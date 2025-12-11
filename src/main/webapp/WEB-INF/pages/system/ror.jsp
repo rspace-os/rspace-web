@@ -1,8 +1,9 @@
 <%@ include file="/common/taglibs.jsp"%>
 <head>
-    <script  src="<c:url value='/ui/dist/rorIntegration.js'/>"></script>
+    <axt:once key="LOADED_rorIntegration">
+        <%@ include file="/ui/dist/templates/rorIntegration-scripts.jsp" %>
+    </axt:once>
 </head>
 <body>
-<div style="width:70%" id="rorIntegration"/>
-
+    <div style="width: 70%" id="rorIntegration"></div>
 </body>

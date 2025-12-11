@@ -317,10 +317,18 @@
 
 <jsp:include page="recordInfoPanel.jsp" />
 
-<!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
-<script src="<c:url value='/ui/dist/exportModal.js'/>"></script>
-<script src="<c:url value='/ui/dist/previewInfo.js'/>"></script>
-<script src="<c:url value='/ui/dist/snapGeneDialog.js'/>"></script>
+
+<axt:once key="LOADED_exportModal">
+  <%@ include file="/ui/dist/templates/exportModal-scripts.jsp" %>
+</axt:once>
+
+<axt:once key="LOADED_previewInfo">
+  <%@ include file="/ui/dist/templates/previewInfo-scripts.jsp" %>
+</axt:once>
+
+<axt:once key="LOADED_snapGeneDialog">
+  <%@ include file="/ui/dist/templates/snapGeneDialog-scripts.jsp" %>
+</axt:once>
+
 <script src="<c:url value='/scripts/tinymceDialogUtils.js'/>"></script>
-<!--End React Scripts -->

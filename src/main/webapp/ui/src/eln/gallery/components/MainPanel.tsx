@@ -1489,6 +1489,7 @@ function GalleryMainPanel({
         position: "relative",
         overflowY: "hidden",
         pr: 2.5,
+        pb: 0,
         ...(over
           ? {
               outline: `3px solid ${SELECTED_OR_FOCUS_BLUE}`,

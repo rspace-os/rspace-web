@@ -14,20 +14,6 @@
     max-height: 100% !important;
 }
 
-#page.treeBrowserWide, #page.treeBrowserWide #main, #page.treeBrowserWide #content {
-    width: 1260px;
-    max-width: 1260px;
-}
-
-#page.treeBrowserNarrow, #page.treeBrowserNarrow #main, #page.treeBrowserNarrow #content {
-    width: 990px;
-    max-width: 990px;
-}
-#page.treeBrowserNarrow #header {
-    width: 960px;
-    margin-left: 30px;
-}
-
 #page.treeBrowserNarrow #fileBrowsing {
     display: none;
 }
@@ -47,6 +33,7 @@
 
 .mainDocumentView {
     display: flex;
+    justify-content: center;
 }
 .documentPanel {
     max-width: 960px;

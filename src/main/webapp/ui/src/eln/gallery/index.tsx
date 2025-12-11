@@ -185,147 +185,144 @@ const WholePage = styled(
     }, [listingOf, path]);
 
     return (
-      <>
-        <CallableImagePreview>
-          <CallablePdfPreview>
-            <CallableAsposePreview>
-              <CallableSnapGenePreview>
-                <CallableSnippetPreview>
-                  <OpenFolderProvider
-                    setPath={(newPath) => {
-                      FetchingData.getSuccessValue(selectedSection).do(
-                        (section) => {
-                          if (section === GALLERY_SECTION.NETWORKFILES) {
-                            setPath(newPath);
-                            return;
-                          }
-                          if (newPath.length > 0) {
-                            navigate(
-                              `/gallery/${idToString(
-                                newPath[newPath.length - 1].id,
-                              ).elseThrow()}`,
-                            );
-                          } else {
-                            try {
-                              navigate(`/gallery?mediaType=${section}`);
-                            } catch {
-                              // do nothing
-                            }
-                          }
-                        },
-                      );
-                    }}
-                  >
-                    <Stack sx={{ height: "100%" }}>
-                      <AppBar
-                        variant="page"
-                        currentPage="Gallery"
-                        sidebarToggle={
-                          <SidebarToggle
-                            setSidebarOpen={setDrawerOpen}
-                            sidebarOpen={drawerOpen}
-                            sidebarId={sidebarId}
-                          />
+      <CallableImagePreview>
+        <CallablePdfPreview>
+          <CallableAsposePreview>
+            <CallableSnapGenePreview>
+              <CallableSnippetPreview>
+                <OpenFolderProvider
+                  setPath={(newPath) => {
+                    FetchingData.getSuccessValue(selectedSection).do(
+                      (section) => {
+                        if (section === GALLERY_SECTION.NETWORKFILES) {
+                          setPath(newPath);
+                          return;
                         }
-                        accessibilityTips={{
-                          supportsHighContrastMode: true,
-                          supportsReducedMotion: true,
-                          supports2xZoom: true,
-                          supportsSkipToContent: true,
-                        }}
-                      />
-                      <Box sx={{ borderBottom: theme.borders.card }}>
-                        <Alert
-                          icon={<BroadcastIcon fontSize="inherit" />}
-                          severity="info"
-                        >
-                          Welcome to the{" "}
-                          <Link href={docLinks.gallery}>new Gallery!</Link> If
-                          you encounter any issues, please let us know by
-                          emailing{" "}
-                          <Link href="mailto:support@researchspace.com">
-                            support
-                          </Link>{" "}
-                          and using the{" "}
-                          <Link target="_self" href="/oldGallery">
-                            old Gallery
-                          </Link>{" "}
-                          in the meantime.
-                        </Alert>
-                      </Box>
-                      <Box
-                        sx={{ display: "flex", minHeight: "0", flexGrow: 1 }}
-                        component="main"
+                        if (newPath.length > 0) {
+                          navigate(
+                            `/gallery/${idToString(
+                              newPath[newPath.length - 1].id,
+                            ).elseThrow()}`,
+                          );
+                        } else {
+                          try {
+                            navigate(`/gallery?mediaType=${section}`);
+                          } catch {
+                            // do nothing
+                          }
+                        }
+                      },
+                    );
+                  }}
+                >
+                  <Stack sx={{ minHeight: "100vh" }}>
+                    <AppBar
+                      variant="page"
+                      currentPage="Gallery"
+                      sidebarToggle={
+                        <SidebarToggle
+                          setSidebarOpen={setDrawerOpen}
+                          sidebarOpen={drawerOpen}
+                          sidebarId={sidebarId}
+                        />
+                      }
+                      accessibilityTips={{
+                        supportsHighContrastMode: true,
+                        supportsReducedMotion: true,
+                        supports2xZoom: true,
+                        supportsSkipToContent: true,
+                      }}
+                    />
+                    <Box sx={{ borderBottom: theme.borders.card }}>
+                      <Alert
+                        icon={<BroadcastIcon fontSize="inherit" />}
+                        severity="info"
                       >
-                        <Sidebar
+                        Welcome to the{" "}
+                        <Link href={docLinks.gallery}>new Gallery!</Link> If
+                        you encounter any issues, please let us know by
+                        emailing{" "}
+                        <Link href="mailto:support@researchspace.com">
+                          support
+                        </Link>{" "}
+                        and using the{" "}
+                        <Link target="_self" href="/oldGallery">
+                          old Gallery
+                        </Link>{" "}
+                        in the meantime.
+                      </Alert>
+                    </Box>
+                    <Box
+                      sx={{ display: "flex", minHeight: "100%", flexGrow: 1 }}
+                      component="main"
+                    >
+                      <Sidebar
+                        selectedSection={FetchingData.getSuccessValue(
+                          selectedSection,
+                        ).orElse(null)}
+                        setSelectedSection={(mediaType) => {
+                          setSelectedSection({ mediaType });
+                          setPath(EMPTY_PATH);
+                          setAppliedSearchTerm("");
+                          trackEvent("user:change:section:gallery", {
+                            section: mediaType,
+                          });
+                        }}
+                        drawerOpen={drawerOpen}
+                        setDrawerOpen={setDrawerOpen}
+                        folderId={folderId}
+                        refreshListing={refreshListing}
+                        id={sidebarId}
+                      />
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          flexGrow: 1,
+                          minWidth: 0,
+                        }}
+                      >
+                        <MainPanel
                           selectedSection={FetchingData.getSuccessValue(
                             selectedSection,
                           ).orElse(null)}
+                          path={FetchingData.getSuccessValue(path).orElse(
+                            null,
+                          )}
                           setSelectedSection={(mediaType) => {
                             setSelectedSection({ mediaType });
                             setPath(EMPTY_PATH);
                             setAppliedSearchTerm("");
-                            trackEvent("user:change:section:gallery", {
-                              section: mediaType,
-                            });
                           }}
-                          drawerOpen={drawerOpen}
-                          setDrawerOpen={setDrawerOpen}
+                          galleryListing={galleryListing}
                           folderId={folderId}
                           refreshListing={refreshListing}
-                          id={sidebarId}
-                        />
-                        <Box
-                          sx={{
-                            height: "100%",
-                            display: "flex",
-                            flexDirection: "column",
-                            flexGrow: 1,
-                            minWidth: 0,
+                          key={null}
+                          sortOrder={sortOrder}
+                          orderBy={orderBy}
+                          setSortOrder={setSortOrder}
+                          setOrderBy={setOrderBy}
+                          appliedSearchTerm={appliedSearchTerm}
+                          setAppliedSearchTerm={(newTerm) => {
+                            FetchingData.getSuccessValue(path).do((p) => {
+                              if (p.length > 0) {
+                                trackEvent("user:search:folder:gallery");
+                              } else {
+                                trackEvent("user:search:section:gallery");
+                              }
+                            });
+                            setAppliedSearchTerm(newTerm);
                           }}
-                        >
-                          <MainPanel
-                            selectedSection={FetchingData.getSuccessValue(
-                              selectedSection,
-                            ).orElse(null)}
-                            path={FetchingData.getSuccessValue(path).orElse(
-                              null,
-                            )}
-                            setSelectedSection={(mediaType) => {
-                              setSelectedSection({ mediaType });
-                              setPath(EMPTY_PATH);
-                              setAppliedSearchTerm("");
-                            }}
-                            galleryListing={galleryListing}
-                            folderId={folderId}
-                            refreshListing={refreshListing}
-                            key={null}
-                            sortOrder={sortOrder}
-                            orderBy={orderBy}
-                            setSortOrder={setSortOrder}
-                            setOrderBy={setOrderBy}
-                            appliedSearchTerm={appliedSearchTerm}
-                            setAppliedSearchTerm={(newTerm) => {
-                              FetchingData.getSuccessValue(path).do((p) => {
-                                if (p.length > 0) {
-                                  trackEvent("user:search:folder:gallery");
-                                } else {
-                                  trackEvent("user:search:section:gallery");
-                                }
-                              });
-                              setAppliedSearchTerm(newTerm);
-                            }}
-                          />
-                        </Box>
+                        />
                       </Box>
-                    </Stack>
-                  </OpenFolderProvider>
-                </CallableSnippetPreview>
-              </CallableSnapGenePreview>
-            </CallableAsposePreview>
-          </CallablePdfPreview>
-        </CallableImagePreview>
-      </>
+                    </Box>
+                  </Stack>
+                </OpenFolderProvider>
+              </CallableSnippetPreview>
+            </CallableSnapGenePreview>
+          </CallableAsposePreview>
+        </CallablePdfPreview>
+      </CallableImagePreview>
     );
   },
 )(() => ({
@@ -569,21 +566,23 @@ export function Gallery() {
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
-  if (domContainer) {
-    window.scrollTo(0, 1);
-
-    const root = createRoot(domContainer);
-    root.render(
-      <React.StrictMode>
-        <BrowserRouter>
-          <Gallery />
-        </BrowserRouter>
-      </React.StrictMode>,
-    );
-
-    const meta = document.createElement("meta");
-    meta.name = "theme-color";
-    meta.content = `hsl(${ACCENT_COLOR.background.hue}, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`;
-    document.head?.appendChild(meta);
+  if (!domContainer) {
+    throw new Error("Failed to find the root element");
   }
+
+  window.scrollTo(0, 1);
+
+  const root = createRoot(domContainer);
+  root.render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <Gallery />
+      </BrowserRouter>
+    </React.StrictMode>,
+  );
+
+  const meta = document.createElement("meta");
+  meta.name = "theme-color";
+  meta.content = `hsl(${ACCENT_COLOR.background.hue}, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`;
+  document.head?.appendChild(meta);
 });
