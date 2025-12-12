@@ -35,7 +35,6 @@ import org.springframework.ui.velocity.VelocityEngineUtils;
  */
 @Service
 public class PdfHtmlGenerator {
-  private List<ArchivalNfsFile> nfsLinks;
   @Autowired private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
   private final VelocityEngine velocityEngine;
 

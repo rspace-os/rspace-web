@@ -34,8 +34,7 @@ public class StoichiometryTableData {
       Double actualMoles,
       Double actualYield,
       String notes) {
-    this.inventoryLinkedItem =
-        inventoryLinkedItem != null ? inventoryLinkedItem : "-";
+    this.inventoryLinkedItem = inventoryLinkedItem != null ? inventoryLinkedItem : "-";
     this.name = name != null ? name : "UNKNOWN";
     this.role = role;
     this.limitingReagent = limitingReagent != null ? limitingReagent.toString() : "false";
