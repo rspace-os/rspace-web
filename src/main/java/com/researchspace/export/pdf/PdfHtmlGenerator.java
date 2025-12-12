@@ -2,6 +2,7 @@ package com.researchspace.export.pdf;
 
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.export.pdf.ExportToFileConfig.DATE_FOOTER_PREF;
+import com.researchspace.export.stoichiometry.StoichiometryHtmlGenerator;
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.model.record.StructuredDocument;
 import java.text.SimpleDateFormat;
@@ -34,7 +35,7 @@ import org.springframework.ui.velocity.VelocityEngineUtils;
  */
 @Service
 public class PdfHtmlGenerator {
-
+  @Autowired private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
   private final VelocityEngine velocityEngine;
 
   private HTMLUnicodeFontProcesser htmlUnicodeFontProcesser;
@@ -161,6 +162,9 @@ public class PdfHtmlGenerator {
         newPageAddedForDocExtras = true;
       }
       html = addProvenance(html, documentData.getRevisionInfo());
+    }
+    if (documentData.hasStoichiometryTable()) {
+      html = stoichiometryHtmlGenerator.addStoichiometryLinks(html, config.getExporter());
     }
 
     if (documentData.hasNfsLinks()) {
