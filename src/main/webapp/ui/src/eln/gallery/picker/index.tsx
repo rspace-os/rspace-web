@@ -193,6 +193,7 @@ const Picker = observer(
                     />
                     <Box
                       sx={{
+                        height: "100%",
                         display: "flex",
                         flexDirection: "column",
                         flexGrow: 1,

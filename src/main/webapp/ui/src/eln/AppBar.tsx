@@ -16,16 +16,9 @@ window.addEventListener("load", () => {
    * We append the app bar to the body to be outside of the wide margins on
    * many pages
    */
-  const domContainer = document.querySelector("#app-bar");
-  if (!domContainer) {
-    console.error("Could not find element with id 'app-bar'");
-    return;
-  }
-
-  if (domContainer.shadowRoot) {
-    // Already initialized
-    return;
-  }
+  const domContainer = document.createElement("div");
+  domContainer.setAttribute("id", "app-bar");
+  document.body?.insertBefore(domContainer, document.body.firstChild);
 
   /*
    * We use a shadow DOM so that the MUI styles to not leak

@@ -32,6 +32,5 @@
     <jsp:include page="workspaceDeletedHistory_ajax.jsp"></jsp:include>
 </div>
 
-<axt:once key="LOADED_baseSearch">
-    <%@ include file="/ui/dist/templates/baseSearch-scripts.jsp" %>
-</axt:once>
+<!-- Import React search -->
+<script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>

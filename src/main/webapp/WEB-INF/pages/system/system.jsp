@@ -14,18 +14,6 @@
     <link rel="stylesheet" href="<c:url value='/styles/system.css'/>" />
     <script src="<c:url value='/scripts/pages/system/system.js'/>"></script>
     <script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-
-    <axt:once key="LOADED_exportModal">
-      <%@ include file="/ui/dist/templates/exportModal-scripts.jsp" %>
-    </axt:once>
-
-    <axt:once key="LOADED_baseSearch">
-      <%@ include file="/ui/dist/templates/baseSearch-scripts.jsp" %>
-    </axt:once>
-
-    <axt:once key="LOADED_sysadminUsers">
-      <%@ include file="/ui/dist/templates/sysadminUsers-scripts.jsp" %>
-    </axt:once>
   </head>
 
   <body>
@@ -54,6 +42,8 @@
 
 <!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
-
+<script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
+<script src="<c:url value='/ui/dist/sysadminUsers.js'/>"></script>
+<!--End React Scripts -->
 </body>
 </html>

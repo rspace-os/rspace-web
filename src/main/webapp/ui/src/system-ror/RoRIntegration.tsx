@@ -353,12 +353,11 @@ function RoRIntegration(): React.ReactNode {
 
 window.addEventListener("loadROR", () => {
   const domContainer = document.getElementById("rorIntegration");
-  if (!domContainer) {
-    throw new Error("Could not find the root element");
-  }
 
-  const root = createRoot(domContainer);
-  root.render(<RoRIntegration />);
+  if (domContainer) {
+    const root = createRoot(domContainer);
+    root.render(<RoRIntegration />);
+  }
 });
 
 export default RoRIntegration;

@@ -257,20 +257,11 @@
 
 <div id="owncloudDialog" title="Import From ownCloud"></div>
 
-<axt:once key="LOADED_galleryToolbar">
-  <%@ include file="/ui/dist/templates/galleryToolbar-scripts.jsp" %>
-</axt:once>
-
-<axt:once key="LOADED_snapGeneDialog">
-  <%@ include file="/ui/dist/templates/snapGeneDialog-scripts.jsp" %>
-</axt:once>
-
-<axt:once key="LOADED_baseSearch">
-  <%@ include file="/ui/dist/templates/baseSearch-scripts.jsp" %>
-</axt:once>
+<!-- React Scripts -->
+<script src="<c:url value='/ui/dist/galleryToolbar.js'/>"></script>
+<script src="<c:url value='/ui/dist/snapGeneDialog.js'/>"></script>
+<script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
 <div id="react-image-editor"></div>
-
-<axt:once key="LOADED_imageEditor">
-  <%@ include file="/ui/dist/templates/imageEditor-scripts.jsp" %>
-</axt:once>
+<script src="<c:url value='/ui/dist/imageEditor.js'/>"></script>
 <script src="<c:url value='/scripts/tinymceDialogUtils.js'/>"></script>
+<!--End React Scripts -->
