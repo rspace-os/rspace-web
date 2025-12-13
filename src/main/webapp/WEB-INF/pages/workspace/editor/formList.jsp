@@ -96,6 +96,5 @@
 
 <jsp:include page="/WEB-INF/pages/recordInfoPanel.jsp"></jsp:include>
 
-<axt:once key="LOADED_baseSearch">
-  <%@ include file="/ui/dist/templates/baseSearch-scripts.jsp" %>
-</axt:once>
+<!-- Import React search -->
+<script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>

@@ -656,22 +656,8 @@
 	</tr>
 </script>
 
-<axt:once key="LOADED_accountActivity">
-	<%@ include file="/ui/dist/templates/accountActivity-scripts.jsp" %>
-</axt:once>
-
-<axt:once key="LOADED_groupActivity">
-	<%@ include file="/ui/dist/templates/groupActivity-scripts.jsp" %>
-</axt:once>
-
-<axt:once key="LOADED_oAuth">
-	<%@ include file="/ui/dist/templates/oAuth-scripts.jsp" %>
-</axt:once>
-
-<axt:once key="LOADED_connectedApps">
-	<%@ include file="/ui/dist/templates/connectedApps-scripts.jsp" %>
-</axt:once>
-
-<axt:once key="LOADED_labgroupsTable">
-	<%@ include file="/ui/dist/templates/labgroupsTable-scripts.jsp" %>
-</axt:once>
+<script src="<c:url value='/ui/dist/accountActivity.js'/>"></script>
+<script src="<c:url value='/ui/dist/groupActivity.js'/>"></script>
+<script src="<c:url value='/ui/dist/oAuth.js'/>"></script>
+<script src="<c:url value='/ui/dist/connectedApps.js'/>"></script>
+<script src="<c:url value='/ui/dist/labgroupsTable.js'/>"></script>

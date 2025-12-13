@@ -232,8 +232,7 @@
 	</div>
 </div>
 
+<!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
-
-<axt:once key="LOADED_exportModal">
-	<%@ include file="/ui/dist/templates/exportModal-scripts.jsp" %>
-</axt:once>
+<script src="<c:url value='/ui/dist/exportModal.js'/>"></script>
+<!--End React Scripts -->

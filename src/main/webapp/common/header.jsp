@@ -1,93 +1,75 @@
 <%@ include file="/common/taglibs.jsp"%>
-<head>
-  <meta name="google-signin-client_id" content="731959816562-p2igqsv375nta4bd0g3c3tkq5r90kpg5.apps.googleusercontent.com">
-  <c:if test="${isGoogleDriveAppEnabled}">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://apis.google.com/js/api.js" async defer></script>
-  </c:if>
+<meta name="google-signin-client_id" content="731959816562-p2igqsv375nta4bd0g3c3tkq5r90kpg5.apps.googleusercontent.com">
+<c:if test="${isGoogleDriveAppEnabled}">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js" async defer></script>
+</c:if>
 
-  <rst:hasDeploymentProperty name="cloud" value="true">
-    <script src="<c:url value='/scripts/pages/signup/google-signin.js'/>"></script>
-    <script src="https://accounts.google.com/gsi/client?onload=onLoad" async defer></script>
-  </rst:hasDeploymentProperty>
+<rst:hasDeploymentProperty name="cloud" value="true">
+  <script src="<c:url value='/scripts/pages/signup/google-signin.js'/>"></script>
+  <script src="https://accounts.google.com/gsi/client?onload=onLoad" async defer></script>
+</rst:hasDeploymentProperty>
 
-  <script type="text/javascript">
-    function removeInventoryAuthOnRunAs() {
-      window.sessionStorage.removeItem("id_token");
-    }
-  </script>
+<script type="text/javascript">
+  function removeInventoryAuthOnRunAs() {
+    window.sessionStorage.removeItem("id_token");
+  }
+</script>
 
-  <script>
-    $(document).on('click', '#logout', function (e) {
-      //RSPAC-987 for case when we have google signout
-      e.preventDefault();
-      if (typeof gapi !== 'undefined' && gapi.auth2) {
-        var auth2 = gapi.auth2.getAuthInstance();
-        if (auth2) {
-          auth2.signOut().then(function () {
-            console.log('User signed out.');
-          });
-        } else {
-          console.log('No GAPI authinstance defined');
-        }
+<script>
+  $(document).on('click', '#logout', function (e) {
+    //RSPAC-987 for case when we have google signout
+    e.preventDefault();
+    if (typeof gapi !== 'undefined' && gapi.auth2) {
+      var auth2 = gapi.auth2.getAuthInstance();
+      if (auth2) {
+        auth2.signOut().then(function () {
+          console.log('User signed out.');
+        });
       } else {
-        console.log('No GAPI defined');
+        console.log('No GAPI authinstance defined');
       }
-      window.location = "/logout";
-    });
-
-    function onLoad() {
-      gapi.load('auth2', function () {
-        gapi.auth2.init();
-      });
+    } else {
+      console.log('No GAPI defined');
     }
-  </script>
+    window.location = "/logout";
+  });
 
-  <!-- Constructed based on WebConfig.java, dispatcher-servlet.xml and admin.jsp -->
-  <c:set var="myRSpaceURLs"
-    value="${fn:split('/admin/cloud/createCloudGroupSuccess,/import/archiveImport,/audit/auditing,/cloud/group/new,/directory,/groups/view,/groups/viewPIGroup,/record/share/manage,/userform,/workspace/editor/form,/workspace/editor/structuredDocument/audit,/workspace/trash/list',',')}" />
-  <!-- Detect MyRSpace URL (so the MyRSpace tab can be marked as active) -->
-  <c:set var="isMyRSpacePage" value="false" />
-  <c:forEach items="${myRSpaceURLs}" var="myRSpaceURL">
-    <c:if test="${fn:startsWith(pageContext.request.servletPath, myRSpaceURL)}">
-      <c:set var="isMyRSpacePage" value="true" />
-    </c:if>
-  </c:forEach>
+  function onLoad() {
+    gapi.load('auth2', function () {
+      gapi.auth2.init();
+    });
+  }
+</script>
 
-
-  <!-- Detect System URL (so the System tab can be marked as active) -->
-  <c:set var="systemURLs" value="${fn:split('/community/admin,/groups/admin,/system',',')}" />
-  <c:set var="isSystemPage" value="false" />
-  <c:forEach items="${systemURLs}" var="systemURL">
-    <c:if test="${fn:startsWith(pageContext.request.servletPath, systemURL)}">
-      <c:set var="isSystemPage" value="true" />
-    </c:if>
-  </c:forEach>
-
-
-  <!-- Detect Workspace URL (so the Workspace tab can be marked as active) -->
-  <c:set var="isWorkspacePage" value="false" />
-  <c:if test="${(fn:startsWith(pageContext.request.servletPath, '/workspace') && !isMyRSpacePage) ||
-              fn:startsWith(pageContext.request.servletPath, '/notebookEditor')}">
-    <c:set var="isWorkspacePage" value="true" />
+<!-- Constructed based on WebConfig.java, dispatcher-servlet.xml and admin.jsp -->
+<c:set var="myRSpaceURLs"
+  value="${fn:split('/admin/cloud/createCloudGroupSuccess,/import/archiveImport,/audit/auditing,/cloud/group/new,/directory,/groups/view,/groups/viewPIGroup,/record/share/manage,/userform,/workspace/editor/form,/workspace/editor/structuredDocument/audit,/workspace/trash/list',',')}" />
+<!-- Detect MyRSpace URL (so the MyRSpace tab can be marked as active) -->
+<c:set var="isMyRSpacePage" value="false" />
+<c:forEach items="${myRSpaceURLs}" var="myRSpaceURL">
+  <c:if test="${fn:startsWith(pageContext.request.servletPath, myRSpaceURL)}">
+    <c:set var="isMyRSpacePage" value="true" />
   </c:if>
+</c:forEach>
 
-  <axt:once key="LOADED_appBar">
-    <%@ include file="/ui/dist/templates/appBar-scripts.jsp" %>
-  </axt:once>
 
-  <axt:once key="LOADED_userDetails">
-    <%@ include file="/ui/dist/templates/userDetails-scripts.jsp" %>
-  </axt:once>
+<!-- Detect System URL (so the System tab can be marked as active) -->
+<c:set var="systemURLs" value="${fn:split('/community/admin,/groups/admin,/system',',')}" />
+<c:set var="isSystemPage" value="false" />
+<c:forEach items="${systemURLs}" var="systemURL">
+  <c:if test="${fn:startsWith(pageContext.request.servletPath, systemURL)}">
+    <c:set var="isSystemPage" value="true" />
+  </c:if>
+</c:forEach>
 
-  <axt:once key="LOADED_toastMessage">
-    <%@ include file="/ui/dist/templates/toastMessage-scripts.jsp" %>
-  </axt:once>
 
-  <axt:once key="LOADED_confirmationDialog">
-    <%@ include file="/ui/dist/templates/confirmationDialog-scripts.jsp" %>
-  </axt:once>
-</head>
+<!-- Detect Workspace URL (so the Workspace tab can be marked as active) -->
+<c:set var="isWorkspacePage" value="false" />
+<c:if test="${(fn:startsWith(pageContext.request.servletPath, '/workspace') && !isMyRSpacePage) ||
+            fn:startsWith(pageContext.request.servletPath, '/notebookEditor')}">
+  <c:set var="isWorkspacePage" value="true" />
+</c:if>
 
 <div class="header-wrapper">
   <!--[if IE]>
@@ -155,6 +137,8 @@
     </div>
 
     <div id="app-bar"></div>
+    <script type="module" src="/../ui/dist/appBar.js"></script>
+
     <script type='text/javascript'>
       var AppContext_Glbal = new String("${pageContext.request.contextPath}");
     </script>
@@ -235,4 +219,11 @@
   </header>
 </div>
 
+<!-- Import React and Toast messages on any page that has a  header -->
+<script src="<c:url value='/ui/dist/runtime.js'/>"></script>
+<script src="<c:url value='/ui/dist/userDetails.js'/>"></script>
+
 <div id="toast-message" data-test-id="toast-messages-wrapper"></div>
+<script src="<c:url value='/ui/dist/toastMessage.js'/>"></script>
+
+<script src="<c:url value='/ui/dist/confirmationDialog.js'/>"></script>

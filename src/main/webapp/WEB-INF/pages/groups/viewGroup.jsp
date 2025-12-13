@@ -550,25 +550,15 @@ See  <a href="https://researchspace.helpdocs.io/article/8qekgz9y5b-the-lab-admin
   var displayName = "${group.displayName}";
 </script>
 
+  <!-- MJJA React Scripts -->
+<script src="<c:url value='/ui/dist/myLabGroups.js'/>"></script>
+  <!--End MJJA React Scripts -->
+
+
+<!-- Other React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
-
-
-<axt:once key="LOADED_myLabGroups">
-  <%@ include file="/ui/dist/templates/myLabGroups-scripts.jsp" %>
-</axt:once>
-
-<axt:once key="LOADED_exportModal">
-  <%@ include file="/ui/dist/templates/exportModal-scripts.jsp" %>
-</axt:once>
-
-<axt:once key="LOADED_groupUserActivity">
-  <%@ include file="/ui/dist/templates/groupUserActivity-scripts.jsp" %>
-</axt:once>
-
-<axt:once key="LOADED_groupEditBar">
-  <%@ include file="/ui/dist/templates/groupEditBar-scripts.jsp" %>
-</axt:once>
-
-<axt:once key="LOADED_memberAutoshareStatusWrapper">
-  <%@ include file="/ui/dist/templates/memberAutoshareStatusWrapper-scripts.jsp" %>
-</axt:once>
+<script src="<c:url value='/ui/dist/exportModal.js'/>"></script>
+<script src="<c:url value='/ui/dist/groupUserActivity.js'/>"></script>
+<script src="<c:url value='/ui/dist/groupEditBar.js'/>"></script>
+<script src="<c:url value='/ui/dist/memberAutoshareStatusWrapper.js'/>"></script>
+<!--End React Scripts -->

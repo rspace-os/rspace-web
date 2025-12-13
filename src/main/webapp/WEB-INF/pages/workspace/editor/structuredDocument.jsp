@@ -91,38 +91,15 @@
 
   <div id="tempData" style="display: none"></div>
 
-    <axt:once key="LOADED_structuredDocumentToolbar">
-      <%@ include file="/ui/dist/templates/structuredDocumentToolbar-scripts.jsp" %>
-    </axt:once>
-
-    <axt:once key="LOADED_fileTreeToolbar">
-      <%@ include file="/ui/dist/templates/fileTreeToolbar-scripts.jsp" %>
-    </axt:once>
-
-    <axt:once key="LOADED_tinymceSidebarInfo">
-      <%@ include file="/ui/dist/templates/tinymceSidebarInfo-scripts.jsp" %>
-    </axt:once>
-
-    <axt:once key="LOADED_internalLink">
-      <%@ include file="/ui/dist/templates/internalLink-scripts.jsp" %>
-    </axt:once>
-
-    <axt:once key="LOADED_materialsListing">
-      <%@ include file="/ui/dist/templates/materialsListing-scripts.jsp" %>
-    </axt:once>
-
-    <axt:once key="LOADED_externalWorkFlows">
-      <%@ include file="/ui/dist/templates/externalWorkFlows-scripts.jsp" %>
-    </axt:once>
-
-    <axt:once key="LOADED_jupyterNotebooks">
-      <%@ include file="/ui/dist/templates/jupyterNotebooks-scripts.jsp" %>
-    </axt:once>
-
-    <axt:once key="LOADED_associatedInventoryRecords">
-      <%@ include file="/ui/dist/templates/associatedInventoryRecords-scripts.jsp" %>
-    </axt:once>
-
+  <!-- React Scripts -->
+  <script src="<c:url value='/ui/dist/structuredDocumentToolbar.js'/>"></script>
+  <script src="<c:url value='/ui/dist/fileTreeToolbar.js'/>"></script>
+  <script src="<c:url value='/ui/dist/tinymceSidebarInfo.js'/>"></script>
+  <script src="<c:url value='/ui/dist/internalLink.js'/>"></script>
+  <script src="<c:url value='/ui/dist/materialsListing.js'/>"></script>
+    <script src="<c:url value='/ui/dist/externalWorkFlows.js'/>"></script>
+    <script src="<c:url value='/ui/dist/jupyterNotebooks.js'/>"></script>
+  <script src="<c:url value='/ui/dist/associatedInventoryRecords.js'/>"></script>
   <script src="<c:url value='/ui/dist/tinymceKetcher.js'/>"></script>
   <script src="<c:url value='/ui/dist/ketcherViewer.js'/>"></script>
 

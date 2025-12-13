@@ -15,9 +15,9 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 
 window.addEventListener("load", () => {
-  const domContainer = document.getElementById("app");
+  const domContainer = document.getElementById("about-page");
   if (!domContainer) {
-    console.error("Could not find element with id 'app'");
+    console.error("Could not find element with id 'about-page'");
     return;
   }
 

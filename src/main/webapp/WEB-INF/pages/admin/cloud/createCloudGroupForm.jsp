@@ -152,8 +152,7 @@
 			</table>
 	   	</form:form>-->--%>
 	</div>
-
-    <axt:once key="LOADED_createGroup">
-        <%@ include file="/ui/dist/templates/createGroup-scripts.jsp" %>
-    </axt:once>
+	<!-- React Scripts -->
+		<script src="<c:url value='/ui/dist/createGroup.js'/>"></script>
+	<!--End React Scripts -->
 </html>

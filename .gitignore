@@ -63,10 +63,3 @@ samples/
 .factorypath
 .java-version
 src/main/webapp/ui/junit.xml
-
-# Entrypoints - generated
-/src/main/webapp/inventory/start.html
-/src/main/webapp/inventory/identifierPublicPage.html
-/src/main/webapp/eln/apps.html
-/src/main/webapp/eln/gallery.html
-/src/main/webapp/about/index.html

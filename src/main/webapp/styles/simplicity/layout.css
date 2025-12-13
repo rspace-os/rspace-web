@@ -6,6 +6,12 @@
         padding: 0;
         /*background: white url(images/background.gif) top left repeat-x;*/
     }
+    div#page {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0;
+        text-align: center;
+    }
     
     /* HEADER */
         header#header {
