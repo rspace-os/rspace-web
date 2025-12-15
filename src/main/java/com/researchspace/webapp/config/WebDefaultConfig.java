@@ -51,11 +51,6 @@ public class WebDefaultConfig {
   }
 
   @Bean
-  APIAvailableInterceptor apiAvailableInterceptor() {
-    return new APIAvailableInterceptor();
-  }
-
-  @Bean
   OriginRefererCheckingInterceptor originRefererCheckingInterceptor() {
     return new OriginRefererCheckingInterceptor();
   }

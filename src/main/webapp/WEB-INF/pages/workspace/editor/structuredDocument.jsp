@@ -81,6 +81,7 @@
               data-is-template="${isTemplate}"
               data-version="${structuredDocument.userVersion.version}"
       ></div>
+      <div id="tinymce-ketcher"></div>
   <jsp:include page="structuredDocumentMainPanel.jsp" >
     <jsp:param name="publicDocument" value="false"/>
   </jsp:include>
@@ -96,5 +97,10 @@
   <script src="<c:url value='/ui/dist/tinymceSidebarInfo.js'/>"></script>
   <script src="<c:url value='/ui/dist/internalLink.js'/>"></script>
   <script src="<c:url value='/ui/dist/materialsListing.js'/>"></script>
+    <script src="<c:url value='/ui/dist/externalWorkFlows.js'/>"></script>
+    <script src="<c:url value='/ui/dist/jupyterNotebooks.js'/>"></script>
   <script src="<c:url value='/ui/dist/associatedInventoryRecords.js'/>"></script>
+  <script src="<c:url value='/ui/dist/tinymceKetcher.js'/>"></script>
+  <script src="<c:url value='/ui/dist/ketcherViewer.js'/>"></script>
+
   <!--End React Scripts -->

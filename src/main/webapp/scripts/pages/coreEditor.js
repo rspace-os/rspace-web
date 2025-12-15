@@ -214,7 +214,6 @@ function showRecordInfo(id, revision, version, $infoArea) {
   var jqxhr = _loadRSpaceElementInfo(id, version, url, $infoArea, isInfoDialog, generate$RecordInfoPanel);
   return jqxhr;
 }
-
 function _loadRSpaceElementInfo(id, version, url, $infoArea, isInfoDialog, infoPanelConstructor) {
   if (!id) {
     // RSPAC-1648 don't call server if id not found
@@ -229,6 +228,7 @@ function _loadRSpaceElementInfo(id, version, url, $infoArea, isInfoDialog, infoP
       $infoArea.find('.recordInfoPanel').replaceWith($recordInfoPanel);
       if (isInfoDialog) {
         $infoArea.dialog('open');
+        RS.trackEvent("user:open:info_panel:document_editor");
       }
     }
   });
@@ -1091,6 +1091,7 @@ function makeRenameRequest(data) {
       $(formSelector).find("#renameRecordEdit").show(fadeTime);
       $(formSelector).find("#renameRecordSubmit").hide(fadeTime);
       nameEditMode = false;
+      RS.trackEvent("user:rename:document:document_editor");
     }
   }).fail(function () {
     RS.ajaxFailed("Renaming record", false, jqxhr);
@@ -1628,6 +1629,7 @@ function saveRecordTags(tags) {
   };
   var jqxhr = $.post("/workspace/editor/structuredDocument/tagRecord", data, function (data) {
     if (data.data != null) {
+      RS.trackEvent("user:tag:document:document_editor");
     } else if (data.errorMsg != null) {
         $('#tag-info-dialog-content').html(getValidationErrorString(data.errorMsg));
         openDialog("#tag-info-dialog");
@@ -1997,7 +1999,6 @@ function navigateAwayFromCurrentDocument(urlToOpen, modalTargetElem) {
 
 //handle file upload via local computer or Dnd into doc editor, or in attachment info panels
 function initGalleryFileUpload() {
-
   setUpFileUpload({
     url: '/gallery/ajax/uploadFile/',
     fileChooserId: '.fromLocalComputer',
@@ -2121,14 +2122,14 @@ $(document).ready(function () {
     var showTreeInEditor = isWindowWideEnoughForFileTreeBrowser() ? 'y' : 'a';
     updateClientUISetting('showTreeInEditor', showTreeInEditor);
     _updateNotebookRibbonVisibility();
-    RS.trackEvent('ShowTreeInEditor', { showTreeInEditor: showTreeInEditor });
+    RS.trackEvent("user:open:sidebar_tree:document:editor", { "default": isWindowWideEnoughForFileTreeBrowser() ? "open" : "closed" });
   });
   $(document).on('click', '#hideFileTreeSmall', function (e) {
     e.preventDefault();
     collapsePageAndHideFileTreeBrowser();
     updateClientUISetting('showTreeInEditor', 'n');
     _updateNotebookRibbonVisibility();
-    RS.trackEvent('ShowTreeInEditor', { showTreeInEditor: 'n' });
+    RS.trackEvent("user:close:sidebar_tree:document_editor");
   });
 
   /* let's start with narrow view */
@@ -2149,3 +2150,28 @@ window.addEventListener("ReactToolbarMounted", () => {
   });
 });
 
+$(document).ready(function () {
+  const searchParams = new URLSearchParams(window.location.search);
+  if (searchParams.has("sharedWithGroup")) {
+    RS.confirm(
+      "<b>This document has been automatically shared with all members of " +
+        RS.escapeHtml(searchParams.get("sharedWithGroup")) +
+        '</b><br />To amend the permissions, visit the <a href="/record/share/manage">Shared Documents</a> page.',
+      "success",
+      "infinite"
+    );
+  }
+});
+
+$(document).ready(function () {
+  if (window.tinymce) {
+    window.tinymce.on("AddEditor", function (e) {
+      e.editor.on("ExecCommand", function (e) {
+        RS.trackEvent("user:trigger:tiny_mce_command:document_editor", { command: e.command });
+      });
+      e.editor.on("OpenWindow", function (e) {
+        RS.trackEvent("user:open:tiny_mce_window:document_editor", { window: document.querySelector(".tox-dialog__title").textContent });
+      });
+    });
+  }
+});

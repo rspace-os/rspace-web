@@ -15,8 +15,10 @@ export const clamp = (num: number, min: number, max: number): number => {
  * DOM.
  */
 export const preventEventBubbling =
-  (f: (e: Event) => void = () => {}): ((e: Event) => void) =>
-  (e: Event): void => {
+  <E extends { stopPropagation: () => void }>(
+    f: (e: E) => void = () => {}
+  ): ((e: E) => void) =>
+  (e: E): void => {
     e.stopPropagation();
     return f(e);
   };
@@ -25,8 +27,10 @@ export const preventEventBubbling =
  * Wrap an event handler function to prevent the default action of the event.
  */
 export const preventEventDefault =
-  (f: (e: Event) => void = () => {}): ((e: Event) => void) =>
-  (e: Event): void => {
+  <E extends { preventDefault: () => void }>(
+    f: (e: E) => void = () => {}
+  ): ((e: E) => void) =>
+  (e: E): void => {
     e.preventDefault();
     return f(e);
   };
@@ -262,10 +266,10 @@ export const isEmptyObject = (obj: object): boolean =>
  * Explicitly execute a function that returns a promise whilst ignoring its
  * return value. Useful when flow requires that event handlers return void.
  */
-export function doNotAwait<T>(
-  f: (...rest: Array<T>) => Promise<unknown>
-): (...rest: Array<T>) => void {
-  return function (...t: Array<T>): void {
+export function doNotAwait<T extends unknown[], R>(
+  f: (...rest: T) => Promise<R>
+): (...rest: T) => void {
+  return function (...t: T): void {
     void f(...t);
   };
 }
@@ -277,24 +281,6 @@ export const filterMap = <A, B>(
   map: Map<A, B>,
   f: (a: A, b: B) => boolean
 ): Map<A, B> => new Map([...map.entries()].filter(([k, v]) => f(k, v)));
-
-/**
- * Combine two classes into one.
- * @deprecated
- */
-export function classMixin<T>(
-  cls: { new (...args: unknown[]): T },
-  ...src: Array<T>
-): void {
-  for (const _cl of src) {
-    // @ts-expect-error prototype is always there
-    for (const key of Object.getOwnPropertyNames(_cl.prototype)) {
-      // @ts-expect-error prototype is always there
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      cls.prototype[key] = _cl.prototype[key];
-    }
-  }
-}
 
 /**
  * AllSettled is the type returned by Promise.allSettled. This function

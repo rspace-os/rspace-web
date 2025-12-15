@@ -57,7 +57,7 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
     return q.uniqueResult();
   }
 
-  public Folder getGalleryFolderForUser(User user) {
+  public Folder getGalleryRootFolderForUser(User user) {
     Query<Folder> q =
         getSession()
             .createQuery("from Folder where type like :type and owner.id=:id", Folder.class);
@@ -99,7 +99,7 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   }
 
   @Override
-  public List<Long> getRecordIds(Folder fd) {
+  public List<Long> getFolderChildrenIds(Folder fd) {
     Long pid = fd.getId();
     return getSession()
         .createQuery("SELECT rtf.record.id FROM RecordToFolder rtf WHERE folder_id = :parentId")
@@ -180,7 +180,7 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
         getFolderCriteria()
             .add(nameRestriction(flderName))
             .add(systemFolderRestriction())
-            .add(Restrictions.in("owner", new User[] {sharer, sharee}))
+            .add(Restrictions.in("owner", (Object[]) new User[] {sharer, sharee}))
             .uniqueResult();
   }
 

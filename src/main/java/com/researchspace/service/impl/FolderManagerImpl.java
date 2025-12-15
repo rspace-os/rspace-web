@@ -43,6 +43,7 @@ import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.TreeViewItem;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
@@ -75,6 +76,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class FolderManagerImpl implements FolderManager {
+
   private Logger log = LoggerFactory.getLogger(getClass());
 
   private FolderDao folderDao;
@@ -83,6 +85,7 @@ public class FolderManagerImpl implements FolderManager {
   private RecordDao recordDao;
   private UserManager userManager;
   private IPermissionUtils permissionUtils;
+  private IPropertyHolder properties;
   private OperationFailedMessageGenerator messages;
   private ApplicationEventPublisher publisher;
   private CommunityServiceManager communityServiceManager;
@@ -96,6 +99,7 @@ public class FolderManagerImpl implements FolderManager {
       RecordDao recordDao,
       UserManager userManager,
       IPermissionUtils permissionUtils,
+      IPropertyHolder properties,
       OperationFailedMessageGenerator messages,
       ApplicationEventPublisher publisher,
       CommunityServiceManager communityServiceManager) {
@@ -105,6 +109,7 @@ public class FolderManagerImpl implements FolderManager {
     this.recordDao = recordDao;
     this.userManager = userManager;
     this.permissionUtils = permissionUtils;
+    this.properties = properties;
     this.messages = messages;
     this.publisher = publisher;
     this.communityServiceManager = communityServiceManager;
@@ -158,9 +163,25 @@ public class FolderManagerImpl implements FolderManager {
   }
 
   @Override
+  public RSPath getShortestPathToSharedRootFolder(Long sharedSubfolderId, User user) {
+    Folder sharedSubfolder = folderDao.get(sharedSubfolderId);
+    Folder sharedRootfolder = folderDao.getUserSharedFolder(user);
+    return sharedSubfolder.getShortestPathToParent(sharedRootfolder);
+  }
+
+  @Override
   public Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-      Long srcRecordId, User user) {
-    Folder src = folderDao.get(srcRecordId);
+      Long parentId, Long grandParentId, User user) {
+    Folder src = folderDao.get(parentId);
+    if (src.isNotebook() && src.isShared()) {
+      if (grandParentId == null) {
+        throw new IllegalStateException(
+            "Cannot infer shared context for Notebook with ID=["
+                + parentId
+                + "], as \"grandParentId\" param is not set");
+      }
+      src = folderDao.get(grandParentId);
+    }
     Folder target = folderDao.getUserSharedFolder(user);
     RSPath path =
         src.getShortestPathToParent(
@@ -178,6 +199,19 @@ public class FolderManagerImpl implements FolderManager {
         || br.hasType(RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT);
   }
 
+  @Override
+  public boolean isFolderInSharedTree(Folder folderOrNotebook, Long parentId, User usr) {
+    boolean isParentFolderInSharedTree = false;
+    if (folderOrNotebook.isNotebook()) {
+      Folder grandParentFolder = this.getFolder(parentId, usr);
+      isParentFolderInSharedTree = grandParentFolder.isSharedFolder();
+    } else {
+      isParentFolderInSharedTree = folderOrNotebook.isSharedFolder();
+    }
+    return isParentFolderInSharedTree;
+  }
+
+  @Override
   public Notebook getNotebook(Long notebookid) {
     Notebook notebook = (Notebook) folderDao.get(notebookid);
     long count =
@@ -389,14 +423,22 @@ public class FolderManagerImpl implements FolderManager {
     return createNewNotebook(parentId, notebookName, context, subject, null);
   }
 
+  @Value("${rs.dev.unsafeMove.allowed}")
+  private String unsafeMoveAllowed;
+
   @Override
   public ServiceOperationResult<Folder> move(Long toMove, Long target, Long srcFolderId, User user)
       throws IllegalAddChildOperation {
-    Folder newparent = folderDao.get(target);
+    Folder newParent = folderDao.get(target);
     Folder oldParent = folderDao.get(srcFolderId);
     Folder original = getFolder(toMove, user);
-    boolean moved = original.move(oldParent, newparent, user);
-    recursiveSave(newparent);
+    boolean moved;
+    if (properties.isRsDevUnsafeMoveAllowed()) {
+      moved = original.unsafeMove(oldParent, newParent, user);
+    } else {
+      moved = original.move(oldParent, newParent, user);
+    }
+    recursiveSave(newParent);
     folderDao.save(oldParent);
     return new ServiceOperationResult<Folder>(original, moved);
   }
@@ -421,8 +463,8 @@ public class FolderManagerImpl implements FolderManager {
   }
 
   @Override
-  public List<Long> getRecordIds(Folder fd) {
-    return folderDao.getRecordIds(fd);
+  public List<Long> getFolderChildrenIds(Folder fd) {
+    return folderDao.getFolderChildrenIds(fd);
   }
 
   public Folder addChild(Long folderId, BaseRecord child, User owner) {
@@ -479,7 +521,7 @@ public class FolderManagerImpl implements FolderManager {
 
   @Override
   public Folder getGalleryRootFolderForUser(User user) {
-    return folderDao.getGalleryFolderForUser(user);
+    return folderDao.getGalleryRootFolderForUser(user);
   }
 
   @Override
@@ -613,7 +655,7 @@ public class FolderManagerImpl implements FolderManager {
 
   @Override
   public Folder getMediaFolderFromURLPath(String path, User user) {
-    Folder targetRecord = folderDao.getGalleryFolderForUser(user);
+    Folder targetRecord = folderDao.getGalleryRootFolderForUser(user);
     if (targetRecord == null) {
       throw new IllegalStateException(format("No root folder for user %s", user.getUsername()));
     }
@@ -700,7 +742,15 @@ public class FolderManagerImpl implements FolderManager {
     String parentFolderName = isDestinationWorkspace ? subject.getUsername() : contentType;
 
     // we return or create default ApiInbox folder
-    if (folderId == null) {
+    Optional<Folder> targetFolderOpt = Optional.empty();
+    if (folderId != null) {
+      targetFolderOpt = folderDao.getSafeNull(folderId);
+      // folder id was not existing
+      if (targetFolderOpt.isEmpty()) {
+        throw new AuthorizationException(unauthorisedMsg(subject));
+      }
+    }
+    if (targetFolderOpt.isEmpty() || targetFolderOpt.get().isSharedFolder()) {
       Optional<Folder> apiInboxOpt =
           folderDao.getApiFolderForContentType(parentFolderName, subject);
       Folder apiInbox;
@@ -723,14 +773,12 @@ public class FolderManagerImpl implements FolderManager {
       return apiInbox;
     }
 
-    // return requested folder
-    Optional<Folder> targetFolderOpt = folderDao.getSafeNull(folderId);
-    if (!targetFolderOpt.isPresent()) {
-      throw new AuthorizationException(unauthorisedMsg(subject));
-    }
     Folder targetFolder = targetFolderOpt.get();
     assertUserHasReadPermission(subject, targetFolder);
     Validate.isTrue(!targetFolder.isSharedFolder(), "Can't add API content into a shared folder");
+    if (targetFolder.isSharedFolder()) {
+      targetFolder = folderDao.getRootRecordForUser(subject); // save to root folder
+    }
     if (isDestinationGallery) {
       Validate.isTrue(
           targetFolder.hasAncestorMatchingPredicate(
@@ -811,7 +859,7 @@ public class FolderManagerImpl implements FolderManager {
         ArrayUtils.contains(MediaUtils.GALLERY_MEDIA_FOLDERS, mediaFolderName),
         "Invalid mediaFolderName " + mediaFolderName);
 
-    Folder imagGalleryFolder = recordManager.getGallerySubFolderForUser(mediaFolderName, user);
+    Folder imagGalleryFolder = recordManager.getGalleryMediaFolderForUser(mediaFolderName, user);
     Folder targetFolder = createNewFolder(imagGalleryFolder.getId(), folderName, user);
     return targetFolder;
   }

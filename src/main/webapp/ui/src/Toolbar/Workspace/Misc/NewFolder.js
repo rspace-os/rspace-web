@@ -39,7 +39,7 @@ export default function NewNotebook() {
     setOpen(false);
     RS.blockPage("Creating a new folder...");
 
-    let bodyFormData = new FormData();
+    const bodyFormData = new FormData();
     bodyFormData.set("folderNameField", name);
     setName("");
 
@@ -57,16 +57,17 @@ export default function NewNotebook() {
           }
           getAndDisplayWorkspaceResults(
             `/workspace/ajax/view/${workspaceSettings.parentFolderId}`,
-            workspaceSettings
+            workspaceSettings,
           );
         } else {
           RS.apprise(
             getValidationErrorString(response.errorMsg, ";", true),
             true,
-            e.target
+            e.target,
           );
           RS.unblockPage();
         }
+        RS.trackEvent("user:create:folder:workspace");
       })
       .catch((error) => {
         RS.unblockPage();

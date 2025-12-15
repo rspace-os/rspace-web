@@ -85,7 +85,7 @@ public class OmeroServiceNightlyTest {
   public void testListScreens() {
     List<? extends OmeroRSpaceView> screens =
         service.getProjectsAndScreens("public_,_public", "Screens");
-    assertEquals(103, screens.size());
+    assertEquals(104, screens.size());
     ScreenRSpaceView aScreen =
         (ScreenRSpaceView) getTargetWithMatchingName(screens, "idr0001-graml-sysgro/screenA");
     assertEquals("idr0001-graml-sysgro/screenA", aScreen.getName());

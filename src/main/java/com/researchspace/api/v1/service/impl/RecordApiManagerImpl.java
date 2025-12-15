@@ -12,6 +12,7 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.HistoricalEvent;
 import com.researchspace.model.audittrail.RenameAuditEvent;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
@@ -22,6 +23,7 @@ import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.SharingHandler;
 import com.researchspace.service.impl.RecordEditorTracker;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -48,25 +50,32 @@ public class RecordApiManagerImpl implements RecordApiManager {
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired ApiFieldsHelper apiFieldsHelper;
   private @Autowired @Setter AuditTrailService auditTrailService;
-  @Autowired private DocumentTagManager documentTagManager;
+  private @Autowired DocumentTagManager documentTagManager;
+  private @Autowired SharingHandler recordShareHandler;
+  private @Autowired IPermissionUtils permissionUtils;
 
   @Override
   public Long createNewDocument(ApiDocument apiDocument, RSForm docForm, User user) {
 
     Folder targetFolder =
         folderManager.getApiUploadTargetFolder("", user, apiDocument.getParentFolderId());
-    StructuredDocument result =
+    StructuredDocument newDocument =
         createNewDocumentInTargetLocation(
             user, docForm, apiDocument.getName(), targetFolder.getId());
 
+    if (apiDocument.getParentFolderId() != null) {
+      Folder originalParentFolder = folderManager.getFolder(apiDocument.getParentFolderId(), user);
+      recordShareHandler.shareIntoSharedFolderOrNotebook(
+          user, originalParentFolder, newDocument.getId(), apiDocument.getGrandParentId());
+    }
     try {
-      saveApiDocumentChangesToStructuredDocument(apiDocument, user, result);
+      saveApiDocumentChangesToStructuredDocument(apiDocument, user, newDocument);
     } catch (DocumentAlreadyEditedException e) {
       // should never happen for a new document
       throw new IllegalStateException("new document, but being edited?", e);
     }
 
-    return result.getId();
+    return newDocument.getId();
   }
 
   /**
@@ -85,7 +94,7 @@ public class RecordApiManagerImpl implements RecordApiManager {
       }
     } catch (AuthorizationException ae) {
       SECURITY_LOG.warn(
-          "Unauthorised API call by user {} to create resource in {}",
+          "Unauthorised API call by user [{}] to create resource inside [{}]",
           user.getUsername(),
           targetFolderId);
       throw new IllegalArgumentException(createNotFoundMessage("Folder", targetFolderId));

@@ -94,7 +94,7 @@ public class RecordDeletionManagerImpl implements RecordDeletionManager {
   @Builder
   public static class DeletionSettings {
 
-    private Long grandParentFolderId;
+    private Long grandParentId;
     private boolean notebookEntryDeletion;
     private Folder parent;
     private UserSessionTracker currentUsers;
@@ -128,7 +128,7 @@ public class RecordDeletionManagerImpl implements RecordDeletionManager {
             if (context.isNotebookEntryDeletion()) {
               log.info("deleting notebook entry");
               recordDeletionResult =
-                  deleteEntry(context.getGrandParentFolderId(), parentFolderId, id, user);
+                  deleteEntry(context.getGrandParentId(), parentFolderId, id, user);
             } else {
               recordDeletionResult = deleteRecord(parentFolderId, id, user);
             }
@@ -266,7 +266,7 @@ public class RecordDeletionManagerImpl implements RecordDeletionManager {
     if (toDelete.isEcatDocument()) {
       EcatDocumentFile doc = (EcatDocumentFile) toDelete;
       if (doc.getDocumentType().equals(MediaUtils.DMP_MEDIA_FLDER_NAME)) {
-        var dmpUsers = dmpManager.findDMPsByPDF(deleting, doc.getId());
+        var dmpUsers = dmpManager.findDMPsByFile(deleting, doc.getId());
         log.info("deleting {} DMPS - ", dmpUsers.size());
         for (DMPUser dmpu : dmpUsers) {
           dmpManager.remove(dmpu.getId());

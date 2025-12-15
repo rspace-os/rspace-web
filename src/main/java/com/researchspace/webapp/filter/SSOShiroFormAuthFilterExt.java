@@ -2,6 +2,7 @@ package com.researchspace.webapp.filter;
 
 import com.researchspace.auth.LoginAuthorizer;
 import com.researchspace.auth.SSOAuthenticationToken;
+import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.webapp.controller.SignupController;
@@ -93,11 +94,11 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
       if (user.getUsername().equals(remoteUser)) {
         // block login attempt with username for user who also have an usernameAlias (RSDEV-263)
         if (StringUtils.isNotEmpty(user.getUsernameAlias())) {
-          SECURITY_LOG.info(
-              String.format(
-                  "Blocked login attempt for username [%s], as there is a usernameAlias set for"
-                      + " user with this username",
-                  remoteUser));
+          SECURITY_LOG.warn(
+              "Blocked login attempt for username [{}], from {}, as there is "
+                  + "a usernameAlias set for user with this username",
+              remoteUser,
+              RequestUtil.remoteAddr(WebUtils.toHttp(request)));
           redirectToLoginAttemptWithUsernameNotAliasPage(httpRequest, response);
           return false;
         }
@@ -131,17 +132,18 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
       }
 
     } catch (DataAccessException ex) {
-      SECURITY_LOG.warn(ex.getMessage() + " User does not exist in RSpace DB: " + remoteUser);
+      SECURITY_LOG.warn("Login attempt by [{}] who does not exist in RSpace DB", remoteUser);
       try {
         if (httpRequest.isRequestedSessionIdValid()) {
           httpRequest.getSession().setAttribute("userName", remoteUser);
         }
         redirectToNoAccountPage(httpRequest, response);
       } catch (IOException eex) {
-        SECURITY_LOG.warn(eex.toString());
+        log.warn("IOException when logging remote user " + remoteUser, eex);
       }
     } catch (Exception e) {
-      SECURITY_LOG.warn("Warning: {}", e.getMessage());
+      SECURITY_LOG.warn("General exception on attempt to login remote user [{}]", remoteUser);
+      log.warn("General exception when logging remote user " + remoteUser, e);
     }
     return false;
   }

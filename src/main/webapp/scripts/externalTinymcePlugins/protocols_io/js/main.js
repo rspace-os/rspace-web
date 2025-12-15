@@ -44,12 +44,29 @@ $(document).ready(function () {
 					}
 				}));
 			});
+
+			function getGrandParentFolderId() {
+				const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
+				const grandParent = breadcrumbs[breadcrumbs.length - 1]
+				if(grandParent === undefined){
+					return null;
+				}
+				return grandParent.getAttribute("id").split("_")[1];
+			}
+			
 			//wait for all pio_Requests to come back
-			$.when.apply($, pio_requests).done(function (resp) {
+			$.when.apply($, pio_requests).done(function () {
 				// submit all protocols
+				let url = "/importer/generic/protocols_io";
+				if (!isTinyMCEPlugin) {
+					const parentFolderId = window.parent.document.querySelector(
+							"#protocolsIoChooserDlgIframe").dataset.parentid;
+					const grandParentFolderId = window.parent.getGrandParentFolderId();
+					url += `/${parentFolderId}?grandParentId=${grandParentFolderId}`;
+				}
 				$.ajax({
-					url: '/importer/generic/protocols_io', dataType: 'json',
-					"data": JSON.stringify(pio_results), type: "POST", contentType: "application/json;"
+					url: url, dataType: 'json', "data": JSON.stringify(pio_results),
+					type: "POST", contentType: "application/json;"
 				})
 					.done(function (response) {
 						if (isTinyMCEPlugin) {
@@ -66,11 +83,16 @@ $(document).ready(function () {
 									});
 							});
 						} else {
+						  parent.RS.trackEvent("user:import:from_protocols_io:workspace");
 							var importFolderId = response.data.importFolderId;
 							window.parent.RS.confirmAndNavigateTo("All documents imported, reloading page...",
 								'success', 3000, window.parent.createURL('/workspace/' + importFolderId));
 						}
 					})
+				.fail(function (result) {
+					showError('Couldn\'t import selected protocol(s).');
+					console.log("error on importing protocols: " + result.responseText);
+				})
 			});
 		},
 	};

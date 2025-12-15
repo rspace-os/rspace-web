@@ -41,13 +41,15 @@ Once the database container has started up for the first time, you will need to 
 ```
 docker exec -it rspace-db bash
 mariadb -u root -p
-CREATE DATABASE rspace collate 'utf8mb4_unicode_ci';
+CREATE DATABASE rspace collate 'utf8mb4_unicode_ci';                
 GRANT ALL ON rspace.* TO 'rspacedbuser'@'127.0.0.1';
 exit
 ```
+***For local development with docker MariaDB, you might need to use ``` GRANT ALL ON rspace.* TO 'rspacedbuser'``` or ``` GRANT ALL ON rspace.* TO 'rspacedbuser'@'localhost'``` instead***
 
+(Note for developers - no need to manually import and run this file when using maven to drop-recreate-db on your locally installed MariaDB and RSpace)
 You will also need the SQL file to import into the DB, which you can find here - https://github.com/rspace-os/rspace-web/blob/main/src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql
 
 At this stage you will need to import the SQL file into the database, you can do this by coping the file into the docker container and then importing the file from the containers bash command line.
 
-You may now go back to continue the Getting Started Guide.
+You may now go back to continue the Getting Started Guide.  

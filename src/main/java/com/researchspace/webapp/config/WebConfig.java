@@ -78,7 +78,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
     registry
         .addInterceptor(defaultConfig.productAndPropertyAnnotationInterceptor())
         .addPathPatterns("/**");
-    registry.addInterceptor(defaultConfig.apiAvailableInterceptor()).addPathPatterns("/api/**");
     if ("true".equals(permissiveCorsEnabled)) {
       registry
           .addInterceptor(defaultConfig.apiPermissiveCorsInterceptor())

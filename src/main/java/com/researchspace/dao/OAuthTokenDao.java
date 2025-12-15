@@ -1,6 +1,7 @@
 package com.researchspace.dao;
 
 import com.researchspace.model.oauth.OAuthToken;
+import com.researchspace.model.oauth.OAuthTokenType;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,7 +47,7 @@ public interface OAuthTokenDao extends GenericDao<OAuthToken, Long> {
    * @param userId
    * @return
    */
-  Optional<OAuthToken> getToken(String clientId, Long userId);
+  Optional<OAuthToken> getToken(String clientId, Long userId, OAuthTokenType tokenType);
 
   /**
    * Remove all tokens for a particular clientId

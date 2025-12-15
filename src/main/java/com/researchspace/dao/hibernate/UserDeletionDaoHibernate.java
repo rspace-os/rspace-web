@@ -107,6 +107,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     deleteRecords(userId, session);
     deleteInventoryItems(userId, session);
     deleteGroups(userId, session);
+    deleteRaid(userId, session);
     deleteForms(userId, session);
     deleteFileStoreContents(toDelete.getUsername(), session);
     deleteUserConnection(toDelete.getUsername(), session);
@@ -315,8 +316,17 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     execute(userId, session, "delete from OAuthApp where user_id = :id");
   }
 
-  // this will only work if user has no published forms!
   private void deleteForms(Long userId, Session session) {
+    // Set the temp field column to NULL to avoid FK violation during deletion
+    execute(
+        userId,
+        session,
+        "update FieldForm ff left join RSForm rf on ff.form_id = rf.id "
+            + "set ff.tempFieldForm_id = NULL where rf.owner_id=:id");
+
+    // Set previous version column to NULL to avoid FK violation
+    execute(userId, session, "update RSForm set previousVersion_id = NULL where owner_id=:id");
+
     execute(
         userId,
         session,
@@ -342,6 +352,10 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     deleteCreateGroupMessageWhereUserIsTarget(userId, session);
 
     execute(userId, session, "delete from RecordGroupSharing  where sharee_id=:id");
+  }
+
+  private void deleteRaid(Long userId, Session session) {
+    execute(userId, session, "delete from UserRaid where owner_id=:id");
   }
 
   private void deleteCreateGroupMessageWhereUserIsTarget(Long userId, Session session) {
@@ -391,6 +405,31 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     executeDeleteByRecordOwner(userId, session, "ecatImageAnnotation", RECORD_ID);
     executeDeleteByRecordOwner(
         userId, session, "ecatImageAnnotation_AUD", "id", "ecatImageAnnotation", "id", RECORD_ID);
+
+    // Delete StoichiometryMolecule first, then Stoichiometry before deleting RSChemElement
+    execute(
+        userId,
+        session,
+        "delete sm from StoichiometryMolecule_AUD sm left join Stoichiometry s on"
+            + " sm.stoichiometry_id = s.id left join RSChemElement rsce on s.parent_reaction_id ="
+            + " rsce.id left join BaseRecord br on rsce.record_id = br.id where br.owner_id=:id");
+    execute(
+        userId,
+        session,
+        "delete sm from StoichiometryMolecule sm left join Stoichiometry s on sm.stoichiometry_id ="
+            + " s.id left join RSChemElement rsce on s.parent_reaction_id = rsce.id left join"
+            + " BaseRecord br on rsce.record_id = br.id where br.owner_id=:id");
+    executeDeleteByRecordOwner(
+        userId,
+        session,
+        "Stoichiometry_AUD",
+        "parent_reaction_id",
+        "RSChemElement",
+        "id",
+        RECORD_ID);
+    executeDeleteByRecordOwner(
+        userId, session, "Stoichiometry", "parent_reaction_id", "RSChemElement", "id", RECORD_ID);
+
     executeDeleteByRecordOwner(userId, session, "RSChemElement", RECORD_ID);
     executeDeleteByRecordOwner(
         userId, session, "RSChemElement_AUD", "id", "RSChemElement", "id", RECORD_ID);

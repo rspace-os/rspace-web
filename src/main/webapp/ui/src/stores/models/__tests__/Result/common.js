@@ -1,6 +1,0 @@
-//@flow
-
-export type Model = {|
-  count: number,
-|};
-

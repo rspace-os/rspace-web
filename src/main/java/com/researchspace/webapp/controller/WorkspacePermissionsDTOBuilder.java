@@ -1,13 +1,22 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.model.core.RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT;
+import static com.researchspace.model.core.RecordType.SHARED_FOLDER;
+import static com.researchspace.model.core.RecordType.SHARED_GROUP_FOLDER_ROOT;
+import static com.researchspace.model.core.RecordType.TEMPLATE;
+
 import com.researchspace.model.User;
-import com.researchspace.model.core.RecordType;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Breadcrumb;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
 import java.util.Collection;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
@@ -15,11 +24,14 @@ import org.springframework.ui.Model;
 /*
  * Helper class for workspace controller to create a DTO object to pass to the UI with permissions info.
  */
+@Log4j
 @Service
 public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOBuilder {
-  private FolderManager fMger;
 
+  private FolderManager fMger;
   private RecordManager recMgr;
+
+  @Getter @Setter private @Autowired IPermissionUtils permissionUtils;
 
   @Autowired
   public void setRecMgr(RecordManager recMgr) {
@@ -39,13 +51,29 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
       Long previousFolderId,
       boolean isSearch) {
 
-    boolean createRecord = parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE);
+    boolean createRecord =
+        (parentFolder.isSharedFolder() && !parentFolder.hasType(INDIVIDUAL_SHARED_FOLDER_ROOT))
+            || parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE);
     boolean createFolder =
         parentFolder.getSharingACL().isPermitted(usr, PermissionType.CREATE_FOLDER);
 
-    boolean isParentFolderInSharedTree =
-        parentFolder.hasAncestorOfType(RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT, true)
-            || parentFolder.hasAncestorOfType(RecordType.SHARED_GROUP_FOLDER_ROOT, true);
+    boolean isParentFolderInSharedTree = false;
+    if (parentFolder.isNotebook()) {
+      if (model.getAttribute("bcrumb") != null
+          && ((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() > 1) {
+        Long grandParentId =
+            ((Breadcrumb) model.getAttribute("bcrumb"))
+                .getElements()
+                .get(((Breadcrumb) model.getAttribute("bcrumb")).getElements().size() - 2)
+                .getId();
+        isParentFolderInSharedTree = fMger.isFolderInSharedTree(parentFolder, grandParentId, usr);
+      } else {
+        log.warn(
+            "it was not possible to get Breadcumbs from the model for notebookID="
+                + parentFolder.getId());
+      }
+    }
+
     ActionPermissionsDTO dto = new ActionPermissionsDTO();
     if (records != null) {
       // allowed options per record in page.
@@ -88,49 +116,60 @@ public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOB
 
     // override if it is notebook
     if (parentFolder.isNotebook()) {
-      // dto.setCreateRecord(false);
+      createRecord =
+          createRecord
+              || (isParentFolderInSharedTree
+                  && permissionUtils.isPermitted(parentFolder, PermissionType.WRITE, usr));
+      dto.setCreateRecord(createRecord);
       dto.setCreateFolder(false);
     }
 
     String movetargetRoot = "/"; // home folder by default
-    if (parentFolder.hasType(RecordType.SHARED_GROUP_FOLDER_ROOT)) {
+    if (parentFolder.hasType(SHARED_GROUP_FOLDER_ROOT)) {
       movetargetRoot = parentFolder.getId() + "";
-    } else if (parentFolder.hasType(RecordType.SHARED_FOLDER) && !parentFolder.isNotebook()) {
-      Folder grpSharedFolder =
+    } else if (parentFolder.hasType(SHARED_FOLDER) && !parentFolder.isNotebook()) {
+      movetargetRoot =
           fMger
-              .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(parentFolder.getId(), usr)
-              .get();
-      movetargetRoot = grpSharedFolder.getId() + "";
-    } else if (parentFolder.hasType(RecordType.SHARED_FOLDER)
+              .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+                  parentFolder.getId(), null, usr)
+              .map(folder -> folder.getId() + "")
+              .orElse("INVALID");
+    } else if (parentFolder.hasType(SHARED_FOLDER)
         && parentFolder.isNotebook()
         && previousFolderId != null) {
       // this seems redundant, we only use the ID, which we already have.
       Folder previousFolder = fMger.getFolder(previousFolderId, usr);
       // this will be a shared folder above the notebook
-      Folder grpSharedFolder =
+      movetargetRoot =
           fMger
-              .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(previousFolder.getId(), usr)
-              .get();
-      movetargetRoot = grpSharedFolder.getId() + "";
-    } else if (parentFolder.hasAncestorOfType(RecordType.TEMPLATE, true)) {
+              .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+                  previousFolder.getId(), null, usr)
+              .map(folder -> folder.getId() + "")
+              .orElse("INVALID");
+    } else if (parentFolder.hasAncestorOfType(TEMPLATE, true)) {
       movetargetRoot = fMger.getTemplateFolderForUser(usr).getId() + "";
     }
 
     model.addAttribute("movetargetRoot", movetargetRoot);
     model.addAttribute("isNotebook", parentFolder.isNotebook());
+    boolean canCreateEntry =
+        parentFolder.isNotebook()
+            && permissionUtils.isPermitted(parentFolder, PermissionType.CREATE, usr);
+    model.addAttribute("allowCreateNewEntryInNotebook", canCreateEntry);
     model.addAttribute("createPermission", dto);
+    model.addAttribute("allowCreateForm", !parentFolder.isSharedFolder());
 
     return dto;
   }
 
   private boolean calculateRenameEnabled(User usr, BaseRecord br) {
     return br.getSharingACL().isPermitted(usr, PermissionType.RENAME)
-        && !br.hasType(RecordType.SHARED_GROUP_FOLDER_ROOT); // rspac-1636
+        && !br.hasType(SHARED_GROUP_FOLDER_ROOT); // rspac-1636
   }
 
   private boolean calculateDeleteEnabled(User usr, BaseRecord br) {
     return br.getSharingACL().isPermitted(usr, PermissionType.DELETE)
-        && !br.hasType(RecordType.SHARED_GROUP_FOLDER_ROOT); // rspac-1636
+        && !br.hasType(SHARED_GROUP_FOLDER_ROOT); // rspac-1636
   }
 
   private boolean calculateCopyEnabled(

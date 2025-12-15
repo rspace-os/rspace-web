@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import com.researchspace.model.User;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +21,6 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 @RequestMapping("/deploymentproperties*")
 public class DeploymentPropertiesController extends BaseController {
-
-  public static final String SNAPGENE_AVAILABLE = "snapgene.available";
 
   @Autowired private SystemPropertyManager sysPropertyMgr;
 
@@ -42,6 +41,9 @@ public class DeploymentPropertiesController extends BaseController {
 
   @Value("${pyrat.server.config}")
   private String pyratServerConfig;
+
+  @Value("${raid.server.config}")
+  private String raidServerConfig;
 
   @Value("${labtools.server.location}")
   private String labToolsServerUrl;
@@ -100,8 +102,17 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${netfilestores.enabled}")
   private String netfilestoresEnabled;
 
+  @Value("${chemistry.provider}")
+  private String chemistryProvider;
+
   @Value("${deployment.cloud}")
   private String cloudDeployment;
+
+  @Value("${deployment.description}")
+  private String deploymentDescription;
+
+  @Value("${deployment.helpEmail}")
+  private String deploymentHelpEmail;
 
   /**
    * Service to return the value of property stored in the deployment.properties file. Uses a
@@ -143,6 +154,8 @@ public class DeploymentPropertiesController extends BaseController {
         return egnyteClientId;
       case "pyrat.server.config":
         return pyratServerConfig;
+      case "raid.server.config":
+        return raidServerConfig;
       case "owncloud.url":
         return ownCloudURL;
       case "owncloud.server.name":
@@ -173,8 +186,14 @@ public class DeploymentPropertiesController extends BaseController {
         return officeOnlineEnabled;
       case "netfilestores.enabled":
         return netfilestoresEnabled;
+      case "chemistry.provider":
+        return chemistryProvider;
       case "deployment.cloud":
         return cloudDeployment;
+      case "deployment.description":
+        return deploymentDescription;
+      case "deployment.helpEmail":
+        return deploymentHelpEmail;
       default:
         throw new IllegalArgumentException("No property available for name: " + propertyName);
     }
@@ -216,8 +235,12 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("egnyte.available", rc.get("egnyte.available").getValue());
     properties.put("egnyte.client.id", egnyteClientId);
 
-    properties.put("chemistry.available", rc.get("chemistry.available").getValue());
-    properties.put(SNAPGENE_AVAILABLE, rc.get(SNAPGENE_AVAILABLE).getValue());
+    properties.put(
+        SystemPropertyName.CHEMISTRY_AVAILABLE.getPropertyName(),
+        rc.get(SystemPropertyName.CHEMISTRY_AVAILABLE.getPropertyName()).getValue());
+    properties.put(
+        SystemPropertyName.SNAPGENE_AVAILABLE.getPropertyName(),
+        rc.get(SystemPropertyName.SNAPGENE_AVAILABLE.getPropertyName()).getValue());
 
     properties.put("baseURL", baseURL);
 
@@ -234,12 +257,16 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("nextcloud.client.id", nextCloudClientId);
 
     properties.put("pyrat.server.config", pyratServerConfig);
+    properties.put("raid.server.config", raidServerConfig);
 
     properties.put("googledrive.developer.key", googleDriveDevKey);
     properties.put("googledrive.client.id", googleDriveClientId);
 
     properties.put("server.urls.prefix", baseURL);
     properties.put("aspose.enabled", String.valueOf(isAsposeEnabled()));
+    properties.put("chemistry.provider", chemistryProvider);
+    properties.put("deployment.description", deploymentDescription);
+    properties.put("deployment.helpEmail", deploymentHelpEmail);
 
     return properties;
   }

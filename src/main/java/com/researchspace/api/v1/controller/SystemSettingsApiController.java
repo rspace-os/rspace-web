@@ -8,6 +8,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.util.Map;
 import javax.servlet.ServletRequest;
@@ -81,22 +82,26 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
 
     if (incomingDataciteSettings.getEnabled() != null
         && !incomingDataciteSettings.getEnabled().equals(currentSettings.getEnabled())) {
-      sysPropertyMgr.save("datacite.enabled", incomingDataciteSettings.getEnabled(), subject);
+      sysPropertyMgr.save(
+          SystemPropertyName.DATACITE_ENABLED, incomingDataciteSettings.getEnabled(), subject);
       dataCiteSettingsUpdated = true;
     }
     if (incomingDataciteSettings.getServerUrl() != null
         && !incomingDataciteSettings.getServerUrl().equals(currentSettings.getServerUrl())) {
-      sysPropertyMgr.save("datacite.server.url", incomingDataciteSettings.getServerUrl(), subject);
+      sysPropertyMgr.save(
+          SystemPropertyName.DATACITE_SERVER_URL, incomingDataciteSettings.getServerUrl(), subject);
       dataCiteSettingsUpdated = true;
     }
     if (incomingDataciteSettings.getUsername() != null
         && !incomingDataciteSettings.getUsername().equals(currentSettings.getUsername())) {
-      sysPropertyMgr.save("datacite.username", incomingDataciteSettings.getUsername(), subject);
+      sysPropertyMgr.save(
+          SystemPropertyName.DATACITE_USERNAME, incomingDataciteSettings.getUsername(), subject);
       dataCiteSettingsUpdated = true;
     }
     if (incomingDataciteSettings.getPassword() != null
         && !incomingDataciteSettings.getPassword().equals(currentSettings.getPassword())) {
-      sysPropertyMgr.save("datacite.password", incomingDataciteSettings.getPassword(), subject);
+      sysPropertyMgr.save(
+          SystemPropertyName.DATACITE_PASSWORD, incomingDataciteSettings.getPassword(), subject);
       dataCiteSettingsUpdated = true;
     }
     if (incomingDataciteSettings.getRepositoryPrefix() != null
@@ -104,7 +109,9 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
             .getRepositoryPrefix()
             .equals(currentSettings.getRepositoryPrefix())) {
       sysPropertyMgr.save(
-          "datacite.repositoryPrefix", incomingDataciteSettings.getRepositoryPrefix(), subject);
+          SystemPropertyName.DATACITE_REPOSITORY_PREFIX,
+          incomingDataciteSettings.getRepositoryPrefix(),
+          subject);
       dataCiteSettingsUpdated = true;
     }
 

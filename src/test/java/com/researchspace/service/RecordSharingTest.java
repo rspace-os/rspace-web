@@ -553,7 +553,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     RSForm anyForm = formDao.getAll().get(0);
     StructuredDocument recordToShare =
         recordMgr.createNewStructuredDocument(
-            recordCreator.getRootFolder().getId(), anyForm.getId(), recordCreator);
+            recordCreator.getRootFolder().getId(), anyForm.getId(), recordCreator, true);
 
     group = createGroup("grp1", piUser);
     addUsersToGroup(piUser, group, recordCreator);
@@ -600,7 +600,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     RSForm anyForm = formDao.getAll().get(0);
     StructuredDocument recordToShare =
         recordMgr.createNewStructuredDocument(
-            piUser.getRootFolder().getId(), anyForm.getId(), piUser);
+            piUser.getRootFolder().getId(), anyForm.getId(), piUser, true);
     other = createOtherUser();
     initUserFolder(other);
     group = createGroup("grop1", piUser);

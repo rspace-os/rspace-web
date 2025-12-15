@@ -255,8 +255,14 @@ public class ExportObjectGenerator {
     addSketchesToExport(context, fieldContents);
     addAttachmentFilesToExport(context, fieldContents);
     updateInteralLinksInExport(context, fieldContents, exportList);
+    addExternalWorkFlowData(context, fieldContents);
     addResourcesFiles(archiveField);
     updateIframeLinks(archiveField);
+  }
+
+  private void addExternalWorkFlowData(FieldExportContext context, FieldContents fieldContents) {
+    ExternalWorkFlowExporter externalWorkFlowExporter = new ExternalWorkFlowExporter(support);
+    externalWorkFlowExporter.addExternalWorkflowDataToExport(context, fieldContents);
   }
 
   private void updateIframeLinks(ArchivalField archiveField) {

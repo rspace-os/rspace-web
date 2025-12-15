@@ -22,10 +22,12 @@ import lombok.NoArgsConstructor;
     value = {
       "id",
       "globalId",
+      "version",
       "name",
       "created",
       "lastModified",
       "parentFolderId",
+      "grandParentId",
       "signed",
       "tags",
       "tagMetaData",
@@ -48,6 +50,9 @@ public class ApiDocumentInfo extends IdentifiableNameableApiObject {
   @JsonProperty("parentFolderId")
   private Long parentFolderId;
 
+  @JsonProperty("grandParentId")
+  private Long grandParentId;
+
   @JsonProperty("signed")
   private Boolean signed = null;
 
@@ -64,13 +69,20 @@ public class ApiDocumentInfo extends IdentifiableNameableApiObject {
   @JsonProperty("owner")
   private ApiUser owner = null;
 
+  @JsonProperty("version")
+  private Long version;
+
   public ApiDocumentInfo(StructuredDocument record, User authorisedSubject) {
     super(record.getId(), record.getGlobalIdentifier(), record.getName());
+    setVersion(record.getUserVersion().getVersion());
     setCreatedMillis(record.getCreationDateMillis());
     setLastModifiedMillis(record.getModificationDateMillis());
     // set parent folder if user is owner of document else null
     if (authorisedSubject.equals(record.getOwner()) && record.hasParents()) {
       setParentFolderId(record.getOwnerParent().get().getId());
+      if (record.getOwnerParent().get().hasParents()) {
+        setGrandParentId(record.getOwnerParent().get().getOwnerParent().get().getId());
+      }
     }
 
     setSigned(record.isSigned());

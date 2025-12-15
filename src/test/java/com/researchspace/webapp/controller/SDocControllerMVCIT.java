@@ -47,6 +47,7 @@ import com.researchspace.model.record.EditInfo;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
+import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.RecordCopyResult;
@@ -54,6 +55,7 @@ import com.researchspace.service.AuditManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.testutils.RSpaceTestUtils;
+import com.researchspace.testutils.TestGroup;
 import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -372,9 +374,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     // create a record from the template
     this.mockMvc
         .perform(
-            post(StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                    + "/createFromTemplate/"
-                    + sd.getParent().getId())
+            post(STRUCTURED_DOCUMENT_EDITOR_URL + "/createFromTemplate/" + sd.getParent().getId())
                 .param("template", template.getId() + "")
                 .principal(mockPrincipal))
         .andReturn();
@@ -545,8 +545,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result =
         this.mockMvc
             .perform(
-                get(StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/getPotentialWitnesses")
+                get(STRUCTURED_DOCUMENT_EDITOR_URL + "/getPotentialWitnesses")
                     .param("recordId", setup.structuredDocument.getId() + "")
                     .principal(mockPrincipal))
             .andReturn();
@@ -561,8 +560,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result1 =
         this.mockMvc
             .perform(
-                post(StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/ajax/proceedSigning/")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning/")
                     .param("recordId", setup.structuredDocument.getId() + "")
                     .param("statement", "any")
                     .param("witnesses[]", new String[] {setup.user.getUsername()})
@@ -584,15 +582,95 @@ public class SDocControllerMVCIT extends MVCTestBase {
     final int initialRecordsCount = (int) getRecordCountInFolderForUser(rootFolder);
     this.mockMvc
         .perform(
-            post(
-                    StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/create/{recordId}",
-                    rootFolder + "")
+            post(STRUCTURED_DOCUMENT_EDITOR_URL + "/create/{recordId}", rootFolder + "")
                 .param("template", form.getId() + "")
                 .principal(new MockPrincipal(u.getUsername())))
         .andExpect(status().is3xxRedirection())
         .andReturn();
     assertEquals(initialRecordsCount + 1, getRecordCountInFolderForUser(rootFolder));
+  }
+
+  @Test
+  public void createIntoSharedFolder() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User u = group.u1();
+    initUser(u);
+    RSpaceTestUtils.login(u.getUsername(), TESTPASSWD);
+    RSForm form = createAnyForm(u);
+
+    openTransaction();
+    Long sharedFolderId = group.getGroup().getCommunalGroupFolderId();
+    commitTransaction();
+    Long rootFolderId = folderMgr.getRootRecordForUser(u, u).getId();
+    final int initialRecordsCount = (int) getRecordCountInFolderForUser(rootFolderId);
+    MvcResult resultUrl =
+        this.mockMvc
+            .perform(
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/create/{recordId}", sharedFolderId + "")
+                    .param("template", form.getId() + "")
+                    .principal(new MockPrincipal(u.getUsername())))
+            .andExpect(status().is3xxRedirection())
+            .andReturn();
+    String redirectUrl = resultUrl.getResponse().getHeader("Location");
+
+    assertEquals(initialRecordsCount + 1, getRecordCountInFolderForUser(rootFolderId));
+    assertEquals(1, getRecordCountInFolderForUser(sharedFolderId));
+    assertTrue(redirectUrl.contains("&sharedWithGroup=" + group.getGroup().getDisplayName()));
+  }
+
+  @Test
+  public void createIntoSharedNotebook() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User u = group.u1();
+    initUser(u);
+    RSpaceTestUtils.login(u.getUsername(), TESTPASSWD);
+    RSForm form = createAnyForm(u);
+
+    openTransaction();
+    Long sharedFolderId = group.getGroup().getCommunalGroupFolderId();
+    commitTransaction();
+    Long rootFolderId = folderMgr.getRootRecordForUser(u, u).getId();
+    //    Long grantParentId = folderMgr.getFolder(sharedFolderId, u).getParentFolders().stream()
+    //        .filter(folder -> folder.getOwner().equals(u)).findFirst().get().getId();
+    final int initialRecordsCount = (int) getRecordCountInFolderForUser(rootFolderId);
+    MvcResult resultUrl =
+        this.mockMvc
+            .perform(
+                post("/workspace/create_notebook/{recordid}", sharedFolderId + "")
+                    .param("notebookNameField", "sharedNotebook")
+                    .principal(new MockPrincipal(u.getUsername())))
+            .andExpect(status().is3xxRedirection())
+            .andReturn();
+    String redirectUrl = resultUrl.getResponse().getHeader("Location");
+    String notebookId = redirectUrl.split("/")[2].split("\\?")[0];
+
+    assertEquals(initialRecordsCount + 1, getRecordCountInFolderForUser(rootFolderId));
+    assertEquals(1, getRecordCountInFolderForUser(sharedFolderId));
+    assertTrue(redirectUrl.contains("sharedWithGroup=" + group.getGroup().getDisplayName()));
+
+    resultUrl =
+        this.mockMvc
+            .perform(
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/create/{recordId}", notebookId)
+                    .param("template", form.getId() + "")
+                    .param("grandParentId", sharedFolderId + "")
+                    .principal(new MockPrincipal(u.getUsername())))
+            .andExpect(status().is3xxRedirection())
+            .andReturn();
+
+    redirectUrl = resultUrl.getResponse().getHeader("Location");
+    assertEquals(1, getRecordCountInFolderForUser(Long.valueOf(notebookId)));
+    assertTrue(redirectUrl.contains("fromNotebook=" + notebookId));
+
+    Long newDocumentId = Long.valueOf(redirectUrl.split("\\?")[0].split("\\/")[4]);
+    Record newDocument = recordMgr.get(newDocumentId);
+    assertEquals(
+        sharedFolderId,
+        newDocument.getParent().getParentFolders().stream()
+            .filter(folder -> folder.getName().endsWith("_SHARED"))
+            .findFirst()
+            .get()
+            .getId());
   }
 
   @Test
@@ -607,8 +685,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     this.mockMvc
         .perform(
             post(
-                    StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/createEntry/{notebookid}",
+                    STRUCTURED_DOCUMENT_EDITOR_URL + "/createEntry/{notebookid}",
                     notebook.getId() + "")
                 .principal(new MockPrincipal(u.getUsername())))
         .andExpect(status().is3xxRedirection())
@@ -627,8 +704,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult defaultEntry =
         mockMvc
             .perform(
-                post(StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/ajax/createEntry")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/createEntry")
                     .param("notebookId", notebook.getId().toString())
                     .principal(user::getUsername))
             .andReturn();
@@ -639,8 +715,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult namedEntry =
         mockMvc
             .perform(
-                post(StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/ajax/createEntry")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/createEntry")
                     .param("notebookId", notebook.getId().toString())
                     .param("entryName", testName)
                     .principal(user::getUsername))
@@ -679,36 +754,32 @@ public class SDocControllerMVCIT extends MVCTestBase {
     Notebook notebook = createNotebookWithNEntries(rootFolderId, "any", 1, user);
 
     // find first entry
-    Long notebookEntryId = folderMgr.getRecordIds(notebook).get(0);
+    Long notebookEntryId = folderMgr.getFolderChildrenIds(notebook).get(0);
     assertNotNull(notebookEntryId);
 
     // opening notebook entry for edit should process document editor page
     this.mockMvc
         .perform(
             get(
-                    StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/{entryId}?fromNotebook={notebookId}",
+                    STRUCTURED_DOCUMENT_EDITOR_URL + "/{entryId}?fromNotebook={notebookId}",
                     notebookEntryId + "",
                     notebook.getId() + "")
                 .principal(user::getUsername))
         .andExpect(status().is2xxSuccessful())
         .andReturn();
 
-    // ...but opening notebook entry for view should redirect to notebook view (RSPAC-501)
+    // ...and also opening notebook entry (outside of the notebook) will still open the document
+    // view (PRT-1007)
     MvcResult redirectResult =
         this.mockMvc
             .perform(
-                get(
-                        StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL + "/{entryId}",
-                        notebookEntryId + "")
+                get(STRUCTURED_DOCUMENT_EDITOR_URL + "/{entryId}", notebookEntryId + "")
                     .principal(user::getUsername))
-            .andExpect(status().is3xxRedirection())
+            .andExpect(status().is2xxSuccessful())
             .andReturn();
 
-    String expectedUrl =
-        "redirect:"
-            + NotebookEditorController.getNotebookViewUrl(notebook.getId(), notebookEntryId, "");
-    assertEquals(expectedUrl, redirectResult.getModelAndView().getViewName());
+    assertEquals(
+        STRUCTURED_DOCUMENT_EDITOR_URL, "/" + redirectResult.getModelAndView().getViewName());
   }
 
   @Test
@@ -719,8 +790,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result =
         this.mockMvc
             .perform(
-                post(StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/ajax/description")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/description")
                     .param("recordId", doc.getId() + "")
                     .param("description", desc)
                     .principal(u::getUsername))
@@ -734,8 +804,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     result =
         this.mockMvc
             .perform(
-                post(StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/ajax/description")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/description")
                     .param("recordId", doc.getId() + "")
                     .param("description", longDesc)
                     .principal(u::getUsername))
@@ -749,8 +818,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     result =
         this.mockMvc
             .perform(
-                post(StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/ajax/description")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/description")
                     .param("recordId", doc.getId() + "")
                     .param("description", tooLongDesc)
                     .principal(u::getUsername))
@@ -768,8 +836,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult unauthorisedResult =
         this.mockMvc
             .perform(
-                post(StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/ajax/description")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/description")
                     .param("recordId", doc.getId() + "")
                     .param("description", desc)
                     .principal(piUser::getUsername))
@@ -884,8 +951,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result =
         this.mockMvc
             .perform(
-                get(StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
-                        + "/ajax/getUpdatedFields")
+                get(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/getUpdatedFields")
                     .param("recordId", doc.getId() + "")
                     .param("modificationDate", modifiedDate.getTime() + "")
                     .principal(mockPrincipal))
@@ -903,7 +969,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result =
         this.mockMvc
             .perform(
-                post(StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL
+                post(STRUCTURED_DOCUMENT_EDITOR_URL
                         + "/ajax/deleteStructuredDocument/"
                         + structuredDocument.getId())
                     .principal(mockPrincipal))

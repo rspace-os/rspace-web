@@ -78,8 +78,11 @@ public enum AnalyticsProperty {
   /** custom property - method e.g. post, put or get */
   API_METHOD("apiHttpMethod"),
 
-  /** custom property - method the API URI */
+  /** custom property - the URI that was called in the API call */
   API_URI("apiUri"),
+
+  /** custom property - how the API call was authenticated */
+  API_AUTHENTICATED_BY("apiAuthenticatedBy"),
 
   CHAT_EVENT_TYPE("chatEventType"),
   RECENTLY_SIGNED_UP("recentlySignedUp"),

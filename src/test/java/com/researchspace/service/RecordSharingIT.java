@@ -32,11 +32,11 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.WorkspacePermissionsDTOBuilder;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -758,7 +758,7 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     RSForm anyForm = formMgr.getAll().get(0);
     StructuredDocument recordToShare =
         recordMgr.createNewStructuredDocument(
-            piUser.getRootFolder().getId(), anyForm.getId(), piUser);
+            piUser.getRootFolder().getId(), anyForm.getId(), piUser, true);
     other = createAndSaveRandomUser();
     initUserFolder(other);
     group = createGroup(getRandomAlphabeticString("grp1"), piUser);

@@ -571,6 +571,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
     contentChanged |=
         identifiersHelper.createDeleteRequestedIdentifiers(
             apiSample.getIdentifiers(), dbSample, user);
+    contentChanged |=
+        identifiersHelper.createAssignRequestedIdentifiers(
+            apiSample.getIdentifiers(), dbSample, user);
     contentChanged |= apiSample.applyChangesToDatabaseSample(dbSample, user);
     contentChanged |= saveSharingACLForIncomingApiInvRec(dbSample, apiSample);
     contentChanged |= saveIncomingSampleImage(dbSample, apiSample, user);

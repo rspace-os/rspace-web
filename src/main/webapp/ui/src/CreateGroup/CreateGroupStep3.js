@@ -67,7 +67,7 @@ class createGroupStep3 extends React.Component {
   buildUserDisplay = (type) => {
     const emailList =
       type === "existingUsers" ? this.state.existingUsers : this.state.newUsers;
-    let display = [];
+    const display = [];
 
     for (let i = 0; i < emailList.length; i++) {
       display.push(
@@ -79,7 +79,7 @@ class createGroupStep3 extends React.Component {
             value={emailList[i]}
             color="primary"
           />
-        </Grid>
+        </Grid>,
       );
     }
 
@@ -97,8 +97,8 @@ class createGroupStep3 extends React.Component {
       (selfService && !projectGroup
         ? `/selfServiceLabGroup/`
         : projectGroup
-        ? /projectGroup/
-        : `/cloud/ajax/`) + `searchPublicUserInfoList?term=${value}`;
+          ? /projectGroup/
+          : `/cloud/ajax/`) + `searchPublicUserInfoList?term=${value}`;
 
     axios
       .get(url)
@@ -170,7 +170,7 @@ class createGroupStep3 extends React.Component {
     ) {
       this.props.updateInvitedMembers(
         this.state.existingUsers,
-        this.state.newUsers
+        this.state.newUsers,
       );
     }
   }

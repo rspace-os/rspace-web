@@ -1,5 +1,0 @@
-//@flow strict
-
-import { Optional } from "./optional";
-
-declare export function get<K, V>(Map<K, V>, K): Optional<V>;

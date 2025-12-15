@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
-import static com.researchspace.model.record.TestFactory.createAnyUser;
 import static com.researchspace.repository.spi.IdentifierScheme.ORCID;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

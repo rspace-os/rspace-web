@@ -11,9 +11,10 @@ import com.google.common.base.Supplier;
 import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.apiutils.ApiError;
-import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.webapp.controller.MVCTestBase;
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
@@ -38,14 +39,12 @@ public class API_MVC_TestBase extends MVCTestBase {
 
   static final String STATUS = "/status";
 
-  static final String API_AVAILABLE = "api.available";
-
   protected void enableAPI(User apiUser) {
-    sysPropMgr.save(API_AVAILABLE, "ALLOWED", apiUser);
+    sysPropMgr.save(SystemPropertyName.API_AVAILABLE, HierarchicalPermission.ALLOWED, apiUser);
   }
 
   protected void disableAPI(User apiUser) {
-    sysPropMgr.save(API_AVAILABLE, "DENIED", apiUser);
+    sysPropMgr.save(SystemPropertyName.API_AVAILABLE, HierarchicalPermission.DENIED, apiUser);
   }
 
   /**
@@ -132,7 +131,7 @@ public class API_MVC_TestBase extends MVCTestBase {
         put(createUrl(API_VERSION.ONE, suffixUrl)), body, user, apiKey);
   }
 
-  MockHttpServletRequestBuilder preparePostOrPutRequestBody(
+  protected MockHttpServletRequestBuilder preparePostOrPutRequestBody(
       MockHttpServletRequestBuilder builder, String body, User user, String apiKey) {
     return builder
         .content(body)
@@ -141,25 +140,11 @@ public class API_MVC_TestBase extends MVCTestBase {
         .header("apiKey", apiKey);
   }
 
-  private String getStringBody(Object toPost) {
-    String body = "";
-    if (toPost instanceof String) {
-      body = toPost.toString();
-    } else {
-      body = JacksonUtil.toJson(toPost);
-    }
-    return body;
-  }
-
   protected MockHttpServletRequestBuilder createBuilderForPut(
       API_VERSION version, String apiKey, String suffixUrl, User user, Object... pathVars) {
     return MockMvcRequestBuilders.put(createUrl(version, suffixUrl), pathVars)
         .principal(createPrincipal(user))
         .header("apiKey", apiKey);
-  }
-
-  protected String createUrl(API_VERSION version, String suffixUrl) {
-    return "/api/v" + version.getVersion() + "/" + suffixUrl;
   }
 
   protected String createInventoryUrl(API_VERSION version, String suffixUrl) {

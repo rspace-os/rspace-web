@@ -9,12 +9,18 @@ import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.RecordSharingACL;
-import com.researchspace.model.record.*;
+import com.researchspace.model.record.ACLPropagationPolicy;
+import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.ImportOverride;
+import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.TreeViewItem;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordContext;
+import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import java.util.Optional;
 
@@ -72,7 +78,7 @@ public class FolderManagerStub implements FolderManager {
   }
 
   @Override
-  public List<Long> getRecordIds(Folder fd) {
+  public List<Long> getFolderChildrenIds(Folder fd) {
     return null;
   }
 
@@ -110,14 +116,24 @@ public class FolderManagerStub implements FolderManager {
   }
 
   @Override
+  public RSPath getShortestPathToSharedRootFolder(Long sharedSubfolderId, User user) {
+    return null;
+  }
+
+  @Override
   public Folder removeBaseRecordFromFolder(BaseRecord toDelete, Long parentfolderid) {
     return null;
   }
 
   @Override
   public Optional<Folder> getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-      Long srcRecordId, User user) {
+      Long srcRecordId, Long grandParentId, User user) {
     return null;
+  }
+
+  @Override
+  public boolean isFolderInSharedTree(Folder folderOrNotebook, Long parentId, User usr) {
+    return false;
   }
 
   @Override

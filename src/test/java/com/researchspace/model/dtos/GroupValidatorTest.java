@@ -10,8 +10,8 @@ import com.researchspace.dao.GroupDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -140,7 +140,6 @@ public class GroupValidatorTest extends SpringTransactionalTest {
     grp.setDisplayName("a display name");
     Errors errors = new BeanPropertyBindingResult(grp, "MyObject");
     validator.validate(grp, errors);
-    System.out.println(errors);
     assertFalse(errors.hasErrors());
   }
 
@@ -152,7 +151,6 @@ public class GroupValidatorTest extends SpringTransactionalTest {
     grp.setDisplayName("a display name");
     Errors errors = new BeanPropertyBindingResult(grp, "MyObject");
     validator.validate(grp, errors);
-    System.out.println(errors);
     assertTrue(ValidationTestUtils.hasError(GroupValidator.GROUP_OWNER_NOT_SELECTED, errors));
   }
 

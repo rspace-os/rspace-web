@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static com.researchspace.service.RecordDeletionManager.MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER;
 import static com.researchspace.service.UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX;
 
 import com.researchspace.Constants;
@@ -15,6 +16,7 @@ import com.researchspace.dao.DAOUtils;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.GroupMembershipEventDao;
+import com.researchspace.dao.RaIDDao;
 import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.dao.RoleDao;
 import com.researchspace.dao.UserDao;
@@ -55,6 +57,7 @@ import com.researchspace.model.record.ChildAddPolicy;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.GroupInvitation;
 import com.researchspace.model.views.GroupInvitation.Invitee;
@@ -118,6 +121,7 @@ public class GroupManagerImpl implements GroupManager {
   private @Autowired FolderDao folderDao;
   private @Autowired GroupMembershipEventDao groupMembershipEventDao;
   private @Autowired RecordManager recordManager;
+  private @Autowired RaIDDao raidDao;
 
   private @Autowired IContentInitialiserUtils contentUtils;
 
@@ -417,27 +421,27 @@ public class GroupManagerImpl implements GroupManager {
       groupDao.save(grp);
       for (User user : grp.getMembers()) {
         Folder snippetFolder =
-            recordManager.getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, user);
+            recordManager.getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, user);
         // this checks to see if a 'SHARED/LABGroup' (or CollaborationGroup) folder has been created
         // inside the user's SNIPPETS folder
         // If it has then this group shared folder is added as a child to the user's folder
         // 'SNIPPETS/SHARED/LAbGroup or CollaborationGroup
         Folder snippetSharedFolder =
-            snippetFolder.getSubFolderByName(
+            snippetFolder.getSystemSubFolderByName(
                 SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
         if (snippetSharedFolder != null) {
           Folder parentForSharedSnippets = null;
           if (grp.isCollaborationGroup()) {
             parentForSharedSnippets =
-                snippetSharedFolder.getSubFolderByName(
+                snippetSharedFolder.getSystemSubFolderByName(
                     SHARED_SNIPPETS_FOLDER_PREFIX + Folder.COLLABORATION_GROUPS_FLDER_NAME);
           } else if (grp.isProjectGroup()) {
             parentForSharedSnippets =
-                snippetSharedFolder.getSubFolderByName(
+                snippetSharedFolder.getSystemSubFolderByName(
                     SHARED_SNIPPETS_FOLDER_PREFIX + Folder.PROJECT_GROUPS_FOLDER_NAME);
           } else {
             parentForSharedSnippets =
-                snippetSharedFolder.getSubFolderByName(
+                snippetSharedFolder.getSystemSubFolderByName(
                     SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
           }
           folderMgr.addChild(
@@ -487,16 +491,17 @@ public class GroupManagerImpl implements GroupManager {
     projectGroupsShared.getSharingACL().addACLElement(element);
     contentUtils.addChild(sharedFolder, projectGroupsShared, u);
 
-    Folder snippetFolder = recordManager.getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, u);
+    Folder snippetFolder = recordManager.getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, u);
     Folder snippetSharedFolder;
-    if (snippetFolder.getSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)
+    if (snippetFolder.getSystemSubFolderByName(
+            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)
         == null) {
       snippetSharedFolder =
           recordFactory.createSystemCreatedFolder(
               SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME, u);
     } else {
       snippetSharedFolder =
-          snippetFolder.getSubFolderByName(
+          snippetFolder.getSystemSubFolderByName(
               UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
     }
     Folder projectGroupsSnippets =
@@ -761,9 +766,30 @@ public class GroupManagerImpl implements GroupManager {
       groupMembershipEventDao.remove(event.getId());
     }
 
+    // remove associated RaID
+    if (group.isProjectGroup() && group.getRaid() != null) {
+      raidDao.remove(group.getRaid().getId());
+    }
+
     // should be last call once all FKs are removed
     groupDao.remove(group.getId());
     return group;
+  }
+
+  public Group getGroupFromAnyLevelOfSharedFolder(
+      User user, Folder sharedFolder, Long grandParentId) {
+    Optional<Folder> sharedFolderRoot =
+        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+            sharedFolder.getId(), grandParentId, user);
+    RSPath path = folderMgr.getShortestPathToSharedRootFolder(sharedFolder.getId(), user);
+    if (path.isEmpty() || path.size() <= MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER) {
+      String msg =
+          String.format(
+              "The folder '%s' is not a shared subfolder - id [%d] is not in a shared folder!",
+              sharedFolder.getName(), sharedFolder.getId());
+      throw new IllegalArgumentException(msg);
+    }
+    return this.getGroupByCommunalGroupFolderId(sharedFolderRoot.get().getId());
   }
 
   @Override
@@ -1164,6 +1190,11 @@ public class GroupManagerImpl implements GroupManager {
           group.getId());
       return doCreateAutoshareFolder(user, group, ug, folderName);
     }
+  }
+
+  @Override
+  public Group getGroupByCommunalGroupFolderId(Long communalGroupFolderId) {
+    return groupDao.getByCommunalGroupFolderId(communalGroupFolderId);
   }
 
   private Folder doCreateAutoshareFolder(User user, Group group, UserGroup ug, String folderName) {

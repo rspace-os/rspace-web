@@ -1,6 +1,6 @@
 # Getting started as a React developer
 
-In general, we use [Flow](https://flow.org/) and [Prettier](https://prettier.io/) for
+In general, we use [TypeScript](https://www.typescriptlang.org/) and [Prettier](https://prettier.io/) for
 making the development less error prone and more convenient.
 
 [ESlint](https://eslint.org/) is used for editors that don't come with great out of

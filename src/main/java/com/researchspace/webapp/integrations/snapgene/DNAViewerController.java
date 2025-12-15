@@ -1,7 +1,6 @@
 package com.researchspace.webapp.integrations.snapgene;
 
 import static com.researchspace.model.preference.HierarchicalPermission.ALLOWED;
-import static com.researchspace.webapp.controller.DeploymentPropertiesController.SNAPGENE_AVAILABLE;
 import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.apiutils.ApiError;
@@ -12,6 +11,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Record;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.snapgene.wclient.SnapgeneWSClient;
 import com.researchspace.webapp.controller.BaseController;
 import com.researchspace.zmq.snapgene.requests.EnzymeSet;
@@ -64,7 +64,10 @@ public class DNAViewerController extends BaseController {
   public ResponseEntity<String> status() {
     if (ALLOWED
         .name()
-        .equals(systemPropertyManagerImpl.findByName(SNAPGENE_AVAILABLE).getValue())) {
+        .equals(
+            systemPropertyManagerImpl
+                .findByName(SystemPropertyName.SNAPGENE_AVAILABLE)
+                .getValue())) {
       Either<ApiError, String> result = snapgeneClient.status();
       ResponseEntity<String> statusResponse =
           result

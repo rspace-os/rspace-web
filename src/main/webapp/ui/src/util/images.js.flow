@@ -1,3 +1,0 @@
-//@flow
-
-declare export function capImageAt1MB(Blob, string, string): Promise<string>;

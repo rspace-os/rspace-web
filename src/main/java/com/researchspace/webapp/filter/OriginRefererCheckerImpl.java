@@ -71,7 +71,7 @@ public class OriginRefererCheckerImpl implements OriginRefererChecker {
     return errMsg;
   }
 
-  protected List<String> listAcceptedDomains() {
+  public List<String> listAcceptedDomains() {
     List<String> domains = new ArrayList<String>();
 
     // add server.urls.prefix, strip trailing slash if present

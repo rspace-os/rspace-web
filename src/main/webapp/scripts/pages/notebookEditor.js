@@ -48,10 +48,7 @@ function editEntryHandler(e) {
 }
 
 function updateEntryNameInBreadcrumbs(entryId, entryName) {
-  /* FIXME: this is too simplistic, in case of shared entries the parent notebook is not visible at all.
-    * also particular entries may be shared into various locations of a Shared folder */
-
-  // reset breadcrumbs to notebook level 
+  // reset breadcrumbs to notebook level
   RS.addBreadcrumbAndRefresh("editorBcrumb", "" + notebookId, notebookName);
   // add breadcrumb for notebook entry
   RS.addBreadcrumbAndRefresh("editorBcrumb", "" + entryId, RS.escapeHtml(entryName));
@@ -74,13 +71,12 @@ function deleteEntry(){
     });
   };
 
-  var event = new CustomEvent('confirm-action', { 'detail': {
+  RS.createConfirmationDialog({
     title: "Confirm deletion",
-    consequences: `Are you sure you want to delete the following entry? - <b>${$("#recordNameInHeader").html()}</b>. Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.`,
+    consequences: `Are you sure you want to delete the following entry?<br><strong>${$("#recordNameInHeader").html()}</strong><br /><br />Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.`,
     variant: "warning",
     callback: callback
-  }});
-  document.dispatchEvent(event);
+  });
 }
 
 /*
@@ -169,6 +165,14 @@ $(document).ready(function(e) {
     Form$.submit();
     e.preventDefault();
   });
+  
+  function appendGrandParentIdToForm($form) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = "grandParentId";
+    input.value = getGrandParentFolderId();
+    $form.append(input);
+  }
 
   window.addEventListener("ReactToolbarMounted", () => {
     if (typeof initWordChooserDlg === 'function') {
@@ -195,12 +199,13 @@ $(document).ready(function(e) {
         RS.trackEvent('CreateFromProtocolsIo');
         openProtocolsIoChooserDlg();
       });
-
+      
     // Clicking on the document (directly) in the menu to create the document.
     $(document).on('click', '.directList', function (e){
       var form$=$("#createPopularSD"); 
       var input$=$(this).find('input');
       form$.append(input$);
+      appendGrandParentIdToForm(form$);
       form$.submit();
       e.preventDefault();
     });
@@ -216,7 +221,9 @@ $(document).ready(function(e) {
   // this is clicking on a create -> other document
   $(document).on('click','.createSDFromFormLink', function (e){
     e.preventDefault();
-    $(this).closest('form').submit();
+    const form = $(this).closest('form');
+    appendGrandParentIdToForm(form);
+    form.submit();
   });
 
   $(document).on('click', '#deleteEntry', function (e){
@@ -272,3 +279,12 @@ $(document).ready(function(e) {
 
   displayStatus(editable);
 });
+
+function getGrandParentFolderId() {
+  const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
+  const grandParent = breadcrumbs[breadcrumbs.length - 2]
+  if(grandParent === undefined){
+    return null;
+  }
+  return grandParent.getAttribute("id").split("_")[1];
+}

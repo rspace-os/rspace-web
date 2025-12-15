@@ -8,24 +8,39 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.ShareRecordAuditEvent;
+import com.researchspace.model.dto.SharingResult;
 import com.researchspace.model.dtos.ShareConfigCommand;
 import com.researchspace.model.dtos.ShareConfigElement;
+import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.IdConstraint;
 import com.researchspace.model.permissions.PermissionDomain;
+import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.RSPath;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
+import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.UserManager;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 public class SharingHandlerImpl implements SharingHandler {
@@ -34,6 +49,8 @@ public class SharingHandlerImpl implements SharingHandler {
   private @Autowired RecordSharingManager sharingManager;
   private @Autowired UserManager userManager;
   private @Autowired GroupManager groupManager;
+  private @Autowired FolderManager folderManager;
+  private @Autowired RecordManager recordManager;
   private @Autowired IPermissionUtils permissionUtils;
 
   @Override
@@ -77,6 +94,47 @@ public class SharingHandlerImpl implements SharingHandler {
       permissionUtils.notifyUserOrGroupToRefreshCache(userORGroup);
     }
     return rc;
+  }
+
+  public List<RecordGroupSharing> shareIntoSharedFolderOrNotebook(
+      User user, Folder sharedFolderOrNotebook, Long recordId, Long recordGrandParentId) {
+    if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
+        user, sharedFolderOrNotebook)) {
+      ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> sharingResult;
+      if (sharedFolderOrNotebook.isNotebook()) {
+        sharingResult =
+            this.shareIntoSharedNotebook(
+                user, (Notebook) sharedFolderOrNotebook, recordId, recordGrandParentId);
+      } else {
+        sharingResult = this.shareIntoSharedFolder(user, sharedFolderOrNotebook, recordId);
+      }
+      return sharingResult.getResults();
+    }
+    return Collections.EMPTY_LIST;
+  }
+
+  private ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
+      shareIntoSharedFolder(User user, Folder sharedFolder, Long recordId) {
+    Group sharedGroup = groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedFolder, null);
+    ShareConfigElement shareConfigElement = new ShareConfigElement(sharedGroup.getId(), "write");
+    shareConfigElement.setGroupFolderId(sharedFolder.getId());
+    ShareConfigCommand shareConfig =
+        new ShareConfigCommand(
+            new Long[] {recordId}, new ShareConfigElement[] {shareConfigElement});
+    return this.shareRecords(shareConfig, user);
+  }
+
+  private ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing>
+      shareIntoSharedNotebook(
+          User user, Notebook sharedNotebook, Long recordId, Long recordGrandParentId) {
+    Group sharedGroup =
+        groupManager.getGroupFromAnyLevelOfSharedFolder(user, sharedNotebook, recordGrandParentId);
+    ShareConfigElement shareConfigElement = new ShareConfigElement(sharedGroup.getId(), "read");
+    shareConfigElement.setGroupFolderId(sharedNotebook.getId());
+    ShareConfigCommand shareConfig =
+        new ShareConfigCommand(
+            new Long[] {recordId}, new ShareConfigElement[] {shareConfigElement});
+    return this.shareRecords(shareConfig, user);
   }
 
   @Override
@@ -129,5 +187,84 @@ public class SharingHandlerImpl implements SharingHandler {
     }
 
     return rc;
+  }
+
+  @Override
+  public SharingResult shareRecordsWithResult(ShareConfigCommand shareConfig, User sharer) {
+    ErrorList error = new ErrorList();
+    ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> result =
+        this.shareRecords(shareConfig, sharer);
+    result.getExceptions().forEach(e -> error.addErrorMsg(e.getMessage()));
+    result.getFailures().forEach(rgs -> error.addErrorMsg(rgs.getShared().getName()));
+    return new SharingResult(buildSharedIdList(result), buildPublicLinkList(result), error);
+  }
+
+  @Override
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public SharingResult moveIntoSharedNotebook(
+      Group group, BaseRecord baseRecordToMove, Notebook targetSharedNotebook) {
+    Validate.isTrue(
+        targetSharedNotebook != null && targetSharedNotebook.isShared(),
+        "Notebook must be already shared");
+
+    if (baseRecordToMove.isShared()) {
+      RSPath pathToRootSharedFolder =
+          folderManager.getShortestPathToSharedRootFolder(
+              targetSharedNotebook.getId(), baseRecordToMove.getOwner());
+      sharingManager.unshareFromSharedFolder(
+          baseRecordToMove.getOwner(), baseRecordToMove, pathToRootSharedFolder);
+    }
+    ShareConfigCommand shareConfig =
+        buildShareCommandForTarget(baseRecordToMove.getId(), group.getId(), targetSharedNotebook);
+    SharingResult sharingResult = shareRecordsWithResult(shareConfig, baseRecordToMove.getOwner());
+    if (sharingResult.getError().hasErrorMessages()) {
+      throw new IllegalStateException(
+          "Errors while moving into Shared Notebook: ["
+              + sharingResult.getError().getAllErrorMessagesAsStringsSeparatedBy(",")
+              + "]");
+    }
+    return sharingResult;
+  }
+
+  @NotNull
+  private static ShareConfigCommand buildShareCommandForTarget(
+      Long idToMove, Long groupId, Folder target) {
+    ShareConfigElement shareElement = new ShareConfigElement(groupId, "read");
+    shareElement.setGroupFolderId(target.getId());
+    return new ShareConfigCommand(
+        new Long[] {idToMove}, new ShareConfigElement[] {shareElement}, false);
+  }
+
+  @NotNull
+  private static List<Long> buildSharedIdList(
+      ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> result) {
+    List<Long> sharedIds =
+        result.getResults().stream()
+            .map(rgs -> rgs.getShared().getId())
+            .collect(Collectors.toList());
+    return sharedIds;
+  }
+
+  @NotNull
+  private static List<String> buildPublicLinkList(
+      ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> result) {
+    List<String> publicLinks =
+        result.getResults().stream()
+            .map(
+                rgs -> {
+                  if (rgs.getPublicLink() == null) {
+                    return null;
+                  }
+                  String prefix = "";
+                  if (rgs.getShared().isStructuredDocument()) {
+                    prefix = "/public/publishedView/document/";
+                  } else if (rgs.getShared().isNotebook()) {
+                    prefix = "/public/publishedView/notebook/";
+                  }
+                  return rgs.getShared().getName() + "_&_&_" + prefix + rgs.getPublicLink();
+                })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    return publicLinks;
   }
 }

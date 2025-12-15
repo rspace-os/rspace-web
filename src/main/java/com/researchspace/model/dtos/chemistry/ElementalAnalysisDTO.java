@@ -1,5 +1,7 @@
 package com.researchspace.model.dtos.chemistry;
 
+import com.researchspace.model.stoichiometry.MoleculeRole;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -17,6 +19,7 @@ public class ElementalAnalysisDTO {
   private List<MoleculeInfoDTO> moleculeInfo;
   private String formula;
   private boolean isReaction;
+  private String additionalMetadata;
 
   public List<MoleculeInfoDTO> getAgents() {
     return filterByRole(MoleculeRole.AGENT);
@@ -35,6 +38,9 @@ public class ElementalAnalysisDTO {
   }
 
   private List<MoleculeInfoDTO> filterByRole(MoleculeRole role) {
+    if (moleculeInfo == null) {
+      return Collections.emptyList();
+    }
     return moleculeInfo.stream()
         .filter(mol -> role.equals(mol.getRole()))
         .collect(Collectors.toList());

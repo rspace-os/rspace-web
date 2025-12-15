@@ -95,7 +95,7 @@ public class UserCounterListener implements ServletContextListener, HttpSessionA
       removeUsersession(u.getUsername(), event.getSession());
       log.info("Removed {} from active session.", u.getUsername());
       SECURE_LOG.info(
-          "User session terminated either by timeout or explicit logout for user {}",
+          "User session terminated either by timeout or explicit logout for user [{}]",
           u.getUsername());
     }
   }

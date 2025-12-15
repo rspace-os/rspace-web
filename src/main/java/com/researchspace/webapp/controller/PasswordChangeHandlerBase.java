@@ -6,7 +6,6 @@ import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.UserManager;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +17,6 @@ public abstract class PasswordChangeHandlerBase {
   protected @Autowired UserManager userManager;
   private @Autowired UserValidator validator;
 
-  private boolean checkInputString(String str) {
-    return StringUtils.isBlank(str);
-  }
-
   public String changePassword(
       String currentPassword,
       String newPassword,
@@ -29,17 +24,11 @@ public abstract class PasswordChangeHandlerBase {
       HttpServletRequest request,
       User user) {
 
-    String currentpass = StringUtils.trim(currentPassword);
-    String newpass = StringUtils.trim(newPassword);
-    String confirmpass = StringUtils.trim(confirmPassword);
-
-    if (checkInputString(currentpass)
-        || checkInputString(newpass)
-        || checkInputString(confirmpass)) {
+    if (currentPassword.isBlank() || newPassword.isBlank() || confirmPassword.isBlank()) {
       return "Please enter data in all fields";
     }
 
-    if (!reauthenticate(user, currentpass)) {
+    if (!reauthenticate(user, currentPassword)) {
       logAuthenticationFailure(request, user);
       return "The current password is incorrect";
     }
@@ -47,24 +36,19 @@ public abstract class PasswordChangeHandlerBase {
     String checkPasswordResult =
         validator.validatePasswords(newPassword, confirmPassword, user.getUsername());
     if (!UserValidator.FIELD_OK.equals(checkPasswordResult)) {
-      SECURITY_LOG.warn(
-          "{} - [{}] unsuccessfully attempted to  reset password.",
-          user.getFullName(),
-          user.getId());
+      logAuthenticationFailure(request, user);
       return checkPasswordResult;
     }
 
-    encryptAndSavePassword(user, newpass);
-    SECURITY_LOG.info("{} [{}] successfully  reset password", user.getFullName(), user.getId());
+    encryptAndSavePassword(user, newPassword);
+    SECURITY_LOG.info("User [{}] successfully reset their password", user.getUsername());
     return "Password changed successfully";
   }
 
   private void logAuthenticationFailure(HttpServletRequest request, User user) {
     SECURITY_LOG.warn(
-        " {}  [{}] unsuccessfully attempted to  reset password but did not authenticate from remote"
-            + " address [{}]",
-        user.getFullName(),
-        user.getId(),
+        "Unsuccessfully attempted to reset password for [{}], from {}",
+        user.getUsername(),
         RequestUtil.remoteAddr(request));
   }
 

@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiUiNavigationData;
+import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationExtraHelpLink;
 import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationUserDetails;
 import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationVisibleTabs;
 import com.researchspace.api.v1.model.ApiUser;
@@ -17,11 +18,16 @@ import com.researchspace.model.User;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 @WebAppConfiguration
+@TestPropertySource(
+    properties = {
+      "ui.footer.urls={'linkName1':'http://www.url.com/example1','linkName2':'http://www.url.com/example2'}"
+    })
 public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
 
   @Before
@@ -212,6 +218,11 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
     assertFalse(visibleTabs.isMyLabGroups());
     assertFalse(visibleTabs.isPublished());
     assertFalse(visibleTabs.isSystem());
+
+    List<ApiUiNavigationExtraHelpLink> extraHelpLinks = retrievedData.getExtraHelpLinks();
+    assertEquals(2, extraHelpLinks.size());
+    assertEquals("linkName1", extraHelpLinks.get(0).getLabel());
+    assertEquals("http://www.url.com/example1", extraHelpLinks.get(0).getUrl());
 
     ApiUiNavigationUserDetails retrievedUser = retrievedData.getUserDetails();
     assertEquals(anyUser.getUsername(), retrievedUser.getUsername());

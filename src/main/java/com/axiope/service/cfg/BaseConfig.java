@@ -18,7 +18,10 @@ import com.researchspace.auth.PostOAuthLoginHelperImpl;
 import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.auth.WhiteListIPCheckerImpl;
 import com.researchspace.core.util.ResponseUtil;
-import com.researchspace.dao.customliquibaseupdates.LiveLiqUpdater;
+import com.researchspace.dataverse.api.v1.DataverseAPI;
+import com.researchspace.dataverse.http.DataverseAPIImpl;
+import com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository;
+import com.researchspace.dataverse.rspaceadapter.DataverseRepoConfigurer;
 import com.researchspace.dcd.rspaceadapter.DigitalCommonsDataRepository;
 import com.researchspace.document.importer.DocumentImporterFromWord2HTML;
 import com.researchspace.document.importer.EvernoteEnexImporter;
@@ -71,6 +74,7 @@ import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.properties.PropertyHolder;
 import com.researchspace.repository.spi.IRepository;
+import com.researchspace.repository.spi.RepositoryConfigurer;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.service.ApiAvailabilityHandler;
@@ -152,12 +156,18 @@ import com.researchspace.service.audit.search.LogLineContentProviderImpl;
 import com.researchspace.service.audit.search.UpdateRecordNamePostProcessor;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl;
+import com.researchspace.service.chemistry.ChemistryClient;
+import com.researchspace.service.chemistry.ChemistryProvider;
+import com.researchspace.service.chemistry.DefaultChemistryProvider;
+import com.researchspace.service.chemistry.IndigoChemistryProvider;
 import com.researchspace.service.cloud.impl.CommunityManualUserSignupPolicy;
 import com.researchspace.service.cloud.impl.CommunityPostSignupVerification;
 import com.researchspace.service.cloud.impl.CreateLabGroupRequestHandler;
 import com.researchspace.service.cloud.impl.ShareRecordRequestHandler;
 import com.researchspace.service.impl.ApiAvailabilityHandlerImpl;
 import com.researchspace.service.impl.AsyncDepositorImpl;
+import com.researchspace.service.impl.ChemistryImageUpdateInitialisor;
+import com.researchspace.service.impl.ChemistrySearchIndexInitialisor;
 import com.researchspace.service.impl.CollabGroupShareRequestCreateHandler;
 import com.researchspace.service.impl.CollabGroupShareRequestUpdateHandler;
 import com.researchspace.service.impl.ContentInitialiserUtilsImpl;
@@ -207,6 +217,7 @@ import com.researchspace.service.impl.SanityChecker;
 import com.researchspace.service.impl.SharingHandlerImpl;
 import com.researchspace.service.impl.StrictEmailContentGenerator;
 import com.researchspace.service.impl.SysadminUserCreationHandlerImpl;
+import com.researchspace.service.impl.SystemConfigurationInitialisor;
 import com.researchspace.service.impl.SystemPropertyPermissionManagerImpl;
 import com.researchspace.service.impl.UserContentUpdater;
 import com.researchspace.service.impl.UserContentUpdaterImpl;
@@ -263,6 +274,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.retry.annotation.EnableRetry;
@@ -270,6 +282,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.ui.velocity.VelocityEngineFactoryBean;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.annotation.SessionScope;
 import org.springframework.web.multipart.MultipartResolver;
@@ -333,11 +346,11 @@ public abstract class BaseConfig {
   @Value("${argos.url}")
   URL argosApiUrl;
 
-  @Value("${chemistry.web.url}")
-  String chemistryWebUrl;
-
   @Value("${aws.s3.hasS3Access}")
   private boolean hasS3Access;
+
+  @Value("${chemistry.provider}")
+  private String chemistryProvider;
 
   protected Logger log = LoggerFactory.getLogger(BaseConfig.class);
 
@@ -393,6 +406,39 @@ public abstract class BaseConfig {
             + velocityExtDir);
 
     return vEngine;
+  }
+
+  /**
+   * Create a new stateful repository adapter per request. <br>
+   * The name is created from appName+'Repository' as IRepository beans are created on-demand at
+   * export time.
+   */
+  @Bean(name = "dataverseRepository")
+  @Scope(value = WebApplicationContext.SCOPE_REQUEST)
+  public IRepository dataverseRepository() {
+    DataverseRSpaceRepository repo = new DataverseRSpaceRepository();
+    repo.setConfigurer(dataverseRepoConfigurer());
+    repo.setDvAPI(dataverseAPI());
+    logSettingRepositoryImplementation(repo);
+    return repo;
+  }
+
+  private void logSettingRepositoryImplementation(IRepository repo) {
+    log.info("Setting in repository implementation {}", repo);
+  }
+
+  @Bean
+  @Scope(value = "prototype")
+  public DataverseAPI dataverseAPI() {
+    return new DataverseAPIImpl();
+  }
+
+  @Bean(name = "configurerDataverse")
+  public RepositoryConfigurer dataverseRepoConfigurer() {
+    DataverseRepoConfigurer rc = new DataverseRepoConfigurer();
+    ClassPathResource subjects = new ClassPathResource("subjects.txt");
+    rc.setResource(subjects);
+    return rc;
   }
 
   @Bean
@@ -475,6 +521,16 @@ public abstract class BaseConfig {
   }
 
   @Bean
+  public IApplicationInitialisor chemistryIndexer() {
+    return new ChemistrySearchIndexInitialisor();
+  }
+
+  @Bean
+  public IApplicationInitialisor chemistryImageUpdater() {
+    return new ChemistryImageUpdateInitialisor();
+  }
+
+  @Bean
   public IApplicationInitialisor sanityChecker() {
     return new SanityChecker();
   }
@@ -497,6 +553,11 @@ public abstract class BaseConfig {
   @Bean(name = "sharedSnippetsFolderCreator")
   public IApplicationInitialisor sharedSnippetsFolderCreator() {
     return new GroupSharedSnippetsFolderAppInitialiser();
+  }
+
+  @Bean
+  public IApplicationInitialisor systemConfigurationUpdater() {
+    return new SystemConfigurationInitialisor();
   }
 
   @Bean
@@ -875,12 +936,6 @@ public abstract class BaseConfig {
     return new UserContentUpdaterImpl();
   }
 
-  @Bean
-  LiveLiqUpdater liveLiqUpdater() {
-    LiveLiqUpdater updater = new LiveLiqUpdater("sqlUpdates/liquibase-live-master.xml");
-    return updater;
-  }
-
   @Bean()
   @Lazy()
   UserImporter userImporter() {
@@ -1224,10 +1279,6 @@ public abstract class BaseConfig {
     this.snapGeneWebUrl = url;
   }
 
-  void setChemistryWSUrl(String url) {
-    this.chemistryWebUrl = url;
-  }
-
   @Bean
   StrictEmailContentGenerator strictEmailContentGenerator() {
     return new StrictEmailContentGenerator();
@@ -1304,5 +1355,23 @@ public abstract class BaseConfig {
   @Bean
   public BreadcrumbGenerator getBreadCrumbGenerator() {
     return new DefaultBreadcrumbGenerator();
+  }
+
+  @Bean
+  public ChemistryProvider chemistryProvider() {
+    if (chemistryProvider.equals("indigo")) {
+      return new IndigoChemistryProvider(chemistryServiceClient());
+    }
+    return new DefaultChemistryProvider();
+  }
+
+  @Bean
+  public ChemistryClient chemistryServiceClient() {
+    return new ChemistryClient(restTemplate());
+  }
+
+  @Bean
+  public RestTemplate restTemplate() {
+    return new RestTemplate();
   }
 }

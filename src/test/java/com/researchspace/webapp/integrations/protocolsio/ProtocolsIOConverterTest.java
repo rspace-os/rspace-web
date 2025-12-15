@@ -18,13 +18,13 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.protocolsio.Protocol;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.RSpaceTestUtils;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.VelocityTestUtils;
 import java.io.File;
 import java.io.IOException;
@@ -124,7 +124,7 @@ public class ProtocolsIOConverterTest {
 
     setupmocks(protocol, aform);
     impl.document = doc;
-    assertEquals(doc, impl.generateFromProtocol(protocol, any));
+    assertEquals(doc, impl.generateFromProtocol(protocol, any, null));
     verify(publisher).publishEvent(Mockito.any(GenericEvent.class));
   }
 
@@ -145,7 +145,7 @@ public class ProtocolsIOConverterTest {
 
     setupmocks(protocol, aform);
     impl.document = doc;
-    assertEquals(doc, impl.generateFromProtocol(protocol, any));
+    assertEquals(doc, impl.generateFromProtocol(protocol, any, null));
     assertTrue(impl.updateFieldContentInvoked);
   }
 

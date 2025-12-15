@@ -9,10 +9,10 @@ import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.UserFolderSetup;
 import com.researchspace.service.archive.export.ExportArchiveTreeTraversor;
 import com.researchspace.testutils.FolderTestUtils;
+import com.researchspace.testutils.TestFactory;
 import org.apache.commons.lang.math.RandomUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -91,6 +91,7 @@ public class ExportTreeTraversorTest {
     // ignore system folders
     f1.addType(RecordType.SYSTEM);
     f1.setName(Folder.SHARED_FOLDER_NAME);
+    f1.setSystemFolder(true);
     f1.process(traversor);
     // f1 not processed, and neither are children
     assertEquals(0, folderTreeSize());

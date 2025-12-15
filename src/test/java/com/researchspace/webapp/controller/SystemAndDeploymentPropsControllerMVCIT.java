@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.researchspace.model.preference.HierarchicalPermission;
+import com.researchspace.service.SystemPropertyName;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
@@ -17,8 +18,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.web.servlet.MvcResult;
 
 public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
-
-  private static final String DROPBOX_AVAILABLE = "dropbox.available";
 
   @Value("${egnyte.client.id}")
   private String egnyteClientId;
@@ -43,7 +42,7 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
     final int MIN_PROPERTY_COUNT = 7; // from rspac861
     assertTrue(data.keySet().size() >= MIN_PROPERTY_COUNT);
     // assert properties are merged from DB...
-    assertNotNull(data.get(DROPBOX_AVAILABLE));
+    assertNotNull(data.get(SystemPropertyName.DROPBOX_AVAILABLE.getPropertyName()));
     // .. and property files
     assertNotNull(data.get("baseURL"));
   }
@@ -53,7 +52,9 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
     logoutAndLoginAsCommunityAdmin(); // can be anyone,
     MvcResult res =
         mockMvc
-            .perform(get("/deploymentproperties/ajax/property").param("name", DROPBOX_AVAILABLE))
+            .perform(
+                get("/deploymentproperties/ajax/property")
+                    .param("name", SystemPropertyName.DROPBOX_AVAILABLE.getPropertyName()))
             .andReturn();
     String result = res.getResponse().getContentAsString();
     HierarchicalPermission.valueOf(result);

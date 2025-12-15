@@ -51,12 +51,12 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
     shareNotebookWithGroup(u1, notebook, group.getGroup(), "edit");
     shareNotebookWithGroup(u1, notebook, group2.getGroup(), "read");
     DetailedRecordInformation resp1 =
-        infoProvider.getDetailedRecordInformation(notebook.getId(), userTracker, u1, null, null);
+        infoProvider.getDetailedRecordInformation(notebook.getId(), u1, null, null);
     assertNotNull(resp1.getSharedGroupsAndAccess().get(group.getGroup().getDisplayName()));
 
     DetailedRecordInformation entry1Info =
         infoProvider.getDetailedRecordInformation(
-            notebook.getChildrens().iterator().next().getId(), userTracker, u1, null, null);
+            notebook.getChildrens().iterator().next().getId(), u1, null, null);
     assertTrue(entry1Info.getImplicitShares().containsKey(notebook.getGlobalIdentifier()));
     assertTrue(
         entry1Info
@@ -83,7 +83,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
     long initialVersion = record.getUserVersion().getVersion();
 
     DetailedRecordInformation initialInfo =
-        infoProvider.getDetailedRecordInformation(recordId, userTracker, user, null, null);
+        infoProvider.getDetailedRecordInformation(recordId, user, null, null);
     assertFalse(initialInfo.getOid().hasVersionId());
     assertEquals(initialName, initialInfo.getName());
     assertEquals(initialVersion, initialInfo.getVersion());
@@ -98,7 +98,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
     recordMgr.renameRecord(newName, recordId, user);
     recordMgr.requestRecordEdit(recordId, user, activeUsers);
     DetailedRecordInformation editedInfo =
-        infoProvider.getDetailedRecordInformation(recordId, userTracker, user, null, null);
+        infoProvider.getDetailedRecordInformation(recordId, user, null, null);
     assertEquals(newName, editedInfo.getName());
     assertTrue(editedInfo.getVersion() > initialVersion);
     assertEquals(EditStatus.EDIT_MODE.toString(), editedInfo.getStatus());
@@ -111,7 +111,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
     recordMgr.unlockRecord(recordId, user.getUsername());
     signingManager.signRecord(recordId, user, null, "signing");
     DetailedRecordInformation signedInfo =
-        infoProvider.getDetailedRecordInformation(recordId, userTracker, user, null, null);
+        infoProvider.getDetailedRecordInformation(recordId, user, null, null);
 
     assertEquals(EditStatus.CAN_NEVER_EDIT.toString(), signedInfo.getStatus());
     assertEquals(null, signedInfo.getCurrentEditor());
@@ -129,7 +129,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
     Long imageId = image.getId();
 
     DetailedRecordInformation imageInfo =
-        infoProvider.getDetailedRecordInformation(imageId, userTracker, user, null, null);
+        infoProvider.getDetailedRecordInformation(imageId, user, null, null);
 
     assertEquals(imageId, imageInfo.getId());
     assertEquals(image.getWidthResized(), imageInfo.getWidthResized());
@@ -143,7 +143,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
     Long docFileId = docFile.getId();
 
     DetailedRecordInformation docInfo =
-        infoProvider.getDetailedRecordInformation(docFileId, userTracker, user, null, null);
+        infoProvider.getDetailedRecordInformation(docFileId, user, null, null);
 
     assertEquals(docFileId, docInfo.getId());
     assertEquals(0, docInfo.getWidthResized());
@@ -178,7 +178,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
 
     // check get info and link information
     DetailedRecordInformation myRecordInfo =
-        infoProvider.getDetailedRecordInformation(userDoc.getId(), userTracker, user, null, null);
+        infoProvider.getDetailedRecordInformation(userDoc.getId(), user, null, null);
 
     assertEquals(0, myRecordInfo.getLinkedByCount());
 
@@ -187,7 +187,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
 
     // check target doc details
     DetailedRecordInformation targetRecordInfo =
-        infoProvider.getDetailedRecordInformation(targetDoc.getId(), userTracker, user, null, null);
+        infoProvider.getDetailedRecordInformation(targetDoc.getId(), user, null, null);
 
     assertEquals(2, targetRecordInfo.getLinkedByCount());
 
@@ -208,7 +208,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
 
     User user = loginAndAddToActiveUsers();
 
-    Folder imgGalleryFolder = recordMgr.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
+    Folder imgGalleryFolder = recordMgr.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
     Folder imgGallerySubfolder = createFolder("my images", imgGalleryFolder, user);
 
     Long subfolderId = imgGallerySubfolder.getId();
@@ -217,7 +217,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
 
     // check folder details
     DetailedRecordInformation subfolderInfo =
-        infoProvider.getDetailedRecordInformation(subfolderId, userTracker, user, null, null);
+        infoProvider.getDetailedRecordInformation(subfolderId, user, null, null);
     assertEquals(subfolderId, subfolderInfo.getId());
     assertEquals(expectedGlobalId, subfolderInfo.getOid().toString());
     assertEquals(imgGallerySubfolder.getName(), subfolderInfo.getName());

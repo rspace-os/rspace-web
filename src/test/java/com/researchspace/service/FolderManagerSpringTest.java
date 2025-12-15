@@ -8,10 +8,12 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.license.InactiveLicenseTestService;
 import com.researchspace.licensews.LicenseExpiredException;
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.controller.ServiceLoggerAspct;
@@ -21,10 +23,12 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class FolderManagerSpringTest extends SpringTransactionalTest {
+
   User user;
 
   private @Autowired RecordManager recordManager;
   private @Autowired ServiceLoggerAspct aspect;
+  private @Autowired SharingHandler sharingHandler;
 
   @Before
   public void setUp() throws Exception {
@@ -42,23 +46,23 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
   @Test
   public void testGetMediaTypeFolder() throws Exception {
     // create a new folder
-    assertNotNull(recordManager.getGallerySubFolderForUser("unknown", user));
+    assertNotNull(recordManager.getGalleryMediaFolderForUser("unknown", user));
     // should be already present
-    assertNotNull(recordManager.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, user));
+    assertNotNull(recordManager.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user));
   }
 
   @Test
   public void testRemoveFolder() throws Exception {
     // we'll delete the image folder from the media folder
-    Folder toRemove = recordManager.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
-    Folder parent = folderDao.getGalleryFolderForUser(user);
+    Folder toRemove = recordManager.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
+    Folder parent = folderDao.getGalleryRootFolderForUser(user);
     int numChildrenB4 = parent.getChildren().size();
     // remove child
     parent = folderMgr.removeBaseRecordFromFolder(toRemove, parent.getId());
 
     // get new child count
     int numChildrenAfter = parent.getChildren().size();
-    int fromDB = folderDao.getGalleryFolderForUser(user).getChildren().size();
+    int fromDB = folderDao.getGalleryRootFolderForUser(user).getChildren().size();
     // check there is now 1 less child
     assertEquals(numChildrenB4 - 1, numChildrenAfter);
     assertEquals(numChildrenB4 - 1, fromDB);
@@ -111,6 +115,33 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void isFolderInSharedTreeTest() throws IllegalAddChildOperation {
+    User piUser = createAndSaveAPi();
+    initialiseContentWithEmptyContent(piUser);
+    assertTrue(piUser.isContentInitialized());
+    logoutAndLoginAs(piUser);
+
+    Group group = createGroup("groupName", piUser);
+    addUsersToGroup(piUser, group, user);
+    Folder grpFolderShared = folderMgr.getFolder(group.getCommunalGroupFolderId(), piUser);
+
+    Notebook notebookShared = recordFactory.createNotebook("notebookShared", user);
+    sharingHandler.shareIntoSharedFolderOrNotebook(
+        user,
+        grpFolderShared,
+        notebookShared.getId(),
+        grpFolderShared.getParents().stream()
+            .filter(recToParent -> recToParent.getFolder().getOwner().equals(user))
+            .findFirst()
+            .get()
+            .getFolder()
+            .getId());
+
+    assertTrue(folderMgr.isFolderInSharedTree(notebookShared, grpFolderShared.getId(), user));
+    assertTrue(folderMgr.isFolderInSharedTree(notebookShared, grpFolderShared.getId(), piUser));
+  }
+
+  @Test
   public void getGroupFolderRootFromSharedSubfolderTest() throws IllegalAddChildOperation {
     Folder userLabGroupFolder = folderDao.getLabGroupFolderForUser(user);
 
@@ -124,12 +155,13 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
     assertEquals(
         grpFolder,
         folderMgr
-            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(grpSubFolder.getId(), user)
+            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(grpSubFolder.getId(), null, user)
             .get());
     // a folder not a subfolder of group folder will return null.
     assertFalse(
         folderMgr
-            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(userLabGroupFolder.getId(), user)
+            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+                userLabGroupFolder.getId(), null, user)
             .isPresent());
 
     // now check the same type of assertion, but for individual shared folders
@@ -143,7 +175,7 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
     assertEquals(
         individSharedFolder,
         folderMgr
-            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(sharedWork.getId(), user)
+            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(sharedWork.getId(), null, user)
             .get());
   }
 

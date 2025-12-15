@@ -1,0 +1,13 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2025-11-28" context="run" author="matthias">
+        <comment>Double BaseRecord.acl column size, to allow sharing to more groups</comment>
+        <modifyDataType columnName="acl" newDataType="varchar(5000)" tableName="BaseRecord" />
+        <modifyDataType columnName="acl" newDataType="varchar(5000)" tableName="BaseRecord_AUD" />
+    </changeSet>
+
+</databaseChangeLog>

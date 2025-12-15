@@ -86,14 +86,15 @@ public interface AnalyticsManager {
   @EventListener(condition = RECORD_CREATED_EVENT_SPEL)
   void recordCreated(HistoricalEvent event);
 
+  /** Registers specific calls to public API made with API Key or OAuth token. */
+  void publicApiUsed(User user, HttpServletRequest req);
+
   /**
    * To calculate and upload file usage for every user in the system
    *
    * <p>Notifies segment about current file/document usage.
    */
   void uploadUsersDiskUsage();
-
-  void apiUsed(User user, HttpServletRequest req);
 
   /**
    * Returns string representing userId as known by the analytics, which can also be used as opaque

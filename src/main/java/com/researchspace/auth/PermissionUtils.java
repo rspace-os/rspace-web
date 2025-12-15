@@ -342,7 +342,7 @@ public class PermissionUtils implements IPermissionUtils {
     pc.add(targetUser.getUsername(), realmName);
     subject.runAs(pc);
     SECURITY_LOG.info(
-        "[{}] running as [{}] using security realms [{}]",
+        "Admin [{}] running as user [{}] using security realms [{}]",
         adminUser.getUsername(),
         targetUser.getUsername(),
         realmName);

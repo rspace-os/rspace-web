@@ -8,7 +8,6 @@ import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.model.EcatChemistryFile;
-import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
@@ -223,7 +222,7 @@ public class GalleryController extends BaseController {
       GalleryFilterCriteria filterCriteria) {
     User user = userManager.getAuthenticatedUserInSession();
     // It's a trick to show parent folder on the
-    Folder galleryItemParent = recordManager.getGallerySubFolderForUser(mediatype, user);
+    Folder galleryItemParent = recordManager.getGalleryMediaFolderForUser(mediatype, user);
 
     boolean isOnRoot = isOnGalleryRoot(currentFolderId, galleryItemParent);
 
@@ -274,13 +273,9 @@ public class GalleryController extends BaseController {
     List<RecordInformation> results = new ArrayList<RecordInformation>();
     for (BaseRecord baseRecord : records.getResults()) {
       RecordInformation recordInfo = baseRecord.toRecordInfo();
-      if (baseRecord instanceof EcatDocumentFile) {
-        EcatDocumentFile doc = (EcatDocumentFile) baseRecord;
-        recordInfo.addType(getEcatDocumentFileType(mediatype, doc.getDocumentType()));
-      }
-
-      recordInfo.setParentId(galleryItemParent.getId());
-      recordInfo.setOnRoot(isOnRoot);
+      recordInfo =
+          recordManager.decorateRecordInfo(
+              recordInfo, user, galleryItemParent, isOnRoot, baseRecord, mediatype);
       results.add(recordInfo);
     }
 
@@ -310,7 +305,7 @@ public class GalleryController extends BaseController {
   public AjaxReturnObject<List<Long>> getImageListFromRootImageFolder() {
     User user = userManager.getAuthenticatedUserInSession();
     Folder galleryItemParent =
-        recordManager.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
+        recordManager.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
 
     PaginationCriteria<BaseRecord> pg = new PaginationCriteria<BaseRecord>();
     pg.setResultsPerPage(Integer.MAX_VALUE);
@@ -335,19 +330,6 @@ public class GalleryController extends BaseController {
       numberOfRecords--;
     }
     return numberOfRecords;
-  }
-
-  private String getEcatDocumentFileType(String mediatype, String documentType) {
-    if (mediatype.equals(Folder.EXPORTS_FOLDER_NAME)) {
-      return Folder.EXPORTS_FOLDER_NAME;
-    }
-    if (documentType.equalsIgnoreCase(MediaUtils.MISC_MEDIA_FLDER_NAME)) {
-      return MediaUtils.MISC_MEDIA_FLDER_NAME;
-    }
-    if (documentType.equalsIgnoreCase(MediaUtils.DMP_MEDIA_FLDER_NAME)) {
-      return MediaUtils.DMP_MEDIA_FLDER_NAME;
-    }
-    return MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
   }
 
   /**
@@ -617,7 +599,7 @@ public class GalleryController extends BaseController {
     }
     User user = userManager.getAuthenticatedUserInSession();
 
-    Folder galleryItemParent = recordManager.getGallerySubFolderForUser(mediatype, user);
+    Folder galleryItemParent = recordManager.getGalleryMediaFolderForUser(mediatype, user);
 
     if (isOnGalleryRoot(targetFolderId, galleryItemParent)) {
       targetFolderId = galleryItemParent.getId();

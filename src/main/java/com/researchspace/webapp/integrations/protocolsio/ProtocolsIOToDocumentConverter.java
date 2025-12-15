@@ -6,5 +6,5 @@ import com.researchspace.protocolsio.Protocol;
 
 public interface ProtocolsIOToDocumentConverter {
 
-  StructuredDocument generateFromProtocol(Protocol toImport, User subject);
+  StructuredDocument generateFromProtocol(Protocol toImport, User subject, Long parentFolderId);
 }

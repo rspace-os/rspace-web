@@ -41,10 +41,11 @@ function setFolderChooserDirListingParams(folderChooserId, params) {
 
 function _setUpFolderTree(folderId, folderChooserId, afterDirSelectionCallback) {
     var scriptUrl = '/fileTree/ajax/directoriesInModel';
-    var dirListingParams = $('#folderChooserTree' + folderChooserId).data('dirListingUrlParams');
+    const folderChooserEl = $('#folderChooserTree' + folderChooserId);
+    var dirListingParams = folderChooserEl.data('dirListingUrlParams');
     var scriptUrlParams = dirListingParams || 'showNotebooks=true';
 
-    $('#folderChooserTree' + folderChooserId).fileTree({
+    folderChooserEl.fileTree({
         // custom argument! This is so we show the root folder of the 
         // tree when it is not the actual root folder, e.g. a group shared folder
         initialLoad : true,
@@ -55,7 +56,7 @@ function _setUpFolderTree(folderId, folderChooserId, afterDirSelectionCallback) 
         multiFolder : false
     },
     function(file, type) {
-        if ("directory" == type) {
+        if (type === "directory") {
             var $selectedRow = $('#folderChooserTree' + folderChooserId).find("a[rel='" + file + "']");
             var selectedType = $selectedRow.data('type');
             // get parents, then reverse order to construct the path 
@@ -70,12 +71,12 @@ function _setUpFolderTree(folderId, folderChooserId, afterDirSelectionCallback) 
             $('#folderChooser-id' + folderChooserId).val(file);
             $('#folderChooser-type' + folderChooserId).val(selectedType);
             
-            if (typeof afterDirSelectionCallback != undefined) {
+            if (typeof afterDirSelectionCallback === 'function') {
                 afterDirSelectionCallback($selectedRow);
             }
         }
     });
-    $('#folderChooserInfo'+folderChooserId).show();
+    folderChooserEl.show();
 }
 
 function _doCreateSubfolder(folderChooserId) {

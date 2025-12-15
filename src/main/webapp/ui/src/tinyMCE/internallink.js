@@ -1,5 +1,5 @@
 "use strict";
-import React, { useEffect, type Node } from "react";
+import React, { useEffect } from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -16,8 +16,8 @@ import TableRow from "@mui/material/TableRow";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
-import UserDetails from "../components/UserDetails";
-import TimeAgoCustom from "../components/TimeAgoCustom";
+import UserDetails from "../components/UserDetails_deprecated";
+import TimeAgoCustom from "@/components/TimeAgoCustom";
 import EnhancedTableHead from "../components/EnhancedTableHead";
 import Radio from "@mui/material/Radio";
 import { stableSort, getSorting, paginationOptions } from "../util/table";
@@ -90,7 +90,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-export default function InternalLink(props): Node {
+export default function InternalLink(props) {
   const { classes } = useStyles();
   const [open, setOpen] = React.useState(true);
   const [revisions, setRevisions] = React.useState([]);
@@ -156,7 +156,7 @@ export default function InternalLink(props): Node {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `/workspace/revisionHistory/ajax/${props.id}/versions`
+          `/workspace/revisionHistory/ajax/${props.id}/versions`,
         );
         const fetchedRevisions = response.data.data.reverse(); // reverse to show latest first
         let latest = fetchedRevisions[0]; // latest version is the first in the reversed list
@@ -168,7 +168,9 @@ export default function InternalLink(props): Node {
         setSelected(props.version ? props.version : latest.version);
 
         // calculate the initial page so that current revision is visible
-        let idx = fetchedRevisions.findIndex((r) => r.version == props.version);
+        const idx = fetchedRevisions.findIndex(
+          (r) => r.version == props.version,
+        );
         if (idx != -1) {
           // if revision's not found, selected "Always latest" and set to page 0
           setPage(Math.floor(idx / 5));
@@ -363,15 +365,15 @@ function WrappedInternalLink(props) {
   );
 }
 
-document.addEventListener("tinymce-insert-revision", function (e) {
+document.addEventListener("tinymce-insert-revision", (e) => {
   $(document.body).append("<span class='revision-dialog'></span>");
-  let container = $(".revision-dialog")[$(".revision-dialog").length - 1];
+  const container = $(".revision-dialog")[$(".revision-dialog").length - 1];
   const root = createRoot(container);
   root.render(
     <WrappedInternalLink
       id={e.detail.id}
       version={e.detail.version}
       initialEl={e.detail.el}
-    />
+    />,
   );
 });

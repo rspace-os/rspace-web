@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dto.IntegrationInfo;
+import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.webapp.integrations.dmptool.DMPToolDMPProvider;
@@ -46,18 +47,18 @@ public class DMPUpdateHandler {
         log.info("No DMPs found for {}", subject.getUsername());
         return;
       }
-      List<String> dmpsToUpdate =
+      List<DMPUser> dmpsToUpdate =
           dmpsForUser.stream()
               .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
-              .map(DMPUser::getDmpId)
               .collect(Collectors.toList());
 
-      for (String dmpStr : dmpsToUpdate) {
-        var dmpUpdated = dmpClient.addDoiIdentifierToDMP(dmpStr, doi.toString(), subject);
+      for (DMPUser currentDmpToUpdate : dmpsToUpdate) {
+        ServiceOperationResult<String> dmpUpdated =
+            dmpClient.addDoiIdentifierToDMP(currentDmpToUpdate.getDmpId(), doi.toString(), subject);
         if (!dmpUpdated.isSucceeded()) {
           log.error("Updating didn't succeed : {}", dmpUpdated.getMessage());
         } else {
-          log.info("Updated DMP {}", dmpStr);
+          log.info("Updated DMP {}", currentDmpToUpdate.getDmpId());
         }
       }
 

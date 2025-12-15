@@ -8,7 +8,19 @@ module.exports = {
       severity: "error",
       from: {},
       to: {
-        licenseNot: ["MIT", "BSD", "Apache", "Hippocratic", "ISC"],
+        licenseNot: [
+          "MIT",
+          "BSD",
+          "Apache",
+          "Hippocratic",
+          "ISC",
+          "MPL",
+          "GPL",
+        ],
+        pathNot: [
+          // posthog-js doesn't properly encode its license in package.json
+          "node_modules/posthog-js",
+        ],
       },
     },
 
@@ -40,8 +52,8 @@ module.exports = {
       },
     },
 
-// this rule is disabled because cycles are generally not an issue, but the rule can be useful when debugging some issues.
-/*
+    // this rule is disabled because cycles are generally not an issue, but the rule can be useful when debugging some issues.
+    /*
     {
       name: 'no-circular',
       severity: 'warn',
@@ -86,12 +98,13 @@ module.exports = {
         path: "src",
         pathNot: [
           "__tests__|__mocks__|test-stubs|node_modules",
+          "\.*.spec.tsx",
           // this list comes from webpack.config.js
-          "src/App.js",
+          "src/App.tsx",
           "./src/components/PublicPages/IdentifierPublicPage.js",
-          "src/eln/apps/index.js",
+          "src/eln/apps/index.tsx",
           "src/eln/gallery/index.js",
-          "src/eln/AppBar.js",
+          "src/eln/AppBar.tsx",
           "src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper.js",
           "src/CreateGroup/CreateGroup.js",
           "src/my-rspace/directory/groups/MyLabGroups.js",
@@ -102,7 +115,7 @@ module.exports = {
           "src/Toolbar/Notebook/Toolbar.js",
           "src/Toolbar/StructuredDocument/Toolbar.js",
           "src/Toolbar/FileTreeToolbar.js",
-          "src/Toolbar/Gallery/Toolbar.js",
+          "src/Toolbar/Gallery/Toolbar.tsx",
           "src/system-groups/NewLabGroup.js",
           "src/tinyMCE/sidebarInfo.js",
           "src/tinyMCE/previewInfo.js",
@@ -120,13 +133,21 @@ module.exports = {
           "src/tinyMCE/pyrat/Pyrat.js",
           "src/tinyMCE/clustermarket/index.js",
           "src/tinyMCE/omero/index.js",
-          "src/tinyMCE/jove/index.js",
+          "src/tinyMCE/jove/index.tsx",
+          "src/tinyMCE/pubchem/index.tsx",
+          "src/tinyMCE/inventory/identifiers/index.tsx",
           "src/components/BaseSearch.js",
-          "src/components/ConfirmationDialog.js",
+          "src/components/ConfirmationDialog/ConfirmationDialog.tsx",
           "src/Gallery/imageEditorDialog.js",
-          "src/eln-inventory-integration/MaterialsListing/MaterialsListing.js",
-          "src/eln-inventory-integration/AssociatedInventoryRecords/index.js",
+          "src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
+          "src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
           "src/eln/sysadmin/users/index.js",
+          "src/tinyMCE/ketcher/KetcherViewer.tsx",
+          "src/tinyMCE/ketcher/KetcherTinyMce.js",
+          "src/tinyMCE/stoichiometry/index.tsx",
+          "src/tinyMCE/galaxy/index.tsx",
+          "src/eln/eln-external-workflows/index.tsx",
+          "src/eln/about/index.tsx",
           // stores/defintion only export types so depcruise thinks it's never used, which at runtime it isn't
           "stores/definitions",
           // src/assets contains icon variants that may be useful in the future
@@ -224,7 +245,7 @@ module.exports = {
       from: {
         path: "^(src)",
         pathNot:
-          "__tests__|.(spec|test).(js|mjs|cjs|ts|ls|coffee|litcoffee|coffee.md)$",
+          "__tests__|.(spec|test).(js|mjs|cjs|ts|tsx|ls|coffee|litcoffee|coffee.md)$",
       },
       to: {
         dependencyTypes: ["npm-dev"],
@@ -267,7 +288,7 @@ module.exports = {
       from: {
         // only this whitelist of paths...
         pathNot:
-          "src/Inventory|src/Router.js|src/eln-inventory-integration|src/stores|src/App.js|src/components/PublicPages/IdentifierPublicPage.js",
+          "src/Inventory|src/Router.tsx|src/eln-inventory-integration|src/stores|src/App.tsx|src/components/PublicPages/IdentifierPublicPage.tsx|src/components/PublicPages/__tests__/IdentifierPublicPage.test.tsx|src/tinyMCE/inventory",
       },
       to: {
         // ...are the modules that should be accessing these Inventory-specific modules
@@ -279,6 +300,7 @@ module.exports = {
       name: "Apps-only",
       comment:
         "Modules containing generic code, Inventory code, or other parts of the ELN should not depend on code specific to the apps page.",
+      severity: "error",
       from: {
         pathNot: "src/eln/apps",
       },
@@ -307,7 +329,7 @@ module.exports = {
         path: "src/stores/definitions",
       },
       to: {
-        pathNot: "src/stores/definitions|src/util|fast-check|babel",
+        pathNot: "src/stores/definitions|src/util|fast-check|babel|jest-dom",
       },
     },
 
@@ -319,7 +341,22 @@ module.exports = {
         path: "src/util",
       },
       to: {
-        pathNot: "src/util|babel|jest-dom|fast-check|mobx|react",
+        pathNot:
+          "src/util|babel|jest-dom|fast-check|mobx|react|@fortawesome|@mui",
+      },
+    },
+
+    {
+      name: "restrict-assets-dependencies",
+      comment:
+        "src/assets should only depend on a small subset of the codebase.",
+      severity: "error",
+      from: {
+        path: "src/assets",
+      },
+      to: {
+        pathNot:
+          "src/assets|src/util|react|node_modules/@mui/material/node/SvgIcon|node_modules/@mui/material/node/utils/index.js",
       },
     },
 
@@ -408,9 +445,9 @@ module.exports = {
        dependency-cruiser's current working directory). When not provided
        defaults to './tsconfig.json'.
      */
-     tsConfig: {
-       fileName: 'tsconfig.json'
-     },
+    tsConfig: {
+      fileName: "tsconfig.json",
+    },
 
     /* Webpack configuration to use to get resolve options from.
 
@@ -423,7 +460,7 @@ module.exports = {
        for details)
      */
     webpackConfig: {
-      fileName: "webpack.config.js",
+      fileName: "webpack.config.mjs",
       env: {},
       arguments: {},
     },
@@ -435,7 +472,7 @@ module.exports = {
       systems) without dependency-cruiser getting a major version bump.
      */
     //babelConfig: {
-      //fileName: 'babel.config.js'
+    //fileName: 'babel.config.js'
     //},
 
     /* List of strings you have in use in addition to cjs/ es6 requires

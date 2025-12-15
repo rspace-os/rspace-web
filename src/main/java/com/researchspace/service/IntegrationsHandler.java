@@ -7,9 +7,11 @@ import java.util.Map;
 /** Handler for IntegrationsController /RSPAC-838 */
 public interface IntegrationsHandler {
 
+  String PROVIDER_USER_ID = "providerUserId";
   String SLACK_APP_NAME = "SLACK";
   String DATAVERSE_APP_NAME = "DATAVERSE";
   String ORCID_APP_NAME = "ORCID";
+  String RAID_APP_NAME = "RAID";
   String GITHUB_APP_NAME = "GITHUB";
   String FIGSHARE_APP_NAME = "FIGSHARE";
   String OWNCLOUD_APP_NAME = "OWNCLOUD";
@@ -29,13 +31,19 @@ public interface IntegrationsHandler {
   String ARGOS_APP_NAME = "ARGOS";
   String ZENODO_APP_NAME = "ZENODO";
   String FIELDMARK_APP_NAME = "FIELDMARK";
+  String GALAXY_APP_NAME = "GALAXY";
   String DMPONLINE_APP_NAME = "DMPONLINE";
   String ZENODO_USER_TOKEN = "ZENODO_USER_TOKEN";
   String FIELDMARK_USER_TOKEN = "FIELDMARK_USER_TOKEN";
+  String GALAXY_APIKEY = "GALAXY_APIKEY";
   String DIGITAL_COMMONS_DATA_USER_TOKEN = "DIGITAL_COMMONS_DATA_USER_TOKEN";
   String DMPONLINE_USER_TOKEN = "DMPONLINE_USER_TOKEN";
+  String ASCENSCIA_APP_NAME = "ASCENSCIA";
+  String ASCENSCIA_USER_TOKEN = "ASCENSCIA_USER_TOKEN";
   String EGNYTE_DOMAIN_SETTING = "EGNYTE_DOMAIN";
   String ACCESS_TOKEN_SETTING = "ACCESS_TOKEN";
+  String GALAXY_CONFIGURED_SERVERS = "GALAXY_CONFIGURED_SERVERS";
+  String GALAXY_ALIAS = "GALAXY_ALIAS";
 
   /**
    * Boolean test as to whether the supplied <code>integrationName</code> is a valid name whose data
@@ -63,7 +71,7 @@ public interface IntegrationsHandler {
    * @param newInfo
    * @return the updated user preference
    * @throws IllegalArgumentException if<code>propertyName</code> in the supplied <code>newInfo
-   *     </code> argument is not recognised
+   *                                  </code> argument is not recognised
    */
   IntegrationInfo updateIntegrationInfo(User subject, IntegrationInfo newInfo);
 

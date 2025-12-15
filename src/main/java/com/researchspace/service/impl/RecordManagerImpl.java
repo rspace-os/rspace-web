@@ -1,7 +1,10 @@
 package com.researchspace.service.impl;
 
+import static com.researchspace.core.util.MediaUtils.DMP_MEDIA_FLDER_NAME;
+import static com.researchspace.core.util.MediaUtils.MISC_MEDIA_FLDER_NAME;
 import static com.researchspace.model.comms.NotificationType.NOTIFICATION_DOCUMENT_EDITED;
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
+import static com.researchspace.model.record.Folder.EXPORTS_FOLDER_NAME;
 import static java.lang.String.format;
 import static org.apache.commons.lang.StringUtils.abbreviate;
 import static org.apache.commons.lang.StringUtils.trim;
@@ -13,6 +16,7 @@ import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.AuditDao;
+import com.researchspace.dao.DMPDao;
 import com.researchspace.dao.EcatImageDao;
 import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.FolderDao;
@@ -25,7 +29,6 @@ import com.researchspace.dao.RecordUserFavoritesDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.linkedelements.FieldContentDelta;
 import com.researchspace.linkedelements.FieldLinksEntitiesSynchronizer;
-import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.linkedelements.TextFieldDataSanitizer;
 import com.researchspace.model.EcatChemistryFile;
@@ -40,6 +43,8 @@ import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.dmps.DMPSource;
+import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
 import com.researchspace.model.dtos.WorkspaceFilters;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
@@ -52,6 +57,7 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.DOCUMENT_CATEGORIES;
 import com.researchspace.model.record.DeltaType;
 import com.researchspace.model.record.DocumentFieldInitializationPolicy;
 import com.researchspace.model.record.DocumentInitializationPolicy;
@@ -63,6 +69,7 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
+import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
@@ -71,6 +78,7 @@ import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
@@ -122,6 +130,7 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired FieldDao fieldDao;
   private @Autowired FolderDao folderDao;
   private @Autowired EcatImageDao imageDao;
+  private @Autowired DMPDao dmpDao;
   private @Autowired FormUsageDao formUsageDao;
   private @Autowired RecordEditorTracker tracker;
   private @Autowired FieldLinksEntitiesSynchronizer fieldContentSynchroniser;
@@ -132,10 +141,10 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired MovePermissionChecker movePermissionChecker;
   private @Autowired IPermissionUtils permissnUtils;
   private @Autowired RecordDao recordDao;
+  private @Autowired IPropertyHolder properties;
   private @Autowired UserManager userManager;
   private @Autowired UserDao userDao;
   private @Autowired AuditDao auditDao;
-  private @Autowired FieldParser fieldParser;
   private @Autowired TextFieldDataSanitizer textFieldDataSanitizer;
 
   private @Autowired NameDateFilter folderFilter;
@@ -182,13 +191,17 @@ public class RecordManagerImpl implements RecordManager {
       for (RecordToFolder rtf : original.getParents()) {
         if (rtf.getUserName().equals(user.getUsername())) {
           parent = rtf.getFolder();
-          if (!parent.isSharedFolder()) {
+          if (!parent.isSharedFolder() && !isFolderANotebookSharedWithCurrentUser(parent, user)) {
             return parent;
           }
         }
       }
     }
     return parent;
+  }
+
+  private boolean isFolderANotebookSharedWithCurrentUser(Folder folder, User user) {
+    return folder.isNotebook() && !user.equals(folder.getOwner());
   }
 
   /** Convenience method to get a subclass of record already cast to the appropriate type. */
@@ -249,9 +262,14 @@ public class RecordManagerImpl implements RecordManager {
     Folder newparent = folderDao.get(targetParent);
     if (newparent != null && toMove != null) {
       if (!movePermissionChecker.checkMovePermissions(user, newparent, toMove)) {
-        return new ServiceOperationResult<>(null, false);
+        return new ServiceOperationResult<>(null, false, "user not permitted to move record");
       }
-      boolean moved = toMove.move(currparent, newparent, user);
+      boolean moved;
+      if (properties.isRsDevUnsafeMoveAllowed()) {
+        moved = toMove.unsafeMove(currparent, newparent, user);
+      } else {
+        moved = toMove.move(currparent, newparent, user);
+      }
       if (moved) {
         if (currparent.isFolder()) {
           folderDao.save(currparent);
@@ -328,12 +346,20 @@ public class RecordManagerImpl implements RecordManager {
     if (parentId != null) {
       parentFolder = folderDao.get(parentId);
     }
-    if (!context.enableDirectTemplateCreationInTemplateFolder()
-        || !(parentFolder.hasAncestorOfType(RecordType.TEMPLATE, true))) {
-      permissnUtils.assertIsPermitted(
-          parentFolder, PermissionType.CREATE, user, "create document in parent folder");
-    }
 
+    if (this.isSharedFolderOrSharedNotebookWithoutCreatePermission(user, parentFolder)) {
+      log.warn(
+          "The record will be created inside the root folder since the"
+              + " specified one [{}] is a shared folder",
+          parentFolder.getName());
+      parentFolder = folderDao.get(user.getRootFolder().getId());
+    } else {
+      if (!context.enableDirectTemplateCreationInTemplateFolder()
+          || !(parentFolder.hasAncestorOfType(RecordType.TEMPLATE, true))) {
+        permissnUtils.assertIsPermitted(
+            parentFolder, PermissionType.CREATE, user, "create document in parent folder");
+      }
+    }
     RSForm form = formDao.get(formID);
 
     if (form.isPublishedAndHidden() && !context.ignoreUnpublishedForms()) {
@@ -398,7 +424,7 @@ public class RecordManagerImpl implements RecordManager {
     Snippet snippet = recordFactory.createSnippet(name, content, user);
     recordDao.save(snippet);
 
-    Folder snippetGaleryFolder = getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, user);
+    Folder snippetGaleryFolder = getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, user);
     snippetGaleryFolder.addChild(snippet, user);
     folderDao.save(snippetGaleryFolder);
 
@@ -427,7 +453,7 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
-  public EditStatus requestRecordView(Long recordId, User user, UserSessionTracker activeUsers) {
+  public EditStatus requestRecordView(Long recordId, User user) {
     EditStatus basicStatus = checkBasicEditStatusForRecordAndUser(recordId, user);
     if (basicStatus != null) {
       return basicStatus;
@@ -835,7 +861,7 @@ public class RecordManagerImpl implements RecordManager {
 
     Folder templateRoot = folderDao.getTemplateFolderForUser(user);
     if (templateRoot == null) { // TODO temporary till all moved RSPAC-921
-      templateRoot = getGallerySubFolderForUser(Folder.TEMPLATE_MEDIA_FOLDER_NAME, user);
+      templateRoot = getGalleryMediaFolderForUser(Folder.TEMPLATE_MEDIA_FOLDER_NAME, user);
     }
 
     StructuredDocument template =
@@ -861,16 +887,16 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
-  public Folder getGallerySubFolderForUser(String folderName, User user)
+  public Folder getGalleryMediaFolderForUser(String mediaFolderName, User user)
       throws IllegalAddChildOperation {
-    Folder systemFolder = folderDao.getSystemFolderForUserByName(user, folderName);
+    Folder systemFolder = folderDao.getSystemFolderForUserByName(user, mediaFolderName);
     if (systemFolder != null) {
       return systemFolder;
     } else {
       // create if not present
-      Folder galleryRoot = folderDao.getGalleryFolderForUser(user);
+      Folder galleryRoot = folderDao.getGalleryRootFolderForUser(user);
 
-      Folder newFolder = recordFactory.createSystemCreatedFolder(folderName, user);
+      Folder newFolder = recordFactory.createSystemCreatedFolder(mediaFolderName, user);
       folderDao.save(newFolder);
 
       RecordToFolder rtf = galleryRoot.addChild(newFolder, user);
@@ -919,8 +945,10 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   private void assertCreatePermission(User user, Folder parentFolder) {
-    if (!permissnUtils.isPermitted(parentFolder, PermissionType.CREATE, user)) {
-      throw new AuthorizationException();
+    if (!permissnUtils.isPermitted(parentFolder, PermissionType.CREATE, user)
+        && !isSharedFolderOrSharedNotebookWithoutCreatePermission(user, parentFolder)) {
+      throw new AuthorizationException(
+          "User is not authorized to created in this folder or notebook");
     }
   }
 
@@ -1317,6 +1345,11 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
+  public List<Long> getAllNonTemplateNonTemporaryStrucDocIdsOwnedByUser(User user) {
+    return recordDao.getAllNonTemplateNonTemporaryStrucDocIdsOwnedByUser(user);
+  }
+
+  @Override
   public List<BaseRecord> getOntologyTagsFilesForUserCalled(
       User user, String userTagsontologyDocument) {
     return recordDao.getOntologyTagsFilesForUserCalled(user, userTagsontologyDocument);
@@ -1326,5 +1359,92 @@ public class RecordManagerImpl implements RecordManager {
   public List<StructuredDocument> getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(
       String uName) {
     return recordDao.getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(uName);
+  }
+
+  @Override
+  public boolean forceMoveDocumentToOwnerWorkspace(StructuredDocument userDoc) {
+    User owner = userDoc.getOwner();
+    Folder ownerWorkspace = owner.getRootFolder();
+
+    if (userDoc.hasSingleParent()) {
+      userDoc.setSharingACL(ownerWorkspace.getSharingACL());
+      recordDao.save(userDoc);
+
+      RecordToFolder recToFolder = userDoc.getParents().iterator().next();
+      recordDao.updateRecordToFolder(recToFolder, ownerWorkspace.getId());
+
+      log.warn(
+          "executed forceMoveDocumentToOwnerWorkspace for doc " + userDoc.getGlobalIdentifier());
+      return true;
+    }
+
+    return false;
+  }
+
+  @Override
+  public boolean isSharedNotebookWithoutCreatePermission(User user, Folder folderOrNotebook) {
+    return folderOrNotebook.isNotebook()
+        && folderOrNotebook.isShared()
+        && !permissnUtils.isPermitted(folderOrNotebook, PermissionType.CREATE, user);
+  }
+
+  @Override
+  public boolean isSharedFolderOrSharedNotebookWithoutCreatePermission(
+      User user, Folder folderOrNotebook) {
+    return folderOrNotebook.isSharedFolder()
+        || isSharedNotebookWithoutCreatePermission(user, folderOrNotebook);
+  }
+
+  @Override
+  public RecordInformation decorateRecordInfo(
+      RecordInformation recordInfo,
+      User user,
+      Folder parentFolder,
+      boolean isOnRoot,
+      BaseRecord baseRecord,
+      String mediaType) {
+    if (baseRecord instanceof EcatDocumentFile) {
+      EcatDocumentFile doc = (EcatDocumentFile) baseRecord;
+      recordInfo.setType(getEcatDocumentFileType(mediaType, doc.getDocumentType()));
+    }
+
+    if ("DMPs".equals(mediaType)) {
+      List<DMPUser> listDmpSaved = dmpDao.findDMPsByFile(user, baseRecord.getId());
+      if (!listDmpSaved.isEmpty()) {
+        DMPUser dmpSaved = listDmpSaved.get(0);
+        String dmpLink =
+            dmpSaved.getDmpLink() == null ? null : dmpSaved.getDmpLink().replace("/api/v2/", "/");
+        recordInfo.setDmpLink(dmpLink);
+        recordInfo.setDoiLink(dmpSaved.getDoiLink());
+        recordInfo.setDmpSource(dmpSaved.getSource());
+      } else {
+        log.warn(
+            "It was not possible to find the DMP details User=["
+                + user.getDisplayName()
+                + "] and "
+                + "RecordId=["
+                + baseRecord.getId()
+                + "]");
+        recordInfo.setDmpSource(DMPSource.UNKNOWN);
+      }
+    }
+
+    recordInfo.setParentId(parentFolder.getId());
+    recordInfo.setOnRoot(isOnRoot);
+
+    return recordInfo;
+  }
+
+  private String getEcatDocumentFileType(String mediatype, String documentType) {
+    if (EXPORTS_FOLDER_NAME.equalsIgnoreCase(mediatype)) {
+      return DOCUMENT_CATEGORIES.EXPORTEDFILE;
+    }
+    if (MISC_MEDIA_FLDER_NAME.equalsIgnoreCase(documentType)) {
+      return DOCUMENT_CATEGORIES.MISCFILE;
+    }
+    if (DMP_MEDIA_FLDER_NAME.equalsIgnoreCase(documentType)) {
+      return DOCUMENT_CATEGORIES.DMP;
+    }
+    return DOCUMENT_CATEGORIES.DOCUMENTFILE;
   }
 }

@@ -50,6 +50,9 @@ import com.researchspace.model.dtos.WorkspaceFilters;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.permissions.ACLElement;
+import com.researchspace.model.permissions.ConstraintBasedPermission;
+import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecordAdaptable;
@@ -64,7 +67,6 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.FolderRecordPair;
 import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.model.views.RecordCopyResult;
@@ -74,6 +76,7 @@ import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.TestGroup;
 import java.io.IOException;
 import java.time.Instant;
@@ -85,6 +88,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
@@ -99,11 +103,16 @@ public class RecordManagerTest extends SpringTransactionalTest {
   private @Autowired EcatCommentManager commentManager;
   private @Autowired BaseRecordAdaptable baseRecordAdapter;
   private @Autowired FieldDao fieldDao;
+  private @Autowired SharingHandler sharingHandler;
 
   private RSForm anyForm;
   private User user;
+  private User anotherUser;
   private PaginationCriteria<BaseRecord> pgCrit =
       PaginationCriteria.createDefaultForClass(BaseRecord.class);
+
+  private Folder parent = null;
+  private Notebook notebook = null;
 
   @Before
   public void setUp() throws Exception {
@@ -111,7 +120,16 @@ public class RecordManagerTest extends SpringTransactionalTest {
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
     initialiseContentWithExampleContent(user);
     assertTrue(user.isContentInitialized());
+
+    anotherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("anotherUser"));
+    initialiseContentWithEmptyContent(anotherUser);
+    assertTrue(anotherUser.isContentInitialized());
+
     logoutAndLoginAs(user);
+    parent = TestFactory.createAFolder("parent", user);
+    parent.setId(1L);
+    notebook = TestFactory.createANotebook("notebook", user);
+    notebook.setId(2L);
   }
 
   @After
@@ -123,12 +141,12 @@ public class RecordManagerTest extends SpringTransactionalTest {
   @Test
   public void testInitialSetup() throws Exception {
     final int galleryFolders = 8;
-    Folder mediaRecord = folderDao.getGalleryFolderForUser(user);
+    Folder mediaRecord = folderDao.getGalleryRootFolderForUser(user);
     assertTrue(mediaRecord.isSystemFolder());
     assertEquals(galleryFolders, mediaRecord.getChildren().size());
     assertTrue(mediaRecord.getSubfolders().stream().allMatch(subF -> subF.isSystemFolder()));
 
-    Folder imges = recordMgr.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
+    Folder imges = recordMgr.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
     Set<BaseRecord> imgGalleryContent = imges.getChildrens();
     assertEquals(2, imgGalleryContent.size()); // 'examples' folder + apifolder only
 
@@ -143,7 +161,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
   @Test
   public void testAllGallerySubfoldersHaveSystemType() {
-    Folder galleryRoot = folderDao.getGalleryFolderForUser(user);
+    Folder galleryRoot = folderDao.getGalleryRootFolderForUser(user);
     for (BaseRecord child : galleryRoot.getChildrens()) {
       assertTrue(child.hasType(RecordType.SYSTEM));
       if (child.isFolder()) {
@@ -298,7 +316,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     long numb4InDB =
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
     anyForm = formDao.getAll().get(0);
-    Folder cf1 = root.getSubFolderByName(Folder.SHARED_FOLDER_NAME);
+    Folder cf1 = root.getSystemSubFolderByName(Folder.SHARED_FOLDER_NAME);
     String newName = "newname";
     Folder copied = folderMgr.copy(cf1.getId(), user, newName).getParentCopy();
     flushDatabaseState();
@@ -576,11 +594,13 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
     try {
       // these are not globally flagged as deleted, only from a folder,
-      // since a record
-      // can belong to multiple folders, if it is shared
+      // since a record can belong to multiple folders, if it is shared
       StructuredDocument childDeleted = (StructuredDocument) recordMgr.get(child.getId());
-      assertTrue(root.isMarkedDeleted(childDeleted));
       assertFalse(childDeleted.isDeleted());
+      assertEquals(1, childDeleted.getParents().size());
+      RecordToFolder rtf = childDeleted.getParents().iterator().next();
+      assertEquals(root, rtf.getFolder());
+      assertTrue(rtf.isRecordInFolderDeleted());
 
     } catch (ObjectRetrievalFailureException e) {
       fail(child.getId() + " was actually deleted!");
@@ -909,7 +929,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void moveSearchResults() throws Exception {
+  public void moveSearchResultsAsPI() {
     User pi = createAndSaveAPi();
     User grpMember = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(pi, grpMember);
@@ -917,13 +937,43 @@ public class RecordManagerTest extends SpringTransactionalTest {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(grpMember, "quiop");
     Group g = createGroup("any", pi);
     addUsersToGroup(pi, g, grpMember);
-    // now login  as PI:
+
+    // check PI's permission to record
     logoutAndLoginAs(pi);
-    assertTrue(permissionUtils.isPermitted(doc, PermissionType.READ, pi)); // must be true
-    // but shouldn't be able to move from group members folder into pis folder
+    assertTrue(permissionUtils.isPermitted(doc, PermissionType.READ, pi)); // PI can always read
+    assertFalse(permissionUtils.isPermitted(doc, PermissionType.WRITE, pi)); // cannot write
+    assertFalse(permissionUtils.isPermitted(doc, PermissionType.SEND, pi)); // cannot move
+    // cannot move from group members folder into pi's folder
     assertFalse(
         recordMgr
             .move(doc.getId(), pi.getRootFolder().getId(), grpMember.getRootFolder().getId(), pi)
+            .isSucceeded());
+
+    // now share the document, with 'read' permission
+    logoutAndLoginAs(grpMember);
+    doc = shareRecordWithGroup(grpMember, g, doc).getShared().asStrucDoc();
+    // re-check PI's permissions
+    logoutAndLoginAs(pi);
+    assertTrue(permissionUtils.isPermitted(doc, PermissionType.READ, pi)); // PI can always read
+    assertFalse(permissionUtils.isPermitted(doc, PermissionType.WRITE, pi)); // cannot write
+    assertTrue(permissionUtils.isPermitted(doc, PermissionType.SEND, pi)); // can move now
+    // PI's move permission should be limited to shared folder, cannot move into pi's own folder
+    assertFalse(
+        recordMgr
+            .move(doc.getId(), pi.getRootFolder().getId(), grpMember.getRootFolder().getId(), pi)
+            .isSucceeded());
+    // attempt to move into pi's own folder triggered from within a shared folder should also fail
+    assertFalse(
+        recordMgr
+            .move(doc.getId(), pi.getRootFolder().getId(), g.getCommunalGroupFolderId(), pi)
+            .isSucceeded());
+    // attempt to move from shared folder into shared subfolder should be fine though
+    Folder sharedSubfolder =
+        folderMgr.createNewFolder(g.getCommunalGroupFolderId(), "sharedSubfolder", pi);
+    assertTrue(sharedSubfolder.isSharedFolder());
+    assertTrue(
+        recordMgr
+            .move(doc.getId(), sharedSubfolder.getId(), g.getCommunalGroupFolderId(), pi)
             .isSucceeded());
   }
 
@@ -1454,19 +1504,19 @@ public class RecordManagerTest extends SpringTransactionalTest {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(grpMember, "text3");
     UserSessionTracker users = anySessionTracker();
 
-    EditStatus memberViewStatus = recordMgr.requestRecordView(doc.getId(), grpMember, users);
+    EditStatus memberViewStatus = recordMgr.requestRecordView(doc.getId(), grpMember);
     assertEquals(EditStatus.VIEW_MODE, memberViewStatus);
-    EditStatus piViewStatus = recordMgr.requestRecordView(doc.getId(), pi, users);
+    EditStatus piViewStatus = recordMgr.requestRecordView(doc.getId(), pi);
     assertEquals(EditStatus.VIEW_MODE, piViewStatus);
 
     // user starts editing
     EditStatus memberEditStatus = recordMgr.requestRecordEdit(doc.getId(), grpMember, users);
     assertEquals(EditStatus.EDIT_MODE, memberEditStatus);
     // they can see the document being edited by themselves
-    EditStatus memberViewStatus2 = recordMgr.requestRecordView(doc.getId(), grpMember, users);
+    EditStatus memberViewStatus2 = recordMgr.requestRecordView(doc.getId(), grpMember);
     assertEquals(EditStatus.EDIT_MODE, memberViewStatus2);
     // pi sees document as edited
-    EditStatus piEditStatus = recordMgr.requestRecordView(doc.getId(), pi, users);
+    EditStatus piEditStatus = recordMgr.requestRecordView(doc.getId(), pi);
     assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, piEditStatus);
   }
 
@@ -1478,11 +1528,9 @@ public class RecordManagerTest extends SpringTransactionalTest {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(any, "text3");
     recordDeletionMgr.deleteRecord(doc.getParent().getId(), doc.getId(), any);
     UserSessionTracker otherUsers = anySessionTracker();
-    assertEquals(
-        EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), any, otherUsers));
+    assertEquals(EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), any));
     User sysadmin = logoutAndLoginAsSysAdmin();
-    assertEquals(
-        EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), sysadmin, otherUsers));
+    assertEquals(EditStatus.ACCESS_DENIED, recordMgr.requestRecordView(doc.getId(), sysadmin));
   }
 
   @Test
@@ -1605,5 +1653,150 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // unauthorised not included
     logoutAndLoginAs(user);
     assertTrue(recordMgr.getAuthorisedRecordsById(anyUserIds, user, PermissionType.READ).isEmpty());
+  }
+
+  @Test
+  public void testCreateNewStructuredDocumentIntoSharedFolder() {
+    User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    Group group = new Group(CoreTestUtils.getRandomName(10), admin);
+    group.addMember(user, RoleInGroup.DEFAULT);
+    group.addMember(admin, RoleInGroup.DEFAULT);
+    group = grpMgr.saveGroup(group, admin);
+    initialiseContentWithEmptyContent(user, admin);
+    grpMgr.createSharedCommunalGroupFolders(group.getId(), admin.getUsername());
+
+    Long sharedFolderId = group.getCommunalGroupFolderId();
+    Folder rootFolder = user.getRootFolder();
+
+    flushDatabaseState();
+
+    long initialCountRootFolder =
+        recordMgr.listFolderRecords(rootFolder.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
+    anyForm = formDao.getAll().get(0);
+    StructuredDocument newCreatedDocument =
+        recordMgr.createNewStructuredDocument(sharedFolderId, anyForm.getId(), user);
+    assertColumnIndicesAreTheSameForFieldsAndFormss(newCreatedDocument);
+    assertNotNull(recordMgr.get(newCreatedDocument.getId()));
+    assertNotNull(newCreatedDocument.getId());
+    assertEquals(initialCountRootFolder + 1, rootFolder.getChildren().size());
+  }
+
+  @Test
+  public void testCreateNewStructuredDocumentIntoSharedNotebook() throws InterruptedException {
+    User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    Group group = new Group(CoreTestUtils.getRandomName(10), admin);
+    group.addMember(user, RoleInGroup.DEFAULT);
+    group.addMember(admin, RoleInGroup.DEFAULT);
+    group = grpMgr.saveGroup(group, admin);
+    initialiseContentWithEmptyContent(user, admin);
+    grpMgr.createSharedCommunalGroupFolders(group.getId(), admin.getUsername());
+
+    Long sharedFolderId = group.getCommunalGroupFolderId();
+    Folder rootFolder = user.getRootFolder();
+    Folder sharedGroupFolder = folderMgr.getFolder(sharedFolderId, admin);
+
+    flushDatabaseState();
+
+    long initialCountRootFolder =
+        recordMgr.listFolderRecords(rootFolder.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
+    anyForm = formDao.getAll().get(0);
+
+    long notebookId = createNotebookWithNEntries(sharedFolderId, "notebook", 0, admin).getId();
+    flushDatabaseState();
+
+    sharingHandler.shareIntoSharedFolderOrNotebook(admin, sharedGroupFolder, notebookId, null);
+    flushDatabaseState();
+
+    final Notebook sharedNotebook = folderMgr.getNotebook(notebookId);
+    assertTrue(sharedNotebook.isShared());
+    assertTrue(sharedNotebook.getChildrens().isEmpty());
+
+    StructuredDocument newCreatedDocument =
+        recordMgr.createNewStructuredDocument(notebookId, anyForm.getId(), user);
+
+    assertColumnIndicesAreTheSameForFieldsAndFormss(newCreatedDocument);
+    assertNotNull(recordMgr.get(newCreatedDocument.getId()));
+    assertNotNull(newCreatedDocument.getId());
+    assertEquals(initialCountRootFolder + 1, rootFolder.getChildren().size());
+  }
+
+  @Test
+  public void RSDEV_613_getParentPreferNonSharedHandlesDocSharedIntoNotebook() throws Exception {
+
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("u1"));
+    initialiseContentWithEmptyContent(pi, user);
+    Group labGroup = createGroup("g1", pi);
+    addUsersToGroup(pi, labGroup, user);
+
+    // pi creates a notebook and shares it with groups for edit
+    logoutAndLoginAs(pi);
+    Long piRootId = pi.getRootFolder().getId();
+    Notebook sharedNotebook = createNotebookWithNEntries(piRootId, "shared nbook", 1, pi);
+    assertEquals(1, sharedNotebook.getEntryCount());
+    StructuredDocument entryInSharedNotebook =
+        sharedNotebook.getChildrens().iterator().next().asStrucDoc();
+    shareNotebookWithGroup(pi, sharedNotebook, labGroup, "write");
+
+    // user creates a document and shares it into pi's notebook
+    logoutAndLoginAs(user);
+    BaseRecord doc = createBasicDocumentInRootFolderWithText(user, "any");
+    assertEquals(1, doc.getParents().size());
+
+    shareRecordIntoGroupNotebook(doc, sharedNotebook, labGroup, user).get().getShared();
+    // user's doc know understand it has two parents now
+    doc = recordMgr.get(doc.getId());
+    assertEquals(2, doc.getParents().size());
+    // shared notebook should show two entries now
+    sharedNotebook = folderMgr.getNotebook(sharedNotebook.getId());
+    assertEquals(2, sharedNotebook.getEntryCount());
+
+    // check that when asked for non-shared parent, user's doc shared into notebook returns user's
+    // workspace
+    Folder nonSharedParentForDocSharedIntoNotebook =
+        recordMgr.getRecordParentPreferNonShared(user, doc);
+    assertEquals(user.getUsername(), nonSharedParentForDocSharedIntoNotebook.getName());
+
+    /* confirm that when asked for non-shared parent, pi's entry which wasn't explicitly shared (just a part of PI's shared notebook)
+     * returns a notebook (it is both shared and exists on PI workspace) */
+    Folder nonSharedParentForImplicitlySharedEntry =
+        recordMgr.getRecordParentPreferNonShared(user, entryInSharedNotebook);
+    assertEquals("shared nbook", nonSharedParentForImplicitlySharedEntry.getName());
+  }
+
+  @Test
+  public void testIsSharedFolderOrSharedNotebookWithoutCreatePermssison_whenSharedFolder() {
+    // when is NOT shared folder && NOT shared notebook
+    assertFalse(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermission(user, parent));
+
+    // when is shared folder and NOT shared notebook
+    parent.addType(RecordType.SHARED_FOLDER);
+    Assertions.assertTrue(parent.isSharedFolder());
+    assertTrue(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermission(user, parent));
+  }
+
+  @Test
+  public void testIsSharedFolderOrSharedNotebookWithoutCreatePermssison_whenSharedNotebook() {
+    notebook
+        .getSharingACL()
+        .addACLElement(new ACLElement("userGroup1", new ConstraintBasedPermission()));
+    notebook
+        .getSharingACL()
+        .addACLElement(new ACLElement("userGroup2", new ConstraintBasedPermission()));
+    notebook
+        .getSharingACL()
+        .addACLElement(
+            new ACLElement(
+                user.getUniqueName(),
+                new ConstraintBasedPermission(PermissionDomain.USER, PermissionType.CREATE)));
+    Assertions.assertTrue(notebook.isShared());
+
+    // when is shared Notebook with CREATE permission
+    assertFalse(recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermission(user, notebook));
+
+    logoutAndLoginAs(anotherUser);
+    // when is shared Notebook and NO CREATE permission
+    assertTrue(
+        recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermission(anotherUser, notebook));
   }
 }

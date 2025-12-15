@@ -7,8 +7,8 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
-import com.researchspace.model.dmps.DMP;
 import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
@@ -184,8 +184,8 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
     InputStream inputStream =
         RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("smartscotland3.pdf");
     var ecatDocumentFile = mediaMgr.saveNewDMP("smartscotland3.pdf", inputStream, user, null);
-    var dmpUser = new DMPUser(user, new DMP("DMPid23", "somet title"));
-    dmpUser.setDmpDownloadPdf(ecatDocumentFile);
+    var dmpUser = new DMPUser(user, new DmpDto("DMPid23", "somet title"));
+    dmpUser.setDmpDownloadFile(ecatDocumentFile);
     dmpMgr.save(dmpUser);
     assertEquals(1, dmpMgr.findDMPsForUser(user).size());
 

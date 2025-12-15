@@ -1,5 +1,5 @@
 "use strict";
-import React, { useEffect, type Node } from "react";
+import React, { useEffect } from "react";
 import TextField from "@mui/material/TextField";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
@@ -8,10 +8,10 @@ import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
-import UserDetails from "../components/UserDetails";
+import UserDetails from "../components/UserDetails_deprecated";
 import { stripDiacritics } from "../util/StringUtils";
 
-export default function UserList(props): Node {
+export default function UserList(props) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [visibleUsers, setVisibleUsers] = React.useState([]);
 
@@ -23,7 +23,7 @@ export default function UserList(props): Node {
   const handleSelect = (u) => {
     if (Array.isArray(u)) {
       props.onSelect(
-        u.map((user) => (typeof user === "string" ? user : user.username))
+        u.map((user) => (typeof user === "string" ? user : user.username)),
       );
     } else {
       props.onSelect(typeof u === "string" ? u : u.username);
@@ -37,17 +37,18 @@ export default function UserList(props): Node {
   function userLabel(u) {
     if (u.displayName) {
       return `${u.username} - ${u.displayName}`;
-    } else if (u.fullName) {
-      return `${u.username} - ${u.fullName}`;
-    } else if (u.firstName && u.lastName) {
-      return `${u.username} - ${u.firstName} ${u.lastName}`;
-    } else {
-      return `${u.username}`;
     }
+    if (u.fullName) {
+      return `${u.username} - ${u.fullName}`;
+    }
+    if (u.firstName && u.lastName) {
+      return `${u.username} - ${u.firstName} ${u.lastName}`;
+    }
+    return `${u.username}`;
   }
 
   function userRow(u) {
-    let name = userLabel(u);
+    const name = userLabel(u);
 
     return (
       <UserDetails
@@ -64,7 +65,7 @@ export default function UserList(props): Node {
     const visible = props.users.filter((u) =>
       stripDiacritics(userLabel(u))
         .toUpperCase()
-        .includes(stripDiacritics(search.toUpperCase()))
+        .includes(stripDiacritics(search.toUpperCase())),
     );
     setVisibleUsers(visible);
     unselectFilteredUsers(visible);
@@ -72,7 +73,7 @@ export default function UserList(props): Node {
 
   function unselectFilteredUsers(visible) {
     visible = visible.map((u) => u.username);
-    let to_unselect = props.selected.filter((s) => !visible.includes(s));
+    const to_unselect = props.selected.filter((s) => !visible.includes(s));
     handleSelect(to_unselect);
   }
 

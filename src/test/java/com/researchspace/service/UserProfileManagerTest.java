@@ -7,6 +7,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.views.PublicUserList;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.HashMap;
@@ -44,7 +45,7 @@ public class UserProfileManagerTest extends SpringTransactionalTest {
 
     // set orcid id for new user
     User sysadmin = logoutAndLoginAsSysAdmin();
-    sysPropMgr.save("orcid.available", "ALLOWED", sysadmin);
+    sysPropMgr.save(SystemPropertyName.ORCID_AVAILABLE, HierarchicalPermission.ALLOWED, sysadmin);
     String testOrcidId = "testOrcidId";
     Map<String, String> newOptions = new HashMap<>();
     newOptions.put("ORCID_ID", testOrcidId);

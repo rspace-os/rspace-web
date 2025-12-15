@@ -141,8 +141,25 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-351.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-262.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-435.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-607.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-638.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-365.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-664.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-695.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-639.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-575.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-639b.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-669.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-563.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-689.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rspac-2890.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-855.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-868.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-850.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-923.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-907.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-849.xml"/>
 
-
-  <!--  ensure that customUpdates-changeLog.xml always runs LAST! -->
+    <!--  ensure that customUpdates-changeLog.xml always runs LAST! -->
     <include relativeToChangelogFile="true" file="customUpdates-changeLog.xml"/>
 </databaseChangeLog>

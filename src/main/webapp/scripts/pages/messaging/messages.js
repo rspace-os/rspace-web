@@ -20,6 +20,20 @@
 	*
   */
     $(document).ready(function (){
+      
+      function decrementMessagesBadge() {
+        const badge = $('#messagesBadge');
+        if (badge.length > 0) {
+            let count = parseInt(badge.text(), 10);
+            if (count > 0) {
+                count--;
+                badge.text(count);
+                if (count === 0) {
+                    badge.hide();
+                }
+            }
+        }
+      }
 
     	// handles order-by pagination
     	$('body').on("click", '.morOrderBy', function(event) {
@@ -50,6 +64,7 @@
     	// handles polling
     	$('body').on("click", '#openMessageDlgLink', function (e){
     		$('#messageDlg').dialog ('open');
+        RS.trackEvent("user:open:messages_dialog:workspace");
     	});
     	
     	$('body').on("change", '.messageStatusChooser', function(e){
@@ -71,9 +86,10 @@
 				function (xhr) {
 					tr$.hide("fade", function () {
 						if( $('tr.notificationRow').filter(":visible").size() == 0 ){
-			          		contentDiv$.html("There are no active messages.");
-			          	 }  
+          		contentDiv$.html("There are no active messages.");
+        	  }  
 					});
+          decrementMessagesBadge();
 				}
     		);
     	});

@@ -21,13 +21,10 @@ import SymbolsTab from "./symbolsTab";
 import { Alert, AlertTitle } from "@mui/material";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faInfo,
-  faChevronUp,
-  faChevronDown,
-} from "@fortawesome/free-solid-svg-icons";
+import { faInfo } from "@fortawesome/free-solid-svg-icons/faInfo";
+import { faChevronUp } from "@fortawesome/free-solid-svg-icons/faChevronUp";
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons/faChevronDown";
 import { createRoot } from "react-dom/client";
-library.add(faInfo, faChevronUp, faChevronDown);
 
 const used = config.used.split(" ");
 const forbidden = config.forbidden.split(" ");
@@ -69,13 +66,13 @@ class Shortcuts extends React.Component {
     // handle reset
     parent.document.addEventListener(
       "shortcuts-reset",
-      this.applyCurrentConfig
+      this.applyCurrentConfig,
     );
 
     // handle reset to default
     parent.document.addEventListener(
       "shortcuts-resetDefault",
-      this.applyDefaultConfig
+      this.applyDefaultConfig,
     );
 
     // handle submit
@@ -101,13 +98,13 @@ class Shortcuts extends React.Component {
 
   applyCurrentConfigActions = () => {
     let saved_config_actions = JSON.parse(
-      localStorage.getItem("custom_shortcuts_actions")
+      localStorage.getItem("custom_shortcuts_actions"),
     );
 
     // backward compatibility
     if (!saved_config_actions) {
       saved_config_actions = JSON.parse(
-        localStorage.getItem("custom_shortcuts")
+        localStorage.getItem("custom_shortcuts"),
       );
     }
 
@@ -124,8 +121,8 @@ class Shortcuts extends React.Component {
   };
 
   applyCurrentConfigSymbols = () => {
-    let saved_config_symbols = JSON.parse(
-      localStorage.getItem("custom_shortcuts_symbols")
+    const saved_config_symbols = JSON.parse(
+      localStorage.getItem("custom_shortcuts_symbols"),
     );
 
     this.setState((oldState) => {
@@ -169,7 +166,7 @@ class Shortcuts extends React.Component {
     });
     localStorage.setItem(
       "custom_shortcuts_actions",
-      JSON.stringify(new_config)
+      JSON.stringify(new_config),
     );
 
     new_config = {};
@@ -183,7 +180,7 @@ class Shortcuts extends React.Component {
     });
     localStorage.setItem(
       "custom_shortcuts_symbols",
-      JSON.stringify(new_config)
+      JSON.stringify(new_config),
     );
   };
 
@@ -197,7 +194,7 @@ class Shortcuts extends React.Component {
       };
     });
 
-    let combination =
+    const combination =
       (e.ctrlKey ? "Ctrl " : "") +
       (e.shiftKey ? "Shift " : "") +
       (e.altKey ? "Alt " : "") +
@@ -211,14 +208,14 @@ class Shortcuts extends React.Component {
   };
 
   setShortcut = (key, combination) => {
-    let isReserved = this.isShortcutReserved(combination);
-    let isForbidden = isShortcutForbidden(combination, forbidden);
-    let isSingle = isShortcutSingle(combination);
-    let isTwowithShift = isShiftwithsomeKey(combination);
+    const isReserved = this.isShortcutReserved(combination);
+    const isForbidden = isShortcutForbidden(combination, forbidden);
+    const isSingle = isShortcutSingle(combination);
+    const isTwowithShift = isShiftwithsomeKey(combination);
 
     let errorMessage = "";
-    let actionShortcuts = this.state.actionShortcuts;
-    let symbolShortcuts = this.state.symbolShortcuts;
+    const actionShortcuts = this.state.actionShortcuts;
+    const symbolShortcuts = this.state.symbolShortcuts;
 
     this.setState((oldState) => {
       return {
@@ -231,11 +228,11 @@ class Shortcuts extends React.Component {
       errorMessage = `${humanize(combination)} is being used.`;
     } else if (isForbidden) {
       errorMessage = `${humanize(
-        combination
+        combination,
       )} is not allowed. Try another one.`;
     } else if (isSingle) {
       errorMessage = `${humanize(
-        combination.split(" ")[0]
+        combination.split(" ")[0],
       )} alone is not allowed. Try another one.`;
     } else if (isTwowithShift) {
       errorMessage = `Shift+Somekey is not allowed. Try another one.`;
@@ -265,7 +262,7 @@ class Shortcuts extends React.Component {
     this.setState((oldState) => {
       return {
         ...oldState,
-        errorMessage: errorMessage,
+        errorMessage,
       };
     });
   };
@@ -274,7 +271,7 @@ class Shortcuts extends React.Component {
     combination = humanize(combination).split(" ");
     let isReserved = false;
 
-    used.forEach(function (command) {
+    used.forEach((command) => {
       if (arraysEqual(command.split("+"), combination)) {
         isReserved = true;
         return false;
@@ -282,7 +279,7 @@ class Shortcuts extends React.Component {
     });
     if (isReserved) return true;
 
-    let all_shortcuts = {
+    const all_shortcuts = {
       ...this.state.actionShortcuts,
       ...this.state.symbolShortcuts,
     };
@@ -308,8 +305,8 @@ class Shortcuts extends React.Component {
 
   resetInput = () => {
     if (this.state.hasError) {
-      let actionShortcuts = this.state.actionShortcuts;
-      let symbolShortcuts = this.state.symbolShortcuts;
+      const actionShortcuts = this.state.actionShortcuts;
+      const symbolShortcuts = this.state.symbolShortcuts;
 
       this.setState((oldState) => {
         return {
@@ -347,7 +344,7 @@ class Shortcuts extends React.Component {
           <Alert
             icon={
               <FontAwesomeIcon
-                icon="info"
+                icon={faInfo}
                 size="2x"
                 style={{ height: "30px" }}
               />
@@ -363,10 +360,10 @@ class Shortcuts extends React.Component {
               >
                 <IconButton onClick={() => this.toggleInstructions()}>
                   {this.state.instructions && (
-                    <FontAwesomeIcon icon="chevron-up" />
+                    <FontAwesomeIcon icon={faChevronUp} />
                   )}
                   {!this.state.instructions && (
-                    <FontAwesomeIcon icon="chevron-down" />
+                    <FontAwesomeIcon icon={faChevronDown} />
                   )}
                 </IconButton>
               </Tooltip>
@@ -408,7 +405,7 @@ class Shortcuts extends React.Component {
                 Here's{" "}
                 <a
                   target="_blank"
-                  href="https://www.tinymce.com/docs/advanced/keyboard-shortcuts/"
+                  href="https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/"
                   rel="noreferrer"
                 >
                   a list
@@ -463,7 +460,7 @@ class Shortcuts extends React.Component {
   }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-shortcuts");
   const root = createRoot(domContainer);
   root.render(<Shortcuts />);

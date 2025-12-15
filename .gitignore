@@ -1,12 +1,14 @@
 /target/
 *.DS_Store
+/ApiRequests.txt
 /RSLogs.txt
 /RSLogs.txt*
 /SecurityEvents.txt
 /SlowRequests.txt
 /emailErrors.txt
-/error.log
+/error.log*
 /httpRequests.log
+/ApiRequests.txt
 /FTsearchIndices/
 /LuceneFTsearchIndices/
 /Users/
@@ -23,6 +25,7 @@
 /src/main/webapp/ui/node/
 /src/main/webapp/ui/node_modules/
 node_modules
+src/main/webapp/ui/playwright/
 /.classpath
 /.project
 /.settings
@@ -35,6 +38,7 @@ generatedDBChangeSets/
 /svg.pdf
 /xsxx.pdf
 xsxx2.pdf
+.spotless
 
 # Nix specifics
 shell.nix

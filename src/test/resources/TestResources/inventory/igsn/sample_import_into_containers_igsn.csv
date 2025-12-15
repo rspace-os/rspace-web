@@ -1,0 +1,5 @@
+﻿Name,Description,Import identifier,Parent container,Igsn
+Sample1,with subsample on workbench, s1,,[check src/test/resources/TestResources/inventory/igsn/README.md]
+Sample2,with subsample inside container1, s2, cont1,[check src/test/resources/TestResources/inventory/igsn/README.md]
+Sample3,with subsample inside container5,,cont5,[check src/test/resources/TestResources/inventory/igsn/README.md]
+Sample4,with subsample on workbench,,,[check src/test/resources/TestResources/inventory/igsn/README.md]

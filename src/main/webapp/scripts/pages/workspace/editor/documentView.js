@@ -170,8 +170,12 @@ function initAttachmentButton() {
     });
   }
   $(".attachmentButton").click(function () {
-    if ($(".attachmentList").is(":hidden")) {
-      _scanAllTextFieldsForAttachments();
+    _scanAllTextFieldsForAttachments();
+    const isHidden = $(".attachmentList").is(":hidden");
+    if (isHidden) {
+      RS.trackEvent("user:open:attachment_listing:document_editor");
+    } else {
+      RS.trackEvent("user:close:attachment_listing:document_editor");
     }
     $(".attachmentList").slideToggle();
   });
@@ -236,6 +240,15 @@ function _scanAllTextFieldsForAttachments() {
   }
 }
 
+function getGrandParentFolderId() {
+  const breadcrumbs = [...document.getElementsByClassName("breadcrumbLink")];
+  const grandParent = breadcrumbs[breadcrumbs.length - 2]
+  if(grandParent === undefined){
+    return null;
+  }
+  return grandParent.getAttribute("id").split("_")[1];
+}
+
 function initTopBarButtonsForEditableDoc() {
   $('#close').click(function (e) {
     if (editable === 'EDIT_MODE') {
@@ -244,32 +257,37 @@ function initTopBarButtonsForEditableDoc() {
     }
   });
   if (fromNotebook) {
-    $('#close').attr('href', getDocumentViewUrl(fromNotebook, recordId, true));
+    $('#close').attr('href', getDocumentViewUrl(fromNotebook, recordId, getGrandParentFolderId(),true));
   }
 
   $('#save').click(function (e) {
     e.preventDefault();
     saveStructuredDocument(false, false);
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save" });
   });
 
   $('#saveClose').click(function (e) {
     e.preventDefault();
     saveStructuredDocument(true, true);
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save & Close" });
   });
 
   $('#saveView').click(function (e) {
     e.preventDefault();
     saveStructuredDocument(false, true);
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save & View" });
   });
 
   $('#saveClone').click(function (e) {
     e.preventDefault();
     saveCopyStructuredDocument();
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save & Clone" });
   });
 
   $('#saveNew').click(function (e) {
     e.preventDefault();
     saveNewStructuredDocument();
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save & New" });
   });
 
   $('#cancel').click(function (e) {
@@ -284,6 +302,7 @@ function initTopBarButtonsForEditableDoc() {
 
   initSaveAsTemplateDlg();
   $('#saveAsTemplateSaveMenuBtn, #saveAsTemplateBtn').click(function () {
+    RS.trackEvent("user:save:document:document_editor", { buttonLabel: "Save as Template" });
     openSaveAsTemplateDlg();
   });
 
@@ -741,6 +760,15 @@ $(document).ready(function () {
 
   $(document).on('click', '.commentIcon', function () {
     showCommentDialog(this, false);
+  });
+
+  // Analytics tracking for field editing
+  $(document).on('click', '.editButton', function () {
+    RS.trackEvent("user:start_edit:field:document_editor");
+  });
+
+  $(document).on('click', '.stopEditButton', function () {
+    RS.trackEvent("user:save:field:document_editor");
   });
 
   if (!isSigned && !isWitnessed) {

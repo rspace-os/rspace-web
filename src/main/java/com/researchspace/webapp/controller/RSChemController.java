@@ -10,6 +10,7 @@ import com.researchspace.model.dtos.chemistry.ChemElementDataDto;
 import com.researchspace.model.dtos.chemistry.ChemElementImageUpdateDto;
 import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.dtos.chemistry.ChemicalImageDTO;
+import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.field.ErrorList;
@@ -22,8 +23,10 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.io.IOUtils;
@@ -41,12 +44,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.ModelAndView;
 
 /** Methods related to chemical elements. */
 @Controller
 @RequestMapping({"/chemical", "/public/publicView/chemical"})
 public class RSChemController extends BaseController {
+
   @Autowired private ChemistryService chemistryService;
 
   /**
@@ -64,6 +67,17 @@ public class RSChemController extends BaseController {
     User subject = userManager.getAuthenticatedUserInSession();
     RSChemElement saved = chemistryService.saveChemicalElement(chemicalDataDTO, subject);
     return new AjaxReturnObject<>(saved);
+  }
+
+  /***
+   * A version of the above saveChemElement method, which accepts the chemical data as a @RequestBody
+   * rather than request params to avoid hitting uri limits for large chemical files.
+   */
+  @PostMapping("/save")
+  @ResponseBody
+  public RSChemElement save(@RequestBody ChemicalDataDTO chemicalDataDTO) throws IOException {
+    User subject = userManager.getAuthenticatedUserInSession();
+    return chemistryService.saveChemicalElement(chemicalDataDTO, subject);
   }
 
   /**
@@ -98,47 +112,79 @@ public class RSChemController extends BaseController {
    */
   @PostMapping("ajax/saveChemImage")
   @ResponseBody
-  public AjaxReturnObject<Boolean> saveChemImage(
-      @Valid ChemicalImageDTO chemImageDto, BindingResult error) throws IOException {
+  public AjaxReturnObject<Boolean> saveChemImage(ChemicalImageDTO chemImageDto, BindingResult error)
+      throws IOException {
     User subject = userManager.getAuthenticatedUserInSession();
     chemistryService.saveChemicalImage(chemImageDto, subject);
     return new AjaxReturnObject<>(true);
   }
 
-  /**
-   * Search a mol format structure on the database.
-   *
-   * @param chemQuery the search query term
-   * @return AjaxReturnObject<List < ChemSearchedItem>>
-   */
-  @PostMapping("ajax/searchChemElement")
-  @ResponseBody
-  public ModelAndView searchChemElement(
-      @RequestParam("chem") String chemQuery,
-      @RequestParam(name = "searchType", required = false, defaultValue = "SUBSTRUCTURE")
-          String searchType,
-      @RequestParam(name = "pageNumber", required = false, defaultValue = "0") int pageNumber,
-      @RequestParam(name = "pageSize", required = false, defaultValue = "10") int pageSize) {
-
-    log.info("Searching for chemical structure: {}", chemQuery);
-    if (pageSize <= 0) {
-      pageSize = PaginationCriteria.getDefaultResultsPerPage();
+  private ChemicalSearchResults getChemicalSearchResults(ChemicalSearchRequestDTO request) {
+    log.info("Searching for chemical structure: {}", request.searchInput);
+    if (request.pageSize <= 0) {
+      request.pageSize = PaginationCriteria.getDefaultResultsPerPage();
     }
 
     User user = userManager.getAuthenticatedUserInSession();
 
-    ChemicalSearchResults result =
-        chemistryService.searchChemicals(chemQuery, searchType, pageNumber, pageSize, user);
+    return chemistryService.searchChemicals(
+        request.searchInput, request.searchType, request.pageNumber, request.pageSize, user);
+  }
 
-    ModelAndView mav = new ModelAndView("chemSearchResults");
-    mav.addObject("searchResults", result.getPagedRecords());
-    mav.addObject("currentTime", System.currentTimeMillis());
-    mav.addObject("breadcrumbMap", result.getBreadcrumbMap());
-    mav.addObject("startHit", result.getStartHit());
-    mav.addObject("endHit", result.getEndHit());
-    mav.addObject("totalHitCount", result.getTotalHitCount());
-    mav.addObject("totalPageCount", result.getTotalPageCount());
-    return mav;
+  @PostMapping("/search")
+  public ChemSearchResultsPage searchChemicals(@RequestBody ChemicalSearchRequestDTO request) {
+    // default to substructure search
+    if (request.searchType == null
+        || !(request.searchType.equalsIgnoreCase("SUBSTRUCTURE")
+            || request.searchType.equalsIgnoreCase("EXACT"))) {
+      request.searchType = "SUBSTRUCTURE";
+    }
+    ChemicalSearchResults results = getChemicalSearchResults(request);
+
+    ChemSearchResultsPage page =
+        ChemSearchResultsPage.builder()
+            .hits(
+                results.getPagedRecords().stream()
+                    .map(
+                        item ->
+                            new ChemSearchHit(
+                                item.getRecord().getOid().toString(),
+                                item.getRecordName(),
+                                item.getChemId(),
+                                results
+                                    .getBreadcrumbMap()
+                                    .get(item.getRecordId())
+                                    .getAsStringPath(),
+                                item.getRecord().getOwner().getFullName(),
+                                item.getRecord().getModificationDateAsDate().toString()))
+                    .collect(Collectors.toList()))
+            .build();
+    page.setStartHit(results.getStartHit());
+    page.setEndHit(results.getEndHit());
+    page.setTotalHitCount(results.getTotalHitCount());
+    page.setTotalPageCount(results.getTotalPageCount());
+    return page;
+  }
+
+  @Data
+  @Builder
+  static class ChemSearchHit {
+    String globalId;
+    String recordName;
+    long chemId;
+    String breadcrumb;
+    String owner;
+    String lastModified;
+  }
+
+  @Data
+  @Builder
+  public static class ChemSearchResultsPage {
+    List<ChemSearchHit> hits;
+    Integer totalHitCount;
+    Integer totalPageCount;
+    int startHit;
+    int endHit;
   }
 
   /**
@@ -331,6 +377,19 @@ public class RSChemController extends BaseController {
     return new AjaxReturnObject<>(chemicalEditorInput);
   }
 
+  /***
+   * Returns the string contents of a chemistry file. Contents will be base64-encoded where the file is a binary format.
+   */
+  @GetMapping("file/contents")
+  @ResponseBody
+  public String getFileAsString(
+      @RequestParam("chemId") long chemId,
+      @RequestParam(required = false) Integer revision,
+      Principal principal) {
+    User subject = getUserByUsername(principal.getName());
+    return chemistryService.getChemicalFileContents(chemId, revision, subject);
+  }
+
   /**
    * Gets a map of key-value pairs for a given RSChemElement Id. <br>
    * If no such ChemElement exists for the given id, will return an error message in
@@ -351,11 +410,16 @@ public class RSChemController extends BaseController {
     User subject = getUserByUsername(principal.getName());
     Optional<ElementalAnalysisDTO> elementalAnalysis =
         chemistryService.getElementalAnalysis(chemId, revision, subject);
+    if (elementalAnalysis == null) {
+      log.info("No chem element found for id {} and revision {}", chemId, revision);
+      return new AjaxReturnObject<>(ErrorList.of("No chem element with id " + chemId));
+    }
     if (elementalAnalysis.isPresent()) {
       return new AjaxReturnObject<>(elementalAnalysis.get());
     } else {
-      log.info("No chem element found for id: {}", chemId);
-      return new AjaxReturnObject<>(ErrorList.of("No chem element with id " + chemId));
+      log.info(
+          "Couldn't retrieve elementalAnalysis for chemId {} and revision {}", chemId, revision);
+      return new AjaxReturnObject<>(ErrorList.of("Couldn't retrieve info for chemId: " + chemId));
     }
   }
 
@@ -366,5 +430,6 @@ public class RSChemController extends BaseController {
     private Long chemId;
     private String chemElements;
     private ChemElementsFormat format;
+    private Long chemFileId;
   }
 }

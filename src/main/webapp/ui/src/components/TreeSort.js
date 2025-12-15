@@ -2,14 +2,9 @@ import React, { useEffect } from "react";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import styled from "@emotion/styled";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSort,
-  faSortAmountUpAlt,
-  faSortAmountDown,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(faSort, faSortAmountUpAlt, faSortAmountDown);
+import { faSortAmountUpAlt } from "@fortawesome/free-solid-svg-icons/faSortAmountUpAlt";
+import { faSortAmountDown } from "@fortawesome/free-solid-svg-icons/faSortAmountDown";
 
 const SortWrapper = styled.div`
   display: flex;
@@ -26,8 +21,10 @@ const SortWrapper = styled.div`
     height: 100%;
     padding: 0px;
     border-radius: 4px;
-    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2),
-      0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12);
+    box-shadow:
+      0px 1px 3px 0px rgba(0, 0, 0, 0.2),
+      0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+      0px 2px 1px -1px rgba(0, 0, 0, 0.12);
 
     ::before,
     ::after {
@@ -60,12 +57,13 @@ export default function TreeSort(props) {
   function applySettings(order, sort) {
     updateClientUISetting("treeSort", order + "." + sort);
     sortFileTreeBrowser(order, sort);
+    RS.trackEvent("user:sorts:file_tree:document_editor", { order, sort });
   }
 
   useEffect(() => {
-    $(function () {
+    $(() => {
       if (clientUISettings) {
-        let [order, sort] = clientUISettings.treeSort.split(".");
+        const [order, sort] = clientUISettings.treeSort.split(".");
         setOrderBy(order || "name");
         setSortOrder(sort || "DESC");
       }
@@ -101,14 +99,14 @@ export default function TreeSort(props) {
       >
         <MenuItem value="ASC" data-test-id="sort-asc">
           <FontAwesomeIcon
-            icon="sort-amount-up-alt"
+            icon={faSortAmountUpAlt}
             style={{ marginRight: "10px" }}
           />
           Ascending
         </MenuItem>
         <MenuItem value="DESC" data-test-id="sort-desc">
           <FontAwesomeIcon
-            icon="sort-amount-down"
+            icon={faSortAmountDown}
             style={{ marginRight: "10px" }}
           />
           Descending

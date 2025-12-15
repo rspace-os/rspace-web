@@ -2,7 +2,7 @@ import Result from "../util/result";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 import React from "react";
 import Popover from "@mui/material/Popover";
-import Alert from "@mui/lab/Alert";
+import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import { styled } from "@mui/material/styles";
 import type { Progress } from "../util/progress";
@@ -23,11 +23,8 @@ export const IsInvalid = (reason: string): ValidationResult =>
   Result.Error([new Error(reason)]);
 
 export const allAreValid = (
-  v: ReadonlyArray<ValidationResult>
-): ValidationResult =>
-  Result.all(...(v as [ValidationResult, ...ValidationResult[]])).map(
-    () => null
-  );
+  v: ReadonlyArray<ValidationResult>,
+): ValidationResult => Result.all(...v).map(() => null);
 
 type ValidatingSubmitButtonArgs = {
   children: React.ReactNode;
@@ -35,6 +32,7 @@ type ValidatingSubmitButtonArgs = {
   validationResult: ValidationResult;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   progress?: Progress;
+  color?: "primary" | "callToAction";
 };
 
 const StyledPopover = styled(Popover)(() => ({
@@ -52,7 +50,7 @@ const StyledButton = styled(
     animating: boolean;
   } & Omit<React.ComponentProps<typeof SubmitSpinnerButton>, "animating">) => (
     <SubmitSpinnerButton {...rest} />
-  )
+  ),
 )(({ animating }) => ({
   "@keyframes wiggle": {
     "0%, 7%": {
@@ -91,6 +89,7 @@ export default function ValidatingSubmitButton({
   validationResult,
   onClick,
   progress,
+  color = "callToAction",
 }: ValidatingSubmitButtonArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
   const [playAnimation, setPlayAnimation] = React.useState(false);
@@ -123,6 +122,7 @@ export default function ValidatingSubmitButton({
           }, 1000);
         }}
         animating={playAnimation}
+        color={color}
       />
       <StyledPopover
         open={Boolean(anchorEl)}
@@ -158,7 +158,7 @@ export default function ValidatingSubmitButton({
                   {error.message}
                 </Alert>
               </Fade>
-            ))
+            )),
           )}
         </Stack>
       </StyledPopover>

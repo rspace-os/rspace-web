@@ -17,6 +17,7 @@ import com.researchspace.model.record.DocumentInitializationPolicy;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.Record;
+import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.FolderRecordPair;
@@ -72,17 +73,16 @@ public interface RecordManager {
    * @param documentId
    * @param user
    * @return The parent Folder of this document which has the same owner as the record, or <code>
-   *     null</code> if <code>user</code> is not the document's owner.
+   * null</code> if <code>user</code> is not the document's owner.
    */
   Folder getParentFolderOfRecordOwner(Long documentId, User user);
 
   /**
-   * Gets the record specified by the given id casted to the specified
-   * subclass. Doesn't check permissions. <br/>
-   * Equivalent to <code>getAsSubclass(long id, Class<T> clazz, false);
+   * Gets the record specified by the given id casted to the specified subclass. Doesn't check
+   * permissions. <br/> Equivalent to <code>getAsSubclass(long id, Class<T> clazz, false);
+   *
    * @param id
-   * @param clazz
-   *            The class to cast to.
+   * @param clazz The class to cast to.
    * @return
    */
   <T extends Record> T getAsSubclass(long id, Class<T> clazz);
@@ -199,7 +199,7 @@ public interface RecordManager {
    *     parents so this needs to be specified
    * @param user The subject
    * @return ServiceOperationResult<BaseRecord> with succeeded = <code>true</code> if moved, <code>
-   *     false</code> otherwise
+   * false</code> otherwise
    * @throws AuthorizationException if not permitted
    */
   ServiceOperationResult<BaseRecord> move(Long id, Long targetParent, Long currParentId, User user);
@@ -261,10 +261,9 @@ public interface RecordManager {
    *
    * @param recordId
    * @param user
-   * @param activeUsers
    * @return
    */
-  EditStatus requestRecordView(Long recordId, User user, UserSessionTracker activeUsers);
+  EditStatus requestRecordView(Long recordId, User user);
 
   /**
    * Creates and persists a new empty {@link StructuredDocument}, using the {@link
@@ -530,7 +529,7 @@ public interface RecordManager {
    * @return The media folder, or <code>null</code> if it does not exist and it could not be
    *     created.
    */
-  Folder getGallerySubFolderForUser(String folderName, User user);
+  Folder getGalleryMediaFolderForUser(String folderName, User user);
 
   /**
    * Unlock all the locked records using RecordEditorTracker.
@@ -631,8 +630,30 @@ public interface RecordManager {
    */
   Long getRecordCountForUser(RecordTypeFilter recordTypes, User user);
 
+  List<Long> getAllNonTemplateNonTemporaryStrucDocIdsOwnedByUser(User user);
+
   List<BaseRecord> getOntologyTagsFilesForUserCalled(User user, String userTagsontologyDocument);
 
   List<StructuredDocument> getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(
       String uName);
+
+  /**
+   * This method added to address support-522 ticket: Assuming the document has just one parent,
+   * this parent is updated to be a document owner's Workspace, with appropriate permission change.
+   *
+   * @return whether the move/permission change action was successful
+   */
+  boolean forceMoveDocumentToOwnerWorkspace(StructuredDocument userDoc);
+
+  boolean isSharedNotebookWithoutCreatePermission(User user, Folder folder);
+
+  boolean isSharedFolderOrSharedNotebookWithoutCreatePermission(User user, Folder folder);
+
+  RecordInformation decorateRecordInfo(
+      RecordInformation recordInfo,
+      User user,
+      Folder parentFolder,
+      boolean isOnRoot,
+      BaseRecord baseRecord,
+      String mediaType);
 }

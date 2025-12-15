@@ -230,7 +230,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
 
     Folder root = initUser(u);
     Notebook nb = createNotebookWithNEntries(root.getId(), u.getUsername() + "nb", 1, u);
-    Long nbEntryId = folderMgr.getRecordIds(nb).get(0);
+    Long nbEntryId = folderMgr.getFolderChildrenIds(nb).get(0);
 
     // start editing
     recordMgr.requestRecordEdit(nbEntryId, u, anySessionTracker());
@@ -239,7 +239,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     AjaxReturnObject<String> cloneUrl =
         controller.saveCopyStructuredDocument(
             nbEntryId, "entry", new MockPrincipal(u.getUsername()));
-    Long clonedEntryId = folderMgr.getRecordIds(nb).get(1);
+    Long clonedEntryId = folderMgr.getFolderChildrenIds(nb).get(1);
     assertNotEquals(nbEntryId, clonedEntryId);
 
     String expectedCloneUrl =
@@ -254,7 +254,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     // save and new
     AjaxReturnObject<String> newUrl =
         controller.saveNewStructuredDocument(nbEntryId, new MockPrincipal(u.getUsername()));
-    Long newEntryId = folderMgr.getRecordIds(nb).get(2);
+    Long newEntryId = folderMgr.getFolderChildrenIds(nb).get(2);
     assertNotEquals(clonedEntryId, newEntryId);
 
     String expectedNewUrl =
@@ -589,20 +589,19 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     // for user, the doc should open it in document view
     logoutAndLoginAs(user);
     String documentViewUrl = StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_VIEW_NAME;
-    String notebookRedirectUrl = controller.redirectToNotebookView(doc, "");
     ModelAndView userOpensDocument =
         controller.openDocument(
             doc.getId(), "", false, false, null, modelTss, mockHttpSession, user::getUsername);
     assertEquals(documentViewUrl, userOpensDocument.getViewName());
 
-    // for pi, who sees it as a part of their notebook, should open in notebook view
+    // for pi, still opening in document view
     logoutAndLoginAs(pi);
     ModelAndView piOpensDocument =
         controller.openDocument(
             doc.getId(), "", false, false, null, modelTss, mockHttpSession, pi::getUsername);
-    assertEquals(notebookRedirectUrl, piOpensDocument.getViewName());
+    assertEquals(documentViewUrl, piOpensDocument.getViewName());
 
-    // for second user, who sees it as a part of pi's shared notebook, should open in notebook view
+    // for second user still opening in document view
     logoutAndLoginAs(secondUser);
     ModelAndView secondUserOpensDocument =
         controller.openDocument(
@@ -614,7 +613,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
             modelTss,
             mockHttpSession,
             secondUser::getUsername);
-    assertEquals(notebookRedirectUrl, secondUserOpensDocument.getViewName());
+    assertEquals(documentViewUrl, secondUserOpensDocument.getViewName());
 
     // for other user, who sees it as individually shared doc, should open in document view
     logoutAndLoginAs(otherUser);

@@ -1,7 +1,7 @@
 import CustomToggleButtonGroup from "../../components/CustomToggleButtonGroup";
 import CustomToggleButton from "../../components/CustomToggleButton";
 import React from "react";
-import useViewportDimensions from "../../util/useViewportDimensions";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 

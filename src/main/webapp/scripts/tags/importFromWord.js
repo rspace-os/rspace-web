@@ -20,12 +20,13 @@ function initWordChooserDlg() {
         buttons: {
             Cancel: function() {$(this).dialog('close');},
             Import: function() {
-            	var fileType = $(this).data('config').fileType
-                var formSubmitted = _submitWordImportForm(fileType);
-                if (formSubmitted) {
-                    RS.blockingProgressBar.show({msg: "Importing files...", progressType:"rs-wordImporter"});
-                    $(this).dialog('close');
-                }
+              var fileType = $(this).data('config').fileType;
+              var formSubmitted = _submitWordImportForm(fileType);
+              if (formSubmitted) {
+                  RS.blockingProgressBar.show({msg: "Importing files...", progressType:"rs-wordImporter"});
+                  $(this).dialog('close');
+              }
+              RS.trackEvent("user:import:from_doc:workspace", { fileType });
             }
         }
     });
@@ -132,6 +133,7 @@ function _submitWordImportForm(fileType) {
     $('#wordImportFormRecordToReplace').val(recordToReplaceId);
 
     var formData = new FormData($form[0]);
+    formData.append("grandParentId", getGrandParentFolderId());
     var jqxhr = $.ajax({
        url: '/workspace/editor/structuredDocument/ajax/createFromWord/' + targetFolderId,
        type: 'POST',

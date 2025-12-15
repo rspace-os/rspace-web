@@ -5,7 +5,6 @@ import styled from "@emotion/styled";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import Input from "@mui/material/Input";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
@@ -18,16 +17,10 @@ import CardActions from "@mui/material/CardActions";
 import { CardWrapper } from "../../../styles/CommonStyles.js";
 import DateField from "../../../components/Inputs/DateField";
 import Grid from "@mui/material/Grid";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlus,
-  faTrashAlt,
-  faSave,
-  faTimes,
-  faInfoCircle,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(faPlus, faTrashAlt, faSave, faTimes, faInfoCircle);
+import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons/faTrashAlt";
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons/faInfoCircle";
 
 import FilePicker from "./RecordSelect/FilePicker";
 import UserSelect from "./UserSelect/UserSelect";
@@ -90,8 +83,8 @@ class AdvancedSearch extends React.Component {
   }
 
   componentDidMount = () => {
-    let toolbar = this;
-    $(document).on("click", "#resetSearch", function (e) {
+    const toolbar = this;
+    $(document).on("click", "#resetSearch", (e) => {
       toolbar.reset();
     });
   };
@@ -102,7 +95,7 @@ class AdvancedSearch extends React.Component {
 
   setQueries = (queries) => {
     this.setState({
-      queries: queries,
+      queries,
     });
   };
 
@@ -115,11 +108,11 @@ class AdvancedSearch extends React.Component {
   };
 
   handleChange = (idx, input) => (event) => {
-    let value = event.target.value;
+    const value = event.target.value;
     let queries = this.state.queries;
 
     if (value == "records") {
-      let selected = getSelectedGlobalIds();
+      const selected = getSelectedGlobalIds();
 
       this.setState({
         queries: update(queries, {
@@ -127,7 +120,8 @@ class AdvancedSearch extends React.Component {
         }),
       });
       return;
-    } else if (input == "filter") {
+    }
+    if (input == "filter") {
       queries = update(queries, {
         [idx]: { term: { $set: "" } },
       });
@@ -191,6 +185,10 @@ class AdvancedSearch extends React.Component {
     workspaceSettings.pageNumber = 0;
 
     doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
+    RS.trackEvent("user:search:advanced:workspace", {
+      options: workspaceSettings.options,
+      operator: workspaceSettings.operator,
+    });
   };
 
   formatTerm = (query) => {
@@ -200,27 +198,27 @@ class AdvancedSearch extends React.Component {
         query.to,
         23,
         59,
-        59
+        59,
       )}`;
-    } else if (query.filter == "records") {
-      return query.term.join("; ");
-    } else {
-      return query.term;
     }
+    if (query.filter == "records") {
+      return query.term.join("; ");
+    }
+    return query.term;
   };
 
   toISO = (date, hours, minutes, seconds) => {
     if (typeof date === "string") {
       return date;
-    } else if (date) {
+    }
+    if (date) {
       date.setHours(hours);
       date.setMinutes(minutes);
       date.setSeconds(seconds);
 
       return date.toISOString();
-    } else {
-      return null;
     }
+    return null;
   };
 
   validateQueries = () => {
@@ -229,15 +227,15 @@ class AdvancedSearch extends React.Component {
     let queries = this.state.queries;
 
     this.state.queries.map((query, idx) => {
-      let isSimple = [
+      const isSimple = [
         "fullText",
         "name",
         "form",
         "template",
         "attachment",
       ].includes(query.filter);
-      let isSelectable = ["owner", "tag"].includes(query.filter);
-      let isScopeRecords = query.filter == "records";
+      const isSelectable = ["owner", "tag"].includes(query.filter);
+      const isScopeRecords = query.filter == "records";
 
       if (isSimple) {
         if (query.term.length >= 2) {
@@ -280,11 +278,11 @@ class AdvancedSearch extends React.Component {
 
     this.setState(
       {
-        queries: queries,
+        queries,
       },
       () => {
         if (valid) this.submitSearch();
-      }
+      },
     );
   };
 
@@ -317,7 +315,7 @@ class AdvancedSearch extends React.Component {
         </td>
         <td className="search-term">
           {["fullText", "name", "form", "template", "attachment"].includes(
-            query.filter
+            query.filter,
           ) && (
             <Searchbox
               idx={idx}
@@ -395,7 +393,7 @@ class AdvancedSearch extends React.Component {
                 onClick={() => this.deleteQuery(idx)}
                 data-test-id={`a-search-rmv-${idx}`}
               >
-                <FontAwesomeIcon icon="trash-alt" />
+                <FontAwesomeIcon icon={faTrashAlt} />
               </IconButton>
             </Tooltip>
           )}
@@ -405,7 +403,7 @@ class AdvancedSearch extends React.Component {
                 onClick={this.addNewQuery}
                 data-test-id={`a-search-query-add`}
               >
-                <FontAwesomeIcon icon="plus" />
+                <FontAwesomeIcon icon={faPlus} />
               </IconButton>
             </Tooltip>
           )}
@@ -441,7 +439,7 @@ class AdvancedSearch extends React.Component {
                     <div>
                       Satisfy all conditions
                       {this.state.queries.findIndex(
-                        (q) => q.filter == "records"
+                        (q) => q.filter == "records",
                       ) != -1 && (
                         <Tooltip title="At least one of the 'Within records' conditions will always be satisfied.">
                           <IconButton
@@ -453,7 +451,7 @@ class AdvancedSearch extends React.Component {
                               padding: "0px",
                             }}
                           >
-                            <FontAwesomeIcon icon="info-circle" />
+                            <FontAwesomeIcon icon={faInfoCircle} />
                           </IconButton>
                         </Tooltip>
                       )}
@@ -475,7 +473,7 @@ class AdvancedSearch extends React.Component {
                     <div>
                       Satisfy at least one condition
                       {this.state.queries.findIndex(
-                        (q) => q.filter == "records"
+                        (q) => q.filter == "records",
                       ) != -1 && (
                         <Tooltip title="At least one of the 'Within records' conditions will always be satisfied.">
                           <IconButton
@@ -487,7 +485,7 @@ class AdvancedSearch extends React.Component {
                               padding: "0px",
                             }}
                           >
-                            <FontAwesomeIcon icon="info-circle" />
+                            <FontAwesomeIcon icon={faInfoCircle} />
                           </IconButton>
                         </Tooltip>
                       )}

@@ -108,10 +108,11 @@ public class ApiFieldsHelper {
         throw new IllegalStateException("couldn't find media file for fileId " + fileId);
       }
       if (!permUtils.isRecordAccessPermitted(user, linkedItem, PermissionType.READ)) {
+        log.warn("Unauthorized read attempt for resource [{}]", linkedItem.getGlobalIdentifier());
         SECURITY_LOG.warn(
-            "Unauthorised API call by user {} to access resource {}",
+            "Unauthorised API call by user [{}] to resource [{}]",
             user.getUsername(),
-            linkedItem.getId());
+            linkedItem.getGlobalIdentifier());
       }
       attachmentMarkerFragmentsAndLinkedItems.put(attachmentMarkerFragment, linkedItem);
       if (linkedItem.isMediaRecord()) {
@@ -407,9 +408,9 @@ public class ApiFieldsHelper {
           if (!apiBetaAllowUnauthorizedLinks
               && !permUtils.isRecordAccessPermitted(user, linkedItem, PermissionType.READ)) {
             SECURITY_LOG.warn(
-                "Unauthorised API call by user {} to access resource {}",
+                "Unauthorised API call by user [{}] to link resource [{}]",
                 user.getUsername(),
-                linkedItem.getId());
+                linkedItem.getGlobalIdentifier());
             return "" + fileId;
           }
         } catch (DataAccessException e) {

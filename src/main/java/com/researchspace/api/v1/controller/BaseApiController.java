@@ -42,12 +42,11 @@ public class BaseApiController implements ServletContextAware {
   public static final String DOCUMENTS_ENDPOINT = "/documents";
   public static final String FOLDERS_ENDPOINT = "/folders";
   public static final String FILES_ENDPOINT = "/files";
+  public static final String SNIPPETS_ENDPOINT = "/snippets";
   public static final String FOLDER_TREE_ENDPOINT = "/folders/tree";
   public static final String EVENTS_ENDPOINT = "/activity";
 
   public static final String FORMS_ENDPOINT = "/forms";
-  public static final String SHARE_ENDPOINT = "/share";
-  public static final String GROUPS_ENDPOINT = "/groups";
   public static final String EXPORT_INTERNAL_ENDPOINT = "/export";
   public static final String JOBS_INTERNAL_ENDPOINT = "/jobs";
 

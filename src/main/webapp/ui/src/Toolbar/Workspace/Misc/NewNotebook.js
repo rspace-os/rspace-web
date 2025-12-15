@@ -8,11 +8,13 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
+import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 
 export default function NewNotebook() {
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const [error, setError] = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
 
   useEffect(() => {
     $(document).on("click", "#createNotebook", () => {
@@ -31,20 +33,22 @@ export default function NewNotebook() {
   }
 
   function handleSubmit() {
-    let form = $("<form></form>");
+    setLoading(true);
+    const form = $("<form></form>");
     form.attr("method", "POST");
     form.attr(
       "action",
-      "/workspace/create_notebook/" + workspaceSettings.parentFolderId
+      "/workspace/create_notebook/" + workspaceSettings.parentFolderId,
     );
     form.append(
       $(`<input name="notebookNameField" value="${name}"/>`).attr(
         "type",
-        "hidden"
-      )
+        "hidden",
+      ),
     );
     $("body").append(form);
     form.submit();
+    RS.trackEvent("user:create:notebook:workspace");
   }
 
   const focusUsernameInputField = (input) => {
@@ -88,13 +92,12 @@ export default function NewNotebook() {
         >
           Cancel
         </Button>
-        <Button
+        <SubmitSpinnerButton
+          label="Create"
+          loading={loading}
+          disabled={loading}
           onClick={validateForm}
-          color="primary"
-          data-test-id="new-notebook-submit"
-        >
-          Create
-        </Button>
+        />
       </DialogActions>
     </Dialog>
   );

@@ -18,13 +18,13 @@ import com.researchspace.archive.ImmutableExportRecordList;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.DiskSpaceLimitException;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -88,7 +88,7 @@ public class RelativeLinkProcessorTest extends SpringTransactionalTest {
 
     // now delete the gallery item folder. it will be copied into archive folder
     deletionMgr.deleteRecord(
-        recordMgr.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, user).getId(),
+        recordMgr.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user).getId(),
         media.getId(),
         user);
     // refresh object following deletion to pick up deleted state.

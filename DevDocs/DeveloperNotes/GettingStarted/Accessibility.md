@@ -435,7 +435,7 @@ issues with HTML written using JSX notation.
 
 #### Pros
 
-* It requires to no work to use, it just runs as part of our existing eslint
+* It requires no work to use, it just runs as part of our existing eslint
   workflow.
 * It can catch issues like missing alt attributes and invalid aria- attributes
 
@@ -489,6 +489,21 @@ describe("some tests", () => {
   colour contrast.
 
 
+### Playwright Component Tests
+
+[Playwright Component Tests][pwct] allow for one react component to be tested in an isolated environment that still runs in a browser. Given accessibility is inherently tied to the browser this will pretty much always trump Jest. In most instances, this is the best tool to assert accessibility.
+
+#### Pros
+
+* Renders code, so can assert behaviour like keyboard controls and colour contrast.
+* Runs as part of the Jenkins build so any failure will be alerted before merging.
+
+#### Cons
+
+* Slower to run than Jest, so its not really feasible to run these tests for every possible input value/state.
+* Some of the inviolations are simply a result of rendering a component in isolation rather than as a full page
+
+
 ### Cypress
 
 Cypress runs the tests in an actual browser so can assert even more dynamic
@@ -497,12 +512,13 @@ behaviour.
 #### Pros
 
 * Renders code, so can assert behaviour like keyboard controls.
+* Renders the complete page so any failures will be exactly as the user experiences it.
 * Is also run by jenkins so we'll be alerted to any breakage.
 
 #### Cons
 
-* Requires quite some time to write and maintain.
 * Takes some time to run, and the feedback cycle is quite long.
+* Jenkins build only runs nightly, so feedback is delayed.
 
 
 ### Lighthouse
@@ -519,7 +535,7 @@ accessibility issues. For more information on how to use, see
 #### Cons
 
 * Only looks at page load, so can't check other states of the system
-* Can't be run automatically
+* Can't be directly to check specific parts of the codebase
 
 
 ### Manual audit
@@ -637,11 +653,9 @@ IconButton wrapped in a CustomTooltip as the former does the aria-label
 automatically.
 
 
-### Asserting contrast of theme colours
+### Asserting sufficient contrast
 
-Write tests asserting [relativeLuminosity][] of colours defined in the theme,
-and then just refer to those colours. This way, we can move the contrast
-checking into an automated step of verification.
+Write tests asserting colour contrast using Playwright Component Testing and AxeBuilder. Mock `window.matchMedia` to have the component render with high-contrast set to ensure AAA is met. An example is [ValidatingSubmitButton.spec.tsx].
 
 
 ## More links
@@ -706,3 +720,5 @@ Here are just an assortment of more helpful links
 [consistent-help]: https://www.w3.org/TR/WCAG22/#consistent-help
 [wcag2.2-new]: https://www.w3.org/TR/WCAG22/#new-features-in-wcag-2-2
 [redundant-entry]: https://www.w3.org/TR/WCAG22/#redundant-entry
+[pwct]: https://playwright.dev/docs/test-components
+[ValidatingSubmitButton.spec.tsx]: https://github.com/rspace-os/rspace-web/blob/5bf4188f080147eee9e1b44d4643116ebbb74ebe/src/main/webapp/ui/src/components/ValidatingSubmitButton.spec.tsx#L158

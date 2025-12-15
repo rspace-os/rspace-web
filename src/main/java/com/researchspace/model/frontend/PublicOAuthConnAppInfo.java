@@ -11,7 +11,7 @@ import lombok.NonNull;
 public class PublicOAuthConnAppInfo {
   @NonNull String clientName;
   @NonNull String clientId;
-  @NonNull String scope;
+  @NonNull String scope = "all";
 
   public PublicOAuthConnAppInfo(OAuthToken token, PublicOAuthAppInfo appInfo) {
     if (!token.getClientId().equals(appInfo.getClientId())) {
@@ -20,6 +20,5 @@ public class PublicOAuthConnAppInfo {
 
     this.clientName = appInfo.getAppName();
     this.clientId = token.getClientId();
-    this.scope = token.getScope();
   }
 }

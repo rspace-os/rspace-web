@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.ProductType;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
@@ -63,15 +64,16 @@ public class VerificationPasswordController extends BaseController {
   @ResponseBody
   public AjaxReturnObject<String> setVerificationPassword(
       @RequestParam("newVerificationPassword") String newVerificationPassword,
-      @RequestParam("confirmVerificationPassword") String confirmVerificationPassword) {
+      @RequestParam("confirmVerificationPassword") String confirmVerificationPassword,
+      HttpServletRequest request) {
 
     User user = userManager.getAuthenticatedUserInSession();
 
     if (verificationPasswordValidator.isVerificationPasswordSet(user)) {
       SECURITY_LOG.warn(
-          " {} - [{}] attempted to set verification password, but it has already been set.",
-          user.getFullName(),
-          user.getId());
+          "User [{}] attempted to set verification password, from {}, but it has already been set",
+          user.getUsername(),
+          RequestUtil.remoteAddr(request));
       return new AjaxReturnObject<>("Verification password has already been set.", null);
     }
 
@@ -87,9 +89,9 @@ public class VerificationPasswordController extends BaseController {
             newVerificationPassword, confirmVerificationPassword, user.getUsername());
     if (!UserValidator.FIELD_OK.equals(checkPasswordResult)) {
       SECURITY_LOG.warn(
-          "{} [{}] unsuccessfully attempted to set verification password.",
-          user.getFullName(),
-          user.getId());
+          "User [{}] unsuccessfully attempted to set verification password, from {}",
+          user.getUsername(),
+          RequestUtil.remoteAddr(request));
       return new AjaxReturnObject<>(checkPasswordResult, null);
     }
 
@@ -98,8 +100,7 @@ public class VerificationPasswordController extends BaseController {
     user.setVerificationPassword(encryptedPass);
     userManager.saveUser(user);
 
-    SECURITY_LOG.info(
-        "{} [{}] successfully set verification password", user.getFullName(), user.getId());
+    SECURITY_LOG.info("User [{}] successfully set verification password", user.getUsername());
     return new AjaxReturnObject<>("Verification password set successfully", null);
   }
 
@@ -147,9 +148,10 @@ public class VerificationPasswordController extends BaseController {
   @PostMapping("/verificationPasswordResetReply")
   @IgnoreInLoggingInterceptor(ignoreRequestParams = {"pwd", "confirmPwd"})
   public ModelAndView submitPasswordResetPage(
-      @ModelAttribute PasswordResetCommand cmd, BindingResult errors) throws Exception {
+      @ModelAttribute PasswordResetCommand cmd, BindingResult errors, HttpServletRequest request)
+      throws Exception {
     return passwordResetEmailHandler
-        .submitResetPage(cmd, errors)
+        .submitResetPage(cmd, errors, request)
         .addObject("passwordType", PasswordType.VERIFICATION_PASSWORD);
   }
 }

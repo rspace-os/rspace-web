@@ -8,7 +8,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import Button from "@mui/material/Button";
-import TimeAgoCustom from "../../components/TimeAgoCustom";
+import TimeAgoCustom from "@/components/TimeAgoCustom";
 import { stableSort, getSorting } from "../../util/table";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import axios from "@/common/axios";
@@ -27,7 +27,7 @@ export default function GroupActivity(props) {
   const [orderBy, setOrderBy] = React.useState("timestamp");
 
   const loadUserActivity = () => {
-    let url = `/groups/ajax/membershipEventsByUser/${props.userId}`;
+    const url = `/groups/ajax/membershipEventsByUser/${props.userId}`;
     axios
       .get(url)
       .then((response) => {
@@ -94,7 +94,7 @@ export default function GroupActivity(props) {
                           </TableCell>
                         </TableRow>
                       );
-                    }
+                    },
                   )}
                 </TableBody>
               </Table>

@@ -16,16 +16,16 @@
 </script>
 
 <title>
-  <spring:message code="workspace.title" /> 
+  <spring:message code="workspace.title" />
 </title>
 
 <head>
   <meta name="heading" content="Workspace" />
   <link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace.css'/>" />
-  
+
   <!-- moved to default.jsp -->
   <!-- <link rel="stylesheet" href="<c:url value='/styles/bootstrap-custom-flat.css'/>" /> -->
-  
+
   <link rel="stylesheet" href="<c:url value='/styles/dropbox.css'/>" />
   <link rel="stylesheet" href="<c:url value='/styles/journal.css'/>" />
   <link rel="stylesheet" href="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" />
@@ -63,9 +63,9 @@
   <!-- <script src="<c:url value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script> -->
 </head>
 
-<div 
+<div
   id="toolbar2"
-  data-pio-enabled="${pioEnabled}" 
+  data-pio-enabled="${pioEnabled}"
   data-evernote-enabled="${evernoteEnabled}"
   data-aspose-enabled="${asposeEnabled}"
   data-labgroups-folder-id="${labgroupsFolderId}">
@@ -74,7 +74,7 @@
 <div id="createDocForm">
   <!-- Importing script for word files manipulation -->
   <axt:importFromWord isNotebook="${isNotebook}" parentId="${recordId}"/>
-  <axt:importFromProtocolsIo />
+  <axt:importFromProtocolsIo parentId="${recordId}"/>
 
   <%--
        And also some strange stuff happens here.
@@ -139,7 +139,7 @@ $(document).ready(function() {
   //to activate bootstrap.js dropdown component without conflicts with jquery ui.
   //It is located in the end because otherwise jquery ui components overrides it
   $('.dropdown-toggle').dropdown();
-  
+
 });
 </script>
 

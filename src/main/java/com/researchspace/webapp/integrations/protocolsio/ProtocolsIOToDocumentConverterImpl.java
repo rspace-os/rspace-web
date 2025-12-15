@@ -67,27 +67,31 @@ public class ProtocolsIOToDocumentConverterImpl extends AbstractExternalDocImpor
   }
 
   @Override
-  public StructuredDocument generateFromProtocol(Protocol toImport, User subject) {
+  public StructuredDocument generateFromProtocol(
+      Protocol toImport, User subject, Long parentFolderId) {
     String html = generateHtml(toImport);
 
-    return saveDocument(toImport, html, subject);
+    return saveDocument(toImport, html, subject, parentFolderId);
   }
 
-  private StructuredDocument saveDocument(Protocol toImport, String html, User subject) {
-    StructuredDocument newDocument = createAPioDocument(toImport, subject);
+  private StructuredDocument saveDocument(
+      Protocol toImport, String html, User subject, Long parentFolderId) {
+    StructuredDocument newDocument = createAPioDocument(toImport, subject, parentFolderId);
     newDocument = processHtml(html, newDocument, subject);
 
     publisher.publishEvent(new GenericEvent(subject, newDocument, AuditAction.CREATE));
     return newDocument;
   }
 
-  private StructuredDocument createAPioDocument(Protocol toImport, User subject) {
+  private StructuredDocument createAPioDocument(
+      Protocol toImport, User subject, Long parentFolderId) {
     RSForm form =
         formMgr.getCurrentSystemForm("ProtocolsIO").orElseGet(() -> createProtocolsIOForm(subject));
 
-    Folder importFolder = folderMgr.getImportsFolder(subject);
+    Long importFolderId =
+        parentFolderId != null ? parentFolderId : folderMgr.getImportsFolder(subject).getId();
     return recordMgr.createNewStructuredDocument(
-        importFolder.getId(),
+        importFolderId,
         form.getId(),
         toImport.getTitle(),
         subject,

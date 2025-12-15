@@ -43,6 +43,7 @@ function _initialiseExtMessageRequestDlg(recordIdsGetter, appName) {
   	                } else if (result.errorMsg) {
   	                    $().toastmessage('showErrorToast', getValidationErrorString(result.errorMsg));
   	                }
+	                    RS.trackEvent('user:external_message:sent:' + appName.toLowerCase());
   			    });
   	            jqxhr.fail(function() {
   	                RS.ajaxFailed("Sending message", false, jqxhr);

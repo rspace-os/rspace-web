@@ -6,6 +6,7 @@ import com.researchspace.dao.OAuthTokenDao;
 import com.researchspace.model.User;
 import com.researchspace.model.frontend.PublicOAuthAppInfo;
 import com.researchspace.model.oauth.OAuthToken;
+import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.OAuthAppManager;
@@ -16,7 +17,6 @@ import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import java.time.Instant;
-import java.time.Period;
 import java.time.temporal.TemporalAmount;
 import java.util.Date;
 import java.util.List;
@@ -41,12 +41,33 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
   @Autowired IPropertyHolder properties;
 
   @Override
+  public ServiceOperationResult<Void> validateToken(String token) {
+    if (StringUtils.isEmpty(token)) {
+      return new ServiceOperationResult<>(null, false, "token empty or missing");
+    }
+    boolean isJwtToken = jwtToken.matcher(token).matches();
+    if (isJwtToken) {
+      for (String section : token.split("\\.")) {
+        if (!Base64.isBase64(section)) {
+          return new ServiceOperationResult<>(null, false, section + " not in base64 format");
+        }
+      }
+    } else {
+      if (token.length() != TOKEN_LENGTH) {
+        return new ServiceOperationResult<>(null, false, "token length incorrect");
+      }
+      if (!Base64.isBase64(token)) {
+        return new ServiceOperationResult<>(null, false, "token not in base64 format");
+      }
+    }
+    return new ServiceOperationResult<>(null, true);
+  }
+
+  @Override
   public ServiceOperationResult<OAuthToken> authenticate(String accessToken) {
-    boolean isJwt = jwtToken.matcher(accessToken).matches();
-
-    if (isJwt) {
+    boolean isJwtToken = jwtToken.matcher(accessToken).matches();
+    if (isJwtToken) {
       Jws<Claims> jws;
-
       try {
         jws =
             Jwts.parserBuilder()
@@ -65,37 +86,34 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
         // This could only happen if someone was "pentesting" or pasted the token badly
         return new ServiceOperationResult<>(null, false, "Bad JWT token!");
       }
-    } else {
-      String hash = CryptoUtils.hashToken(accessToken);
-      Optional<OAuthToken> tokenFound = tokenDao.findByAccessTokenHash(hash);
-      if (tokenFound.isPresent()) {
-        OAuthToken token = tokenFound.get();
-        if (token.getExpiryTime().isAfter(Instant.now())) {
-          return new ServiceOperationResult<>(token, true);
-        } else {
-          return new ServiceOperationResult<>(null, false, "OAuth token expired!");
-        }
+    }
+
+    String hash = CryptoUtils.hashToken(accessToken);
+    Optional<OAuthToken> tokenFound = tokenDao.findByAccessTokenHash(hash);
+    if (tokenFound.isPresent()) {
+      OAuthToken token = tokenFound.get();
+      if (token.getExpiryTime().isAfter(Instant.now())) {
+        return new ServiceOperationResult<>(token, true);
       } else {
-        return new ServiceOperationResult<>(null, false, "OAuth token not found!");
+        return new ServiceOperationResult<>(null, false, "OAuth token expired!");
       }
+    } else {
+      return new ServiceOperationResult<>(null, false, "OAuth token not found!");
     }
   }
 
   @Override
   public ServiceOperationResult<NewOAuthTokenResponse> refreshAccessToken(
       String clientId, String clientSecret, String refreshToken) {
+
     if (!appManager.isClientSecretCorrect(clientId, clientSecret)) {
       return new ServiceOperationResult<>(null, false, "ClientId or ClientSecret incorrect");
     }
-
-    String hash = CryptoUtils.hashToken(refreshToken);
-    Optional<OAuthToken> tokenFound = tokenDao.findByRefreshTokenHash(hash);
-
-    if (!tokenFound.isPresent() || !tokenFound.get().getClientId().equals(clientId)) {
+    OAuthToken token = getOAuthTokenForRefreshToken(clientId, refreshToken);
+    if (token == null) {
       return new ServiceOperationResult<>(
           null, false, "OAuth token not found! Perhaps its refresh rights have been removed.");
     }
-    OAuthToken token = tokenDao.load(tokenFound.get().getId());
 
     String newAccessToken = CryptoUtils.generateUnhashedToken();
     String hashedAccessToken = CryptoUtils.hashToken(newAccessToken);
@@ -110,7 +128,6 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
     response.setAccessToken(newAccessToken);
     response.setRefreshToken(newRefreshToken);
     response.setExpiryTime(expiryTime);
-    response.setScope(token.getScope());
 
     return new ServiceOperationResult<>(response, true);
   }
@@ -118,13 +135,16 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
   @Override
   public ServiceOperationResult<NewOAuthTokenResponse> refreshJwtAccessToken(
       String clientId, String clientSecret, String refreshToken) {
-    String hash = CryptoUtils.hashToken(refreshToken);
-    Optional<OAuthToken> optToken = tokenDao.findByRefreshTokenHash(hash);
 
-    if (!optToken.isPresent() || !optToken.get().getClientId().equals(clientId)) {
+    if (!appManager.isClientSecretCorrect(clientId, clientSecret)) {
+      return new ServiceOperationResult<>(null, false, "ClientId or ClientSecret incorrect");
+    }
+    OAuthToken token = getOAuthTokenForRefreshToken(clientId, refreshToken);
+    if (token == null) {
       return new ServiceOperationResult<>(
           null, false, "OAuth token not found! Perhaps its refresh rights have been removed.");
     }
+
     Instant expiryTime = generateExpiryTime();
     String newAccessToken =
         Jwts.builder()
@@ -133,28 +153,36 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
             .setExpiration(Date.from(expiryTime))
             .claim(
                 "refreshTokenHash",
-                optToken.get().getHashedRefreshToken()) // Don't invalidate previous JWT tokens
+                token.getHashedRefreshToken()) // Don't invalidate previous JWT tokens
             .signWith(properties.getJwtKey())
             .compact();
 
     NewOAuthTokenResponse response = new NewOAuthTokenResponse();
-    response.setExpiryTime(generateExpiryTime());
     response.setAccessToken(newAccessToken);
-    response.setScope(optToken.get().getScope());
     response.setRefreshToken(null);
+    response.setExpiryTime(expiryTime);
 
     return new ServiceOperationResult<>(response, true);
   }
 
+  private OAuthToken getOAuthTokenForRefreshToken(String clientId, String refreshToken) {
+    String hash = CryptoUtils.hashToken(refreshToken);
+    Optional<OAuthToken> optToken = tokenDao.findByRefreshTokenHash(hash);
+
+    OAuthToken result = null;
+    if (optToken.isPresent() && optToken.get().getClientId().equals(clientId)) {
+      result = tokenDao.load(optToken.get().getId());
+    }
+    return result;
+  }
+
   @Override
   public ServiceOperationResult<NewOAuthTokenResponse> createNewToken(
-      String clientId, String clientSecret, User user, String scope) {
+      String clientId, String clientSecret, User user, OAuthTokenType tokenType) {
+
     if (!appManager.isClientSecretCorrect(clientId, clientSecret)) {
       return new ServiceOperationResult<>(null, false, "ClientId or ClientSecret incorrect");
     }
-
-    Optional<OAuthToken> existingConnection = tokenDao.getToken(clientId, user.getId());
-    NewOAuthTokenResponse response = new NewOAuthTokenResponse();
 
     String newAccessToken = CryptoUtils.generateUnhashedToken();
     String hashedAccessToken = CryptoUtils.hashToken(newAccessToken);
@@ -162,44 +190,42 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
     String hashedRefreshToken = CryptoUtils.hashToken(newRefreshToken);
     Instant expiryTime = generateExpiryTime();
 
+    NewOAuthTokenResponse response = new NewOAuthTokenResponse();
     response.setAccessToken(newAccessToken);
     response.setRefreshToken(newRefreshToken);
     response.setExpiryTime(expiryTime);
-    response.setScope(scope);
 
-    if (existingConnection.isPresent()) {
-      OAuthToken token = tokenDao.load(existingConnection.get().getId());
+    Optional<OAuthToken> existingToken = tokenDao.getToken(clientId, user.getId(), tokenType);
+    if (existingToken.isPresent()) {
+      OAuthToken token = tokenDao.load(existingToken.get().getId());
       token.setHashedAccessToken(hashedAccessToken);
       token.setHashedRefreshToken(hashedRefreshToken);
       token.setExpiryTime(expiryTime);
-      token.setScope(scope);
-
-      return new ServiceOperationResult<>(response, true);
+    } else {
+      OAuthToken token = new OAuthToken(user, clientId, tokenType);
+      token.setHashedAccessToken(hashedAccessToken);
+      token.setExpiryTime(expiryTime);
+      token.setHashedRefreshToken(hashedRefreshToken);
+      tokenDao.save(token);
     }
-    OAuthToken token = new OAuthToken(user, clientId, hashedAccessToken, expiryTime);
-    token.setHashedRefreshToken(hashedRefreshToken);
-    token.setScope(scope);
-    tokenDao.save(token);
-
     return new ServiceOperationResult<>(response, true);
   }
 
   @Override
   public ServiceOperationResult<NewOAuthTokenResponse> createNewJwtToken(
-      String clientId, String clientSecret, User user, String scope) {
+      String clientId, String clientSecret, User user, OAuthTokenType tokenType) {
+
     if (!appManager.isClientSecretCorrect(clientId, clientSecret)) {
       return new ServiceOperationResult<>(null, false, "ClientId or ClientSecret incorrect");
     }
-    OAuthToken originalToken = tokenDao.getToken(clientId, user.getId()).orElse(null);
+    OAuthToken originalToken = tokenDao.getToken(clientId, user.getId(), tokenType).orElse(null);
     NewOAuthTokenResponse response = new NewOAuthTokenResponse();
 
     // Assume that if a JWT is requested for an already existing OAuthToken, the unhashed refresh
     // token is known
-    String refreshToken = null;
     if (originalToken == null) {
-      refreshToken = CryptoUtils.generateUnhashedToken();
-      originalToken = new OAuthToken(user, clientId, null, null);
-      originalToken.setScope(scope);
+      String refreshToken = CryptoUtils.generateUnhashedToken();
+      originalToken = new OAuthToken(user, clientId, tokenType);
       originalToken.setHashedRefreshToken(CryptoUtils.hashToken(refreshToken));
       response.setRefreshToken(refreshToken);
       tokenDao.save(originalToken);
@@ -216,42 +242,13 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
 
     response.setAccessToken(newAccessToken);
     response.setExpiryTime(expiryTime);
-    response.setScope(scope);
 
     return new ServiceOperationResult<>(response, true);
   }
 
   private Instant generateExpiryTime() {
     TemporalAmount lifeTime = appManager.getOAuthTokenExpiryTimeInSeconds();
-
-    if (lifeTime == null) {
-      // Years cause crashes, Instant.Max is too far ahead in the future to be saved to DB
-      return Instant.now().plus(Period.ofDays(365 * 100));
-    } else {
-      return Instant.now().plus(lifeTime);
-    }
-  }
-
-  @Override
-  public ServiceOperationResult<Void> validateToken(String token) {
-    if (StringUtils.isEmpty(token)) {
-      return new ServiceOperationResult<>(null, false, "token empty or missing");
-    }
-    if (jwtToken.matcher(token).matches()) {
-      for (String section : token.split("\\.")) {
-        if (!Base64.isBase64(section)) {
-          return new ServiceOperationResult<>(null, false, section + " not in base64 format");
-        }
-      }
-    } else {
-      if (token.length() != TOKEN_LENGTH) {
-        return new ServiceOperationResult<>(null, false, "token length incorrect");
-      }
-      if (!Base64.isBase64(token)) {
-        return new ServiceOperationResult<>(null, false, "token not in base64 format");
-      }
-    }
-    return new ServiceOperationResult<>(null, true);
+    return Instant.now().plus(lifeTime);
   }
 
   @Override
@@ -261,7 +258,8 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
 
   @Override
   public ServiceOperationResult<OAuthToken> removeToken(User user, String clientId) {
-    Optional<OAuthToken> token = tokenDao.getToken(clientId, user.getId());
+    Optional<OAuthToken> token =
+        tokenDao.getToken(clientId, user.getId(), OAuthTokenType.API_GENERATED_TOKEN);
     if (!token.isPresent()) {
       return new ServiceOperationResult<>(
           null, false, "Could not find OAuth connection for the given client app and user.");

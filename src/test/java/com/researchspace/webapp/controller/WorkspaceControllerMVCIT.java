@@ -28,6 +28,8 @@ import com.axiope.search.SearchConstants;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.Constants;
+import com.researchspace.api.v1.model.GroupSharePostItem;
+import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.PaginationObject;
@@ -64,6 +66,7 @@ import com.researchspace.model.record.DetailedRecordInformation;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
+import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
@@ -95,6 +98,7 @@ import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mock;
 import org.springframework.aop.framework.AopProxyUtils;
@@ -832,16 +836,6 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     settings.setParentFolderId(sd.getParent().getId());
     // move record into subfolder
     basicMove(new Long[] {sd.getId()}, Sub1.getId(), settings);
-    workspaceController.move(
-        new Long[] {sd.getId()},
-        "" + Sub1.getId(),
-        null,
-        settings,
-        model,
-        mockPrincipal,
-        request,
-        session,
-        response);
 
     ISearchResults<BaseRecord> rcds2 = listRootFolder();
     assertEquals(initialCount - 1, rcds2.getTotalHits().intValue());
@@ -1228,6 +1222,174 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void testMoveIntoNotebookMVC() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User piUser = group.getPi();
+    initUser(piUser);
+    RSpaceTestUtils.login(piUser.getUsername(), TESTPASSWD);
+    Folder piRootFolder = piUser.getRootFolder();
+
+    // pi create a regular notebook in workspace
+    Notebook nb = createNotebookWithNEntries(piRootFolder.getId(), "nb", 1, piUser);
+    assertEquals(1, nb.getEntryCount());
+    assertFalse(nb.isShared());
+
+    // create new doc and move it into notebook
+    StructuredDocument doc1 = createBasicDocumentInFolder(piUser, piRootFolder, "test1");
+    MvcResult mvcResult = moveRecordIntoNotebook(piUser, piRootFolder.getId(), nb, doc1);
+    assertNull(mvcResult.getResolvedException());
+    nb = folderMgr.getNotebook(nb.getId());
+    assertEquals(2, nb.getEntryCount());
+
+    // share a notebook, with write permission
+    shareNotebookWithGroup(piUser, nb, group.getGroup(), "write");
+    nb = folderMgr.getNotebook(nb.getId());
+    assertTrue(nb.isShared());
+
+    // try adding a document into own, shared, notebook (RSDEV-775)
+    StructuredDocument doc2 = createBasicDocumentInFolder(piUser, piRootFolder, "test2");
+    mvcResult = moveRecordIntoNotebook(piUser, piRootFolder.getId(), nb, doc2);
+    assertNull(mvcResult.getResolvedException());
+    nb = folderMgr.getNotebook(nb.getId());
+    assertEquals(3, nb.getEntryCount());
+  }
+
+  @Test
+  public void testCreateNotebookIntoSharedFolderMVC() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User user = group.u1();
+    initUser(user);
+    RSpaceTestUtils.login(user.getUsername(), TESTPASSWD);
+
+    openTransaction();
+    Long sharedFolderId = group.getGroup().getCommunalGroupFolderId();
+    Folder sharedFolder = folderDao.get(sharedFolderId);
+    Set<BaseRecord> orgChildren = folderDao.getRootRecordForUser(user).getChildrens();
+    commitTransaction();
+
+    String testName = "newTestNotebook";
+    this.mockMvc
+        .perform(
+            post("/workspace/create_notebook/{rootid}", sharedFolder.getId())
+                .principal(new MockPrincipal(user.getUsername()))
+                .param("notebookNameField", testName))
+        .andExpect(status().isFound())
+        .andReturn();
+
+    openTransaction();
+    Folder refreshedSharedFolder = folderDao.get(sharedFolderId);
+    Set<BaseRecord> newSharedChildren = refreshedSharedFolder.getChildrens();
+
+    Folder refreshedRootFolder = folderDao.getRootRecordForUser(user);
+    Set<BaseRecord> newRootChildren = refreshedRootFolder.getChildrens();
+    newRootChildren.removeAll(orgChildren);
+    commitTransaction();
+
+    assertEquals("no new child in root folder", 1, newRootChildren.size());
+    assertEquals("no new child in shared folder", 1, newSharedChildren.size());
+    BaseRecord newRecord = (BaseRecord) (newRootChildren.toArray())[0];
+    assertTrue("new record should be a folder", newRecord.isFolder());
+    assertTrue("new record should be a notebook", newRecord.isNotebook());
+    assertEquals("created notebook has different name", testName, newRecord.getName());
+
+    RSpaceTestUtils.logout();
+  }
+
+  @Test
+  public void testMoveDocumentIntoSharedNotebookMVC() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User piUser = group.getPi();
+    initUser(piUser);
+    RSpaceTestUtils.login(piUser.getUsername(), TESTPASSWD);
+
+    openTransaction();
+    Long sharedFolderId = group.getGroup().getCommunalGroupFolderId();
+    Folder sharedFolder = folderDao.get(sharedFolderId);
+    commitTransaction();
+
+    // pi create a SharedNotebook into group shared folder
+    String testName = "newTestNotebook";
+    this.mockMvc
+        .perform(
+            post("/workspace/create_notebook/{rootid}", sharedFolder.getId())
+                .principal(new MockPrincipal(piUser.getUsername()))
+                .param("notebookNameField", testName))
+        .andExpect(status().isFound())
+        .andReturn();
+
+    openTransaction();
+    Folder refreshedSharedFolder = folderDao.get(sharedFolderId);
+    Set<BaseRecord> newSharedChildren = refreshedSharedFolder.getChildrens();
+    Notebook sharedNotebook = (Notebook) (newSharedChildren.toArray())[0];
+    commitTransaction();
+    logoutCurrentUser();
+
+    User regularUser = group.getUserByPrefix("u1");
+    initUser(regularUser);
+    logoutAndLoginAs(regularUser);
+    Folder regularUserRoot = folderMgr.getRootFolderForUser(regularUser);
+
+    StructuredDocument docToShare = createBasicDocumentInRootFolderWithText(regularUser, "anytext");
+    SharePost toPost =
+        createValidSharePostWithGroup(
+            group, docToShare, group.getGroup().getCommunalGroupFolderId());
+    String apiKey = createNewApiKeyForUser(regularUser);
+
+    // regular user shares a Doc into Group_shared_folder
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/share", regularUser, toPost))
+        .andExpect(status().isCreated())
+        .andReturn();
+    Record sharedDocument = recordMgr.get(docToShare.getId());
+    Assertions.assertTrue(sharedDocument.isShared());
+    logoutCurrentUser();
+
+    logoutAndLoginAs(piUser);
+    Set<Folder> docParentFolders = sharedDocument.getParentFolders();
+    assertEquals(2, docParentFolders.size());
+    assertTrue(docParentFolders.contains(sharedFolder));
+    assertTrue(docParentFolders.contains(regularUserRoot));
+
+    // pi moves the Doc from Group_shared_folder into SharedNotebook
+    moveRecordIntoNotebook(piUser, sharedFolderId, sharedNotebook, sharedDocument);
+    logoutCurrentUser();
+
+    Record newSharedDocument = recordMgr.get(sharedDocument.getId());
+    docParentFolders = newSharedDocument.getParentFolders();
+    assertEquals(2, docParentFolders.size());
+    assertTrue(docParentFolders.contains(sharedNotebook));
+    assertTrue(docParentFolders.contains(regularUserRoot));
+  }
+
+  private MvcResult moveRecordIntoNotebook(
+      User user, Long parentFolderId, Notebook targetNotebook, Record recordToMove)
+      throws Exception {
+    return mockMvc
+        .perform(
+            post("/workspace/ajax/move")
+                .param("parentFolderId", parentFolderId + "")
+                .param("toMove[]", recordToMove.getId() + "")
+                .param("target", targetNotebook.getId() + "")
+                .principal(user::getUsername))
+        .andReturn();
+  }
+
+  private SharePost createValidSharePostWithGroup(
+      TestGroup testGrp1, BaseRecord toShare, Long sharedFolderId) {
+    SharePost toPost =
+        SharePost.builder()
+            .itemToShare(toShare.getId())
+            .groupSharePostItem(
+                GroupSharePostItem.builder()
+                    .id(testGrp1.getGroup().getId())
+                    .permission("EDIT")
+                    .sharedFolderId(sharedFolderId)
+                    .build())
+            .build();
+    return toPost;
+  }
+
+  @Test
   public void testCreateNotebooksInRootFolderWithAjax() throws Exception {
     User user = createAndSaveUser(getRandomName(10));
     initUser(user);
@@ -1318,7 +1480,8 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     // now lets log in as U2 and check the notebook can be accessed from the shared folder
     logoutAndLoginAs(u2);
     Optional<Folder> indivSFolder =
-        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(nb.getId(), u2);
+        folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+            nb.getId(), group.getCommunalGroupFolderId(), u2);
     assertTrue(indivSFolder.isPresent());
 
     // now we'll browse to notebook from this folder as if navigating from the shared root
@@ -2240,5 +2403,109 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals("notebookTag", foundTagDTOs.get(1).getTagMetaData());
     assertEquals(testDoc2.getId(), foundTagDTOs.get(2).getRecordId());
     assertEquals("docTag", foundTagDTOs.get(2).getTagMetaData());
+  }
+
+  @Test
+  public void testPiSharesDocToGroupSubFolderThenMovesToGroupRoot() throws Exception {
+    // Create a group with a PI and log in as PI
+    TestGroup group = createTestGroup(2);
+    User piUser = group.getPi();
+    logoutAndLoginAs(piUser);
+
+    // Create a new document in PI’s own workspace
+    Folder piRoot = folderMgr.getRootFolderForUser(piUser);
+    StructuredDocument doc = createBasicDocumentInFolder(piUser, piRoot, "some text");
+
+    // Share the document to a group sub-folder
+    Long sharedFolderRootId = group.getGroup().getCommunalGroupFolderId();
+    Folder sharedFolderRoot = folderMgr.getFolder(sharedFolderRootId, piUser);
+    Folder sharedSubFolder = createSubFolder(sharedFolderRoot, "shared sub folder", piUser);
+    SharePost sharePost = createValidSharePostWithGroup(group, doc, sharedSubFolder.getId());
+    String apiKey = createNewApiKeyForUser(piUser);
+
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/share", piUser, sharePost))
+        .andExpect(status().isCreated())
+        .andReturn();
+
+    // Move the doc to the top-level shared folder
+    MvcResult moveResult =
+        mockMvc
+            .perform(
+                post("/workspace/ajax/move")
+                    .param("parentFolderId", sharedSubFolder.getId() + "")
+                    .param("toMove[]", doc.getId() + "")
+                    .param("target", sharedFolderRootId + "")
+                    .principal(new MockPrincipal(piUser.getUsername())))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(moveResult.getResolvedException());
+
+    Record movedToSharedRoot = recordMgr.get(doc.getId());
+    assertTrue(movedToSharedRoot.getParentFolders().contains(sharedFolderRoot));
+    assertFalse(movedToSharedRoot.getParentFolders().contains(sharedSubFolder));
+  }
+
+  @Test
+  public void testPiAttemptsToMoveSharedDocIntoSharedNotebookOwnedBySameUser() throws Exception {
+    // Create a group with a PI and a regular member
+    TestGroup group = createTestGroup(2);
+    User piUser = group.getPi();
+    User regularUser = group.getUserByPrefix("u1");
+
+    logoutAndLoginAs(regularUser);
+
+    // Create notebook as regular user in shared location
+    Long sharedFolderRootId = group.getGroup().getCommunalGroupFolderId();
+    Folder sharedFolderRoot = folderMgr.getFolder(sharedFolderRootId, regularUser);
+    String sharedNbName = "member-shared-notebook";
+    MvcResult res =
+        mockMvc
+            .perform(
+                post("/workspace/create_notebook/{rootid}", sharedFolderRoot.getId())
+                    .principal(new MockPrincipal(regularUser.getUsername()))
+                    .param("notebookNameField", sharedNbName))
+            .andExpect(status().isFound())
+            .andReturn();
+
+    long notebookId = Long.parseLong(res.getResponse().getRedirectedUrl().split("[/?]")[2]);
+
+    // regular member creates a new doc in own workspace and shares it to the group shared folder
+    Folder regularUserRoot = folderMgr.getRootFolderForUser(regularUser);
+    StructuredDocument doc = createBasicDocumentInFolder(regularUser, regularUserRoot, "some text");
+    SharePost sharePostForDoc = createValidSharePostWithGroup(group, doc, sharedFolderRoot.getId());
+    String regUserApiKey = createNewApiKeyForUser(regularUser);
+
+    mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(regUserApiKey, "/share", regularUser, sharePostForDoc))
+        .andExpect(status().isCreated())
+        .andReturn();
+
+    // Now login as PI and attempt to move the member-owned shared doc into the member-owned shared
+    // notebook
+    logoutAndLoginAs(piUser);
+    MvcResult moveIntoNotebookResult =
+        mockMvc
+            .perform(
+                post("/workspace/ajax/move")
+                    .param("parentFolderId", sharedFolderRoot.getId() + "")
+                    .param("toMove[]", doc.getId() + "")
+                    .param("target", notebookId + "")
+                    .principal(new MockPrincipal(piUser.getUsername())))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    // Verify error message
+    assertNull(moveIntoNotebookResult.getResolvedException());
+    ModelMap modelMap = moveIntoNotebookResult.getModelAndView().getModelMap();
+    Object errorMsg = modelMap.get("errorMsg");
+    assertTrue(
+        errorMsg
+            .toString()
+            .contains(
+                "A shared document owned by a specific user cannot be shared into a notebook owned"
+                    + " by the same user"));
   }
 }

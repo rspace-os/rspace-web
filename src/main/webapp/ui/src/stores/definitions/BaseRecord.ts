@@ -1,3 +1,5 @@
+import { match } from "../../util/Util";
+
 /**
  * IDs are used to identify a record within a given class of record i.e. to
  * identify a container amongst all other containers.
@@ -51,6 +53,81 @@ export const globalIdPatterns: Record<string, RegExp> = {
   document: /^sd\d+$/i,
   group: /^gp\d+$/i,
 };
+
+export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
+  sample: "SA",
+  subsample: "SS",
+  container: "IC",
+  sampleTemplate: "IT",
+  bench: "BE",
+  basket: "BA",
+  attachment: "IF",
+  field: "SF",
+  document: "SD",
+  group: "GP",
+};
+
+/*
+ * The corresponding label, as should be rendered by the UI, for each Inventory
+ * record.
+ */
+export const inventoryRecordTypeLabels = {
+  sample: "Sample",
+  subsample: "Subsample",
+  container: "Container",
+  sampleTemplate: "Sample Template",
+  bench: "Bench",
+  basket: "Basket",
+};
+
+/**
+ * Given a Global ID of an *Inventory* record, return a label for the type of
+ * record.
+ */
+export const globalIdToInventoryRecordTypeLabel: (
+  globalId: GlobalId
+) => (typeof inventoryRecordTypeLabels)[keyof typeof inventoryRecordTypeLabels] =
+  match([
+    [
+      (globalId: GlobalId) => globalIdPatterns.sample.test(globalId),
+      inventoryRecordTypeLabels.sample,
+    ],
+    [
+      (globalId: GlobalId) => globalIdPatterns.subsample.test(globalId),
+      inventoryRecordTypeLabels.subsample,
+    ],
+    [
+      (globalId: GlobalId) => globalIdPatterns.container.test(globalId),
+      inventoryRecordTypeLabels.container,
+    ],
+    [
+      (globalId: GlobalId) => globalIdPatterns.sampleTemplate.test(globalId),
+      inventoryRecordTypeLabels.sampleTemplate,
+    ],
+    [
+      (globalId: GlobalId) => globalIdPatterns.bench.test(globalId),
+      inventoryRecordTypeLabels.bench,
+    ],
+    [
+      (globalId: GlobalId) => globalIdPatterns.basket.test(globalId),
+      inventoryRecordTypeLabels.basket,
+    ],
+  ]);
+
+/**
+ * Creates the Global ID string for a given record type and ID.
+ * This works because "type + id <-> Global ID" is an isomorphism
+ */
+export function globalId({
+  type,
+  id,
+}: {
+  type: keyof typeof globalIdPatterns;
+  id: number;
+}): GlobalId {
+  const prefix = globalIdPrefixes[type];
+  return `${prefix}${id}`;
+}
 
 /**
  * This is the canonical definition of what the frontend considers to be the

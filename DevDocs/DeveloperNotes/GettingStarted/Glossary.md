@@ -66,7 +66,7 @@ the MDN documentation.](https://developer.mozilla.org/en-US/docs/Web/Accessibili
 ### Aspose
 
 Aspose is a third-party service for converting between common document formats.
-We mostly use it to generate PDFs of word, excel, and other office documents.
+We mostly use it to generate previews of Word, Excel, and other MS Office documents.
 [For more information, see Aspose's website.](https://products.aspose.app/)
 
 ### axe

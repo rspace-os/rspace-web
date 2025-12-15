@@ -169,14 +169,21 @@ function journal($, extensions = default_extensions) {
       }
     },
 
-    loadEntry: function(pagePositionModifier) {
+    loadEntry: function(pagePositionModifier, recordId) {
       $("#prevEntryButton, #nextEntryButton, #prevEntryButton_mobile, #nextEntryButton_mobile").hide();
-      const url =extensions.springMVCUrlReroutePrefix + "/journal/ajax/retrieveEntry/";
-      /* loads an entry in a page uses page modifier to determine if it should show a new document
-       * or another page of an existing record */
-      $.get(url + journalSettings.parentRecordId + "/" + journalPrivateVars.recordPosition + "/" + pagePositionModifier,
+
+      /* retrieve entry either by record id, or by using current position and
+         pagePositionModifier (for next/prev page navigation) */
+      var url = extensions.springMVCUrlReroutePrefix;
+      if (recordId !== undefined) {
+        url += "/journal/ajax/retrieveEntryById/" + journalSettings.parentRecordId + "/" + recordId;
+      } else {
+        url += "/journal/ajax/retrieveEntry/" + journalSettings.parentRecordId + "/"
+            + journalPrivateVars.recordPosition + "/" + pagePositionModifier;
+      }
+      $.get(url,
         function(data) {
-            tagMetaData = data.tagMetaData ? data.tagMetaData: "";
+          tagMetaData = data.tagMetaData ? data.tagMetaData: "";
           if (data.name == "EMPTY") {
             journalPrivateVars.journalEmpty = true;
             $plugin.append(journalPrivateVars.journalPageHtml);
@@ -197,6 +204,7 @@ function journal($, extensions = default_extensions) {
               }});
               RS.checkToolbarDividers(".toolbar-divider");
               journalPrivateVars.selectedRecordId = null;
+              journalPrivateVars.recordPosition = 0;
               methods._statusMessage("There are no entries to display.");
               displayStatus(editable);
             });
@@ -204,7 +212,7 @@ function journal($, extensions = default_extensions) {
             $("#journalToolbar>button").show();
             $("#journalSearch").show();
 
-            $("#cachedData").html(data.html);
+            $("#cachedData").text(data.html);
 
             //rspac-1396
             document.title = data.name;
@@ -294,6 +302,8 @@ function journal($, extensions = default_extensions) {
         repositionEntryNavButtons();
 
         window.dispatchEvent(new CustomEvent("listOfMaterialInit"));
+        window.dispatchEvent(new CustomEvent("extWorkFlows-init"));
+        window.dispatchEvent(new CustomEvent("jupyterNotebooks-init"));
       }, 800);
     },
 
@@ -359,7 +369,7 @@ function journal($, extensions = default_extensions) {
 
     _loadPage: function() {
 
-      $(".journalPageContent").html($("#cachedData").html());
+      $(".journalPageContent").html($("#cachedData").text());
 
       $(".commentIcon").click(function() {
         showCommentDialog(this, true);
@@ -381,7 +391,6 @@ function journal($, extensions = default_extensions) {
       applyCodeSampleHighlights($('.journalPageContent'));
       addDownloadButtonToTables($('.journalPageContent table'));
       extensions.loadPageModify();
-      extensions.selectFileTreeBrowserRecordById(journalPrivateVars.selectedRecordId);
       // Tell React that a new document was placed into the dom
       document.dispatchEvent(new Event('document-placed'));
 
@@ -404,6 +413,7 @@ function journal($, extensions = default_extensions) {
 
         methods._updateTopHeaderWithEntryData();
         updateEntryNameInBreadcrumbs(journalPrivateVars.selectedRecordId, journalPrivateVars.pageName);
+        extensions.selectFileTreeBrowserRecordById(journalPrivateVars.selectedRecordId);
 
         // updating top scrollbar
         var journalPageElement = $(".journalPageContent")[0];
@@ -487,22 +497,12 @@ function journal($, extensions = default_extensions) {
     },
 
     /*
-     * Loads an entry based on ID - delegates to loadEntry once an index is found.
+     * Loads an entry based on record ID.
      * Passed numeric record id must be prefixed with 'journalEntry'.
      */
-    loadEntryById: function(recordId) {
-      var prefixLength = 'journalEntry'.length;
-      const url =extensions.springMVCUrlReroutePrefix + "/journal/ajax/entryIndex/";
-      var jqxhr = $.get(url + journalSettings.parentRecordId + "/" + recordId.substring(prefixLength) + "/");
-      jqxhr.done(function(data) {
-          var position = parseInt(data);
-          journalPrivateVars.recordPosition = position;
-          journalPrivateVars.selectedRecordId = recordId;
-          methods.loadEntry(0);
-      });
-      jqxhr.fail(function(xhr, status, error) {
-          alert(error);
-      });
+    loadEntryById: function(journalEntryRecordId) {
+        var recordId = journalEntryRecordId.substring('journalEntry'.length);
+        methods.loadEntry(null, recordId);
     },
 
     /* =========================

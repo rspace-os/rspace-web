@@ -791,6 +791,11 @@ div .searchButton {
     .newTabularView .mainTable.noCheckboxes td:first-child {
       padding-left: 20px; }
 
+/* rsdev-754 */
+#file_table {
+  cursor: default;
+}
+
 .linkedRecordInfoAction {
   position: relative;
   left: 4px;

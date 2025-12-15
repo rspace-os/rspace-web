@@ -1,0 +1,25 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2025-03-26-update" context="run" author="nico">
+    <comment>Update correct DigitalObjectIdentifier user into owner_id column</comment>
+    <customChange
+      class="com.researchspace.dao.customliquibaseupdates.UpdatingOwnerIdColumnOnDigitalObjectIdentifier_RSDEV607">
+    </customChange>
+  </changeSet>
+
+  <changeSet id="2025-03-26b-a" context="run" author="nico">
+    <comment>RSDEV-607 adding a not null constraint on the columns owner_id of the
+      DigitalObjectIdentifier table
+    </comment>
+    <addNotNullConstraint columnName="owner_id" tableName="DigitalObjectIdentifier"
+      columnDataType="bigint(20)"/>
+    <addForeignKeyConstraint baseColumnNames="owner_id"
+      baseTableName="DigitalObjectIdentifier" constraintName="FK60DF21A7DE6F978E"
+      deferrable="false" initiallyDeferred="false" onDelete="NO ACTION"
+      onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User"/>
+  </changeSet>
+
+</databaseChangeLog>

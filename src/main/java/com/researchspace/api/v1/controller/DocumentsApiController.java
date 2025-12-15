@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiSearchQuery;
 import com.researchspace.api.v1.model.ApiSearchQuery.OperatorEnum;
 import com.researchspace.api.v1.model.ApiSearchTerm;
 import com.researchspace.api.v1.model.ApiSearchTerm.QueryTypeEnum;
+import com.researchspace.api.v1.model.MoveRequest;
 import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.api.v1.service.RecordApiManager;
 import com.researchspace.core.util.ISearchResults;
@@ -33,12 +34,14 @@ import com.researchspace.model.record.FormType;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.CompositeRecordOperationResult;
+import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.RecordDeletionManager;
+import com.researchspace.service.WorkspaceService;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
 import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
@@ -69,6 +72,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
   @Autowired private ApiFieldsHelper apiFieldsHelper;
   @Autowired private RecordDeletionManager deletionMgr;
   @Autowired private BaseRecordManager baseRecordMgr;
+  @Autowired private WorkspaceService workspaceService;
 
   @Override
   public ApiDocumentSearchResult getDocuments(
@@ -198,7 +202,6 @@ public class DocumentsApiController extends BaseApiController implements Documen
     StructuredDocument doc = retrieveDocumentForApiUser(id, user);
     ApiDocument apiDocument = new ApiDocument(doc, user);
     apiFieldsHelper.updateOutgoingApiFieldsContent(apiDocument.getFields(), user);
-
     buildAndAddSelfLink(DOCUMENTS_ENDPOINT, apiDocument);
     buildAndAddSelfLink(FORMS_ENDPOINT, apiDocument.getForm());
     addFileLinks(apiDocument);
@@ -225,7 +228,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
                 new DocumentFieldInitializationPolicy(
                     new DocumentFieldAttachmentInitializationPolicy()),
                 false);
-        EditStatus res = recordManager.requestRecordView(id, user, getCurrentActiveUsers());
+        EditStatus res = recordManager.requestRecordView(id, user);
         if (EditStatus.ACCESS_DENIED.equals(res)) {
           throw new NotFoundException(createNotFoundMessage(id));
         }
@@ -238,7 +241,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
         }
       } catch (AuthorizationException auth) {
         SECURITY_LOG.warn(
-            "Unauthorised API call by user {} to access resource {}", user.getUsername(), id);
+            "Unauthorised API call by user [{}] to access resource [{}]", user.getUsername(), id);
         throw new NotFoundException(createNotFoundMessage(id));
       }
     } else {
@@ -407,6 +410,31 @@ public class DocumentsApiController extends BaseApiController implements Documen
       response.setStatus(HttpStatus.NO_CONTENT.value());
     } else {
       throw new RuntimeException(" Unexpected error deleting item " + id);
+    }
+  }
+
+  @Override
+  public void moveDocuments(
+      @RequestBody @Valid MoveRequest request,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+    throwBindExceptionIfErrors(errors);
+    ServiceOperationResult<? extends BaseRecord> moveResult =
+        workspaceService
+            .moveRecords(
+                List.of(request.getDocId()),
+                String.valueOf(request.getTargetFolderId()),
+                request.getSourceFolderId(),
+                request.getCurrentGrandparentId(),
+                user)
+            .stream()
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("No result from move operation."));
+
+    if (!moveResult.isSucceeded()) {
+      String message = StringUtils.defaultIfBlank(moveResult.getMessage(), "");
+      throw new RuntimeException("Error performing move. " + message);
     }
   }
 }

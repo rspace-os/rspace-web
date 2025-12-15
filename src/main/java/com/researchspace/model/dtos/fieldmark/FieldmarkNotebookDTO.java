@@ -23,14 +23,16 @@ public class FieldmarkNotebookDTO {
   private String id;
   private String timestamp;
   private Map<String, FieldmarkRecordDTO> records;
+  private String doiIdentifierFieldName;
 
   private FieldmarkNotebookMetadata metadata;
 
-  public FieldmarkNotebookDTO(String notebookId, String name) {
+  public FieldmarkNotebookDTO(String notebookId, String name, String doiIdentifierFieldName) {
     this.id = notebookId;
     this.name = name;
     this.records = new LinkedHashMap<>();
     this.timestamp = dateFormat.format(LocalDateTime.now(Clock.systemDefaultZone()));
+    this.doiIdentifierFieldName = doiIdentifierFieldName;
   }
 
   public FieldmarkRecordDTO addRecord(FieldmarkRecordDTO record) {

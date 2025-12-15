@@ -265,6 +265,7 @@ button:focus {
   padding-bottom: 5px;
   padding-top: 5px;
   padding-right: 10px;
+  vertical-align: top;
 }
 
 #groupsList table {
@@ -379,6 +380,9 @@ button:focus {
 
 .settingCategoryRow {
   margin: 20px 5px 20px 5px; }
+
+.settingSubCategoryRow {
+  margin: 20px 5px 8px 5px; }
 
 .settingRow {
   margin: 10px;

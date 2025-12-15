@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static com.researchspace.model.record.TestFactory.createUserConnection;
+import static com.researchspace.testutils.TestFactory.createUserConnection;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -82,7 +82,7 @@ public class UserConnectionManagerTest {
     int result = 0;
     when(connectionDao.deleteByUserAndProvider(USERNAME, PROVIDER_NAME)).thenReturn(result);
 
-    assertEquals(result, userConnMgr.deleteByUserAndProvider(PROVIDER_NAME, USERNAME));
+    assertEquals(result, userConnMgr.deleteByUserAndProvider(USERNAME, PROVIDER_NAME));
     verify(connectionDao).deleteByUserAndProvider(USERNAME, PROVIDER_NAME);
   }
 }

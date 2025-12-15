@@ -39,7 +39,7 @@
 </script>
 <script type="mustache" id="auditactionTemplate">
 	<fieldset>   
-		<legend>Select which actions to audit:</legend>
+		<legend>Select actions to audit:</legend>
 		{{#data}}
 		<input class="actionsInput" aria-label="{{.}}" type="checkbox" name="actions" value="{{.}}"> {{.}} 
 		{{/data}}
@@ -49,9 +49,10 @@
 
 <script type="mustache" id="auditdomainTemplate">
 	<fieldset>   
-		<legend>Select which domains to audit:</legend>	
-		<input class="domainsInput" aria-label="Inventory" checked type="checkbox" name="domains" value="INV">  Inventory	
-		<input class="domainsInput" aria-label="ELN" checked type="checkbox" name="domains" value="ELN"> ELN 		
+		<legend>Select activity areas to audit:</legend>
+		<input class="domainsInput" aria-label="ELN" checked type="checkbox" name="domains" value="ELN"> ELN
+		<input class="domainsInput" aria-label="Inventory" checked type="checkbox" name="domains" value="INV"> Inventory
+		<input class="domainsInput" aria-label="Other" checked type="checkbox" name="domains" value="OTHER"> Other
 	</fieldset>   
 	<button class="remover" style="height:19px; width:19px;padding:0px !important;" id="remover1" name="x1">X</button>
 </script>

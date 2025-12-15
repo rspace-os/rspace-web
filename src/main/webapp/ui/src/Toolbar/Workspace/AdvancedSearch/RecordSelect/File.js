@@ -4,10 +4,8 @@ import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFile } from "@fortawesome/free-solid-svg-icons";
-library.add(faFile);
+import { faFile } from "@fortawesome/free-solid-svg-icons/faFile";
 
 class Folder extends React.Component {
   constructor(props) {
@@ -38,7 +36,7 @@ class Folder extends React.Component {
               onChange={this.updateSelfSelect}
               style={{ padding: 0 }}
             />
-            <FontAwesomeIcon icon="file" size="2x" />
+            <FontAwesomeIcon icon={faFile} size="2x" />
           </>
         </ListItemIcon>
         <ListItemText primary={this.props.file.name} />

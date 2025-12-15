@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.Validate;
 
 /** Validates and authenticates API requests accessed using an api key. */
-public class ApiKeyAuthenticator extends AbstractApiAuthenticator implements ApiAuthenticator {
+public class ApiKeyAuthenticator extends AbstractApiAuthenticator {
 
   private UserApiKeyManager apiMgr;
 
@@ -29,6 +29,7 @@ public class ApiKeyAuthenticator extends AbstractApiAuthenticator implements Api
     } else if (!apiKey.matches(APIKEY_REGEX)) {
       throw new ApiAuthenticationException("API key invalid - must match regexp:" + APIKEY_REGEX);
     }
+
     return apiKey;
   }
 

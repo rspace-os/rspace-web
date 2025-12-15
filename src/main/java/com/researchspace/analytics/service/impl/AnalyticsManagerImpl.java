@@ -211,21 +211,21 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
   }
 
   @Override
-  public void apiUsed(User user, HttpServletRequest req) {
+  public void publicApiUsed(User user, HttpServletRequest req) {
     String userId = returnIfUserNull(user, "ignoring api used event");
     if (userId == null) {
       return;
     }
-    // don't log requests to inventory API, as that's just normal app usage
     String requestURI = req.getRequestURI();
-    if (isInventoryApiRequest(requestURI)) {
-      return;
-    }
-
     Map<String, Object> props = new HashMap<>();
     props.put(AnalyticsProperty.API_METHOD.getLabel(), req.getMethod());
     props.put(AnalyticsProperty.API_URI.getLabel(), requestURI);
-    track(userId, AnalyticsEvent.API_USED.getLabel(), props);
+    props.put(AnalyticsProperty.RSPACE_URL.getLabel(), properties.getServerUrl());
+    props.put(
+        AnalyticsProperty.API_AUTHENTICATED_BY.getLabel(),
+        user.getAuthenticatedBy() != null ? user.getAuthenticatedBy().toString() : null);
+    AnalyticsEvent event = AnalyticsEvent.PUBLIC_API_USED;
+    track(userId, event.getLabel(), props);
   }
 
   private boolean isInventoryApiRequest(String requestURI) {

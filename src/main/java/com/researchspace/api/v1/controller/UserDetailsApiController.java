@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.UserDetailsApi;
 import com.researchspace.api.v1.model.ApiUiNavigationData;
+import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationExtraHelpLink;
 import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationScheduledMaintenance;
 import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationUserDetails;
 import com.researchspace.api.v1.model.ApiUiNavigationData.ApiUiNavigationVisibleTabs;
@@ -14,13 +15,16 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.UserProfileManager;
 import com.researchspace.service.inventory.ContainerApiManager;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.shiro.SecurityUtils;
@@ -110,10 +114,11 @@ public class UserDetailsApiController extends BaseApiController implements UserD
         properties.isCloud() ? "/images/mainLogoCloudN2.png" : "/public/banner");
 
     ApiUiNavigationVisibleTabs visibleTabs = new ApiUiNavigationVisibleTabs();
-    visibleTabs.setInventory(systemPropertyManager.isPropertyAllowed(user, "inventory.available"));
+    visibleTabs.setInventory(
+        systemPropertyManager.isPropertyAllowed(user, SystemPropertyName.INVENTORY_AVAILABLE));
     visibleTabs.setMyLabGroups(user.hasRole(Role.PI_ROLE));
     visibleTabs.setPublished(
-        systemPropertyPermissionManager.isPropertyAllowed(user, "public_sharing"));
+        systemPropertyPermissionManager.isPropertyAllowed(user, SystemPropertyName.PUBLIC_SHARING));
     visibleTabs.setSystem(user.hasAdminRole());
     navigationData.setVisibleTabs(visibleTabs);
 
@@ -124,9 +129,7 @@ public class UserDetailsApiController extends BaseApiController implements UserD
     if (extIdResolver.isIdentifierSchemeAvailable(user, IdentifierScheme.ORCID)) {
       userDetails.setOrcidAvailable(true);
       Optional<ExternalId> extId = extIdResolver.getExternalIdForUser(user, IdentifierScheme.ORCID);
-      if (extId.isPresent()) {
-        userDetails.setOrcidId(extId.get().getIdentifier());
-      }
+      extId.ifPresent(externalId -> userDetails.setOrcidId(externalId.getIdentifier()));
     }
     UserProfile userProfile = userProfileManager.getUserProfile(user);
     Long profileImageId =
@@ -144,6 +147,15 @@ public class UserDetailsApiController extends BaseApiController implements UserD
       navigationData.setNextMaintenance(new ApiUiNavigationScheduledMaintenance(nextMaintenance));
     }
     navigationData.setOperatedAs(SecurityUtils.getSubject().isRunAs());
+
+    List<ApiUiNavigationExtraHelpLink> extraHelpLinks = new ArrayList<>();
+    Map<String, String> propertiesUrls = properties.getUiFooterUrls();
+    if (!propertiesUrls.isEmpty()) {
+      for (var entry : propertiesUrls.entrySet()) {
+        extraHelpLinks.add(new ApiUiNavigationExtraHelpLink(entry.getKey(), entry.getValue()));
+      }
+    }
+    navigationData.setExtraHelpLinks(extraHelpLinks);
 
     return navigationData;
   }

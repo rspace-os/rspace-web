@@ -133,6 +133,14 @@
         <to>/inventory/identifierPublicPage.html</to>
     </rule>
     <rule>
+        <from>/about</from>
+        <to>/about/index.html</to>
+    </rule>
+    <rule>
+        <from>/about/**</from>
+        <to>/about/index.html</to>
+    </rule>
+    <rule>
         <from>/apps</from>
         <to>/eln/apps.html</to>
     </rule>

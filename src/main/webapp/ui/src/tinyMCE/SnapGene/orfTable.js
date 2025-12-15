@@ -88,7 +88,7 @@ export default function orfTable(props) {
   const fetchData = () => {
     setLoading(true);
 
-    let url = `/molbiol/dna/orfs/${props.id}`;
+    const url = `/molbiol/dna/orfs/${props.id}`;
     axios
       .get(url)
       .then((response) => {
@@ -98,7 +98,7 @@ export default function orfTable(props) {
       .catch((error) => {
         RS.confirm(error.response.data, "warning", "infinite");
       })
-      .finally(function () {
+      .finally(() => {
         setLoading(false);
       });
   };
@@ -123,7 +123,7 @@ export default function orfTable(props) {
     passed_results = passed_results || results; // in case the results are not set yet
     const to_include = readingFrameOptions[readingFrameOption].filter;
     const filtered = passed_results.filter((r) =>
-      to_include.includes(r.readingFrame)
+      to_include.includes(r.readingFrame),
     );
     setFilteredResults(filtered);
   };

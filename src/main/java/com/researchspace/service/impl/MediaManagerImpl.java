@@ -342,11 +342,11 @@ public class MediaManagerImpl implements MediaManager {
     if (targetFolder != null) {
       if (!targetFolder.hasAncestorMatchingPredicate(
           targetFolderIsCorrectTypeForMedia(mediaFolderType), true)) {
-        targetFolder = recordManager.getGallerySubFolderForUser(mediaFolderType, user);
+        targetFolder = recordManager.getGalleryMediaFolderForUser(mediaFolderType, user);
       }
 
     } else {
-      targetFolder = recordManager.getGallerySubFolderForUser(mediaFolderType, user);
+      targetFolder = recordManager.getGalleryMediaFolderForUser(mediaFolderType, user);
     }
     assertCanAddToFolder(targetFolder, user);
 
@@ -490,9 +490,8 @@ public class MediaManagerImpl implements MediaManager {
           fileStore.createAndSaveFileProperty(fileType, user, updatedFileName, inputStream);
     }
 
+    // reset doc-type attachment thumbnail to force re-generation on next request
     if (media.isEcatDocument()) {
-      indexFile(media);
-      // reset the thumbnail to force re-generation on next request
       ((EcatDocumentFile) media).setThumbNail(null);
     }
 
@@ -512,6 +511,9 @@ public class MediaManagerImpl implements MediaManager {
     media.setVersion(media.getVersion() + 1);
     recordDao.save(media);
 
+    if (media.isEcatDocument()) {
+      indexFile(media);
+    }
     updateRevisionOfLinkedDocuments(media, user);
 
     return media;
@@ -597,11 +599,11 @@ public class MediaManagerImpl implements MediaManager {
       InputStream dataImageIS, String chem, ChemElementsFormat format, long fieldId, Record record)
       throws IOException {
     byte[] data = IOUtils.toByteArray(dataImageIS);
-    String mrvString = chemistryProvider.convert(chem);
+    String convertedChem = chemistryProvider.convertToDefaultFormat(chem, format.getLabel());
     RSChemElement rsChemElement =
         RSChemElement.builder()
             .dataImage(data)
-            .chemElements(mrvString)
+            .chemElements(convertedChem)
             .chemElementsFormat(format)
             .parentId(fieldId)
             .record(record)

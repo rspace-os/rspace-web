@@ -55,7 +55,6 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.EcatImageAnnotationManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.IContentInitializer;
@@ -456,7 +455,6 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
     RSChemElement chemElement = rsChemElementManager.get(chemElementId, user);
 
     InputStream molInput = getClass().getResourceAsStream("/TestResources/Aminoglutethimide.mol");
-    // System.out.println("molInput null: " + (molInput == null));
     String newChemElementMolString = IOUtils.toString(molInput, "UTF-8");
     molInput.close();
 

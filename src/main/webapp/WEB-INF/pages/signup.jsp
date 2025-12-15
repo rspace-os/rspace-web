@@ -95,22 +95,25 @@
             <form:input id="username" type="text" 
                         path="username"
                         readonly="true"
+                        pattern="[a-zA-Z0-9]{6,50}"
                         class="form-control rs-field__input" />
           </rst:hasDeploymentProperty>
           <div class="rs-field__icon glyphicon glyphicon-user"></div>
+          <p class="form-text">6 - 50 characters. Only numbers and letters are allowed.</p>
           <form:errors class="rs-tooltip error" path="username"></form:errors>
         </div>
 
         <rst:hasDeploymentProperty name="standalone" value="true">
           <div class="form-group col-lg-12 rs-field rs-field--input">
-            <label for="password" class="sr-only">Create a Password</label>
+            <label for="password" class="sr-only">Create a Password (8 - 50 characters). Numbers, letters, spaces and special characters are allowed.</label>
             <form:input id="password" type="password" 
                         path="password"
-                        placeholder="Create a Password" 
+                        placeholder="Create a Password"
                         required="required"
-                        pattern="[A-Za-z0-9@\.]{8,255}" 
-                        title="Minimum 8, max 255 alphanumeric characters"
+                        pattern="[ -~]{8,50}"
+                        title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
                         class="form-control rs-field__input"/>
+            <p class="form-text">8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
             <div class="rs-field__icon glyphicon fa-key"></div>
             <form:errors class="rs-tooltip error" path="password"></form:errors>
           </div>
@@ -121,8 +124,8 @@
                         path="confirmPassword" 
                         placeholder="Confirm Password" 
                         required="required"
-                        pattern="[A-Za-z0-9@\.]{8,255}" 
-                        title="Minimum 8, max 255 alphanumeric characters"
+                        pattern="[ -~]{8,50}"
+                        title="Confirm Password"
                         class="form-control rs-field__input"/>
             <div class="rs-field__icon glyphicon fa-key"></div>
             <form:errors class="rs-tooltip error" path="confirmPassword"></form:errors>
@@ -175,23 +178,27 @@
         <c:set var="signup_info">
             <spring:message code="pi.signup.info"/>
         </c:set>
-        <rst:hasDeploymentProperty name="picreateGroupOnSignupEnabled" value="true">
-          <c:set var="showPiCreateGroupOnSignup" value="true" />
 
+        <rst:hasDeploymentProperty name="picreateGroupOnSignupEnabled" value="true">
+          <c:set var="allowPiCreateGroupOnSignup" value="true" />
           <rst:hasDeploymentProperty name="SSOSelfDeclarePiEnabled" value="true">
             <c:if test="${not isAllowedPiRole}">
-              <c:set var="showPiCreateGroupOnSignup" value="false"/>
+              <c:set var="allowPiCreateGroupOnSignup" value="false"/>
             </c:if>
           </rst:hasDeploymentProperty>
 
-          <c:if test="${showPiCreateGroupOnSignup}">
-            <div class="form-group col-lg-12 rs-field rs-field--input pi-create-group-on-signup">        
-              <form:checkbox id="picreateGroupOnSignup" 
-                          path="picreateGroupOnSignup"              
-                          class="form-control rs-field__input checkbox" label="${signup_info}"/>
-              <form:errors class="rs-tooltip error" path="picreateGroupOnSignup"></form:errors>
-            </div>
-          </c:if>
+          <div class="form-group col-lg-12 rs-field rs-field--input pi-create-group-on-signup">
+            <c:if test="${allowPiCreateGroupOnSignup}">
+                <form:checkbox id="picreateGroupOnSignup"
+                            path="picreateGroupOnSignup"
+                            class="form-control rs-field__input checkbox" label="${signup_info}"/>
+                <form:errors class="rs-tooltip error" path="picreateGroupOnSignup"></form:errors>
+            </c:if>
+            <c:if test="${not allowPiCreateGroupOnSignup}">
+              Based on your status at ${applicationScope['RS_DEPLOY_PROPS']['customerNameShort']},
+              you cannot become a PI unless a system administrator manually enables this for you.
+            </c:if>
+          </div>
         </rst:hasDeploymentProperty>
         
         <rst:hasDeploymentProperty name="cloud" value="true">

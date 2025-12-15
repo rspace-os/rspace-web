@@ -3,6 +3,7 @@ package com.researchspace.webapp.integrations.egnyte;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
@@ -25,10 +26,6 @@ public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTe
   @Value("${egnyte.realConnectionTest.password}")
   private String testPassword;
 
-  // real access token - can be retrieved with testAccessTokenQuery() test below
-  @Value("${egnyte.realConnectionTest.token}")
-  private String testUserAccessToken;
-
   @Test
   @RunIfSystemPropertyDefined(value = "nightly")
   public void testAccessTokenQuery() throws Exception {
@@ -42,10 +39,10 @@ public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTe
     Map<String, Object> happyTokenRequest =
         connector.queryForEgnyteAccessToken(testUsername, testPassword);
     assertNotNull(happyTokenRequest, "no token after querying egnyte with test credentials");
-    assertEquals(3, happyTokenRequest.size());
-    assertEquals(testUserAccessToken, happyTokenRequest.get("access_token"));
-    assertEquals("bearer", happyTokenRequest.get("token_type"));
-    assertEquals(-1, happyTokenRequest.get("expires_in"));
+    assertTrue(happyTokenRequest.size() >= 3, "lack of expected data in egynte response");
+    assertEquals("Bearer", happyTokenRequest.get("token_type"));
+    assertNotNull(happyTokenRequest.get("access_token"));
+    assertNotNull(happyTokenRequest.get("expires_in"));
   }
 
   @Test
@@ -56,7 +53,13 @@ public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTe
     Map<String, Object> tokenError = connector.queryForEgnyteUserInfoWithAccessToken("dummyToken");
     assertNull(tokenError);
 
-    // valid token should retrieve user details
+    // get latest token from user credentials
+    Map<String, Object> happyTokenRequest =
+        connector.queryForEgnyteAccessToken(testUsername, testPassword);
+    assertNotNull(happyTokenRequest, "no token after querying egnyte with test credentials");
+    String testUserAccessToken = (String) happyTokenRequest.get("access_token");
+
+    // valid token should retrieve user's details
     Map<String, Object> happyTokenValidation =
         connector.queryForEgnyteUserInfoWithAccessToken(testUserAccessToken);
     assertNotNull(happyTokenValidation, "no user info after querying egnyte with test token");

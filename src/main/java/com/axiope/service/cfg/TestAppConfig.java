@@ -44,7 +44,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
 
@@ -114,12 +113,6 @@ public class TestAppConfig extends BaseConfig {
     return createNewExecutor(2, 5, 10);
   }
 
-  @Bean(name = "asyncDbMigrationExecutor")
-  TaskExecutor asyncDbMigrationExecutor() {
-    SimpleAsyncTaskExecutor exe = new SimpleAsyncTaskExecutor();
-    return exe;
-  }
-
   @Bean
   public IApplicationInitialisor licenseServerChecker() {
     return new LicenseServerChecker();
@@ -131,11 +124,14 @@ public class TestAppConfig extends BaseConfig {
     List<IApplicationInitialisor> inits = new ArrayList<IApplicationInitialisor>();
     inits.add(fileStoreRootDetector());
     inits.add(indexer());
+    inits.add(chemistryIndexer());
+    inits.add(chemistryImageUpdater());
     // must be before devGrpSetup
     inits.add(sampleTemplateAppInitialiser());
     inits.add(devGrpSetup());
     inits.add(integrationsHandlerInitialisor());
     inits.add(dBDataIntegrityChecker());
+    inits.add(systemConfigurationUpdater());
     inits.add(customForms());
     inits.add(sharedSnippetsFolderCreator());
     inits.add(sanityChecker()); // must be last

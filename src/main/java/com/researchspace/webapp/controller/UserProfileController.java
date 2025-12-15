@@ -53,6 +53,7 @@ import com.researchspace.model.frontend.PublicOAuthApps;
 import com.researchspace.model.frontend.PublicOAuthConnAppInfo;
 import com.researchspace.model.frontend.PublicOAuthConnApps;
 import com.researchspace.model.oauth.OAuthToken;
+import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.preference.PreferenceCategory;
@@ -359,12 +360,10 @@ public class UserProfileController extends BaseController {
     return new AjaxReturnObject<>(msg, null);
   }
 
-  private void logAuthenticationFailure(HttpServletRequest request, User user) {
+  private void logAuthenticationFailureOnEmailChange(HttpServletRequest request, User user) {
     SECURITY_LOG.warn(
-        "{}  [{}] unsuccessfully attempted to  reset password but "
-            + "did not authenticate from remote address [{}]",
-        user.getFullName(),
-        user.getId(),
+        "Unsuccessfully attempted to change email of user [{}], from {}",
+        user.getUsername(),
         RequestUtil.remoteAddr(request));
   }
 
@@ -433,7 +432,7 @@ public class UserProfileController extends BaseController {
         || checkInputString(password)) {
       errorMsg = "Please enter data in all fields";
     } else if (!reauthenticator.reauthenticate(user, password)) {
-      logAuthenticationFailure(request, user);
+      logAuthenticationFailureOnEmailChange(request, user);
       errorMsg = "The current password is incorrect";
     } else if (!email.equalsIgnoreCase(emailConfirm)) {
       errorMsg = "New email field does not match the confirm email";
@@ -700,7 +699,7 @@ public class UserProfileController extends BaseController {
   @PostMapping("/ajax/apiKey")
   @IgnoreInLoggingInterceptor(ignoreRequestParams = "password")
   public @ResponseBody AjaxReturnObject<ApiKeyInfo> generateApiKey(
-      @RequestParam("password") String pwd) {
+      @RequestParam("password") String pwd, HttpServletRequest req) {
     if (isEmpty(pwd)) {
       return new AjaxReturnObject<>(
           null, ErrorList.of(getText(ERRORS_REQUIRED, new Object[] {"Password"})));
@@ -714,12 +713,14 @@ public class UserProfileController extends BaseController {
     User user = userManager.getAuthenticatedUserInSession();
     if (!reauthenticator.reauthenticate(user, pwd)) {
       SECURITY_LOG.warn(
-          "User {} tried to create a new API key but authentication failed", user.getUsername());
+          "Failed attempt to authenticate creation of a new API Key for User [{}], from {}",
+          user.getUsername(),
+          RequestUtil.remoteAddr(req));
       return new AjaxReturnObject<>(null, ErrorList.of("Invalid password"));
     }
 
     UserApiKey apiKey = apiKeyMgr.createKeyForUser(user);
-    SECURITY_LOG.info("User {} created new API key", user.getUsername());
+    SECURITY_LOG.info("User [{}] created new API key", user.getUsername());
     return new AjaxReturnObject<>(
         new ApiKeyInfo(apiKey.getApiKey(), true, true, true, "", 0L), null);
   }
@@ -728,7 +729,7 @@ public class UserProfileController extends BaseController {
   public @ResponseBody Integer revokeApiKey() {
     User user = userManager.getAuthenticatedUserInSession();
     int result = apiKeyMgr.revokeKeyForUser(user);
-    SECURITY_LOG.info("User {} revoked API key", user.getUsername());
+    SECURITY_LOG.info("User [{}] revoked API key", user.getUsername());
     return result;
   }
 
@@ -860,10 +861,7 @@ public class UserProfileController extends BaseController {
             () ->
                 oAuthTokenManager
                     .createNewJwtToken(
-                        INVENTORY_CLIENT_ID,
-                        INVENTORY_CLIENT_SECRET,
-                        user,
-                        OAuthToken.DEFAULT_SCOPE)
+                        INVENTORY_CLIENT_ID, INVENTORY_CLIENT_SECRET, user, OAuthTokenType.UI_TOKEN)
                     .getEntity());
     NewOAuthTokenResponse createdToken = Try.ofCallable(updateWithRetry).get();
 

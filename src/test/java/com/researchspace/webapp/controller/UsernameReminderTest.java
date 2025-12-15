@@ -105,12 +105,12 @@ public class UsernameReminderTest extends SpringTransactionalTest {
         request, "non-existing-email@email.com");
     Mockito.verify(logger)
         .warn(
-            "Username reminder request from {} for a non-existing email {}",
-            "127.0.0.1",
-            "non-existing-email@email.com");
+            "Username reminder request for unknown email [{}], from {}",
+            "non-existing-email@email.com",
+            "127.0.0.1");
 
     usernameReminderByEmailHandlerTSS.sendUsernameReminderEmail(request, U2_EMAIL);
     Mockito.verify(logger)
-        .info("Username reminder request from {} sent to email {}", "127.0.0.1", U2_EMAIL);
+        .info("Username reminder request from {} sent to [{}]", "127.0.0.1", U2_EMAIL);
   }
 }

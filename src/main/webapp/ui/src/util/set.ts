@@ -2,9 +2,6 @@ import { computed, makeObservable } from "mobx";
 import { filterMap } from "./Util";
 import { Optional } from "./optional";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Class<T> = new (...args: any[]) => T;
-
 /**
  * This is an extension of the standard Set data structure, with the addition
  * of methods that operate on the contents of the set in a manner similar to
@@ -65,8 +62,8 @@ export default class RsSet<A> extends Set<A> {
   }
 
   /*
-   * This is for Flow's benefit, because it returns an instance of RsSet,
-   *  not Set but is otherwise not necessary
+   * This is for TypeScript's benefit, because it returns an instance of RsSet,
+   * not Set but is otherwise not necessary
    */
   add(a: A): this {
     super.add(a);
@@ -132,8 +129,7 @@ export default class RsSet<A> extends Set<A> {
    * filter.
    * Usage: see test
    */
-  // filterClass<U extends A>(clazz: { new (...args: unknown[]): U }): RsSet<U> {
-  filterClass<U extends A>(clazz: Class<U>): RsSet<U> {
+  filterClass<U>(clazz: { new (...args: any[]): U }): RsSet<U> {
     const setOft = new RsSet<U>();
     for (const a of this) {
       if (a instanceof clazz) setOft.add(a);
@@ -357,8 +353,8 @@ export default class RsSet<A> extends Set<A> {
       (opt) =>
         opt.destruct(
           () => new Empty(),
-          (v) => new Present(v)
-        )
+          (v) => new Present(v),
+        ),
     );
     const setOfPresent: RsSet<Present<B>> = setOfPresentOrEmpty.filterClass<
       Present<B>
@@ -374,7 +370,7 @@ export default class RsSet<A> extends Set<A> {
  *  flattenWithIntersection(new RsSet([new RsSet([1,2]), new RsSet([2,3])]))    // new RsSet([2])
  */
 export const flattenWithIntersection = <A>(
-  setOfSets: RsSet<RsSet<A>>
+  setOfSets: RsSet<RsSet<A>>,
 ): RsSet<A> => {
   if (setOfSets.isEmpty) return new RsSet();
   const [first, ...rest] = setOfSets.toArray();
@@ -399,7 +395,7 @@ export const flattenWithUnion = <A>(setOfSets: RsSet<RsSet<A>>): RsSet<A> => {
  */
 export const flattenWithIntersectionWithEq = <A>(
   setOfSets: RsSet<RsSet<A>>,
-  eqFunc: (elem1A: A, elem2A: A) => boolean
+  eqFunc: (elem1A: A, elem2A: A) => boolean,
 ): RsSet<A> => {
   const allElements = flattenWithUnion(setOfSets);
   const intersection = new RsSet<A>();
@@ -438,7 +434,7 @@ export const flattenWithIntersectionWithEq = <A>(
  */
 export const unionWith = <A, B>(
   eqFunc: (elem: A) => B,
-  sets: Array<RsSet<A>>
+  sets: Array<RsSet<A>>,
 ): RsSet<A> => {
   const uniqueBs = new RsSet<B>();
   const uniqueAs = new RsSet<A>();

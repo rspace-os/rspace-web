@@ -5,6 +5,7 @@ import static com.researchspace.core.util.imageutils.ImageUtils.TIFF_EXTENSIONS;
 import com.researchspace.archive.ArchivalGalleryMetadata;
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.archive.ArchiveUtils;
+import com.researchspace.export.stoichiometry.StoichiometryHtmlGenerator;
 import com.researchspace.model.record.Record;
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.tools.generic.DateTool;
+import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,7 @@ public class HTMLWriter implements ExportObjectWriter {
 
   @Autowired private VelocityEngine velocity;
   Logger logger = LoggerFactory.getLogger(HTMLWriter.class);
+  @Autowired private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
 
   @Override
   public void writeExportObject(File outputFile, ExportedRecord exported) {
@@ -80,10 +83,18 @@ public class HTMLWriter implements ExportObjectWriter {
     Record exportedRcd = exported.getExportedRecord();
     addParentLink(velocityModel, exportedRcd);
 
-    String msg =
+    String htmlExtracted =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocity, "documentView.vm", "UTF-8", velocityModel);
-    return msg;
+    org.jsoup.nodes.Document jsoupDoc = Jsoup.parse(htmlExtracted);
+    jsoupDoc = ImageFieldExporter.addImageAltToImages(jsoupDoc);
+    htmlExtracted = ImageFieldExporter.resizeChemImages(jsoupDoc).html();
+    if (htmlExtracted.contains("data-stoichiometry-table")) {
+      htmlExtracted =
+          stoichiometryHtmlGenerator.addStoichiometryLinks(
+              htmlExtracted, exported.getExportedRecord().getOwner());
+    }
+    return htmlExtracted;
   }
 
   // adds info about original tiff files if these are in media file's export folder.

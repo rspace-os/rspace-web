@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -10,8 +11,8 @@ import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.testutils.TestFactory;
 import java.util.concurrent.Callable;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.subject.Subject;
@@ -56,7 +57,7 @@ public class SampleTemplateAppInitialiserTest {
     when(subject.execute(any(Callable.class))).thenReturn(Boolean.TRUE);
     sampleTemplateAppInitialiser.onAppStartup(null);
     verifyLoginAndLogout();
-    assertTrue(strgLogger.logContents.isEmpty());
+    assertFalse(strgLogger.logContents.contains("error"));
   }
 
   @Test

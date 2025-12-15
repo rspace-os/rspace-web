@@ -1,14 +1,8 @@
-import {
-  createTheme,
-  Theme as MuiTheme,
-  PaletteColorOptions,
-  PaletteOptions,
-  TransitionsOptions,
-} from "@mui/material";
+import { createTheme, ThemeOptions as MuiThemeOptions } from "@mui/material";
+import { type Transitions } from "@mui/material/styles/createTransitions";
 import { makeStyles } from "tss-react/mui";
 import { grey, red } from "@mui/material/colors";
 import { hslToHex } from "./util/colors";
-import { TypographyOptions } from "@mui/material/styles/createTypography";
 
 /**
  * The RecordPalette type is used to define the colours used for each Inventory
@@ -17,20 +11,46 @@ import { TypographyOptions } from "@mui/material/styles/createTypography";
 export type RecordPalette = {
   bg: string;
   fg: string;
-  lighter: string;
-};
-
-type Color = {
-  main: string;
-  light?: string;
-  contrastText?: string;
-  saturated?: string;
+  lighter?: string;
 };
 
 declare module "@mui/material/styles" {
-  // eslint-disable-next-line no-unused-vars
-  interface ThemeOptions {
+   
+  interface Theme {
     borders: {
+      table?: string;
+      descriptionList?: string;
+      floatingActions?: string;
+      menu?: string;
+      section?: string;
+      menuButton?: string;
+      card?: string;
+      themedDialog?: (hue: number, sat: number, lig: number) => string;
+      themedDialogTitle?: (hue: number, sat: number, lig: number) => string;
+    };
+    transitions: {
+      iconTransformations: string;
+      filterToggle: string;
+    } & Transitions;
+  }
+
+   
+  interface SimplePaletteColorOptions {
+    saturated?: string;
+    placeholderText?: string;
+    background?: string;
+  }
+
+  interface TransitionsOptions {
+    iconTransformations: string;
+    filterToggle: string;
+  }
+}
+
+declare module "@mui/material/styles/createTheme" {
+   
+  interface ThemeOptions {
+    borders?: {
       table: string;
       descriptionList: string;
       floatingActions: string;
@@ -42,20 +62,80 @@ declare module "@mui/material/styles" {
       themedDialogTitle: (hue: number, sat: number, lig: number) => string;
     };
   }
+}
 
-  // eslint-disable-next-line no-unused-vars
-  interface Theme {
-    borders: {
-      table: string;
-      descriptionList: string;
-      floatingActions: string;
-      menu: string;
-      section: string;
-      menuButton: string;
-      card: string;
-      themedDialog: (hue: number, sat: number, lig: number) => string;
-      themedDialogTitle: (hue: number, sat: number, lig: number) => string;
+declare module "@mui/material/styles/createPalette" {
+   
+  interface PaletteColor {
+    background: string;
+    saturated?: string;
+    placeholderText?: string;
+  }
+  interface Palette {
+    tertiary: PaletteColor;
+    callToAction: PaletteColor;
+    standardIcon: PaletteColor;
+    lightestGrey: string;
+    warningRed: string;
+    deletedGrey: string;
+    modifiedHighlight: string;
+    record: {
+      container: RecordPalette;
+      sample: RecordPalette;
+      subSample: RecordPalette;
+      sampleTemplate: RecordPalette;
+      document: RecordPalette;
+      mixed: RecordPalette;
+      attachment: Pick<RecordPalette, "fg">;
+      gallery: Pick<RecordPalette, "fg">;
     };
+    hover: {
+      tableRow: string;
+      iconButton: string;
+    };
+    sidebar: {
+      selected: {
+        bg: string;
+        badge: string;
+      };
+    };
+  }
+  interface PaletteOptions {
+    callToAction: PaletteColorOptions;
+    tertiary: PaletteColorOptions;
+    hover: {
+      tableRow: string;
+      iconButton: string;
+    };
+    borders?: {
+      card?: string;
+    };
+    record: {
+      container: RecordPalette;
+      sample: RecordPalette;
+      subSample: RecordPalette;
+      sampleTemplate: RecordPalette;
+      document: RecordPalette;
+      mixed: RecordPalette;
+      attachment: Pick<RecordPalette, "fg">;
+      gallery: Pick<RecordPalette, "fg">;
+    };
+    standardIcon: PaletteColorOptions;
+    sidebar: {
+      selected: {
+        bg: string;
+        badge: string;
+      };
+    };
+    lightestGrey: string;
+    menuIconGrey: string;
+    faIconGrey: string;
+    modifiedHighlight: string;
+    warningRed: string;
+    deletedGrey: string;
+  }
+  interface TypeBackground {
+    alt?: string;
   }
 }
 
@@ -72,16 +152,54 @@ declare module "@mui/material/styles" {
  * accept.
  */
 declare module "@mui/material/Button" {
-  // eslint-disable-next-line no-unused-vars
+   
   interface ButtonPropsColorOverrides {
     standardIcon: true;
     callToAction: true;
   }
 }
 declare module "@mui/material/IconButton" {
-  // eslint-disable-next-line no-unused-vars
+   
   interface IconButtonPropsColorOverrides {
     standardIcon: true;
+  }
+}
+declare module "@mui/material/Badge" {
+  interface BadgePropsColorOverrides {
+    callToAction: true;
+  }
+}
+declare module "@mui/material/Switch" {
+  interface SwitchPropsColorOverrides {
+    tertiary: true;
+  }
+}
+declare module "@mui/material/Chip" {
+   
+  interface ChipPropsColorOverrides {
+    callToAction: true;
+  }
+}
+declare module "@mui/material/Fab" {
+   
+  interface FabPropsColorOverrides {
+    callToAction: true;
+  }
+}
+
+declare module "@mui/material/styles/createTypography" {
+  interface Typography {
+    letterSpacing: {
+      spaced: string;
+      dense: string;
+    };
+  }
+
+  interface TypographyOptions {
+    letterSpacing?: {
+      spaced: string;
+      dense: string;
+    };
   }
 }
 
@@ -97,105 +215,13 @@ export const COLORS = {
   },
 };
 
-/**
- * The Theme type is used to define the colours and styles used throughout the
- * application.
- */
-export type Theme = {
-  palette: {
-    primary: Color & {
-      placeholderText: string;
-    };
-    secondary: Color;
-    tertiary: Color;
-    background: Color;
-    hover: {
-      tableRow: string;
-      iconButton: string;
-    };
-    record: {
-      container: RecordPalette;
-      sample: RecordPalette;
-      subSample: RecordPalette;
-      sampleTemplate: RecordPalette;
-      document: RecordPalette;
-      mixed: RecordPalette;
-      attachment: {
-        fg: string;
-      };
-      gallery: {
-        fg: string;
-      };
-    };
-    standardIcon: Color;
-    sidebar: {
-      selected: {
-        bg: string;
-        badge: string;
-      };
-    };
-    lightestGrey: string;
-    menuIconGrey: string;
-    faIconGrey: string;
-    modifiedHighlight: string;
-    warningRed: string;
-    deletedGrey: string;
-    text: string;
-  };
-  breakpoints: {
-    values: {
-      xs: number;
-      sm: number;
-      md: number;
-      lg: number;
-      xl: number;
-    };
-    up: (size: "sm") => string;
-  };
-  borders: {
-    table: string;
-    descriptionList: string;
-    menu: string;
-    section: string;
-    menuButton: string;
-    card: string;
-    themedDialog: (hue: number, sat: number, lig: number) => string;
-  };
-  transitions: {
-    iconTransformations: string;
-    filterToggle: string;
-    create: (
-      property: string | Array<string>,
-      options?: {
-        easing?: string;
-        duration?: string | number;
-        delay?: string | number;
-      }
-    ) => string;
-    easing: {
-      sharp: string;
-    };
-    duration: {
-      enteringScreen: string;
-      leavingScreen: string;
-    };
-  };
-  typography: {
-    hnumber: {
-      fontSize: string;
-    };
-  };
-  components: {};
-  spacing: (...dimensions: Array<number>) => number;
-};
-
 const baseTheme = createTheme({
   palette: {
     primary: {
       main: hslToHex(
         COLORS.primary.hue,
         COLORS.primary.saturation,
-        COLORS.primary.lightness
+        COLORS.primary.lightness,
       ),
       contrastText: "#fff",
       saturated: "#009ad6",
@@ -203,18 +229,14 @@ const baseTheme = createTheme({
       background: "#00adef22",
       dark: "rgba(0, 121, 167, 1)",
       light: "rgba(51, 189, 242, 1)",
-    } as PaletteColorOptions & { saturated: string },
+    },
     callToAction: {
-      main: hslToHex(
-        COLORS.primary.hue,
-        COLORS.primary.saturation,
-        COLORS.primary.lightness
-      ),
-      contrastText: "#fff",
-      saturated: "#009ad6",
+      main: hslToHex(207, 76, 76),
+      contrastText: "#264b58",
+      saturated: "#ff0000",
       placeholderText: "#8babcb",
-      background: "#00adef22",
-      dark: "rgba(0, 121, 167, 1)",
+      background: hslToHex(207, 76, 66),
+      dark: hslToHex(207, 76, 66),
       light: "rgba(51, 189, 242, 1)",
     },
     secondary: {
@@ -291,10 +313,6 @@ const baseTheme = createTheme({
         badge: "#f7f7f7",
       },
     },
-    contextMenuButton: {
-      main: "rgba(0, 0, 0, 0.87)",
-      border: "#bdbdbd",
-    },
 
     // the lightest grey on a white background that has AA contrast
     lightestGrey: "#949494",
@@ -303,7 +321,7 @@ const baseTheme = createTheme({
     modifiedHighlight: "teal",
     warningRed: red[500],
     deletedGrey: grey[700],
-  } as PaletteOptions & { callToAction: PaletteColorOptions },
+  },
   breakpoints: {
     values: {
       xs: 0,
@@ -329,7 +347,7 @@ const baseTheme = createTheme({
   transitions: {
     iconTransformations: "transform 0.3s cubic-bezier(0.42, 0, 0.94, 1.49) 0s", // just a little bounce
     filterToggle: "filter .2s ease-in-out, opacity .2s ease-in-out",
-  } as TransitionsOptions & { iconTransformations: string },
+  },
   typography: {
     h6: {
       fontSize: "1.1rem",
@@ -338,14 +356,15 @@ const baseTheme = createTheme({
       spaced: "0.03em",
       dense: "0.01071em",
     },
-  } as TypographyOptions & { letterSpacing: { spaced: string; dense: string } },
+  },
 });
 
 /**
  * The standard theme used across the application.
  */
 export default createTheme({
-  ...baseTheme,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ...(baseTheme as any as MuiThemeOptions),
   components: {
     MuiFormLabel: {
       styleOverrides: {
@@ -381,6 +400,11 @@ export default createTheme({
     MuiButton: {
       defaultProps: {
         color: "standardIcon",
+      },
+      styleOverrides: {
+        containedCallToAction: {
+          fontWeight: 700,
+        },
       },
     },
     MuiSelect: {
@@ -429,15 +453,8 @@ export default createTheme({
     },
     MuiTypography: {
       styleOverrides: {
-        h1: {
-          fontSize: "2rem",
-          fontWeight: 500,
-          color: "#5482b7",
-          textAlign: "center",
-        },
         subtitle1: {
           fontSize: "1.05rem",
-          color: "#5482b7",
           letterSpacing: "0.02em",
         },
         body1: {
@@ -453,7 +470,7 @@ export default createTheme({
       },
     },
   },
-}) as Theme & MuiTheme;
+} as MuiThemeOptions);
 
 /**
  * Some global styles used in various places

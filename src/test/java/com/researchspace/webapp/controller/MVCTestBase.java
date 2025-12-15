@@ -1,12 +1,19 @@
 package com.researchspace.webapp.controller;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.researchspace.api.v1.controller.API_VERSION;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.preference.HierarchicalPermission;
+import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -15,10 +22,12 @@ import java.util.Map;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Before;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -47,6 +56,32 @@ public abstract class MVCTestBase extends RealTransactionSpringTestBase {
   }
 
   @Autowired protected MvcTestUtils mvcUtils;
+
+  @Autowired protected SystemPropertyManager sysPropMgr;
+
+  public void disableGlobalApiAccess() {
+    sysPropMgr.save(
+        SystemPropertyName.API_AVAILABLE, HierarchicalPermission.DENIED, getSysAdminUser());
+  }
+
+  public void enableGlobalApiAccess() {
+    sysPropMgr.save(
+        SystemPropertyName.API_AVAILABLE, HierarchicalPermission.ALLOWED, getSysAdminUser());
+  }
+
+  public void disableApiOAuthAuthentication() {
+    sysPropMgr.save(
+        SystemPropertyName.API_OAUTH_AUTHENTICATION,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
+  }
+
+  public void enableApiOAuthAuthentication() {
+    sysPropMgr.save(
+        SystemPropertyName.API_OAUTH_AUTHENTICATION,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
+  }
 
   /**
    * Mimics edit lock request, autosave and save, and unlock behaviour from editor via MVC
@@ -193,5 +228,35 @@ public abstract class MVCTestBase extends RealTransactionSpringTestBase {
    */
   protected String getAsJsonString(Object object) throws JsonProcessingException {
     return mvcUtils.getAsJsonString(object);
+  }
+
+  protected MockHttpServletRequestBuilder createBuilderForPostWithJSONBody(
+      String apiKey, String suffixUrl, User user, Object toPost) {
+    String body = getStringBody(toPost);
+    return preparePostOrPutRequestBody(
+        post(createUrl(API_VERSION.ONE, suffixUrl)), body, user, apiKey);
+  }
+
+  protected MockHttpServletRequestBuilder preparePostOrPutRequestBody(
+      MockHttpServletRequestBuilder builder, String body, User user, String apiKey) {
+    return builder
+        .content(body)
+        .contentType(MediaType.APPLICATION_JSON)
+        .principal(new MockPrincipal(user.getUsername()))
+        .header("apiKey", apiKey);
+  }
+
+  protected String createUrl(API_VERSION version, String suffixUrl) {
+    return "/api/v" + version.getVersion() + "/" + suffixUrl;
+  }
+
+  protected String getStringBody(Object toPost) {
+    String body = "";
+    if (toPost instanceof String) {
+      body = toPost.toString();
+    } else {
+      body = JacksonUtil.toJson(toPost);
+    }
+    return body;
   }
 }

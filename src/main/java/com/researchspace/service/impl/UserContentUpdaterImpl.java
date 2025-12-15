@@ -29,8 +29,9 @@ public class UserContentUpdaterImpl implements UserContentUpdater {
 
   private void createSharedSnippetFolder(User subject) {
     Folder snippetFolder =
-        recordManager.getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, subject);
-    if (snippetFolder.getSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)
+        recordManager.getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, subject);
+    if (snippetFolder.getSystemSubFolderByName(
+            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)
         == null) {
       userFolderCreator.createSharedSnippetFolder(subject, snippetFolder);
     }

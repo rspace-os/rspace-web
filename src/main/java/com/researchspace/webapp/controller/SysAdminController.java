@@ -802,7 +802,7 @@ public class SysAdminController extends BaseController {
         errors, "sysadminPassword", "errors.required", new Object[] {"password"});
     ValidationUtils.rejectIfEmpty(
         errors, "runAsUsername", "errors.required", new Object[] {"username"});
-    String[] users = User.getUsernameesFromMultiUser(runAsUserCmnd.getRunAsUsername());
+    String[] users = User.getUsernamesFromMultiUser(runAsUserCmnd.getRunAsUsername());
     if (ArrayUtils.isEmpty(users)) {
       errors.rejectValue("runAsUsername", "system.runAs.invalidusernameformat.msg", null);
     }

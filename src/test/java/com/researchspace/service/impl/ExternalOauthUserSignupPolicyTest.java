@@ -5,9 +5,9 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
+import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.List;
 import org.junit.After;

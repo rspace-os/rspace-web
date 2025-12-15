@@ -110,13 +110,13 @@ added to the project.
 
 ## Static Typing
 
-* Does the library expose Flow.js types?
-  Flow.js is a core part of our toolchain enabling us to catch a variety of
+* Does the library expose TypeScript types?
+  TypeScript is a core part of our toolchain enabling us to catch a variety of
   bugs during development. Libraries that expose type definitions for their API
-  allow for Flow.js to type check where our code interfaces with that API. If
-  the project doesn't expose Flow.js type definitions (which are not the same
-  thing as TypeScript type definitions) then
-  * Does the [flow-typed project](https://flow-typed.github.io/flow-typed)?
+  allow for TypeScript to type check where our code interfaces with that API. If
+  the project doesn't expose TypeScript type definitions then
+  * Does the [DefinitelyTyped project](https://github.com/DefinitelyTyped/DefinitelyTyped),
+    or other community-led effort provide type definitions for the library?
   * Is the API small enough that we could reasonably implement a library
     definition?
 

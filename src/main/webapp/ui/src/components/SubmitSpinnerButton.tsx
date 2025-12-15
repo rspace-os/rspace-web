@@ -1,9 +1,7 @@
 import React from "react";
 import Button from "@mui/material/Button";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-library.add(faSpinner);
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { observer } from "mobx-react-lite";
 import { makeStyles } from "tss-react/mui";
 import clsx from "clsx";
@@ -40,7 +38,7 @@ const useStyles = makeStyles<{ progress: Progress }>()(
       position: "relative",
       overflow: "hidden",
     },
-  })
+  }),
 );
 
 type SubmitSpinnerButtonArgs = {
@@ -53,6 +51,7 @@ type SubmitSpinnerButtonArgs = {
   type?: "button" | "submit";
   size?: "small" | "medium" | "large";
   className?: string;
+  color?: "primary" | "callToAction";
 };
 
 function SubmitSpinnerButton({
@@ -65,11 +64,12 @@ function SubmitSpinnerButton({
   type = "button",
   size = "medium",
   className,
+  color = "callToAction",
 }: SubmitSpinnerButtonArgs): React.ReactNode {
   const { classes } = useStyles({ progress: progress ?? 0 });
   return (
     <Button
-      color="callToAction"
+      color={color}
       onClick={onClick}
       variant="contained"
       disabled={disabled}
@@ -83,7 +83,7 @@ function SubmitSpinnerButton({
     >
       <div className={clsx(classes.spinner, !loading && classes.hidden)}>
         <FontAwesomeIcon
-          icon="spinner"
+          icon={faSpinner}
           spin
           size="lg"
           style={{ marginRight: "10px" }}

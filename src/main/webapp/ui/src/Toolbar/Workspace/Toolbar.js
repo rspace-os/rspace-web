@@ -9,36 +9,21 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCalendarAlt,
-  faList,
-  faFolder,
-  faStar,
-  faShareAlt,
-  faUsers,
-  faFile,
-  faBook,
-  faFolderOpen,
-  faThList,
-  faStream,
-} from "@fortawesome/free-solid-svg-icons";
-library.add(
-  faCalendarAlt,
-  faList,
-  faFolder,
-  faStar,
-  faShareAlt,
-  faUsers,
-  faFile,
-  faBook,
-  faFolderOpen,
-  faThList,
-  faStream
-);
+import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons/faCalendarAlt";
+import { faList } from "@fortawesome/free-solid-svg-icons/faList";
+import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
+import { faStar } from "@fortawesome/free-solid-svg-icons/faStar";
+import { faShareAlt } from "@fortawesome/free-solid-svg-icons/faShareAlt";
+import { faUsers } from "@fortawesome/free-solid-svg-icons/faUsers";
+import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
+import { faThList } from "@fortawesome/free-solid-svg-icons/faThList";
+import { faStream } from "@fortawesome/free-solid-svg-icons/faStream";
+
 import TagDialog from "./TagDialog";
 import CompareDialog from "./CompareDialog";
+import RenameDialog from "./RenameDialog";
+import ShareDialog from "../../components/ShareDialog";
 
 import BaseToolbar from "../../components/BaseToolbar";
 import TreeSort from "../../components/TreeSort";
@@ -46,6 +31,7 @@ import CreateMenu from "../ToolbarCreateMenu";
 import SocialActions from "../ToolbarSocial";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
+import Analytics from "../../components/Analytics";
 
 class WorkspaceToolbar extends React.Component {
   constructor(props) {
@@ -66,9 +52,9 @@ class WorkspaceToolbar extends React.Component {
       evernoteEnabled:
         props.domContainer.getAttribute("data-evernote-enabled") === "true",
       asposeEnabled:
-          props.domContainer.getAttribute("data-aspose-enabled") === "true",
+        props.domContainer.getAttribute("data-aspose-enabled") === "true",
       labgroupsFolderId: props.domContainer.getAttribute(
-        "data-labgroups-folder-id"
+        "data-labgroups-folder-id",
       ),
     };
 
@@ -80,8 +66,8 @@ class WorkspaceToolbar extends React.Component {
     this.checkSavedSettings();
 
     // Bad practise. Change when the reset button is in React
-    let toolbar = this;
-    $(document).on("click", "#resetSearch", function () {
+    const toolbar = this;
+    $(document).on("click", "#resetSearch", () => {
       abandonSearch();
       toolbar.setState({
         sharedFilter: workspaceSettings.sharedFilter,
@@ -140,7 +126,7 @@ class WorkspaceToolbar extends React.Component {
           filter === "global" && workspaceSettings.options.length > 1
             ? "fullText"
             : filter,
-        term: term,
+        term,
         from: from === "null" ? null : from,
         to: to === "null" ? null : to,
       });
@@ -148,7 +134,7 @@ class WorkspaceToolbar extends React.Component {
 
     if (localQueries.length > 1) {
       this.setState({ advancedOpen: true }, () =>
-        this.advancedSearch.current.setQueries(localQueries)
+        this.advancedSearch.current.setQueries(localQueries),
       );
     } else if (localQueries.length === 1) {
       this.simpleSearch.current.setQueries(localQueries);
@@ -182,16 +168,16 @@ class WorkspaceToolbar extends React.Component {
     if (this.state.advancedOpen) {
       this.setState({ advancedOpen: false });
     } else {
-      let queries = [];
+      const queries = [];
 
       if (filter == "global") {
-        queries.push({ filter: "fullText", term: term });
+        queries.push({ filter: "fullText", term });
       } else {
-        queries.push({ filter: filter, term: term, from: from, to: to });
+        queries.push({ filter, term, from, to });
       }
 
       this.setState({ advancedOpen: true }, () =>
-        this.advancedSearch.current.setQueries(queries)
+        this.advancedSearch.current.setQueries(queries),
       );
     }
   };
@@ -204,22 +190,26 @@ class WorkspaceToolbar extends React.Component {
     tree_view();
     this.setState({ treeView: true });
     this.handleClose(0);
+    RS.trackEvent("user:view:tree:workspace");
   };
 
   openListView = () => {
     list_view();
     this.setState({ treeView: false });
     this.handleClose(0);
+    RS.trackEvent("user:view:list:workspace");
   };
 
   openFolderView = () => {
     this.setState({ viewableItemsFilter: false }, this.displayWorkspace);
     this.handleClose(1);
+    RS.trackEvent("user:view:folder:workspace");
   };
 
   openViewAll = () => {
     this.setState({ viewableItemsFilter: true }, this.displayWorkspace);
     this.handleClose(1);
+    RS.trackEvent("user:view:all:workspace");
   };
 
   toggleFilter = (filter) => {
@@ -227,7 +217,7 @@ class WorkspaceToolbar extends React.Component {
       {
         [filter]: !this.state[filter],
       },
-      this.displayWorkspace
+      this.displayWorkspace,
     );
   };
 
@@ -235,6 +225,7 @@ class WorkspaceToolbar extends React.Component {
     const callback = () => {
       this.setWorkspaceSettings();
       getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
+      RS.trackEvent("user:view:labgroup:workspace");
     };
 
     this.setWorkspaceSettingsUrl();
@@ -248,7 +239,7 @@ class WorkspaceToolbar extends React.Component {
           viewableItemsFilter: false,
           treeView: false,
         },
-        callback
+        callback,
       );
     } else {
       workspaceSettings.searchMode = false;
@@ -258,14 +249,14 @@ class WorkspaceToolbar extends React.Component {
           favoritesFilter: false,
           sharedFilter: false,
         },
-        callback
+        callback,
       );
     }
   };
 
   displayWorkspace = () => {
     this.setWorkspaceSettings();
-    let url = "/workspace/ajax/view/" + workspaceSettings.parentFolderId;
+    const url = "/workspace/ajax/view/" + workspaceSettings.parentFolderId;
 
     if (workspaceSettings.searchMode) {
       doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
@@ -312,7 +303,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-calendar"
                 aria-label="Create a calendar entry"
               >
-                <FontAwesomeIcon icon="calendar-alt" />
+                <FontAwesomeIcon icon={faCalendarAlt} />
               </IconButton>
             </Tooltip>
           </span>
@@ -333,7 +324,11 @@ class WorkspaceToolbar extends React.Component {
             color="inherit"
             aria-label="View mode"
           >
-            <FontAwesomeIcon icon={this.state.treeView ? "stream" : "list"} />
+            {this.state.treeView ? (
+              <FontAwesomeIcon icon={faStream} />
+            ) : (
+              <FontAwesomeIcon icon={faList} />
+            )}
           </IconButton>
         </Tooltip>
         <Menu
@@ -352,7 +347,7 @@ class WorkspaceToolbar extends React.Component {
             data-test-id="toolbar-view-tree"
             aria-label="Tree view"
           >
-            <FontAwesomeIcon icon="stream" style={{ paddingRight: "10px" }} />
+            <FontAwesomeIcon icon={faStream} style={{ paddingRight: "10px" }} />
             Tree view
           </MenuItem>
           <MenuItem
@@ -361,7 +356,7 @@ class WorkspaceToolbar extends React.Component {
             data-test-id="toolbar-view-list"
             aria-label="List view"
           >
-            <FontAwesomeIcon icon="list" style={{ paddingRight: "10px" }} />
+            <FontAwesomeIcon icon={faList} style={{ paddingRight: "10px" }} />
             List view
           </MenuItem>
         </Menu>
@@ -377,11 +372,11 @@ class WorkspaceToolbar extends React.Component {
                 color="inherit"
                 aria-label="View mode"
               >
-                <FontAwesomeIcon
-                  icon={
-                    this.state.viewableItemsFilter ? "th-list" : "folder-open"
-                  }
-                />
+                {this.state.viewableItemsFilter ? (
+                  <FontAwesomeIcon icon={faThList} />
+                ) : (
+                  <FontAwesomeIcon icon={faFolderOpen} />
+                )}
               </IconButton>
             </Tooltip>
             <Menu
@@ -401,7 +396,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-view-folders"
               >
                 <FontAwesomeIcon
-                  icon="folder-open"
+                  icon={faFolderOpen}
                   style={{ paddingRight: "10px" }}
                 />
                 Folder view
@@ -412,7 +407,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-view-all"
               >
                 <FontAwesomeIcon
-                  icon="th-list"
+                  icon={faThList}
                   style={{ paddingRight: "10px" }}
                 />
                 View all
@@ -426,7 +421,7 @@ class WorkspaceToolbar extends React.Component {
                 data-test-id="toolbar-filter-labgroup"
                 aria-label="Labgroup records"
               >
-                <FontAwesomeIcon icon="users" />
+                <FontAwesomeIcon icon={faUsers} />
               </IconButton>
             </Tooltip>
             <span
@@ -438,38 +433,47 @@ class WorkspaceToolbar extends React.Component {
             ></span>
             <Tooltip title="Favorites" enterDelay={300}>
               <IconButton
-                onClick={() => this.toggleFilter("favoritesFilter")}
+                onClick={() => {
+                  this.toggleFilter("favoritesFilter");
+                  RS.trackEvent("user:filter:favorites:workspace");
+                }}
                 id="favoritesFilter_1"
                 color={this.state.favoritesFilter ? "default" : "inherit"}
                 className={this.state.favoritesFilter ? "active" : ""}
                 data-test-id="toolbar-filter-favorites"
                 aria-label="Favorites"
               >
-                <FontAwesomeIcon icon="star" />
+                <FontAwesomeIcon icon={faStar} />
               </IconButton>
             </Tooltip>
             <Tooltip title="Shared with me" enterDelay={300}>
               <IconButton
-                onClick={() => this.toggleFilter("sharedFilter")}
+                onClick={() => {
+                  this.toggleFilter("sharedFilter");
+                  RS.trackEvent("user:filter:shared_with_me:workspace");
+                }}
                 id="sharedFilter_1"
                 color={this.state.sharedFilter ? "default" : "inherit"}
                 className={this.state.sharedFilter ? "active" : ""}
                 data-test-id="toolbar-filter-shared"
                 aria-label="Shared with me"
               >
-                <FontAwesomeIcon icon="share-alt" />
+                <FontAwesomeIcon icon={faShareAlt} />
               </IconButton>
             </Tooltip>
             <Tooltip title="Templates" enterDelay={300}>
               <IconButton
-                onClick={() => this.toggleFilter("templatesFilter")}
+                onClick={() => {
+                  this.toggleFilter("templatesFilter");
+                  RS.trackEvent("user:filter:templates:workspace");
+                }}
                 id="templatesFilter_1"
                 color={this.state.templatesFilter ? "default" : "inherit"}
                 className={this.state.templatesFilter ? "active" : ""}
                 data-test-id="toolbar-filter-templates"
                 aria-label="Templates"
               >
-                <FontAwesomeIcon icon="folder" />
+                <FontAwesomeIcon icon={faFolder} />
                 <span
                   style={{
                     position: "absolute",
@@ -485,14 +489,17 @@ class WorkspaceToolbar extends React.Component {
             </Tooltip>
             <Tooltip title="Ontology files" enterDelay={300}>
               <IconButton
-                onClick={() => this.toggleFilter("ontologiesFilter")}
+                onClick={() => {
+                  this.toggleFilter("ontologiesFilter");
+                  RS.trackEvent("user:filter:ontologies:workspace");
+                }}
                 id="ontologiesFilter_1"
                 color={this.state.ontologiesFilter ? "default" : "inherit"}
                 className={this.state.ontologiesFilter ? "active" : ""}
                 data-test-id="toolbar-filter-ontology"
                 aria-label="Ontology files"
               >
-                <FontAwesomeIcon icon="folder" />
+                <FontAwesomeIcon icon={faFolder} />
                 <span
                   style={{
                     position: "absolute",
@@ -529,12 +536,16 @@ class WorkspaceToolbar extends React.Component {
     return (
       <StyledEngineProvider injectFirst>
         <ThemeProvider theme={materialTheme}>
-          <BaseToolbar content={this.content()} />
-          {this.state.advancedOpen && (
-            <AdvancedSearch ref={this.advancedSearch} />
-          )}
-          <TagDialog />
-          <CompareDialog />
+          <Analytics>
+            <BaseToolbar content={this.content()} />
+            {this.state.advancedOpen && (
+              <AdvancedSearch ref={this.advancedSearch} />
+            )}
+            <TagDialog />
+            <CompareDialog />
+            <RenameDialog />
+            <ShareDialog />
+          </Analytics>
         </ThemeProvider>
       </StyledEngineProvider>
     );
@@ -571,7 +582,7 @@ window.renderToolbar = (newProps) => {
     },
   };
   rootNode.render(
-    <WorkspaceToolbar domContainer={domContainer} {...prevProps} />
+    <WorkspaceToolbar domContainer={domContainer} {...prevProps} />,
   );
 };
 
@@ -580,6 +591,6 @@ window.renderToolbar = (newProps) => {
  * opportunity to set up event handlers for the ReactToolbarMounted event
  * dispatched above.
  */
-window.addEventListener("load", function () {
+window.addEventListener("load", () => {
   window.renderToolbar();
 });

@@ -2,6 +2,7 @@ import Grid from "@mui/material/Grid";
 import React from "react";
 import clsx from "clsx";
 import { withStyles } from "Styles";
+import AnalyticsContext from "@/stores/contexts/Analytics";
 
 /**
  * Error message to display when we cannot recover from an error and we cannot
@@ -72,11 +73,17 @@ type ErrorBoundaryState = {
  * The ErrorBoundary component is a React component that catches errors in its
  * children and displays an error message instead. This is useful for catching
  * errors that are not recoverable and would otherwise crash the app.
+ *
+ * If it is rendered inside of an {@link AnalyticsContext} provider, it will
+ * also report the error to the analytics service, allowing us to track errors
+ * that occur in production.
  */
 export default class ErrorBoundary extends React.Component<
   ErrorBoundaryArgs,
   ErrorBoundaryState
 > {
+  declare context: React.ContextType<typeof AnalyticsContext>;
+
   message: React.ReactNode;
 
   constructor(props: ErrorBoundaryArgs) {
@@ -87,6 +94,18 @@ export default class ErrorBoundary extends React.Component<
 
   static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    this.context.trackEvent("reactRenderFailed", { error, errorInfo });
+  }
+
+  componentDidMount(): void {
+    if (!this.context) {
+      throw new Error(
+        "ErrorBoundary must be used within an AnalyticsContext provider"
+      );
+    }
   }
 
   render(): React.ReactNode {
@@ -103,3 +122,4 @@ export default class ErrorBoundary extends React.Component<
     return this.props.children;
   }
 }
+ErrorBoundary.contextType = AnalyticsContext;

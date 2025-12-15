@@ -18,6 +18,7 @@ import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.*;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -372,10 +373,6 @@ public class FormManagerTest extends SpringTransactionalTest {
     }
 
     items = formMgr.getDynamicMenuFormItems(user);
-    System.err.println("menu items, in order");
-    for (RSForm t : items) {
-      System.err.println("[" + t.getName() + "," + t.getId() + "]");
-    }
 
     assertEquals(4, items.size());
     assertEquals(2, items.indexOf(forms[3]));

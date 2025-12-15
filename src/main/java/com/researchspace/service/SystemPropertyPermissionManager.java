@@ -16,6 +16,8 @@ public interface SystemPropertyPermissionManager {
    */
   boolean isPropertyAllowed(User user, String systemPropertyName);
 
+  boolean isPropertyAllowed(User user, SystemPropertyName systemPropertyName);
+
   /**
    * Returns whether this property is allowed to be used by this lab group. This method takes into
    * account system-wide settings and community settings.

@@ -21,7 +21,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.JournalEntry;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
-import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -74,17 +73,34 @@ public class JournalController extends BaseController {
     this.signingManager = signingManager;
   }
 
-  /** Load notebook entry after opening the notebook or using previuos/next entry arrows */
-  @GetMapping("/ajax/retrieveEntry/{notebookid}/{position}/{positionmodifier}")
+  /** Load notebook entry by record id (and notebook id) */
+  @GetMapping("/ajax/retrieveEntryById/{notebookId}/{recordId}")
   @ResponseBody
   public JournalEntry retrieveEntry(
-      @PathVariable("notebookid") Long notebookId,
+      @PathVariable("notebookId") Long notebookId,
+      @PathVariable("recordId") Long recordId,
+      Principal principal) {
+
+    User user = userManager.getUserByUsername(principal.getName());
+    return retrieveEntryByRecordIdOrPosition(notebookId, recordId, null, null, user);
+  }
+
+  /** Load notebook entry after opening the notebook or using previuos/next entry arrows */
+  @GetMapping("/ajax/retrieveEntry/{notebookId}/{position}/{positionmodifier}")
+  @ResponseBody
+  public JournalEntry retrieveEntry(
+      @PathVariable("notebookId") Long notebookId,
       @PathVariable("position") Integer position,
       @PathVariable("positionmodifier")
           Integer positionModifier, // used when clicking on arrow tags
       Principal principal) {
 
     User user = userManager.getUserByUsername(principal.getName());
+    return retrieveEntryByRecordIdOrPosition(notebookId, null, position, positionModifier, user);
+  }
+
+  private JournalEntry retrieveEntryByRecordIdOrPosition(
+      Long notebookId, Long recordId, Integer position, Integer positionModifier, User user) {
 
     // this only retrieves structured documents
     List<Long> allRecordIds = recordManager.getDescendantRecordIdsExcludeFolders(notebookId);
@@ -96,24 +112,32 @@ public class JournalController extends BaseController {
       return new JournalEntry("EMPTY", "");
     }
 
-    // this is the index of entry that front end wants to be opened
-    int requestedEntryPosition = position + positionModifier;
+    // this is the index of requested position, or null if retrieving by id
+    Integer requestedEntryPosition = null;
+    if (position != null && positionModifier != null) {
+      requestedEntryPosition = position + positionModifier;
+    }
 
     // this is the counter of readable documents that were processed
     int readableRecordPosition = 0;
 
     // need to iterate from the beginning, to skip entries that user can't access
     for (int allRecordPosition = 0; allRecordPosition < allRecordIds.size(); allRecordPosition++) {
-      // omit unreadable records
+      // iterate over unreadable records
       if (!ObjectUtils.equals(
           allRecordIds.get(allRecordPosition),
           readableRecords.get(readableRecordPosition).getId())) {
         continue;
       }
+
       Record currentRecord = readableRecords.get(readableRecordPosition);
-      if (readableRecordPosition == requestedEntryPosition) {
+      boolean recordFound =
+          requestedEntryPosition != null && requestedEntryPosition.equals(readableRecordPosition)
+              || recordId != null && recordId.equals(currentRecord.getId());
+      if (recordFound) {
         return retrieveJournalEntry(currentRecord, user, allRecordPosition);
       }
+
       readableRecordPosition++;
     }
 
@@ -125,32 +149,6 @@ public class JournalController extends BaseController {
       noResultEntry.setPosition(-1);
     }
     return noResultEntry;
-  }
-
-  /**
-   * Get the chronological position of an entry in a notebook, or -1 if the entry id does not exist
-   * or if no permission. Called when opening journal from workspace by clicking on particular
-   * entry, or when privateVars.searchModeOn is true. - authorisation OK May15
-   */
-  @GetMapping("/ajax/entryIndex/{notebookId}/{entryId}")
-  @ResponseBody
-  public String entryIndex(
-      @PathVariable("notebookId") Long notebookId,
-      @PathVariable("entryId") Long entryId,
-      Principal principal) {
-
-    User u = userManager.getUserByUsername(principal.getName());
-    List<Record> readableRecords = recordManager.getLoadableNotebookEntries(u, notebookId);
-
-    int index = -1;
-    for (int i = 0; i < readableRecords.size(); i++) {
-      Record record = readableRecords.get(i);
-      if (record.getId().equals(entryId)) {
-        index = i;
-        break;
-      }
-    }
-    return Integer.toString(index);
   }
 
   /* Creates a journal entry based on the type of record */
@@ -167,9 +165,7 @@ public class JournalController extends BaseController {
     if (doc.getTagMetaData() != null) {
       journalEntry.setTagMetaData(doc.getTagMetaData().replaceAll(RSPACTAGS_FORSL__, "/"));
     }
-    UserSessionTracker activeUsers = getCurrentActiveUsers();
-    journalEntry.setEditStatus(
-        recordManager.requestRecordView(currentRecord.getId(), user, activeUsers));
+    journalEntry.setEditStatus(recordManager.requestRecordView(currentRecord.getId(), user));
     signingManager.updateSigningAttributes(journalEntry, doc.getId(), user);
 
     boolean canShare =
@@ -186,11 +182,21 @@ public class JournalController extends BaseController {
   private static final String LIST_OF_MATERIALS_DIV =
       "<div class='invMaterialsListing' data-field-id='%d'></div>";
 
+  private static final String EXTERNAL_WORKFLOWS_DIV =
+      "<div class='ext-workflows-textfield' data-field-id='%d' data-document-id='%d'></div>";
+  private static final String JUPYTER_NOTEBOOKS_DIV =
+      "<button style=\"display:none; \" class=\"bootstrap-custom-flat btn btn-default\" "
+          + " id=\"jupyter_notebooks_button_%d\" onclick=\"window.dispatchEvent(new"
+          + " CustomEvent('jupyter_viewer_click',{detail:{id: %d}}))\">   Open Jupyter Notebook(s)"
+          + " </button><span><div class='jupyter_notebooks_contents' style='display:none;"
+          + " max-width:950px' data-field-id='%d'  data-document-id='%d'></div></span>  ";
+
   /* Creates html string containing all the named fields and contents. Escapes content of non-text fields. */
   protected String prepareStructuredDocumentContent(StructuredDocument doc) {
     StringBuffer buffer = new StringBuffer();
     List<Field> allFields = doc.getFields();
     Boolean inventoryEnabled = null;
+    Boolean galaxyEnabled = null;
     for (Field field : allFields) {
       if (!doc.isBasicDocument()) {
         buffer.append("<h2 class='formTitles'>" + field.getName() + "</h2>");
@@ -204,6 +210,15 @@ public class JournalController extends BaseController {
         if (inventoryEnabled) {
           buffer.append(String.format(LIST_OF_MATERIALS_DIV, field.getId()));
         }
+        if (galaxyEnabled == null) {
+          galaxyEnabled = sysPropPermissionsMgr.isPropertyAllowed((User) null, "galaxy.available");
+        }
+        if (galaxyEnabled) {
+          buffer.append(String.format(EXTERNAL_WORKFLOWS_DIV, field.getId(), doc.getId()));
+        }
+        buffer.append(
+            String.format(
+                JUPYTER_NOTEBOOKS_DIV, field.getId(), field.getId(), field.getId(), doc.getId()));
       }
       Field latestField = field;
       if (field.getTempField() != null) {

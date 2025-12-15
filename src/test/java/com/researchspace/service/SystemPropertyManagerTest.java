@@ -18,8 +18,6 @@ import org.springframework.dao.DataAccessException;
 
 public class SystemPropertyManagerTest extends SpringTransactionalTest {
 
-  private static final String GOOGLE_DRIVE_AVAILABLE = "googledrive.available";
-
   private @Autowired SystemPropertyManager sysPropMgr;
   private final long parentId = -1L;
   private final long childId = -2L;
@@ -68,20 +66,19 @@ public class SystemPropertyManagerTest extends SpringTransactionalTest {
 
   @Test
   public void findByName() {
-    assertNotNull(sysPropMgr.findByName(GOOGLE_DRIVE_AVAILABLE));
-    assertNull(sysPropMgr.findByName("xxx"));
+    assertNotNull(sysPropMgr.findByName(SystemPropertyName.GOOGLE_DRIVE_AVAILABLE));
   }
 
   @Test
   public void cachingBehaviour() {
     User sysadmin = logoutAndLoginAsSysAdmin();
     // calling get twice returns identical(cached) object
-    SystemPropertyValue original = sysPropMgr.findByName(GOOGLE_DRIVE_AVAILABLE);
-    SystemPropertyValue cached = sysPropMgr.findByName(GOOGLE_DRIVE_AVAILABLE);
+    SystemPropertyValue original = sysPropMgr.findByName(SystemPropertyName.GOOGLE_DRIVE_AVAILABLE);
+    SystemPropertyValue cached = sysPropMgr.findByName(SystemPropertyName.GOOGLE_DRIVE_AVAILABLE);
     assertThat(original, sameInstance(cached));
     // now save, which will update the cache with a new object instance
     sysPropMgr.save(cached.getProperty().getName(), reverse(original.getValue()), sysadmin);
-    SystemPropertyValue reloaded = sysPropMgr.findByName(GOOGLE_DRIVE_AVAILABLE);
+    SystemPropertyValue reloaded = sysPropMgr.findByName(SystemPropertyName.GOOGLE_DRIVE_AVAILABLE);
     assertThat(reloaded, not(sameInstance(cached)));
     // assert value is updated
     assertEquals(reloaded.getValue(), reverse(original.getValue()));

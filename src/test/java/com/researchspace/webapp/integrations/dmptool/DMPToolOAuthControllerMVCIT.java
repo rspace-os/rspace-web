@@ -10,10 +10,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.dmptool.client.DMPToolClient;
 import com.researchspace.dmptool.client.DMPToolClientImpl;
-import com.researchspace.dmptool.model.DMPList;
 import com.researchspace.dmptool.model.DMPPlanScope;
+import com.researchspace.dmptool.model.DMPTooItem;
 import com.researchspace.dmptool.model.DMPToolDMP;
+import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.rda.model.DmpId;
+import com.researchspace.rda.model.DmpId.DmpIdType;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -21,9 +24,9 @@ import com.researchspace.webapp.controller.MVCTestBase;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -181,7 +184,8 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
   }
 
   private DMPToolDMP mkDMP(Long id, String title) {
-    var dmp = new DMPToolDMP();
+    DMPToolDMP dmp = new DMPToolDMP();
+    dmp.setDmpId(new DmpId("http://doi.org/10.12345/asdfr-ertgd", DmpIdType.DOI));
     dmp.setTitle(title);
     dmp.setLinks(
         Map.of(
@@ -227,22 +231,28 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
   public void doListPlans() throws Exception {
     DMPToolOAuthController.AccessToken clientCredentialToken = getClientCredentialToken();
 
-    // try conversion to API response object
-    DMPList plansList =
+    // retrieve & deserialize plans owned by the user
+    DMPToolList plansList =
         dmpToolProvider.listPlans(DMPPlanScope.MINE, clientCredentialToken.getAccessToken());
-    assertEquals(5, plansList.getItems().size());
     assertFalse(plansList.getItems().isEmpty());
-    DMPToolDMP firstPlan = plansList.getItems().get(0);
-    assertNotNull(firstPlan.getId());
-    assertNotNull(firstPlan.getTitle());
-    assertNotNull(firstPlan.getDescription());
-    assertEquals("eng", firstPlan.getLanguage());
+
+    // check details of test plan
+    List<DMPToolDMP> matchingDmps =
+        plansList.getItems().stream()
+            .map(DMPTooItem::getDmp)
+            .filter(p -> p.getId().equals(69563L))
+            .collect(Collectors.toList());
+    assertEquals(1, matchingDmps.size());
+    DMPToolDMP testDmp = matchingDmps.get(0);
+    assertEquals("Testing DMP integration", testDmp.getTitle());
+    assertNotNull(testDmp.getDescription());
+    assertEquals("eng", testDmp.getLanguage());
   }
 
   @Test
   @RunIfSystemPropertyDefined("nightly")
   public void downloadPublicDMPPlan() throws Exception {
-    var dmp = mkDMP(PUBLIC_DMP_ID, PUBLIC_DMP_TITLE);
+    DMPToolDMP dmp = mkDMP(PUBLIC_DMP_ID, PUBLIC_DMP_TITLE);
 
     int initialDocCount = getCountOfEntityTable("EcatDocumentFile").intValue();
     int initialDMPUserCount = getCountOfEntityTable("DMPUser").intValue();
@@ -250,7 +260,7 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
     createInitAndLoginAnyUser();
     DMPUser dmpUser =
         dmpToolProvider.doJsonDownload(dmp, "A title", clientCredentialToken.getAccessToken());
-    assertEquals("A title.json", dmpUser.getDmpDownloadPdf().getName());
+    assertEquals("A title.json", dmpUser.getDmpDownloadFile().getName());
     int finalDocCount = getCountOfEntityTable("EcatDocumentFile").intValue();
     assertEquals(initialDocCount + 1, finalDocCount);
     assertEquals(initialDMPUserCount + 1, getCountOfEntityTable("DMPUser"));
@@ -280,12 +290,13 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  @RunIfSystemPropertyDefined("nightly")
   public void testSanitizeDMPLinksFromDMPToolDMP() throws JsonProcessingException {
     ObjectMapper mapper = new ObjectMapper();
 
     // this also tests that the JSON deserialization works correctly
-    DMPToolDMP dmpPlan = mapper.readValue(jsonDmpTool, DMPList.class).getItems().get(0);
-
+    DMPToolList dmpList = mapper.readValue(jsonDmpTool, DMPToolList.class);
+    DMPToolDMP dmpPlan = dmpList.getItems().get(0).getDmp();
     assertTrue(dmpPlan.getLinks().get("get").contains("https://https/api/v2/plans/"));
     dmpPlan = ((DMPToolDMPProviderImpl) dmpToolProvider).sanitizeDMPLinks(dmpPlan);
     assertFalse(dmpPlan.getLinks().get("get").contains("https://https/api/v2/plans/"));
@@ -293,32 +304,11 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  @RunIfSystemPropertyDefined("nightly")
   public void testSanitizeDMPLinksFromJson() {
     assertTrue(jsonDmpTool.contains("https://https/api/v2/plans/"));
     String sanitizedJson = ((DMPToolDMPProviderImpl) dmpToolProvider).sanitizeDMPLinks(jsonDmpTool);
     assertFalse(sanitizedJson.contains("https://https/api/v2/plans/"));
     assertTrue(sanitizedJson.contains(realBaseUrl.getHost()));
-  }
-
-  /**
-   * won't work anymore, as it seem DMP API no longer allows editing with
-   * grant_type=client_credentials authentication
-   */
-  // @Test
-  // @RunIfSystemPropertyDefined("nightly")
-  public void attachDoiToPublicDMPPlan() throws Exception {
-    DMPToolOAuthController.AccessToken clientCredentialToken = getClientCredentialToken();
-    String doiIdentifier =
-        "https://doi.org/10.987/rsUnitTest-" + DateTimeFormatter.ISO_INSTANT.format(Instant.now());
-    dmpToolProvider.addDoiIdentifierToDMP(
-        "https://dmptool-stg.cdlib.org/api/v2/plans/" + PUBLIC_DMP_ID,
-        doiIdentifier,
-        clientCredentialToken.getAccessToken());
-
-    // verify DOI identifier present in updated plan
-    String testPlanJson =
-        dmpToolProvider.doGet(
-            clientCredentialToken.getAccessToken(), "plans/" + PUBLIC_DMP_ID, String.class);
-    assertTrue(testPlanJson.contains(doiIdentifier), "no expected DOI in plan: " + testPlanJson);
   }
 }

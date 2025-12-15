@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.model.record.StructuredDocument.MAX_TAG_LENGTH;
+import static com.researchspace.model.utils.Utils.convertToLongOrNull;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.RSPACTAGS_FORSL__;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.allGroupsAllowBioOntologies;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.anyGroupEnforcesOntologies;
@@ -17,6 +18,7 @@ import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.Group;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Signature;
 import com.researchspace.model.SignatureInfo;
 import com.researchspace.model.User;
@@ -28,6 +30,7 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.RenameAuditEvent;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.dto.UserPublicInfo;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.field.ErrorList;
@@ -53,22 +56,28 @@ import com.researchspace.service.DocumentHTMLPreviewHandler;
 import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.FieldManager;
+import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordSigningManager;
+import com.researchspace.service.SharingHandler;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpSession;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
@@ -113,6 +122,7 @@ public class StructuredDocumentController extends BaseController {
   private @Autowired RecordEditorTracker tracker;
   private @Autowired DocumentHTMLPreviewHandler htmlGenerator;
   private @Autowired SystemPropertyPermissionManager systemPropertyMgr;
+  private @Autowired @Setter(value = AccessLevel.PROTECTED) SharingHandler recordShareHandler;
 
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
   @Autowired private DocumentTagManager documentTagManager;
@@ -169,9 +179,10 @@ public class StructuredDocumentController extends BaseController {
       @PathVariable("parentId") Long parentFolderId,
       @RequestParam("wordXfile") List<MultipartFile> mswordOrEvernoteFile,
       @RequestParam(value = "recordToReplaceId", required = false) Long recordToReplaceId,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       HttpSession session)
       throws IOException {
-
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = userManager.getAuthenticatedUserInSession();
     log.info("Creating RSpace docs from {} submitted files", mswordOrEvernoteFile.size());
 
@@ -206,9 +217,8 @@ public class StructuredDocumentController extends BaseController {
         return new AjaxReturnObject<List<RecordInformation>>(null, el);
       }
     }
-
-    Folder parent = folderManager.getFolder(parentFolderId, user);
-    assertAuthorisation(user, parent, PermissionType.READ);
+    Folder originalParentFolder = folderManager.getFolder(parentFolderId, user);
+    assertAuthorisation(user, originalParentFolder, PermissionType.READ);
     List<RecordInformation> rc = new ArrayList<>();
     ProgressMonitor progress =
         new ProgressMonitorImpl(mswordOrEvernoteFile.size() * 10, "File import progress");
@@ -229,7 +239,12 @@ public class StructuredDocumentController extends BaseController {
           createdOrUpdated =
               importer
                   .get()
-                  .create(mf.getInputStream(), user, parent, null, mf.getOriginalFilename());
+                  .create(
+                      mf.getInputStream(),
+                      user,
+                      originalParentFolder,
+                      null,
+                      mf.getOriginalFilename());
         } else {
           createdOrUpdated =
               importer
@@ -238,6 +253,11 @@ public class StructuredDocumentController extends BaseController {
         }
         if (createdOrUpdated != null) {
           rc.add(createdOrUpdated.toRecordInfo());
+          if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
+              user, originalParentFolder)) {
+            recordShareHandler.shareIntoSharedFolderOrNotebook(
+                user, originalParentFolder, createdOrUpdated.getId(), grandParentId);
+          }
           publisher.publishEvent(createGenericEvent(user, createdOrUpdated, AuditAction.CREATE));
         } else {
           String error =
@@ -292,21 +312,30 @@ public class StructuredDocumentController extends BaseController {
   public String createSD(
       @PathVariable("recordid") Long parentRecordId,
       @RequestParam(value = "template") long formid,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       Principal principal)
       throws RecordAccessDeniedException {
-
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = getUserByUsername(principal.getName());
     StructuredDocument newRecord = null;
+    List<RecordGroupSharing> sharedWithGroup = null;
     try {
       newRecord = recordManager.createNewStructuredDocument(parentRecordId, formid, user, true);
       if (newRecord == null) {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Form", formid));
       }
+      Folder originalParentFolder = folderManager.getFolder(parentRecordId, user);
+      if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
+          user, originalParentFolder)) {
+        sharedWithGroup =
+            recordShareHandler.shareIntoSharedFolderOrNotebook(
+                user, originalParentFolder, newRecord.getId(), grandParentId);
+      }
     } catch (AuthorizationException ae) {
       throw new RecordAccessDeniedException(getResourceNotFoundMessage("Record", parentRecordId));
     }
     publisher.publishEvent(createGenericEvent(user, newRecord, AuditAction.CREATE));
-    return redirectToDocumentEditorInEditMode(newRecord);
+    return redirectToDocumentEditorInEditMode(newRecord, sharedWithGroup);
   }
 
   @PostMapping("/createEntry/{notebookid}")
@@ -354,16 +383,24 @@ public class StructuredDocumentController extends BaseController {
       @PathVariable("recordid") Long parentRecordId,
       @RequestParam(value = "template") long templateid,
       @RequestParam(value = "newname", required = false) String newname,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       Principal principal)
       throws RecordAccessDeniedException {
-
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = getUserByUsername(principal.getName());
     Long targetFolderId = parentRecordId;
     StructuredDocument rc = null;
+    Folder originalParentFolder = null;
+    List<RecordGroupSharing> sharedWithGroup = null;
     try {
-      if (targetFolderId == null || targetFolderId == -1) {
+      if (targetFolderId != null && targetFolderId != -1) {
+        originalParentFolder = folderManager.getFolder(parentRecordId, user);
+      }
+      if ((targetFolderId == null || targetFolderId == -1)
+          || (originalParentFolder != null && originalParentFolder.isSharedFolder())) {
         targetFolderId = folderManager.getRootFolderForUser(user).getId();
       }
+
       if (StringUtils.isBlank(newname) || newname.contains("/")) {
         newname = StructuredDocument.DEFAULT_NAME;
       }
@@ -374,20 +411,37 @@ public class StructuredDocumentController extends BaseController {
 
       if (rc == null) {
         throw new RecordAccessDeniedException(getResourceNotFoundMessage("Template", templateid));
+
+      } else if (originalParentFolder != null && originalParentFolder.isSharedFolder()) {
+        sharedWithGroup =
+            recordShareHandler.shareIntoSharedFolderOrNotebook(
+                user, originalParentFolder, rc.getId(), grandParentId);
       }
+
     } catch (AuthorizationException ae) {
       throw new RecordAccessDeniedException(getResourceNotFoundMessage("Record", null));
     }
     publisher.publishEvent(createGenericEvent(user, rc, AuditAction.CREATE));
-    return redirectToDocumentEditorInEditMode(rc);
+    return redirectToDocumentEditorInEditMode(rc, sharedWithGroup);
   }
 
   private String redirectToDocumentEditorInEditMode(StructuredDocument newRecord) {
+    return redirectToDocumentEditorInEditMode(newRecord, null);
+  }
+
+  private String redirectToDocumentEditorInEditMode(
+      StructuredDocument newRecord, List<RecordGroupSharing> sharedWithGroup) {
     String redirectUrl = "redirect:" + STRUCTURED_DOCUMENT_EDITOR_URL + "/" + newRecord.getId();
     if (newRecord.isNotebookEntry()) {
       redirectUrl += "?fromNotebook=" + newRecord.getParentNotebook().getId();
     } else {
       redirectUrl += "?editMode=true";
+    }
+    if (!(sharedWithGroup == null || sharedWithGroup.isEmpty())) {
+      redirectUrl +=
+          "&sharedWithGroup="
+              + URLEncoder.encode(
+                  sharedWithGroup.get(0).getSharee().getDisplayName(), StandardCharsets.UTF_8);
     }
     return redirectUrl;
   }
@@ -510,21 +564,6 @@ public class StructuredDocumentController extends BaseController {
     User user = userManager.getUserByUsername(principal.getName(), true);
     DocumentEditContext docEditContext = getDocEditContext(recordId, user);
     StructuredDocument structuredDocument = docEditContext.getStructuredDocument();
-
-    // notebook entries should be opened in notebook view (RSPAC-501)
-    if (structuredDocument.isNotebookEntry() && fromNotebook == null && !msTeamsDocView) {
-      boolean redirectToNotebook = false;
-      if (user.equals(structuredDocument.getOwner())) {
-        // if you're an owner, and the doc is part of your notebook
-        redirectToNotebook = structuredDocument.getNonSharedParentNotebook() != null;
-      } else {
-        // user is not an owner, but one of the parent notebook was shared with him
-        redirectToNotebook = canUserAccessAnyOfParentNotebooks(user, structuredDocument);
-      }
-      if (redirectToNotebook) {
-        return new ModelAndView(redirectToNotebookView(structuredDocument, settingsKey));
-      }
-    }
     EditStatus res = docEditContext.getEditStatus();
     // Opening Basic Documents in "Edit Mode" when editMode flag is true or coming
     // from notebook view
@@ -577,7 +616,12 @@ public class StructuredDocumentController extends BaseController {
     auditService.notify(new GenericEvent(user, structuredDocument, AuditAction.READ));
 
     boolean inventoryEnabled = systemPropertyMgr.isPropertyAllowed(user, "inventory.available");
+    IntegrationInfo galaxyInfo =
+        integrationsHandler.getIntegration(user, IntegrationsHandler.GALAXY_APP_NAME);
+    boolean galaxyEnabled =
+        galaxyInfo != null && galaxyInfo.isEnabled() && galaxyInfo.isAvailable();
     model.addAttribute("dmpEnabled", isDMPEnabled(user));
+    model.addAttribute("galaxyEnabled", galaxyEnabled);
     model.addAttribute("inventoryAvailable", inventoryEnabled);
     model.addAttribute("enforce_ontologies", anyGroupEnforcesOntologies(user));
     model.addAttribute("allow_bioOntologies", allGroupsAllowBioOntologies(user));
@@ -595,6 +639,7 @@ public class StructuredDocumentController extends BaseController {
   @Getter
   @AllArgsConstructor
   static class DocumentEditContext {
+
     private EditStatus editStatus;
     private UserSessionTracker userTracker;
     private StructuredDocument structuredDocument;
@@ -603,7 +648,7 @@ public class StructuredDocumentController extends BaseController {
   private DocumentEditContext getDocEditContext(long recordId, User user)
       throws RecordAccessDeniedException {
     UserSessionTracker users = getCurrentActiveUsers();
-    EditStatus res = recordManager.requestRecordView(recordId, user, users);
+    EditStatus res = recordManager.requestRecordView(recordId, user);
     assertViewPermission(recordId, res);
     // now we can load full record, after access check
     StructuredDocument structuredDocument =
@@ -637,15 +682,6 @@ public class StructuredDocumentController extends BaseController {
     createBreadcrumb(model, document, rootRecord, parent);
   }
 
-  private boolean canUserAccessAnyOfParentNotebooks(User user, StructuredDocument doc) {
-    for (Notebook nb : doc.getParentNotebooks()) {
-      if (permissionUtils.isPermitted(nb, PermissionType.READ, user)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   private void addGroupAttributes(Model model, User usr) {
     Set<Group> groups = groupManager.listGroupsForUser();
     model.addAttribute("groups", groups);
@@ -670,12 +706,6 @@ public class StructuredDocumentController extends BaseController {
       model.addAttribute("parentId", breadcrumb.getParentFolderId());
     }
     return breadcrumb;
-  }
-
-  protected String redirectToNotebookView(StructuredDocument notebookEntry, String settingsKey) {
-    return "redirect:"
-        + NotebookEditorController.getNotebookViewUrl(
-            notebookEntry.getParentNotebook().getId(), notebookEntry.getId(), settingsKey);
   }
 
   /**
@@ -723,7 +753,7 @@ public class StructuredDocumentController extends BaseController {
    * @param recordId The record ID
    * @param principal
    * @return AjaxReturnObject<PublicUserInfo>. The payload of the return object may be <code>null
-   *     </code> if either:
+   * </code> if either:
    *     <ol>
    *       <li>Noone is currently editing, or
    *       <li>The subject is the current editor.

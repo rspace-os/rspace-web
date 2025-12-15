@@ -22,10 +22,11 @@ pipeline {
         string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '17', description: 'Java version Maven toolchain')
         string(name: 'MAVEN_TOOLCHAIN_JAVA_VENDOR', defaultValue: 'openjdk', description: 'Java vendor Maven toolchain')
         string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional nightly build configuration')
+        booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')
         booleanParam(name: 'AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to AWS')
         booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
         booleanParam(name: 'DOCKER_AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to Docker on AWS - see the README in build/ folder for more details')
-        booleanParam(name: 'FRONTEND_TESTS', defaultValue: false, description: 'Run Flow/Jest tests (runs after changes to frontend files by default)')
+        booleanParam(name: 'FRONTEND_TESTS', defaultValue: false, description: 'Run TypeScript/Jest tests (runs after changes to frontend files by default)')
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
@@ -45,10 +46,12 @@ pipeline {
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
         DOCKER_AMI = 'ami-069082aeb2787a3ba'
-        AWS_TOMCAT_AMI = 'ami-0d2c7a1d1463d921e'
+        AWS_TOMCAT_AMI = 'ami-0472af19af2fe2af2'
         APP_VERSION = readMavenPom().getVersion()
         DOCKERHUB_PWD = credentials('DOCKER_HUB_RSPACEOPS')
         DOCKERHUB_REPO = 'rspaceops/rspace-services'
+
+        NODE_OPTIONS="--max-old-space-size=5120"
     }
 
     stages {
@@ -104,7 +107,6 @@ pipeline {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
-                    changeset '**/*.js.flow'
                     changeset '**/*.ts'
                     changeset '**/*.tsx'
                     changeset '**/*.jsp'
@@ -116,24 +118,6 @@ pipeline {
                 dir('src/main/webapp/ui') {
                     echo 'Installing npm packages'
                     sh 'npm ci --force'
-                }
-            }
-        }
-        stage('Flow Check') {
-            when {
-                anyOf {
-                    expression { return params.FRONTEND_TESTS }
-                    changeset '**/*.js'
-                    changeset '**/*.js.flow'
-                    changeset '**/*.jsp'
-                    changeset '**/*.css'
-                    changeset '**/*.json'
-                }
-            }
-            steps {
-                dir('src/main/webapp/ui') {
-                    echo 'Running flow check'
-                    sh 'npm run flow check 2>/dev/null | awk \'{ print $0 } /^Found 0 errors$/ { pass = 1 } END { exit !pass }\''
                 }
             }
         }
@@ -151,6 +135,7 @@ pipeline {
             steps {
                 dir('src/main/webapp/ui') {
                     echo 'Running TypeScript check'
+                    sh 'npx tsc --version'
                     sh 'npm run tsc --noEmit'
                 }
             }
@@ -160,7 +145,6 @@ pipeline {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
-                    changeset '**/*.js.flow'
                     changeset '**/*.ts'
                     changeset '**/*.tsx'
                     changeset '**/*.jsp'
@@ -171,16 +155,51 @@ pipeline {
             steps {
                 dir('src/main/webapp/ui') {
                     echo 'Running dependency cruiser'
-                    sh 'npm run depcruise'
+                    sh 'npm run depcruise | sed \'s/\\x1b\\[[0-9;]*[a-zA-Z]//g\''
                 }
             }
         }
-        stage('Jest Tests') {
+        stage('Jest Tests (feature branch)') {
             when {
+                not {
+                    branch 'main'
+                }
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
-                    changeset '**/*.js.flow'
+                    changeset '**/*.ts'
+                    changeset '**/*.tsx'
+                    changeset '**/*.jsp'
+                    changeset '**/*.css'
+                    changeset '**/*.json'
+                }
+            }
+            steps {
+                echo 'Running Jest tests'
+                sh 'git fetch origin main:main || true'
+                dir('src/main/webapp/ui') {
+                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2 --changedSince=main'
+                }
+            }
+            post {
+                failure {
+                    notify currentBuild.result
+                    notifySlack('FAILURE', "Jest tests failed: ${currentBuild.result}")
+                }
+                fixed {
+                    notify currentBuild.result
+                }
+                success {
+                    junit checksName: 'Jest Tests', testResults: '**/ui/junit.xml', allowEmptyResults: true
+                }
+            }
+        }
+        stage('Jest Tests (main branch)') {
+            when {
+                branch 'main'
+                anyOf {
+                    expression { return params.FRONTEND_TESTS }
+                    changeset '**/*.js'
                     changeset '**/*.ts'
                     changeset '**/*.tsx'
                     changeset '**/*.jsp'
@@ -207,13 +226,58 @@ pipeline {
                 }
             }
         }
+        stage('Playwright Component Tests (feature branch)') {
+        		when {
+                not {
+                    branch 'main'
+                }
+            		anyOf {
+                		expression { return params.FRONTEND_TESTS }
+                		changeset '**/*.ts'
+                		changeset '**/*.tsx'
+                		changeset '**/*.css'
+                		changeset '**/*.json'
+            		}
+            }
+            steps {
+                echo 'Running Playwright tests'
+                dir('src/main/webapp/ui') {
+                    sh 'npx playwright install'
+                    sh 'rm -rf playwright/.cache'
+                    sh 'npm run test-ct -- --only-changed=main'
+                }
+            }
+        }
+        stage('Playwright Component Tests (main branch)') {
+        		when {
+                branch 'main'
+            		anyOf {
+                		expression { return params.FRONTEND_TESTS }
+                		changeset '**/*.ts'
+                		changeset '**/*.tsx'
+                		changeset '**/*.css'
+                		changeset '**/*.json'
+            		}
+            }
+            steps {
+                echo 'Running Playwright tests'
+                dir('src/main/webapp/ui') {
+                    sh 'npx playwright install'
+                    sh 'rm -rf playwright/.cache'
+                    sh 'npm run test-ct'
+                }
+            }
+        }
         stage('Build feature branch') {
             when {
                 anyOf {
                     expression { return params.AWS_DEPLOY }
+                    expression { return params.ONLY_BUILD_WAR }
                     expression { return params.DOCKER_AWS_DEPLOY }
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
+                    changeset '**/*.ts'
+                    changeset '**/*.tsx'
                     changeset '**/*.jsp'
                     changeset '**/*.css'
                     changeset '**/*.json'
@@ -307,7 +371,8 @@ pipeline {
                                         name: 'DEPLOYMENT_PROPERTY_OVERRIDE',
                                         value: "$WORKSPACE/${BRANCH_NAME}.properties"
                                 ]
-                        ]
+                        ],
+                        wait: false
                 )
             }
         }
@@ -364,7 +429,8 @@ pipeline {
                            name: 'BRANCH_NAME',
                            value: "${BRANCH_NAME}"
                          ]
-                    ]
+                    ],
+                    wait: false
                 )
             }
         }
@@ -379,7 +445,7 @@ pipeline {
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Dlog4j2.configurationFile=log4j2-dev.xml \
                   -Djdbc.url=jdbc:mysql://localhost:3306/testLiquibaseUpdate \
-                  -Dliquibase.context=liquibase-update-test,run \
+                  -Dliquibase.context=run \
                   -Dmaven.test.failure.ignore=false   -Denvironment=keepdbintact  \
                   -DRS.devlogLevel=INFO -DRS_FILE_BASE=/var/lib/jenkins/userContent/RS_FileRepoLiquibase"
             }

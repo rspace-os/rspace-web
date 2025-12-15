@@ -14,6 +14,7 @@ import com.researchspace.dao.OAuthTokenDao;
 import com.researchspace.model.User;
 import com.researchspace.model.frontend.OAuthAppInfo;
 import com.researchspace.model.oauth.OAuthToken;
+import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -42,12 +43,12 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
 
     ServiceOperationResult<NewOAuthTokenResponse> tokenResponse1 =
         tokenManager.createNewToken(
-            app.getClientId(), "incorrectClientSecret", user, OAuthToken.DEFAULT_SCOPE);
+            app.getClientId(), "incorrectClientSecret", user, OAuthTokenType.UI_TOKEN);
     assertFalse(tokenResponse1.isSucceeded());
 
     ServiceOperationResult<NewOAuthTokenResponse> tokenResponse2 =
         tokenManager.createNewToken(
-            "incorrectClientId", app.getUnhashedClientSecret(), user, OAuthToken.DEFAULT_SCOPE);
+            "incorrectClientId", app.getUnhashedClientSecret(), user, OAuthTokenType.UI_TOKEN);
     assertFalse(tokenResponse2.isSucceeded());
   }
 
@@ -59,7 +60,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
     NewOAuthTokenResponse tokenResponse =
         tokenManager
             .createNewToken(
-                app.getClientId(), app.getUnhashedClientSecret(), user, OAuthToken.DEFAULT_SCOPE)
+                app.getClientId(), app.getUnhashedClientSecret(), user, OAuthTokenType.UI_TOKEN)
             .getEntity();
 
     ServiceOperationResult<NewOAuthTokenResponse> failedRefresh1 =
@@ -82,7 +83,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
     String clientSecret = app.getUnhashedClientSecret();
 
     ServiceOperationResult<NewOAuthTokenResponse> response =
-        tokenManager.createNewToken(clientId, clientSecret, user, OAuthToken.DEFAULT_SCOPE);
+        tokenManager.createNewToken(clientId, clientSecret, user, OAuthTokenType.UI_TOKEN);
     assertTrue(response.isSucceeded());
     assertEquals(1, tokenManager.getTokensForUser(user).size());
     assertEquals(
@@ -93,7 +94,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
         tokenManager.getTokensForUser(user).get(0).getHashedRefreshToken());
 
     // create another one for the same user, tokens are updated
-    response = tokenManager.createNewToken(clientId, clientSecret, user, OAuthToken.DEFAULT_SCOPE);
+    response = tokenManager.createNewToken(clientId, clientSecret, user, OAuthTokenType.UI_TOKEN);
     assertTrue(response.isSucceeded());
     assertEquals(1, tokenManager.getTokensForUser(user).size());
     assertEquals(
@@ -114,18 +115,18 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
 
     // Create normal token
     ServiceOperationResult<NewOAuthTokenResponse> response1 =
-        tokenManager.createNewToken(clientId, clientSecret, user, OAuthToken.DEFAULT_SCOPE);
+        tokenManager.createNewToken(clientId, clientSecret, user, OAuthTokenType.UI_TOKEN);
     assertTrue(response1.isSucceeded());
     NewOAuthTokenResponse tokenResponse = response1.getEntity();
 
     // Create multiple JWT tokens
     ServiceOperationResult<NewOAuthTokenResponse> response2 =
-        tokenManager.createNewJwtToken(clientId, clientSecret, user, OAuthToken.DEFAULT_SCOPE);
+        tokenManager.createNewJwtToken(clientId, clientSecret, user, OAuthTokenType.UI_TOKEN);
     assertTrue(response2.isSucceeded());
     NewOAuthTokenResponse jwtResponse1 = response2.getEntity();
 
     ServiceOperationResult<NewOAuthTokenResponse> response3 =
-        tokenManager.createNewJwtToken(clientId, clientSecret, user, OAuthToken.DEFAULT_SCOPE);
+        tokenManager.createNewJwtToken(clientId, clientSecret, user, OAuthTokenType.UI_TOKEN);
     assertTrue(response3.isSucceeded());
     NewOAuthTokenResponse jwtResponse2 = response2.getEntity();
 
@@ -145,20 +146,20 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
 
     // Create multiple JWT tokens
     ServiceOperationResult<NewOAuthTokenResponse> response1 =
-        tokenManager.createNewJwtToken(clientId, clientSecret, user, OAuthToken.DEFAULT_SCOPE);
+        tokenManager.createNewJwtToken(clientId, clientSecret, user, OAuthTokenType.UI_TOKEN);
     assertTrue(response1.isSucceeded());
     NewOAuthTokenResponse jwtResponse1 = response1.getEntity();
     assertNotNull(jwtResponse1.getRefreshToken());
 
     ServiceOperationResult<NewOAuthTokenResponse> response2 =
-        tokenManager.createNewJwtToken(clientId, clientSecret, user, OAuthToken.DEFAULT_SCOPE);
+        tokenManager.createNewJwtToken(clientId, clientSecret, user, OAuthTokenType.UI_TOKEN);
     assertTrue(response2.isSucceeded());
     NewOAuthTokenResponse jwtResponse2 = response1.getEntity();
     assertNotNull(jwtResponse2.getRefreshToken());
 
     // Create normal token
     ServiceOperationResult<NewOAuthTokenResponse> response3 =
-        tokenManager.createNewToken(clientId, clientSecret, user, OAuthToken.DEFAULT_SCOPE);
+        tokenManager.createNewToken(clientId, clientSecret, user, OAuthTokenType.UI_TOKEN);
     assertTrue(response3.isSucceeded());
     NewOAuthTokenResponse tokenResponse = response3.getEntity();
     assertNotNull(tokenResponse.getRefreshToken());
@@ -184,7 +185,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
 
     NewOAuthTokenResponse createdToken =
         tokenManager
-            .createNewToken(clientId, clientSecret, user, OAuthToken.DEFAULT_SCOPE)
+            .createNewToken(clientId, clientSecret, user, OAuthTokenType.UI_TOKEN)
             .getEntity();
     ServiceOperationResult<NewOAuthTokenResponse> response =
         tokenManager.refreshAccessToken(clientId, clientSecret, createdToken.getRefreshToken());
@@ -236,7 +237,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
     OAuthAppInfo app = appManager.addApp(user, RandomStringUtils.randomAlphabetic(10)).getEntity();
 
     tokenManager.createNewToken(
-        app.getClientId(), app.getUnhashedClientSecret(), user, OAuthToken.DEFAULT_SCOPE);
+        app.getClientId(), app.getUnhashedClientSecret(), user, OAuthTokenType.API_GENERATED_TOKEN);
     assertEquals(1, tokenManager.getTokensForUser(user).size());
 
     ServiceOperationResult<OAuthToken> tokenRemovedResult =
@@ -255,9 +256,9 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
         appManager.addApp(appDeveloper, RandomStringUtils.randomAlphabetic(10)).getEntity();
 
     tokenManager.createNewToken(
-        app.getClientId(), app.getUnhashedClientSecret(), normalUser1, OAuthToken.DEFAULT_SCOPE);
+        app.getClientId(), app.getUnhashedClientSecret(), normalUser1, OAuthTokenType.UI_TOKEN);
     tokenManager.createNewToken(
-        app.getClientId(), app.getUnhashedClientSecret(), normalUser2, OAuthToken.DEFAULT_SCOPE);
+        app.getClientId(), app.getUnhashedClientSecret(), normalUser2, OAuthTokenType.UI_TOKEN);
 
     assertEquals(1, tokenManager.getTokensForUser(normalUser1).size());
     assertEquals(1, tokenManager.getTokensForUser(normalUser2).size());
@@ -286,12 +287,12 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
     NewOAuthTokenResponse token =
         tokenManager
             .createNewToken(
-                app.getClientId(), app.getUnhashedClientSecret(), user, OAuthToken.DEFAULT_SCOPE)
+                app.getClientId(), app.getUnhashedClientSecret(), user, OAuthTokenType.UI_TOKEN)
             .getEntity();
     NewOAuthTokenResponse jwtToken =
         tokenManager
             .createNewJwtToken(
-                app.getClientId(), app.getUnhashedClientSecret(), user, OAuthToken.DEFAULT_SCOPE)
+                app.getClientId(), app.getUnhashedClientSecret(), user, OAuthTokenType.UI_TOKEN)
             .getEntity();
     // Creating a JWT token will not override the normal token above,
     // it is assumed that the refresh token is known from the normal token

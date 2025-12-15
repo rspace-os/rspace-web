@@ -18,6 +18,7 @@ import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.core.RecordType;
@@ -26,7 +27,6 @@ import com.researchspace.model.events.GroupMembershipEvent;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IntegrationsHandler;
@@ -34,6 +34,7 @@ import com.researchspace.service.LicenseService;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import com.segment.analytics.Analytics;
 import java.lang.reflect.Field;
 import java.time.Instant;
@@ -322,13 +323,22 @@ public class AnalyticsManagerTest extends SpringTransactionalTest {
     final String expectedUserId = analyticsManager.getAnalyticsUserId(testUser);
     MockHttpServletRequest mockRequest = new MockHttpServletRequest();
 
-    mockRequest.setRequestURI("/app/api/inventory/v1/samples");
-    analyticsManager.apiUsed(testUser, mockRequest);
-    assertNull(analyticsManagerImplTSS.userId);
-
-    mockRequest.setRequestURI("/app/api/v1/documents");
-    analyticsManager.apiUsed(testUser, mockRequest);
+    mockRequest.setRequestURI("/api/inventory/v1/samples");
+    testUser.setAuthenticatedBy(UserAuthenticationMethod.API_KEY);
+    analyticsManager.publicApiUsed(testUser, mockRequest);
     assertEquals(expectedUserId, analyticsManagerImplTSS.userId);
+    assertEquals("publicApiUsed", analyticsManagerImplTSS.label);
+    assertEquals("/api/inventory/v1/samples", analyticsManagerImplTSS.props.get("apiUri"));
+    assertEquals("http://localhost:8080", analyticsManagerImplTSS.props.get("rspaceUrl"));
+    assertEquals("API_KEY", analyticsManagerImplTSS.props.get("apiAuthenticatedBy"));
+
+    mockRequest.setRequestURI("/api/v1/documents");
+    testUser.setAuthenticatedBy(UserAuthenticationMethod.API_OAUTH_TOKEN);
+    analyticsManager.publicApiUsed(testUser, mockRequest);
+    assertEquals(expectedUserId, analyticsManagerImplTSS.userId);
+    assertEquals("publicApiUsed", analyticsManagerImplTSS.label);
+    assertEquals("/api/v1/documents", analyticsManagerImplTSS.props.get("apiUri"));
+    assertEquals("API_OAUTH_TOKEN", analyticsManagerImplTSS.props.get("apiAuthenticatedBy"));
   }
 
   @Test

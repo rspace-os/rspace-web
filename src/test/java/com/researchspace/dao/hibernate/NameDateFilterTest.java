@@ -8,7 +8,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,51 +43,24 @@ public class NameDateFilterTest {
         PaginationCriteria.createDefaultForClass(BaseRecord.class);
     pgCrit.setOrderByIfNull("name");
     WorkspaceListingConfig input = createANameSearchInput(pgCrit);
-    String from = ndf.generateCountQueryString(input, pname, pval);
-    System.err.println(from);
+    ndf.generateCountQueryString(input, pname, pval);
     assertEquals(pname.size(), pval.size());
     assertEquals(5, pname.size());
 
     pname.clear();
     pval.clear();
     String from2 = ndf.generateRetrieveQueryString(input, pname, pval);
-    System.err.println(from2);
     assertEquals(pname.size(), pval.size());
     assertEquals(5, pname.size());
     assertTrue(from2.contains(" order by name"));
   }
 
   private WorkspaceListingConfig createANameSearchInput(PaginationCriteria<BaseRecord> pgCrit) {
-    WorkspaceListingConfig input =
-        new WorkspaceListingConfig(
-            pgCrit,
-            new String[] {SearchConstants.NAME_SEARCH_OPTION},
-            new String[] {"testname"},
-            1L,
-            false);
-    return input;
-  }
-
-  private WorkspaceListingConfig createAFormSearchInput(PaginationCriteria<BaseRecord> pgCrit) {
-    WorkspaceListingConfig input =
-        new WorkspaceListingConfig(
-            pgCrit,
-            new String[] {SearchConstants.FORM_SEARCH_OPTION},
-            new String[] {"form"},
-            1L,
-            false);
-    return input;
-  }
-
-  @Test
-  public void testGenerateQuerySDByFormString() {
-    List<String> pname = new ArrayList<String>();
-    List<Object> pval = new ArrayList<Object>();
-    PaginationCriteria<BaseRecord> pgCrit =
-        PaginationCriteria.createDefaultForClass(BaseRecord.class);
-    String from =
-        ndf.generateFilterStrucDocByFormQuery(
-            createAFormSearchInput(pgCrit), pname, pval, Arrays.asList(new Long[] {1L}));
-    System.err.println(from);
+    return new WorkspaceListingConfig(
+        pgCrit,
+        new String[] {SearchConstants.NAME_SEARCH_OPTION},
+        new String[] {"testname"},
+        1L,
+        false);
   }
 }

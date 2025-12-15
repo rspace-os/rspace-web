@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertEquals;
 
 import com.researchspace.model.User;
@@ -9,11 +9,11 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.service.DeletionPlan;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordSharingManager;
+import com.researchspace.testutils.TestFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

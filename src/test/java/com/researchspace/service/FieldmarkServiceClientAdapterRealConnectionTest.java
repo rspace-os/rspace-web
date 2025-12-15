@@ -1,6 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
 import static org.junit.Assert.assertNotNull;
 
 import com.researchspace.fieldmark.model.FieldmarkNotebook;
@@ -36,7 +37,7 @@ public class FieldmarkServiceClientAdapterRealConnectionTest extends SpringTrans
     user = createAndSaveRandomUser();
     UserConnection actualConnection = new UserConnection();
     actualConnection.setId(
-        new UserConnectionId(user.getUsername(), FIELDMARK_APP_NAME, "ProviderUserIdNotNeeded"));
+        new UserConnectionId(user.getUsername(), FIELDMARK_APP_NAME, PROVIDER_USER_ID));
     actualConnection.setAccessToken(ACCESS_TOKEN);
     actualConnection.setRefreshToken("REFRESH_TOKEN");
     actualConnection.setExpireTime(299L);
@@ -54,7 +55,7 @@ public class FieldmarkServiceClientAdapterRealConnectionTest extends SpringTrans
   @Test
   public void testImportNotebook() throws IOException {
     FieldmarkNotebookDTO notebookList =
-        fieldmarkServiceClientAdapter.getFieldmarkNotebook(user, NOTEBOOK_ID);
+        fieldmarkServiceClientAdapter.getFieldmarkNotebook(user, NOTEBOOK_ID, null);
 
     assertNotNull(notebookList);
   }

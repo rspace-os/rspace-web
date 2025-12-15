@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.model.record.TestFactory.createOAuthToken;
+import static com.researchspace.testutils.TestFactory.createOAuthTokenForUI;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -28,7 +28,6 @@ import com.researchspace.model.frontend.PublicOAuthApps;
 import com.researchspace.model.frontend.PublicOAuthConnApps;
 import com.researchspace.model.oauth.OAuthToken;
 import com.researchspace.model.preference.Preference;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.LicenseService;
@@ -36,6 +35,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.UserProfileController.UserGroupInfo;
 import java.io.IOException;
 import java.security.Principal;
@@ -166,7 +166,7 @@ public class UserProfileControllerTest {
   public void getConnectedApps() {
     // given
     when(usrMgr.getAuthenticatedUserInSession()).thenReturn(sessionUser);
-    OAuthToken token = createOAuthToken(sessionUser);
+    OAuthToken token = createOAuthTokenForUI(sessionUser);
     when(oAuthTokenManager.getTokensForUser(sessionUser)).thenReturn(toList(token));
     PublicOAuthAppInfo appInfo = createAnyPublicOauthAppInfo(token.getClientId());
     when(oAuthAppManager.getApp(token.getClientId())).thenReturn(Optional.of(appInfo));
@@ -185,7 +185,7 @@ public class UserProfileControllerTest {
   public void disconnectOAuthConnectedAppSuccess() {
     // given
     ServiceOperationResult<OAuthToken> result =
-        new ServiceOperationResult<>(createOAuthToken(sessionUser), true, "succeeded");
+        new ServiceOperationResult<>(createOAuthTokenForUI(sessionUser), true, "succeeded");
     when(usrMgr.getAuthenticatedUserInSession()).thenReturn(sessionUser);
     when(oAuthTokenManager.removeToken(sessionUser, "id")).thenReturn(result);
 

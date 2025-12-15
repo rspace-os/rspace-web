@@ -18,7 +18,8 @@ public class NewOAuthTokenResponse {
   private String refreshToken;
 
   @JsonIgnore private Instant expiryTime;
-  private String scope;
+
+  private String scope = "all";
 
   @JsonProperty("token_type")
   private static String TOKEN_TYPE = "bearer";

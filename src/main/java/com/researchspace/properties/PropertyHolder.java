@@ -52,6 +52,12 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${deployment.cloud}")
   private String cloud;
 
+  @Value("${deployment.description}")
+  private String deploymentDescription;
+
+  @Value("${deployment.helpEmail}")
+  private String deploymentHelpEmail;
+
   @Value("${sysadmin.delete.user}")
   private String deleteUser;
 
@@ -227,6 +233,12 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${aspose.enabled:true}")
   private String asposeEnabled;
 
+  @Value("${chemistry.provider}")
+  private String chemistryProvider;
+
+  @Value("${rs.dev.unsafeMove.allowed}")
+  private String rsDevUnsafeMoveAllowed;
+
   @Override
   public Key getJwtKey() {
     if (this.jwtKey == null) {
@@ -328,6 +340,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public void setJoveApiKey(String joveApiKey) {
     this.joveApiKey = joveApiKey;
+  }
+
+  @Override
+  public void setRsDevUnsafeMoveAllowed(String unsafeMoveAllowed) {
+    rsDevUnsafeMoveAllowed = unsafeMoveAllowed;
   }
 
   public String getDryadBaseUrl() {
@@ -521,6 +538,25 @@ public class PropertyHolder implements IMutablePropertyHolder {
 
   public boolean isAsposeEnabled() {
     return Boolean.parseBoolean(asposeEnabled);
+  }
+
+  public String getChemistryProvider() {
+    return chemistryProvider;
+  }
+
+  @Override
+  public String getDeploymentDescription() {
+    return deploymentDescription;
+  }
+
+  @Override
+  public String getDeploymentHelpEmail() {
+    return deploymentHelpEmail;
+  }
+
+  @Override
+  public boolean isRsDevUnsafeMoveAllowed() {
+    return "true".equals(rsDevUnsafeMoveAllowed);
   }
 
   /*

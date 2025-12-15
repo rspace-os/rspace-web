@@ -1,5 +1,5 @@
 "use strict";
-import React, { useEffect, type Node } from "react";
+import React, { useEffect } from "react";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
@@ -11,6 +11,7 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import axios from "@/common/axios";
 import { makeStyles } from "tss-react/mui";
+import { isUrl } from "../util/Util";
 
 const useStyles = makeStyles()((theme) => ({
   text: {
@@ -30,7 +31,10 @@ const useStyles = makeStyles()((theme) => ({
     borderRadius: "0px",
     marginBottom: "10px",
     zIndex: 1,
-    backgroundColor: "rgb(240,240,240)",
+    borderTop: "none",
+    borderRight: "none",
+    borderBottomLeftRadius: "4px",
+    backgroundColor: "unset",
   },
   cardHeader: {
     padding: "7px",
@@ -56,7 +60,7 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-export default function ChemCard(props): Node {
+export default function ChemCard(props) {
   const { classes } = useStyles();
   const [chem, setChem] = React.useState({
     reactants: [],
@@ -69,15 +73,22 @@ export default function ChemCard(props): Node {
     // eslint-disable-next-line no-undef
     const publicView = $("#public_document_view").length > 0;
     const publicUrlPrepend = publicView ? "/public/publicView" : "";
-    let url =
+    const url =
       publicUrlPrepend + `/chemical/ajax/getInfo?chemId=${props.item.id}`;
     axios
       .get(url)
       .then((response) => {
-        setChem(response.data.data);
+        if (response.data.data) {
+          setChem(response.data.data);
+        } else {
+          console.warn(
+            "error when retrieving info for chem elem " + props.item.id,
+            response.data.error,
+          );
+        }
       })
       .catch((error) => {
-        console.log(error);
+        console.warn(error);
       });
   };
 
@@ -156,6 +167,24 @@ export default function ChemCard(props): Node {
             {chemical.atomCount}
           </TableCell>
         </TableRow>
+        {Object.entries(JSON.parse(chemical.additionalMetadata ?? "{}")).map(
+          ([k, v]) => (
+            <TableRow>
+              <TableCell component="th" scope="row">
+                {k}
+              </TableCell>
+              <TableCell align="right" className={classes.tableCell}>
+                {isUrl(v) ? (
+                  <a href={v} target="_blank" rel="noopener noreferrer">
+                    {v}
+                  </a>
+                ) : (
+                  v
+                )}
+              </TableCell>
+            </TableRow>
+          ),
+        )}
       </React.Fragment>
     );
   };
@@ -219,6 +248,24 @@ export default function ChemCard(props): Node {
             {chem.reactants.map((r) => chemInfoTable(r))}
             {chem.products.map((p) => chemInfoTable(p))}
             {chem.molecules.map((m) => chemInfoTable(m))}
+            {Object.entries(JSON.parse(chem.additionalMetadata ?? "{}")).map(
+              ([k, v]) => (
+                <TableRow key={k}>
+                  <TableCell component="th" scope="row">
+                    {k}
+                  </TableCell>
+                  <TableCell align="right" className={classes.tableCell}>
+                    {isValidUrl(v) ? (
+                      <a href={v} target="_blank" rel="noopener noreferrer">
+                        {v}
+                      </a>
+                    ) : (
+                      v
+                    )}
+                  </TableCell>
+                </TableRow>
+              ),
+            )}
           </TableBody>
         </Table>
       </CardContent>

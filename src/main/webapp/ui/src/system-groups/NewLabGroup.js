@@ -1,5 +1,5 @@
 "use strict";
-import React, { useState, useRef, useEffect, type Node } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../theme";
@@ -17,7 +17,7 @@ const scrollToRef = (ref) => window.scrollTo(0, ref.current.offsetTop);
 const PROJECT_GROUP = "PROJECT_GROUP";
 const LAB_GROUP = "LAB_GROUP";
 
-export default function NewLabGroup(): Node {
+export default function NewLabGroup() {
   const [values, setValues] = useState({
     name: "",
     nameError: false,
@@ -65,9 +65,9 @@ export default function NewLabGroup(): Node {
       executeScroll();
       setValues({ ...values, nameError: true });
       return;
-    } else {
-      setValues({ ...values, nameError: false });
     }
+    setValues({ ...values, nameError: false });
+
     if (values.groupType === LAB_GROUP && values.pis.length != 1) {
       setValues({ ...values, pisError: "Please, select a PI" });
     } else if (
@@ -88,7 +88,7 @@ export default function NewLabGroup(): Node {
     form.method = "post";
     form.action = "/groups/admin/?new";
 
-    let params = {};
+    const params = {};
     params._memberString = 1;
     params.cancel = "Add group";
     params.pis = values.pis.length ? values.pis[0].username : values.pis;
@@ -103,8 +103,8 @@ export default function NewLabGroup(): Node {
     } else if (values.groupType === PROJECT_GROUP) {
       params.memberString = params.memberString.concat(
         ...params.groupOwners.filter(
-          (owner) => !params.memberString.includes(owner)
-        )
+          (owner) => !params.memberString.includes(owner),
+        ),
       );
     }
 
@@ -169,7 +169,10 @@ export default function NewLabGroup(): Node {
                 <MenuItem value={LAB_GROUP} data-test-id="groupType-labGroup">
                   Lab Group
                 </MenuItem>
-                <MenuItem value={PROJECT_GROUP} data-test-id="groupType-projectGroup">
+                <MenuItem
+                  value={PROJECT_GROUP}
+                  data-test-id="groupType-projectGroup"
+                >
                   Project Group
                 </MenuItem>
               </Select>

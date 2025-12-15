@@ -7,7 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +43,7 @@ public class FolderToDisplayInMoveDialogFilterTest {
     assertFalse(filter.filter(f3));
 
     Folder shared = TestFactory.createAFolder(Folder.SHARED_FOLDER_NAME, user);
+    shared.setSystemFolder(true);
     Folder root = TestFactory.createAFolder("ROOt", user);
     user.setRootFolder(root);
     root.addType(RecordType.ROOT);

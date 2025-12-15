@@ -1,0 +1,6 @@
+﻿Name,Parent sample,Parent container,Igsn
+SubSample1,s1,cont1,[check src/test/resources/TestResources/inventory/igsn/README.md]
+SubSample2,s1,cont1,[check src/test/resources/TestResources/inventory/igsn/README.md]
+SubSample3,s2,cont5,[check src/test/resources/TestResources/inventory/igsn/README.md]
+SubSample4,s1,cont5,[check src/test/resources/TestResources/inventory/igsn/README.md]
+SubSample5,s2,,[check src/test/resources/TestResources/inventory/igsn/README.md]

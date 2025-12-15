@@ -17,10 +17,9 @@ import com.researchspace.model.apps.AppConfigElement;
 import com.researchspace.model.apps.AppConfigElementDescriptor;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
-import com.researchspace.model.dmps.DMP;
 import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.dto.IntegrationInfo;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.repository.spi.properties.RepoProperty;
 import com.researchspace.repository.spi.properties.StringRepoProperty;
@@ -29,6 +28,7 @@ import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.testutils.TestFactory;
 import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -172,7 +172,7 @@ class RepositoryConfigurationControllerTest {
     when(integrationsHandler.getIntegration(eq(exporter), anyString()))
         .thenReturn(dfinf, new IntegrationInfo(), new IntegrationInfo(), dmpInf);
     when(dmpManager.findDMPsForUser(exporter))
-        .thenReturn(List.of(new DMPUser(exporter, new DMP("id", "title"))));
+        .thenReturn(List.of(new DMPUser(exporter, new DmpDto("id", "title"))));
     setupApp();
     mockUICfgInfo();
     List<RepoUIConfigInfo> activeRepos =

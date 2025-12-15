@@ -1,6 +1,8 @@
 package com.researchspace.service.inventory.csvimport;
 
+import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryDateField;
+import com.researchspace.model.inventory.field.InventoryIdentifierField;
 import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
@@ -14,8 +16,10 @@ import com.researchspace.model.units.RSUnitDef;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -80,8 +84,20 @@ public class InventoryImportSampleFieldCreator {
     return new InventoryStringField(name);
   }
 
+  public Map<String, String> getFieldMappingForIdentifier(String name, List<String> values) {
+    List<String> nonEmptyValues =
+        values.stream().filter(opt -> StringUtils.isNotBlank(opt)).collect(Collectors.toList());
+    Set<String> valueSet = new HashSet<>(nonEmptyValues);
+
+    // identifier
+    if (isSuggestedFieldForValues(valueSet, new InventoryIdentifierField())) {
+      return Map.of(name, FieldType.IDENTIFIER.name().toLowerCase());
+    }
+    return new HashMap<>();
+  }
+
   private boolean isSuggestedFieldForValues(Set<String> values, SampleField field) {
-    return values.stream().allMatch(v -> field.isSuggestedFieldForData(v));
+    return !values.isEmpty() && values.stream().allMatch(v -> field.isSuggestedFieldForData(v));
   }
 
   private boolean shouldRadioTypeBeSuggested(

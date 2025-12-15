@@ -10,6 +10,7 @@
 /*
  * Default workspace refresh used when this page is inside Workspace page.
  */
+
 var defaultRefresh = function (result) {
   setTimeout(function () {
     $('#record_list').hide(effect, effectDuration);
@@ -77,7 +78,7 @@ function setUpCrudOps(args) {
   registerDeleteRecordsHandler(onDelete);
 
   registerFavoritesRecordsHandler();
-  registerViewRevisionsHandler();
+  registerViewRevisionsHandler(); 
   registerOfflineWorkHandler();
   registerExternalMessagesHandler();
 
@@ -104,6 +105,7 @@ function setUpUseTemplateDialog() {
   $('#createDocFromTemplate').click(function (e) {
     e.preventDefault();
     $('#useTemplateDlg').dialog('open');
+    RS.trackEvent("user:open:create_document_from_template_dialog:workspace");
   });
 }
 
@@ -151,6 +153,7 @@ function registerViewRevisionsHandler() {
     var namesToRename = [];
     getSelectedIdsAndNames(idsToRename, namesToRename);
     var url = createURL("/workspace/revisionHistory/list/" + idsToRename[0] + "?settingsKey=" + settingsKey);
+    RS.trackEvent("user:view:revisions:workspace", { count: idsToRename.length });
     window.location.href = url;
   });
 }
@@ -172,6 +175,10 @@ function registerOfflineWorkHandler() {
     var jqxhr = $.post(url, { recordIds: selectedIds },
         function (result) {
           RS.unblockPage();
+          RS.trackEvent("user:toggle_offline:documents:workspace", {
+            count: selectedIds.length,
+            setTo: e.target.id === "startOfflineWork" ? "offline" : "online"
+          });
           $.get(createURL('/workspace/ajax/view/' + workspaceSettings.parentFolderId),
               function (result) {
                 defaultRefresh(result);
@@ -307,12 +314,15 @@ function createMoveDialog(onmove, moveparams) {
     title: "Select target folder",
     open: function () {
       var moveTargetRoot = $("#movetargetRoot").val()
+      if (moveTargetRoot === "INVALID") {
+        apprise("Cannot calculate valid move targets for content of the current folder.");
+        $(this).dialog('close');
+        return;
+      }
       var scriptUrl = '/fileTree/ajax/directoriesInModel';
-      if (moveTargetRoot === "/") {
-        var types = $(this).data('toMoveTypes');
-        if (onlyNormalDocsOnTypesList(types)) {
-          scriptUrl += '?showNotebooks=true';
-        }
+      var types = $(this).data('toMoveTypes');
+      if (onlyNormalDocsOnTypesList(types)) {
+        scriptUrl += '?showNotebooks=true';
       }
       $("#folder-move-path").html("");
       $('#movefolder-tree').fileTree({
@@ -363,6 +373,7 @@ function createMoveDialog(onmove, moveparams) {
         var jqxhr = $.post(createURL('/workspace/ajax/move'), data,
             function (result) {
               onmove(result);
+              RS.trackEvent("user:move:documents:workspace", { count: data.toMove.length });
             });
         jqxhr.fail(function () {
           RS.ajaxFailed("Move", true, jqxhr);
@@ -382,74 +393,22 @@ function createMoveDialog(onmove, moveparams) {
 }
 
 function createRenameDialog() {
-  $('#renameRecord').dialog({
-    modal: true,
-    autoOpen: false,
-    title: "Rename",
-    open: function (event, ui) {
-      var name = $(this).data('recordNameWithoutExt');
-      $('#nameField').val(name);
-    },
-    buttons: {
-      Cancel: function () {
-        $(this).dialog('close');
-      },
-      Rename: function () {
-        $(this).dialog('close');
-        // recordId is defined local, it is not using workspaceSettings.
-        var recordId = $(this).data('selectedId');
-        var extension = $(this).data('recordExt');
-        var newName = $('#nameField').val() + extension;
-
-        var data = {
-          settingsKey: settingsKey,
-          recordId: recordId,
-          newName: newName
-        };
-        var jqxhr$ = $.post(createURL("/workspace/editor/structuredDocument/ajax/rename"),
-            data,
-            function (response) {
-              if (response.errorMsg !== null) {
-                apprise(getValidationErrorString(response.errorMsg));
-              } else {
-                // update document title
-                var idStr = "_" + recordId;
-                var match = "a[id$=" + idStr + "]";
-                $(match).text(newName);
-                reloadFileTreeBrowser();
-              }
-            });
-        jqxhr$.fail(function () {
-          RS.ajaxFailed("Renaming", false, jqxhr$);
-        });
-      }
-    }
-  });
-
-  RS.onEnterSubmitJQueryUIDialog('#renameRecord');
-
-  $('body').on('click', '#renameRecords', function (e) {
+  $("body").on("click", "#renameRecords", function (e) {
     e.preventDefault();
 
-    var selectedChkBxes = $("input[class='record_checkbox']:checked");
-    var $selected = $(selectedChkBxes[0]);
-    var selectedId = $selected.attr('id').split("_")[1];
-    var recordName = $selected.closest('tr').children().find("a.recordNameCell").text().trim();
-    var recordExt = "";
-
-    var type = $selected.siblings('[name="recordType"]').val();
-    var isMediaFile = type === 'MEDIA_FILE';
-    if (isMediaFile && recordName.indexOf('.') >= 0) {
-      recordExt = recordName.substring(recordName.lastIndexOf('.'));
-    }
-    var recordNameWithoutExt = recordName.substring(0, recordName.length - recordExt.length);
-
-    // this parameterizes the dialog
-    $("#renameRecord")
-    .data('selectedId', selectedId)
-    .data("recordNameWithoutExt", recordNameWithoutExt)
-    .data("recordExt", recordExt)
-    .dialog('open');
+    var selected = getSelectedIdsNamesAndTypes();
+    window.dispatchEvent(
+      new CustomEvent("OPEN_RENAME_DIALOG", {
+        detail: { documentId: selected.ids[0], currentName: selected.names[0] },
+      }),
+    );
+  });
+  window.addEventListener("COMPLETE_RENAME", (event) => {
+    const newName = event.detail.newName;
+    var idStr = "_" + getSelectedIdsNamesAndTypes().ids[0];
+    var match = "a[id$=" + idStr + "]";
+    $(match).text(newName);
+    reloadFileTreeBrowser();
   });
 }
 
@@ -538,6 +497,7 @@ function registerCopyRecordsHandler(oncopy) {
     var jqxhr = $.post(createURL("/workspace/ajax/copy"), data, function (result) {
       RS.unblockPage();
       oncopy(result);
+      RS.trackEvent("user:duplicate:documents:workspace", { count: idsToCopy.length });
     });
 
     jqxhr.fail(function () {
@@ -570,6 +530,7 @@ function registerDeleteRecordsHandler(onDelete) {
           function (result) {
             RS.blockingProgressBar.hide();
             onDelete(result);
+            RS.trackEvent("user:delete:documents:workspace", { count: idsToDelete.length });
           });
       jqxhr.fail(function () {
         RS.blockingProgressBar.hide();
@@ -577,13 +538,13 @@ function registerDeleteRecordsHandler(onDelete) {
       });
     }
     getSelectedIdsAndNames(idsToDelete, namesToDelete);
-    var event = new CustomEvent('confirm-action', { 'detail': {
-        title: "Confirm deletion",
-        consequences: `Do you want to delete the following document(s)? - ${RS.escapeHtml(namesToDelete.join(", "))} - Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.`,
-        variant: "warning",
-        callback: callback
-      }});
-    document.dispatchEvent(event);
+
+    RS.createConfirmationDialog({
+      title: "Confirm deletion",
+      consequences: `Do you want to delete the following document(s)?<br><strong>${RS.escapeHtml(namesToDelete.join(", "))}</strong><br><br>Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.`,
+      variant: "warning",
+      callback: callback
+    });
     RS.focusAppriseDialog(false);
   });
 }
@@ -626,6 +587,7 @@ function registerFavoritesRecordsHandler() {
 
         updateCrudopsMenu();
 
+        RS.trackEvent("user:favorite:documents:workspace", { count: favIds.length });
         if (favIds.length === 1) {
           RS.confirm("Document marked as favorite", "success", 3000);
         } else {

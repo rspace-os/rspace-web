@@ -12,6 +12,8 @@ import com.researchspace.core.util.throttling.TooManyRequestsException;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
+import com.researchspace.service.chemistry.ChemistryClientException;
+import com.researchspace.service.chemistry.StoichiometryException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
@@ -147,6 +149,28 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleUnsupported(
       final ExportFailureException ex, final WebRequest request) {
     return handle500Error(ex, ApiErrorCodes.BATCH_LAUNCH, "Export batch job launch failure");
+  }
+
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  @ExceptionHandler(StoichiometryException.class)
+  public ResponseEntity<Object> handleStoichiometryException(
+      StoichiometryException ex, WebRequest request) {
+    log.error("Stoichiometry error", ex);
+    ApiError apiError =
+        new ApiError(
+            HttpStatus.BAD_REQUEST,
+            ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
+            ex.getLocalizedMessage(),
+            "");
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  @ExceptionHandler(ChemistryClientException.class)
+  public ResponseEntity<Object> handleChemistryClientException(
+      ChemistryClientException ex, WebRequest request) {
+    HttpStatus status = ex.getStatus() != null ? ex.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    ApiError apiError = new ApiError(status, 50001, ex.getMessage(), "");
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
   @Override

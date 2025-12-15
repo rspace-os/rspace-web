@@ -2,7 +2,7 @@ package com.researchspace.linkedelements;
 
 import com.researchspace.dao.AuditDao;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.VelocityTestUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.jsoup.Jsoup;

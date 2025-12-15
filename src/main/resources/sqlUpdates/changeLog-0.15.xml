@@ -55,7 +55,7 @@
 			  <column name="role_id" type="NUMERIC"/>
 </loadData>
 </changeSet>
-<changeSet id="4" author="radams" context="dev-test,liquibase-update-test">
+<changeSet id="4" author="radams" context="dev-test">
 <validCheckSum>7:86de01ed1524537224d0aee871372ec3</validCheckSum>
 <comment> Load data into DB for when running unit/ IT tests</comment>
 <loadData tableName="User"  file="sqlUpdates/data/users.csv">
@@ -81,7 +81,7 @@
 			  <column name="role_id" type="NUMERIC"/>
 </loadData>
 </changeSet>
-<changeSet id="8_4-3-2014" author="radams" context="dev-test,liquibase-update-test">
+<changeSet id="8_4-3-2014" author="radams" context="dev-test">
 <validCheckSum>7:342153c696e26acc480a2a88bdfb75da</validCheckSum>
 <validCheckSum>8:6892fc5d3be61363eae670a7196fdb1f</validCheckSum>
 <comment> Load  developer users data into DB for when running unit/ IT tests/ localhost runs</comment>

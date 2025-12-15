@@ -23,9 +23,9 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.impl.FolderManagerImpl;
 import com.researchspace.testutils.FolderTestUtils;
+import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
@@ -87,17 +87,18 @@ public class FolderOrganisationAndApiInboxFolderTest {
     Folder snippet = setup.getSnippet();
     assertTrue(snippet.getChildrens().size() > 0);
     Folder shared =
-        snippet.getSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
+        snippet.getSystemSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
     assertTrue(shared.isSystemFolder());
     Folder labGroup =
-        shared.getSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
+        shared.getSystemSubFolderByName(
+            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
     assertNotNull(labGroup);
     Folder collabGrp =
-        shared.getSubFolderByName(
+        shared.getSystemSubFolderByName(
             SHARED_SNIPPETS_FOLDER_PREFIX + Folder.COLLABORATION_GROUPS_FLDER_NAME);
     assertNotNull(collabGrp);
     Folder indGrp =
-        shared.getSubFolderByName(
+        shared.getSystemSubFolderByName(
             SHARED_SNIPPETS_FOLDER_PREFIX + Folder.INDIVIDUAL_SHARE_ITEMS_FLDER_NAME);
     assertNotNull(indGrp);
     verify(folderManagerMock)

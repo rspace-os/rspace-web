@@ -34,7 +34,6 @@ import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -47,6 +46,7 @@ import org.apache.http.entity.ContentType;
 import org.hibernate.criterion.Order;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -58,7 +58,11 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.ui.ModelMap;
 
-@TestPropertySource(properties = "chemistry.web.url=http://howler.researchspace.com:8099")
+@TestPropertySource(
+    properties = {
+      "chemistry.service.url=http://your-chem-service:8090",
+      "chemistry.provider=indigo"
+    })
 public class GalleryControllerMVCIT extends MVCTestBase {
 
   private @Autowired GalleryController galleryController;
@@ -110,7 +114,9 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   @Test
   public void testOpeningGalleryOnSpecificFolder() throws Exception {
     Long audioFolderId =
-        recordManager.getGallerySubFolderForUser(MediaUtils.AUDIO_MEDIA_FLDER_NAME, owner).getId();
+        recordManager
+            .getGalleryMediaFolderForUser(MediaUtils.AUDIO_MEDIA_FLDER_NAME, owner)
+            .getId();
     MvcResult result =
         mockMvc
             .perform(
@@ -128,7 +134,9 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   public void testOpeningGalleryOnSpecificFolderFromItem() throws Exception {
     RecordInformation imageInfo = uploadImageToGallery();
     Long imageFolderId =
-        recordManager.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, owner).getId();
+        recordManager
+            .getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, owner)
+            .getId();
     MvcResult result =
         mockMvc
             .perform(
@@ -145,7 +153,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
   @Test
   public void uploadToTargetFolder_RSPAC_1703() throws Exception {
-    Folder imagesFolder = recordManager.getGallerySubFolderForUser(IMAGES_MEDIA_FLDER_NAME, owner);
+    Folder imagesFolder =
+        recordManager.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, owner);
     final long initialCountInImagesFolder = getRecordCountInFolderForUser(imagesFolder.getId());
     Folder target = createSubFolder(imagesFolder, "imagesTarget", owner);
     assertEquals(0, getRecordCountInFolderForUser(target.getId()));
@@ -154,7 +163,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     assertEquals(1, getRecordCountInFolderForUser(target.getId()));
 
     // this is folder in wrong part of gallery for image file
-    Folder docFolder = recordManager.getGallerySubFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, owner);
+    Folder docFolder = recordManager.getGalleryMediaFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, owner);
     RecordInformation uploaded2 = uploadImageToGallery(docFolder.getId());
     assertNotNull(uploaded2.getId());
     // it gets uploaded to image root folder instead
@@ -179,7 +188,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     User other = createAndSaveUser(getRandomAlphabeticString("other"));
     initUser(other);
     Folder otherUsersImagesFolder =
-        recordManager.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, other);
+        recordManager.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, other);
     MvcResult otherUsersFolderResult =
         mockMvc
             .perform(
@@ -304,7 +313,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     // let's move audio to the subfolder
     Folder audioFolder =
-        recordMgr.getGallerySubFolderForUser(MediaUtils.AUDIO_MEDIA_FLDER_NAME, subject);
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.AUDIO_MEDIA_FLDER_NAME, subject);
     final String AUDIOSUBFOLDER_NAME = "subFolderOfAudio";
     Folder newSubfolder = createSubFolder(audioFolder, AUDIOSUBFOLDER_NAME, subject);
 
@@ -406,7 +415,9 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @Ignore(
+      "Requires chemistry service to run. See"
+          + " https://documentation.researchspace.com/article/1jbygguzoa")
   public void testChemistryFileUploadNewVersion() throws Exception {
     User user = createInitAndLoginAnyUser();
     mockPrincipal = user::getUsername;
@@ -540,7 +551,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             .getResponse()
             .getContentAsByteArray();
     BufferedImage image = getImageFromBytes(data);
-    System.err.println(image.getWidth());
+    assertEquals(644, image.getWidth());
     // unauthorised can't view
     User other = createInitAndLoginAnyUser();
     MvcResult result =
@@ -576,7 +587,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
         new Long[] {folder.getId()},
         new String[] {"test-folder_copy"},
         new MockPrincipal(user.getUsername()));
-    Folder copiedFolder = recordManager.getGallerySubFolderForUser("test-folder_copy", user);
+    Folder copiedFolder = recordManager.getGalleryMediaFolderForUser("test-folder_copy", user);
     CompositeRecordOperationResult result =
         recordDeletionMgr.deleteFolder(
             copiedFolder.getParent().getId(), copiedFolder.getId(), user);
@@ -681,10 +692,13 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   // Chemistry File Specific Tests
   // 1. Generic test, check file goes in correct "Chemistry" folder
   // 2. Check RsChemElement is generated with a chemId
+  @Ignore(
+      "Requires chemistry service to run. See"
+          + " https://documentation.researchspace.com/article/1jbygguzoa")
   @Test
   public void testUploadingChemistryFile() throws IOException, URISyntaxException {
     Folder chemistryFolder =
-        recordManager.getGallerySubFolderForUser(CHEMISTRY_MEDIA_FLDER_NAME, owner);
+        recordManager.getGalleryMediaFolderForUser(CHEMISTRY_MEDIA_FLDER_NAME, owner);
     assertEquals(0, getRecordCountInFolderForUser(chemistryFolder.getId()));
     RecordInformation uploaded = uploadFileToGallery("Amfetamine.mol", "application/octet-stream");
     EcatChemistryFile chemistryFile = chemistryFileManager.get(uploaded.getId(), owner);
@@ -716,7 +730,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   private void create5FolderAnd5DocsInGalleryDocFolder(User user) throws IOException {
-    Folder parentFolder = recordManager.getGallerySubFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, user);
+    Folder parentFolder =
+        recordManager.getGalleryMediaFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, user);
     int i = 0;
     while (i < 5) {
       folderMgr.createNewFolder(parentFolder.getId(), "some folder", user);

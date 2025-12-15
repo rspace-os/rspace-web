@@ -8,6 +8,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,11 @@ public class SystemPropertyPermissionManagerImpl implements SystemPropertyPermis
     }
 
     return isPropertyAllowed(communities, systemPropertyName);
+  }
+
+  @Override
+  public boolean isPropertyAllowed(User user, SystemPropertyName systemPropertyName) {
+    return isPropertyAllowed(user, systemPropertyName.getPropertyName());
   }
 
   /* (non-Javadoc)

@@ -24,7 +24,7 @@ public class AccountEnabledAuthorizer extends AbstractLoginAuthorizer implements
     if (subject.isLoginDisabled()) {
       HttpServletRequest req = WebUtils.toHttp(request);
       SECURITY_LOG.warn(
-          "Attempt by [{}] to access disabled account from {}",
+          "Attempt by [{}] to access disabled account, from {}",
           subject.getUsername(),
           getRemoteAddress(req));
       if (subject.isAccountAwaitingEmailConfirmation()

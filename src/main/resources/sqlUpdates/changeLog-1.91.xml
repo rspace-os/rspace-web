@@ -17,7 +17,7 @@
         </sql>
     </changeSet>
 
-    <changeSet id="2023-08-07" author="matthias" context="dev-test,liquibase-update-test">
+    <changeSet id="2023-08-07" author="matthias" context="dev-test">
         <comment>RSOPS-506: keep 'admin' account enabled on test servers and in liquibase test run</comment>
         <sql>
             update User set account_enabled = true where username = 'admin'

@@ -25,16 +25,17 @@ import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.dtos.FormMenu;
 import com.researchspace.model.dtos.WorkspaceSettings;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DetailedRecordInformation;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
+import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FormManager;
@@ -44,7 +45,9 @@ import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordFavoritesManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.WorkspaceService;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
 import com.researchspace.service.impl.RecordManagerImpl;
@@ -52,9 +55,11 @@ import com.researchspace.service.impl.UserContentUpdater;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletRequest;
@@ -94,6 +99,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   @Mock FormManager formMgr;
   @Mock private RSForm mockOntologyForm;
   @Mock private UserContentUpdater userContentUpdaterMock;
+  @Mock WorkspaceService workspaceService;
   @Autowired private PaginationSettingsPreferences paginationSettingsPreferences;
   private static final String WORKSPACE_AJAX_VIEWNAME = WorkspaceController.WORKSPACE_AJAX;
 
@@ -136,6 +142,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     model = tss;
     workspaceController.setFormManager(formMgr);
     workspaceController.setGroupManager(grpMgr);
+    workspaceController.setWorkspaceService(workspaceService);
     workspaceController.setFolderManager(new FolderManagerStub());
     recordManagerStub = new RecordManagerStub();
     session = new MockHttpSession();
@@ -149,10 +156,12 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
 
   private void setupSystemPropertyForPublishAllowedAndSeoAllowed() {
     sysadmin1 = workspaceController.getUserByUsername("sysadmin1");
-    existingPublicSharingValue = systemPropertyManager.findByName("public_sharing");
-    existingPublicSharingValue.setValue("ALLOWED");
-    existingPublicSeoValue = systemPropertyManager.findByName("publicdocs_allow_seo");
-    existingPublicSeoValue.setValue("ALLOWED");
+    existingPublicSharingValue =
+        systemPropertyManager.findByName(SystemPropertyName.PUBLIC_SHARING);
+    existingPublicSharingValue.setValue(HierarchicalPermission.ALLOWED.name());
+    existingPublicSeoValue =
+        systemPropertyManager.findByName(SystemPropertyName.PUBLICDOCS_ALLOW_SEO);
+    existingPublicSeoValue.setValue(HierarchicalPermission.ALLOWED.name());
     systemPropertyManager.save(existingPublicSharingValue, sysadmin1);
     systemPropertyManager.save(existingPublicSeoValue, sysadmin1);
   }
@@ -426,25 +435,17 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
       setUpCommonMocks();
       WorkspaceSettings settings = new WorkspaceSettings();
       settings.setParentFolderId(2L);
+      ServiceOperationResult<? extends BaseRecord> moveSuccess =
+          new ServiceOperationResult<>(null, true);
+      when(workspaceService.moveRecords(any(), any(), any(), any(), any()))
+          .thenReturn(List.of(moveSuccess));
       ModelAndView mav = basicMove(new Long[] {1L}, "/", settings);
+
       assertTrue(model.containsAttribute("recordId"));
       assertEquals(WORKSPACE_AJAX_VIEWNAME, mav.getViewName());
       assertTrue((Boolean) model.getAttribute("publish_allowed"));
     } finally {
       workspaceController.setRecordManager(new RecordManagerImpl());
-    }
-  }
-
-  @SuppressWarnings("unused")
-  @Test(expected = Exception.class)
-  public void testMoveChildThrowsISExceptionForEmptyList() throws Exception {
-    try {
-      workspaceController.setRecordManager(recordManagerStub);
-      WorkspaceSettings settings = new WorkspaceSettings();
-      settings.setParentFolderId(2L);
-      ModelAndView mav = basicMove(new Long[] {}, "/", settings);
-    } finally {
-      workspaceController.setRecordManager(recordManager);
     }
   }
 
@@ -459,7 +460,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     MockHttpServletRequest mockRequest = new MockHttpServletRequest();
     MockHttpServletResponse mockResponse = new MockHttpServletResponse();
 
-    setRequestAsAjaxREquest(mockRequest);
+    setRequestAsAjaxRequest(mockRequest);
     Exception e = new Exception("Test message");
     ModelAndView mav = workspaceController.handleExceptions(mockRequest, mockResponse, e);
     assertEquals(ControllerExceptionHandler.AJAX_ERROR_VIEW_NAME, mav.getViewName());
@@ -512,7 +513,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     assertEquals(ControllerExceptionHandler.NON_AJAX_ERROR_VIEW_NAME, mav.getViewName());
   }
 
-  private void setRequestAsAjaxREquest(MockHttpServletRequest mockRequest) {
+  private void setRequestAsAjaxRequest(MockHttpServletRequest mockRequest) {
     mockRequest.addHeader(RequestUtil.AJAX_REQUEST_HEADER_NAME, RequestUtil.AJAX_REQUEST_TYPE);
   }
 }

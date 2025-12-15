@@ -113,7 +113,7 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
     doInTransaction(
         () -> {
           Folder imagesFolder =
-              recordMgr.getGallerySubFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
+              recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
           assertNotNull(imagesFolder);
 
           Set<BaseRecord> subfolders = imagesFolder.getChildrens();

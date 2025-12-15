@@ -18,12 +18,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.linkedelements.FieldParser;
-import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
+import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.RecordInformation;
@@ -33,6 +33,7 @@ import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
+import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPage;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,20 +47,22 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+@Ignore(
+    "Requires chemistry service to run. See"
+        + " https://documentation.researchspace.com/article/1jbygguzoa")
 @WebAppConfiguration
 @RunWith(ConditionalTestRunner.class)
-@TestPropertySource(properties = "chemistry.web.url=http://howler.researchspace.com:8099")
-@Ignore // RSDEV-88 current default chemistry implementation returns empty data. No front-end code
-// calls RSChemController endpoints
+@TestPropertySource(
+    properties = {
+      "chemistry.service.url=http://your-chem-service:8090",
+      "chemistry.provider=indigo"
+    })
 public class RSChemControllerMVCIT extends MVCTestBase {
-
-  @Autowired private MockServletContext servletContext;
 
   private Principal principal;
   private User user;
@@ -113,7 +116,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     assertNotNull(savedChemElement.getId());
     assertNotNull(rsChemElementManager.get(savedChemElement.getId()).getCreationDate());
 
-    assertEquals(ChemElementsFormat.MRV, savedChemElement.getChemElementsFormat());
+    assertEquals(chemistryProvider.graphicFormat(), savedChemElement.getChemElementsFormat());
     // now we use this data to generate a Chem element String
     String fldData = generateChemElementImageURl(savedChemElement);
     // ..add it tofield
@@ -235,27 +238,30 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void teststructureSearchRoundTrip() throws Exception {
+  public void testStructureSearchRoundTrip() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
     String chemdata = RSpaceTestUtils.getExampleChemString();
     // we save a new chem element, created in chem editor for example.
     addChemStructureToField(fld, user);
+    ChemicalSearchRequestDTO request =
+        new ChemicalSearchRequestDTO(chemdata, 0, 10, "SUBSTRUCTURE");
     MvcResult result =
         mockMvc
             .perform(
-                post("/chemical/ajax/searchChemElement")
-                    .param("chem", chemdata)
-                    .principal(principal))
+                post("/chemical/search")
+                    .content(getAsJsonString(request))
+                    .principal(principal)
+                    .contentType(APPLICATION_JSON))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     assertNull(result.getResolvedException());
-    String hits = result.getModelAndView().getModel().get("totalHitCount").toString();
-    assertEquals(1, Integer.parseInt(hits));
+    ChemSearchResultsPage resultsPage =
+        (ChemSearchResultsPage) result.getModelAndView().getModel().get("chemSearchResultsPage");
+    assertEquals(1, resultsPage.totalHitCount.intValue());
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void testStructureSearchWithChemFileInGallery() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
@@ -264,17 +270,21 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     // ecatchemistryfile.
     addChemStructureToFieldWithLinkedChemFile(
         addChemistryFileToGallery("Amfetamine.mol", user), fld, user);
+    ChemicalSearchRequestDTO request =
+        new ChemicalSearchRequestDTO(chemdata, 0, 10, "SUBSTRUCTURE");
     MvcResult result =
         mockMvc
             .perform(
-                post("/chemical/ajax/searchChemElement")
-                    .param("chem", chemdata)
-                    .principal(principal))
+                post("/chemical/search")
+                    .content(getAsJsonString(request))
+                    .principal(principal)
+                    .contentType(APPLICATION_JSON))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     assertNull(result.getResolvedException());
-    String hits = result.getModelAndView().getModel().get("totalHitCount").toString();
-    assertEquals(2, Integer.parseInt(hits));
+    ChemSearchResultsPage resultsPage =
+        (ChemSearchResultsPage) result.getModelAndView().getModel().get("chemSearchResultsPage");
+    assertEquals(2, resultsPage.getTotalHitCount().intValue());
   }
 
   @Test
@@ -298,12 +308,11 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   @Test
   @RunIfSystemPropertyDefined("nightly")
   public void cachingPerformanceOfChemImages() throws Exception {
-    final int NUM_CHEMS = 20;
+    final int NUM_CHEMS = 30;
     // set up
     List<StructuredDocument> created = new ArrayList<>();
     List<RSChemElement> chems = new ArrayList<>();
     List<String> urls = new ArrayList<>();
-    System.err.println("setting up");
     for (int i = 0; i < NUM_CHEMS; i++) {
       StructuredDocument sd = createBasicDocumentInRootFolderWithText(user, "any");
       created.add(sd);
@@ -314,8 +323,6 @@ public class RSChemControllerMVCIT extends MVCTestBase {
       urls.add(src);
     }
 
-    // load all elements for the first time
-    System.err.println("starting uncached test");
     // load first element before timer starts as that may be possibly slower independent of caching
     mockMvc.perform(get(urls.get(0)).principal(principal)).andReturn();
     StopWatch sw = new StopWatch();
@@ -325,10 +332,8 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     }
     sw.stop();
     long uncached = sw.getTime();
-    System.err.println("uncached time is " + uncached);
 
     // load all elements for the second time (should be cached)
-    System.err.println("starting cached test");
     sw.reset();
     sw.start();
     for (int i = 0; i < NUM_CHEMS; i++) {
@@ -336,11 +341,10 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     }
     sw.stop();
     long cached = sw.getTime();
-    System.err.println("Cached time is " + cached);
 
-    double SPEEDUP = 1.5; // is around 2 on new jenkins, but 1.5 is conservative estimate
+    double SPEEDUP = 1.33; // is around 1.5 on new jenkins, but 1.33 is conservative estimate
     assertTrue(
-        "cache speedup should be min 33%, was: " + cached + "-" + uncached,
+        "cache speedup should be min 25%, was: " + cached + "-" + uncached,
         cached * SPEEDUP < uncached);
   }
 

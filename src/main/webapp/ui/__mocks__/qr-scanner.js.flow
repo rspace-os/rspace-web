@@ -1,0 +1,13 @@
+// @flow
+
+export default class QrScanner {
+  onScan: ({ data: string }) => void;
+
+  constructor(
+    videoElement: HTMLVideoElement,
+    onScan: ({ data: string }) => void
+  ) {}
+
+  start(): void {}
+  stop(): void {}
+}

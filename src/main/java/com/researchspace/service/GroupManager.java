@@ -78,6 +78,16 @@ public interface GroupManager {
   Group removeGroup(Long groupId, User subject);
 
   /**
+   * Returns the group from shareFolder (or any of the subfolders fo the share folder)
+   *
+   * @param user
+   * @param sharedFolder
+   * @param grandParentId
+   * @return Returns the group
+   */
+  Group getGroupFromAnyLevelOfSharedFolder(User user, Folder sharedFolder, Long grandParentId);
+
+  /**
    * Changes the role in a group for the specified user
    *
    * @param groupId The group
@@ -244,4 +254,6 @@ public interface GroupManager {
 
   /** Creates an autoshare folder for user in group with a given folderName */
   Folder createAutoshareFolder(User user, Group group, String folderName);
+
+  Group getGroupByCommunalGroupFolderId(Long communalGroupFolderId);
 }

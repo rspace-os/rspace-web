@@ -32,13 +32,13 @@ public class UserContentUpdaterImplTest {
     testee = new UserContentUpdaterImpl();
     ReflectionTestUtils.setField(testee, "userFolderCreator", userFolderCreatorMock);
     ReflectionTestUtils.setField(testee, "recordManager", recordManagerMock);
-    when(recordManagerMock.getGallerySubFolderForUser(eq(Folder.SNIPPETS_FOLDER), eq(userMock)))
+    when(recordManagerMock.getGalleryMediaFolderForUser(eq(Folder.SNIPPETS_FOLDER), eq(userMock)))
         .thenReturn(userSnippetFolder);
   }
 
   @Test
   public void shouldCreateSharedSnippetFolderOnUserContentUpdateIfNotCreatedAlready() {
-    when(userSnippetFolder.getSubFolderByName(
+    when(userSnippetFolder.getSystemSubFolderByName(
             SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME))
         .thenReturn(null);
     testee.doUserContentUpdates(userMock);
@@ -47,7 +47,7 @@ public class UserContentUpdaterImplTest {
 
   @Test
   public void shouldNotCreateSharedSnippetFolderOnUserContentUpdateIfCreatedAlready() {
-    when(userSnippetFolder.getSubFolderByName(
+    when(userSnippetFolder.getSystemSubFolderByName(
             SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME))
         .thenReturn(previouslyCreatedSnippetFolder);
     testee.doUserContentUpdates(userMock);

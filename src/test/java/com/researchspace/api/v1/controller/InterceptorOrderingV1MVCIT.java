@@ -3,7 +3,6 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.api.v1.controller.API_VERSION.ONE;
 import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertEquals;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 
 import com.researchspace.api.v1.throttling.APIFileUploadThrottler;
@@ -67,21 +66,6 @@ public class InterceptorOrderingV1MVCIT extends API_MVC_TestBase {
 
   @After
   public void tearDown() throws Exception {}
-
-  @Test
-  public void apiEnablementDominatesThrottlingAndAuthorisation() throws Exception {
-    disableAPI(apiUser);
-    try {
-      MvcResult result =
-          mockMvc
-              .perform(createBuilderForGet(ONE, randomAlphabetic(MIN_KEY_LENGTH), STATUS, apiUser))
-              .andReturn();
-      ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
-      assertEquals(FORBIDDEN.value(), error.getHttpCode());
-    } finally {
-      enableAPI(apiUser);
-    }
-  }
 
   @Test
   public void throttlingDominatesAuthorisation() throws Exception {

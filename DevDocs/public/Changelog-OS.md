@@ -4,6 +4,168 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.17.0 2025-12-05
+
+### ELN Features
+
+- RSDEV-892 reviewed password policy is now consistently applied across the UI
+- RSDEV-854 new Apps page panel explaining usage of Jupyter Notebook integration
+
+### ELN Bugfix
+
+- RSDEV-791 fix new Gallery UI error on attempt to save a new filestore pointing to a subfolder of a connected file system
+- RSDEV-923 increase size of BaseRecord.acl column, to support sharing with larger number of groups
+- RSDEV-903, RSDEV-905 fixes around DMP import and export
+- RSDEV-912 fix problem with filestore folder links inserted with new 'Insert from Gallery' dialog
+
+# 2.16.0 2025-11-11
+
+### ELN Features
+
+- RSDEV-762 new UI for 'Share' dialog, which now allows to manage share status of the record
+- RSDEV-428 new UI for 'Insert from Gallery' dialog (in document editor)
+- RSDEV-756 server-configured custom links now appear in 'help' button, to stay available on pages that don't display footer
+- RSDEV-773 snippets can be previewed in the new Gallery UI
+- RSDEV-898 document/notebook view allows browsing content of attached .ipynb files (Jupyter Notebooks)  
+
+### ELN Bugfix
+
+- RSDEV-895 fix problem with opening notebook if location of that notebook cannot be easily inferred
+- PRT-1007 fix problem with opening shared notebook entry by the group's PI
+- RSDEV-804 protocols.io import is fixed for Workspace and in document editor
+- RSDEV-860 snippets shared with Lab Group can be navigated through new Gallery UI
+
+### Inventory Features
+
+- RSDEV-821 default search now looks for an exact match OR the first portion of a string
+- RSDEV-464 more consistent use of custom axis labels in grid containers
+
+# 2.15.0 2025-10-10
+
+### ELN Features
+
+- RSDEV-689 stoichiometry calculations for chemical reaction files
+- RSDEV-563 saving/displaying more data for imported DMPs
+- RSDEV-777 update icons for MS Office attachments
+
+### ELN Bugfix
+
+- RSDEV-835 fix problem with 'incorrect sharing status' popup showing up when navigating Shared -> ProjectGroups folder
+- RSDEV-755 fix problem with new version of document attachment not having its content indexed
+- RSDEV-813 fix problem with multiple tags of ELN document being combined into one after duplicating that document
+- RSDEV-765 fix problem with PI being unable to create doc inside shared notebook owned by the group member
+- RSDEV-819 when navigating to shared notebook, the 'CREATE' button was sometimes shown, or hidden, incorrectly
+- RSDEV-840 fix problem with transferring some shared forms to sysadmin during user deletion
+- ISSUE#475 fix problem with tinymce toolbar sometimes disappearing after customization
+
+### Inventory Features
+
+- RSDEV-864 applying accented UI theme
+- RSDEV-826 reduced JS bundle size
+
+# 2.14.0 2025-09-08
+
+### ELN Features
+
+- RSDEV-776 Fieldmark integration using latest Fieldmark API
+- RSDEV-794 better error handling for DMPTool integration
+
+### ELN Bugfix
+
+- RSDEV-796 block scenarios where PI/LabAdmin could accidentally move shared records out Shared folder
+
+# 2.13.0 2025-08-11
+
+### ELN Features
+
+- RSDEV-639 new integration with Galaxy platform
+- RSDEV-701 new "About RSpace" page
+- RSDEV-558 better ordering of subgallery icons on the new Gallery page
+- RSDEV-734 generic skip-to-content button (for keyboard navigation)
+
+### ELN Bugfix
+
+- RSDEV-775 fix problem with moving document into owned shared notebook
+
+### Inventory Features
+
+- RSDEV-520 Fieldmark integration can now link imported data with pre-registered IGSN IDs
+
+### Inventory Bugfix
+
+- RSDEV-761 fix problem with duplicated network calls when navigating Inventory sections
+
+# 2.12.0 2025-07-15
+
+### ELN Features
+
+- RSDEV-681 new integration with PubChem, can be used by users who enabled 'Chemistry' App
+- RSDEV-644 incoming messages count is added to Navbar, so it can be accessed from every page
+- RSDEV-691 users can now trigger document creation inside shared notebooks
+- RSDEV-684 chemical search dialog explains that only searching for a single molecule is supported
+
+### ELN Bugfix
+
+- RSDEV-729, RSDEV-733 performance fixes around opening notebooks, and navigating between notebook entries
+
+### Inventory Features
+
+- RSDEV-631 pre-created IGSN IDs can be now linked with CSV import
+
+### Inventory Bugfix
+
+- RSDEV-694 fix problem with Container tags not being saved during CSV import
+- RSDEV-709 fix problem with 'previous location' column
+
+### Contributed by open-source community
+
+- ISSUE#232 align RSpace API and UI when retrieving audit trail events (contributed by richarda23)
+
+# 2.11.0 2025-06-06
+
+### ELN Features
+
+- RSDEV-653 new System Setting for enabling/disabling OAuth authentication for RSpace API
+- RSDEV-664 extended logging around usage of RSpace API, including new 'ApiEvents' file that tracks RSpace API interactions
+
+### ELN Bugfix
+
+- RSDEV-649 fix problem with 'delete notifications' action being very slow in some scenarios
+
+### Inventory Features
+
+- RSDEV-687 new "Identifiers" page for managing IGSN IDs, openable with button on Inventory sidebar
+- RSDEV-676 clearly marking "Name" as a required field when creating a new Sample
+
+# 2.10.0 2025-05-13
+
+### ELN Features
+
+- RSDEV-268 reordered setting on System -> Configuration page
+- RSDEV-242 allow PIs to move shared documents into shared notebooks
+
+### ELN Bugfix
+
+- RSDEV-641 prevent user from inadvertently creating notebooks more than once
+- RSDEV-595, RSDEV-606, RSDEV-665 various fixes around chemistry files processing and chemical search
+
+### Inventory Features
+
+- RSDEV-636 allow printing two copies of each barcode (raffle-book style) with a label printer
+
+# 2.9.0 2025-04-10
+
+### ELN Features
+
+- RSDEV-438 (also #230) creation of documents/notebooks can be now triggered from within Shared folder
+- RSDEV-394 various improvements around breadcrumbs displayed on new Gallery page
+
+### ELN Bugfix
+
+- RSDEV-613 fix rare problem where duplication of document that is shared into notebook could result in copy being added to the notebook
+- RSDEV-549 disable spellcheck on various text fields
+- RSDEV-619 fix link to 3rd party 'Buffer Calculator'
+
 # 2.8.0 2025-03-07
 
 ### ELN Features

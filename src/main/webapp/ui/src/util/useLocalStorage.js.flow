@@ -1,8 +1,0 @@
-//@flow
-
-import { type UseState } from "./types";
-
-declare export default function useLocalStorage<T>(
-  key: string,
-  defaultValue: T
-): UseState<T>;

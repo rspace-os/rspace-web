@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.MediaUtils.getContentTypeForFileExtension;
 import static com.researchspace.core.util.MediaUtils.getExtension;
+import static com.researchspace.model.utils.Utils.convertToLongOrNull;
 import static com.researchspace.session.SessionAttributeUtils.RS_DELETE_RECORD_PROGRESS;
 
 import com.axiope.search.SearchManager;
@@ -30,10 +31,10 @@ import com.researchspace.model.audittrail.AuditSearchEvent;
 import com.researchspace.model.audittrail.CreateAuditEvent;
 import com.researchspace.model.audittrail.DuplicateAuditEvent;
 import com.researchspace.model.audittrail.HistoricalEvent;
-import com.researchspace.model.audittrail.MoveAuditEvent;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dto.SharingResult;
 import com.researchspace.model.dto.UserPublicInfo;
+import com.researchspace.model.dtos.NotebookCreationResult;
 import com.researchspace.model.dtos.RecordTagData;
 import com.researchspace.model.dtos.ShareConfigCommand;
 import com.researchspace.model.dtos.ShareConfigElement;
@@ -42,6 +43,7 @@ import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.dtos.WorkspaceSettings;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.frontend.CreateMenuFormEntry;
+import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.BaseRecord;
@@ -51,10 +53,8 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
-import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
@@ -72,6 +72,7 @@ import com.researchspace.service.RecordFavoritesManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.WorkspaceService;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
@@ -81,6 +82,8 @@ import com.researchspace.session.UserSessionTracker;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,7 +91,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -102,6 +104,7 @@ import lombok.Value;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
@@ -161,6 +164,8 @@ public class WorkspaceController extends BaseController {
   @Autowired private DetailedRecordInformationProvider infoProvider;
 
   @Autowired private SharingHandler recordShareHandler;
+
+  @Autowired @Setter private WorkspaceService workspaceService;
 
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
 
@@ -224,7 +229,9 @@ public class WorkspaceController extends BaseController {
     if (isValidSettingsKey(settingsKey)) {
       WorkspaceListingConfig cfg =
           (WorkspaceListingConfig) request.getSession().getAttribute(settingsKey);
-      if (cfg != null) rootRecord = folderManager.getFolder(cfg.getParentFolderId(), user);
+      if (cfg != null) {
+        rootRecord = folderManager.getFolder(cfg.getParentFolderId(), user);
+      }
     }
 
     relist(workspaceSettings, settingsKey, model, request, session, response, user, rootRecord);
@@ -291,7 +298,7 @@ public class WorkspaceController extends BaseController {
       throws IOException {
 
     WorkspaceListingConfig cfg = null;
-    Long grandparentFolderId = workspaceSettings.getParentFolderId();
+    Long grandParentId = workspaceSettings.getParentFolderId();
 
     // if we have a settings key, then we use that to configure workspace reload
     if (isValidSettingsKey(settingsKey)
@@ -308,7 +315,7 @@ public class WorkspaceController extends BaseController {
                 cfg.getPgCrit(),
                 cfg.getCurrentViewMode(),
                 user,
-                grandparentFolderId));
+                grandParentId));
       }
 
       model.addAttribute("settingsKey", settingsKey);
@@ -325,11 +332,11 @@ public class WorkspaceController extends BaseController {
               workspaceSettings.createPaginationCriteria(),
               workspaceSettings.getCurrentViewMode(),
               user,
-              grandparentFolderId));
+              grandParentId));
 
       workspaceSettings.setParentFolderId(folder.getId());
       cfg = new WorkspaceListingConfig(workspaceSettings);
-      cfg.setGrandparentFolderId(grandparentFolderId);
+      cfg.setGrandParentId(grandParentId);
       addWorkspaceConfigToSessionAndKeyModel(cfg, model, session);
       model.addAttribute("workspaceConfigJson", workspaceSettings.toJson());
     }
@@ -397,10 +404,31 @@ public class WorkspaceController extends BaseController {
   public String createNotebookAndRedirect(
       @PathVariable("recordid") long parentRecordId,
       @RequestParam("notebookNameField") String notebookName,
+      @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       Principal principal) {
+    Long grandParentId = convertToLongOrNull(grandParentFolderId);
+    User user = getUserByUsername(principal.getName());
 
-    Long newNotebookId = createNotebook(parentRecordId, notebookName, principal);
-    return "redirect:/notebookEditor/" + newNotebookId;
+    NotebookCreationResult result =
+        workspaceService.createNotebook(notebookName, parentRecordId, grandParentId, user);
+
+    return getNotebookRedirectUrl(
+        result.getNotebookId(), result.getGrandParentId(), result.getGroupName());
+  }
+
+  @NotNull
+  private static String getNotebookRedirectUrl(
+      Long newNotebookId, Long grandParentId, String groupName) {
+    String redirectUrl = "redirect:/notebookEditor/" + newNotebookId;
+    if (StringUtils.isNotBlank(groupName)) {
+      redirectUrl +=
+          "?sharedWithGroup="
+              + URLEncoder.encode(groupName, StandardCharsets.UTF_8)
+              + "&grandParentId="
+              + grandParentId;
+      return redirectUrl;
+    }
+    return redirectUrl + "?grandParentId=" + grandParentId;
   }
 
   @PostMapping("/ajax/createNotebook")
@@ -550,45 +578,30 @@ public class WorkspaceController extends BaseController {
     }
 
     User user = getUserByUsername(principal.getName());
-    Folder usersRootFolder = folderManager.getRootFolderForUser(user);
-    Folder target = null;
 
-    // handle input which might contain a /
-    if ("/".equals(targetFolderId)) {
-      target = usersRootFolder;
-    } else {
-      if (targetFolderId.endsWith("/")) {
-        targetFolderId = targetFolderId.substring(0, targetFolderId.length() - 1);
-      }
-      target = folderManager.getFolder(Long.parseLong(targetFolderId), user);
-    }
+    List<ServiceOperationResult<? extends BaseRecord>> moveResults =
+        workspaceService.moveRecords(
+            List.of(toMove),
+            targetFolderId,
+            settings.getParentFolderId(),
+            settings.getGrandParentId(),
+            user);
 
-    int moveCounter = 0;
-    for (Long id : toMove) {
-      if (target.getId().equals(id)) {
-        continue;
-      }
-      Folder sourceFolder =
-          getMoveSourceFolderId(id, settings.getParentFolderId(), user, usersRootFolder);
-      boolean isFolder = !isRecord(id);
-      ServiceOperationResult<? extends BaseRecord> moveResult = null;
-      if (isFolder) {
-        moveResult = folderManager.move(id, target.getId(), sourceFolder.getId(), user);
-      } else {
-        moveResult = recordManager.move(id, target.getId(), sourceFolder.getId(), user);
-      }
-      if (moveResult.isSucceeded()) {
-        moveCounter++;
-        auditService.notify(new MoveAuditEvent(user, moveResult.getEntity(), sourceFolder, target));
-      }
-    }
+    long moveSuccessCount =
+        moveResults.stream().filter(result -> result != null && result.isSucceeded()).count();
 
-    if (moveCounter == toMove.length) {
+    if (moveSuccessCount == toMove.length) {
       model.addAttribute("successMsg", getText("workspace.move.success"));
     } else {
       String msgKey;
-      if (moveCounter == 0) {
-        msgKey = getText("workspace.move.nothing.moved");
+      if (moveSuccessCount == 0) {
+        msgKey =
+            moveResults.stream()
+                    .anyMatch(
+                        result ->
+                            result != null && result.getMessage().contains("into own notebook"))
+                ? "workspace.share.owned.into.shared.owned"
+                : "workspace.move.nothing.moved";
       } else {
         msgKey = getText("workspace.move.some.not.moved");
       }
@@ -599,24 +612,6 @@ public class WorkspaceController extends BaseController {
     relist(settings, settingsKey, model, request, session, response, user, source);
     setPublicationAllowed(model, principal.getName());
     return new ModelAndView(WORKSPACE_AJAX);
-  }
-
-  private Folder getMoveSourceFolderId(
-      Long baseRecordId, Long workspaceParentId, User user, Folder usersRootFolder) {
-    /* if workspaceParentId is among parent folders, then use it */
-    BaseRecord baseRecord = baseRecordManager.get(baseRecordId, user);
-    for (RecordToFolder recToFolder : baseRecord.getParents()) {
-      if (recToFolder.getFolder().getId().equals(workspaceParentId)) {
-        return recToFolder.getFolder();
-      }
-    }
-    /* workspace parent may be incorrect i.e. for search results. in that case
-     * return the parent which would appear in getInfo, or after opening the document */
-    RSPath pathToRoot = baseRecord.getShortestPathToParent(usersRootFolder);
-    return pathToRoot
-        .getImmediateParentOf(baseRecord)
-        .orElseThrow(
-            () -> new IllegalAddChildOperation("Attempted to get parent folder of root folder"));
   }
 
   @PostMapping("/ajax/delete")
@@ -642,7 +637,7 @@ public class WorkspaceController extends BaseController {
             RS_DELETE_RECORD_PROGRESS, toDelete.length * 10, "Deleting records", session);
     DeletionSettings delContext =
         DeletionSettings.builder()
-            .grandParentFolderId(settings.getGrandparentFolderId())
+            .grandParentId(settings.getGrandParentId())
             .notebookEntryDeletion(isNotebookEntryDeletion)
             .parent(parent)
             .currentUsers(users)
@@ -654,7 +649,7 @@ public class WorkspaceController extends BaseController {
 
     if (isNotebookEntryDeletion) {
       /* let's set up proper grandparent for listFilesInFolder (RSPAC-991) */
-      settings.setParentFolderId(settings.getGrandparentFolderId());
+      settings.setParentFolderId(settings.getGrandParentId());
     }
     if (parent == null) {
       parent =
@@ -673,6 +668,7 @@ public class WorkspaceController extends BaseController {
   /** Handles case when document can't be accessed for edit */
   @Value
   class NoAccessHandler implements BiConsumer<Long, EditStatus> {
+
     Model model;
 
     @Override
@@ -726,32 +722,7 @@ public class WorkspaceController extends BaseController {
       anonymousShare.setPublishOnInternet(existingAnonymousShareConfig.isPublishOnInternet());
       shareConfig.setValues(new ShareConfigElement[] {anonymousShare});
     }
-    ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> result =
-        recordShareHandler.shareRecords(shareConfig, sharer);
-    List<Long> sharedIds =
-        result.getResults().stream()
-            .map(rgs -> rgs.getShared().getId())
-            .collect(Collectors.toList());
-    List<String> publicLinks =
-        result.getResults().stream()
-            .map(
-                rgs -> {
-                  if (rgs.getPublicLink() == null) {
-                    return null;
-                  }
-                  String prefix = "";
-                  if (rgs.getShared().isStructuredDocument()) {
-                    prefix = "/public/publishedView/document/";
-                  } else if (rgs.getShared().isNotebook()) {
-                    prefix = "/public/publishedView/notebook/";
-                  }
-                  return rgs.getShared().getName() + "_&_&_" + prefix + rgs.getPublicLink();
-                })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-    result.getExceptions().forEach(e -> error.addErrorMsg(e.getMessage()));
-    result.getFailures().forEach(rgs -> error.addErrorMsg(rgs.getShared().getName()));
-    SharingResult sharingResult = new SharingResult(sharedIds, publicLinks);
+    SharingResult sharingResult = recordShareHandler.shareRecordsWithResult(shareConfig, sharer);
     return new AjaxReturnObject<>(sharingResult, error);
   }
 
@@ -880,7 +851,36 @@ public class WorkspaceController extends BaseController {
     Folder parentFolder = folderManager.getFolder(parentFolderId, user);
     listFilesInFolder(settings, model, session, user, parentFolder);
     setPublicationAllowed(model, principal.getName());
+    addErrorMsgIfProblematicFolder(model, parentFolder);
     return new ModelAndView(WORKSPACE_AJAX);
+  }
+
+  private void addErrorMsgIfProblematicFolder(Model model, Folder parentFolder) {
+    // SUPPORT-526 shared folder moved outside sharing hierarchy
+    boolean isSharedFolderWithOnlyOwnerPermission =
+        parentFolder.isSharedFolder() && isAccessPermittedForFolderOwnerOnly(parentFolder);
+    if (isSharedFolderWithOnlyOwnerPermission) {
+      model.addAttribute(
+          "errorMsg",
+          "The folder you're browsing seems "
+              + "to have inconsistent sharing status. Please contact your System Admin, "
+              + "citing folder ID: "
+              + parentFolder.getOid()
+              + ". More details at https://researchspace.helpdocs.io/article/2toicmq4iu");
+    }
+  }
+
+  private boolean isAccessPermittedForFolderOwnerOnly(Folder folder) {
+    if (folder.isShared()) {
+      return false; // there is access for multiple users/groups
+    }
+    List<ACLElement> sharingACL = folder.getSharingACL().getAclElements();
+    if (sharingACL.isEmpty()) {
+      return false; // no access - would be unexpected error case
+    }
+    /* otherwise check if the only permitted user is the owner of the folder
+    - or rather the permission is for group/project group */
+    return sharingACL.get(0).getUserOrGrpUniqueName().equals(folder.getOwner().getUsername());
   }
 
   /** Widely used function to simply list files in a folder */
@@ -901,10 +901,10 @@ public class WorkspaceController extends BaseController {
           user,
           settings.getParentFolderId());
 
-      Long grandparentFolderId = settings.getParentFolderId();
+      Long grandParentId = settings.getParentFolderId();
       settings.setParentFolderId(parentFolder.getId()); // update with new parent id
       WorkspaceListingConfig config = new WorkspaceListingConfig(settings);
-      config.setGrandparentFolderId(grandparentFolderId);
+      config.setGrandParentId(grandParentId);
       addWorkspaceConfigToSessionAndKeyModel(config, model, session);
 
     } else {
@@ -935,8 +935,11 @@ public class WorkspaceController extends BaseController {
 
     model.addAttribute("user", user);
     Folder rootRecord;
-    if (config.isAttachmentSearch()) rootRecord = folderManager.getGalleryRootFolderForUser(user);
-    else rootRecord = folderManager.getRootFolderForUser(user);
+    if (config.isAttachmentSearch()) {
+      rootRecord = folderManager.getGalleryRootFolderForUser(user);
+    } else {
+      rootRecord = folderManager.getRootFolderForUser(user);
+    }
     config.setParentFolderId(rootRecord.getId());
 
     updateResultsPerPageProperty(user, config.getPgCrit(), Preference.WORKSPACE_RESULTS_PER_PAGE);
@@ -1202,8 +1205,7 @@ public class WorkspaceController extends BaseController {
     User user = userManager.getAuthenticatedUserInSession();
 
     DetailedRecordInformation detailedInfo =
-        infoProvider.getDetailedRecordInformation(
-            recordId, getCurrentActiveUsers(), user, revision, userVersion);
+        infoProvider.getDetailedRecordInformation(recordId, user, revision, userVersion);
     return new AjaxReturnObject<>(detailedInfo, null);
   }
 
@@ -1236,14 +1238,15 @@ public class WorkspaceController extends BaseController {
       Principal principal,
       HttpSession session) {
     // basic validation
-    if (!isValidSettingsKey(settingsKey))
+    if (!isValidSettingsKey(settingsKey)) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid settings key");
-    if (session.getAttribute(settingsKey) == null)
+    }
+    if (session.getAttribute(settingsKey) == null) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST)
           .body(
               "Session did not contain a workspace listing associated with the "
                   + "given settings key");
-    else {
+    } else {
       WorkspaceListingConfig cfg = new WorkspaceListingConfig(settings);
       session.setAttribute(settingsKey, cfg);
     }

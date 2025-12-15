@@ -128,7 +128,7 @@ const fetchDetailsFor = async (type, typeID) => {
       }),
     {
       timeout: 5500,
-    }
+    },
   );
 };
 const setUpProjectAndScreensInDescendingOrder = async () => {
@@ -139,7 +139,7 @@ const setUpProjectAndScreensInDescendingOrder = async () => {
     undefined,
     {
       timeout: 5500,
-    }
+    },
   );
 };
 const setUpScreensAsData = async () => {
@@ -155,7 +155,7 @@ const assertThatFirstRowOfDataIsProjectCalled = async (name, numDatasets) => {
     name +
       "project fetch details see in omero show datasets [" +
       numDatasets +
-      "]"
+      "]",
   );
 };
 const assertThatFirstRowOfDataIsScreenCalled = async (name, numDatasets) => {
@@ -164,23 +164,28 @@ const assertThatFirstRowOfDataIsScreenCalled = async (name, numDatasets) => {
   });
   assertElemWithTestIDHasTextContent(
     "path0",
-    name + "screen fetch details see in omero show plates [" + numDatasets + "]"
+    name +
+      "screen fetch details see in omero show plates [" +
+      numDatasets +
+      "]",
   );
 };
 const setUpLocalStorageWithOrder = (order) => {
   localStorageMock.getItem = jest.fn().mockImplementation((key) => {
     if (key === "omeroSearchOrder") {
       return '"' + order + '"';
-    } else if (key == "omeroSearchOrderBy") {
+    }
+    if (key == "omeroSearchOrderBy") {
       return '"name"';
-    } else return null;
+    }
+    return null;
   });
 };
 const navigateFromScreenToPlate = async (
   screenName,
   screenID,
   plateID,
-  handleSetup = true
+  handleSetup = true,
 ) => {
   setUpLocalStorageWithOrder(Order.asc);
   if (handleSetup) {
@@ -191,7 +196,7 @@ const navigateFromScreenToPlate = async (
     timeout: 5500,
   });
   const fetchPlates = screen.getByTestId(
-    "screen_fetch_childrenLink_" + screenID
+    "screen_fetch_childrenLink_" + screenID,
   );
   fireEvent.click(fetchPlates);
   await waitFor(
@@ -201,20 +206,20 @@ const navigateFromScreenToPlate = async (
       }),
     {
       timeout: 5500,
-    }
+    },
   );
 };
 const navigateFromScreenToPlateWIthoutSetup = async (
   screenName,
   screenID,
-  plateID
+  plateID,
 ) => {
   await navigateFromScreenToPlate(screenName, screenID, plateID, false);
 };
 const navigateFromProjectToDataset = async (
   projectName,
   projectID,
-  datasetID
+  datasetID,
 ) => {
   setUpLocalStorageWithOrder(Order.asc);
   await setUpComponent();
@@ -222,7 +227,7 @@ const navigateFromProjectToDataset = async (
     timeout: 5500,
   });
   const fetchDatasets = screen.getByTestId(
-    "project_fetch_childrenLink_" + projectID
+    "project_fetch_childrenLink_" + projectID,
   );
   fireEvent.click(fetchDatasets);
   await waitFor(
@@ -232,7 +237,7 @@ const navigateFromProjectToDataset = async (
       }),
     {
       timeout: 5500,
-    }
+    },
   );
 };
 
@@ -243,12 +248,12 @@ const hideChildren = async (type, typeID, childType, childID, numchildren) => {
   expect(screen.getByTestId(targetChildID)).toBeInTheDocument();
   assertElemWithTestIDHasTextContent(
     fetchChildrenID,
-    "hide children [" + numchildren + "]"
+    "hide children [" + numchildren + "]",
   );
   fireEvent.click(hideChildrenLink);
   assertElemWithTestIDHasTextContent(
     fetchChildrenID,
-    "show " + childType + "s [" + numchildren + "]"
+    "show " + childType + "s [" + numchildren + "]",
   );
   expect(screen.queryByTestId(targetChildID)).not.toBeInTheDocument();
 };
@@ -266,10 +271,10 @@ const hideImageGrid = async (type, typeID, imageID) => {
 };
 const clickChildLinkAndShowPlateAcquisition = async (
   childLInkID,
-  plateAcquisitionID
+  plateAcquisitionID,
 ) => {
   const fetchPlatesAcquisitions = screen.getByTestId(
-    "plate_fetch_childrenLink_" + childLInkID
+    "plate_fetch_childrenLink_" + childLInkID,
   );
   fireEvent.click(fetchPlatesAcquisitions);
   await waitFor(
@@ -279,18 +284,18 @@ const clickChildLinkAndShowPlateAcquisition = async (
         undefined,
         {
           timeout: 5500,
-        }
+        },
       ),
     {
       timeout: 5500,
-    }
+    },
   );
 };
 //for plates that have 1 or 0 plate acquisitions and so can directly open grid of images and plate acquistion at same time
 const clickChildLinkAndShowPlateAcquisitionWithImages = async (
   childLInkID,
   plateAcquisitionID,
-  imageID
+  imageID,
 ) => {
   await waitFor(
     () =>
@@ -299,14 +304,14 @@ const clickChildLinkAndShowPlateAcquisitionWithImages = async (
         undefined,
         {
           timeout: 15500,
-        }
+        },
       ),
     {
       timeout: 5500,
-    }
+    },
   );
   const fetchGridOfImages = screen.getByTestId(
-    "plate_fetch_childrenLink_" + childLInkID
+    "plate_fetch_childrenLink_" + childLInkID,
   );
   fireEvent.click(fetchGridOfImages);
   await waitFor(
@@ -316,16 +321,16 @@ const clickChildLinkAndShowPlateAcquisitionWithImages = async (
       }),
     {
       timeout: 5500,
-    }
+    },
   );
   //check that a plate acquisition is also displayed
   expect(
-    screen.getByTestId("plateAcquisition_name_display_" + plateAcquisitionID)
+    screen.getByTestId("plateAcquisition_name_display_" + plateAcquisitionID),
   ).toBeInTheDocument();
 };
 
 const clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData = async (
-  imageID
+  imageID,
 ) => {
   const imageInGrid = screen.getByTestId("image_img_" + imageID);
   fireEvent.click(imageInGrid);
@@ -336,7 +341,7 @@ const clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData = async (
       }),
     {
       timeout: 5500,
-    }
+    },
   );
   await waitFor(
     () =>
@@ -345,12 +350,12 @@ const clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData = async (
       }),
     {
       timeout: 5500,
-    }
+    },
   );
 };
 const clickDatasetImageGridLinkAndCheckForImageWithID = async (
   datasetID,
-  targetImageID
+  targetImageID,
 ) => {
   const fetchImages = screen.getByTestId("dataset_show_grid_" + datasetID);
   fireEvent.click(fetchImages);
@@ -361,16 +366,16 @@ const clickDatasetImageGridLinkAndCheckForImageWithID = async (
       }),
     {
       timeout: 5500,
-    }
+    },
   );
 };
 
 const clickImageGridLinkAndCheckForImageWithID = async (
   imageGridLinkID,
-  targetImageID
+  targetImageID,
 ) => {
   const fetchGridOfImages = screen.getByTestId(
-    "plateAcquisition_show_grid_" + imageGridLinkID
+    "plateAcquisition_show_grid_" + imageGridLinkID,
   );
   fireEvent.click(fetchGridOfImages);
   await waitFor(
@@ -380,7 +385,7 @@ const clickImageGridLinkAndCheckForImageWithID = async (
       }),
     {
       timeout: 5500,
-    }
+    },
   );
 };
 const setUpComponent = async () => {
@@ -417,15 +422,15 @@ describe("Renders page with results data ", () => {
       undefined,
       {
         timeout: 5500,
-      }
+      },
     );
     assertElemWithTestIDHasTextContent(
       "path0",
-      "idr0001-graml-sysgro/screenAscreen fetch details see in omero show plates [192]"
+      "idr0001-graml-sysgro/screenAscreen fetch details see in omero show plates [192]",
     );
     assertElemWithTestIDHasTextContent(
       "path24",
-      "idr0018-neff-histopathology/experimentAproject fetch details see in omero show datasets [248]"
+      "idr0018-neff-histopathology/experimentAproject fetch details see in omero show datasets [248]",
     );
   }, 9999);
   it("displays Projects Only", async () => {
@@ -435,10 +440,10 @@ describe("Renders page with results data ", () => {
       undefined,
       {
         timeout: 5500,
-      }
+      },
     );
     expect(
-      screen.queryByText("idr0094-ellinger-sarscov2/screenB")
+      screen.queryByText("idr0094-ellinger-sarscov2/screenB"),
     ).not.toBeInTheDocument();
   }, 9999);
 
@@ -448,7 +453,7 @@ describe("Renders page with results data ", () => {
       timeout: 5500,
     });
     expect(
-      screen.queryByText("idr0018-neff-histopathology/experimentA")
+      screen.queryByText("idr0018-neff-histopathology/experimentA"),
     ).not.toBeInTheDocument();
   }, 9999);
 
@@ -456,12 +461,12 @@ describe("Renders page with results data ", () => {
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0001-graml-sysgro/screenA",
-      192
+      192,
     );
     await screen.getByText("Path").click();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0145-ho-replicationstress/screenB",
-      7
+      7,
     );
   }, 9999);
 
@@ -469,60 +474,60 @@ describe("Renders page with results data ", () => {
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0001-graml-sysgro/screenA",
-      192
+      192,
     );
     await screen.getByText("Description").click();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0006-fong-nuclearbodies/screenA",
-      169
+      169,
     );
   }, 9999);
   it("screens description is formatted", async () => {
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0001-graml-sysgro/screenA",
-      192
+      192,
     );
     assertElemWithTestIDContainsHtml(
       "description0",
       '<td class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1d99l7t-MuiTableCell-root-tableCell" data-testid="description0" id="description_tablecell_screen3" width="75%"> <dl><dt id="screen_first_description_3" class="css-b9v4sk-firstDescription"> Publication Title: "A genomic Multiprocess survey of machineries that control and link cell shape, microtubule organization, and cell-cycle progression."</dt><dt id="screen_rest_description_3" class="css-72f9hd-restOfDescription"> Screen Description - \n' +
-        "Primary screen of fission yeast knock out mutants looking for genes controlling cell shape, microtubules, and cell-cycle progression. 262 genes controlling specific aspects of those processes are identifed, validated, and functionally annotated.</dt></dl></td>"
+        "Primary screen of fission yeast knock out mutants looking for genes controlling cell shape, microtubules, and cell-cycle progression. 262 genes controlling specific aspects of those processes are identifed, validated, and functionally annotated.</dt></dl></td>",
     );
   }, 9999);
   it("projects can be sorted by name ", async () => {
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0018-neff-histopathology/experimentA",
-      248
+      248,
     );
     await screen.getByText("Path").click();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0148-schumacher-kidneytem/experimentA",
-      10
+      10,
     );
   }, 9999);
   it("projects description is formatted ", async () => {
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0018-neff-histopathology/experimentA",
-      248
+      248,
     );
     assertElemWithTestIDContainsHtml(
       "description1",
       '<td class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1d99l7t-MuiTableCell-root-tableCell" data-testid="description1" id="description_tablecell_project51" width="75%"> <dl><dt id="project_first_description_51" class="css-b9v4sk-firstDescription"> Publication Title: "Subdiffraction imaging of centrosomes reveals higher-order organizational features of pericentriolar material."</dt><dt id="project_rest_description_51" class="css-72f9hd-restOfDescription"> Experiment Description - \n' +
-        "Images relating to Figure 1e in Lawo et al 2012. These are the 3D-SIM reconstructed, maximum intensity projected and aligned images of centriole or PCM proteins of cycling HeLa cells in interphase.</dt></dl></td>"
+        "Images relating to Figure 1e in Lawo et al 2012. These are the 3D-SIM reconstructed, maximum intensity projected and aligned images of centriole or PCM proteins of cycling HeLa cells in interphase.</dt></dl></td>",
     );
   }, 9999);
   it("projects can be sorted by description ", async () => {
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0018-neff-histopathology/experimentA",
-      248
+      248,
     );
     await screen.getByText("Description").click();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0117-croce-marimba/experimentA",
-      9
+      9,
     );
   }, 9999);
 
@@ -530,16 +535,16 @@ describe("Renders page with results data ", () => {
     await setUpProjectAndScreensInDescendingOrder();
     assertElemWithTestIDHasTextContent(
       "description24",
-      "Experiment Description - Histopathology raw images and annotated tiff files of tissues from mice with 10 different single gene knockouts."
+      "Experiment Description - Histopathology raw images and annotated tiff files of tissues from mice with 10 different single gene knockouts.",
     );
     await fetchDetailsFor("project", 101);
     assertElemWithTestIDHasTextContent(
       "path24",
-      "idr0018-neff-histopathology/experimentAproject details fetched see in omero show datasets [248]"
+      "idr0018-neff-histopathology/experimentAproject details fetched see in omero show datasets [248]",
     );
     assertElemWithTestIDHasTextContent(
       "description24",
-      'Experiment Description - Histopathology raw images and annotated tiff files of tissues from mice with 10 different single gene knockouts.Sample Type = cellOrganism = Homo sapiensStudy Type = protein localizationImaging Method = structured illumination microscopy (SIM) Publication Title: "= Subdiffraction imaging of centrosomes reveals higher-order organizational features of pericentriolar material." Publication Authors = Lawo S, Hasegan M, Gupta GD, Pelletier LPubMed ID = 23086237 https://www.ncbi.nlm.nih.gov/pubmed/23086237Publication DOI = 10.1038/ncb2591 https://doi.org/10.1038/ncb2591Release Date = 2016-05-26License = CC BY 4.0 https://creativecommons.org/licenses/by/4.0/Copyright = Lawo et alAnnotation File = idr0021-experimentA-annotation.csv https://github.com/IDR/idr0021-lawo-pericentriolarmaterial/blob/HEAD/experimentA/idr0021-experimentA-annotation.csvFile = "bulk_annotations"'
+      'Experiment Description - Histopathology raw images and annotated tiff files of tissues from mice with 10 different single gene knockouts.Sample Type = cellOrganism = Homo sapiensStudy Type = protein localizationImaging Method = structured illumination microscopy (SIM) Publication Title: "= Subdiffraction imaging of centrosomes reveals higher-order organizational features of pericentriolar material." Publication Authors = Lawo S, Hasegan M, Gupta GD, Pelletier LPubMed ID = 23086237 https://www.ncbi.nlm.nih.gov/pubmed/23086237Publication DOI = 10.1038/ncb2591 https://doi.org/10.1038/ncb2591Release Date = 2016-05-26License = CC BY 4.0 https://creativecommons.org/licenses/by/4.0/Copyright = Lawo et alAnnotation File = idr0021-experimentA-annotation.csv https://github.com/IDR/idr0021-lawo-pericentriolarmaterial/blob/HEAD/experimentA/idr0021-experimentA-annotation.csvFile = "bulk_annotations"',
     );
   }, 9999);
 
@@ -547,18 +552,18 @@ describe("Renders page with results data ", () => {
     await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
-      51
+      51,
     );
     assertElemWithTestIDHasTextContent(
       "path28",
-      "CDK5RAP2-Cdataset fetch detailsshow image grid [33] see in omero -> parent_project"
+      "CDK5RAP2-Cdataset fetch detailsshow image grid [33] see in omero -> parent_project",
     );
   }, 9999);
   it("projects can hide datasets", async () => {
     await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
-      51
+      51,
     );
     await hideChildren("project", 51, "dataset", 51, 10);
   }, 9999);
@@ -566,12 +571,12 @@ describe("Renders page with results data ", () => {
     await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
-      51
+      51,
     );
     //check has link to parent project and that the linked ID exists in the doc
     assertElemWithTestIDContainsHtml(
       "dataset_link_parent_51",
-      '<a href="#project_name_display_51"> -> parent_project</a>'
+      '<a href="#project_name_display_51"> -> parent_project</a>',
     );
     expect(screen.getByTestId("project_name_display_51")).toBeInTheDocument();
   }, 9999);
@@ -580,33 +585,33 @@ describe("Renders page with results data ", () => {
     await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
-      51
+      51,
     );
     assertElemWithTestIDHasTextContent(
       "path27",
-      "idr0021-lawo-pericentriolarmaterial/experimentAproject fetch details see in omero hide children [10]"
+      "idr0021-lawo-pericentriolarmaterial/experimentAproject fetch details see in omero hide children [10]",
     );
     assertElemWithTestIDHasTextContent(
       "path28",
-      "CDK5RAP2-Cdataset fetch detailsshow image grid [33] see in omero -> parent_project"
+      "CDK5RAP2-Cdataset fetch detailsshow image grid [33] see in omero -> parent_project",
     );
     assertElemWithTestIDHasTextContent(
       "path37",
-      "TUBG1-Ndataset fetch detailsshow image grid [80] see in omero -> parent_project"
+      "TUBG1-Ndataset fetch detailsshow image grid [80] see in omero -> parent_project",
     );
     await screen.getByText("Path").click();
     assertElemWithTestIDHasTextContent(
       "path11",
-      "idr0021-lawo-pericentriolarmaterial/experimentAproject fetch details see in omero hide children [10]"
+      "idr0021-lawo-pericentriolarmaterial/experimentAproject fetch details see in omero hide children [10]",
     );
     // the datasets come AFTER their parent AND they are now ordered in the opposite way to before - ie by name DESC
     assertElemWithTestIDHasTextContent(
       "path12",
-      "TUBG1-Ndataset fetch detailsshow image grid [80] see in omero -> parent_project"
+      "TUBG1-Ndataset fetch detailsshow image grid [80] see in omero -> parent_project",
     );
     assertElemWithTestIDHasTextContent(
       "path21",
-      "CDK5RAP2-Cdataset fetch detailsshow image grid [33] see in omero -> parent_project"
+      "CDK5RAP2-Cdataset fetch detailsshow image grid [33] see in omero -> parent_project",
     );
   }, 9999);
 
@@ -614,7 +619,7 @@ describe("Renders page with results data ", () => {
     await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
-      51
+      51,
     );
     await clickDatasetImageGridLinkAndCheckForImageWithID(51, 1884837);
   }, 9999);
@@ -623,7 +628,7 @@ describe("Renders page with results data ", () => {
     await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
-      51
+      51,
     );
     await clickDatasetImageGridLinkAndCheckForImageWithID(51, 1884837);
     await hideImageGrid("dataset", 51, 1884837);
@@ -633,12 +638,12 @@ describe("Renders page with results data ", () => {
     await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
     assertElemWithTestIDHasTextContent(
       "path1",
-      "JL_120731_S6Aplate fetch details see in omero show plateAcquisitions [6] -> parent_screen"
+      "JL_120731_S6Aplate fetch details see in omero show plateAcquisitions [6] -> parent_screen",
     );
     await clickChildLinkAndShowPlateAcquisition(2551, 2661);
     assertElemWithTestIDHasTextContent(
       "path2",
-      "Meas_01(2012-07-31_10-41-12)plateAcquisition fetch detailsshow grid of wells for field 1 see in omero -> parent_plate"
+      "Meas_01(2012-07-31_10-41-12)plateAcquisition fetch detailsshow grid of wells for field 1 see in omero -> parent_plate",
     );
   }, 9999);
 
@@ -668,7 +673,7 @@ describe("Renders page with results data ", () => {
     await navigateFromScreenToPlateWIthoutSetup(
       "idr0001-graml-sysgro/screenA",
       3,
-      2551
+      2551,
     );
     const plateAqcquisitionID = "plateAcquisition_name_display_2661";
     expect(screen.getByTestId(plateAqcquisitionID)).toBeInTheDocument();
@@ -691,7 +696,7 @@ describe("Renders page with results data ", () => {
     await navigateFromScreenToPlate(
       "idr0002-heriche-condensation/screenA",
       102,
-      422
+      422,
     );
     await clickChildLinkAndShowPlateAcquisitionWithImages(422, 422, 179693);
   }, 9999);
@@ -700,23 +705,23 @@ describe("Renders page with results data ", () => {
     await navigateFromScreenToPlate(
       "idr0002-heriche-condensation/screenA",
       102,
-      422
+      422,
     );
     await clickChildLinkAndShowPlateAcquisitionWithImages(422, 422, 179693);
     await clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData(
-      179693
+      179693,
     );
     assertElemWithTestIDHasTextContent(
       "path3",
-      "Run 422plateAcquisition fetch detailshide image grid see in omero hide children [1] -> parent_plate"
+      "Run 422plateAcquisition fetch detailshide image grid see in omero hide children [1] -> parent_plate",
     );
     assertElemWithTestIDHasTextContent(
       "path4",
-      "plate1_1_013 [Well 1, Field 1 (Spot 1)] details fetched large thumbnailsee in omero -> parent_plateAcquisition"
+      "plate1_1_013 [Well 1, Field 1 (Spot 1)] details fetched large thumbnailsee in omero -> parent_plateAcquisition",
     );
     assertElemWithTestIDHasTextContent(
       "description4",
-      "Z-sections = 1Timepoints = 329Number of Channels = 2Pixels Type = uint16Dimensions(XY) = 1344 x 1024Pixel Size (XYZ) = 0.323 µm x 0.323 µm x n/a Z Channels = [name = Cy3 colour = -16776961 photo interpretation = Monochrome] [name = eGFP colour = 16711935 photo interpretation = Monochrome] Cell Line = HeLaGene Identifier = ENSG00000117399Gene Identifier URL = http://www.ensembl.org/id/ENSG00000117399Gene Symbol = CDC20Analysis Gene Annotation Build = GRCh37, Ensembl release 61, Feb 2011Organism = Homo sapienssiRNA Identifier = s2748siRNA Pool Identifier = Sense Sequence = CGAAAUGACUAUUACCUGATTAntisense Sequence = UCAGGUAAUAGUCAUUUCGGAReagent Design Gene Annotation Build = GRCh37, Ensembl release 61, Feb 2011Control Type = positive controlControl Comments = early mitotic phenotypeQuality Control = failChannels = H2B- mCherry/Cy3:chromatin;eGFP:nuclear lamina and report on nuclear envelope breakdown"
+      "Z-sections = 1Timepoints = 329Number of Channels = 2Pixels Type = uint16Dimensions(XY) = 1344 x 1024Pixel Size (XYZ) = 0.323 µm x 0.323 µm x n/a Z Channels = [name = Cy3 colour = -16776961 photo interpretation = Monochrome] [name = eGFP colour = 16711935 photo interpretation = Monochrome] Cell Line = HeLaGene Identifier = ENSG00000117399Gene Identifier URL = http://www.ensembl.org/id/ENSG00000117399Gene Symbol = CDC20Analysis Gene Annotation Build = GRCh37, Ensembl release 61, Feb 2011Organism = Homo sapienssiRNA Identifier = s2748siRNA Pool Identifier = Sense Sequence = CGAAAUGACUAUUACCUGATTAntisense Sequence = UCAGGUAAUAGUCAUUUCGGAReagent Design Gene Annotation Build = GRCh37, Ensembl release 61, Feb 2011Control Type = positive controlControl Comments = early mitotic phenotypeQuality Control = failChannels = H2B- mCherry/Cy3:chromatin;eGFP:nuclear lamina and report on nuclear envelope breakdown",
     );
   }, 9999);
 });

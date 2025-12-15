@@ -119,16 +119,16 @@ export default function SnapGeneDialog(props) {
   );
 }
 
-$(document).on("click", ".snapGenePanel .previewActionLink", function (e) {
+$(document).on("click", ".snapGenePanel .previewActionLink", (e) => {
   e.preventDefault();
-  let target_id = $(e.target).parent().parent()[0].getAttribute("bioid");
+  const target_id = $(e.target).parent().parent()[0].getAttribute("bioid");
 
   renderDialog(target_id);
 });
 
-$(document).on("click", ".imageThumbnail", function (e) {
+$(document).on("click", ".imageThumbnail", (e) => {
   if (window.localStorage.getItem("snapgene-available") === "true") {
-    let target = $(e.target).parent();
+    const target = $(e.target).parent();
 
     if (RS.dnaFiles.includes(target.data("extension"))) {
       renderDialog(target.data("id"));
@@ -137,14 +137,14 @@ $(document).on("click", ".imageThumbnail", function (e) {
 });
 
 // detect iframe load and render elements
-document.addEventListener("open-dna-info", function (e) {
+document.addEventListener("open-dna-info", (e) => {
   e.preventDefault();
   renderDialog(e.detail);
 });
 
 function renderDialog(target_id) {
   $(document.body).append("<span class='snapgene-dialog'></span>");
-  let container = $(".snapgene-dialog")[0];
+  const container = $(".snapgene-dialog")[0];
   const root = createRoot(container);
   root.render(<SnapGeneDialog id={target_id} />);
 }

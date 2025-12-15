@@ -4,8 +4,8 @@ import Result from "./result";
 /*
  * This type defines the internal state of the class. It is not exported to
  * prevent the rest of the code base from being able to use the standard
- * constructor. It is necessary because we want to ensure that Flow can use
- * type refinement to determine the existence of the value based on the key.
+ * constructor. It is necessary because we want to ensure that TypeScript can
+ * use type refinement to determine the existence of the value based on the key.
  */
 type OptionalInternals<T> =
   | {
@@ -58,13 +58,13 @@ export class Optional<T> {
       () =>
         other.destruct(
           () => true,
-          () => false
+          () => false,
         ),
       (value) =>
         other.destruct(
           () => false,
-          (otherValue) => value === otherValue
-        )
+          (otherValue) => value === otherValue,
+        ),
     );
   }
 
@@ -96,7 +96,7 @@ export class Optional<T> {
   isPresent(): boolean {
     return this.destruct(
       () => false,
-      () => true
+      () => true,
     );
   }
 
@@ -130,10 +130,10 @@ export class Optional<T> {
         const resultOfAltFunc = altFunc();
         return resultOfAltFunc.destruct(
           () => Optional.empty(),
-          (value) => Optional.present(value)
+          (value) => Optional.present(value),
         );
       },
-      (value) => Optional.present(value)
+      (value) => Optional.present(value),
     );
   }
 
@@ -145,7 +145,7 @@ export class Optional<T> {
   map<U>(func: (t: T) => U): Optional<U> {
     return this.destruct(
       () => Optional.empty(),
-      (value: T) => Optional.present(func(value))
+      (value: T) => Optional.present(func(value)),
     );
   }
 
@@ -188,7 +188,7 @@ export class Optional<T> {
   toResult(onEmpty: () => Error): Result<T> {
     return this.destruct(
       () => Result.Error([onEmpty()]),
-      (value) => Result.Ok(value)
+      (value) => Result.Ok(value),
     );
   }
 }
@@ -205,7 +205,7 @@ export class Optional<T> {
 export function optionalFlat<T>(opt: Optional<Optional<T>>): Optional<T> {
   return opt.destruct(
     () => Optional.empty(),
-    (value) => value
+    (value) => value,
   );
 }
 
@@ -241,7 +241,7 @@ export function lift<A, B>(f: (a: A) => B, optA: Optional<A>): Optional<B> {
 export function lift2<A, B, C>(
   f: (a: A, b: B) => C,
   optA: Optional<A>,
-  optB: Optional<B>
+  optB: Optional<B>,
 ): Optional<C> {
   return optA.flatMap((a) => lift((b) => f(a, b), optB));
 }
@@ -254,7 +254,7 @@ export function lift3<A, B, C, D>(
   f: (a: A, b: B, c: C) => D,
   optA: Optional<A>,
   optB: Optional<B>,
-  optC: Optional<C>
+  optC: Optional<C>,
 ): Optional<D> {
   return optA.flatMap((a) => lift2((b, c) => f(a, b, c), optB, optC));
 }
@@ -268,10 +268,10 @@ export function lift4<A, B, C, D, E>(
   optA: Optional<A>,
   optB: Optional<B>,
   optC: Optional<C>,
-  optD: Optional<D>
+  optD: Optional<D>,
 ): Optional<E> {
   return optA.flatMap((a) =>
-    lift3((b, c, d) => f(a, b, c, d), optB, optC, optD)
+    lift3((b, c, d) => f(a, b, c, d), optB, optC, optD),
   );
 }
 
@@ -286,8 +286,8 @@ export function lift4<A, B, C, D, E>(
  */
 export function getByKey<T extends object, K extends keyof T>(
   key: K,
-  obj: T
-): Optional<T[K]> {
+  obj: T,
+): Optional<Required<T>[K]> {
   if (key in obj) {
     return Optional.present(obj[key]);
   }

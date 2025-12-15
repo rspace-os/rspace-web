@@ -486,7 +486,7 @@ public class MessageAndRequestController extends BaseController implements Appli
    * @return
    */
   private String[] extractUserNamesFromCfg(MsgOrReqstCreationCfg mor) {
-    return User.getUsernameesFromMultiUser(mor.getRecipientnames());
+    return User.getUsernamesFromMultiUser(mor.getRecipientnames());
   }
 
   /**

@@ -2,6 +2,7 @@ package com.researchspace.properties;
 
 import com.researchspace.core.util.version.Versionable;
 import java.security.Key;
+import java.util.Map;
 
 /**
  * Abstracts property and environment settings which influence application behaviour. <br>
@@ -281,4 +282,14 @@ public interface IPropertyHolder extends Versionable {
   String getFieldmarkBaseUrl();
 
   boolean isAsposeEnabled();
+
+  String getChemistryProvider();
+
+  String getDeploymentDescription();
+
+  String getDeploymentHelpEmail();
+
+  boolean isRsDevUnsafeMoveAllowed();
+
+  Map<String, String> getUiFooterUrls();
 }

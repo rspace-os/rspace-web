@@ -1,6 +1,5 @@
 package com.researchspace.api.v1.controller;
 
-import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.api.v1.auth.ApiAuthenticator;
 import com.researchspace.model.User;
 import javax.servlet.http.HttpServletRequest;
@@ -16,28 +15,22 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
  */
 public class ApiAuthenticationInterceptor extends HandlerInterceptorAdapter {
 
-  @Autowired private ApiAuthenticator apiAuthenticator;
-
-  @Autowired private AnalyticsManager analyticsMgr;
+  @Autowired private ApiAuthenticator combinedApiAuthenticator;
 
   @Override
   public boolean preHandle(
       HttpServletRequest request, HttpServletResponse response, Object handler) {
-    User user = apiAuthenticator.authenticate(request);
+    User user = combinedApiAuthenticator.authenticate(request);
     request.setAttribute("user", user);
-    if (user != null) {
-      analyticsMgr.apiUsed(user, request);
-    }
     return true;
   }
 
-  /** Logs out. */
   @Override
   public void postHandle(
       HttpServletRequest request,
       HttpServletResponse response,
       Object handler,
       ModelAndView modelAndView) {
-    apiAuthenticator.logout();
+    combinedApiAuthenticator.logout();
   }
 }

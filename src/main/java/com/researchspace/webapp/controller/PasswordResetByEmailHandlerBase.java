@@ -74,7 +74,7 @@ public abstract class PasswordResetByEmailHandlerBase {
                   getEmailSubject(), emailContent, TransformerUtils.toList(email), null);
 
               SECURITY_LOG.info(
-                  "Password reset request from {} sent to email {}", remoteIpAddress, email);
+                  "Password reset request from [{}] sent to email [{}]", remoteIpAddress, email);
             });
       } catch (RequestNotPermitted e) {
         throw new IllegalStateException(
@@ -83,7 +83,7 @@ public abstract class PasswordResetByEmailHandlerBase {
       }
     } else {
       SECURITY_LOG.warn(
-          "Password reset request from {} for a non-existing email {}.", remoteIpAddress, email);
+          "Password reset request for a non-existing email [{}], from {}", email, remoteIpAddress);
     }
   }
 
@@ -98,7 +98,7 @@ public abstract class PasswordResetByEmailHandlerBase {
     RateLimiter rld = RateLimiter.of(email, cfg);
     rld.getEventPublisher()
         .onFailure(
-            e -> SECURITY_LOG.info("Password reminder request blocked from email {}", email));
+            e -> SECURITY_LOG.info("Password reminder request blocked from email [{}]", email));
     return rld;
   }
 
@@ -116,14 +116,16 @@ public abstract class PasswordResetByEmailHandlerBase {
     }
   }
 
-  protected ModelAndView submitResetPage(PasswordResetCommand cmd, BindingResult errors)
-      throws Exception {
+  protected ModelAndView submitResetPage(
+      PasswordResetCommand cmd, BindingResult errors, HttpServletRequest request) throws Exception {
+
     Optional<String> usernameOpt = userManager.getUsernameByToken(cmd.getToken());
-    if (!usernameOpt.isPresent()) {
+    if (usernameOpt.isEmpty()) {
+      SECURITY_LOG.warn(
+          "Invalid reset password attempt, with token, from {}", RequestUtil.remoteAddr(request));
       String msg =
           String.format(
               "Could not reset " + getPasswordType() + " - no token [%s] known", cmd.getToken());
-      SECURITY_LOG.warn(msg);
       throw new IllegalStateException(msg);
     }
     String username = usernameOpt.get();
@@ -136,7 +138,7 @@ public abstract class PasswordResetByEmailHandlerBase {
     if (upc != null) {
       sendPasswordChangeCompleteEmail(upc);
       SECURITY_LOG.info(
-          "Password reset for user with email [{}] from IP address {}",
+          "Completed password reset for user with email [{}] from IP address [{}]",
           upc.getEmail(),
           upc.getIpAddressOfRequestor());
       return new ModelAndView("passwordReset/resetPasswordComplete");

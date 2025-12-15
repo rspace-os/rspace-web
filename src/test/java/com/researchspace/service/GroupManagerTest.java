@@ -24,7 +24,6 @@ import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
 import com.researchspace.model.permissions.FormPermissionAdapter;
 import com.researchspace.model.permissions.PermissionDomain;
-import com.researchspace.model.permissions.PermissionTestUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.RecordPermissionAdapter;
 import com.researchspace.model.preference.HierarchicalPermission;
@@ -35,10 +34,10 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.TestGroup;
 import java.util.Arrays;
 import org.apache.shiro.authz.AuthorizationException;
@@ -56,7 +55,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testAddRemoveGrp() {
+  public void testSaveGroup() {
     User u1 = createAndSaveUserIfNotExists("any");
     Group g1 = new Group("unique", u1);
     grpMgr.saveGroup(g1, u1);
@@ -180,7 +179,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     assertEquals(1, g2.getPermissions().size());
     ConstraintBasedPermission reloaded =
         (ConstraintBasedPermission) g2.getPermissions().iterator().next();
-    PermissionTestUtils.assertPermissionsAreEquivalent(reloaded, permOb);
+    assertEquals(reloaded.toString(), permOb.toString());
 
     // now remove and test
     g2.removePermission(reloaded);
@@ -395,6 +394,21 @@ public class GroupManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void testGetGroupByCommunalGroupFolderId() throws IllegalAddChildOperation {
+    User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    User user = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    Group g1 = new Group(CoreTestUtils.getRandomName(10), admin);
+    g1 = grpMgr.saveGroup(g1, admin);
+    initialiseContentWithEmptyContent(user, admin);
+
+    g1 = grpMgr.addMembersToGroup(g1.getId(), Arrays.asList(user, admin), "", "admin2", admin);
+    Folder grpSharedFolder =
+        grpMgr.createSharedCommunalGroupFolders(g1.getId(), admin.getUsername());
+    Group actualGroup = grpMgr.getGroupByCommunalGroupFolderId(grpSharedFolder.getId());
+    assertEquals(g1, actualGroup);
+  }
+
+  @Test
   public void testSetUpSharedSnippetGroupFolderForGroupWithMembers()
       throws IllegalAddChildOperation {
     User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
@@ -458,13 +472,14 @@ public class GroupManagerTest extends SpringTransactionalTest {
 
   private void makeSharedSnippetFolderAssertionsForUser(
       User aUser, String expectedName, boolean shouldFolderExist) {
-    Folder snippetFolder = recordMgr.getGallerySubFolderForUser(Folder.SNIPPETS_FOLDER, aUser);
+    Folder snippetFolder = recordMgr.getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, aUser);
     Folder snippetSharedFolder =
-        snippetFolder.getSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
+        snippetFolder.getSystemSubFolderByName(
+            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
     Folder snippetLabGroups =
-        snippetSharedFolder.getSubFolderByName(
+        snippetSharedFolder.getSystemSubFolderByName(
             SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
-    Folder sharedSnippetsForGroup = snippetLabGroups.getSubFolderByName(expectedName);
+    Folder sharedSnippetsForGroup = snippetLabGroups.getSystemSubFolderByName(expectedName);
     if (shouldFolderExist) {
       assertNotNull(sharedSnippetsForGroup);
     } else {
@@ -732,7 +747,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // Let's enable this functionality
     User sysadmin = logoutAndLoginAsSysAdmin();
     systemPropertyManager.save(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.ALLOWED.name(),
         sysadmin);
 
@@ -781,7 +796,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // Let's enable this functionality
     User sysadmin = logoutAndLoginAsSysAdmin();
     systemPropertyManager.save(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.ALLOWED.name(),
         sysadmin);
 
@@ -816,7 +831,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // Let's disable this functionality
     logoutAndLoginAsSysAdmin();
     systemPropertyManager.save(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.DENIED.name(),
         sysadmin);
 
@@ -830,7 +845,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // Let's enable this functionality
     User sysadmin = logoutAndLoginAsSysAdmin();
     systemPropertyManager.save(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.ALLOWED.name(),
         sysadmin);
 
@@ -854,7 +869,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     Community community = createAndSaveCommunity(admin, getRandomAlphabeticString("community"));
     community = communityMgr.addGroupToCommunity(grp.getId(), community.getId(), admin);
     saveSystemPropertyValue(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.ALLOWED,
         community,
         admin);
@@ -875,7 +890,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // Let's disable this functionality on community level
     logoutAndLoginAs(admin);
     saveSystemPropertyValue(
-        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP.name(),
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
         HierarchicalPermission.DENIED,
         community,
         admin);
@@ -920,12 +935,12 @@ public class GroupManagerTest extends SpringTransactionalTest {
   }
 
   private void saveSystemPropertyValue(
-      String property, HierarchicalPermission permission, Community community, User admin) {
+      Preference preference, HierarchicalPermission permission, Community community, User admin) {
     SystemPropertyValue systemPropertyValue =
-        systemPropertyManager.findByNameAndCommunity(property, community.getId());
+        systemPropertyManager.findByNameAndCommunity(preference.name(), community.getId());
 
     if (systemPropertyValue == null) {
-      SystemProperty systemProperty = systemPropertyManager.findByName(property).getProperty();
+      SystemProperty systemProperty = systemPropertyManager.findByName(preference).getProperty();
       systemPropertyValue =
           new SystemPropertyValue(systemProperty, permission.toString(), community);
     } else {

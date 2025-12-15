@@ -123,6 +123,15 @@ var tinymcesetup = {
 					tinyMCE.activeEditor.execCommand("cmdSketch");
 				} else if ($target.hasClass("sketch")) {
 					tinyMCE.activeEditor.execCommand("cmdSketch");
+				} else if ($target.hasClass("chem")) {
+					if($target.attr("data-chemfileid")) {
+						var result = tinyMCE.activeEditor.execCommand("cmdKetcherViewable");
+					} else {
+						result = tinyMCE.activeEditor.execCommand("cmdKetcherEditable");
+					}
+					if (!result) {
+						apprise('To operate on a chemical structure please active Chemistry integration on Apps page');
+					}
 				} else if ($target.hasClass("attachmentIcon") && $target.parents(".boxVersionLink").length) {
 					showBoxLinkInfo($target.parents(".boxVersionLink"));
 				}
@@ -342,7 +351,8 @@ tinymce.PluginManager.add('commandpalette', function (editor) {
         // Normalize the input to match the same action regardless if the end-user used upper or lowercase.
         return (
             action.type === 'separator' ||
-            action.text.toLowerCase().indexOf(pattern.toLowerCase()) !== -1
+            action.text.toLowerCase().indexOf(pattern.toLowerCase()) !== -1 ||
+            action.aliases?.some(alias => alias.toLowerCase().indexOf(pattern.toLowerCase()) !== -1)
         );
       }).filter((action, i, actions) => {
         // As the end-user filters the list, separators can end up adjacent to
@@ -397,6 +407,8 @@ var initTinyMCE_cachedIntegrationsResponse;
 
 function initTinyMCE(selector) {
 	var localTinymcesetup = tinymcesetup;
+	// THIS IS USED BY THE GALAXY INTEGRATION
+	localTinymcesetup.recordId = recordId;
 	localTinymcesetup.selector = selector;
 	var toolbarRequest, propertiesRequest, integrationsRequest;
 
@@ -436,6 +448,8 @@ function initTinyMCE(selector) {
 		initTinyMCE_cachedPropertiesResponse = propertiesResponse;
 		initTinyMCE_cachedIntegrationsResponse = integrationsResponse;
 
+		localTinymcesetup.external_plugins["gallery"] = "/ui/dist/tinymceGallery.js";
+		
 		var properties = propertiesResponse[0];
 		var integrations = integrationsResponse[0].data;
 
@@ -445,14 +459,20 @@ function initTinyMCE(selector) {
 		var googleDriveEnabled = integrations.GOOGLEDRIVE.enabled && integrations.GOOGLEDRIVE.available && integrations.GOOGLEDRIVE.options['googledrive.linking.enabled'];
 		var egnyteEnabled      = integrations.EGNYTE.enabled && integrations.EGNYTE.available;
 		var gitHubEnabled      = integrations.GITHUB.enabled && integrations.GITHUB.available;
-		var chemistryEnabled      = integrations.CHEMISTRY.enabled && integrations.CHEMISTRY.available;
+		var chemistryEnabled   = integrations.CHEMISTRY.enabled && integrations.CHEMISTRY.available;
 		var protocolsIOEnabled = integrations.PROTOCOLS_IO.enabled && integrations.PROTOCOLS_IO.available;
 		var ownCloudEnabled    = integrations.OWNCLOUD.enabled && integrations.OWNCLOUD.available && properties["ownCloud.url"] !== '';
-		var nextCloudEnabled    = integrations.NEXTCLOUD.enabled && integrations.NEXTCLOUD.available && properties["nextcloud.url"] !== '';
+		var nextCloudEnabled   = integrations.NEXTCLOUD.enabled && integrations.NEXTCLOUD.available && properties["nextcloud.url"] !== '';
 		let pyratEnabled       = integrations.PYRAT.enabled && integrations.PYRAT.available && properties["pyrat.server.config"] !== "";
 		const clustermarketEnabled =  integrations.CLUSTERMARKET.enabled && integrations.CLUSTERMARKET.available && properties["clustermarket.web.url"] !== "";
 		const omeroEnabled =  integrations.OMERO.enabled && integrations.OMERO.available && properties["omero.api.url"] !== "";
 		const joveEnabled =  integrations.JOVE.enabled && integrations.JOVE.available;
+		const identifiersEnabled = false; // Once RSDEV-484 is complete, this should check whether Inventory is available
+    const pubchemEnabled = chemistryEnabled;
+		const galaxyEnabled = integrations.GALAXY.enabled && integrations.GALAXY.available;
+
+		const chemistryProvider = properties["chemistry.provider"];
+		chemistryAvailable = integrations.CHEMISTRY.available;
 
 		// File repositories section
 		var enabledFileRepositories = "";
@@ -468,6 +488,11 @@ function initTinyMCE(selector) {
 			localTinymcesetup.clustermarket_web_url = properties["clustermarket.web.url"];
 			enabledFileRepositories += " clustermarket";
 			fileRepositoriesMenu += " optClustermarket";
+		}
+		if (galaxyEnabled) {
+			localTinymcesetup.external_plugins["galaxy"] = "/scripts/externalTinymcePlugins/galaxy/plugin.min.js";
+			enabledFileRepositories += " galaxy";
+			fileRepositoriesMenu += " optGalaxy";
 		}
 		if (omeroEnabled) {
 			localTinymcesetup.external_plugins["omero"] = "/scripts/externalTinymcePlugins/omero/plugin.min.js";
@@ -531,8 +556,23 @@ function initTinyMCE(selector) {
 			addToToolbarIfNotPresent(localTinymcesetup, " | pyrat");
 			addToMenuIfNotPresent(localTinymcesetup, " | optPyrat");
 		}
+		// always load tinymceStoichiometry as it handles the case of chemistry not being enabled
+		localTinymcesetup.external_plugins["stoichiometry"] = "/ui/dist/tinymceStoichiometry.js";
 		if (chemistryEnabled) {
 			localTinymcesetup.external_plugins["cheminfo"] = "/scripts/externalTinymcePlugins/chemInfo/plugin.min.js";
+			localTinymcesetup.external_plugins["ketcher"] = "/scripts/externalTinymcePlugins/ketcher/plugin.min.js";
+			addToMenuIfNotPresent(localTinymcesetup, " ketcherMenuItem");
+			addToToolbarIfNotPresent(localTinymcesetup, "| ketcher23");
+		}
+		if (identifiersEnabled) {
+			localTinymcesetup.external_plugins["identifiers"] = "/ui/dist/tinymceIdentifiers.js";
+			addToToolbarIfNotPresent(localTinymcesetup, " | identifiers");
+			addToMenuIfNotPresent(localTinymcesetup, " | optIdentifiers");
+		}
+		if (pubchemEnabled) {
+			localTinymcesetup.external_plugins["pubchem"] = "/ui/dist/tinymcePubchem.js";
+			addToToolbarIfNotPresent(localTinymcesetup, " | pubchem");
+			addToMenuIfNotPresent(localTinymcesetup, " | optPubchem");
 		}
 	});
 
@@ -572,6 +612,7 @@ function runAfterTinymceActiveEditorInitialized(afterInitCallback) {
 }
 
 function addToToolbarIfNotPresent(localTinymcesetup, toolBarName) {
+  while (localTinymcesetup.toolbar.length < 2) localTinymcesetup.toolbar.push('');
 	if (localTinymcesetup.toolbar[1].indexOf(toolBarName) === -1) {
 		localTinymcesetup.toolbar[1] = localTinymcesetup.toolbar[1] + toolBarName;
 	}

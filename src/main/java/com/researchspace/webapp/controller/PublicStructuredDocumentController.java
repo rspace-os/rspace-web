@@ -150,7 +150,7 @@ public class PublicStructuredDocumentController extends BaseController {
   private DocumentEditContext getDocEditContext(long recordId, User user)
       throws RecordAccessDeniedException {
     UserSessionTracker users = getCurrentActiveUsers();
-    EditStatus res = recordManager.requestRecordView(recordId, user, users);
+    EditStatus res = recordManager.requestRecordView(recordId, user);
     assertViewPermission(recordId, res);
     // now we can load full record, after access check
     StructuredDocument structuredDocument =

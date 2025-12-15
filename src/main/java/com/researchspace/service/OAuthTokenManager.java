@@ -3,6 +3,7 @@ package com.researchspace.service;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.OAuthToken;
+import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.views.ServiceOperationResult;
 import java.util.List;
 
@@ -12,6 +13,7 @@ import java.util.List;
  * allow us to have many tokens for the same OAuthApp
  */
 public interface OAuthTokenManager {
+
   /**
    * Validate access or refresh token to make sure it is valid.
    *
@@ -50,18 +52,17 @@ public interface OAuthTokenManager {
    *
    * @param clientId client app identifier
    * @param user upon behalf the app will be acting as
-   * @param scope of the access token
    * @return generated access token, refresh token, expiry time for the access token, and scope
    */
   ServiceOperationResult<NewOAuthTokenResponse> createNewToken(
-      String clientId, String clientSecret, User user, String scope);
+      String clientId, String clientSecret, User user, OAuthTokenType tokenType);
 
   /**
    * Generate new JWT access token. Does not override the access/refresh tokens if there is an
    * existing connection.
    */
   ServiceOperationResult<NewOAuthTokenResponse> createNewJwtToken(
-      String clientId, String clientSecret, User user, String scope);
+      String clientId, String clientSecret, User user, OAuthTokenType tokenType);
 
   List<OAuthToken> getTokensForUser(User user);
 

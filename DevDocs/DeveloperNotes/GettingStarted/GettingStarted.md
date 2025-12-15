@@ -6,13 +6,16 @@ These instructions are for anyone wanting to run RSpace from source code, on the
 
 ### Recommended hardware
 
-For production setup we recommend a Linux-based server with at least 8Gb RAM. More details: 
+For production setup we recommend a Linux-based server with at least 8GB RAM. More details: 
 https://documentation.researchspace.com/article/q5dl9e6oz6-system-requirements-for-research-space
 
 For development you should be able to run all the code and tests fine with Linux/MacOS.  
 
 ### Install required software
--   Install Java JDK17, use OpenJDK rather than Oracle.
+Our build toolchain requires Java 17. Currently using a different Java version to run Maven is not supported because of [spotless not supporting the Maven toolchains plugin](https://github.com/diffplug/spotless/issues/1857).
+
+-   Install Java JDK17 via [Adoptium](https://adoptium.net/temurin/releases/?version=17)
+-   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
 -   Install MariaDB 10.3.39, or later. MariaDB 11.3 is used fine on dockerized RSpace version. Later versions of MariaDB 11 are untested and we have seen some compatability issues with those.
 
 Historically we were running RSpace on MySQL 5.7 version, so some docs still mention it, but you should go with MariaDB.
@@ -40,7 +43,7 @@ path to your java installation.
      <type>jdk</type>
      <provides>
        <version>17</version>
-       <vendor>openjdk</vendor>
+       <vendor>openjdk</vendor> <!-- Only vendor=openjdk is accepted at the moment, though it does not have to be actual OpenJDK -->
      </provides>
      <configuration>
        <jdkHome>/usr/lib/jvm/java-17-openjdk-amd64</jdkHome>   <!-- path to your local installation -->
@@ -93,11 +96,11 @@ ResearchSpace dev team (check 'Build prodRelease-like package' stage script).
 
 ### Set up MariaDB/MySQL database
 
-**You can now use the Docker MariaDB setup guide found in the side bar**
+**You can now use the Docker MariaDB setup guide [here](/DevDocs/DeveloperNotes/GettingStarted/dockerMariaDB.md)**
 
 #### MariaDB/MySQL initialisation
 
-Take these steps if you do not have MariaDB/MySQL or have a fresh installation of MariaDB/MySQL.
+Take these steps if you do not have MariaDB/MySQL or have a fresh installation of MariaDB/MySQL and ***are using standalone DB instead of docker image***.
 
 ```bash
 # These steps are specific to Linux and MySQL5.7, adapt as needed
@@ -144,7 +147,7 @@ as mysqladmin.
 
 After adding/updating the file and restarting mysql confirm that `SELECT @@sql_mode;` no longer contains the 'ONLY_FULL_GROUP_BY' option.
 
-#### RSpace table setup
+#### RSpace table setup (***for standalone install - ignore this if using docker***)
 
 1.  Make sure MariaDB/MySQL is installed and running on your machine.
 2.  Set up an 'rspacedbuser' user and 'rspace' database on your MariaDB/MySQL using this command:
@@ -157,8 +160,9 @@ mysql -u "root" -p"password" -e "
 "
 ```
 **NOTE:** depending on OS and DB used, your may need to change the username in creation/grant commands
-from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`.
+from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`. (Or you may need to just use `'rspacedbuser'` with no host)
 You will know if running the tests/app gets you db authentication error for user `'rspacedbuser'@'localhost'`
+or you see `'Access denied for user 'rspacedbuser'@'%' to database 'rspace'`
 
 **NOTE:** if you subsequently drop the rspace DB, the rspacedbuser user will stay; do not try to recreate the user.
 
@@ -166,8 +170,10 @@ You will know if running the tests/app gets you db authentication error for user
 i.e. do not have `-Dmaven.test.skip=true -Dmaven.site.skip=true -Dmaven.javadoc.skip=true`
 in your launch config
 
-At the end of this, you should be able to connect to the rspace database from
+At the end of this, you should be able to connect to a standalone mysql rspace database from
 your command line. with `bash mysql -urspacedbuser -prspacedbpwd rspace`.
+For Mariadb use
+`mariadb -urspacedbuser -prspacedbpwd rspace` (if using docker you need to run this after `docker exec -it rspace-db bash`)
 
 'rspace' database is used for running acceptance tests and the application on localhost.
 
@@ -195,7 +201,11 @@ This just runs plain Junit tests and is much faster to run:
 
 ### Launch RSpace with Maven and Jetty
 
-When starting RSpace for the first time use the following command:
+When starting RSpace for the first time use the following command: 
+
+***(note - you may need to increase memory for NODE when doing `generateReactDist`
+step below : set and export the environmental variable NODE_OPTIONS:
+`export NODE_OPTIONS="--max-old-space-size=8192"`  in .zshrc file for OSX, or .bash_profile for linux)***
 
 ```bash
 mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
@@ -269,59 +279,17 @@ overrides the default filestore location.
 true/false will enable/disable the ability to set HTTP response headers
 to cache.
 
-#### Running RSpace in full production mode locally
+#### Running RSpace in production mode locally
 
-This describes how to run RSpace in full production mode locally from
-Eclipse. In most cases you don't need to do this unless you are
-developing features that are stubbed in development version.
+Run the usual `mvn jetty:run` command, just change the active spring profile to `prod`
+i.e. pass a `-Dspring.profiles.active=prod` parameter.
 
-##### Setting up Aspose document conversion (for MSOffice files preview)
+Note that when running through jetty, the `defaultDeployment.properties` file is not used for some reason.
+That means deployment properties that are not explicitly set in your `deployment.properties` file may have unexpected values. 
 
-**NOTE:** while the following steps are for Eclipse, Intellij setup is almost identical
+#### Compiling RSpace production mode package
 
-In production, we use 3rd party library, Aspose, to preview MSOffice
-documents. This is installed as a separate product and is not available
-in a development or test environment.
-
-There are several options to set up a dummy Aspose conversion service
-when running in 'run' profile, i.e. where RSpace is not expecting Aspose
-converter to be available. The following 3 properties should be set to
-paths that point to files, as if generated by Aspose converter. E.g add
-these to your launch configuration (paths are for Windows). Anywhere conversion
-to png, doc or pdf is required these files will be returned.
-
-`-Dsample.pdf=C:\\path\\to\\workspace\\rspace-web\\src\\test\\resources\\TestResources\\smartscotland3.pdf`
-`-Dsample.doc=C:\\path\\to\\workspace\\rspace-web\\src\\test\\resources\\TestResources\\letterlegal5.doc`
-`-Dsample.png=C:\\path\\to\\workspace\\rspace-web\\src\\test\\resources\\TestResources\\biggerLogo.png`
-
-##### Compiling Aspose converter
-
-This converts documents to/from Word format and in production runs as a
-separate standalone app.
-
-- Checkout the Aspose project from
-  `https://github.com/ResearchSpace-ELN/aspose-documentconversion`
-- Build the standalone converter using `mvn clean package -Pdist`
-- This will put a large jar, probably called
-  `aspose-app-[version].jar` (50Mb) in the target folder of the project.
-- Ensure this jar is executable ( e.g.
-  `chmod 755 aspose-app-[version].jar` on Unix )
-- Test it runs OK using `java -jar aspose-app-[version].jar -v`
-- Now run RSpace using the following launch configuration:
-
-```
-mvn clean jetty:run -Denvironment=keepdbintact \
--Dspring.profiles.active=prod \
--DgenerateReactDist -Dlog4j2.configurationFile=log4j2-dev.xml \
--Daspose.license=/full/path/to/aspose-documentconversion/Aspose-Total-Java.lic \
--Daspose.logfile=/full/path/to/any/file/logfile.txt -DRS.logLevel=INFO
-# Daspose.app=/full/path/to/aspose-documentconversion/target/aspose-app[version].jar
-```
-altering paths of the 'aspose' properties to point to files in the
-Aspose converter project.
-
-The 1st time you run this you might need to run with
-`-Denvironment=drop-recreate-db` set to clean the DB.
+Check the Jenkinsfile and mvn command run during "Build prodRelease-like package" stage:
 
 ### Developer docs on specific subjects
 

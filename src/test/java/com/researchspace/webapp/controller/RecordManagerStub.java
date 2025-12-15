@@ -17,9 +17,9 @@ import com.researchspace.model.record.DocumentInitializationPolicy;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.Record;
+import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.FolderRecordPair;
 import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.model.views.RecordCopyResult;
@@ -29,6 +29,7 @@ import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
+import com.researchspace.testutils.TestFactory;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -71,7 +72,7 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
-  public EditStatus requestRecordView(Long recordId, User user, UserSessionTracker activeUsers) {
+  public EditStatus requestRecordView(Long recordId, User user) {
     return null;
   }
 
@@ -276,7 +277,7 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
-  public Folder getGallerySubFolderForUser(String folderName, User user) {
+  public Folder getGalleryMediaFolderForUser(String folderName, User user) {
     return null;
   }
 
@@ -390,6 +391,11 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
+  public List<Long> getAllNonTemplateNonTemporaryStrucDocIdsOwnedByUser(User user) {
+    return null;
+  }
+
+  @Override
   public List<BaseRecord> getOntologyTagsFilesForUserCalled(
       User user, String userTagsontologyDocument) {
     return null;
@@ -399,6 +405,32 @@ public class RecordManagerStub implements RecordManager {
   public List<StructuredDocument> getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(
       String uName) {
     return null;
+  }
+
+  @Override
+  public boolean forceMoveDocumentToOwnerWorkspace(StructuredDocument userDoc) {
+    return false;
+  }
+
+  @Override
+  public boolean isSharedNotebookWithoutCreatePermission(User user, Folder folder) {
+    return true;
+  }
+
+  @Override
+  public boolean isSharedFolderOrSharedNotebookWithoutCreatePermission(User user, Folder folder) {
+    return true;
+  }
+
+  @Override
+  public RecordInformation decorateRecordInfo(
+      RecordInformation recordInfo,
+      User user,
+      Folder parentFolder,
+      boolean isOnRoot,
+      BaseRecord baseRecord,
+      String mediaType) {
+    return recordInfo;
   }
 
   @Override

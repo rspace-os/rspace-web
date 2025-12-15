@@ -15,6 +15,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.subject.Subject;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Component;
  * <p>The type of subclass used at runtime is defined in BaseConfig.
  */
 @Component
+@Slf4j
 public class BaseShiroFormAuthFilterExt extends FormAuthenticationFilter {
 
   // this is configured to use a different log file in log4j2.xml and not append to console
@@ -67,7 +69,7 @@ public class BaseShiroFormAuthFilterExt extends FormAuthenticationFilter {
     try {
       maintenanceLoginAuthorizer.isLoginPermitted(request, response, null);
     } catch (IOException e) {
-      SECURITY_LOG.warn(e.getMessage());
+      log.warn("Exception on checking maintenanceLoginAuthorizer", e);
     }
     return false;
   }
@@ -100,7 +102,7 @@ public class BaseShiroFormAuthFilterExt extends FormAuthenticationFilter {
       try {
         WebUtils.issueRedirect(request, response, redirectUrl);
       } catch (IOException ex) {
-        SECURITY_LOG.error(ex.getMessage());
+        log.warn("Exception on redirect attempt to url " + redirectUrl, ex);
       }
     }
   }

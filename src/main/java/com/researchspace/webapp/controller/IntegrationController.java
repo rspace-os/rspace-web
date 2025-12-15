@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.service.IntegrationsHandler.ARGOS_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.ASCENSCIA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.CLUSTERMARKET_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
@@ -12,6 +13,7 @@ import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTIN
 import static com.researchspace.service.IntegrationsHandler.EVERNOTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.GALAXY_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.JOVE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.MSTEAMS_APP_NAME;
@@ -20,6 +22,7 @@ import static com.researchspace.service.IntegrationsHandler.OMERO_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.OWNCLOUD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
 import static org.apache.commons.lang.StringUtils.join;
@@ -131,6 +134,7 @@ public class IntegrationController extends BaseController {
     rc.put(MSTEAMS_APP_NAME, integrationsHandler.getIntegration(user, MSTEAMS_APP_NAME));
     rc.put(PROTOCOLS_IO_APP_NAME, integrationsHandler.getIntegration(user, PROTOCOLS_IO_APP_NAME));
     rc.put(PYRAT_APP_NAME, integrationsHandler.getIntegration(user, PYRAT_APP_NAME));
+    rc.put(RAID_APP_NAME, integrationsHandler.getIntegration(user, RAID_APP_NAME));
     rc.put(DMPTOOL_APP_NAME, integrationsHandler.getIntegration(user, DMPTOOL_APP_NAME));
     rc.put(DMPONLINE_APP_NAME, integrationsHandler.getIntegration(user, DMPONLINE_APP_NAME));
     rc.put(
@@ -140,10 +144,12 @@ public class IntegrationController extends BaseController {
     rc.put(ARGOS_APP_NAME, integrationsHandler.getIntegration(user, ARGOS_APP_NAME));
     rc.put(ZENODO_APP_NAME, integrationsHandler.getIntegration(user, ZENODO_APP_NAME));
     rc.put(FIELDMARK_APP_NAME, integrationsHandler.getIntegration(user, FIELDMARK_APP_NAME));
+    rc.put(GALAXY_APP_NAME, integrationsHandler.getIntegration(user, GALAXY_APP_NAME));
     rc.put(OMERO_APP_NAME, integrationsHandler.getIntegration(user, OMERO_APP_NAME));
     rc.put(
         DIGITAL_COMMONS_DATA_APP_NAME,
         integrationsHandler.getIntegration(user, DIGITAL_COMMONS_DATA_APP_NAME));
+    rc.put(ASCENSCIA_APP_NAME, integrationsHandler.getIntegration(user, ASCENSCIA_APP_NAME));
 
     return rc;
   }

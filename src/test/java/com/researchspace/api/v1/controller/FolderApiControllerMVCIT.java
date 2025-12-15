@@ -12,6 +12,7 @@ import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestGroup;
 import org.junit.After;
@@ -118,7 +119,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     String apiKey = createNewApiKeyForUser(anyUser);
 
     Folder docGalleryFolder =
-        recordMgr.getGallerySubFolderForUser(MediaUtils.DOCUMENT_MEDIA_FLDER_NAME, anyUser);
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.DOCUMENT_MEDIA_FLDER_NAME, anyUser);
     ApiFolder folderPost = new ApiFolder();
     folderPost.setName("TestFolder");
     folderPost.setParentFolderId(docGalleryFolder.getId());
@@ -354,5 +355,57 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
 
   private MockHttpServletRequestBuilder folderTree(User anyUser, String apiKey) {
     return createBuilderForGet(API_VERSION.ONE, apiKey, "/folders/tree", anyUser);
+  }
+
+  @Test
+  public void whenNotebookInUsersSubFolderAccessedAsPiThenPathToPiRootIsReturned()
+      throws Exception {
+    // Create test group with PI and user
+    TestGroup group = createTestGroup(2);
+    User user = group.u1();
+    User pi = group.getPi();
+
+    // As user, create a subfolder in workspace
+    logoutAndLoginAs(user);
+    String userApiKey = createNewApiKeyForUser(user);
+    Long userRootId = getRootFolderForUser(user).getId();
+
+    ApiFolder subfolderPost = new ApiFolder();
+    subfolderPost.setName("WorkspaceSubfolder");
+    subfolderPost.setParentFolderId(userRootId);
+    MvcResult createFolderResult =
+        this.mockMvc.perform(folderCreate(user, userApiKey, subfolderPost)).andReturn();
+    ApiFolder subfolder = getFromJsonResponseBody(createFolderResult, ApiFolder.class);
+
+    // Create a notebook in the user's subfolder
+    Notebook notebook = createNotebookWithNEntries(subfolder.getId(), "TestNotebook", 1, user);
+
+    // As PI, call endpoint to get the notebook with includePathToRootFolder=true
+    logoutAndLoginAs(pi);
+    String piApiKey = createNewApiKeyForUser(pi);
+
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                        API_VERSION.ONE, piApiKey, "/folders/{id}", pi, notebook.getId())
+                    .param("includePathToRootFolder", "true"))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    ApiFolder notebookFromUsersSubfolder = getFromJsonResponseBody(result, ApiFolder.class);
+    assertNotNull(notebookFromUsersSubfolder.getPathToRootFolder());
+    int pathLengthFromUsersSubfolder = notebookFromUsersSubfolder.getPathToRootFolder().size();
+
+    // Test path goes back to PI root
+    assertEquals(5, pathLengthFromUsersSubfolder);
+
+    Long piRootId = getRootFolderForUser(pi).getId();
+    Long lastFolderId =
+        notebookFromUsersSubfolder
+            .getPathToRootFolder()
+            .get(pathLengthFromUsersSubfolder - 1)
+            .getId();
+    assertEquals(piRootId, lastFolderId);
   }
 }

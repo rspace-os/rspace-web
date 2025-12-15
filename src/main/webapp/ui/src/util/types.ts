@@ -5,6 +5,8 @@ import Result from "./result";
  * Some general purpose type definitions.
  */
 
+export type emptyObject = Record<string, never>;
+
 /*
  * For adding optional type definitions to invocations of `useState`
  * Usage:
@@ -67,3 +69,12 @@ export type URL = string;
  * This is a URL whose protocol is "blob".
  */
 export type BlobUrl = URL;
+
+/**
+ * The type of the `_links` property in the JSON API response, which is part of
+ * implementing Hypermedia as the Engine of Application State (HATEOAS).
+ */
+export type _LINK = {
+  link: URL;
+  rel: string;
+};

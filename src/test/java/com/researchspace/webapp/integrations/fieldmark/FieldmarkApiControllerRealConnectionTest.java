@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.fieldmark;
 
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -12,8 +13,6 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.testutils.SpringTransactionalTest;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -42,7 +41,7 @@ public class FieldmarkApiControllerRealConnectionTest extends SpringTransactiona
 
     UserConnection actualConnection = new UserConnection();
     actualConnection.setId(
-        new UserConnectionId(user.getUsername(), FIELDMARK_APP_NAME, "ProviderUserIdNotNeeded"));
+        new UserConnectionId(user.getUsername(), FIELDMARK_APP_NAME, PROVIDER_USER_ID));
     actualConnection.setAccessToken(ACCESS_TOKEN);
     actualConnection.setRefreshToken("REFRESH_TOKEN");
     actualConnection.setExpireTime(299L);
@@ -52,11 +51,12 @@ public class FieldmarkApiControllerRealConnectionTest extends SpringTransactiona
   }
 
   @Test
-  public void testGetNotebooks() throws BindException, IOException, URISyntaxException {
+  public void testGetNotebooks() throws BindException {
     List<FieldmarkNotebook> result = fieldmarkApiController.getNotebooks(user);
     assertNotNull(result);
   }
 
+  @Test
   public void testImportNotebook() throws BindException {
     FieldmarkApiImportResult result =
         fieldmarkApiController.importNotebook(IMPORT_REQ, mockBindingResult, user);

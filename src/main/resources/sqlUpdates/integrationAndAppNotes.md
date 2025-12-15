@@ -2,7 +2,7 @@
 
 ### Naming conventions
 
-There are various trnsformations applied to names nad assumptions made about the names of ssytem properties 
+There are various transformations applied to names and assumptions made about the names of system properties 
 and App names.
 
 * App name (referred to as <app_name> below) should be all lower case and be alphanumeric, e.g.  `pubmed` 

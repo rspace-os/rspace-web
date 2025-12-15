@@ -54,7 +54,7 @@ public class UsernameReminderByEmailHandler {
     List<User> users = userManager.getUserByEmail(email);
     if (users == null || users.isEmpty()) {
       SECURITY_LOG.warn(
-          "Username reminder request from {} for a non-existing email {}", remoteIpAddress, email);
+          "Username reminder request for unknown email [{}], from {}", email, remoteIpAddress);
       return;
     }
 
@@ -81,7 +81,7 @@ public class UsernameReminderByEmailHandler {
               + " support for assistance");
     }
 
-    SECURITY_LOG.info("Username reminder request from {} sent to email {}", remoteIpAddress, email);
+    SECURITY_LOG.info("Username reminder request from {} sent to [{}]", remoteIpAddress, email);
   }
 
   // 5 per hour
@@ -96,7 +96,7 @@ public class UsernameReminderByEmailHandler {
 
     rld.getEventPublisher()
         .onFailure(
-            e -> SECURITY_LOG.info("Username reminder request blocked from email {}", email));
+            e -> SECURITY_LOG.info("Username reminder request blocked from email [{}]", email));
 
     return rld;
   }

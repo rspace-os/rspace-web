@@ -117,7 +117,9 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
   @Override
   public RecordGroupSharing get(Long id) {
-    return groupshareRecordDao.get(id);
+    RecordGroupSharing rgs = groupshareRecordDao.get(id);
+    populateSharingPermissionType(Collections.singletonList(rgs));
+    return rgs;
   }
 
   @Override
@@ -587,7 +589,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         aclPolicy = ACLPropagationPolicy.SHARE_INTO_NOTEBOOK_POLICY;
       }
       selectedTargetFolder.addChild(
-          docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy, true); // check this
+          docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy, true);
       saveRecordOrFolder(docOrNotebook);
       selectedTargetFolder = folderDao.get(selectedTargetFolder.getId());
       log.info(
@@ -628,7 +630,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     if (targetFolder.isNotebook()) {
       assertUserHasWritePermission(subject, targetFolder);
       if (targetFolder.getOwner().equals(docOrNotebook.getOwner())) {
-        throw new IllegalAddChildOperation("can't share document into own notebook");
+        throw new IllegalAddChildOperation(
+            "can't share document with id " + docOrNotebook.getId() + " into own notebook");
       }
     }
     return targetFolder;
@@ -793,7 +796,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       Folder sharedTopLevelFolder = null;
       if (toUnshareWith.isUser()) {
         User user = toUnshareWith.asUser();
-        if (user.getSharedFolder() != null) {
+        Folder userSharedFolder = folderDao.getUserSharedFolder(user);
+        if (userSharedFolder != null) {
           sharedTopLevelFolder =
               getTopLevelSharingFolder(subject, toUnshareWith, user, docOrNotebook);
         }

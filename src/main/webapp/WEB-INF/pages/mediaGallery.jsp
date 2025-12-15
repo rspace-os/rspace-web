@@ -9,8 +9,8 @@
  var oneDriveClientId = "${applicationScope['RS_DEPLOY_PROPS']['oneDriveClientId']}";
  var oneDriveRedirect = "${applicationScope['RS_DEPLOY_PROPS']['oneDriveRedirect']}";
  <c:if test="${not empty term}">
-               galleryOptionalSearchTermFromUrlParameter = '${term}';
-           </c:if>
+     galleryOptionalSearchTermFromUrlParameter = '${term}';
+ </c:if>
 </script>
 
 <link href="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" rel="stylesheet" />

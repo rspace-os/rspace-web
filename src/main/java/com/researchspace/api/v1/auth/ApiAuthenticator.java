@@ -9,7 +9,7 @@ public interface ApiAuthenticator {
   /**
    * @param request An {@link HttpServletRequest} containing User credentials in some format.
    * @return A {@link User} on successful authentication and authorisation
-   * @throws APIAuthorisationException if authorisation failed
+   * @throws ApiAuthenticationException if authorisation failed
    */
   User authenticate(HttpServletRequest request);
 
@@ -19,5 +19,4 @@ public interface ApiAuthenticator {
    * @apiNote Default implementation does nothing
    */
   default void logout() {}
-  ;
 }

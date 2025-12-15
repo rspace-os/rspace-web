@@ -9,11 +9,11 @@ import static org.mockito.Mockito.when;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.preference.Preference;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.IntegrationsHandlerImpl;
+import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
 import java.util.Locale;
 import java.util.Map;
@@ -51,8 +51,7 @@ public class IntegrationControllerTest {
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(subject);
     when(handler.getIntegration(Mockito.eq(subject), Mockito.anyString()))
         .thenReturn(new IntegrationInfo());
-    // +20 for all non-boolean integrations
-    int integrationsNumber = IntegrationsHandlerImpl.booleanIntegrationPrefs.size() + 21;
+    int integrationsNumber = IntegrationsHandlerImpl.booleanIntegrationPrefs.size() + 24;
     AjaxReturnObject<Map<String, IntegrationInfo>> infos =
         integrationCtrller.getAllIntegrationsInfo(new MockPrincipal(subject.getUsername()));
     assertEquals(integrationsNumber, infos.getData().size());

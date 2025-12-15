@@ -189,27 +189,15 @@ Unzip and follow the installation instructions in the file `Usage.md`.
 
 There are several deployment properties relating to document preview generation. These three are **mandatory** if you want document previewing enabled:
 
-* **aspose.license** 	 	Absolute file path to Aspose license E.g.
-
-  aspose.license=/etc/rspace/aspose/Aspose-Total-Java.lic
-
-* **aspose.app** 	 	Absolute file path to Aspose standalone document converter E.g.
-
-  aspose.app=/etc/rspace/aspose/aspose-app.jar
-
-* **aspose.logfile**      Absolute path to Aspose document converter's log file. E.g.
-
-  aspose.logfile=/etc/rspace/aspose/logs.txt
+* **aspose.enabled**  Needs to be set to 'true'
+* **aspose.license**  Absolute file path to Aspose license E.g. aspose.license=/etc/rspace/aspose/Aspose-Total-Java.lic
+* **aspose.app**      Absolute file path to Aspose standalone document converter E.g. aspose.app=/etc/rspace/aspose/aspose-app.jar
+* **aspose.logfile**  Absolute path to Aspose document converter's log file. E.g. aspose.logfile=/etc/rspace/aspose/logs.txt
 
 ##### Optional Aspose logging
 
-* **aspose.logLevel** The log level (default is INFO) e.g.
-
-    aspose.logLevel=WARN
-
-* **aspose.jvmArgs**  Optional jvm args to pass to application. E.g.
-
-    aspose.jvmArgs=-Xmx1024m
+* **aspose.logLevel** The log level (default is INFO) e.g. aspose.logLevel=WARN
+* **aspose.jvmArgs**  Optional jvm args to pass to application. E.g. aspose.jvmArgs=-Xmx1024m
 
 #### As a Docker service
 
@@ -225,13 +213,7 @@ Instructions on setting up a Snapgene server is in our Help documentation https:
 
 ### Chemistry service
 
-To set a URL of a Snapgene server, use
-
-* **chemistry.web.url**  	 The web URL of the Chemistry server, e.g.
-
-  chemistry.web.url=https://my-chemistry-service.myedu.edu
-
-Instructions on setting up a Chemistry server is in our Help documentation https://researchspace.helpdocs.io/article/5k7qib0n3t-installation-of-rspace-add-on-services
+Instructions on setting up a Chemistry server is in our Help documentation https://documentation.researchspace.com/article/1jbygguzoa-setting-up-the-new-rspace-chemistry-service-on-docker
 
 ### MySQL
 
@@ -317,6 +299,28 @@ The following optional properties enable RSpace to connect to Orcid  API (if thi
 * **orcid.client.id** Client id of Orcid App registered for given RSpace instance
 * **orcid.client.secret** Client secret of Orcid App registered for given RSpace instance
 
+The following optional properties enable RSpace to connect to RaID API (if this integration is enabled):
+* **raid.server.config** configures the RaID server alias associated to *server url* .
+  **raid.server.config** should be configured (for local use) in dev/deployment.properties as we 
+                         have not got a central RaID server common to all RSpace instances.
+  * For example:
+```
+raid.server.config={ 
+    "DEMO": { 
+        "url": "https://api.demo.raid.org.au", 
+        "authUrl": "https://iam.demo.raid.org.au/realms/raid/protocol/openid-connect", 
+        "servicePointId": 20000030, 
+        "clientId": "pasteHereClientId", 
+        "clientSecret": "pasteHereClientSecret" 
+    }, 
+    "PROD": { 
+        "url": "https://api.production.raid.org.au", 
+        "authUrl": "https://iam.production.raid.org.au/realms/raid/protocol/openid-connect", 
+        "servicePointId": 20000030, 
+        "clientId": "pasteHereClientId", 
+        "clientSecret": "pasteHereClientSecret"
+}
+```
 The following optional properties enable RSpace to connect to Github API (if this integration is enabled):
 * **github.client.id** Client id of Github registered for given RSpace instance
 * **github.secret** Client secret of Github registered for given RSpace instance
@@ -334,14 +338,24 @@ The following optional properties enable RSpace to connect to Slack (if this int
 
 The following optional property enables RSpace to connect to your PyRAT database instance (if this integration is enabled):
 * **pyrat.server.config** configures the pyrat server alias associated to *server url* and server *access token* (API-Client-Token provided by Scionics - developers of PyRAT).
-  For example:
+  **pyrat.server.config** should be configured (for local use) in dev/deployment.properties as we have no  central pyrat server common to all RSpace isntances.
+* For example:
   ```
   pyrat.server.config={ \
       "mice server": {"url": "https://mice.pyrat.cloud/mypyrat/api/v3/", "token": "x-xxxxxxxx"}, \
       "frogs server": {"url": "https://frogs.pyrat.cloud/mypyrat/api/v3/", "token": "x-xxxxxxxx"} \
   }
   ```
-4
+
+The following optional property enables RSpace to connect to GALAXY server instances (if this integration is enabled):
+* **galaxy.server.config** configures the galaxy server alias(es) associated to a *url* for the server).
+* RSpace users will see the value of the *alias* when they are configuring their API tokens for accessing Galaxy instances.
+* For example:
+  ```
+  galaxy.server.config=[{"alias": "galaxy eu server", "url": "https://usegalaxy.eu"}, {"alias": "galaxy us server", "url": "https://usegalaxy.org"}]
+  
+  ```
+
 The following optional properties enable RSpace to connect to Clustermarket :
 * **clustermarket.api.url** URL of the exposed Clustermarket API. For example
   `https://api.staging.clustermarket.com/v1/`.
@@ -374,7 +388,7 @@ Properties for configuring Collabora Online integration:
 
 Properties for configuring Research Organisation Registry (ROR) integration:
 * **ror.enabled** true/false. Whether ROR Registry panel should be visible on System -> Configuration page. Default is `false`.
-* **ror.api.url** Default is `https://api.ror.org/organizations`.
+* **ror.api.url** Default is `https://api.ror.org/v2/organizations`.
 
 #### Google's reCAPTCHA on 'Sign up' page
 
@@ -410,13 +424,14 @@ These optional settings will enable you to import user data from LDAP, or enable
 ### SSO configuration
 Set these properties to configure RSpace to run in SSO mode e.g. for Shibboleth integration. There may be further integration work needed with Apache headers/redirects etc. to get this working.
 * **deployment.standalone** true /false. Set to false to enable SSO integration. Default is true.
-* **deployment.sso.type** if single sign-on is configured (if deployment.standalone=false), this property must switch authentication filter to 'SAML' (default) or 'openid'.
+* **deployment.sso.type** if single sign-on is configured (if deployment.standalone=false), this property must switch authentication filter to 'SAML' or 'openid'.
 * **deployment.sso.logout.url** the URL to redirect to after logout from RSpace. Default is 'You're logged out' page.
 * **deployment.sso.idp.logout.url** the URL presented to the user on 'You're logged out' page, which should point to a link that ends the global SSO session with IDP. No default. 
-* **user.signup.acceptedDomains**  restricts self sign-up for users in SSO environments.
+* **user.signup.acceptedDomains** restricts self sign-up for users in SSO environments. Only users with a username ending with the accepted domain will be allowed to sign up, and other users will be redirected to an information page. There is no default. E.g., @uni.ac.uk.
+* **deployment.sso.signup.username.suffixToReplace** optional, SSO username suffix that should be replaced by suffix defined in **.suffixReplacement** deployment property, when signing up a new RSpace user; the original SSO username will be saved as username alias 
+* **deployment.sso.signup.username.suffixReplacement** optional, a replacement suffix that should be used when signing up a new RSpace user with SSO username matching suffix defined in **.suffixToReplace** deployment property     
 * **deployment.sso.ssoInfoVariant** Sets a custom "RSpace doesn't know you " page when self-signup is disabled. Default is unset. Requires custom page for RSpace.
 * **deployment.sso.adminEmail** Sets the support email address for matters relating to accounts managed by SSO.
-* Only users with a username ending with the accepted domain will be allowed to sign up, and other users will be redirected to an information page. There is no default. E.g., @uni.ac.uk.
 
 #### SSO configuration - backdoor admin login functionality
 The following two properties can be enabled to allow creation and use of special System Admin backdoor account(s), i.e. accounts that work independently from SSO identity.

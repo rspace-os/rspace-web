@@ -1,0 +1,133 @@
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <!-- External Workflows -->
+  <changeSet id="2025-06-13a" context="run" author="nhanlon2">
+    <createTable tableName="ExternalWorkFlow">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="extId" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="description" type="TEXT"/>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="2025-06-13b" context="run" author="nhanlon2">
+    <createTable tableName="ExternalWorkFlowData">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+        <column name="externalService" type="VARCHAR(30)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="rspacedataid" type="BIGINT" >
+            <constraints nullable="false"/>
+        </column>
+        <column name="rspaceDataType" type="VARCHAR(30)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="rspacecontainerid" type="BIGINT" >
+            <constraints nullable="false"/>
+        </column>
+      <column name="rspacecontainerName" type="VARCHAR(255)" >
+        <constraints nullable="false"/>
+      </column>
+        <column name="rspaceContainerType" type="VARCHAR(30)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="extName" type="VARCHAR(255)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="extId" type="VARCHAR(255)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="extSecondaryId" type="VARCHAR(255)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="extContainerID" type="VARCHAR(255)">
+            <constraints nullable="false"/>
+        </column>
+      <column name="extContainerName" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+        <column name="baseUrl" type="VARCHAR(255)">
+            <constraints nullable="false"/>
+        </column>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="2025-06-13c" context="run" author="nhanlon2">
+    <createTable tableName="ExternalWorkFlowInvocation">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="extId" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="status" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="external_work_flow_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint baseColumnNames="external_work_flow_id" baseTableName="ExternalWorkFlowInvocation"
+      constraintName="fk_invocation_workflow" deferrable="false" initiallyDeferred="false"
+      onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="ExternalWorkFlow"/>
+  </changeSet>
+
+  <changeSet id="2025-06-13d" context="run" author="nhanlon2">
+    <createTable tableName="ExtInvoc_ExtData">
+      <column name="invocation_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="data_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addPrimaryKey tableName="ExtInvoc_ExtData" columnNames="invocation_id, data_id"
+      constraintName="pk_ext_invoc_ext_data"/>
+    <addForeignKeyConstraint baseColumnNames="invocation_id" baseTableName="ExtInvoc_ExtData"
+      constraintName="fk_extdata_invocation" deferrable="false" initiallyDeferred="false"
+      onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="ExternalWorkFlowInvocation"/>
+    <addForeignKeyConstraint baseColumnNames="data_id" baseTableName="ExtInvoc_ExtData"
+      constraintName="fk_extdata_data" deferrable="false" initiallyDeferred="false"
+      onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="ExternalWorkFlowData"/>
+  </changeSet>
+
+  <changeSet id="2025-06-13e" context="run" author="nhanlon2">
+    <createIndex tableName="ExternalWorkFlow" indexName="idx_ExternalWorkFlow_extId">
+      <column name="extId"/>
+    </createIndex>
+    <createIndex tableName="ExternalWorkFlowInvocation"
+      indexName="idx_ExternalWorkFlowInvocation_extId">
+      <column name="extId"/>
+    </createIndex>
+    <createIndex tableName="ExternalWorkFlowData" indexName="idx_ExternalWorkFlowData_extId">
+      <column name="extId"/>
+    </createIndex>
+    <createIndex tableName="ExternalWorkFlowData"
+      indexName="idx_ExternalWorkFlowData_extSecondaryId">
+      <column name="extSecondaryId"/>
+    </createIndex>
+    <createIndex tableName="ExternalWorkFlowInvocation" indexName="idx_invocation_workflow">
+      <column name="external_work_flow_id"/>
+    </createIndex>
+    <createIndex tableName="ExtInvoc_ExtData" indexName="idx_ext_invoc_data_invocation">
+      <column name="invocation_id"/>
+    </createIndex>
+    <createIndex tableName="ExtInvoc_ExtData" indexName="idx_ext_invoc_data_data">
+      <column name="data_id"/>
+    </createIndex>
+  </changeSet>
+
+
+</databaseChangeLog>
