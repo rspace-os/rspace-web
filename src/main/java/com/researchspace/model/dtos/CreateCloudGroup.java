@@ -2,7 +2,7 @@ package com.researchspace.model.dtos;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.researchspace.model.User;
-import com.researchspace.webapp.integrations.raid.RaIDReference;
+import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.io.Serializable;
 import java.util.Arrays;
 import lombok.Getter;
@@ -18,7 +18,7 @@ public class CreateCloudGroup implements Serializable {
   private String piEmail;
   private String groupName;
   private String[] emails;
-  private RaIDReference raid;
+  private RaIDReferenceDTO raid;
   @JsonIgnore private User sessionUser;
 
   public CreateCloudGroup() {

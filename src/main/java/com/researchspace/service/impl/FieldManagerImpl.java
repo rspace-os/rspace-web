@@ -66,6 +66,11 @@ public class FieldManagerImpl implements FieldManager {
     return fieldDao.getFieldIdsForRecord(recordId);
   }
 
+  @Override
+  public List<FieldAttachment> getFieldAttachments(Long id) {
+    return fieldDao.getFieldAttachments(id);
+  }
+
   public Optional<FieldAttachment> addMediaFileLink(
       Long ecatMediaFileId, User subject, Long fieldId, Boolean ignorePermissions) {
     Record mediaFile = recordDao.get(ecatMediaFileId);

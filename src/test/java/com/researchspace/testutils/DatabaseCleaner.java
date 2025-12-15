@@ -166,6 +166,7 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from ArchivalCheckSum");
     jdbcTemplate.update("delete from InventoryChoiceFieldDef");
     jdbcTemplate.update("delete from InventoryRadioFieldDef");
+    jdbcTemplate.update("delete from UserRaid");
 
     // remove any users we've added during the tests
     jdbcTemplate.update("delete from user_role where user_id > 0");

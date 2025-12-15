@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form id="1">
+    <code>doc_Experiment1-298_form</code>
+    <type>NORMAL</type>
+    <name>Experiment</name>
+    <createDate>1410561466000</createDate>
+    <modificationDate>1410561466501</modificationDate>
+    <publishingState>PUBLISHED</publishingState>
+    <formVersion>0</formVersion>
+    <schemaVersion>1</schemaVersion>
+    <listFormFields>
+        <fieldForm id="1">
+            <code>doc_Experiment1-298_form_field_0</code>
+            <name>Method</name>
+            <columnIndex>0</columnIndex>
+            <modificationDate>1410561466502</modificationDate>
+            <type>Text</type>
+            <summary>Type: [TEXT], Default : [Unspecified] </summary>
+            <isPassword>false</isPassword>
+        </fieldForm>
+        <fieldForm id="2">
+            <code>doc_Experiment1-298_form_field_1</code>
+            <name>Objective</name>
+            <columnIndex>1</columnIndex>
+            <modificationDate>1410561466502</modificationDate>
+            <type>Text</type>
+            <summary>Type: [TEXT], Default : [Unspecified] </summary>
+            <isPassword>false</isPassword>
+        </fieldForm>
+        <fieldForm id="3">
+            <code>doc_Experiment1-298_form_field_2</code>
+            <name>Procedure</name>
+            <columnIndex>2</columnIndex>
+            <modificationDate>1410561466502</modificationDate>
+            <type>Text</type>
+            <summary>Type: [TEXT], Default : [Unspecified] </summary>
+            <isPassword>false</isPassword>
+        </fieldForm>
+        <fieldForm id="4">
+            <code>doc_Experiment1-298_form_field_3</code>
+            <name>Results</name>
+            <columnIndex>3</columnIndex>
+            <modificationDate>1410561466502</modificationDate>
+            <type>Text</type>
+            <summary>Type: [TEXT], Default : [Unspecified] </summary>
+            <isPassword>false</isPassword>
+        </fieldForm>
+        <fieldForm id="5">
+            <code>doc_Experiment1-298_form_field_4</code>
+            <name>Discussion</name>
+            <columnIndex>4</columnIndex>
+            <modificationDate>1410561466502</modificationDate>
+            <type>Text</type>
+            <summary>Type: [TEXT], Default : [Unspecified] </summary>
+            <isPassword>false</isPassword>
+        </fieldForm>
+        <fieldForm id="6">
+            <code>doc_Experiment1-298_form_field_5</code>
+            <name>Conclusion</name>
+            <columnIndex>5</columnIndex>
+            <modificationDate>1410561466502</modificationDate>
+            <type>Text</type>
+            <summary>Type: [TEXT], Default : [Unspecified] </summary>
+            <isPassword>false</isPassword>
+        </fieldForm>
+        <fieldForm id="7">
+            <code>doc_Experiment1-298_form_field_6</code>
+            <name>Comment</name>
+            <columnIndex>6</columnIndex>
+            <modificationDate>1410561466502</modificationDate>
+            <type>Text</type>
+            <summary>Type: [TEXT], Default : [Unspecified] </summary>
+            <isPassword>false</isPassword>
+        </fieldForm>
+    </listFormFields>
+</form>

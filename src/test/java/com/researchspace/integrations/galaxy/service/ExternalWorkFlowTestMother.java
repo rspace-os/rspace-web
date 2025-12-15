@@ -58,8 +58,10 @@ public class ExternalWorkFlowTestMother {
       "historyDatasetAssociationDataSetId";
   public static final String HISTORY_DATASET_ASSOCIATION_UUID = "historyDatasetAssociationUuid";
   public static final String HISTORY_DATASET_ASSOCIATION_NAME = "historyDatasetAssociationName";
+  public static final String NEW_INVOCATION_STATUS = "new-invocation-status";
+  public static final String WF_EXT_ID = "extID";
 
-  private static ExternalWorkFlowDataBuilder getBuilderWithNonNullValuesSet() {
+  public static ExternalWorkFlowDataBuilder getBuilderWithNonNullValuesSet() {
     ExternalWorkFlowDataBuilder builder = ExternalWorkFlowData.builder();
     builder
         .extName(DEFAULT_DATA_NAME)
@@ -136,6 +138,16 @@ public class ExternalWorkFlowTestMother {
     return builder.build();
   }
 
+  public static ExternalWorkFlowData createExternalWorkFlowDataWithNonDefaultName(
+      String extContainerId, String extId, String historyName, String nameToUse) {
+    ExternalWorkFlowDataBuilder builder = getBuilderWithNonNullValuesSet();
+    builder.extContainerID(extContainerId);
+    builder.extId(extId);
+    builder.extContainerName(historyName);
+    builder.extName(nameToUse);
+    return builder.build();
+  }
+
   public static ExternalWorkFlowData createExternalWorkFlowDataWithInvocations(
       String extContainerId, String extId, String historyName, String invocationStatus) {
     ExternalWorkFlowDataBuilder builder = getBuilderWithNonNullValuesSet();
@@ -144,7 +156,7 @@ public class ExternalWorkFlowTestMother {
     builder.extContainerName(historyName);
     builder.extSecondaryId(extId + "_uuid");
     ExternalWorkFlowData toReturn = builder.build();
-    ExternalWorkFlow externalWorkFlow = new ExternalWorkFlow("extID", WORKFLOWTHATWASUSED, "");
+    ExternalWorkFlow externalWorkFlow = new ExternalWorkFlow(WF_EXT_ID, WORKFLOWTHATWASUSED, "");
     ExternalWorkFlowInvocation invocation =
         new ExternalWorkFlowInvocation(
             INVOCATION_ID_1, Set.of(toReturn), invocationStatus, externalWorkFlow);
@@ -244,7 +256,7 @@ public class ExternalWorkFlowTestMother {
   }
 
   public static void makeGalaxyDataAssertions(List<GalaxySummaryStatusReport> result) {
-    assertEquals(DEFAULT_DATA_NAME, result.get(0).getGalaxyDataNames());
+    assertEquals(DEFAULT_DATA_NAME, result.get(0).getGalaxyDataNames()[0].getFileName());
     assertEquals("Test History", result.get(0).getGalaxyHistoryName());
     assertEquals(HISTORY_ID_1, result.get(0).getGalaxyHistoryId());
     assertEquals("default-baseurl", result.get(0).getGalaxyBaseUrl());
@@ -261,7 +273,7 @@ public class ExternalWorkFlowTestMother {
 
   public static void makeGalaxyDataAssertionsWithInvocation(
       GalaxySummaryStatusReport result, String suffix) {
-    assertEquals(DEFAULT_DATA_NAME, result.getGalaxyDataNames());
+    assertEquals(DEFAULT_DATA_NAME, result.getGalaxyDataNames()[0].getFileName());
     assertEquals("Test History" + suffix, result.getGalaxyHistoryName());
     assertEquals(HISTORY_ID_1 + suffix, result.getGalaxyHistoryId());
     assertEquals("default-baseurl", result.getGalaxyBaseUrl());

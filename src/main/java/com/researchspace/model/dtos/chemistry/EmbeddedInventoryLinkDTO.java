@@ -18,7 +18,8 @@ public class EmbeddedInventoryLinkDTO {
     this.unitId = inventoryLink.getQuantity().getUnitId();
   }
 
-  static EmbeddedInventoryLinkDTO fromInventoryLink(StoichiometryInventoryLink inventoryLink) {
+  public static EmbeddedInventoryLinkDTO fromInventoryLink(
+      StoichiometryInventoryLink inventoryLink) {
     if (inventoryLink == null) {
       return null;
     }

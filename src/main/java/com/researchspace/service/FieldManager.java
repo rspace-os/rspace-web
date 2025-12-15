@@ -33,6 +33,8 @@ public interface FieldManager {
 
   List<Long> getFieldIdsForRecord(Long recordId);
 
+  List<FieldAttachment> getFieldAttachments(Long id);
+
   /**
    * Associates an EcatMediaFile with this field.
    *

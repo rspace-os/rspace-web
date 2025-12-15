@@ -1,5 +1,6 @@
 package com.researchspace.service.raid.impl;
 
+import static com.researchspace.CacheNames.RAID_CONNECTION;
 import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -17,14 +18,16 @@ import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.webapp.integrations.MultiInstanceBaseClient;
 import com.researchspace.webapp.integrations.MultiInstanceClient;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller.AccessToken;
+import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -33,6 +36,8 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -59,7 +64,7 @@ public class RaIDServiceClientAdapterImpl
 
   private @Autowired UserConnectionManager userConnectionManager;
 
-  @Setter(value = AccessLevel.PROTECTED) // for test purposes
+  @Setter // for test purposes
   private @Autowired RaIDClient raidClient;
 
   private @Autowired IPropertyHolder properties;
@@ -76,32 +81,45 @@ public class RaIDServiceClientAdapterImpl
   }
 
   @Override
-  public Set<RaIDServicePoint> getServicePointList(String username, String serverAlias)
-      throws HttpServerErrorException {
-    // TODO: RSDEV-849
-    return null;
+  public List<RaIDServicePoint> getServicePointList(String username, String serverAlias)
+      throws HttpServerErrorException, URISyntaxException, JsonProcessingException {
+    return raidClient.getServicePointList(
+        getApiBaseUrl(serverAlias),
+        getExistingAccessTokenOrRefreshIfExpired(username, serverAlias));
   }
 
   @Override
   public RaIDServicePoint getServicePoint(
       String username, String serverAlias, Integer servicePointId) throws HttpServerErrorException {
-    // TODO: RSDEV-849
-    RaIDServicePoint result = new RaIDServicePoint(); // TODO: current dummy one - TBD on RSDEV-849
-    return null;
+    return raidClient.getServicePoint(
+        getApiBaseUrl(serverAlias),
+        getExistingAccessToken(username, serverAlias),
+        getServicePointId(serverAlias));
   }
 
   @Override
-  public Set<RaID> getRaIDList(String username, String serverAlias)
-      throws HttpServerErrorException {
-    // TODO: RSDEV-849
-    return null;
+  public Set<RaIDReferenceDTO> getRaIDList(String username, String serverAlias)
+      throws HttpServerErrorException, URISyntaxException, JsonProcessingException {
+    List<RaID> verboseRaidList =
+        raidClient.getRaIDList(
+            getApiBaseUrl(serverAlias),
+            getExistingAccessTokenOrRefreshIfExpired(username, serverAlias));
+    return verboseRaidList.stream()
+        .map(r -> new RaIDReferenceDTO(serverAlias, r.getIdentifier().getId()))
+        .collect(Collectors.toSet());
   }
 
   @Override
-  public RaID getRaID(String username, String serverAlias, String raidPrefix, String raidSuffix)
-      throws HttpServerErrorException {
-    // TODO: RSDEV-849
-    return null;
+  public RaIDReferenceDTO getRaID(
+      String username, String serverAlias, String raidPrefix, String raidSuffix)
+      throws HttpServerErrorException, URISyntaxException, JsonProcessingException {
+    RaID verboseRaid =
+        raidClient.getRaID(
+            getApiBaseUrl(serverAlias),
+            getExistingAccessTokenOrRefreshIfExpired(username, serverAlias),
+            raidPrefix,
+            raidSuffix);
+    return new RaIDReferenceDTO(serverAlias, verboseRaid.getIdentifier().getId());
   }
 
   @Override
@@ -112,6 +130,7 @@ public class RaIDServiceClientAdapterImpl
   }
 
   @Override
+  @CacheEvict(value = RAID_CONNECTION, key = "#username + #serverAlias")
   public AccessToken performCreateAccessToken(
       String username, String serverAlias, String authorizationCode)
       throws JsonProcessingException, URISyntaxException {
@@ -129,6 +148,7 @@ public class RaIDServiceClientAdapterImpl
   }
 
   @Override
+  @CacheEvict(value = RAID_CONNECTION, key = "#username + #serverAlias")
   public AccessToken performRefreshToken(String username, String serverAlias)
       throws HttpServerErrorException, URISyntaxException, JsonProcessingException {
 
@@ -146,6 +166,7 @@ public class RaIDServiceClientAdapterImpl
   }
 
   @Override
+  @Cacheable(value = RAID_CONNECTION, key = "#username + #serverAlias")
   public boolean isRaidConnectionAlive(String username, String serverAlias) {
     Optional<UserConnection> optUserConnection =
         getExistingRaidUserConnection(username, serverAlias);
@@ -166,22 +187,11 @@ public class RaIDServiceClientAdapterImpl
     return isConnectionAlive;
   }
 
-  // do not delete since it will be used by RSDEV-849
-  private String getExistingAccessToken(String username, String serverAlias)
+  private String getExistingAccessTokenOrRefreshIfExpired(String username, String serverAlias)
       throws URISyntaxException, JsonProcessingException {
-    Optional<UserConnection> optUserConnection =
-        getExistingRaidUserConnection(username, serverAlias);
-    if (optUserConnection.isEmpty()) {
-      throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "RaID User connection not found");
-    }
-    if (StringUtils.isBlank(optUserConnection.get().getAccessToken())) {
-      throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "RaID Access token not found");
-    }
-    String accessToken;
+    String accessToken = getExistingAccessToken(username, serverAlias);
     if (!isRaidConnectionAlive(username, serverAlias)) {
       accessToken = performRefreshToken(username, serverAlias).getAccessToken();
-    } else {
-      accessToken = optUserConnection.get().getAccessToken();
     }
     return accessToken;
   }
@@ -196,6 +206,18 @@ public class RaIDServiceClientAdapterImpl
       throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Refresh token not found");
     }
     return optUserConnection.get().getRefreshToken();
+  }
+
+  private String getExistingAccessToken(String username, String serverAlias) {
+    Optional<UserConnection> optUserConnection =
+        getExistingRaidUserConnection(username, serverAlias);
+    if (optUserConnection.isEmpty()) {
+      throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "User connection not found");
+    }
+    if (StringUtils.isBlank(optUserConnection.get().getAccessToken())) {
+      throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Refresh token not found");
+    }
+    return optUserConnection.get().getAccessToken();
   }
 
   private Optional<UserConnection> getExistingRaidUserConnection(
