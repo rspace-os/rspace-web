@@ -28,6 +28,10 @@ public class ExportProcesserInput {
     this.nfsLinks = nfsLinks;
   }
 
+  public boolean hasStoichiometryTable() {
+    return documentAsHtml.contains("data-stoichiometry-table");
+  }
+
   public boolean hasComments() {
     return comments != null && comments.size() > 0;
   }

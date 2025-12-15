@@ -572,12 +572,14 @@ public class GalaxyService {
       GalaxyInvocationDetails galaxyInvocationDetails,
       List<ExternalWorkFlowData> allMatchingDataForThisInvocation) {
 
-    externalWorkFlowDataManager.saveExternalWorkfFlowInvocation(
-        invocation.getWorkflowId(),
-        galaxyInvocationDetails.getWorkflowName(),
-        invocation.getInvocationId(),
-        allMatchingDataForThisInvocation,
-        invocation.getState());
+    ExternalWorkFlowInvocation invocationPersisted =
+        externalWorkFlowDataManager.saveExternalWorkfFlowInvocation(
+            invocation.getWorkflowId(),
+            galaxyInvocationDetails.getWorkflowName(),
+            invocation.getInvocationId(),
+            allMatchingDataForThisInvocation,
+            invocation.getState());
+    galaxyInvocationDetails.setPersistedInvocation(invocationPersisted);
   }
 
   private Set<String> findAllHistoryIdsForThisData(

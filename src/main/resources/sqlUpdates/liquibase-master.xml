@@ -158,6 +158,8 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-850.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-923.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-907.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-907.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-849.xml"/>
 
     <!--  ensure that customUpdates-changeLog.xml always runs LAST! -->
     <include relativeToChangelogFile="true" file="customUpdates-changeLog.xml"/>

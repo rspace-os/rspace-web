@@ -27,6 +27,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationStatus;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
+import com.researchspace.model.dtos.RaidGroupAssociation;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
@@ -36,9 +37,11 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.RaIDServiceManager;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.TestGroup;
+import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,6 +68,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
   private static final String CHANGE_ROLE_URL = "/groups/ajax/admin/changeRole/{grpId}/{username}";
 
   private @Autowired GroupDao grpDao;
+  private @Autowired RaIDServiceManager raIDServiceManager;
 
   @Autowired GroupController groupController;
   @Autowired SystemPropertyManager sysPropMgr;
@@ -121,6 +125,44 @@ public class GroupControllerMVCIT extends MVCTestBase {
                 .param("memberString", toAdd.getUsername()))
         .andReturn();
     assertEquals(2, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // toAdd added
+
+    // make sure group can be deleted.
+    grpMgr.removeGroup(g1.getId(), pi1);
+    assertEquals(0, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // no rows after deletion
+    assertExceptionThrown(() -> grpMgr.getGroup(g1.getId()), ObjectRetrievalFailureException.class);
+  }
+
+  @Test
+  public void removeProjectGroupServiceTest() throws Exception {
+
+    // create and save a user
+    User pi1 = createAndSaveUser("pi1_" + getRandomName(10), Constants.PI_ROLE);
+    initUser(pi1);
+    Group g1 = createProjectGroupForUsers(pi1, pi1.getUsername(), "", pi1);
+
+    logoutAndLoginAs(pi1);
+    assertEquals(1, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // pi added
+    User toAdd = createAndSaveUser(getRandomAlphabeticString("other"));
+    initUser(toAdd);
+
+    grpMgr.addUserToGroup(pi1.getUsername(), g1.getId(), RoleInGroup.DEFAULT);
+
+    User sysadminUser = logoutAndLoginAsSysAdmin();
+    // now we'll add a new user..
+    mockMvc
+        .perform(
+            post("/groups/admin/addUser")
+                .principal(sysadminUser::getUsername)
+                .param("id", g1.getId() + "")
+                .param("memberString", toAdd.getUsername()))
+        .andReturn();
+    assertEquals(2, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // toAdd added
+
+    raIDServiceManager.bindRaidToGroupAndSave(
+        pi1,
+        new RaidGroupAssociation(
+            g1.getId(), new RaIDReferenceDTO("raidServerAlias", "raidServerIdentifier")));
+
     // make sure group can be deleted.
     grpMgr.removeGroup(g1.getId(), pi1);
     assertEquals(0, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // no rows after deletion

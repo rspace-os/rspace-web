@@ -55,7 +55,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testAddRemoveGrp() {
+  public void testSaveGroup() {
     User u1 = createAndSaveUserIfNotExists("any");
     Group g1 = new Group("unique", u1);
     grpMgr.saveGroup(g1, u1);

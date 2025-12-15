@@ -20,7 +20,8 @@ public class EmbeddedInventoryLinkDTO {
     this.reducesStock = inventoryLink.getReducesStock();
   }
 
-  static EmbeddedInventoryLinkDTO fromInventoryLink(StoichiometryInventoryLink inventoryLink) {
+  public static EmbeddedInventoryLinkDTO fromInventoryLink(
+      StoichiometryInventoryLink inventoryLink) {
     if (inventoryLink == null) {
       return null;
     }

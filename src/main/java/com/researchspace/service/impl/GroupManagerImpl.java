@@ -16,6 +16,7 @@ import com.researchspace.dao.DAOUtils;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.GroupMembershipEventDao;
+import com.researchspace.dao.RaIDDao;
 import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.dao.RoleDao;
 import com.researchspace.dao.UserDao;
@@ -120,6 +121,7 @@ public class GroupManagerImpl implements GroupManager {
   private @Autowired FolderDao folderDao;
   private @Autowired GroupMembershipEventDao groupMembershipEventDao;
   private @Autowired RecordManager recordManager;
+  private @Autowired RaIDDao raidDao;
 
   private @Autowired IContentInitialiserUtils contentUtils;
 
@@ -762,6 +764,11 @@ public class GroupManagerImpl implements GroupManager {
     List<GroupMembershipEvent> events = groupMembershipEventDao.getGroupEventsForGroup(group);
     for (GroupMembershipEvent event : events) {
       groupMembershipEventDao.remove(event.getId());
+    }
+
+    // remove associated RaID
+    if (group.isProjectGroup() && group.getRaid() != null) {
+      raidDao.remove(group.getRaid().getId());
     }
 
     // should be last call once all FKs are removed

@@ -107,6 +107,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     deleteRecords(userId, session);
     deleteInventoryItems(userId, session);
     deleteGroups(userId, session);
+    deleteRaid(userId, session);
     deleteForms(userId, session);
     deleteFileStoreContents(toDelete.getUsername(), session);
     deleteUserConnection(toDelete.getUsername(), session);
@@ -351,6 +352,10 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     deleteCreateGroupMessageWhereUserIsTarget(userId, session);
 
     execute(userId, session, "delete from RecordGroupSharing  where sharee_id=:id");
+  }
+
+  private void deleteRaid(Long userId, Session session) {
+    execute(userId, session, "delete from UserRaid where owner_id=:id");
   }
 
   private void deleteCreateGroupMessageWhereUserIsTarget(Long userId, Session session) {
