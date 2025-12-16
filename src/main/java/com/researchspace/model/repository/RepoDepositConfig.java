@@ -1,6 +1,7 @@
 package com.researchspace.model.repository;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.researchspace.dataverse.api.v1.DataverseConfig;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
@@ -24,6 +25,8 @@ public class RepoDepositConfig {
 
   /** A list of 0 or more selected DMPUser internal IDs */
   private List<Long> selectedDMPs = new ArrayList<>();
+
+  private DataverseConfig repoConnectionInfo;
 
   /**
    * @return {@code}true{@code} if 1 or more DMP ids were selected

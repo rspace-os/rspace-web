@@ -19,6 +19,12 @@ type DataverseArgs = {
       value: string;
     };
   }) => void;
+  handleMetadataLanguageChange: (event: {
+    target: {
+      name: "metadataLanguage";
+      value: string;
+    };
+  }) => void;
   inputValidations: StandardValidations;
   submitAttempt: boolean;
   updatePeople: (people: Array<Person>) => void;
@@ -35,6 +41,7 @@ type DataverseArgs = {
     version: string;
   }>;
   fetchingTags: boolean;
+  metadataLanguage: string;
 };
 
 /**
@@ -52,6 +59,8 @@ export default function DataverseRepo({
   title,
   description,
   subject,
+  metadataLanguage,
+  handleMetadataLanguageChange,
   license,
   tags,
   onTagsChange,
@@ -87,7 +96,7 @@ export default function DataverseRepo({
           value={description}
         />
       </Grid>
-      <Grid item xs={5}>
+      <Grid item xs={4}>
         <TextField
           error={submitAttempt && !inputValidations.subject}
           name="subject"
@@ -108,8 +117,29 @@ export default function DataverseRepo({
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={2}></Grid>
-      <Grid item xs={5}>
+      {repo.metadataLanguages.length > 0 && (<Grid item xs={4}>
+        <TextField
+          //TODO: deal with validation
+          error={submitAttempt && !inputValidations.subject}
+          name="metadataLanguage"
+          select
+          label="Metadata language *"
+          defaultValue={null}
+          // @ts-expect-error React event handlers are not parameterised by the name prop
+          onChange={handleMetadataLanguageChange}
+          helperText="Please select your metadata language"
+          margin="normal"
+          fullWidth
+          value={metadataLanguage}
+        >
+          {repo.metadataLanguages.map((option) => (
+            <MenuItem key={option.title} value={option.locale}>
+              {option.title}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Grid>)}
+      <Grid item xs={4}>
         <TextField
           name="license"
           select

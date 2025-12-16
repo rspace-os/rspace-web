@@ -3,6 +3,8 @@ package com.researchspace.service.impl;
 import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrationName;
 
 import com.researchspace.archive.ArchiveResult;
+import com.researchspace.dataverse.api.v1.DataverseConfig;
+import com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
@@ -36,8 +38,11 @@ import com.researchspace.webapp.controller.repositories.ZenodoUIConnectionConfig
 import com.researchspace.webapp.integrations.digitalcommonsdata.DigitalCommonsDataController;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -86,7 +91,10 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     checkConnectionState(app, subject);
 
     IRepository repository = repoFactory.getRepository(getRepoName(app));
-    RepositoryConfig repoConnectionInfo = getRepoConnectionInfo(cfg, app, subject);
+    RepositoryConfig repoConnectionInfo =
+        app.getName().equals(App.APP_DATAVERSE)
+            ? dataverseConfigToRepositoryConfig(archiveConfig.getRepoConnectionInfo())
+            : getRepoConnectionInfo(cfg, app, subject);
     repository.configure(repoConnectionInfo);
     repository.testConnection();
 
@@ -106,13 +114,24 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     checkConnectionState(app, subject);
 
     IRepository repository = repoFactory.getRepository(getRepoName(app));
-    RepositoryConfig repoConnectionInfo = getRepoConnectionInfo(cfg, app, subject);
+    RepositoryConfig repoConnectionInfo =
+        app.getName().equals(App.APP_DATAVERSE)
+            ? dataverseConfigToRepositoryConfig(archiveConfig.getRepoConnectionInfo())
+            : getRepoConnectionInfo(cfg, app, subject);
     repository.configure(repoConnectionInfo);
     repository.testConnection();
 
     asyncDepositor.depositArchive(
         app, subject, repository, archiveConfig, repoConnectionInfo, archive);
     return null;
+  }
+
+  private RepositoryConfig dataverseConfigToRepositoryConfig(DataverseConfig repoConnectionInfo) {
+    return new RepositoryConfig(
+        repoConnectionInfo.getServerURL(),
+        repoConnectionInfo.getApiKey(),
+        null,
+        repoConnectionInfo.getRepositoryName());
   }
 
   private RepositoryConfig getRepoConnectionInfo(
@@ -253,5 +272,49 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     LicenseConfigInfo license = configurer.getLicenseConfigInfo();
     List<RepoProperty> otherProperties = new ArrayList<>(configurer.getOtherProperties().values());
     return new RepoUIConfigInfo(app.getName(), subjects, license, otherProperties);
+  }
+
+  @Override
+  public Map<String, Object> populateDataverseOptions(Map<String, Object> options)
+      throws MalformedURLException {
+    DataverseRSpaceRepository dataverseRepo =
+        (DataverseRSpaceRepository) repoFactory.getRepository("dataverseRepository");
+    var newCollections = new HashMap<String, Object>();
+    for (var collectionObject : options.entrySet()) {
+      var collection = (Map<String, Object>) collectionObject.getValue();
+      URL url = new URL((String) collection.get("DATAVERSE_URL"));
+      String apiKey = (String) collection.get("DATAVERSE_APIKEY");
+      String alias = (String) collection.get("DATAVERSE_ALIAS");
+      RepositoryConfig repoCfg = new RepositoryConfig(url, apiKey, null, alias);
+      dataverseRepo.configure(repoCfg);
+      var searchResults = dataverseRepo.getCollections(repoCfg.getRepositoryName());
+      var metadataLanguages = dataverseRepo.getMetadataLanguage();
+      collection.put("metadataLanguages", metadataLanguages);
+      String parentIndex = collectionObject.getKey();
+      int[] index = {0};
+      searchResults
+          .getItems()
+          .forEach(
+              item -> {
+                dataverseRepo.configure(
+                    new RepositoryConfig(url, apiKey, null, item.getIdentifier()));
+                var childRepoMetadataLanguages = dataverseRepo.getMetadataLanguage();
+                newCollections.put(
+                    parentIndex + index[0]++,
+                    Map.of(
+                        "DATAVERSE_URL",
+                        url.toString(),
+                        "DATAVERSE_APIKEY",
+                        apiKey,
+                        "DATAVERSE_ALIAS",
+                        item.getIdentifier(),
+                        "_label",
+                        item.getName(),
+                        "metadataLanguages",
+                        childRepoMetadataLanguages));
+              });
+      newCollections.put(parentIndex, collection);
+    }
+    return newCollections;
   }
 }

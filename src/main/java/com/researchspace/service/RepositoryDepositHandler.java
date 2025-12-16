@@ -10,6 +10,7 @@ import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.repository.spi.RepositoryOperationResult;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -78,4 +79,7 @@ public interface RepositoryDepositHandler {
   RepoUIConfigInfo getZenodoRepoUIConfigInfo(User user) throws MalformedURLException;
 
   RepoUIConfigInfo getDigitalCommonsDataRepoUIConfigInfo(User user) throws MalformedURLException;
+
+  Map<String, Object> populateDataverseOptions(Map<String, Object> options)
+      throws MalformedURLException;
 }
