@@ -1537,10 +1537,6 @@
           <artifactId>rspace-repository-spi</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-core-util</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>xerces</groupId>
           <artifactId>xercesImpl</artifactId>
         </exclusion>
@@ -1583,6 +1579,10 @@
         <exclusion>
           <groupId>commons-codec</groupId>
           <artifactId>commons-codec</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.codehaus.woodstox</groupId>
