@@ -22,5 +22,6 @@ public class StoichiometryInventoryLinkDTO {
         entity.getQuantity().getNumericValue() == null
             ? null
             : new ApiQuantityInfo(entity.getQuantity());
+    this.reducesStock = entity.getReducesStock();
   }
 }

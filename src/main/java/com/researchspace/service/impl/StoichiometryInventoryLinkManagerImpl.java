@@ -8,6 +8,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.StructuredDocument;
@@ -19,6 +20,7 @@ import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryMaterialUsageHelper;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.SubSampleApiManager;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   private final IPermissionUtils elnPermissionUtils;
   private final InventoryPermissionUtils invPermissionUtils;
   private final InventoryMaterialUsageHelper materialUsageHelper;
+  private final SubSampleApiManager subSampleMgr;
 
   @Autowired
   public StoichiometryInventoryLinkManagerImpl(
@@ -39,12 +42,14 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
       StoichiometryMoleculeManager stoichiometryMoleculeManager,
       IPermissionUtils elnPermissionUtils,
       InventoryPermissionUtils invPermissionUtils,
-      InventoryMaterialUsageHelper materialUsageHelper) {
+      InventoryMaterialUsageHelper materialUsageHelper,
+      SubSampleApiManager subSampleMgr) {
     this.linkDao = linkDao;
     this.stoichiometryMoleculeManager = stoichiometryMoleculeManager;
     this.elnPermissionUtils = elnPermissionUtils;
     this.invPermissionUtils = invPermissionUtils;
     this.materialUsageHelper = materialUsageHelper;
+    this.subSampleMgr = subSampleMgr;
   }
 
   @Override
@@ -77,7 +82,12 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     link.setInventoryRecord(inventoryRecord);
     QuantityInfo quantityInfo = makeQuantity(req);
     link.setQuantity(quantityInfo);
+    link.setReducesStock(req.getReducesStock());
     link = linkDao.save(link);
+
+    if (inventoryRecord instanceof SubSample && req.getReducesStock()) {
+      subSampleMgr.registerApiSubSampleUsage(inventoryRecord.getId(), quantityInfo, user);
+    }
     generateNewStoichiometryRevision(stoichiometryMolecule);
     return new StoichiometryInventoryLinkDTO(link);
   }

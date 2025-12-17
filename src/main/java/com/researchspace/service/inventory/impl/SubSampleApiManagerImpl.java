@@ -231,9 +231,9 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl
 
   @Override
   public ApiSubSample registerApiSubSampleUsage(
-      ApiSubSample apiSubSample, QuantityInfo usedQuantity, User user) {
+      Long subsampleId, QuantityInfo usedQuantity, User user) {
 
-    SubSample dbSubSample = getIfExists(apiSubSample.getId());
+    SubSample dbSubSample = getIfExists(subsampleId);
     if (usedQuantity.getNumericValue().equals(BigDecimal.ZERO)) {
       return getPopulatedApiSubSampleFull(dbSubSample, user);
     }

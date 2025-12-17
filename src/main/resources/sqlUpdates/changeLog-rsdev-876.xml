@@ -15,7 +15,6 @@
         <comment>Add new column for tracking whether stoichiometry link reduces stock</comment>
         <addColumn tableName="StoichiometryInventoryLink_AUD">
             <column type="boolean" name="reduces_stock" defaultValueBoolean="false">
-                <constraints nullable="false" />
             </column>
         </addColumn>
     </changeSet>
