@@ -398,6 +398,7 @@ public class StoichiometryManagerImplTest {
     link1.setSample(sample);
     link1.setQuantity(new QuantityInfo(BigDecimal.valueOf(1.5), RSUnitDef.MILLI_LITRE.getId()));
     link1.setStoichiometryMolecule(mol1);
+    link1.setReducesStock(true);
 
     mol1.setInventoryLink(link1);
 
@@ -424,6 +425,9 @@ public class StoichiometryManagerImplTest {
     assertEquals("SA" + sample.getId(), newLink.getInventoryItemGlobalId());
     assertEquals(mol1.getInventoryLink().getQuantity().getNumericValue(), newLink.getQuantity());
     assertEquals(RSUnitDef.MILLI_LITRE.getId(), newLink.getUnitId());
+
+    // the default for copied docs is not to reduce stock
+    assertFalse(newLink.reducesStock());
   }
 
   @Test

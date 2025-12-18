@@ -168,6 +168,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
             .stoichiometryMoleculeId(copy.getId())
             .quantity(sourceMol.getInventoryLink().getQuantity().getNumericValue())
             .unitId(sourceMol.getInventoryLink().getQuantity().getUnitId())
+            .reducesStock(false) // copied links do not reduce stock by default
             .build();
     stoichiometryInventoryLinkManager.createLink(link, user);
   }

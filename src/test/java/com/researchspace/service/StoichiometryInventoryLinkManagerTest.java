@@ -123,6 +123,41 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     assertEquals("4.99 g", after.getQuantity().toQuantityInfo().toPlainString());
   }
 
+  @Test
+  public void updateQuantityReducesStock() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "some text");
+    Field field = doc.getFields().get(0);
+    RSChemElement reaction = addReactionToField(field, user);
+
+    Stoichiometry stoich =
+        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, user);
+    StoichiometryMolecule molecule = stoich.getMolecules().get(0);
+
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    ApiSubSample subInfo = sample.getSubSamples().get(0);
+
+    ApiSubSample subBefore = subSampleApiMgr.getApiSubSampleById(subInfo.getId(), user);
+    assertEquals("5 g", subBefore.getQuantity().toQuantityInfo().toPlainString());
+
+    StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
+    req.setStoichiometryMoleculeId(molecule.getId());
+    req.setInventoryItemGlobalId(subInfo.getGlobalId());
+    req.setQuantity(BigDecimal.TEN);
+    req.setUnitId(RSUnitDef.MILLI_GRAM.getId());
+    req.setReducesStock(true);
+    StoichiometryInventoryLinkDTO link = linkManager.createLink(req, user);
+    assertTrue(link.reducesStock());
+
+    StoichiometryLinkQuantityUpdateRequest upd = new StoichiometryLinkQuantityUpdateRequest();
+    upd.setStoichiometryLinkId(link.getId());
+    upd.setNewQuantity(new ApiQuantityInfo(BigDecimal.valueOf(20), RSUnitDef.MILLI_GRAM.getId()));
+    linkManager.updateQuantity(upd.getStoichiometryLinkId(), upd.getNewQuantity(), user);
+
+    ApiSubSample after = subSampleApiMgr.getApiSubSampleById(subInfo.getId(), user);
+    assertEquals("4.97 g", after.getQuantity().toQuantityInfo().toPlainString());
+  }
+
   private ElementalAnalysisDTO createSimpleAnalysis() {
     MoleculeInfoDTO molecule =
         MoleculeInfoDTO.builder()
