@@ -16,11 +16,13 @@ import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
-import com.researchspace.service.inventory.InventoryMaterialUsageHelper;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import java.math.BigDecimal;
+import java.util.List;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +35,8 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   private final StoichiometryMoleculeManager stoichiometryMoleculeManager;
   private final IPermissionUtils elnPermissionUtils;
   private final InventoryPermissionUtils invPermissionUtils;
-  private final InventoryMaterialUsageHelper materialUsageHelper;
   private final SubSampleApiManager subSampleMgr;
+  private final QuantityUtils quantityUtils;
 
   @Autowired
   public StoichiometryInventoryLinkManagerImpl(
@@ -42,14 +44,13 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
       StoichiometryMoleculeManager stoichiometryMoleculeManager,
       IPermissionUtils elnPermissionUtils,
       InventoryPermissionUtils invPermissionUtils,
-      InventoryMaterialUsageHelper materialUsageHelper,
       SubSampleApiManager subSampleMgr) {
     this.linkDao = linkDao;
     this.stoichiometryMoleculeManager = stoichiometryMoleculeManager;
     this.elnPermissionUtils = elnPermissionUtils;
     this.invPermissionUtils = invPermissionUtils;
-    this.materialUsageHelper = materialUsageHelper;
     this.subSampleMgr = subSampleMgr;
+    this.quantityUtils = new QuantityUtils();
   }
 
   @Override
@@ -80,16 +81,26 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setStoichiometryMolecule(stoichiometryMolecule);
     link.setInventoryRecord(inventoryRecord);
+
     QuantityInfo quantityInfo = makeQuantity(req);
     link.setQuantity(quantityInfo);
-    link.setReducesStock(req.getReducesStock());
+    link.setReducesStock(req.reducesStock());
     link = linkDao.save(link);
 
-    if (inventoryRecord instanceof SubSample && req.getReducesStock()) {
-      subSampleMgr.registerApiSubSampleUsage(inventoryRecord.getId(), quantityInfo, user);
-    }
+    processStockReduction(user, link, quantityInfo, inventoryRecord);
     generateNewStoichiometryRevision(stoichiometryMolecule);
     return new StoichiometryInventoryLinkDTO(link);
+  }
+
+  private void processStockReduction(User user, StoichiometryInventoryLink link, QuantityInfo quantityInfo, InventoryRecord inventoryRecord) {
+    if (link.getInventoryRecord() instanceof SubSample && link.getReducesStock()) {
+      SubSample subSample = (SubSample) link.getInventoryRecord();
+      BigDecimal totalAfterStockUpdate = quantityUtils.sum(List.of(subSample.getQuantity(), quantityInfo.negate())).getNumericValue();
+      if(totalAfterStockUpdate.compareTo(BigDecimal.ZERO) < 0){
+        throw new IllegalArgumentException("Insufficient stock to perform this action. Attempting to use " + totalAfterStockUpdate.toPlainString() + " of " + subSample.getQuantity().toPlainString() + " for " + subSample.getGlobalIdentifier());
+      }
+      subSampleMgr.registerApiSubSampleUsage(inventoryRecord.getId(), quantityInfo, user);
+    }
   }
 
   private QuantityInfo makeQuantity(StoichiometryInventoryLinkRequest request) {
@@ -120,9 +131,16 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   @Override
   public StoichiometryInventoryLinkDTO updateQuantity(
       long linkId, ApiQuantityInfo newQuantity, User user) {
+    if (newQuantity.getUnitId() == null) {
+      throw new IllegalArgumentException("Unit ID is required");
+    }
+
     StoichiometryInventoryLink entity = getLinkOrThrowNotFound(linkId);
     verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.WRITE, user);
     invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
+
+    processStockReduction(user, entity, newQuantity.toQuantityInfo(), entity.getInventoryRecord());
+
     entity.setQuantity(newQuantity.toQuantityInfo());
     entity = linkDao.save(entity);
     generateNewStoichiometryRevision(entity.getStoichiometryMolecule());
