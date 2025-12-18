@@ -1,7 +1,6 @@
 package com.researchspace.api.v1.model.stoichiometry;
 
 import java.math.BigDecimal;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,8 +22,7 @@ public class StoichiometryInventoryLinkRequest {
   @Getter(AccessLevel.NONE)
   private boolean reducesStock;
 
-
-  public boolean reducesStock(){
+  public boolean reducesStock() {
     return reducesStock;
   }
 }

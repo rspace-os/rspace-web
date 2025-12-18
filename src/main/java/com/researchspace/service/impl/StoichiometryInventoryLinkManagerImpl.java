@@ -92,12 +92,25 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     return new StoichiometryInventoryLinkDTO(link);
   }
 
-  private void processStockReduction(User user, StoichiometryInventoryLink link, QuantityInfo quantityInfo, InventoryRecord inventoryRecord) {
+  private void processStockReduction(
+      User user,
+      StoichiometryInventoryLink link,
+      QuantityInfo quantityInfo,
+      InventoryRecord inventoryRecord) {
     if (link.getInventoryRecord() instanceof SubSample && link.getReducesStock()) {
       SubSample subSample = (SubSample) link.getInventoryRecord();
-      BigDecimal totalAfterStockUpdate = quantityUtils.sum(List.of(subSample.getQuantity(), quantityInfo.negate())).getNumericValue();
-      if(totalAfterStockUpdate.compareTo(BigDecimal.ZERO) < 0){
-        throw new IllegalArgumentException("Insufficient stock to perform this action. Attempting to use " + quantityInfo.toPlainString() + " of stock amount " + subSample.getQuantity().toPlainString() + " for " + subSample.getGlobalIdentifier());
+      BigDecimal totalAfterStockUpdate =
+          quantityUtils
+              .sum(List.of(subSample.getQuantity(), quantityInfo.negate()))
+              .getNumericValue();
+      if (totalAfterStockUpdate.compareTo(BigDecimal.ZERO) < 0) {
+        throw new IllegalArgumentException(
+            "Insufficient stock to perform this action. Attempting to use "
+                + quantityInfo.toPlainString()
+                + " of stock amount "
+                + subSample.getQuantity().toPlainString()
+                + " for "
+                + subSample.getGlobalIdentifier());
       }
       subSampleMgr.registerApiSubSampleUsage(inventoryRecord.getId(), quantityInfo, user);
     }

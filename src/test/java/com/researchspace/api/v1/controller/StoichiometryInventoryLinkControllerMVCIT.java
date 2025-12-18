@@ -168,10 +168,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
 
     StoichiometryLinkQuantityUpdateRequest upd = new StoichiometryLinkQuantityUpdateRequest();
     upd.setStoichiometryLinkId(created.getId());
-    upd.setNewQuantity(
-        new ApiQuantityInfo(
-            BigDecimal.valueOf(9.5),
-            RSUnitDef.MILLI_LITRE.getId()));
+    upd.setNewQuantity(new ApiQuantityInfo(BigDecimal.valueOf(9.5), RSUnitDef.MILLI_LITRE.getId()));
 
     MvcResult updateResult =
         mockMvc

@@ -31,7 +31,6 @@ import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import java.math.BigDecimal;
-import java.util.Optional;
 import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
@@ -284,13 +283,17 @@ public class StoichiometryInventoryLinkManagerImplTest {
         .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
 
     // Try to increase link usage to 20 mg
-    IllegalArgumentException exception = assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            manager.updateQuantity(
-                321L,
-                new ApiQuantityInfo(new BigDecimal("20"), RSUnitDef.MILLI_GRAM.getId()),
-                user));
-    assertEquals("Insufficient stock to perform this action. Attempting to use 20 mg of stock amount 5 mg for SS300", exception.getMessage());
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                manager.updateQuantity(
+                    321L,
+                    new ApiQuantityInfo(new BigDecimal("20"), RSUnitDef.MILLI_GRAM.getId()),
+                    user));
+    assertEquals(
+        "Insufficient stock to perform this action. Attempting to use 20 mg of stock amount 5 mg"
+            + " for SS300",
+        exception.getMessage());
   }
 }
