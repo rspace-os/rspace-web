@@ -4748,7 +4748,7 @@ definitions:
         type: integer
         format: int64
       inventoryLink:
-        $ref: '#/definitions/EmbeddedInventoryLinkDTO'
+        $ref: '#/definitions/StoichiometryInventoryLinkDTO'
       role:
         type: string
         enum: [REACTANT, PRODUCT, AGENT]
@@ -4779,24 +4779,6 @@ definitions:
       notes:
         type: string
         example: 'some notes'
-  EmbeddedInventoryLinkDTO:
-    description: Embedded link to an Inventory item associated with this molecule
-    properties:
-      linkId:
-        type: integer
-        format: int64
-        description: Identifier of the stoichiometry-inventory link
-      inventoryItemGlobalId:
-        type: string
-        description: Global identifier of the connected Inventory record (e.g. SA123, SS456)
-      quantity:
-        type: number
-        format: double
-        description: Numeric value of the quantity used from the connected item
-      unitId:
-        type: integer
-        format: int32
-        description: Unit identifier of the quantity used from the connected item
   StoichiometryDTO:
     description: Stoichiometry data for a reaction
     properties:
