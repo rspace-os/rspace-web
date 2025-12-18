@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos;
 
+import com.researchspace.model.raid.UserRaid;
 import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.io.Serializable;
 import lombok.AllArgsConstructor;
@@ -13,4 +14,11 @@ public class RaidGroupAssociation implements Serializable {
 
   private Long projectGroupId;
   private RaIDReferenceDTO raid;
+
+  public RaidGroupAssociation(UserRaid userRaid) {
+    this.projectGroupId = userRaid.getGroupAssociated().getId();
+    this.raid =
+        new RaIDReferenceDTO(
+            userRaid.getId(), userRaid.getRaidServerAlias(), userRaid.getRaidIdentifier());
+  }
 }
