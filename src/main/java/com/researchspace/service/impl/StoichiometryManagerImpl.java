@@ -46,7 +46,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       RSChemElementManager rsChemElementManager,
       ChemicalSearcher chemicalSearcher,
       AuditManager auditManager,
-      // avoids circular dependency which is non-trivial to break
+      // avoids circular dependency
       @Lazy StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager) {
     super(stoichiometryDao);
     this.stoichiometryDao = stoichiometryDao;

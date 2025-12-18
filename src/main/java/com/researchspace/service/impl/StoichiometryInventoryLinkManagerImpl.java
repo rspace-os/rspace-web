@@ -97,7 +97,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
       SubSample subSample = (SubSample) link.getInventoryRecord();
       BigDecimal totalAfterStockUpdate = quantityUtils.sum(List.of(subSample.getQuantity(), quantityInfo.negate())).getNumericValue();
       if(totalAfterStockUpdate.compareTo(BigDecimal.ZERO) < 0){
-        throw new IllegalArgumentException("Insufficient stock to perform this action. Attempting to use " + totalAfterStockUpdate.toPlainString() + " of " + subSample.getQuantity().toPlainString() + " for " + subSample.getGlobalIdentifier());
+        throw new IllegalArgumentException("Insufficient stock to perform this action. Attempting to use " + quantityInfo.toPlainString() + " of stock amount " + subSample.getQuantity().toPlainString() + " for " + subSample.getGlobalIdentifier());
       }
       subSampleMgr.registerApiSubSampleUsage(inventoryRecord.getId(), quantityInfo, user);
     }

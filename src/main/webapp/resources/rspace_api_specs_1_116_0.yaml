@@ -3036,6 +3036,10 @@ paths:
       summary: Create a link between a stoichiometry molecule and an Inventory Container, Sample or Subsample
       tags:
         - Chemistry
+      description: |
+        Creates a link between a stoichiometry molecule and an Inventory record. If `reducesStock=true` and the
+        target is a SubSample, the specified quantity is deducted from the SubSample stock immediately. If the
+        `reducesStock` field is omitted it defaults to `false` and no stock is deducted.
       parameters:
         - in: body
           name: body
@@ -3047,6 +3051,14 @@ paths:
           description: Created link
           schema:
             $ref: '#/definitions/StoichiometryInventoryLinkDTO'
+        '400':
+          description: Insufficient stock to perform the requested operation (when linking to a SubSample with `reducesStock=true`).
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Insufficient stock to perform this action. Attempting to use 20 mg of stock amount 5 mg for SS300"
         '401':
           description: Authentication error or insufficient permissions
           schema:
@@ -3083,6 +3095,11 @@ paths:
       summary: Update quantity used for a stoichiometry-inventory link
       tags:
         - Chemistry
+      description: |
+        Updates the quantity used on a stoichiometry–inventory link. If the link has `reducesStock=true` and
+        targets a SubSample, the new quantity is deducted from stock again (cumulative behavior). For example,
+        with 100 ml in stock: creating a link for 50 ml and later updating it to 25 ml results in 25 ml remaining
+        (100 − 50 − 25). Attempts to use more than is in stock result in a 400 response.
       parameters:
         - in: body
           name: body
@@ -3094,6 +3111,14 @@ paths:
           description: Updated link
           schema:
             $ref: '#/definitions/StoichiometryInventoryLinkDTO'
+        '400':
+          description: Insufficient stock to perform the requested operation.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Insufficient stock to perform this action. Attempting to use 20 mg of stock amount 5 mg for SS300"
         '401':
           description: Authentication error or insufficient permissions
           schema:
@@ -3163,6 +3188,9 @@ paths:
       summary: Delete a stoichiometry-inventory link
       tags:
         - Chemistry
+      description: |
+        Deletes the link. If stock was deducted earlier (when `reducesStock=true`), deleting the link does not
+        replenish stock.
       parameters:
         - name: id
           in: path
@@ -3540,7 +3568,8 @@ definitions:
         type: boolean
         description: |-
           If true and the linked item is a SubSample, the specified quantity will be deducted from its stock.
-          On updates the delta is applied; on delete the previously deducted amount is restored.
+          Updates are cumulative: setting a new quantity deducts that amount again from current stock.
+          Deleting a link does not replenish any previously deducted stock.
         default: false
   StoichiometryInventoryLinkRequest:
     description: >-
@@ -3549,6 +3578,8 @@ definitions:
     required:
       - inventoryItemGlobalId
       - stoichiometryMoleculeId
+      - quantity
+      - unitId
     properties:
       inventoryItemGlobalId:
         type: string

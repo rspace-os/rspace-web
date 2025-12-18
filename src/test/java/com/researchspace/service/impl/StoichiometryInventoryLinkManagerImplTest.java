@@ -284,12 +284,13 @@ public class StoichiometryInventoryLinkManagerImplTest {
         .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
 
     // Try to increase link usage to 20 mg
-    assertThrows(
+    IllegalArgumentException exception = assertThrows(
         IllegalArgumentException.class,
         () ->
             manager.updateQuantity(
                 321L,
                 new ApiQuantityInfo(new BigDecimal("20"), RSUnitDef.MILLI_GRAM.getId()),
                 user));
+    assertEquals("Insufficient stock to perform this action. Attempting to use 20 mg of stock amount 5 mg for SS300", exception.getMessage());
   }
 }
