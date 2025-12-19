@@ -355,32 +355,75 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     return toNotify;
   }
 
+  // As currently implemented, as well as correctly handling a change in
+  // permissions, this method needs to deal with resolving defect
+  // https://researchspace.atlassian.net/browse/RSDEV-863
+  // In that scenario users can end up with having both read and write
+  // permissions for the same document, and this must be handled.
   @Override
   public ErrorList updatePermissionForRecord(Long recordGroupSharing, String action, String uname) {
-    RecordGroupSharing rgs = null;
-    PermissionType type = null;
-
-    rgs = get(recordGroupSharing);
-    type = permissnUtils.createFromString(action);
+    RecordGroupSharing rgs = get(recordGroupSharing);
+    PermissionType type = permissnUtils.createFromString(action);
 
     AbstractUserOrGroupImpl userOrGroup = rgs.getSharee();
-    ConstraintBasedPermission toUpdate =
-        permissnUtils.findBy(
-            userOrGroup.getPermissions(),
-            PermissionDomain.RECORD,
-            new IdConstraint(rgs.getShared().getId()));
-    if (toUpdate != null) {
-      userOrGroup.removePermission(toUpdate);
+    Long sharedDocId = rgs.getShared().getId();
 
-      ConstraintBasedPermission newPerm =
-          perFactory.createIdPermission(PermissionDomain.RECORD, type, rgs.getShared().getId());
-      userOrGroup.addPermission(newPerm);
+    // Find all of the permissions that relate to the document whose access
+    // permissions are to be updated.
+    Set<ConstraintBasedPermission> permsToUpdate =
+        userOrGroup.getPermissions().stream()
+            .filter(
+                p ->
+                    ((ConstraintBasedPermission) p).getIdConstraint().getId().contains(sharedDocId))
+            .map(ConstraintBasedPermission.class::cast)
+            .collect(Collectors.toSet());
+
+    if (!permsToUpdate.isEmpty()) {
+
+      // Remove each of the permissions that need updating - i.e. when changing
+      // the permission of a doc from read to write.  Due to
+      // https://researchspace.atlassian.net/browse/RSDEV-863
+      // and the way that permissions are handled by the permissionHandler on the
+      // user we need to deal separately with each document listed in the permission.
+      for (ConstraintBasedPermission p : permsToUpdate) {
+        Set<Long> originalIds = p.getIdConstraint().getId();
+        for (Long id : originalIds) {
+          p.setIdConstraint(new IdConstraint(id));
+          userOrGroup.removePermission(p);
+        }
+
+        // We will have got a set of all documents with the same type of
+        // permission, so retain those that are not the current document.
+        Set<Long> prunedIds =
+            originalIds.stream()
+                .filter(l -> !l.equals(sharedDocId))
+                .collect(Collectors.toUnmodifiableSet());
+        IdConstraint newConstraint = new IdConstraint(prunedIds);
+        p.setIdConstraint(newConstraint);
+
+        removeACLPermissions(rgs, userOrGroup, p);
+      }
+
+      permsToUpdate =
+          permsToUpdate.stream()
+              .filter(p -> !p.getIdConstraint().getId().isEmpty())
+              .collect(Collectors.toSet());
+
+      // Now add the new permission for the action being performed
+      ConstraintBasedPermission permToAdd =
+          perFactory.createIdPermission(PermissionDomain.RECORD, type, sharedDocId);
+      permsToUpdate.add(permToAdd);
+
+      for (ConstraintBasedPermission p : permsToUpdate) {
+        userOrGroup.addPermission(p);
+        addACLPermissions(rgs, userOrGroup, p);
+      }
+
       saveUserOrGroup(userOrGroup);
       // forces other group members to refresh cache
       log.info("Notifying {} to refresh permissions cache ", userOrGroup.getUniqueName());
       permissnUtils.notifyUserOrGroupToRefreshCache(userOrGroup);
       permissnUtils.refreshCacheIfNotified();
-      updateACLPermissions(rgs, userOrGroup, toUpdate, newPerm);
       return null;
     } else {
       ErrorList el = new ErrorList();
@@ -1154,6 +1197,34 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         new ConstraintBasedPermission(newPerm.getDomain(), newPerm.getActions());
     ACLElement toAdd = new ACLElement(userOrGroup.getUniqueName(), newACLEl);
     propagateACLAddition(br, toAdd);
+  }
+
+  private void removeACLPermissions(
+      RecordGroupSharing rgs,
+      AbstractUserOrGroupImpl userOrGroup,
+      ConstraintBasedPermission toRemove) {
+
+    BaseRecord br = rgs.getShared();
+    // need to create new permission objects as ACL permissions don't have
+    // any constraints beyond domain/type - we only want to compare at this level
+    ConstraintBasedPermission oldACLEl =
+        new ConstraintBasedPermission(toRemove.getDomain(), toRemove.getActions());
+    ACLElement toRemoveFromACL = new ACLElement(userOrGroup.getUniqueName(), oldACLEl);
+    propagateACLRemoval(br, toRemoveFromACL);
+  }
+
+  private void addACLPermissions(
+      RecordGroupSharing rgs,
+      AbstractUserOrGroupImpl userOrGroup,
+      ConstraintBasedPermission toAdd) {
+
+    BaseRecord br = rgs.getShared();
+    // need to create new permission objects as ACL permissions don't have
+    // any constraints beyond domain/type - we only want to compare at this level
+    ConstraintBasedPermission newACLEl =
+        new ConstraintBasedPermission(toAdd.getDomain(), toAdd.getActions());
+    ACLElement toAddToACL = new ACLElement(userOrGroup.getUniqueName(), newACLEl);
+    propagateACLAddition(br, toAddToACL);
   }
 
   @Override
