@@ -8,7 +8,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@EqualsAndHashCode(of = {"extId", "name", "externalService"})
+@EqualsAndHashCode(
+    of = {"extId", "externalService"},
+    callSuper = false)
 public class ArchiveExternalWorkFlow extends ArchivalGalleryMetadata {
   private @XmlElement String extId;
   private @XmlElement String externalService;
