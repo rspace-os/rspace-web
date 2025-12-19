@@ -398,7 +398,6 @@ public class StoichiometryManagerImplTest {
     link1.setSample(sample);
     link1.setQuantity(new QuantityInfo(BigDecimal.valueOf(1.5), RSUnitDef.MILLI_LITRE.getId()));
     link1.setStoichiometryMolecule(mol1);
-    link1.setReducesStock(true);
 
     mol1.setInventoryLink(link1);
 

@@ -3,7 +3,6 @@ package com.researchspace.service;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -80,7 +79,8 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     update.setNewQuantity(
         new ApiQuantityInfo(BigDecimal.valueOf(5), RSUnitDef.MILLI_LITRE.getId()));
     StoichiometryInventoryLinkDTO updated =
-        linkManager.updateQuantity(update.getStoichiometryLinkId(), update.getNewQuantity(), user);
+        linkManager.updateQuantity(
+            update.getStoichiometryLinkId(), update.getNewQuantity(), false, user);
     assertEquals(BigDecimal.valueOf(5), updated.getQuantity().getNumericValue());
     assertEquals(RSUnitDef.MILLI_LITRE.getId(), updated.getQuantity().getUnitId());
 
@@ -116,7 +116,6 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
 
     StoichiometryInventoryLinkDTO createdLink = linkManager.createLink(req, user);
     assertNotNull(createdLink.getId());
-    assertTrue(createdLink.reducesStock());
 
     ApiSubSample after = subSampleApiMgr.getApiSubSampleById(subInfo.getId(), user);
     // 5 g - 10 mg = 4.99 g
@@ -147,12 +146,11 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     req.setUnitId(RSUnitDef.MILLI_GRAM.getId());
     req.setReducesStock(true);
     StoichiometryInventoryLinkDTO link = linkManager.createLink(req, user);
-    assertTrue(link.reducesStock());
 
     StoichiometryLinkQuantityUpdateRequest upd = new StoichiometryLinkQuantityUpdateRequest();
     upd.setStoichiometryLinkId(link.getId());
     upd.setNewQuantity(new ApiQuantityInfo(BigDecimal.valueOf(20), RSUnitDef.MILLI_GRAM.getId()));
-    linkManager.updateQuantity(upd.getStoichiometryLinkId(), upd.getNewQuantity(), user);
+    linkManager.updateQuantity(upd.getStoichiometryLinkId(), upd.getNewQuantity(), true, user);
 
     ApiSubSample after = subSampleApiMgr.getApiSubSampleById(subInfo.getId(), user);
     assertEquals("4.97 g", after.getQuantity().toQuantityInfo().toPlainString());

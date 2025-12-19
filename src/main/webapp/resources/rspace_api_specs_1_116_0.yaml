@@ -3613,6 +3613,12 @@ definitions:
         format: int64
       newQuantity:
         $ref: '#/definitions/QuantityInfo'
+      reducesStock:
+        type: boolean
+        description: |-
+          If true and the linked item is a SubSample, the specified quantity will be deducted from its stock.
+          Optional; defaults to false when omitted.
+        default: false
   ChemicalImportSearchResult:
     description: Chemical search result from external sources
     properties:

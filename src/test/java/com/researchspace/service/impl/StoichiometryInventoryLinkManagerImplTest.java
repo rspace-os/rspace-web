@@ -159,7 +159,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     original.setId(123L);
     original.setStoichiometryMolecule(molecule);
     original.setSample(invSample);
-    original.setReducesStock(false);
     original.setQuantity(new QuantityInfo(BigDecimal.valueOf(1), RSUnitDef.MILLI_LITRE.getId()));
 
     when(linkDao.getSafeNull(123L)).thenReturn(java.util.Optional.of(original));
@@ -173,7 +172,10 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     StoichiometryInventoryLinkDTO updated =
         manager.updateQuantity(
-            123L, new ApiQuantityInfo(BigDecimal.valueOf(5), RSUnitDef.MILLI_LITRE.getId()), user);
+            123L,
+            new ApiQuantityInfo(BigDecimal.valueOf(5), RSUnitDef.MILLI_LITRE.getId()),
+            false,
+            user);
     assertEquals(Long.valueOf(123L), updated.getId());
     assertEquals(BigDecimal.valueOf(5), updated.getQuantity().getNumericValue());
   }
@@ -268,7 +270,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     original.setId(321L);
     original.setStoichiometryMolecule(molecule);
     original.setSubSample(invSubSample);
-    original.setReducesStock(true);
     // current link uses 10 mg
     original.setQuantity(new QuantityInfo(BigDecimal.TEN, RSUnitDef.MILLI_GRAM.getId()));
 
@@ -290,6 +291,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
                 manager.updateQuantity(
                     321L,
                     new ApiQuantityInfo(new BigDecimal("20"), RSUnitDef.MILLI_GRAM.getId()),
+                    true,
                     user));
     assertEquals(
         "Insufficient stock to perform this action. Attempting to use 20 mg of stock amount 5 mg"

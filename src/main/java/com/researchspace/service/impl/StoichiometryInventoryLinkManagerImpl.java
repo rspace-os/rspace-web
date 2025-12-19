@@ -84,10 +84,11 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
 
     QuantityInfo quantityInfo = makeQuantity(req);
     link.setQuantity(quantityInfo);
-    link.setReducesStock(req.reducesStock());
     link = linkDao.save(link);
 
-    processStockReduction(user, link, quantityInfo, inventoryRecord);
+    if (req.reducesStock()) {
+      processStockReduction(user, link, quantityInfo, inventoryRecord);
+    }
     generateNewStoichiometryRevision(stoichiometryMolecule);
     return new StoichiometryInventoryLinkDTO(link);
   }
@@ -97,7 +98,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
       StoichiometryInventoryLink link,
       QuantityInfo quantityInfo,
       InventoryRecord inventoryRecord) {
-    if (link.getInventoryRecord() instanceof SubSample && link.getReducesStock()) {
+    if (link.getInventoryRecord() instanceof SubSample) {
       SubSample subSample = (SubSample) link.getInventoryRecord();
       BigDecimal totalAfterStockUpdate =
           quantityUtils
@@ -143,7 +144,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
 
   @Override
   public StoichiometryInventoryLinkDTO updateQuantity(
-      long linkId, ApiQuantityInfo newQuantity, User user) {
+      long linkId, ApiQuantityInfo newQuantity, boolean reducesStock, User user) {
     if (newQuantity == null
         || newQuantity.getNumericValue() == null
         || newQuantity.getUnitId() == null) {
@@ -154,7 +155,10 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.WRITE, user);
     invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
 
-    processStockReduction(user, entity, newQuantity.toQuantityInfo(), entity.getInventoryRecord());
+    if (reducesStock) {
+      processStockReduction(
+          user, entity, newQuantity.toQuantityInfo(), entity.getInventoryRecord());
+    }
 
     entity.setQuantity(newQuantity.toQuantityInfo());
     entity = linkDao.save(entity);
