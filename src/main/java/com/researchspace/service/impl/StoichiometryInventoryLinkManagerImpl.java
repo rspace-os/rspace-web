@@ -144,8 +144,10 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   @Override
   public StoichiometryInventoryLinkDTO updateQuantity(
       long linkId, ApiQuantityInfo newQuantity, User user) {
-    if (newQuantity.getUnitId() == null) {
-      throw new IllegalArgumentException("Unit ID is required");
+    if (newQuantity == null
+        || newQuantity.getNumericValue() == null
+        || newQuantity.getUnitId() == null) {
+      throw new IllegalArgumentException("numericValue and unitId are required");
     }
 
     StoichiometryInventoryLink entity = getLinkOrThrowNotFound(linkId);

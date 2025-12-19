@@ -3037,9 +3037,9 @@ paths:
       tags:
         - Chemistry
       description: |
-        Creates a link between a stoichiometry molecule and an Inventory record. If `reducesStock=true` and the
-        target is a SubSample, the specified quantity is deducted from the SubSample stock immediately. If the
-        `reducesStock` field is omitted it defaults to `false` and no stock is deducted.
+        Creates a link between a stoichiometry molecule and an Inventory item. If `reducesStock=true` and the
+        inventory item is a SubSample, the specified quantity is deducted from the SubSample stock. If the
+        `reducesStock` field is omitted it defaults to `false`.
       parameters:
         - in: body
           name: body

@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.model.stoichiometry;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import lombok.AccessLevel;
@@ -30,6 +31,7 @@ public class StoichiometryInventoryLinkDTO {
     this.reducesStock = entity.getReducesStock();
   }
 
+  @JsonGetter("reducesStock")
   public boolean reducesStock() {
     return reducesStock;
   }
