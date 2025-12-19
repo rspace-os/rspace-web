@@ -255,7 +255,6 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     convertISearchResults(
         pgCrit,
         apiSrchConfig,
-        user,
         internalShares,
         apiShareSearchResults,
         shareInfoList,
