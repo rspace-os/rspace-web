@@ -17,7 +17,9 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@EqualsAndHashCode(of = {"extId", "rspaceDataId"})
+@EqualsAndHashCode(
+    of = {"extId", "rspaceDataId"},
+    callSuper = false)
 public class ArchiveExternalWorkFlowData extends ArchivalGalleryMetadata {
   private @XmlElement long rspaceDataId;
   private @XmlElement String externalService;

@@ -9,6 +9,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSPath;
 import com.researchspace.service.DeletionPlan;
 import com.researchspace.service.FolderDeletionOrderPolicy;
+import com.researchspace.service.FolderNotSharedException;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -31,7 +32,7 @@ public class DeleteFolderFromSharedFolderPolicy implements FolderDeletionOrderPo
           String.format(
               "The folder '%s' to be deleted - id [%d] is not in a shared folder!",
               toDelete.getName(), toDelete.getId());
-      throw new IllegalArgumentException(msg);
+      throw new FolderNotSharedException(msg);
     }
     DeletionPlan plan = new DeletionPlan(subject, path, parent);
     plan.add(toDelete);
