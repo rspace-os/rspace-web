@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos.chemistry;
 
+import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import java.util.ArrayList;
@@ -58,8 +59,10 @@ public final class StoichiometryMapper {
     }
     Long rsChemElementId =
         molecule.getRsChemElement() != null ? molecule.getRsChemElement().getId() : null;
-    EmbeddedInventoryLinkDTO inventoryLink =
-        EmbeddedInventoryLinkDTO.fromInventoryLink(molecule.getInventoryLink());
+    StoichiometryInventoryLinkDTO inventoryLink =
+        molecule.getInventoryLink() == null
+            ? null
+            : new StoichiometryInventoryLinkDTO(molecule.getInventoryLink());
     return StoichiometryMoleculeDTO.builder()
         .id(molecule.getId())
         .rsChemElementId(rsChemElementId)

@@ -3036,6 +3036,10 @@ paths:
       summary: Create a link between a stoichiometry molecule and an Inventory Container, Sample or Subsample
       tags:
         - Chemistry
+      description: |
+        Creates a link between a stoichiometry molecule and an Inventory item. If `reducesStock=true` and the
+        inventory item is a SubSample, the specified quantity is deducted from the SubSample stock. If the
+        `reducesStock` field is omitted it defaults to `false`.
       parameters:
         - in: body
           name: body
@@ -3047,6 +3051,14 @@ paths:
           description: Created link
           schema:
             $ref: '#/definitions/StoichiometryInventoryLinkDTO'
+        '400':
+          description: Insufficient stock to perform the requested operation (when linking to a SubSample with `reducesStock=true`).
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Insufficient stock to perform this action. Attempting to use 20 mg of stock amount 5 mg for SS300"
         '401':
           description: Authentication error or insufficient permissions
           schema:
@@ -3083,6 +3095,11 @@ paths:
       summary: Update quantity used for a stoichiometry-inventory link
       tags:
         - Chemistry
+      description: |
+        Updates the quantity used on a stoichiometry–inventory link. If the link has `reducesStock=true` and
+        targets a SubSample, the new quantity is deducted from stock again (cumulative behavior). For example,
+        with 100 ml in stock: creating a link for 50 ml and later updating it to 25 ml results in 25 ml remaining
+        (100 − 50 − 25). Attempts to use more than is in stock result in a 400 response.
       parameters:
         - in: body
           name: body
@@ -3094,6 +3111,14 @@ paths:
           description: Updated link
           schema:
             $ref: '#/definitions/StoichiometryInventoryLinkDTO'
+        '400':
+          description: Insufficient stock to perform the requested operation.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Insufficient stock to perform this action. Attempting to use 20 mg of stock amount 5 mg for SS300"
         '401':
           description: Authentication error or insufficient permissions
           schema:
@@ -3163,6 +3188,9 @@ paths:
       summary: Delete a stoichiometry-inventory link
       tags:
         - Chemistry
+      description: |
+        Deletes the link. If stock was deducted earlier (when `reducesStock=true`), deleting the link does not
+        replenish stock.
       parameters:
         - name: id
           in: path
@@ -3536,6 +3564,13 @@ definitions:
         format: int64
       quantity:
         $ref: '#/definitions/QuantityInfo'
+      reducesStock:
+        type: boolean
+        description: |-
+          If true and the linked item is a SubSample, the specified quantity will be deducted from its stock.
+          Updates are cumulative: setting a new quantity deducts that amount again from current stock.
+          Deleting a link does not replenish any previously deducted stock.
+        default: false
   StoichiometryInventoryLinkRequest:
     description: >-
       Request to create a link between a stoichiometry molecule and an Inventory item.
@@ -3543,6 +3578,8 @@ definitions:
     required:
       - inventoryItemGlobalId
       - stoichiometryMoleculeId
+      - quantity
+      - unitId
     properties:
       inventoryItemGlobalId:
         type: string
@@ -3559,6 +3596,12 @@ definitions:
         type: integer
         format: int32
         description: Unit identifier. Options can be retrieved from /units endpoint.
+      reducesStock:
+        type: boolean
+        description: |-
+          If true and the linked item is a SubSample, the specified quantity will be deducted from its stock.
+          Optional; defaults to false when omitted.
+        default: false
   StoichiometryLinkQuantityUpdateRequest:
     description: Request to update quantity used for a stoichiometry-inventory link
     required:
@@ -3570,6 +3613,12 @@ definitions:
         format: int64
       newQuantity:
         $ref: '#/definitions/QuantityInfo'
+      reducesStock:
+        type: boolean
+        description: |-
+          If true and the linked item is a SubSample, the specified quantity will be deducted from its stock.
+          Optional; defaults to false when omitted.
+        default: false
   ChemicalImportSearchResult:
     description: Chemical search result from external sources
     properties:
@@ -4705,7 +4754,7 @@ definitions:
         type: integer
         format: int64
       inventoryLink:
-        $ref: '#/definitions/EmbeddedInventoryLinkDTO'
+        $ref: '#/definitions/StoichiometryInventoryLinkDTO'
       role:
         type: string
         enum: [REACTANT, PRODUCT, AGENT]
@@ -4736,24 +4785,6 @@ definitions:
       notes:
         type: string
         example: 'some notes'
-  EmbeddedInventoryLinkDTO:
-    description: Embedded link to an Inventory item associated with this molecule
-    properties:
-      linkId:
-        type: integer
-        format: int64
-        description: Identifier of the stoichiometry-inventory link
-      inventoryItemGlobalId:
-        type: string
-        description: Global identifier of the connected Inventory record (e.g. SA123, SS456)
-      quantity:
-        type: number
-        format: double
-        description: Numeric value of the quantity used from the connected item
-      unitId:
-        type: integer
-        format: int32
-        description: Unit identifier of the quantity used from the connected item
   StoichiometryDTO:
     description: Stoichiometry data for a reaction
     properties:

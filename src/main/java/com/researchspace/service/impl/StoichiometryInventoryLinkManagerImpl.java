@@ -8,6 +8,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.StructuredDocument;
@@ -15,9 +16,13 @@ import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.SubSampleApiManager;
+import java.math.BigDecimal;
+import java.util.List;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,17 +35,22 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   private final StoichiometryMoleculeManager stoichiometryMoleculeManager;
   private final IPermissionUtils elnPermissionUtils;
   private final InventoryPermissionUtils invPermissionUtils;
+  private final SubSampleApiManager subSampleMgr;
+  private final QuantityUtils quantityUtils;
 
   @Autowired
   public StoichiometryInventoryLinkManagerImpl(
       StoichiometryInventoryLinkDao linkDao,
       StoichiometryMoleculeManager stoichiometryMoleculeManager,
       IPermissionUtils elnPermissionUtils,
-      InventoryPermissionUtils invPermissionUtils) {
+      InventoryPermissionUtils invPermissionUtils,
+      SubSampleApiManager subSampleMgr) {
     this.linkDao = linkDao;
     this.stoichiometryMoleculeManager = stoichiometryMoleculeManager;
     this.elnPermissionUtils = elnPermissionUtils;
     this.invPermissionUtils = invPermissionUtils;
+    this.subSampleMgr = subSampleMgr;
+    this.quantityUtils = new QuantityUtils();
   }
 
   @Override
@@ -71,11 +81,40 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setStoichiometryMolecule(stoichiometryMolecule);
     link.setInventoryRecord(inventoryRecord);
+
     QuantityInfo quantityInfo = makeQuantity(req);
     link.setQuantity(quantityInfo);
     link = linkDao.save(link);
+
+    if (req.reducesStock()) {
+      processStockReduction(user, link, quantityInfo, inventoryRecord);
+    }
     generateNewStoichiometryRevision(stoichiometryMolecule);
     return new StoichiometryInventoryLinkDTO(link);
+  }
+
+  private void processStockReduction(
+      User user,
+      StoichiometryInventoryLink link,
+      QuantityInfo quantityInfo,
+      InventoryRecord inventoryRecord) {
+    if (link.getInventoryRecord() instanceof SubSample) {
+      SubSample subSample = (SubSample) link.getInventoryRecord();
+      BigDecimal totalAfterStockUpdate =
+          quantityUtils
+              .sum(List.of(subSample.getQuantity(), quantityInfo.negate()))
+              .getNumericValue();
+      if (totalAfterStockUpdate.compareTo(BigDecimal.ZERO) < 0) {
+        throw new IllegalArgumentException(
+            "Insufficient stock to perform this action. Attempting to use "
+                + quantityInfo.toPlainString()
+                + " of stock amount "
+                + subSample.getQuantity().toPlainString()
+                + " for "
+                + subSample.getGlobalIdentifier());
+      }
+      subSampleMgr.registerApiSubSampleUsage(inventoryRecord.getId(), quantityInfo, user);
+    }
   }
 
   private QuantityInfo makeQuantity(StoichiometryInventoryLinkRequest request) {
@@ -105,10 +144,22 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
 
   @Override
   public StoichiometryInventoryLinkDTO updateQuantity(
-      long linkId, ApiQuantityInfo newQuantity, User user) {
+      long linkId, ApiQuantityInfo newQuantity, boolean reducesStock, User user) {
+    if (newQuantity == null
+        || newQuantity.getNumericValue() == null
+        || newQuantity.getUnitId() == null) {
+      throw new IllegalArgumentException("numericValue and unitId are required");
+    }
+
     StoichiometryInventoryLink entity = getLinkOrThrowNotFound(linkId);
     verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.WRITE, user);
     invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
+
+    if (reducesStock) {
+      processStockReduction(
+          user, entity, newQuantity.toQuantityInfo(), entity.getInventoryRecord());
+    }
+
     entity.setQuantity(newQuantity.toQuantityInfo());
     entity = linkDao.save(entity);
     generateNewStoichiometryRevision(entity.getStoichiometryMolecule());

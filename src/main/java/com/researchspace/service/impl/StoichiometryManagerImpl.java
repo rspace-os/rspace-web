@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -45,7 +46,8 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       RSChemElementManager rsChemElementManager,
       ChemicalSearcher chemicalSearcher,
       AuditManager auditManager,
-      StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager) {
+      // avoids circular dependency
+      @Lazy StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager) {
     super(stoichiometryDao);
     this.stoichiometryDao = stoichiometryDao;
     this.rsChemElementManager = rsChemElementManager;
@@ -166,6 +168,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
             .stoichiometryMoleculeId(copy.getId())
             .quantity(sourceMol.getInventoryLink().getQuantity().getNumericValue())
             .unitId(sourceMol.getInventoryLink().getQuantity().getUnitId())
+            .reducesStock(false) // copied links do not reduce stock by default
             .build();
     stoichiometryInventoryLinkManager.createLink(link, user);
   }

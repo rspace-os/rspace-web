@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos.chemistry;
 
+import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class StoichiometryMoleculeDTO {
   private Long id;
   private Long rsChemElementId;
-  private EmbeddedInventoryLinkDTO inventoryLink;
+  private StoichiometryInventoryLinkDTO inventoryLink;
   private MoleculeRole role;
   private String formula;
   private String name;

@@ -11,7 +11,8 @@ public interface StoichiometryInventoryLinkManager {
 
   StoichiometryInventoryLinkDTO getById(long linkId, User user);
 
-  StoichiometryInventoryLinkDTO updateQuantity(long linkId, ApiQuantityInfo newQuantity, User user);
+  StoichiometryInventoryLinkDTO updateQuantity(
+      long linkId, ApiQuantityInfo newQuantity, boolean reducesStock, User user);
 
   void deleteLink(long linkId, User user);
 }

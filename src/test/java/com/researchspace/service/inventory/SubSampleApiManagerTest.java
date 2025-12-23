@@ -522,10 +522,8 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
         .publishEvent(Mockito.any(InventoryEditingEvent.class));
 
     // register usage
-    ApiSubSample subSampleUsage = new ApiSubSample();
-    subSampleUsage.setId(retrievedSubSample.getId());
     QuantityInfo quantity1mg = QuantityInfo.of(BigDecimal.ONE, RSUnitDef.MILLI_GRAM);
-    subSampleApiMgr.registerApiSubSampleUsage(subSampleUsage, quantity1mg, testUser);
+    subSampleApiMgr.registerApiSubSampleUsage(retrievedSubSample.getId(), quantity1mg, testUser);
     Mockito.verify(mockPublisher, Mockito.times(4))
         .publishEvent(Mockito.any(InventoryEditingEvent.class));
 
@@ -552,24 +550,23 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
 
     // register usage
-    ApiSubSample subSampleUsage = new ApiSubSample();
-    subSampleUsage.setId(retrievedSubSample.getId());
     QuantityInfo quantity1dot5555mg = QuantityInfo.of(new BigDecimal("1.5555"), RSUnitDef.GRAM);
-    subSampleApiMgr.registerApiSubSampleUsage(subSampleUsage, quantity1dot5555mg, testUser);
+    subSampleApiMgr.registerApiSubSampleUsage(
+        retrievedSubSample.getId(), quantity1dot5555mg, testUser);
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("3.444 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
 
     // register another usage
     QuantityInfo quantity45mg = QuantityInfo.of(new BigDecimal("45"), RSUnitDef.MILLI_GRAM);
-    subSampleApiMgr.registerApiSubSampleUsage(subSampleUsage, quantity45mg, testUser);
+    subSampleApiMgr.registerApiSubSampleUsage(retrievedSubSample.getId(), quantity45mg, testUser);
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("3.399 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
 
     // register usage greater than the remaining value - that should zero remaining quantity
     QuantityInfo quantity5g = QuantityInfo.of(new BigDecimal("5"), RSUnitDef.GRAM);
-    subSampleApiMgr.registerApiSubSampleUsage(subSampleUsage, quantity5g, testUser);
+    subSampleApiMgr.registerApiSubSampleUsage(retrievedSubSample.getId(), quantity5g, testUser);
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("0 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
@@ -577,7 +574,6 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
   @Test
   public void moveSubSampleBetweenContainers() throws Exception {
-
     User testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(testUser);
 

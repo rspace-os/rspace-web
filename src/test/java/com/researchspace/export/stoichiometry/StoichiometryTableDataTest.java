@@ -2,11 +2,12 @@ package com.researchspace.export.stoichiometry;
 
 import static org.junit.Assert.assertEquals;
 
-import com.researchspace.model.dtos.chemistry.EmbeddedInventoryLinkDTO;
+import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
+import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.model.units.QuantityInfo;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -105,7 +106,9 @@ public class StoichiometryTableDataTest {
     StoichiometryInventoryLink invL = new StoichiometryInventoryLink();
     ReflectionTestUtils.setField(invL, "quantity", qi);
     invL.setSample(sample);
-    EmbeddedInventoryLinkDTO linkDTO = EmbeddedInventoryLinkDTO.fromInventoryLink(invL);
+    StoichiometryMolecule mol = new StoichiometryMolecule();
+    invL.setStoichiometryMolecule(mol);
+    StoichiometryInventoryLinkDTO linkDTO = new StoichiometryInventoryLinkDTO(invL);
     StoichiometryMoleculeDTO stdo =
         new StoichiometryMoleculeDTO(
             1L,
