@@ -67,16 +67,18 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
       boolean trustedOrigin,
       User user) {
     Validate.isTrue(!appConfigSetData.isEmpty(), "appConfigSetData is empty!");
-    String anyProperty = appConfigSetData.keySet().iterator().next();
+    String propName = appConfigSetData.keySet().iterator().next();
 
-    UserAppConfig cfg = appCfgDao.findByPropertyNameUser(anyProperty, user);
+    UserAppConfig cfg = appCfgDao.findByPropertyNameUser(propName, user);
     if (cfg == null) {
       logger.info(
           "No UserAppConfig set for user {} for property {}, setting",
           user.getUsername(),
-          anyProperty);
-      App app = appCfgDao.findAppByPropertyName(anyProperty);
-      Validate.notNull(app, "App could not be identified for property " + anyProperty);
+          propName);
+      App app = appCfgDao.findAppByPropertyName(propName);
+      if (app == null) {
+        throw new IllegalArgumentException("App could not be identified for property " + propName);
+      }
       cfg = new UserAppConfig(user, app, true);
       cfg = appCfgDao.save(cfg);
     }
@@ -104,7 +106,6 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
     if ("app.orcid".equals(app.getName())) {
       throw new AuthorizationException("This App cannot be updated this way");
     }
-    ;
   }
 
   private AppConfigElementSet createAppConfigElementSetFromMap(
