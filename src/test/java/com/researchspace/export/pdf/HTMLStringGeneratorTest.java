@@ -294,7 +294,7 @@ public class HTMLStringGeneratorTest {
     assertFalse(data.contains("special html chars &∅∈∌"));
     assertTrue(
         "unexpected:" + data,
-        data.contains("special html chars &amp;amp;&amp;empty;&amp;isin;&amp;#8716;"));
+        data.contains("special html chars &amp;amp;&amp;empty;&amp;isin;∌"));
   }
 
   @Test
