@@ -2332,9 +2332,7 @@
                 <phase>process-resources</phase>
                 <configuration>
                   <skip>${skip.liquibase.diff}</skip>
-                  <!-- if doing this on windows need to remove timestamp as has ':'
-                    chars which conflict with filepath -->
-                  <diffChangeLogFile>${liquibase.changelogdiff.folder}/diffChangeset-${maven.build.timestamp}.xml</diffChangeLogFile>
+                  <diffChangeLogFile>${liquibase.changelogdiff.folder}/diffChangeset-${timestamp}.xml</diffChangeLogFile>
                 </configuration>
                 <goals>
                   <goal>diff</goal>
@@ -3064,6 +3062,7 @@
 
     <!-- Application settings -->
     <artifactName>${project.artifactId}-${project.version}</artifactName>
+    <maven.build.timestamp.format>yyyyMMdd'T'HHmmss'Z'</maven.build.timestamp.format>
     <timestamp>${maven.build.timestamp}</timestamp>
     <copyright.year>2026</copyright.year>
     <dao.framework>hibernate</dao.framework>
