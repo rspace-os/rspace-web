@@ -5,7 +5,7 @@ import com.researchspace.model.UserPreference;
 import com.researchspace.model.preference.ExportPageSize;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.UserManager;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

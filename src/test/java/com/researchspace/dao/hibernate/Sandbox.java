@@ -9,7 +9,7 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.type.StringType;

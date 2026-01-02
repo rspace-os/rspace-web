@@ -3,8 +3,8 @@ package com.researchspace.service.impl;
 import static com.researchspace.archive.ExportScope.SELECTION;
 import static com.researchspace.model.record.Folder.EXPORTS_FOLDER_NAME;
 import static com.researchspace.model.record.Folder.TEMPLATE_MEDIA_FOLDER_NAME;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.core.util.EscapeReplacement;
@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -206,7 +206,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
     publisher.publishEvent(new GenericEvent(u, ecatDocumentFile, AuditAction.CREATE));
     publisher.publishEvent(new GenericEvent(u, config, AuditAction.EXPORT));
 
-    String escapedName = StringEscapeUtils.escapeHtml(config.getExportName());
+    String escapedName = StringEscapeUtils.escapeHtml4(config.getExportName());
     String galleryLink =
         String.format(
             "%s/gallery/item/%d", propertyHolder.getServerUrl(), ecatDocumentFile.getId());
@@ -288,7 +288,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
   }
 
   private void postExportFailure(ExportToFileConfig config, User u, String detailMsg) {
-    String escapedName = StringEscapeUtils.escapeHtml(config.getExportName());
+    String escapedName = StringEscapeUtils.escapeHtml4(config.getExportName());
     String msg =
         messageSource.getMessage(
             "workspace.export.msgFailure", new String[] {escapedName, detailMsg}, null);

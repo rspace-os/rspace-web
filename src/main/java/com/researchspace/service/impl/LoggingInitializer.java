@@ -2,7 +2,7 @@ package com.researchspace.service.impl;
 
 import java.io.File;
 import javax.annotation.PostConstruct;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.springframework.beans.factory.annotation.Value;

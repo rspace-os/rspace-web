@@ -25,7 +25,7 @@ import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;

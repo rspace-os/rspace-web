@@ -17,7 +17,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /** Common methods to both stub and real implementations */

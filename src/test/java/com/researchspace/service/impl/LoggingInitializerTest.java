@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.apache.commons.lang.SystemUtils.IS_OS_WINDOWS;
+import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeFalse;
 

@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.auth;
 
-import static org.apache.commons.lang.StringUtils.abbreviate;
+import static org.apache.commons.lang3.StringUtils.abbreviate;
 
 import com.researchspace.auth.ApiKeyAuthenticationToken;
 import com.researchspace.model.User;

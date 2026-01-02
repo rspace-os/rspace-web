@@ -4,7 +4,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.views.ServiceOperationResult;
 import java.util.function.Function;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * A return object for Ajax calls. This object contains the data to be serialized and an optional

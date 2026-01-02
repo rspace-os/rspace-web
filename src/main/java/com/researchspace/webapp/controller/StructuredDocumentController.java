@@ -8,7 +8,7 @@ import static com.researchspace.service.impl.DocumentTagManagerImpl.anyGroupEnfo
 import static com.researchspace.session.SessionAttributeUtils.BATCH_WORDIMPORT_PROGRESS;
 import static java.lang.String.format;
 import static org.apache.commons.io.FilenameUtils.getExtension;
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.core.util.progress.ProgressMonitorImpl;
@@ -79,8 +79,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

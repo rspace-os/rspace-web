@@ -2,7 +2,7 @@ package com.researchspace.netfiles;
 
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileSystem;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

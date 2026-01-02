@@ -9,7 +9,7 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordSharingManager;
 import java.util.Iterator;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j

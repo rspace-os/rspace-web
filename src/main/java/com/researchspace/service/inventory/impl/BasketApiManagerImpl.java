@@ -1,6 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
-import static org.apache.commons.lang.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.axiope.search.InventorySearchConfig.InventorySearchType;

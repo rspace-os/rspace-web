@@ -3,7 +3,7 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.service.UserDeletionPolicy.UserTypeRestriction.TEMP_USER;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.researchspace.api.v1.SysadminApi;
@@ -59,7 +59,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.NotBlank;

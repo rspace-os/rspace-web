@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller.cloud;
 
-import static org.apache.commons.lang.RandomStringUtils.randomAlphanumeric;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

@@ -44,7 +44,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.After;
 import org.junit.Before;

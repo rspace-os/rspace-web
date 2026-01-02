@@ -1,11 +1,11 @@
 package com.researchspace.model.dtos;
 
-import static org.apache.commons.lang.StringUtils.isAlphanumeric;
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isAlphanumeric;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.Organisation;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;

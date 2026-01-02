@@ -30,8 +30,8 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -85,7 +85,7 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
       IArchiveExportConfig expCfg, User user, ArchiveResult result, File file, String fileSize) {
     String name = "";
     if (!StringUtils.isEmpty(expCfg.getDescription())) {
-      name = "[" + StringEscapeUtils.escapeHtml(expCfg.getDescription()) + "]";
+      name = "[" + StringEscapeUtils.escapeHtml4(expCfg.getDescription()) + "]";
     }
     String link = ArchiveUtils.getExportDownloadLink(serverURLPrefix, result);
     String linkText = link;

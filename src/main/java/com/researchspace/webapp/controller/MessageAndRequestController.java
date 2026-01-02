@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.comms.CommunicationTargetFinderPolicy;
 import com.researchspace.comms.CommunicationTargetFinderPolicy.TargetFinderPolicy;
@@ -48,8 +48,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.validate.ValidationException;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;

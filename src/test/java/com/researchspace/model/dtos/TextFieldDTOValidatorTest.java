@@ -1,7 +1,7 @@
 package com.researchspace.model.dtos;
 
 import static com.researchspace.model.dtos.AbstractFormFieldDTO.MAX_NAME_LENGTH;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.API_VERSION.ONE;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertEquals;
 import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 

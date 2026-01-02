@@ -12,7 +12,7 @@
 
     <function>
         <name>unescapeXml</name>
-        <function-class>org.apache.commons.lang.StringEscapeUtils</function-class>
+        <function-class>org.apache.commons.text.StringEscapeUtils</function-class>
         <function-signature>java.lang.String unescapeXml(java.lang.String)</function-signature>
     </function>
 </taglib>

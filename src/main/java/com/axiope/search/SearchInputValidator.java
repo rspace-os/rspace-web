@@ -10,13 +10,13 @@ import static com.axiope.search.SearchConstants.OWNER_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.SEARCH_OPTIONS_LIST;
 import static com.axiope.search.SearchConstants.TAG_SEARCH_OPTION;
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 

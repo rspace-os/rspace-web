@@ -3,8 +3,8 @@ package com.axiope.userimport;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.UserRegistrationInfo;
 import java.util.Set;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Attempts to create a a username wither from supplied candidate, or from the first/last name set

@@ -7,7 +7,7 @@ import static com.researchspace.core.util.MediaUtils.VIDEO_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.extractFileTypeFromPath;
 import static com.researchspace.core.util.MediaUtils.getExtension;
 import static com.researchspace.model.record.Folder.targetFolderIsCorrectTypeForMedia;
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.axiope.search.IFileIndexer;
 import com.researchspace.core.util.IoUtils;

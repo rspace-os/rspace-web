@@ -42,7 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,7 +151,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
     String filesystemJson =
         "{\"id\":11,\"name\":\"testFileSystem\",\"url\":\"smb://test.com\","
             + "\"clientType\":\"SAMBA\",\"authType\":\"PASSWORD\",\"options\":{},\"loggedAs\":null}";
-    String expectedFilesystemJson = StringEscapeUtils.escapeJavaScript(filesystemJson);
+    String expectedFilesystemJson = StringEscapeUtils.escapeEcmaScript(filesystemJson);
     assertEquals(
         "[" + expectedFilesystemJson + "]",
         model.asMap().get(NfsViewProperty.FILE_SYSTEMS_JSON.toString()));
@@ -162,7 +162,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
             + "\"fileSystem\":"
             + filesystemJson
             + "}";
-    String expectedFilestoreJson = StringEscapeUtils.escapeJavaScript(filestoreJson);
+    String expectedFilestoreJson = StringEscapeUtils.escapeEcmaScript(filestoreJson);
     assertEquals(
         "[" + expectedFilestoreJson + "]",
         model.asMap().get(NfsViewProperty.FILE_STORES_JSON.toString()));
@@ -183,7 +183,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
     String filesystemJson =
         "{\"id\":11,\"name\":\"testFileSystem\",\"url\":\"smb://test.com\","
             + "\"clientType\":\"SAMBA\",\"authType\":\"PASSWORD\",\"options\":{\"USER_DIRS_REQUIRED\":\"true\"},\"loggedAs\":null}";
-    String expectedFilesystemJson = StringEscapeUtils.escapeJavaScript(filesystemJson);
+    String expectedFilesystemJson = StringEscapeUtils.escapeEcmaScript(filesystemJson);
     assertEquals(
         "[" + expectedFilesystemJson + "]",
         model.asMap().get(NfsViewProperty.FILE_SYSTEMS_JSON.toString()));
@@ -203,7 +203,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
     String filesystemJson =
         "{\"id\":11,\"name\":\"testFileSystem\",\"url\":\"smb://test.com\","
             + "\"clientType\":\"SAMBA\",\"authType\":\"PASSWORD\",\"options\":{\"USER_DIRS_REQUIRED\":\"true\"},\"loggedAs\":null}";
-    String expectedFilesystemJson = StringEscapeUtils.escapeJavaScript(filesystemJson);
+    String expectedFilesystemJson = StringEscapeUtils.escapeEcmaScript(filesystemJson);
     assertEquals(
         "[" + expectedFilesystemJson + "]",
         model.asMap().get(NfsViewProperty.FILE_SYSTEMS_JSON.toString()));
@@ -402,7 +402,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
     // reloaded view should contain new public key
     controller.getNetFilesGalleryView(model, principalStub);
     assertEquals(
-        StringEscapeUtils.escapeJavaScript(returnedKey),
+        StringEscapeUtils.escapeEcmaScript(returnedKey),
         model.asMap().get(NfsViewProperty.PUBLIC_KEY.toString()));
   }
 

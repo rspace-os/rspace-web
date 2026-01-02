@@ -3,7 +3,7 @@ package com.researchspace.core.util;
 import java.io.File;
 import java.util.regex.Pattern;
 import org.apache.commons.io.filefilter.AbstractFileFilter;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 /**
  * File filter solely to address RSPAC-1312, where MySQL that has changed a UTF-8 char to '?'

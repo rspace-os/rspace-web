@@ -1,7 +1,7 @@
 package com.researchspace.testutils;
 
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.SecureStringUtils;

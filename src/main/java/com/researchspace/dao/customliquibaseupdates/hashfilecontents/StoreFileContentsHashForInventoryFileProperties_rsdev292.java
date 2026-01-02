@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import liquibase.database.Database;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class StoreFileContentsHashForInventoryFileProperties_rsdev292

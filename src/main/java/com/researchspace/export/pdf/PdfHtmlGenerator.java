@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -100,9 +100,9 @@ public class PdfHtmlGenerator {
       String html, String docOwner, String docTitle, String exporterFullName) {
 
     Map<String, Object> context = new HashMap<>();
-    context.put("docOwner", StringEscapeUtils.escapeHtml(docOwner));
-    context.put("docTitle", StringEscapeUtils.escapeHtml(docTitle));
-    context.put("exporterFullName", StringEscapeUtils.escapeHtml(exporterFullName));
+    context.put("docOwner", StringEscapeUtils.escapeHtml4(docOwner));
+    context.put("docTitle", StringEscapeUtils.escapeHtml4(docTitle));
+    context.put("exporterFullName", StringEscapeUtils.escapeHtml4(exporterFullName));
     String runningPageHtml =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocityEngine, "pdf/runningPageElems.vm", "UTF-8", context);

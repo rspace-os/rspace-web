@@ -4,7 +4,7 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo.ApiContainerGridLayoutConfig;
 import com.researchspace.api.v1.model.ApiContainerLocationWithContent;
 import java.util.List;
-import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;

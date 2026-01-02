@@ -3,7 +3,7 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.webapp.controller.SignupControllerMVCIT.CONFIRM_PASSWORD_PARAM;
 import static com.researchspace.webapp.controller.SignupControllerMVCIT.PASSWORD_PARAM;
 import static com.researchspace.webapp.controller.SignupControllerMVCIT.VALID_PWD;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertEquals;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;

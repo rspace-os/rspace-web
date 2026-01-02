@@ -54,7 +54,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import net.minidev.json.JSONArray;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authz.AuthorizationException;

@@ -6,7 +6,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.service.IVerificationPasswordValidator;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;

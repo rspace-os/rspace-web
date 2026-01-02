@@ -91,16 +91,15 @@ public class EcatMediaFactoryTest {
     assertEquals(maxWidth, ecatImage.getWidthResized());
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void generateEcatNullBUfferedImage() throws IOException, URISyntaxException {
+  @Test(expected = NullPointerException.class)
+  public void generateEcatNullBufferedImage() throws IOException {
     FileProperty fp = new FileProperty();
-    EcatImage ecatImage =
-        ecatImageFactoryAPI.generateEcatImage(user, fp, null, "png", "test.png", null);
+    ecatImageFactoryAPI.generateEcatImage(user, fp, null, "png", "test.png", null);
   }
 
   @Test
   public void generateEcatImageSucceedsForResizeableUnparseableTiff()
-      throws IOException, URISyntaxException {
+      throws IOException {
     // RSPAC-1817 - this image is parsed OK on java11
     assumeTrue(isJDK8());
 
@@ -120,7 +119,7 @@ public class EcatMediaFactoryTest {
 
   @Test
   public void generateEcatImageSucceedsForNonresizableUnparseableTiff()
-      throws IOException, URISyntaxException {
+      throws IOException {
     // RSPAC-1817 - this image is parsed OK on java11
     assumeTrue(isJDK8());
 
@@ -138,7 +137,7 @@ public class EcatMediaFactoryTest {
   }
 
   @Test
-  public void generateEcatVideo() throws Exception {
+  public void generateEcatVideo() {
     User user = TestFactory.createAnyUser("user");
     FileProperty fp = new FileProperty();
     EcatVideo ecatVideo = ecatImageFactoryAPI.generateEcatVideo(user, fp, "flv", "video.flv", null);
@@ -146,7 +145,7 @@ public class EcatMediaFactoryTest {
   }
 
   @Test
-  public void generateEcatAudio() throws Exception {
+  public void generateEcatAudio() {
     User user = TestFactory.createAnyUser("user");
     FileProperty fp = new FileProperty();
 
@@ -156,8 +155,7 @@ public class EcatMediaFactoryTest {
   }
 
   @Test
-  public void getIconSuffixBytes() throws IOException, URISyntaxException {
-    FileProperty fp = new FileProperty();
+  public void getIconSuffixBytes() throws IOException {
     File file = RSpaceTestUtils.getResource(UNPARSEABLE_TIFF_PATH);
     when(mockResourceLoader.getResource(Mockito.endsWith("png"))).thenReturn(resource);
     when(resource.exists()).thenReturn(true);
@@ -168,7 +166,7 @@ public class EcatMediaFactoryTest {
   }
 
   @Test
-  public void getIconSuffixBytesReturnsDefault() throws IOException, URISyntaxException {
+  public void getIconSuffixBytesReturnsDefault() throws IOException {
 
     when(mockResourceLoader.getResource(Mockito.endsWith("png"))).thenReturn(resource, resource2);
     when(resource.exists()).thenReturn(false);

@@ -5,7 +5,7 @@ import static com.axiope.search.SearchConstants.CREATION_DATE_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.FULL_TEXT_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.MODIFICATION_DATE_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;

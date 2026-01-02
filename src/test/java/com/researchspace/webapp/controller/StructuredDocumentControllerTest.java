@@ -4,7 +4,7 @@ import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrow
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
 import static java.lang.Boolean.TRUE;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphanumeric;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -64,7 +64,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.struts.mock.MockPrincipal;
 import org.jetbrains.annotations.NotNull;

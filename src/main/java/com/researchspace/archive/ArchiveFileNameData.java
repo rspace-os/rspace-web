@@ -1,13 +1,13 @@
 package com.researchspace.archive;
 
 import static com.researchspace.archive.ArchiveUtils.filterArchiveNameString;
-import static org.apache.commons.lang.StringUtils.abbreviate;
+import static org.apache.commons.lang3.StringUtils.abbreviate;
 
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.model.core.RecordType;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Encapsulates the information maintained in a folder/ export file or folder name. <br>

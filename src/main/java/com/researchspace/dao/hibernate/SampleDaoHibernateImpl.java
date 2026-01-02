@@ -17,7 +17,7 @@ import com.researchspace.model.inventory.field.SampleField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.hibernate.search.FullTextSession;

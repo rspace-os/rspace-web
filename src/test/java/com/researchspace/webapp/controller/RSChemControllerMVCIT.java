@@ -37,8 +37,8 @@ import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPag
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.junit.Before;

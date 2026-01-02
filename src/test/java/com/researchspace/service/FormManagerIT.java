@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.model.dtos.AbstractFormFieldDTO.MAX_NAME_LENGTH;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.hamcrest.Matchers.containsString;
 
 import com.researchspace.core.testutil.CoreTestUtils;

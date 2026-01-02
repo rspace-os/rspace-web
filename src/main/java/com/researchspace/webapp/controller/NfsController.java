@@ -35,8 +35,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -99,7 +99,7 @@ public class NfsController extends BaseController {
     if (userKeyPair != null) {
       model.addAttribute(
           NfsViewProperty.PUBLIC_KEY.toString(),
-          StringEscapeUtils.escapeJavaScript(userKeyPair.getPublicKey()));
+          StringEscapeUtils.escapeEcmaScript(userKeyPair.getPublicKey()));
     }
     return new ModelAndView("netfiles/netFiles");
   }
@@ -127,10 +127,10 @@ public class NfsController extends BaseController {
     } catch (JsonProcessingException e) {
       log.warn("couldn't serialize filestore or filesystem", e);
     }
-    String escapedUserStoresJson = StringEscapeUtils.escapeJavaScript(userStoresJson); // RSPAC-2090
+    String escapedUserStoresJson = StringEscapeUtils.escapeEcmaScript(userStoresJson); // RSPAC-2090
     model.addAttribute(NfsViewProperty.FILE_STORES_JSON.toString(), escapedUserStoresJson);
     String escapedFileSystemsJson =
-        StringEscapeUtils.escapeJavaScript(activeSystemsJson); // RSPAC-2360
+        StringEscapeUtils.escapeEcmaScript(activeSystemsJson); // RSPAC-2360
     model.addAttribute(NfsViewProperty.FILE_SYSTEMS_JSON.toString(), escapedFileSystemsJson);
   }
 

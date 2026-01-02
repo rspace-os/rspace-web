@@ -2,7 +2,7 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD;
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.Constants;
 import com.researchspace.model.Community;
@@ -35,7 +35,7 @@ import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

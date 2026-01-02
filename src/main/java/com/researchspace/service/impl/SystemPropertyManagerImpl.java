@@ -4,7 +4,7 @@ import static com.researchspace.CacheNames.INTEGRATION_INFO;
 import static com.researchspace.model.preference.HierarchicalPermission.DENIED;
 import static com.researchspace.model.preference.HierarchicalPermission.DENIED_BY_DEFAULT;
 import static com.researchspace.model.preference.Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP;
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.core.util.ObjectToStringPropertyTransformer;
 import com.researchspace.dao.SystemPropertyDao;

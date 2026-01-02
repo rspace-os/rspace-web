@@ -9,7 +9,7 @@ import com.researchspace.maintenance.service.WhiteListedIPAddressManager;
 import com.researchspace.model.User;
 import com.researchspace.properties.PropertyHolder;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
 import org.junit.After;

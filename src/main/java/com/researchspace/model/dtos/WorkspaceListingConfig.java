@@ -13,7 +13,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 /** Simple POJO class to hold search input terms for validation */
 @NoArgsConstructor

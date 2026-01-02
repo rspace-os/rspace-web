@@ -46,7 +46,7 @@ import javax.mail.internet.MimeMultipart;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.velocity.tools.generic.DateTool;
 import org.jsoup.helper.Validate;
 import org.slf4j.Logger;
