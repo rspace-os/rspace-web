@@ -5,7 +5,7 @@ import com.researchspace.core.util.UISearchTerm;
 import java.time.LocalDate;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 @EqualsAndHashCode(

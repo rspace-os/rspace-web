@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.apache.commons.lang.StringUtils.replace;
+import static org.apache.commons.lang3.StringUtils.replace;
 
 import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
 import java.util.Map;

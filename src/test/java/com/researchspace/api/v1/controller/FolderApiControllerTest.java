@@ -64,7 +64,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Supplier;
 import javax.ws.rs.NotFoundException;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

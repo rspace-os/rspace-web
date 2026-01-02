@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -67,7 +67,7 @@ public class HTMLArchiveExporter extends AbstractArchiveExporter
         generateSummaryNfsExports(context.getArchiveAssmblyFlder(), archived);
 
     // we want escaped description for index file
-    String escapedDescription = StringEscapeUtils.escapeHtml(aconfig.getDescription());
+    String escapedDescription = StringEscapeUtils.escapeHtml4(aconfig.getDescription());
     manifest.addItem(ArchiveManifest.DESCRIPTION, escapedDescription);
     String html = processIndexTemplate(links, "Export Root", manifest, allNfs.size() > 0);
     FileUtils.write(indexFile, html, "UTF-8");

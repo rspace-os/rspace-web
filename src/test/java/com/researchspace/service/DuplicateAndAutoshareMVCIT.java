@@ -16,7 +16,7 @@ import com.researchspace.webapp.controller.GroupController;
 import com.researchspace.webapp.controller.MVCTestBase;
 import java.security.Principal;
 import java.util.Set;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

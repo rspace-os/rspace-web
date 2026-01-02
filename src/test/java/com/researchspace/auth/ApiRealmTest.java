@@ -8,7 +8,7 @@ import com.researchspace.dao.UserApiKeyDao;
 import com.researchspace.model.User;
 import com.researchspace.model.UserApiKey;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.cache.CacheManager;
 import org.junit.After;

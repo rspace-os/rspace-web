@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.RSMath;
@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.XMLConstants;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.Namespace;

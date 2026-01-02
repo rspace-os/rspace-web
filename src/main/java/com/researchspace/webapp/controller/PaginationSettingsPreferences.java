@@ -11,7 +11,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.UserManager;
 import java.util.EnumSet;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 

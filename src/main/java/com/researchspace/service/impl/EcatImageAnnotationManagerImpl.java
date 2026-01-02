@@ -15,7 +15,7 @@ import com.researchspace.service.EcatImageAnnotationManager;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Optional;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

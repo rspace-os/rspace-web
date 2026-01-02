@@ -5,7 +5,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.UserFolderSetup;
 import com.researchspace.service.impl.MockFolderStructure;
-import org.apache.commons.lang.math.RandomUtils;
+import org.apache.commons.lang3.math.RandomUtils;
 
 public class FolderTestUtils {
 

@@ -1,6 +1,6 @@
 package com.researchspace.model.dtos;
 
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.model.field.TimeFieldForm;
 import java.text.ParseException;

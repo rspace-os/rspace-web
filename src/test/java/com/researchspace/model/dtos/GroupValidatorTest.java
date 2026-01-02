@@ -2,7 +2,7 @@ package com.researchspace.model.dtos;
 
 import static com.researchspace.model.Group.GROUP_UNIQUE_NAME_SUFFIX_LENGTH;
 import static com.researchspace.model.Organisation.MAX_INDEXABLE_UTF_LENGTH;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

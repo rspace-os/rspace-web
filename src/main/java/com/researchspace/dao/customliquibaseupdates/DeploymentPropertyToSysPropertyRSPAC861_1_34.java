@@ -1,6 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.researchspace.dao.SystemPropertyDao;
 import com.researchspace.model.system.SystemProperty;
