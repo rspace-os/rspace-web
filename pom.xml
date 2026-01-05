@@ -1562,6 +1562,10 @@
       <version>2.1.1</version>
       <exclusions>
         <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rspace-core-util</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>xerces</groupId>
           <artifactId>xercesImpl</artifactId>
         </exclusion>
