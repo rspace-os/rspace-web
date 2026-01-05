@@ -2,7 +2,6 @@ package com.researchspace.service.inventory;
 
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
-import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.units.QuantityInfo;
@@ -40,6 +39,6 @@ public class InventoryMaterialUsageHelper {
     } else {
       usageDifference = qUtils.sum(Arrays.asList(newUsedQuantity, previouslyUsedQuantity.negate()));
     }
-    subSampleMgr.registerApiSubSampleUsage((ApiSubSample) apiInvRec, usageDifference, user);
+    subSampleMgr.registerApiSubSampleUsage(apiInvRec.getId(), usageDifference, user);
   }
 }

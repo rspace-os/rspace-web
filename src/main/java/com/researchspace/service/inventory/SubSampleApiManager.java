@@ -60,8 +60,7 @@ public interface SubSampleApiManager extends InventoryApiManager {
    */
   ApiSubSample addNewApiSubSampleToSample(ApiSubSample incomingSubSample, Long sampleId, User user);
 
-  ApiSubSample registerApiSubSampleUsage(
-      ApiSubSample usedSubSample, QuantityInfo usedQuantity, User user);
+  ApiSubSample registerApiSubSampleUsage(Long subsampleId, QuantityInfo usedQuantity, User user);
 
   ApiSubSample addSubSampleNote(Long subSampleId, ApiSubSampleNote subSampleNote, User user);
 

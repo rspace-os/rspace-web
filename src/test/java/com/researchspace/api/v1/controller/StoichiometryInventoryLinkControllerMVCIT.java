@@ -60,7 +60,8 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
     req.setStoichiometryMoleculeId(molecule.getId());
     req.setInventoryItemGlobalId(sample.getGlobalId());
     req.setQuantity(BigDecimal.valueOf(1.23));
-    req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
+    req.setUnitId(RSUnitDef.MILLI_GRAM.getId());
+    req.setReducesStock(false);
 
     // creation should create a new Stoichiometry revision
     long revisionBeforeCreateLink = getLatestStoichiometryRevisionId(molecule);
@@ -100,6 +101,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
     req.setInventoryItemGlobalId(sample.getGlobalId());
     req.setQuantity(BigDecimal.valueOf(2.0));
     req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
+    req.setReducesStock(false);
 
     MvcResult createResult =
         mockMvc
@@ -151,6 +153,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
     req.setInventoryItemGlobalId(sample.getGlobalId());
     req.setQuantity(BigDecimal.valueOf(1.0));
     req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
+    req.setReducesStock(false);
 
     MvcResult createResult =
         mockMvc
@@ -165,7 +168,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
 
     StoichiometryLinkQuantityUpdateRequest upd = new StoichiometryLinkQuantityUpdateRequest();
     upd.setStoichiometryLinkId(created.getId());
-    upd.setNewQuantity(new ApiQuantityInfo(java.math.BigDecimal.valueOf(9.5), (Integer) null));
+    upd.setNewQuantity(new ApiQuantityInfo(BigDecimal.valueOf(9.5), RSUnitDef.MILLI_LITRE.getId()));
 
     MvcResult updateResult =
         mockMvc
@@ -177,7 +180,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
             .andReturn();
     StoichiometryInventoryLinkDTO updated =
         getFromJsonResponseBody(updateResult, StoichiometryInventoryLinkDTO.class);
-    assertEquals(java.math.BigDecimal.valueOf(9.5), updated.getQuantity().getNumericValue());
+    assertEquals(BigDecimal.valueOf(9.5), updated.getQuantity().getNumericValue());
   }
 
   @Test
@@ -191,7 +194,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
 
     StoichiometryLinkQuantityUpdateRequest upd = new StoichiometryLinkQuantityUpdateRequest();
     upd.setStoichiometryLinkId(created.getId());
-    upd.setNewQuantity(new ApiQuantityInfo(java.math.BigDecimal.valueOf(2.0), (Integer) null));
+    upd.setNewQuantity(new ApiQuantityInfo(BigDecimal.valueOf(2.0), 2));
 
     mockMvc
         .perform(
@@ -304,6 +307,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
     req.setInventoryItemGlobalId(sample.getGlobalId());
     req.setQuantity(BigDecimal.valueOf(quantity));
     req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
+    req.setReducesStock(false);
 
     MvcResult createResult =
         mockMvc
