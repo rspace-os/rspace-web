@@ -3,7 +3,7 @@ package com.researchspace.core.util.progress;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 public class ProgressMonitorImpl implements ProgressMonitor, Serializable {
 

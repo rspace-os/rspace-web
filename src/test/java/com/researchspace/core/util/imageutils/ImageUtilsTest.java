@@ -281,9 +281,9 @@ public class ImageUtilsTest {
 	@DisplayName("Parse web base64 png/jpeg image with helper methods")
 	public void checkBase64HelperMethods() throws IOException {
 
-		IllegalArgumentException nullArgIae = Assertions.assertThrows(IllegalArgumentException.class, 
+		NullPointerException nullArgNpe = Assertions.assertThrows(NullPointerException.class,
 				() -> ImageUtils.getExtensionFromBase64DataImage(null));
-		assertEquals("Expected base64 web image string but was null or empty.", nullArgIae.getMessage());
+		assertEquals("Expected base64 web image string but was null or empty.", nullArgNpe.getMessage());
 		IllegalArgumentException notBase64Iae = Assertions.assertThrows(IllegalArgumentException.class, 
 				() -> ImageUtils.getImageBytesFromBase64DataImage("asdf"));
 		assertEquals("Expected base64 web image string to contain a ','.", notBase64Iae.getMessage());

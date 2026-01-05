@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 
 import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Assume;
 import org.junit.Test;
 /**

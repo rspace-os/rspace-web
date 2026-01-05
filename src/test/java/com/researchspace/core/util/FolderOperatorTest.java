@@ -38,7 +38,6 @@ public class FolderOperatorTest {
 		assertNotNull(folderOps.getFileRoot());
 		assertThat(folderOps.getBaseDir().getAbsolutePath(), containsString(FolderOperator.FILE_STORE_DIR_NAME));
 		assertThat(folderOps.getFileRoot().getAbsolutePath(), not(containsString(FolderOperator.FILE_STORE_DIR_NAME)));
-
 	}
 
 	@Test
@@ -64,8 +63,8 @@ public class FolderOperatorTest {
 		assertThat(baseDir, not(containsString(fStoreRoot.getRoot().getName())));
 	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testCreateNullPathThrowsIAE() throws IOException {
+	@Test(expected = NullPointerException.class)
+	public void testCreateNullPathThrowsNPE() throws IOException {
 		folderOps = new FolderOperator(fStoreRoot.getRoot().getAbsolutePath());
 		folderOps.createPath(null);
 	}
@@ -81,7 +80,6 @@ public class FolderOperatorTest {
 		assertTrue(new File(folderOps.getBaseDir(), "a/b/c").exists());
 		assertTrue(new File(folderOps.getBaseDir(), "a/b/c").isDirectory());
 		assertTrue(new File(folderOps.getBaseDir(), "a/b").isDirectory());
-
 	}
 
 }

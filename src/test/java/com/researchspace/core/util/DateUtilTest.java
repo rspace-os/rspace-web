@@ -88,13 +88,13 @@ public class DateUtilTest {
 	@Test
 	public void testConvertMillisToISOFormatRequiresNotNull() {
 		Long millis = null;
-		assertThrows(IllegalArgumentException.class, ()->convertDateToISOFormat(millis, TimeZone.getTimeZone("UTC")));
+		assertThrows(NullPointerException.class, ()->convertDateToISOFormat(millis, TimeZone.getTimeZone("UTC")));
 	}
 	
 	@Test
 	public void testConvertDateToISOFormatRequiresNotNull() {
 		Date date = null;
-		assertThrows(IllegalArgumentException.class, ()->convertDateToISOFormat(date, TimeZone.getTimeZone("UTC")));
+		assertThrows(NullPointerException.class, ()->convertDateToISOFormat(date, TimeZone.getTimeZone("UTC")));
 	}
 
 }

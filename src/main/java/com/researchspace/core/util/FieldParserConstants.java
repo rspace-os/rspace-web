@@ -1,6 +1,6 @@
 package com.researchspace.core.util;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * Constants of CSS classnames and other text-field related attributes

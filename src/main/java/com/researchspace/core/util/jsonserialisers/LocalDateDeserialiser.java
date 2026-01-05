@@ -3,7 +3,7 @@ package com.researchspace.core.util.jsonserialisers;
 import java.io.IOException;
 import java.time.LocalDate;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;

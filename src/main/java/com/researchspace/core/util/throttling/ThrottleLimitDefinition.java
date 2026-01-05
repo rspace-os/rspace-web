@@ -1,6 +1,6 @@
 package com.researchspace.core.util.throttling;
 
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 /**
  * Defines an event/usage limit per time interval.

@@ -1,6 +1,6 @@
 package com.researchspace.model.core;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * Identifier used to classify the different records in the system.

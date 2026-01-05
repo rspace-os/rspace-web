@@ -3,7 +3,7 @@ package com.researchspace.core.util;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Utility class for manipulation / handling of URLS and links

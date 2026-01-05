@@ -2,7 +2,7 @@ package com.researchspace.core.util;
 
 import java.lang.reflect.InvocationTargetException;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Default implementation that adds pagination request parameters to a URL

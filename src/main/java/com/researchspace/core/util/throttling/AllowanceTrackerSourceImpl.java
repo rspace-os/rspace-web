@@ -3,7 +3,7 @@ package com.researchspace.core.util.throttling;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 import com.researchspace.core.util.TimeSource;
 
