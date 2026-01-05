@@ -360,7 +360,9 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     metadata.setContacts(contacts);
     metadata.setDescription(archiveConfig.getMeta().getDescription());
     metadata.setSubjects(getSubjects(archiveConfig));
-    if (!LicenseDefs.NO_LICENSE.equals(archiveConfig.getMeta().getLicenseUrl())) {
+    if (LicenseDefs.NO_LICENSE_URL.equals(archiveConfig.getMeta().getLicenseUrl())) {
+      log.info("No license chosen.");
+    } else {
       metadata.setLicenseName(Optional.of(archiveConfig.getMeta().getLicenseName()));
       try {
         metadata.setLicense(Optional.of(new URL(archiveConfig.getMeta().getLicenseUrl())));
@@ -368,8 +370,6 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         throw new IllegalArgumentException(
             String.format("%s is not a valid URL", archiveConfig.getMeta().getLicenseUrl()));
       }
-    } else {
-      log.info("No license chosen.");
     }
     metadata.setTitle(archiveConfig.getMeta().getTitle());
     metadata.setPublish(archiveConfig.getMeta().isPublish());

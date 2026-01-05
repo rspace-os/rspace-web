@@ -20,7 +20,9 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@EqualsAndHashCode(of = {"extId"})
+@EqualsAndHashCode(
+    of = {"extId"},
+    callSuper = false)
 public class ArchiveExternalWorkFlowInvocation extends ArchivalGalleryMetadata {
   private @XmlElement String extId;
   private @XmlElement String status;
