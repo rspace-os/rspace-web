@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /** Utility class for handling name conventions and manipulations for archives. */
 public class ArchiveUtils {

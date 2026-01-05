@@ -16,7 +16,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import java.util.List;
 import javax.validation.Valid;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;

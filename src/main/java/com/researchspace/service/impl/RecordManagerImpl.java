@@ -6,8 +6,8 @@ import static com.researchspace.model.comms.NotificationType.NOTIFICATION_DOCUME
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
 import static com.researchspace.model.record.Folder.EXPORTS_FOLDER_NAME;
 import static java.lang.String.format;
-import static org.apache.commons.lang.StringUtils.abbreviate;
-import static org.apache.commons.lang.StringUtils.trim;
+import static org.apache.commons.lang3.StringUtils.abbreviate;
+import static org.apache.commons.lang3.StringUtils.trim;
 
 import com.axiope.search.SearchUtils;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -104,8 +104,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;

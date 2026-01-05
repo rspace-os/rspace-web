@@ -12,7 +12,7 @@ import static com.researchspace.service.archive.export.HTMLArchiveExporter.NFS_L
 import static com.researchspace.testutils.ArchiveTestUtils.assertPredicateOnHtmlFile;
 import static com.researchspace.testutils.ArchiveTestUtils.getAllHTMLFilesInArchive;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;

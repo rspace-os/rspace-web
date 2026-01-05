@@ -3,7 +3,7 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.service.IntegrationsHandler.EVERNOTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 import static com.researchspace.session.SessionAttributeUtils.USER_INFO;
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.progress.ProgressMonitor;
@@ -50,7 +50,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -2,7 +2,7 @@ package com.researchspace.dao.customliquibaseupdates;
 
 import static com.researchspace.core.util.imageutils.ImageUtils.scaleImageToWidthWithAspectRatio;
 import static com.researchspace.core.util.imageutils.ImageUtils.toBytes;
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.researchspace.core.util.imageutils.ImageUtils;
 import com.researchspace.model.record.IconEntity;
@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import liquibase.database.Database;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 /** For RSPAC-827 */
 public class FormIconThumbnailator extends AbstractCustomLiquibaseUpdater {

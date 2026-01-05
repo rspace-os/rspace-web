@@ -11,8 +11,8 @@ import static com.researchspace.model.preference.Preference.NOTIFICATION_REQUEST
 import static com.researchspace.model.preference.Preference.PROCESS_COMPLETED_PREF;
 import static com.researchspace.model.preference.Preference.PROCESS_FAILED_PREF;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang.StringUtils.abbreviate;
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.abbreviate;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -101,7 +101,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

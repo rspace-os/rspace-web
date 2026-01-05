@@ -14,8 +14,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.velocity.tools.generic.DateTool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -130,7 +130,7 @@ public class SysAdminSupportController extends BaseController {
     config.put("user", user);
     config.put("date", new DateTool());
     if (!StringUtils.isBlank(message)) {
-      config.put("message", StringEscapeUtils.escapeHtml(message.trim()));
+      config.put("message", StringEscapeUtils.escapeHtml4(message.trim()));
     }
     config.put("logLines", lines);
     return strictEmailContentGenerator.generatePlainTextAndHtmlContent(

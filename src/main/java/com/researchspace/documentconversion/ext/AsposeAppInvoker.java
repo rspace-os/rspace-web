@@ -1,6 +1,6 @@
 package com.researchspace.documentconversion.ext;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.researchspace.core.util.CommandLineRunner;
 import com.researchspace.core.util.version.SemanticVersion;

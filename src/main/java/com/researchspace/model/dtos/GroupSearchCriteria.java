@@ -3,7 +3,7 @@ package com.researchspace.model.dtos;
 import com.researchspace.core.util.FilterCriteria;
 import com.researchspace.core.util.UISearchTerm;
 import com.researchspace.model.GroupType;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /** Used to configure restrictions on group Listings */
 public class GroupSearchCriteria extends FilterCriteria {

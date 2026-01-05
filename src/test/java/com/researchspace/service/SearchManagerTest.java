@@ -79,7 +79,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Before;

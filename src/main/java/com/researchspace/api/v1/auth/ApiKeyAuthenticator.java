@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.auth;
 
 import static com.researchspace.model.UserApiKey.APIKEY_REGEX;
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.researchspace.model.User;
 import com.researchspace.service.UserApiKeyManager;

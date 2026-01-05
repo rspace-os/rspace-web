@@ -60,7 +60,7 @@ import java.util.function.Supplier;
 import javax.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.Setter;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,7 +198,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     String msg =
         messageSource.getMessage(
             "workspace.export.msgFailure",
-            new String[] {StringEscapeUtils.escapeHtml(exportName), detailMsg},
+            new String[] {StringEscapeUtils.escapeHtml4(exportName), detailMsg},
             null);
     commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, u.getUsername(), true);
   }
