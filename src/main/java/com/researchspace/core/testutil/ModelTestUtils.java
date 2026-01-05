@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class ModelTestUtils {
 	
@@ -27,12 +27,12 @@ public class ModelTestUtils {
 	public static  <T> void  assertCopiedFieldsAreEqual (T copy, T orig, 
 				Set<String> toExclude,  
 				Collection <Class<? super T>>  classes) throws IllegalArgumentException, IllegalAccessException {
-		// these are java reflect fields, not ecat fields!
+
 		Field [] allFields = new Field []{};
 		// add fields we want to compare from class and superclasses
 		for (Class<?> c: classes){
 			 Field  [] f1 = c.getDeclaredFields();
-			 allFields = (Field [])ArrayUtils.addAll(allFields,  f1);
+			 allFields = ArrayUtils.addAll(allFields,  f1);
 		}
 		for (Field f: allFields) {
 			// include private fields
