@@ -2,7 +2,6 @@ package com.axiope.userimport;
 
 import static org.junit.Assert.assertNotNull;
 
-import com.researchspace.model.dto.UserRegistrationInfo;
 import com.researchspace.model.field.ErrorList;
 import java.util.Collections;
 import org.junit.After;
@@ -30,8 +29,7 @@ public class UserImportResultTest {
   @Test
   public void testUserImportResultGroupsCanBeNull() {
     UserImportResult result =
-        new UserImportResult(
-            Collections.emptyList(), null, null, new ErrorList());
+        new UserImportResult(Collections.emptyList(), null, null, new ErrorList());
     assertNotNull(result);
   }
 }

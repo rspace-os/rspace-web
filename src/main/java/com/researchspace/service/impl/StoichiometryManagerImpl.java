@@ -112,6 +112,20 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       }
     }
 
+    // Set first reactant as limiting reagent
+    if (stoichiometry.getMolecules() != null && !stoichiometry.getMolecules().isEmpty()) {
+      Optional<StoichiometryMolecule> firstReactant =
+          stoichiometry.getMolecules().stream()
+              .filter(
+                  molecule ->
+                      molecule.getRole()
+                          == com.researchspace.model.stoichiometry.MoleculeRole.REACTANT)
+              .findFirst();
+
+      firstReactant.ifPresent(
+          stoichiometryMolecule -> stoichiometryMolecule.setLimitingReagent(true));
+    }
+
     return save(stoichiometry);
   }
 
