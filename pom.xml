@@ -195,7 +195,7 @@
             </resource>
           </webResources>
           <warSourceExcludes>
-            ui/node/**, ui/node_modules/**
+            ui/node/**, ui/node_modules/**, ui/dist/stats.json
           </warSourceExcludes>
         </configuration>
       </plugin>
