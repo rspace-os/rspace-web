@@ -23,7 +23,6 @@ import ij.io.FileSaver;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -98,8 +97,7 @@ public class EcatMediaFactoryTest {
   }
 
   @Test
-  public void generateEcatImageSucceedsForResizeableUnparseableTiff()
-      throws IOException {
+  public void generateEcatImageSucceedsForResizeableUnparseableTiff() throws IOException {
     // RSPAC-1817 - this image is parsed OK on java11
     assumeTrue(isJDK8());
 
@@ -118,8 +116,7 @@ public class EcatMediaFactoryTest {
   }
 
   @Test
-  public void generateEcatImageSucceedsForNonresizableUnparseableTiff()
-      throws IOException {
+  public void generateEcatImageSucceedsForNonresizableUnparseableTiff() throws IOException {
     // RSPAC-1817 - this image is parsed OK on java11
     assumeTrue(isJDK8());
 

@@ -153,6 +153,135 @@ public class StoichiometryManagerImplTest {
   }
 
   @Test
+  public void whenCreateFromAnalysis_withReactants_thenFirstReactantSetAsLimitingReagent()
+      throws IOException, ChemicalImportException {
+    Long parentReactionId = 1L;
+    RSChemElement parentReaction = createRSChemElement(parentReactionId);
+
+    // Create analysis with multiple reactants
+    MoleculeInfoDTO reactant1 =
+        MoleculeInfoDTO.builder()
+            .role(MoleculeRole.REACTANT)
+            .formula("C2H6O")
+            .name("Ethanol")
+            .smiles("CCO")
+            .mass(46.07)
+            .build();
+
+    MoleculeInfoDTO reactant2 =
+        MoleculeInfoDTO.builder()
+            .role(MoleculeRole.REACTANT)
+            .formula("O2")
+            .name("Oxygen")
+            .smiles("O=O")
+            .mass(32.00)
+            .build();
+
+    MoleculeInfoDTO product =
+        MoleculeInfoDTO.builder()
+            .role(MoleculeRole.PRODUCT)
+            .formula("CH3COOH")
+            .name("Acetic Acid")
+            .smiles("CC(=O)O")
+            .mass(60.05)
+            .build();
+
+    List<MoleculeInfoDTO> molecules = List.of(reactant1, reactant2, product);
+    ElementalAnalysisDTO analysisDTO =
+        ElementalAnalysisDTO.builder()
+            .moleculeInfo(molecules)
+            .formula("CH3COOH + H2O")
+            .isReaction(true)
+            .build();
+
+    List<ChemicalImportSearchResult> searchResults = new ArrayList<>();
+    searchResults.add(
+        ChemicalImportSearchResult.builder()
+            .name("Ethanol")
+            .smiles("CCO")
+            .formula("C2H6O")
+            .build());
+    searchResults.add(
+        ChemicalImportSearchResult.builder().name("Oxygen").smiles("O=O").formula("O2").build());
+    searchResults.add(
+        ChemicalImportSearchResult.builder()
+            .name("Acetic Acid")
+            .smiles("CC(=O)O")
+            .formula("CH3COOH")
+            .build());
+
+    when(chemicalSearcher.searchChemicals(any(ChemicalImportSearchType.class), anyString()))
+        .thenReturn(searchResults);
+
+    stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);
+
+    verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
+    List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
+
+    Stoichiometry finalSave = savedStoichiometries.get(1);
+    assertEquals(3, finalSave.getMolecules().size());
+
+    // First reactant should be limiting reagent
+    StoichiometryMolecule firstReactant = finalSave.getMolecules().get(0);
+    assertTrue(firstReactant.getLimitingReagent());
+
+    // Other molecules should not be limiting reagent
+    StoichiometryMolecule secondReactant = finalSave.getMolecules().get(1);
+    assertFalse(secondReactant.getLimitingReagent());
+
+    StoichiometryMolecule productMolecule = finalSave.getMolecules().get(2);
+    assertFalse(productMolecule.getLimitingReagent());
+  }
+
+  @Test
+  public void whenCreateFromAnalysis_withOnlyProducts_thenNoLimitingReagentSet()
+      throws IOException, ChemicalImportException {
+    Long parentReactionId = 1L;
+    RSChemElement parentReaction = createRSChemElement(parentReactionId);
+
+    // Analysis only has product
+    MoleculeInfoDTO product =
+        MoleculeInfoDTO.builder()
+            .role(MoleculeRole.PRODUCT)
+            .formula("CH3COOH")
+            .name("Acetic Acid")
+            .smiles("CC(=O)O")
+            .mass(60.05)
+            .build();
+
+    List<MoleculeInfoDTO> molecules = List.of(product);
+    ElementalAnalysisDTO analysisDTO =
+        ElementalAnalysisDTO.builder()
+            .moleculeInfo(molecules)
+            .formula("CH3COOH")
+            .isReaction(true)
+            .build();
+
+    List<ChemicalImportSearchResult> searchResults = new ArrayList<>();
+    searchResults.add(
+        ChemicalImportSearchResult.builder()
+            .name("Acetic Acid")
+            .smiles("CC(=O)O")
+            .formula("CH3COOH")
+            .build());
+
+    when(chemicalSearcher.searchChemicals(any(ChemicalImportSearchType.class), anyString()))
+        .thenReturn(searchResults);
+
+    stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);
+
+    verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
+    List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
+
+    Stoichiometry saved = savedStoichiometries.get(1);
+    assertEquals(1, saved.getMolecules().size());
+
+    // Product should not be limiting reagent
+    StoichiometryMolecule productMolecule = saved.getMolecules().get(0);
+    assertFalse(productMolecule.getLimitingReagent());
+  }
+
+  @Test
   public void whenUpdateWithNonExistentStoichiometry_thenThrowException() {
     Long stoichiometryId = 1L;
     StoichiometryUpdateDTO stoichiometryUpdateDTO = createStoichiometryUpdateDTO(stoichiometryId);

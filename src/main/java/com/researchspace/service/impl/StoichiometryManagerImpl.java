@@ -10,6 +10,7 @@ import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
+import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.AuditManager;
@@ -110,6 +111,17 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
 
         stoichiometry.addMolecule(stoichiometryMolecule);
       }
+    }
+
+    // Set first reactant as limiting reagent
+    if (stoichiometry.getMolecules() != null && !stoichiometry.getMolecules().isEmpty()) {
+      Optional<StoichiometryMolecule> firstReactant =
+          stoichiometry.getMolecules().stream()
+              .filter(molecule -> molecule.getRole() == MoleculeRole.REACTANT)
+              .findFirst();
+
+      firstReactant.ifPresent(
+          stoichiometryMolecule -> stoichiometryMolecule.setLimitingReagent(true));
     }
 
     return save(stoichiometry);
