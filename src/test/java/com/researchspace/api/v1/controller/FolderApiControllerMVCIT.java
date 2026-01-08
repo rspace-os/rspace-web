@@ -183,6 +183,13 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
         listing.getRecords().stream().map(RecordTreeItemInfo::getName).collect(toList()),
         hasItem(Folder.MEDIAROOT));
 
+    // ISSUE-521 root folder listing doesn't put folderId in self link
+    assertEquals(1, listing.getLinks().size());
+    String selfLink = listing.getLinks().get(0).getLink();
+    assertTrue(
+        selfLink, selfLink.endsWith(BaseApiController.FOLDER_TREE_ENDPOINT + "?pageNumber=0"));
+    assertEquals(anyUser.getRootFolder().getId(), listing.getParentId());
+
     final int expectedDocumentCount = 1;
     // we are ignoring the document we just created
     result = performRootFolderListingWithFilter(anyUser, apiKey, "folder,notebook");
@@ -317,6 +324,15 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     RecordTreeItemInfo retrievedFolder = sharedFolderListing.getRecords().get(0);
     assertEquals(u1.getUsername(), retrievedFolder.getOwner().getUsername());
     assertEquals(groupSharedFolderId, retrievedFolder.getParentFolderId());
+
+    // ISSUE-521 listing tree for specific folderId puts that id in self link
+    assertEquals(1, sharedFolderListing.getLinks().size());
+    String selfLink = sharedFolderListing.getLinks().get(0).getLink();
+    assertTrue(
+        selfLink,
+        selfLink.endsWith(
+            BaseApiController.FOLDER_TREE_ENDPOINT + "/" + groupSharedFolderId + "?pageNumber=0"));
+    assertEquals(groupSharedFolderId, sharedFolderListing.getParentId());
   }
 
   private long getIdFromNameForListing(String name, ApiRecordTreeItemListing listing) {

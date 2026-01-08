@@ -84,7 +84,6 @@ public class FilesApiController extends BaseApiController implements FilesApi {
     convertISearchResults(
         pgCrit,
         srchConfig,
-        user,
         mediaFilesResults,
         apiSearchResult,
         fileList,

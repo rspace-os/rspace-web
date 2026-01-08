@@ -344,7 +344,7 @@ public class FolderApiControllerTest {
     ApiRecordTreeItemListing listing =
         controller.rootFolderTree(null, pgCriteria, errorsObject(pgCriteria), subject);
     assertEquals(3, listing.getRecords().size());
-    assertNull(listing.getParentId());
+    assertEquals(subject.getRootFolder().getId(), listing.getParentId());
     assertSelfLink(FOLDER_TREE_ENDPOINT, listing);
 
     RecordTreeItemInfo docInfo = findResultById(docId, listing);
@@ -378,7 +378,7 @@ public class FolderApiControllerTest {
         controller.folderTreeById(
             subFolder.getId(), null, pgCriteria, errorsObject(pgCriteria), subject);
     assertEquals(0, listing.getRecords().size());
-    assertEquals(root.getId(), listing.getParentId());
+    assertEquals(subFolder.getId(), listing.getParentId());
   }
 
   private void mockFolderLoad(Folder folder) {
@@ -414,7 +414,7 @@ public class FolderApiControllerTest {
             errorsObject(pgCriteria),
             subject);
     assertEquals(1, listing.getRecords().size());
-    assertEquals(folderSetup.getMediaImgExamples().getParent().getId(), listing.getParentId());
+    assertEquals(folderSetup.getMediaImgExamples().getId(), listing.getParentId());
   }
 
   private ISearchResults<BaseRecord> createMediaResults(EcatMediaFile imgFile) {
