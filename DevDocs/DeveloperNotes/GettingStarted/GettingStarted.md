@@ -16,7 +16,7 @@ Our build toolchain requires Java 17. Currently using a different Java version t
 
 -   Install Java JDK17 via [Adoptium](https://adoptium.net/temurin/releases/?version=17)
 -   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
--   Install MariaDB 10.6 or later. MariaDB 11.3 is used fine on dockerized RSpace version. Later versions of MariaDB 11 are not tested yet and may have seen some compatability issues.
+-   Install MariaDB 10.6 or 10.11. If your OS pre-installs MariaDB 11.3 you can try it, it's used fine on dockerized RSpace version. Later versions of MariaDB 11 are not tested yet and may have seen some compatibility issues.
 
 Historically we were running RSpace on MySQL database, so some docs may still mention it, but go with MariaDB.
 Database installation can be skipped if your only goal is to compile/build the project.
@@ -106,7 +106,7 @@ Take these steps if you do not have MariaDB, or have a fresh installation of Mar
 # These steps are specific to Ubuntu and latest MariaDB, adapt as needed
 
 # 1. Install the database package (your package manager might be apt, dnf, yum etc., here is apt)
-sudo apt update && sudo apt install mariadb-server -
+sudo apt update && sudo apt install mariadb-server
 
 # 2. Initialise the database before starting the systemd service
 mysqld --initialize
