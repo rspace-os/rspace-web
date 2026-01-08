@@ -20,7 +20,8 @@ public interface StoichiometryApi {
 
   @PostMapping
   StoichiometryDTO saveStoichiometry(
-      @RequestParam("chemId") long chemId, @RequestAttribute(name = "user") User user);
+      @RequestParam(value = "chemId", required = false) long chemId,
+      @RequestAttribute(name = "user") User user);
 
   @PutMapping
   StoichiometryDTO updateStoichiometry(

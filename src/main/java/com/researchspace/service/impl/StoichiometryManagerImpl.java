@@ -128,6 +128,12 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   }
 
   @Override
+  public Stoichiometry createEmpty(RSChemElement parentReaction, User user) {
+    Stoichiometry stoichiometry = Stoichiometry.builder().parentReaction(parentReaction).build();
+    return save(stoichiometry);
+  }
+
+  @Override
   public Stoichiometry update(StoichiometryUpdateDTO stoichiometryUpdate, User user) {
     Stoichiometry stoichiometry = get(stoichiometryUpdate.getId());
     if (stoichiometry == null) {

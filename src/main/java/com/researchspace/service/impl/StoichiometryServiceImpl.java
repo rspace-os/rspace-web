@@ -16,6 +16,7 @@ import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.RSChemElementManager;
+import com.researchspace.service.RecordManager;
 import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.chemistry.ChemistryProvider;
@@ -36,6 +37,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   private final IPermissionUtils permissionUtils;
   private final ChemistryProvider chemistryProvider;
   private final RSChemElementManager rsChemElementManager;
+  private final RecordManager recordManager;
 
   @Autowired
   public StoichiometryServiceImpl(
@@ -43,12 +45,14 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       StoichiometryManager stoichiometryManager,
       IPermissionUtils permissionUtils,
       ChemistryProvider chemistryProvider,
-      RSChemElementManager rsChemElementManager) {
+      RSChemElementManager rsChemElementManager,
+      RecordManager recordManager) {
     this.chemistryService = chemistryService;
     this.stoichiometryManager = stoichiometryManager;
     this.permissionUtils = permissionUtils;
     this.chemistryProvider = chemistryProvider;
     this.rsChemElementManager = rsChemElementManager;
+    this.recordManager = recordManager;
   }
 
   private boolean hasPermissions(Record record, User user, PermissionType permission) {
@@ -104,6 +108,33 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       throw new StoichiometryException(
           "Problem while creating new Stoichiometry: " + e.getMessage());
     }
+  }
+
+  @Override
+  public Stoichiometry createEmpty(long recordId, User user) {
+    Record record = recordManager.get(recordId);
+    if (record == null) {
+      throw new NotFoundException("Record with id " + recordId + " not found");
+    }
+    if (!permissionUtils.isPermitted((BaseRecord) record, PermissionType.WRITE, user)) {
+      throw new AuthorizationException("User does not have write permissions on record");
+    }
+
+    // Create a dummy RSChemElement to serve as parent
+    RSChemElement dummyParent =
+        RSChemElement.builder()
+            .record(record)
+            .chemElements("") // Empty SMILES
+            .build();
+
+    try {
+      dummyParent = rsChemElementManager.save(dummyParent, user);
+    } catch (IOException e) {
+      throw new StoichiometryException(
+          "Problem while creating dummy chemical element: " + e.getMessage());
+    }
+
+    return stoichiometryManager.createEmpty(dummyParent, user);
   }
 
   @Override

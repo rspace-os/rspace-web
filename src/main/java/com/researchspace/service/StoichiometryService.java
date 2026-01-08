@@ -12,6 +12,8 @@ public interface StoichiometryService {
 
   Stoichiometry create(long chemId, User user);
 
+  Stoichiometry createEmpty(long recordId, User user);
+
   Stoichiometry update(
       long stoichiometryId, StoichiometryUpdateDTO stoichiometryUpdateDTO, User user);
 
