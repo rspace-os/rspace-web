@@ -18,7 +18,7 @@ Our build toolchain requires Java 17. Currently using a different Java version t
 -   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
 -   Install MariaDB 10.6 or 10.11. If your OS pre-installs MariaDB 11.3 you can try it - it's used fine in the dockerized RSpace version. Later versions of MariaDB 11 are not tested yet and may have compatibility issues.
 
-Historically we were running RSpace on MySQL database, so some docs may still mention it, but go with MariaDB.
+Historically we were running RSpace on MySQL database, so some docs may still mention MySQL, but go with MariaDB.
 Database installation can be skipped if your only goal is to compile/build the project.
 
 ### Recommended software
