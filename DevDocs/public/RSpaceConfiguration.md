@@ -215,7 +215,7 @@ Instructions on setting up a Snapgene server is in our Help documentation https:
 
 Instructions on setting up a Chemistry server is in our Help documentation https://documentation.researchspace.com/article/1jbygguzoa-setting-up-the-new-rspace-chemistry-service-on-docker
 
-### MySQL
+### Database
 
 You can override the default MySQL connection settings in `deployment.properties`
 
