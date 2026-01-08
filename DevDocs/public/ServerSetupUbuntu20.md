@@ -32,7 +32,7 @@ The following services/packages are required by RSpace and are the default packa
 
 * Java JDK 17
 * Tomcat 9.0.x
-* MariaDB 10.3
+* MariaDB 10.3 (10.6 as of Dec 2024) 
 * Webserver (We recommend Apache 2.4.7)
 
 
