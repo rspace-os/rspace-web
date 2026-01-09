@@ -405,13 +405,15 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
           p.setIdConstraint(newConstraint);
           userOrGroup.removePermission(p);
 
-          Set<Long> prunedIds =
-              originalIds.stream()
-                  .filter(l -> !l.equals(sharedDocId))
-                  .collect(Collectors.toUnmodifiableSet());
-          newConstraint = new IdConstraint(prunedIds);
-          p.setIdConstraint(newConstraint);
-          userOrGroup.addPermission(p);
+          // Add the permissions one at a time, as this is how they
+          // should be stored on the user
+          for (Long originalId : originalIds) {
+            if (!sharedDocId.equals(originalId)) {
+              newConstraint = new IdConstraint(originalId);
+              p.setIdConstraint(newConstraint);
+              userOrGroup.addPermission(p);
+            }
+          }
         }
       }
 
