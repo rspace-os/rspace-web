@@ -28,13 +28,14 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'dbd7e93e-36f3-4ca0-8f01-2b142585abcc', variable: 'NVD_API_KEY')]) {
 
-                dependencyCheck additionalArguments: '''
+                    dependencyCheck additionalArguments: '''
                     --nvdApiKey ${NVD_API_KEY}
                     -o './'
                     -s './'
                     -f 'XML'
                     --prettyPrint''', odcInstallation: 'OWASP'
-                dependencyCheckPublisher pattern: 'dependency-check-report.xml', failedNewCritical: 1, failedNewHigh: 1
+                    dependencyCheckPublisher pattern: 'dependency-check-report.xml', failedNewCritical: 1, failedNewHigh: 1
+                }
             }
         }
     }
