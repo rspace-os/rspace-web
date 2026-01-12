@@ -12,9 +12,9 @@
   <url>https://www.researchspace.com</url>
 
   <parent>
-    <artifactId>rspace-parent</artifactId>
     <groupId>com.github.rspace-os</groupId>
-    <version>rsdev-966-bump-spring-patch-version-SNAPSHOT</version>
+    <artifactId>rspace-parent</artifactId>
+    <version>rsdev-966-bump-spring-patch-version-c9152868f8-1</version>
   </parent>
 
   <repositories>
