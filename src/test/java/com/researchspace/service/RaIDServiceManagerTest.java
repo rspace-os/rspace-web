@@ -26,7 +26,7 @@ import org.mockito.MockitoAnnotations;
 public class RaIDServiceManagerTest {
 
   private static final String SERVER_ALIAS = "raidServerAlias";
-  private static final String RAID_IDENTIFIER = "rairdIdentifier";
+  private static final String RAID_IDENTIFIER = "https://raid.org/10.12345/FJK987";
   public static final long USER_RAID_ID = 1L;
   public static final long PROJECT_GROUP_ID = 2L;
 
@@ -76,7 +76,9 @@ public class RaIDServiceManagerTest {
     raIDServiceManager.bindRaidToGroupAndSave(
         piUser,
         new RaidGroupAssociation(
-            projectGroup.getId(), new RaIDReferenceDTO(SERVER_ALIAS, RAID_IDENTIFIER)));
+            projectGroup.getId(),
+            projectGroup.getDisplayName(),
+            new RaIDReferenceDTO(SERVER_ALIAS, RAID_IDENTIFIER)));
 
     // THEN
     verify(groupManager).getGroup(projectGroup.getId());

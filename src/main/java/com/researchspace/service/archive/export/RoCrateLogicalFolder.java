@@ -1,6 +1,7 @@
 package com.researchspace.service.archive.export;
 
 import edu.kit.datamanager.ro_crate.entities.data.DataSetEntity;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -22,8 +23,8 @@ public class RoCrateLogicalFolder {
     roCrateDataSet.addToHasPart(id);
   }
 
-  public void isPartOf(String id) {
-    roCrateDataSet.addProperty("isPartOf", id);
+  public void addToIsPartOf(String id) {
+    roCrateDataSet.addIdListProperties("isPartOf", List.of(id));
   }
 
   public String getRspaceGlobalID() {

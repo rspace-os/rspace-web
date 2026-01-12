@@ -19,6 +19,7 @@ import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.dtos.ExportSelection;
+import com.researchspace.model.dtos.RaidGroupAssociation;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
 import com.researchspace.model.field.ErrorList;
@@ -28,6 +29,7 @@ import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.DocumentTagManager;
+import com.researchspace.service.RaIDServiceManager;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.archive.ExportImport;
@@ -111,6 +113,7 @@ public class ExportController extends BaseController {
   private @Autowired NfsController nfsController;
   private @Autowired @Qualifier("importUsersAndRecords") ImportStrategy importStrategy;
   @Autowired private OntologyDocManager ontologyImportManager;
+  @Autowired private RaIDServiceManager raidServiceManager;
 
   private @Autowired ResponseUtil responseUtil;
   @Lazy @Autowired private DocumentTagManager documentTagManager;
@@ -295,6 +298,7 @@ public class ExportController extends BaseController {
    */
   @Data
   static class ServerPath {
+
     @NotNull
     @Size(max = 1024) // in case of 4 byte unicode chars; max path length is 4096 bytes on Linux
     @javax.validation.constraints.Pattern(regexp = "^(/[^;\\*\\?'\"\\./]{1,251})+\\.zip")
@@ -557,6 +561,7 @@ public class ExportController extends BaseController {
 
   @Data
   private static class RepoDepositPreDepositValidation {
+
     private String errorMsg;
     private App app;
     Optional<AppConfigElementSet> optionalAppConfig;
@@ -682,7 +687,35 @@ public class ExportController extends BaseController {
     try {
       URI baseUri = new URI(properties.getServerUrl());
       User exporter = getUserByUsername(principal.getName());
+
       ArchiveExportConfig exportCfg = exportDialogConfig.toArchiveExportConfig();
+
+      if (exportCfg.hasRaidAssociation()) {
+        // validate raid exists and it is associated
+        Optional<RaidGroupAssociation> raidAssociated =
+            raidServiceManager.getAssociatedRaidByUserAliasAndProjectId(
+                userManager.getUserByUsername(principal.getName()),
+                exportCfg.getRaidGroupAssociation().getRaid().getRaidServerAlias(),
+                exportCfg.getRaidGroupAssociation().getProjectGroupId());
+        if (!(raidAssociated.isPresent()
+            && raidAssociated
+                .get()
+                .getRaid()
+                .getRaidIdentifier()
+                .equals(exportCfg.getRaidGroupAssociation().getRaid().getRaidIdentifier()))) {
+          return getText(
+              "workspace.export.msgFailure",
+              new String[] {
+                "Export",
+                "The submitted RaID \""
+                    + exportCfg.getRaidGroupAssociation().getRaid().getRaidIdentifier()
+                    + "\" "
+                    + "is not currently associated to the projectId \""
+                    + exportCfg.getRaidGroupAssociation().getProjectGroupId()
+                    + "\""
+              });
+        }
+      }
 
       if (exportCfg.isIncludeNfsLinks()) {
         exportCfg.setAvailableNfsClients(nfsController.retrieveNfsClientsMapFromSession(request));
