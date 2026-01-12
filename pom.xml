@@ -14,7 +14,7 @@
   <parent>
     <artifactId>rspace-parent</artifactId>
     <groupId>com.github.rspace-os</groupId>
-    <version>2.1.1</version>
+    <version>rsdev-966-bump-spring-patch-version-SNAPSHOT</version>
   </parent>
 
   <repositories>
