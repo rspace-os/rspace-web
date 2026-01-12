@@ -6,7 +6,7 @@
 
     <!-- RaID integration -->
     <changeSet id="2025-10-20a" context="run,dev-test" author="nico">
-        <comment>Create a new system properties for Fieldmark</comment>
+        <comment>Create a new system properties for RaID</comment>
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="defaultValue" type="STRING" value="DENIED"/>
