@@ -6,7 +6,7 @@
 
     <!-- RaID integration -->
     <changeSet id="2025-10-27a" context="run" author="nico">
-        <comment>Create a new app - Fieldmark</comment>
+        <comment>Create a new app - RaID</comment>
         <insert tableName="App">
             <column name="id" type="NUMERIC" value="NULL" />
             <column name="label" type="STRING" value="RaID" />
@@ -38,7 +38,7 @@
     </changeSet>
 
     <changeSet id="2025-10-27c" context="run" author="nico">
-        <comment>AppConfigElementDescriptor for Fieldmark App: id, descriptor_id, app_id</comment>
+        <comment>AppConfigElementDescriptor for RaID App: id, descriptor_id, app_id</comment>
         <sql>insert into AppConfigElementDescriptor (descriptor_id, app_id)
              select pd.id as descriptor_id, app.id as app_id
              from PropertyDescriptor pd, App app
