@@ -1653,7 +1653,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-external-auth</artifactId>
-      <version>097bbfe4a1</version>
+      <version>1.1.3</version>
       <exclusions>
         <exclusion>
           <artifactId>guava</artifactId>
