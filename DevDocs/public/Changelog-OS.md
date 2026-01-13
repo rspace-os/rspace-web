@@ -4,6 +4,22 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.18.0 2026-01-08
+
+### ELN Features
+
+- RSDEV-911 stoichiometry reaction details are now included in PDF/html export
+- RSDEV-910 export-import mechanism supports Galaxy workflow execution data
+
+### ELN Bugfix
+
+- RSDEV-938 fix problem with re-importing RSpace documents containing chemical reactions
+- RSDEV-807 fix error appearing when opening group profile page by user who is not a group member
+
+### Contributed by open-source community
+
+- ISSUE#542 fix license selection when exporting to Dataverse (based on contribution from akos326)
+
 # 2.17.0 2025-12-05
 
 ### ELN Features

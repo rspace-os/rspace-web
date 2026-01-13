@@ -41,10 +41,8 @@ configuration options such as authentication. The changes required can be broken
 down into two parts: the backend and the frontend.
 
 ### Step 1.1: Backend changes
-- Deployment properties, where applicable
-- Sysadmin toggle
-- Enabled state (including how it is exposed for using in section 2.1 below)
-- Authentication
+See the [integration docs](/DevDocs/DeveloperNotes/CreatingNewIntegration.md)
+
 
 ### Step 1.2: Frontend changes
 The frontend changes required to add a new integration to the apps page are

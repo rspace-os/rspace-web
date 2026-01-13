@@ -37,7 +37,7 @@ you would first upgrade to 1.59.2, then 1.60.3, then 1.69.x etc. In this way dat
 ### Things you need to know before updating
 
 * The location of the RSpace `error.log` file, for troubleshooting. These  are defined by `logging.dir` property in `deployment.properties`. If not set, then the  default is Tomcat working directory.
-* MySQL connection details for the RSpace database: You can get the connection details for user, password and database name from the properties `jdbc.username`, `jdbc.password` and  the final part of the path defined in `jdbc.url` in `deployment.properties`.
+* Connection details for the RSpace database: You can get the connection details for user, password and database name from the properties `jdbc.username`, `jdbc.password` and  the final part of the path defined in `jdbc.url` in `deployment.properties`.
 * How to set up a maintenance downtime window: https://researchspace.helpdocs.io/app/content/article/b6w17h3sk7
  
 ### Preparatory work
