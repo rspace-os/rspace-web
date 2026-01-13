@@ -4,7 +4,7 @@
 
 <script src="<c:url value='/scripts/pdfjs/build/pdf.js'/>"></script>
 <script>
-    PDFJS.workerSrc = '<c:url value='/scripts/pdfjs/build/pdf.worker.js'/>';
+    PDFJS.workerSrc = '<c:url value='/scripts/pdfjs/build/pdf.worker.mjs'/>';
 </script>
 
 <div id="pdfPreviewPanelTemplate" style="display: none">
