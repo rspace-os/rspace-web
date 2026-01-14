@@ -158,7 +158,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     String apiKey = createNewApiKeyForUser(user);
 
     // update sample with image
-    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
     sample.setNewBase64Image(imageBytes);
     sampleApiMgr.updateApiSample(sample, user);
@@ -183,7 +183,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user1);
 
     // update sample with image
-    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
     sample.setNewBase64Image(imageBytes);
     sampleApiMgr.updateApiSample(sample, user1);
