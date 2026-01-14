@@ -228,7 +228,7 @@
       <div id="viewer">
         <div id="viewerNav">
           <div id="nameViewerImage"></div>
-          <button id="closeViewer" class="smallBtn closeIcon"> Close PIES </button>
+          <button id="closeViewer" class="smallBtn closeIcon"> Close </button>
         </div>
         <div id="viewerContent"></div>
       </div>

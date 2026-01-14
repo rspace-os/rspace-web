@@ -21,7 +21,7 @@
   "files": [
     "bin/",
     "mustache.mjs",
-    "mustache.min.js",
+    "mustache.js",
     "wrappers/"
   ],
   "exports": {
