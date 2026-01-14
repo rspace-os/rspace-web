@@ -678,7 +678,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
 
   @Test
   public void contentsHashSetInFileProperty() throws Exception {
-    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
+    InputStream imageFile =
+        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
 
     ApiSample updatedSample = updateSampleWithImage(imageBytes);
@@ -691,7 +692,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
 
   @Test
   public void linksUrlsCreatedWithContentsHash() throws Exception {
-    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
+    InputStream imageFile =
+        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
 
     ApiSample updatedSample = updateSampleWithImage(imageBytes);
@@ -722,7 +724,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples sample1 = createBasicSampleForUser(user, "Sample 1");
 
-    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
+    InputStream imageFile =
+        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
     sample1.setNewBase64Image(imageBytes);
     ApiSample updatedSample1 =
@@ -743,7 +746,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
 
   @Test
   public void differentUserUploadingSameImageGeneratesNewFileProperty() throws Exception {
-    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
+    InputStream imageFile =
+        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
 
     User user1 = createInitAndLoginAnyUser();
