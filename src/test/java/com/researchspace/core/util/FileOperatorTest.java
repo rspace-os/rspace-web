@@ -10,6 +10,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -117,7 +118,8 @@ public class FileOperatorTest {
 			fileOps.deleteFile(outfile);
 			fail("expected exception on subsequent delete");
 		} catch (IOException e) {
-			boolean expectedMsg = e.getMessage().startsWith("File does not exist")
+			boolean expectedMsg = e instanceof FileNotFoundException
+					|| e.getMessage().startsWith("File does not exist")
 					|| e.getMessage().startsWith("Cannot delete file");
 			assertTrue("expected file not exists, but was:" + e.getMessage(), expectedMsg);
 		}

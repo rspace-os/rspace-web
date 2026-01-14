@@ -1,6 +1,7 @@
 package com.researchspace.core.util.imageutils;
 
 import com.researchspace.core.util.RSpaceCoreTestUtils;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -284,11 +285,14 @@ public class ImageUtilsTest {
 		NullPointerException nullArgNpe = Assertions.assertThrows(NullPointerException.class,
 				() -> ImageUtils.getExtensionFromBase64DataImage(null));
 		assertEquals("Expected base64 web image string but was null or empty.", nullArgNpe.getMessage());
-		IllegalArgumentException notBase64Iae = Assertions.assertThrows(IllegalArgumentException.class, 
+		IllegalArgumentException notBase64Iae = Assertions.assertThrows(IllegalArgumentException.class,
+				() -> ImageUtils.getImageBytesFromBase64DataImage("data:image/png;base64,»Þõûã"));
+		assertEquals("Image string doesn't seem to be base64-encoded", notBase64Iae.getMessage());
+		IllegalArgumentException notBase64Iae2 = Assertions.assertThrows(IllegalArgumentException.class,
 				() -> ImageUtils.getImageBytesFromBase64DataImage("asdf"));
-		assertEquals("Expected base64 web image string to contain a ','.", notBase64Iae.getMessage());
+		assertEquals("Expected base64 web image string to contain a ','.", notBase64Iae2.getMessage());
 		
-		byte[] imageBytes = RSpaceCoreTestUtils.getResourceAsByteArray("Picture1.png");
+		byte[] imageBytes = Base64.decodeBase64(RSpaceCoreTestUtils.getResourceAsByteArray("Picture1.b64"));
 		String exampleImage = ImageUtils.getBase64DataImageFromImageBytes(imageBytes, "png");
 
 		assertEquals("png", ImageUtils.getExtensionFromBase64DataImage(exampleImage));

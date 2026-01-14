@@ -79,9 +79,6 @@ public class ImageUtils {
 		} catch (Exception e) {
 			return Optional.empty();
 		}
-
-
-
 	}
 
 	/**
@@ -104,10 +101,8 @@ public class ImageUtils {
 				log.warn("Couldn't parse file {}: {}", tiffFile.getAbsolutePath(), e.getMessage());
 			}
 			return Optional.ofNullable(bi);
-		} else {
-			return Optional.ofNullable(imp.getBufferedImage());
 		}
-		
+		return Optional.ofNullable(imp.getBufferedImage());
 	}
 
 	/**
@@ -153,23 +148,19 @@ public class ImageUtils {
 	 * @throws IOException
 	 */
 	public static Optional<BufferedImage> getBufferedImageFromUploadedFile(String extensionType,
-			InputStream stream)
-			throws IOException {
+			InputStream stream) throws IOException {
+
 		if (isTiff(extensionType)) {
-			File tempTiff = File.createTempFile("original", ".tif");		
-			try(FileOutputStream fos = new FileOutputStream(tempTiff)) {		
+			File tempTiff = File.createTempFile("original", ".tif");
+			try (stream; FileOutputStream fos = new FileOutputStream(tempTiff)) {
 				byte[] buff = new byte[1024];
 				while (stream.read(buff) != -1) {
 					fos.write(buff);
 				}
-			} finally {
-				stream.close();
 			}
-			// file.transferTo(tempTiff);
 			return getBufferedImageFromTiffFile(tempTiff);
-		} else {
-			return getBufferedImageFromInputImageStream(stream);
 		}
+		return getBufferedImageFromInputImageStream(stream);
 	}
 
 	/**
@@ -304,7 +295,7 @@ public class ImageUtils {
 		Validate.isTrue(iis != null, "ImageInputstream must not be null");
 		Iterator<ImageReader> iter = ImageIO.getImageReaders(iis);
 		if (!iter.hasNext()) {
-			String inputStreamAsString = (imageInputStream != null) ? imageInputStream.toString() : "null";
+			String inputStreamAsString = imageInputStream.toString();
 			log.warn("There is no image reader for image {} with inputstream [{}],", imageName, inputStreamAsString);
 			throw new ImageProcessingFailureException(
 					format("Can't read image %s from input Stream %s", imageName, inputStreamAsString));
@@ -313,19 +304,17 @@ public class ImageUtils {
 		reader.setInput(iis, true, true);
 
 		ImageReadParam params = reader.getDefaultReadParam();
-		int sampling = calculateSampling(reader.getWidth(0), MAX_PAGE_DISPLAY_WIDTH);
+		int sampling = calculateSampling(reader.getWidth(0));
 		params.setSourceSubsampling(sampling, sampling, 0, 0);
 
-		BufferedImage img = reader.read(0, params);
-		return img;
+		return reader.read(0, params);
 	}
 
-	private static int calculateSampling(float width, float maxwidth) {
-		Validate.isTrue(maxwidth > 1, "Max width must be > 1");
-		if (width < maxwidth) {
+	private static int calculateSampling(float width) {
+		if (width < (float) ImageUtils.MAX_PAGE_DISPLAY_WIDTH) {
 			return 1;// sample all pixels
 		}
-		return Double.valueOf(Math.ceil(width / maxwidth)).intValue();
+		return Double.valueOf(Math.ceil(width / (float) ImageUtils.MAX_PAGE_DISPLAY_WIDTH)).intValue();
 	}
 
 	/**
@@ -401,9 +390,9 @@ public class ImageUtils {
 	public static byte[] toBytes(BufferedImage img, String outputFormat) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ImageIO.write(img, outputFormat, baos);
-		byte[] bytes = baos.toByteArray();
-		return bytes;
+		return baos.toByteArray();
 	}
+
 	/**
 	 * Rotates a tiff file by a multiple of Pi/2 radians (90 degrees).<br/>
 	 * This uses the underlying ImageJ library to handle rotation. <br/>
@@ -448,7 +437,6 @@ public class ImageUtils {
 		double sin = Math.abs(Math.sin(angle)), cos = Math.abs(Math.cos(angle));
 		int w = image.getWidth(), h = image.getHeight();
 		int neww = (int) Math.floor(w * cos + h * sin), newh = (int) Math.floor(h * cos + w * sin);
-		// int transparency = image.getColorModel().getTransparency();
 		int imageType = image.getType();
 
 		// Hack to solve the issue with PNG files and tomcat server
@@ -486,12 +474,12 @@ public class ImageUtils {
 	private static void validateIsBase64WebImageString(String base64WebImage) {
 		Validate.notEmpty(base64WebImage, "Expected base64 web image string but was null or empty.");
 		Validate.isTrue(base64WebImage.contains(","), "Expected base64 web image string to contain a ','.");
+		Validate.isTrue(Base64.isBase64(base64WebImage.split(",")[1]), "Image string doesn't seem to be base64-encoded");
 	}
 
 	/**
 	 * @param imageBytes
 	 * @param fileExtension png/jpg
-	 * @return
 	 */
 	public static String getBase64DataImageFromImageBytes(byte[] imageBytes, String fileExtension) {
 		Validate.notNull(imageBytes, "Image bytes empty");
