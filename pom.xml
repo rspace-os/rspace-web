@@ -591,6 +591,10 @@
           <artifactId>commons-lang3</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
         </exclusion>
@@ -688,6 +692,7 @@
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
+      <version>1.13</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1718,6 +1723,10 @@
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-lang3</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -1754,6 +1763,10 @@
         <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpcore</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -2241,23 +2254,11 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-evernote-parser</artifactId>
-      <version>1.1.2</version>
+      <version>7c66c6c088</version>
       <exclusions>
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-collections4</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>commons-codec</groupId>
           <artifactId>commons-codec</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.jdom</groupId>
-          <artifactId>jdom2</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
