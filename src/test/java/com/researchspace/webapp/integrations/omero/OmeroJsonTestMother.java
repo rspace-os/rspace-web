@@ -2,6 +2,7 @@ package com.researchspace.webapp.integrations.omero;
 
 import static java.nio.file.Files.readString;
 
+import java.net.URI;
 import java.nio.file.Path;
 import lombok.SneakyThrows;
 
@@ -75,7 +76,7 @@ public class OmeroJsonTestMother {
   @SneakyThrows
   private static String makeDataJson(String resource) {
     ClassLoader classLoader = OmeroJsonTestMother.class.getClassLoader();
-    String versionPath = classLoader.getResource(resource).getPath();
+    URI versionPath = classLoader.getResource(resource).toURI();
     return readString(Path.of(versionPath)).trim();
   }
 }

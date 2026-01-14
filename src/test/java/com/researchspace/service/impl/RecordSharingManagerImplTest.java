@@ -425,5 +425,4 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     assertEquals(doc2FoundWrite, true);
     assertEquals(doc3FoundWrite, true);
   }
-
 }
