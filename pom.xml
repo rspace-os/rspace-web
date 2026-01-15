@@ -1539,13 +1539,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-repository-spi</artifactId>
-      <version>1.1.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-      </exclusions>
+      <version>1.1.1</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1555,6 +1549,10 @@
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-core-util</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rspace-repository-spi</artifactId>
         </exclusion>
         <exclusion>
           <groupId>xerces</groupId>
@@ -1782,27 +1780,11 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-figshare-adapter</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.2</version>
       <exclusions>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-core-util</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-repository-spi</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>org.springframework</groupId>
           <artifactId>spring-context</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-core</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.springframework</groupId>
@@ -1813,27 +1795,11 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dryad-adapter</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.2</version>
       <exclusions>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-repository-spi</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-core-util</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>org.springframework</groupId>
           <artifactId>spring-context</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-core</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.springframework</groupId>
@@ -1844,27 +1810,15 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-zenodo-adapter</artifactId>
-      <version>0.3.1</version>
+      <version>0.3.2</version>
       <exclusions>
         <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-repository-spi</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-web</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.springframework</groupId>
           <artifactId>spring-context</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-web</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
