@@ -212,6 +212,44 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
+  public void testCreateStoichiometryForRecord() throws Exception {
+    doc1 = createBasicDocumentInRootFolderWithText(user, "any");
+
+    MvcResult createResult =
+        mockMvc
+            .perform(
+                post(URL)
+                    .param("recordId", doc1.getId().toString())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    StoichiometryDTO createdStoichiometry =
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
+    assertNotNull(createdStoichiometry.getId());
+    assertEquals(doc1.getId(), createdStoichiometry.getRecordId());
+    // Should have a parentReactionId pointing to the dummy RSChemElement
+    assertNotNull(createdStoichiometry.getParentReactionId());
+
+    // Verify we can retrieve it
+    MvcResult getResult =
+        mockMvc
+            .perform(
+                get(URL)
+                    .param("stoichiometryId", createdStoichiometry.getId().toString())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    StoichiometryDTO retrievedStoichiometry =
+        getFromJsonResponseBody(getResult, StoichiometryDTO.class);
+    assertEquals(createdStoichiometry.getId(), retrievedStoichiometry.getId());
+    assertEquals(doc1.getId(), retrievedStoichiometry.getRecordId());
+  }
+
+  @Test
   public void testSaveStoichiometryAlreadyExists() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field docField = doc1.getFields().get(0);
@@ -225,6 +263,25 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     String responseContent = failResult.getResponse().getContentAsString();
     assertEquals(HttpStatus.BAD_REQUEST.value(), failResult.getResponse().getStatus());
     assertTrue(responseContent.contains("Stoichiometry already exists for reaction chemId="));
+  }
+
+  @Test
+  public void testSaveStoichiometryBothIdsProvided() throws Exception {
+    mockMvc
+        .perform(
+            post(URL)
+                .param("chemId", "1")
+                .param("recordId", "1")
+                .principal(principal)
+                .header("apiKey", apiKey))
+        .andExpect(status().isBadRequest())
+        .andExpect(
+            result ->
+                assertTrue(
+                    result
+                        .getResponse()
+                        .getContentAsString()
+                        .contains("Provide either chemId or recordId, but not both.")));
   }
 
   @Test

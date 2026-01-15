@@ -25,14 +25,21 @@ public final class StoichiometryMapper {
     }
 
     Long parentReactionId = null;
+    Long recordId = null;
     if (stoichiometry.getParentReaction() != null) {
       parentReactionId = stoichiometry.getParentReaction().getId();
+      if (stoichiometry.getParentReaction().getRecord() != null) {
+        recordId = stoichiometry.getParentReaction().getRecord().getId();
+      }
+    } else if (stoichiometry.getRecord() != null) {
+      recordId = stoichiometry.getRecord().getId();
     }
 
     return StoichiometryDTO.builder()
         .id(stoichiometry.getId())
         .molecules(moleculeDTOs)
         .parentReactionId(parentReactionId)
+        .recordId(recordId)
         .revision(revision)
         .build();
   }

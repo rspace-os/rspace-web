@@ -63,6 +63,11 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   }
 
   @Override
+  public Optional<Stoichiometry> findByRecordId(Long recordId) {
+    return stoichiometryDao.findByRecordId(recordId);
+  }
+
+  @Override
   public AuditedEntity<Stoichiometry> getRevision(long id, Long revision, User user) {
     if (revision == null) {
       return auditManager.getNewestRevisionForEntity(Stoichiometry.class, id);
@@ -130,6 +135,13 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   @Override
   public Stoichiometry createEmpty(RSChemElement parentReaction, User user) {
     Stoichiometry stoichiometry = Stoichiometry.builder().parentReaction(parentReaction).build();
+    return save(stoichiometry);
+  }
+
+  @Override
+  public Stoichiometry createEmpty(com.researchspace.model.record.Record record, User user) {
+    Stoichiometry stoichiometry = new Stoichiometry();
+    stoichiometry.setRecord(record);
     return save(stoichiometry);
   }
 

@@ -13,10 +13,14 @@ public interface StoichiometryManager extends GenericManager<Stoichiometry, Long
 
   Optional<Stoichiometry> findByParentReactionId(Long parentReactionId);
 
+  Optional<Stoichiometry> findByRecordId(Long recordId);
+
   Stoichiometry createFromAnalysis(
       ElementalAnalysisDTO analysisDTO, RSChemElement parentReaction, User user) throws IOException;
 
   Stoichiometry createEmpty(RSChemElement parentReaction, User user);
+
+  Stoichiometry createEmpty(com.researchspace.model.record.Record record, User user);
 
   Stoichiometry update(StoichiometryUpdateDTO stoichiometryUpdateDTO, User user);
 

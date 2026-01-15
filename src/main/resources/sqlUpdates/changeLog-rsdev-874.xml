@@ -1,0 +1,25 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-01-14" context="run" author="fraser">
+        <comment>Add record_id column to Stoichiometry</comment>
+        <addColumn tableName="Stoichiometry">
+            <column type="BIGINT" name="record_id">
+                <constraints nullable="true" foreignKeyName="fk_stoichiometry_record"
+                             references="BaseRecord(id)"/>
+            </column>
+        </addColumn>
+        
+        <addColumn tableName="Stoichiometry_AUD">
+            <column type="BIGINT" name="record_id">
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+
+        <dropNotNullConstraint tableName="Stoichiometry" columnName="parent_reaction_id" columnDataType="BIGINT"/>
+
+    </changeSet>
+
+</databaseChangeLog>
