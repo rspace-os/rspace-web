@@ -1795,7 +1795,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dryad-adapter</artifactId>
-      <version>55f8a6578e</version>
+      <version>1.0.2</version>
       <exclusions>
         <exclusion>
           <groupId>org.springframework</groupId>
