@@ -2,9 +2,9 @@
 
 <%-- Various content that is shared between notebook page, document editor, and gallery --%>
 
-<script type="module" src="<c:url value='/scripts/pdfjs/build/pdf.mjs'/>"></script>
+<script type="module" src="<c:url value='/scripts/pdfjs/v54530/build/pdf.mjs'/>"></script>
 <script type="module">
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "<c:url value='/scripts/pdfjs/build/pdf.worker.mjs'/>";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "<c:url value='/scripts/pdfjs/v54530/build/pdf.worker.mjs'/>";
 </script>
 
 <div id="pdfPreviewPanelTemplate" style="display: none">

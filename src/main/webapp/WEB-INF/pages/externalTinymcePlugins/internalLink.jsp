@@ -17,7 +17,7 @@
     <script src="/scripts/bower_components/blockui/jquery.blockUI.js"></script>
     <script src="/scripts/bower_components/bootstrap/dist/js/bootstrap.js"></script>
     <script src='/scripts/tinymceDialogUtils.js'></script>
-    <script src="/scripts/bower_components/mustache/mustache.min.js"></script>
+    <script src="/scripts/bower_components/mustache/v420/mustache.min.js"></script>
     <script src="/scripts/global.js"></script>
     <script src="/scripts/bower_components/Apprise-v2/apprise-v2.js"></script>
     <script src="/scripts/pages/searchableRecordPicker.js"></script>

@@ -108,7 +108,7 @@ Below are some usage scenarios for different runtimes.
 
 ```js
 // index.mjs
-import mustache from 'mustache/mustache.mjs'
+import mustache from 'mustache/v420/mustache.mjs'
 
 console.log(mustache.render('Hello {{name}}!', { name: 'Santa' }))
 // Hello Santa!
