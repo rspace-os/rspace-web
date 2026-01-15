@@ -1539,13 +1539,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-repository-spi</artifactId>
-      <version>1.1.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-      </exclusions>
+      <version>1.1.1</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1555,6 +1549,10 @@
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-core-util</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rspace-repository-spi</artifactId>
         </exclusion>
         <exclusion>
           <groupId>xerces</groupId>
