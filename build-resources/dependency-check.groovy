@@ -4,6 +4,10 @@
 pipeline {
     agent any
 
+    triggers {
+        cron(env.BRANCH_NAME == 'main' ? 'H 9 * * *' : '')
+    }
+
     options { disableConcurrentBuilds() }
 
     environment {
