@@ -1780,7 +1780,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-figshare-adapter</artifactId>
-      <version>e46dbe6b22</version>
+      <version>1.0.2</version>
       <exclusions>
         <exclusion>
           <groupId>org.springframework</groupId>
