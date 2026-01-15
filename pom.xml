@@ -1842,7 +1842,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-zenodo-adapter</artifactId>
-      <version>6efabb9b79</version>
+      <version>0.3.2</version>
       <exclusions>
         <exclusion>
           <groupId>org.springframework</groupId>
