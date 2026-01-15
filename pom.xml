@@ -1842,24 +1842,8 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-zenodo-adapter</artifactId>
-      <version>0.3.1</version>
+      <version>6efabb9b79</version>
       <exclusions>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-repository-spi</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-context</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-core</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>org.springframework</groupId>
           <artifactId>spring-web</artifactId>
