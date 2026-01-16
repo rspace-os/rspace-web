@@ -14,7 +14,7 @@
   <script src="/scripts/pages/connect/msteams/MicrosoftTeams_sdk_v1.0.min.js"></script>
   <script src="<c:url value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
   <script src="<c:url value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
-  <script src="<c:url value='/scripts/bower_components/mustache/mustache.min.js'/>"></script>
+  <script src="<c:url value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
   <script src="<c:url value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 
   <script src="/scripts/global.js"></script>

@@ -24,7 +24,7 @@
     "jquery.fancytree": "fancytree#^2.27.0",
     "jqui-multi-dates-picker": "*",
     "jstz-detect": "~1.0.5",
-    "mustache": "~2.0.0",
+    "mustache": "4.2.0",
     "photoswipe": "~4.1.1",
     "zeroclipboard": "~2.2.0",
     "Apprise-v2": "ThrivingKings/Apprise-v2",
@@ -38,7 +38,7 @@
     "mathjs": "^3.17.0",
     "jquery.scrollTo": "^2.1.2",
     "js-owncloud-client": "*",
-    "swagger-ui": "^3.26.0"
+    "swagger-ui": "^5.31.0"
   },
   "resolutions": {
     "jquery": "~2.1.3"
