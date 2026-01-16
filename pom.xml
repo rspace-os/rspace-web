@@ -1810,7 +1810,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-zenodo-adapter</artifactId>
-      <version>262e6110fc</version>
+      <version>0.3.3</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
