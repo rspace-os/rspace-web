@@ -120,14 +120,6 @@ public class StoichiometryServiceImpl implements StoichiometryService {
     if (!permissionUtils.isPermitted((BaseRecord) record, PermissionType.WRITE, user)) {
       throw new AuthorizationException("User does not have write permissions on record");
     }
-
-    Optional<Stoichiometry> existing = stoichiometryManager.findByRecordId(recordId);
-    if (existing.isPresent()) {
-      Stoichiometry e = existing.get();
-      throw new StoichiometryException(
-          "Stoichiometry already exists for recordId=" + recordId + ", stoichId=" + e.getId());
-    }
-
     return stoichiometryManager.createEmpty(record, user);
   }
 
