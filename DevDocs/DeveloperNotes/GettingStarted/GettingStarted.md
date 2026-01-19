@@ -58,13 +58,9 @@ path to your java installation.
 
 Current location of the codebase is https://github.com/rspace-os/rspace-web
 
-It's best to use a Git client to download and update source code.
-Alternatively, for one-off installation, you can download project directly from the page as a zip package.
+(if you are a member of ResearchSpace Dev Team, please clone our fork of the codebase located at https://github.com/ResearchSpace-ELN/rspace-web)
 
-#### (only if running RSpace version < 2.1.0) Download required non-public RSpace dependencies 
-
-This is no longer needed for RSpace 2.1.0 version (or later), but if you're trying to run an older version, check the historical revision of this document,
-which describes how to download and install an additional package of dependencies from https://github.com/rspace-os/rspace-web/releases page. 
+We recommend using a Git client to download and update the source code.
 
 #### Sanity check
 

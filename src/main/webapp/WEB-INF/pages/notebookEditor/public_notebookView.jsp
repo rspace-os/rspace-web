@@ -27,7 +27,7 @@
   <script src="<c:url value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
   <script src="<c:url value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
   <script src="<c:url value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
-  <script src="<c:url value='/scripts/bower_components/mustache/mustache.min.js'/>"></script>
+  <script src="<c:url value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
   <script src="<c:url value='/scripts/jquery.toastmessage.js'/>"></script>
   <script src="<c:url value='/scripts/global.js'/>"></script>
   <script src="<c:url value='/scripts/global.settingsStorage.js'/>"></script>
