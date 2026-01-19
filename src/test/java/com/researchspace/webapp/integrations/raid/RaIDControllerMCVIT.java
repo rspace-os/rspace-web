@@ -209,7 +209,8 @@ public class RaIDControllerMCVIT extends MVCTestBase {
                     .principal(piUser::getUsername))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    RaidGroupAssociation actualResult = extractRaid(result);
+    RaidGroupAssociation actualResult =
+        extractRaid(projectGroupCreationWithRaid.getGroupName(), result);
 
     assertNotNull(actualResult);
     assertEquals(newProjectGroupId, actualResult.getProjectGroupId());
@@ -241,7 +242,8 @@ public class RaIDControllerMCVIT extends MVCTestBase {
                     .principal(piUser::getUsername))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    RaidGroupAssociation actualResult = extractRaid(result);
+    RaidGroupAssociation actualResult =
+        extractRaid(projectGroupCreationWithRaid.getGroupName(), result);
 
     // THEN a RaID is returned
     assertNotNull(actualResult);
@@ -283,7 +285,8 @@ public class RaIDControllerMCVIT extends MVCTestBase {
 
     // WHEN
     RaidGroupAssociation raidToGroupAssociation =
-        new RaidGroupAssociation(newProjectGroupId, RAID_ASSOCIATED_1);
+        new RaidGroupAssociation(
+            newProjectGroupId, projectGroupCreationWithoutRaid.getGroupName(), RAID_ASSOCIATED_1);
     result =
         mockMvc
             .perform(
@@ -349,7 +352,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
   }
 
   @NotNull
-  private RaidGroupAssociation extractRaid(MvcResult result)
+  private RaidGroupAssociation extractRaid(String groupName, MvcResult result)
       throws JsonProcessingException, UnsupportedEncodingException {
     Map mapResult = mapper.readValue(result.getResponse().getContentAsString(), Map.class);
     assertNull((mapResult.get("error")));
@@ -358,6 +361,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
         (Map<String, Map<String, String>>) mapResult.get("data");
     return new RaidGroupAssociation(
         Long.valueOf(((Map<String, Integer>) mapResult.get("data")).get("projectGroupId")),
+        groupName,
         new RaIDReferenceDTO(
             (groupAssociation.get("raid")).get("raidServerAlias"),
             groupAssociation.get("raid").get("raidIdentifier")));

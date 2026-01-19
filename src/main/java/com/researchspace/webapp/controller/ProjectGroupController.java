@@ -92,7 +92,9 @@ public class ProjectGroupController extends BaseController {
     if (createCloudGroup.getRaid() != null) {
       validateRaidInput(createCloudGroup.getRaid());
       raidServiceManager.bindRaidToGroupAndSave(
-          creator, new RaidGroupAssociation(newLabGroup.getId(), createCloudGroup.getRaid()));
+          creator,
+          new RaidGroupAssociation(
+              newLabGroup.getId(), newLabGroup.getDisplayName(), createCloudGroup.getRaid()));
     }
     sendInvites(request, creator, listEmails, newLabGroup);
     publisher.publishEvent(new GenericEvent(creator, newLabGroup, AuditAction.CREATE));

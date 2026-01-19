@@ -1,7 +1,6 @@
 package com.researchspace.model.repository;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.researchspace.model.dtos.RaidGroupAssociation;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
@@ -27,7 +26,6 @@ public class RepoDepositConfig {
   private List<Long> selectedDMPs = new ArrayList<>();
 
   private boolean exportToRaid = false;
-  private RaidGroupAssociation raidAssociated;
 
   /**
    * @return {@code}true{@code} if 1 or more DMP ids were selected
