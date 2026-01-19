@@ -7,7 +7,7 @@
         <comment>Add record_id column to Stoichiometry</comment>
         <addColumn tableName="Stoichiometry">
             <column type="BIGINT" name="record_id">
-                <constraints nullable="false" foreignKeyName="fk_stoichiometry_record"
+                <constraints nullable="true" foreignKeyName="fk_stoichiometry_record"
                              references="BaseRecord(id)"/>
             </column>
         </addColumn>
@@ -36,6 +36,11 @@
             <column name="record_id" valueComputed="(SELECT rce.record_id FROM RSChemElement rce WHERE rce.id = Stoichiometry_AUD.parent_reaction_id)"/>
             <where>record_id IS NULL AND parent_reaction_id IS NOT NULL</where>
         </update>
+    </changeSet>
+
+    <changeSet id="2026-01-19" context="run" author="fraser">
+        <comment>Add not null to record_id after backfilling</comment>
+        <addNotNullConstraint tableName="Stoichiometry" columnName="record_id" columnDataType="BIGINT"/>
     </changeSet>
 
 </databaseChangeLog>

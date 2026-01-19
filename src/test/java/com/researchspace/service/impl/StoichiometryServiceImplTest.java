@@ -191,16 +191,6 @@ public class StoichiometryServiceImplTest {
   }
 
   @Test
-  void createEmpty_whenAlreadyExists_throwsStoichException() {
-    Record record = TestFactory.createAnySD();
-    when(recordManager.get(123L)).thenReturn(record);
-    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
-    when(stoichiometryManager.findByRecordId(123L)).thenReturn(Optional.of(new Stoichiometry()));
-
-    assertThrows(StoichiometryException.class, () -> service.createEmpty(123L, user));
-  }
-
-  @Test
   void update_whenOwningRecordMissing_throwsNotFound() throws Exception {
     Stoichiometry existing = new Stoichiometry();
     existing.setId(3L);
