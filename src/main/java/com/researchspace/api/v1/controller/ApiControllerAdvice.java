@@ -13,7 +13,6 @@ import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
-import com.researchspace.service.chemistry.StoichiometryException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
@@ -39,7 +38,6 @@ public class ApiControllerAdvice extends RestControllerAdvice {
 
   protected @Autowired MessageSourceUtils messages;
 
-  // 401
   @ExceptionHandler({AuthorizationException.class, ApiAuthenticationException.class})
   public ResponseEntity<Object> handleAuth(final Exception ex, final WebRequest request) {
     final String error = "Authorisation error";
@@ -62,7 +60,6 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
-  @ResponseStatus(HttpStatus.CONFLICT)
   @ExceptionHandler(DocumentAlreadyEditedException.class)
   protected ResponseEntity<Object> handleDocumentAlreadyEditedException(
       final DocumentAlreadyEditedException ex, final WebRequest request) {
@@ -152,9 +149,9 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   }
 
   @ResponseStatus(HttpStatus.BAD_REQUEST)
-  @ExceptionHandler(StoichiometryException.class)
+  @ExceptionHandler(com.researchspace.service.chemistry.StoichiometryException.class)
   public ResponseEntity<Object> handleStoichiometryException(
-      StoichiometryException ex, WebRequest request) {
+      com.researchspace.service.chemistry.StoichiometryException ex, WebRequest request) {
     log.error("Stoichiometry error", ex);
     ApiError apiError =
         new ApiError(

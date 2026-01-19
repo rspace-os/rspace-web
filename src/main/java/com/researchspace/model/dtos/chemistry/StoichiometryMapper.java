@@ -24,16 +24,11 @@ public final class StoichiometryMapper {
               .collect(Collectors.toList());
     }
 
-    Long parentReactionId = null;
-    Long recordId = null;
-    if (stoichiometry.getParentReaction() != null) {
-      parentReactionId = stoichiometry.getParentReaction().getId();
-      if (stoichiometry.getParentReaction().getRecord() != null) {
-        recordId = stoichiometry.getParentReaction().getRecord().getId();
-      }
-    } else if (stoichiometry.getRecord() != null) {
-      recordId = stoichiometry.getRecord().getId();
-    }
+    Long parentReactionId =
+        stoichiometry.getParentReaction() != null
+            ? stoichiometry.getParentReaction().getId()
+            : null;
+    Long recordId = stoichiometry.getRecord() != null ? stoichiometry.getRecord().getId() : null;
 
     return StoichiometryDTO.builder()
         .id(stoichiometry.getId())

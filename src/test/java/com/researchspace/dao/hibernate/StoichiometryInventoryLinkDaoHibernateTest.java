@@ -71,6 +71,7 @@ public class StoichiometryInventoryLinkDaoHibernateTest extends SpringTransactio
     mol.setRole(MoleculeRole.REACTANT);
     stoich.setParentReaction(stoichChem);
     stoich.setMolecules(List.of(mol));
+    stoich.setRecord(doc);
     mol.setStoichiometry(stoich);
     stoichDao.save(stoich);
 

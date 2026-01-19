@@ -10,7 +10,7 @@ public interface StoichiometryService {
 
   StoichiometryDTO getById(long stoichiometryId, Long revision, User user);
 
-  Stoichiometry create(long chemId, User user);
+  Stoichiometry createFromReaction(long recordId, long chemId, User user);
 
   Stoichiometry createEmpty(long recordId, User user);
 

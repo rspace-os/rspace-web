@@ -10,6 +10,7 @@ import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
+import com.researchspace.model.record.Record;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
@@ -77,9 +78,10 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
 
   @Override
   public Stoichiometry createFromAnalysis(
-      ElementalAnalysisDTO analysisDTO, RSChemElement parentReaction, User user)
+      ElementalAnalysisDTO analysisDTO, RSChemElement parentReaction, Record record, User user)
       throws IOException {
-    Stoichiometry stoichiometry = Stoichiometry.builder().parentReaction(parentReaction).build();
+    Stoichiometry stoichiometry =
+        Stoichiometry.builder().parentReaction(parentReaction).record(record).build();
 
     stoichiometry = save(stoichiometry);
 
@@ -133,15 +135,8 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   }
 
   @Override
-  public Stoichiometry createEmpty(RSChemElement parentReaction, User user) {
-    Stoichiometry stoichiometry = Stoichiometry.builder().parentReaction(parentReaction).build();
-    return save(stoichiometry);
-  }
-
-  @Override
-  public Stoichiometry createEmpty(com.researchspace.model.record.Record record, User user) {
-    Stoichiometry stoichiometry = new Stoichiometry();
-    stoichiometry.setRecord(record);
+  public Stoichiometry createEmpty(Record record, User user) {
+    Stoichiometry stoichiometry = Stoichiometry.builder().record(record).build();
     return save(stoichiometry);
   }
 
@@ -169,7 +164,11 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
                     new StoichiometryException(
                         "No stoichiometry found for reaction id " + sourceParentReactionId));
 
-    Stoichiometry newStoich = Stoichiometry.builder().parentReaction(newParentReaction).build();
+    Stoichiometry newStoich =
+        Stoichiometry.builder()
+            .parentReaction(newParentReaction)
+            .record(newParentReaction.getRecord())
+            .build();
     newStoich = save(newStoich);
 
     if (originalStoich.getMolecules() != null) {

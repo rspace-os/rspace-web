@@ -64,10 +64,12 @@ public class StoichiometryManagerImplTest {
   @Captor private ArgumentCaptor<Stoichiometry> stoichiometryCaptor;
 
   private User user;
+  private com.researchspace.model.record.Record record;
 
   @Before
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("testUser");
+    record = TestFactory.createAnyRecord(user);
     when(stoichiometryDao.save(stoichiometryCaptor.capture()))
         .thenAnswer(invocation -> invocation.getArgument(0, Stoichiometry.class));
   }
@@ -111,7 +113,7 @@ public class StoichiometryManagerImplTest {
 
     when(chemicalSearcher.searchChemicals(any(ChemicalImportSearchType.class), anyString()))
         .thenReturn(searchResults);
-    stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);
+    stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, record, user);
 
     verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
@@ -138,7 +140,7 @@ public class StoichiometryManagerImplTest {
             new ChemicalImportException("Error searching chemicals", HttpStatus.BAD_REQUEST));
 
     Stoichiometry result =
-        stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);
+        stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, record, user);
 
     verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
@@ -213,7 +215,7 @@ public class StoichiometryManagerImplTest {
     when(chemicalSearcher.searchChemicals(any(ChemicalImportSearchType.class), anyString()))
         .thenReturn(searchResults);
 
-    stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);
+    stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, record, user);
 
     verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
@@ -268,7 +270,7 @@ public class StoichiometryManagerImplTest {
     when(chemicalSearcher.searchChemicals(any(ChemicalImportSearchType.class), anyString()))
         .thenReturn(searchResults);
 
-    stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, user);
+    stoichiometryManager.createFromAnalysis(analysisDTO, parentReaction, record, user);
 
     verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();

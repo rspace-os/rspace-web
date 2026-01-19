@@ -38,20 +38,18 @@ public class StoichiometryApiController extends BaseApiController implements Sto
   }
 
   @Override
-  public StoichiometryDTO saveStoichiometry(Long chemId, Long recordId, User user) {
-    Stoichiometry stoichiometry;
-    if (chemId != null && chemId > 0 && recordId != null && recordId > 0) {
-      throw new StoichiometryException("Provide either chemId or recordId, but not both.");
-    }
-
-    if (chemId != null && chemId > 0) {
-      stoichiometry = stoichiometryService.create(chemId, user);
-    } else if (recordId != null && recordId > 0) {
-      stoichiometry = stoichiometryService.createEmpty(recordId, user);
-    } else {
+  public StoichiometryDTO createStoichiometry(Long recordId, Long chemId, User user) {
+    if (recordId == null && chemId == null) {
       throw new StoichiometryException("Either chemId or recordId must be provided");
     }
-    // Get latest revision number after save
+
+    Stoichiometry stoichiometry;
+    if (chemId != null) {
+      stoichiometry = stoichiometryService.createFromReaction(recordId, chemId, user);
+    } else {
+      stoichiometry = stoichiometryService.createEmpty(recordId, user);
+    }
+    // Get the latest revision number after save
     AuditedEntity<Stoichiometry> latestRevision =
         auditManager.getNewestRevisionForEntity(Stoichiometry.class, stoichiometry.getId());
     Long revisionNumber = latestRevision != null ? latestRevision.getRevision().longValue() : null;

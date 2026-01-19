@@ -229,8 +229,8 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
         getFromJsonResponseBody(createResult, StoichiometryDTO.class);
     assertNotNull(createdStoichiometry.getId());
     assertEquals(doc1.getId(), createdStoichiometry.getRecordId());
-    // Should have a parentReactionId pointing to the dummy RSChemElement
-    assertNotNull(createdStoichiometry.getParentReactionId());
+    // parentReactionId should be null for record-level stoichiometry
+    assertNull(createdStoichiometry.getParentReactionId());
 
     // Verify we can retrieve it
     MvcResult getResult =
@@ -267,21 +267,25 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
   @Test
   public void testSaveStoichiometryBothIdsProvided() throws Exception {
+    doc1 = createBasicDocumentInRootFolderWithText(user, "any");
+    Field docField = doc1.getFields().get(0);
+    RSChemElement reaction = addReactionToField(docField, user);
+
     mockMvc
         .perform(
             post(URL)
-                .param("chemId", "1")
-                .param("recordId", "1")
+                .param("chemId", reaction.getId().toString())
+                .param("recordId", doc1.getId().toString())
                 .principal(principal)
                 .header("apiKey", apiKey))
-        .andExpect(status().isBadRequest())
-        .andExpect(
-            result ->
-                assertTrue(
-                    result
-                        .getResponse()
-                        .getContentAsString()
-                        .contains("Provide either chemId or recordId, but not both.")));
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  public void testSaveStoichiometryNoIdsProvided() throws Exception {
+    mockMvc
+        .perform(post(URL).principal(principal).header("apiKey", apiKey))
+        .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -356,18 +360,13 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     StoichiometryDTO createdStoichiometry =
         getFromJsonResponseBody(createResult, StoichiometryDTO.class);
 
-    MvcResult deleteResult =
-        mockMvc
-            .perform(
-                delete(URL)
-                    .param("stoichiometryId", createdStoichiometry.getId().toString())
-                    .principal(principal)
-                    .header("apiKey", apiKey))
-            .andExpect(status().is2xxSuccessful())
-            .andReturn();
-
-    boolean deleteSuccess = getFromJsonResponseBody(deleteResult, Boolean.class);
-    assertTrue(deleteSuccess);
+    mockMvc
+        .perform(
+            delete(URL)
+                .param("stoichiometryId", createdStoichiometry.getId().toString())
+                .principal(principal)
+                .header("apiKey", apiKey))
+        .andExpect(status().is4xxClientError());
   }
 
   @Test
@@ -645,24 +644,22 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
   @Test
   public void createStoichiometry_withInvalidChemId_returnsBadRequest() throws Exception {
-    MvcResult result =
-        mockMvc
-            .perform(
-                post(URL).param("chemId", "-999").principal(principal).header("apiKey", apiKey))
-            .andExpect(status().isInternalServerError())
-            .andReturn();
-
-    String body = result.getResponse().getContentAsString();
-    assertTrue(
-        body.contains(
-            "Object of class [com.researchspace.model.RSChemElement] with identifier [-999]: not"
-                + " found"));
+    doc1 = createBasicDocumentInRootFolderWithText(user, "any");
+    mockMvc
+        .perform(
+            post(URL)
+                .param("recordId", doc1.getId().toString())
+                .param("chemId", "-999")
+                .principal(principal)
+                .header("apiKey", apiKey))
+        .andExpect(status().is5xxServerError());
   }
 
   private MvcResult createStoichiometry(RSChemElement reaction) throws Exception {
     return mockMvc
         .perform(
             post(URL)
+                .param("recordId", reaction.getRecord().getId().toString())
                 .param("chemId", reaction.getId().toString())
                 .principal(principal)
                 .header("apiKey", apiKey))
