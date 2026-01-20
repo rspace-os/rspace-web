@@ -43,4 +43,27 @@
         <addNotNullConstraint tableName="Stoichiometry" columnName="record_id" columnDataType="BIGINT"/>
     </changeSet>
 
+    <changeSet id="2026-01-19-uuid" context="run" author="fraser">
+        <comment>Add uuid column to Stoichiometry and backfill</comment>
+        <addColumn tableName="Stoichiometry">
+            <column type="VARCHAR(36)" name="uuid">
+                <constraints nullable="true" unique="true"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="Stoichiometry_AUD">
+            <column type="VARCHAR(36)" name="uuid">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Backfill UUIDs for existing records. Using a custom SQL for UUID generation. -->
+        <sql>
+            UPDATE Stoichiometry SET uuid = UUID() WHERE uuid IS NULL;
+        </sql>
+
+        <addNotNullConstraint tableName="Stoichiometry" columnName="uuid" columnDataType="VARCHAR(36)"/>
+    </changeSet>
+    
+    
+
 </databaseChangeLog>
