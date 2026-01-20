@@ -58,6 +58,7 @@
 
         <sql>
             UPDATE Stoichiometry SET uuid = UUID() WHERE uuid IS NULL;
+            UPDATE Stoichiometry_AUD SET uuid = (SELECT s.uuid FROM Stoichiometry s WHERE s.id = Stoichiometry_AUD.id) WHERE uuid IS NULL;
         </sql>
 
         <addNotNullConstraint tableName="Stoichiometry" columnName="uuid" columnDataType="VARCHAR(36)"/>

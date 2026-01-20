@@ -358,12 +358,13 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     StoichiometryDTO createdStoichiometry =
         getFromJsonResponseBody(createResult, StoichiometryDTO.class);
 
-    MvcResult deleteResult = mockMvc
-        .perform(
-            delete(URL)
-                .param("stoichiometryId", createdStoichiometry.getId().toString())
-                .principal(principal)
-                .header("apiKey", apiKey))
+    MvcResult deleteResult =
+        mockMvc
+            .perform(
+                delete(URL)
+                    .param("stoichiometryId", createdStoichiometry.getId().toString())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
 
