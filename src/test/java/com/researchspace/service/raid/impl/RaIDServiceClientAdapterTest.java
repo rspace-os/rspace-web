@@ -161,7 +161,10 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
     when(mockedRaidClient.getRaIDList(API_BASE_URL, OLD_ACCESS_TOKEN)).thenReturn(expectedRaidList);
     Set<RaIDReferenceDTO> expectedRaidReferenceDTOList =
         expectedRaidList.stream()
-            .map(el -> new RaIDReferenceDTO(SERVER_ALIAS, el.getIdentifier().getId()))
+            .map(
+                el ->
+                    new RaIDReferenceDTO(
+                        SERVER_ALIAS, el.getTitle().get(0).getText(), el.getIdentifier().getId()))
             .collect(Collectors.toSet());
     raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
 
@@ -179,7 +182,10 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
     when(mockedRaidClient.getRaID(API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX))
         .thenReturn(expectedRaid);
     RaIDReferenceDTO expectedRaidReferenceDTO =
-        new RaIDReferenceDTO(SERVER_ALIAS, expectedRaid.getIdentifier().getId());
+        new RaIDReferenceDTO(
+            SERVER_ALIAS,
+            expectedRaid.getTitle().get(0).getText(),
+            expectedRaid.getIdentifier().getId());
     raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
 
     // WHEN
