@@ -65,6 +65,7 @@ public class RaIDServiceManagerImpl implements RaIDServiceManager {
             user,
             projectGroup,
             raidToGroupAssociation.getRaid().getRaidServerAlias(),
+            raidToGroupAssociation.getRaid().getRaidTitle(),
             raidToGroupAssociation.getRaid().getRaidIdentifier()));
     grpManager.saveGroup(projectGroup, false, user);
   }

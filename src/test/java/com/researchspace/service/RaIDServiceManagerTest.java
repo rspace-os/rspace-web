@@ -27,6 +27,7 @@ public class RaIDServiceManagerTest {
 
   private static final String SERVER_ALIAS = "raidServerAlias";
   private static final String RAID_IDENTIFIER = "https://raid.org/10.12345/FJK987";
+  private static final String RAID_TITLE = "Raid Title 1";
   public static final long USER_RAID_ID = 1L;
   public static final long PROJECT_GROUP_ID = 2L;
 
@@ -47,7 +48,7 @@ public class RaIDServiceManagerTest {
     projectGroup = TestFactory.createAnyGroup(piUser);
     projectGroup.setId(PROJECT_GROUP_ID);
     projectGroup.setGroupType(GroupType.PROJECT_GROUP);
-    userRaid = new UserRaid(piUser, projectGroup, SERVER_ALIAS, RAID_IDENTIFIER);
+    userRaid = new UserRaid(piUser, projectGroup, SERVER_ALIAS, RAID_TITLE, RAID_IDENTIFIER);
     userRaid.setId(USER_RAID_ID);
 
     when(raidDao.getAssociatedRaidByUserAndAlias(piUser, SERVER_ALIAS))
@@ -78,7 +79,7 @@ public class RaIDServiceManagerTest {
         new RaidGroupAssociation(
             projectGroup.getId(),
             projectGroup.getDisplayName(),
-            new RaIDReferenceDTO(SERVER_ALIAS, RAID_IDENTIFIER)));
+            new RaIDReferenceDTO(SERVER_ALIAS, RAID_TITLE, RAID_IDENTIFIER)));
 
     // THEN
     verify(groupManager).getGroup(projectGroup.getId());
