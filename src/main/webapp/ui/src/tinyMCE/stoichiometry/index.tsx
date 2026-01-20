@@ -64,6 +64,7 @@ class StoichiometryPlugin {
         open: false,
         onClose: () => {},
         chemId: null,
+        recordId: recordId,
         stoichiometryId: undefined,
         stoichiometryRevision: undefined,
         onTableCreated: () => {},
