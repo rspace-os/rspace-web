@@ -103,9 +103,9 @@ class StoichiometryPlugin {
       throw new Error("tinymce-stoichiometry container not found");
     }
 
+    const recordId = editor.getParam("recordId") as number;
     const dialogRenderer = renderDialog(container);
     dialogRenderer.next();
-    const recordId = editor.getParam("recordId") as number;
     const initialProps: React.ComponentProps<typeof StoichiometryDialog> = {
       open: false,
       onClose: () => {},
