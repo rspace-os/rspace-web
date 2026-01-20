@@ -2847,13 +2847,13 @@ paths:
           required: false
           type: integer
           format: int64
-          description: The ID of the chemical reaction. Mutually exclusive with recordId.
+          description: The ID of the chemical reaction. If provided, the stoichiometry will be initialized from this reaction.
         - name: recordId
           in: query
-          required: false
+          required: true
           type: integer
           format: int64
-          description: The ID of the record. Mutually exclusive with chemId.
+          description: The ID of the record the stoichiometry belongs to.
         - name: revision
           in: query
           required: false
@@ -2863,14 +2863,6 @@ paths:
           description: Stoichiometry
           schema:
             $ref: '#/definitions/StoichiometryDTO'
-        '400':
-          description: Either chemId or recordId must be provided, but not both.
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Provide either chemId or recordId, but not both."
         '401':
           description: You should have write permissions on the document containing the stoichiometry table.
           schema:
