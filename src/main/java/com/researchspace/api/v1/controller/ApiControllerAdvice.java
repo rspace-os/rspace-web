@@ -39,7 +39,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
 
   protected @Autowired MessageSourceUtils messages;
 
-  //401
+  // 401
   @ExceptionHandler({AuthorizationException.class, ApiAuthenticationException.class})
   public ResponseEntity<Object> handleAuth(final Exception ex, final WebRequest request) {
     final String error = "Authorisation error";
