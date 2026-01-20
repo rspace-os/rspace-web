@@ -19,7 +19,7 @@ import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.dtos.ExportSelection;
-import com.researchspace.model.dtos.RaidGroupAssociation;
+import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
 import com.researchspace.model.field.ErrorList;
@@ -462,6 +462,7 @@ public class ExportController extends BaseController {
     ExportSelection exportSelection = exportConfig.getExportSelection();
     ExportToFileConfig exportToFileConfig = exportConfig.getExportConfig();
     RepoDepositConfig repositoryConfig = exportConfig.getRepositoryConfig();
+    RaidGroupAssociationDTO raidAssociated = exportConfig.getRaidAssociated();
 
     // Checks for JSON binding errors, like fields that must not be null
     if (errors.hasErrors()) {
@@ -484,6 +485,10 @@ public class ExportController extends BaseController {
       return getText(
           "workspace.export.msgFailure",
           new String[] {"Export", getMultiDocExportErrorMsg(errorBuffer)});
+    }
+
+    if (!hasValidRaidAssociation(principal.getName(), raidAssociated)) {
+      return getRaidValidationError(raidAssociated);
     }
 
     updatePageSizePrefs(
@@ -548,6 +553,9 @@ public class ExportController extends BaseController {
             validatePreDeposit(errorBuffer, repositoryConfig, exporter);
         if (!StringUtils.isBlank(va.getErrorMsg())) {
           return va.getErrorMsg();
+        }
+        if (repositoryConfig.isExportToRaid()) {
+          repositoryConfig.setRaidAssociated(raidAssociated);
         }
         depositHandler.sendDocumentToRepository(
             repositoryConfig, va.getOptionalAppConfig(), va.getApp(), futureExportDocument);
@@ -684,38 +692,15 @@ public class ExportController extends BaseController {
       return getText("workspace.export.noDiskSpace");
     }
 
+    if (!hasValidRaidAssociation(principal.getName(), exportDialogConfig.getRaidAssociated())) {
+      return getRaidValidationError(exportDialogConfig.getRaidAssociated());
+    }
+
     try {
       URI baseUri = new URI(properties.getServerUrl());
       User exporter = getUserByUsername(principal.getName());
 
       ArchiveExportConfig exportCfg = exportDialogConfig.toArchiveExportConfig();
-
-      if (exportCfg.hasRaidAssociation()) {
-        // validate raid exists and it is associated
-        Optional<RaidGroupAssociation> raidAssociated =
-            raidServiceManager.getAssociatedRaidByUserAliasAndProjectId(
-                userManager.getUserByUsername(principal.getName()),
-                exportCfg.getRaidGroupAssociation().getRaid().getRaidServerAlias(),
-                exportCfg.getRaidGroupAssociation().getProjectGroupId());
-        if (!(raidAssociated.isPresent()
-            && raidAssociated
-                .get()
-                .getRaid()
-                .getRaidIdentifier()
-                .equals(exportCfg.getRaidGroupAssociation().getRaid().getRaidIdentifier()))) {
-          return getText(
-              "workspace.export.msgFailure",
-              new String[] {
-                "Export",
-                "The submitted RaID \""
-                    + exportCfg.getRaidGroupAssociation().getRaid().getRaidIdentifier()
-                    + "\" "
-                    + "is not currently associated to the projectId \""
-                    + exportCfg.getRaidGroupAssociation().getProjectGroupId()
-                    + "\""
-              });
-        }
-      }
 
       if (exportCfg.isIncludeNfsLinks()) {
         exportCfg.setAvailableNfsClients(nfsController.retrieveNfsClientsMapFromSession(request));
@@ -756,6 +741,9 @@ public class ExportController extends BaseController {
         if (!StringUtils.isBlank(va.getErrorMsg())) {
           return va.getErrorMsg();
         }
+        if (repositoryConfig.isExportToRaid()) {
+          repositoryConfig.setRaidAssociated(exportDialogConfig.getRaidAssociated());
+        }
         depositHandler.sendArchiveToRepository(
             repositoryConfig, va.getOptionalAppConfig(), va.getApp(), futureArchive);
       }
@@ -765,6 +753,39 @@ public class ExportController extends BaseController {
     }
 
     return getText("pdfArchiving.submission.successMsg");
+  }
+
+  private String getRaidValidationError(RaidGroupAssociationDTO raidAssociated) {
+    return getText(
+        "workspace.export.msgFailure",
+        new String[] {
+          "Export",
+          "The submitted RaID \""
+              + raidAssociated.getRaid().getRaidIdentifier()
+              + "\" "
+              + "is not currently associated to the projectId \""
+              + raidAssociated.getProjectGroupId()
+              + "\""
+        });
+  }
+
+  private boolean hasValidRaidAssociation(
+      String username, RaidGroupAssociationDTO raidGroupAssociation) {
+    if (raidGroupAssociation != null) {
+      // validate raid exists and it is associated
+      Optional<RaidGroupAssociationDTO> raidAssociated =
+          raidServiceManager.getAssociatedRaidByUserAliasAndProjectId(
+              userManager.getUserByUsername(username),
+              raidGroupAssociation.getRaid().getRaidServerAlias(),
+              raidGroupAssociation.getProjectGroupId());
+      return raidAssociated.isPresent()
+          && raidAssociated
+              .get()
+              .getRaid()
+              .getRaidIdentifier()
+              .equals(raidGroupAssociation.getRaid().getRaidIdentifier());
+    }
+    return true;
   }
 
   private String getMultiDocExportErrorMsg(StringBuilder erbf) {

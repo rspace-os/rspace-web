@@ -6,7 +6,7 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
-import com.researchspace.model.dtos.RaidGroupAssociation;
+import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.repository.spi.IRepository;
 import java.io.File;
@@ -43,7 +43,7 @@ public class ArchiveExportConfig implements IArchiveExportConfig {
 
   private ExportScope exportScope;
 
-  private RaidGroupAssociation raidGroupAssociation;
+  private RaidGroupAssociationDTO raidGroupAssociated;
 
   private ProgressMonitor progressMonitor = ProgressMonitor.NULL_MONITOR;
 
@@ -178,6 +178,6 @@ public class ArchiveExportConfig implements IArchiveExportConfig {
 
   @Override
   public boolean hasRaidAssociation() {
-    return this.raidGroupAssociation != null;
+    return this.raidGroupAssociated != null;
   }
 }

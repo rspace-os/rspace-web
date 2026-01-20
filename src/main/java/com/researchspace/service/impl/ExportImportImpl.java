@@ -464,7 +464,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     }
     if (exportConfig.hasRaidAssociation()) {
       manifest.addItem(
-          "ProjectID", exportConfig.getRaidGroupAssociation().getRaid().getRaidIdentifier());
+          "ProjectID", exportConfig.getRaidGroupAssociated().getRaid().getRaidIdentifier());
     }
     getAppDBVersion(manifest);
     return manifest;

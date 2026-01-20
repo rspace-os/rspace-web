@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static com.researchspace.model.apps.App.APP_DATAVERSE;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +32,7 @@ import com.researchspace.service.IAsyncArchiveDepositor;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -50,6 +52,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.Setter;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.velocity.app.VelocityEngine;
 import org.jetbrains.annotations.Nullable;
@@ -71,6 +75,9 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
 
   private @Autowired IntegrationsHandler integrationsHandler;
   private @Autowired DMPManager dmpManager;
+
+  @Setter(value = AccessLevel.PROTECTED) /* test purposes */
+  private @Autowired RaIDServiceClientAdapter raIDServiceClientAdapter;
 
   private Logger log = LoggerFactory.getLogger(AsyncDepositorImpl.class);
   private static String NOT_ALLOWED_FILENAME_CHARS = "[?*/\\\\]+";
@@ -114,8 +121,38 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       User subject,
       File archive,
       RepoDepositConfig repoDepositConfig) {
+    reportDoiToRaid(result, subject, repoDepositConfig);
     notifyDepositComplete(result, app, subject, archive);
     updateDMPS(result, subject, repoDepositConfig);
+  }
+
+  private boolean reportDoiToRaid(
+      RepositoryOperationResult result, User subject, RepoDepositConfig repoDepositConfig) {
+    boolean raidUpdated = false;
+    if (result.isSucceeded()
+        && APP_DATAVERSE.equals(repoDepositConfig.getAppName())) { // only supports DATAVERSE
+      // the url returned by DATAVERSE is something like:
+      // https://dataverse.org/dataset.xhtml?persistentId=doi:10.70122/FK2/FNGEGH
+      try {
+        String doiLink = "https://doi.org/" + result.getUrl().toString().split("=doi:")[1];
+        raidUpdated =
+            raIDServiceClientAdapter.updateRaIDRelatedObject(
+                subject.getUsername(), repoDepositConfig.getRaidAssociated().getRaid(), doiLink);
+        log.info(
+            "The following DOI link: \""
+                + doiLink
+                + "\" has been successfully reported to the RelatedObject section of the RaID \""
+                + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
+                + "\"");
+      } catch (Exception e) {
+        log.error(
+            "Impossible to report the RelatedObject to the RaID \""
+                + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
+                + "\"relatedObjects becasue of the following error: "
+                + e);
+      }
+    }
+    return raidUpdated;
   }
 
   /**

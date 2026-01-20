@@ -150,7 +150,7 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
           roCrate.addDataEntity(out, true);
           List<String> listIsPartOf = new LinkedList<>();
           if (aconfig.hasRaidAssociation()) {
-            listIsPartOf.add(aconfig.getRaidGroupAssociation().getRoCrateId());
+            listIsPartOf.add(aconfig.getRaidGroupAssociated().getRoCrateId());
           }
           for (RoCrateLogicalFolder logicalFolder : logicalTopLevelFolders) {
             if (recordToExport.hasParents()) {
