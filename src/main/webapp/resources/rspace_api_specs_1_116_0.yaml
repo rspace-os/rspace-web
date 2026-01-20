@@ -2842,18 +2842,18 @@ paths:
       tags:
         - Chemistry
       parameters:
-        - name: chemId
-          in: query
-          required: false
-          type: integer
-          format: int64
-          description: The ID of the chemical reaction. If provided, the stoichiometry will be initialized from this reaction.
         - name: recordId
           in: query
           required: true
           type: integer
           format: int64
           description: The ID of the record the stoichiometry belongs to.
+        - name: chemId
+          in: query
+          required: false
+          type: integer
+          format: int64
+          description: The ID of the chemical reaction. If provided, the stoichiometry will be initialized from this reaction.
         - name: revision
           in: query
           required: false
