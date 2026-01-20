@@ -161,7 +161,9 @@ public class GroupControllerMVCIT extends MVCTestBase {
     raIDServiceManager.bindRaidToGroupAndSave(
         pi1,
         new RaidGroupAssociation(
-            g1.getId(), new RaIDReferenceDTO("raidServerAlias", "raidServerIdentifier")));
+            g1.getId(),
+            g1.getDisplayName(),
+            new RaIDReferenceDTO("raidServerAlias", "https://raid.org/10.12345/FKJ897")));
 
     // make sure group can be deleted.
     grpMgr.removeGroup(g1.getId(), pi1);

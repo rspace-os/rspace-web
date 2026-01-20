@@ -5,6 +5,7 @@ import com.researchspace.archive.ArchivalMeta;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.dtos.RaidGroupAssociation;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.repository.spi.IRepository;
 import java.io.File;
@@ -117,4 +118,8 @@ public interface IArchiveExportConfig extends IExportConfig {
   Map<Long, NfsClient> getAvailableNfsClients();
 
   ProgressMonitor getProgressMonitor();
+
+  boolean hasRaidAssociation();
+
+  RaidGroupAssociation getRaidGroupAssociation();
 }

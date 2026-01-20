@@ -139,15 +139,9 @@ public class RaIDController extends BaseOAuth2Controller {
     Optional<RaidGroupAssociation> result = Optional.empty();
     BindingResult errors = new BeanPropertyBindingResult(null, "raidGroupAssociation");
     try {
-      Set<RaidGroupAssociation> userRaidAlreadyAssociated =
-          raidServiceManager.getAssociatedRaidsByUserAndAlias(
-              userManager.getUserByUsername(principal.getName()), raidServerAlias);
-      if (!userRaidAlreadyAssociated.isEmpty()) {
-        result =
-            userRaidAlreadyAssociated.stream()
-                .filter(raid -> raid.getProjectGroupId().equals(projectGroupId))
-                .findAny();
-      }
+      result =
+          raidServiceManager.getAssociatedRaidByUserAliasAndProjectId(
+              userManager.getUserByUsername(principal.getName()), raidServerAlias, projectGroupId);
     } catch (Exception e) {
       log.error("Not able to get RaID list for the user \"{}\":", principal.getName(), e);
       errors.reject(
@@ -262,9 +256,12 @@ public class RaIDController extends BaseOAuth2Controller {
       @PathVariable String raidServerAlias,
       @RequestParam(name = "raidIdentifier") String raidIdentifier)
       throws BindException {
+
     RaidGroupAssociation input =
         new RaidGroupAssociation(
-            projectGroupId, new RaIDReferenceDTO(raidServerAlias, raidIdentifier));
+            projectGroupId,
+            groupManager.getGroup(projectGroupId).getDisplayName(),
+            new RaIDReferenceDTO(raidServerAlias, raidIdentifier));
     associateRaidToGroup(input);
   }
 

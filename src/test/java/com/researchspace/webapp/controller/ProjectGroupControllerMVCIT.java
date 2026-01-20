@@ -32,6 +32,8 @@ import org.springframework.test.web.servlet.MvcResult;
 @WebAppConfiguration
 public class ProjectGroupControllerMVCIT extends MVCTestBase {
 
+  private static final String RAID_SERVER_ALIAS = "raidServerAlias_X";
+  private static final String RAID_IDENTIFIER = "https://raid.org/10.12345/FKHJ78";
   @Autowired private RaIDServiceManager raIDServiceManager;
 
   private User pi;
@@ -41,14 +43,14 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    this.pi = createAndSaveUser("pi_" + getRandomName(10), Constants.PI_ROLE);
+    this.pi = createAndSaveUser("pi" + getRandomName(10), Constants.PI_ROLE);
     initUser(this.pi);
     logoutAndLoginAs(pi);
 
     projectGroupCreationObj = new CreateCloudGroup();
     projectGroupCreationObj.setGroupName("ProjectGroupWithRaid");
     projectGroupCreationObj.setSessionUser(pi);
-    projectGroupCreationObj.setRaid(new RaIDReferenceDTO("raidServerAlias_X", "raidIdentifier_Y"));
+    projectGroupCreationObj.setRaid(new RaIDReferenceDTO(RAID_SERVER_ALIAS, RAID_IDENTIFIER));
     projectGroupCreationObj.setPiEmail(pi.getEmail());
   }
 
@@ -69,16 +71,16 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
     assertNotNull(newProjectGroupId);
     Group newProjectGroup = grpMgr.getGroup(newProjectGroupId);
     assertNotNull(newProjectGroup.getRaid());
-    assertEquals("raidServerAlias_X", newProjectGroup.getRaid().getRaidServerAlias());
-    assertEquals("raidIdentifier_Y", newProjectGroup.getRaid().getRaidIdentifier());
+    assertEquals(RAID_SERVER_ALIAS, newProjectGroup.getRaid().getRaidServerAlias());
+    assertEquals(RAID_IDENTIFIER, newProjectGroup.getRaid().getRaidIdentifier());
     assertEquals(newProjectGroupId, newProjectGroup.getRaid().getGroupAssociated().getId());
     assertEquals(pi.getId(), newProjectGroup.getRaid().getOwner().getId());
     Long raidId = newProjectGroup.getRaid().getId();
     assertNotNull(raidId);
 
     UserRaid raidSaved = raIDServiceManager.getUserRaid(raidId);
-    assertEquals("raidServerAlias_X", raidSaved.getRaidServerAlias());
-    assertEquals("raidIdentifier_Y", raidSaved.getRaidIdentifier());
+    assertEquals(RAID_SERVER_ALIAS, raidSaved.getRaidServerAlias());
+    assertEquals(RAID_IDENTIFIER, raidSaved.getRaidIdentifier());
     assertEquals(newProjectGroupId, raidSaved.getGroupAssociated().getId());
     assertEquals(pi.getId(), raidSaved.getOwner().getId());
 
