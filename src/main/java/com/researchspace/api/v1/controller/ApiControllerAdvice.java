@@ -39,6 +39,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
 
   protected @Autowired MessageSourceUtils messages;
 
+  //401
   @ExceptionHandler({AuthorizationException.class, ApiAuthenticationException.class})
   public ResponseEntity<Object> handleAuth(final Exception ex, final WebRequest request) {
     final String error = "Authorisation error";
@@ -61,6 +62,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
+  @ResponseStatus(HttpStatus.CONFLICT)
   @ExceptionHandler(DocumentAlreadyEditedException.class)
   protected ResponseEntity<Object> handleDocumentAlreadyEditedException(
       final DocumentAlreadyEditedException ex, final WebRequest request) {
