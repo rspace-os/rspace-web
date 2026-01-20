@@ -81,9 +81,6 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   public Stoichiometry createFromReaction(long recordId, long chemId, User user) {
     RSChemElement chemical = chemistryService.getChemicalElementByRevision(chemId, null, user);
     Record owningRecord = recordManager.get(recordId);
-    if (owningRecord == null) {
-      throw new NotFoundException("Record with id " + recordId + " not found");
-    }
     if (!permissionUtils.isPermitted((BaseRecord) owningRecord, PermissionType.WRITE, user)) {
       throw new AuthorizationException(
           "User does not have write permissions on document containing stoichiometry");
@@ -114,9 +111,6 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   @Override
   public Stoichiometry createEmpty(long recordId, User user) {
     Record record = recordManager.get(recordId);
-    if (record == null) {
-      throw new NotFoundException("Record with id " + recordId + " not found");
-    }
     if (!permissionUtils.isPermitted((BaseRecord) record, PermissionType.WRITE, user)) {
       throw new AuthorizationException("User does not have write permissions on record");
     }
@@ -127,9 +121,6 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   public Stoichiometry update(
       long stoichiometryId, StoichiometryUpdateDTO stoichiometryUpdateDTO, User user) {
     Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
-    if (stoichiometry == null) {
-      throw new NotFoundException("Stoichiometry with id " + stoichiometryId + " not found");
-    }
     Record owningRecord = stoichiometry.getRecord();
     if (owningRecord == null) {
       throw new NotFoundException(
@@ -146,9 +137,6 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   @Override
   public void delete(long stoichiometryId, User user) {
     Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
-    if (stoichiometry == null) {
-      throw new NotFoundException("Stoichiometry with id " + stoichiometryId + " not found");
-    }
     Record owningRecord = stoichiometry.getRecord();
     if (!hasPermissions(owningRecord, user, PermissionType.WRITE)) {
       throw new AuthorizationException(

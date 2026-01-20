@@ -28,7 +28,7 @@ public final class StoichiometryMapper {
         stoichiometry.getParentReaction() != null
             ? stoichiometry.getParentReaction().getId()
             : null;
-    Long recordId = stoichiometry.getRecord() != null ? stoichiometry.getRecord().getId() : null;
+    Long recordId = stoichiometry.getRecord().getId();
 
     return StoichiometryDTO.builder()
         .id(stoichiometry.getId())

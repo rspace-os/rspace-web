@@ -56,7 +56,6 @@
             </column>
         </addColumn>
 
-        <!-- Backfill UUIDs for existing records. Using a custom SQL for UUID generation. -->
         <sql>
             UPDATE Stoichiometry SET uuid = UUID() WHERE uuid IS NULL;
         </sql>

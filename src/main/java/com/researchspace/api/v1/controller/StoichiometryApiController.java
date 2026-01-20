@@ -39,8 +39,8 @@ public class StoichiometryApiController extends BaseApiController implements Sto
 
   @Override
   public StoichiometryDTO createStoichiometry(Long recordId, Long chemId, User user) {
-    if (recordId == null && chemId == null) {
-      throw new StoichiometryException("Either chemId or recordId must be provided");
+    if (recordId == null) {
+      throw new StoichiometryException("recordId must be provided");
     }
 
     Stoichiometry stoichiometry;

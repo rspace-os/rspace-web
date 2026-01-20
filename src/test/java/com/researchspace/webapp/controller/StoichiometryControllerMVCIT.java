@@ -29,7 +29,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
@@ -212,7 +211,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  public void testCreateStoichiometryForRecord() throws Exception {
+  public void testCreateEmptyStoichiometryWithoutReaction() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
 
     MvcResult createResult =
@@ -229,10 +228,8 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
         getFromJsonResponseBody(createResult, StoichiometryDTO.class);
     assertNotNull(createdStoichiometry.getId());
     assertEquals(doc1.getId(), createdStoichiometry.getRecordId());
-    // parentReactionId should be null for record-level stoichiometry
     assertNull(createdStoichiometry.getParentReactionId());
 
-    // Verify we can retrieve it
     MvcResult getResult =
         mockMvc
             .perform(
@@ -645,14 +642,21 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void createStoichiometry_withInvalidChemId_returnsBadRequest() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
-    mockMvc
-        .perform(
-            post(URL)
-                .param("recordId", doc1.getId().toString())
-                .param("chemId", "-999")
-                .principal(principal)
-                .header("apiKey", apiKey))
-        .andExpect(status().is5xxServerError());
+    MvcResult result =
+        mockMvc
+            .perform(
+                post(URL)
+                    .param("recordId", doc1.getId().toString())
+                    .param("chemId", "-999")
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andReturn();
+
+    String body = result.getResponse().getContentAsString();
+    assertTrue(
+        body.contains(
+            "Object of class [com.researchspace.model.RSChemElement] with identifier [-999]: not"
+                + " found"));
   }
 
   private MvcResult createStoichiometry(RSChemElement reaction) throws Exception {

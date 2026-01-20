@@ -13,6 +13,7 @@ import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
+import com.researchspace.service.chemistry.StoichiometryException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
@@ -149,9 +150,9 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   }
 
   @ResponseStatus(HttpStatus.BAD_REQUEST)
-  @ExceptionHandler(com.researchspace.service.chemistry.StoichiometryException.class)
+  @ExceptionHandler(StoichiometryException.class)
   public ResponseEntity<Object> handleStoichiometryException(
-      com.researchspace.service.chemistry.StoichiometryException ex, WebRequest request) {
+      StoichiometryException ex, WebRequest request) {
     log.error("Stoichiometry error", ex);
     ApiError apiError =
         new ApiError(

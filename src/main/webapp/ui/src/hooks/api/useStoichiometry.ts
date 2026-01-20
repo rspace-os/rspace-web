@@ -90,7 +90,7 @@ export default function useStoichiometry(): {
     recordId,
     chemId,
   }: {
-    recordId?: number;
+    recordId: number;
     chemId?: number;
   }) => Promise<StoichiometryResponse>;
 

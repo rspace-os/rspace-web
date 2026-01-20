@@ -107,7 +107,7 @@ function StandaloneDialogInner({
         if (!chemId) throw new Error("chemId is required");
         const { id, revision } = await calculateStoichiometry({
           chemId: chemId || undefined,
-          recordId: recordId || undefined,
+          recordId: recordId,
         });
         setShowTable(true);
         onTableCreated?.(id, revision);
