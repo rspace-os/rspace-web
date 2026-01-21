@@ -39,9 +39,11 @@ public class ApiGroupInfo extends ApiGroupBasicInfo {
 
     this.sharedFolderId = group.getCommunalGroupFolderId();
     this.sharedSnippetFolderId = group.getSharedSnippetGroupFolderId();
-    this.raid = new RaIDReferenceDTO(
-            group.getRaid().getId(), group.getRaid().getRaidServerAlias(),
-            group.getRaid().getRaidTitle(), group.getRaid().getRaidIdentifier());
+    if (group.getRaid() != null) {
+      this.raid = new RaIDReferenceDTO(
+          group.getRaid().getId(), group.getRaid().getRaidServerAlias(),
+          group.getRaid().getRaidTitle(), group.getRaid().getRaidIdentifier());
+    }
     for (UserGroup ug : group.getUserGroups()) {
       members.add(new ApiUserGroupInfo(ug));
     }
