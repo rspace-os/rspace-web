@@ -61,10 +61,11 @@ public class RaIDControllerMCVIT extends MVCTestBase {
   private static final String API_BASE_URL_2 = "https://demo2.raid.au";
   private static final String SERVER_ALIAS_1 = "alias1";
   private static final String SERVER_ALIAS_2 = "alias2";
+  private static final String RAID_TITLE_1 = "Raid Title 1";
   private static final String IDENTIFIER_ASSOCIATED_1 =
       "https://static.demo.raid.org.au/10.83334/c74980b1";
   private static final RaIDReferenceDTO RAID_ASSOCIATED_1 =
-      new RaIDReferenceDTO(SERVER_ALIAS_1, IDENTIFIER_ASSOCIATED_1);
+      new RaIDReferenceDTO(SERVER_ALIAS_1, RAID_TITLE_1, IDENTIFIER_ASSOCIATED_1);
 
   @Autowired private RaIDController raidController;
 
@@ -124,6 +125,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     alreadyAssociatedRaidForServerAlias1 =
         new RaIDReferenceDTO(
             SERVER_ALIAS_1,
+            RAID_TITLE_1,
             mapper
                 .readValue(
                     IOUtils.resourceToString(
@@ -148,7 +150,10 @@ public class RaIDControllerMCVIT extends MVCTestBase {
                     IOUtils.resourceToString(
                         "/TestResources/raid/json/raid-list.json", Charset.defaultCharset()),
                     RaID[].class))
-            .map(r -> new RaIDReferenceDTO(SERVER_ALIAS_1, r.getIdentifier().getId()))
+            .map(
+                r ->
+                    new RaIDReferenceDTO(
+                        SERVER_ALIAS_1, r.getTitle().get(0).getText(), r.getIdentifier().getId()))
             .collect(Collectors.toSet());
     when(mockedRaidClientAdapter.getRaIDList(piUser.getUsername(), SERVER_ALIAS_1))
         .thenReturn(configuredRaidList1);
@@ -159,7 +164,10 @@ public class RaIDControllerMCVIT extends MVCTestBase {
                     IOUtils.resourceToString(
                         "/TestResources/raid/json/raid-list-2.json", Charset.defaultCharset()),
                     RaID[].class))
-            .map(r -> new RaIDReferenceDTO(SERVER_ALIAS_2, r.getIdentifier().getId()))
+            .map(
+                r ->
+                    new RaIDReferenceDTO(
+                        SERVER_ALIAS_2, r.getTitle().get(0).getText(), r.getIdentifier().getId()))
             .collect(Collectors.toSet());
     when(mockedRaidClientAdapter.getRaIDList(piUser.getUsername(), SERVER_ALIAS_2))
         .thenReturn(configuredRaidList2);
@@ -347,7 +355,10 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     assertTrue((boolean) mapResult.get("success"));
     return ((List<Map<String, String>>) mapResult.get("data"))
         .stream()
-            .map(el -> new RaIDReferenceDTO(el.get("raidServerAlias"), el.get("raidIdentifier")))
+            .map(
+                el ->
+                    new RaIDReferenceDTO(
+                        el.get("raidServerAlias"), el.get("raidTitle"), el.get("raidIdentifier")))
             .collect(Collectors.toSet());
   }
 
@@ -363,7 +374,8 @@ public class RaIDControllerMCVIT extends MVCTestBase {
         Long.valueOf(((Map<String, Integer>) mapResult.get("data")).get("projectGroupId")),
         groupName,
         new RaIDReferenceDTO(
-            (groupAssociation.get("raid")).get("raidServerAlias"),
+            groupAssociation.get("raid").get("raidServerAlias"),
+            groupAssociation.get("raid").get("raidTitle"),
             groupAssociation.get("raid").get("raidIdentifier")));
   }
 

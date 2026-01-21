@@ -34,6 +34,7 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
 
   private static final String RAID_SERVER_ALIAS = "raidServerAlias_X";
   private static final String RAID_IDENTIFIER = "https://raid.org/10.12345/FKHJ78";
+  private static final String RAID_TITLE = "Raid Title 1";
   @Autowired private RaIDServiceManager raIDServiceManager;
 
   private User pi;
@@ -50,7 +51,8 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
     projectGroupCreationObj = new CreateCloudGroup();
     projectGroupCreationObj.setGroupName("ProjectGroupWithRaid");
     projectGroupCreationObj.setSessionUser(pi);
-    projectGroupCreationObj.setRaid(new RaIDReferenceDTO(RAID_SERVER_ALIAS, RAID_IDENTIFIER));
+    projectGroupCreationObj.setRaid(
+        new RaIDReferenceDTO(RAID_SERVER_ALIAS, RAID_TITLE, RAID_IDENTIFIER));
     projectGroupCreationObj.setPiEmail(pi.getEmail());
   }
 

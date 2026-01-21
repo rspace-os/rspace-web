@@ -1,6 +1,8 @@
 package com.researchspace.webapp.integrations.raid;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.researchspace.raid.model.exception.RaIDException;
 import java.io.Serializable;
 import lombok.Data;
@@ -19,15 +21,21 @@ public class RaIDReferenceDTO implements Serializable {
   @JsonIgnore private String briefIdentifier; // format raid:10.2343/FDR364
 
   private String raidServerAlias;
+
+  @JsonInclude(value = Include.NON_NULL)
+  private String raidTitle;
+
   private String raidIdentifier; // raid URL
 
-  public RaIDReferenceDTO(Long id, String raidServerAlias, String raidIdentifier) {
-    this(raidServerAlias, raidIdentifier);
+  public RaIDReferenceDTO(
+      Long id, String raidServerAlias, String raidTitle, String raidIdentifier) {
+    this(raidServerAlias, raidTitle, raidIdentifier);
     this.id = id;
   }
 
-  public RaIDReferenceDTO(String raidServerAlias, String raidIdentifier) {
+  public RaIDReferenceDTO(String raidServerAlias, String raidTitle, String raidIdentifier) {
     this.raidServerAlias = raidServerAlias;
+    this.raidTitle = raidTitle;
     this.raidIdentifier = raidIdentifier;
     try {
       String[] raidIdentifierSplit = raidIdentifier.split("/");
