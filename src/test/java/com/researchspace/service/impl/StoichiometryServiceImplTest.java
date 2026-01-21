@@ -110,7 +110,9 @@ public class StoichiometryServiceImplTest {
     StoichiometryException ex =
         assertThrows(
             StoichiometryException.class, () -> service.createFromReaction(123L, 2L, user));
-    assertEquals("Unable to generate stoichiometry for chemId=2: chemistry provider returned no analysis", ex.getMessage());
+    assertEquals(
+        "Unable to generate stoichiometry for chemId=2: chemistry provider returned no analysis",
+        ex.getMessage());
   }
 
   @Test
@@ -163,8 +165,7 @@ public class StoichiometryServiceImplTest {
   void createEmpty_whenRecordMissing_throwsNotFound() {
     when(recordManager.get(123L))
         .thenThrow(new ObjectRetrievalFailureException(Record.class, 123L));
-    assertThrows(
-        ObjectRetrievalFailureException.class, () -> service.createEmpty(123L, user));
+    assertThrows(ObjectRetrievalFailureException.class, () -> service.createEmpty(123L, user));
   }
 
   @Test
