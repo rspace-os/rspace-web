@@ -6,7 +6,7 @@ import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.model.inventory.Sample;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;

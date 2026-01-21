@@ -23,7 +23,7 @@
       <script src="<c:url value='/scripts/pages/signup/signup.js'/>"></script>
       <script src="https://accounts.google.com/gsi/client" async defer></script>
       <script src="<c:url value='/scripts/pages/signup/google-signin.js'/>"></script>
-      <script src="<c:url value='/scripts/bower_components/mustache/mustache.min.js'/>"></script>
+      <script src="<c:url value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
     </rst:hasDeploymentProperty>
 
     <link href="/styles/sign-in-up-common.css" rel="stylesheet">

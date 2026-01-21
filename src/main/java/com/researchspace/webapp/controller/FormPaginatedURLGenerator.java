@@ -4,7 +4,7 @@ import com.researchspace.core.util.AbstractURLPaginator;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.views.FormSearchCriteria;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class FormPaginatedURLGenerator extends AbstractURLPaginator {
 

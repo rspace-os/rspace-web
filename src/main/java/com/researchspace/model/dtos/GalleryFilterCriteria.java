@@ -4,7 +4,7 @@ import com.researchspace.core.util.FilterCriteria;
 import com.researchspace.core.util.UISearchTerm;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /** Simple filter POJO for filtering Gallery displays */
 @Data

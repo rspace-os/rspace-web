@@ -60,7 +60,7 @@ import java.util.function.Supplier;
 import javax.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.Setter;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,7 +198,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     String msg =
         messageSource.getMessage(
             "workspace.export.msgFailure",
-            new String[] {StringEscapeUtils.escapeHtml(exportName), detailMsg},
+            new String[] {StringEscapeUtils.escapeHtml4(exportName), detailMsg},
             null);
     commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, u.getUsername(), true);
   }
@@ -420,7 +420,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       URI baseURL,
       Supplier<ExportRecordList> exportListSupplier) {
 
-    ArchiveManifest manif = initializeArchiveManifest(expCfg.getExporter());
+    ArchiveManifest manif = initializeArchiveManifest(expCfg);
     ImmutableExportRecordList rcdList = exportListSupplier.get();
     configureArchiveMetadata(expCfg, baseURL, manif);
     try {
@@ -451,15 +451,20 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     return null;
   }
 
-  private ArchiveManifest initializeArchiveManifest(User exporter) {
+  private ArchiveManifest initializeArchiveManifest(IArchiveExportConfig exportConfig) {
+    User userExporter = exportConfig.getExporter();
     ArchiveManifest manifest = new ArchiveManifest();
     manifest.addItem(ArchiveManifest.SOURCE, ArchiveManifest.RSPACE_SOURCE);
-    manifest.addItem("Exported by", exporter.getFullName());
+    manifest.addItem("Exported by", userExporter.getFullName());
     // RSPAC-1023
     Optional<ExternalId> extId =
-        extIdResolver.getExternalIdForUser(exporter, IdentifierScheme.ORCID);
+        extIdResolver.getExternalIdForUser(userExporter, IdentifierScheme.ORCID);
     if (extId.isPresent()) {
       manifest.addItem("OrcidID", extId.get().getIdentifier());
+    }
+    if (exportConfig.hasRaidAssociation()) {
+      manifest.addItem(
+          "ProjectID", exportConfig.getRaidGroupAssociation().getRaid().getRaidIdentifier());
     }
     getAppDBVersion(manifest);
     return manifest;

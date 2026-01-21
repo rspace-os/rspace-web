@@ -22,8 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -92,7 +92,9 @@ public class ProjectGroupController extends BaseController {
     if (createCloudGroup.getRaid() != null) {
       validateRaidInput(createCloudGroup.getRaid());
       raidServiceManager.bindRaidToGroupAndSave(
-          creator, new RaidGroupAssociation(newLabGroup.getId(), createCloudGroup.getRaid()));
+          creator,
+          new RaidGroupAssociation(
+              newLabGroup.getId(), newLabGroup.getDisplayName(), createCloudGroup.getRaid()));
     }
     sendInvites(request, creator, listEmails, newLabGroup);
     publisher.publishEvent(new GenericEvent(creator, newLabGroup, AuditAction.CREATE));

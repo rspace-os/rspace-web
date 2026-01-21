@@ -1684,7 +1684,7 @@ RS.openWithPdfViewer = function (documentId, revisionId, name, fileExtension) {
 
   RS.getPdfDownloadLink(documentId, revisionId, fileExtension).then(function (downloadLink) {
 
-    var pdfViewerLink = '/scripts/pdfjs/web/viewer.html';
+    var pdfViewerLink = '/scripts/pdfjs/v54530/web/viewer.html';
     var encodedLink = encodeURIComponent((publicView?'/public/publicView':'')+downloadLink);
     var encodedTitle = encodeURIComponent(name + ' - RSpace preview');
 
@@ -1776,7 +1776,7 @@ RS.loadPdfPreviewIntoDiv = function (id, revisionId, fileName, extension, $div) 
 
     RS.blockPage("Generating preview...", false, $previewMainPanel);
 
-    PDFJS.getDocument(pdfDownloadLink).then(function (pdf) {
+    pdfjsLib.getDocument(pdfDownloadLink).promise.then(function (pdf) {
       RS.unblockPage($previewMainPanel);
       $previewPanel.data('previewLoaded', true);
 
@@ -1836,14 +1836,14 @@ RS._renderPdfPage = function ($previewPanel) {
 
     // lets measure the full-scale viewport
     var fullScale = 1;
-    var viewport = page.getViewport(fullScale);
+    var viewport = page.getViewport({ scale: fullScale });
 
     // we need to fit preview into limited width & height
     var scaleHeight = $canvas.height() / viewport.height;
     var scaleWidth = $canvas.width() / viewport.width;
     var newScale = Math.min(1, scaleHeight, scaleWidth);
 
-    viewport = page.getViewport(newScale);
+    viewport = page.getViewport({ scale: newScale });
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 

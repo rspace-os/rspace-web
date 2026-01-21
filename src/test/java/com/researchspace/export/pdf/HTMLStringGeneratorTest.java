@@ -293,8 +293,7 @@ public class HTMLStringGeneratorTest {
     // html chars in name escaped
     assertFalse(data.contains("special html chars &∅∈∌"));
     assertTrue(
-        "unexpected:" + data,
-        data.contains("special html chars &amp;amp;&amp;empty;&amp;isin;&amp;#8716;"));
+        "unexpected:" + data, data.contains("special html chars &amp;amp;&amp;empty;&amp;isin;∌"));
   }
 
   @Test

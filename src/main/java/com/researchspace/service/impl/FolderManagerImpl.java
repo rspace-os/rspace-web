@@ -2,9 +2,9 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.MediaUtils.GALLERY_MEDIA_FOLDERS;
 import static java.lang.String.format;
-import static org.apache.commons.lang.StringUtils.isBlank;
-import static org.apache.commons.lang.StringUtils.join;
 import static org.apache.commons.lang3.ArrayUtils.contains;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.core.util.ISearchResults;
@@ -63,8 +63,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;

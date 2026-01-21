@@ -38,10 +38,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
@@ -135,7 +136,6 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
       Record record = recordDao.get(rid.getDbId());
       List<AuditedRecord> versionsToExport =
           archivePlanner.getVersionsToExportForRecord(aconfig, rid, record);
-
       for (AuditedRecord ar : versionsToExport) {
         BaseRecord recordToExport = ar.getRecord();
         Number revision = ar.getRevision(); // will be null for non-all-revision export
@@ -148,16 +148,21 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
           dsb.setId("./" + recordFolder.getName());
           DataSetEntity out = dsb.build();
           roCrate.addDataEntity(out, true);
+          List<String> listIsPartOf = new LinkedList<>();
+          if (aconfig.hasRaidAssociation()) {
+            listIsPartOf.add(aconfig.getRaidGroupAssociation().getRoCrateId());
+          }
           for (RoCrateLogicalFolder logicalFolder : logicalTopLevelFolders) {
             if (recordToExport.hasParents()) {
               for (RecordToFolder parent : recordToExport.getParents()) {
                 if (recordParentIsThisFolder(parent.getFolder(), logicalFolder)) {
                   logicalFolder.addToHasPart(out.getId());
-                  out.addProperty("isPartOf", logicalFolder.getId());
+                  listIsPartOf.add(logicalFolder.getId());
                 }
               }
             }
           }
+          out.addIdListProperties("isPartOf", listIsPartOf);
           if (recordToExport.isStructuredDocument()) {
             StructuredDocument sd = recordToExport.asStrucDoc();
             if (!StringUtils.isEmpty(sd.getDocTag())) {

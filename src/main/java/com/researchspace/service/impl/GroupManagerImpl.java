@@ -64,6 +64,7 @@ import com.researchspace.model.views.GroupInvitation.Invitee;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.UserView;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.FolderNotSharedException;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitialiserUtils;
 import com.researchspace.service.OperationFailedMessageGenerator;
@@ -85,7 +86,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.Permission;
@@ -787,7 +788,7 @@ public class GroupManagerImpl implements GroupManager {
           String.format(
               "The folder '%s' is not a shared subfolder - id [%d] is not in a shared folder!",
               sharedFolder.getName(), sharedFolder.getId());
-      throw new IllegalArgumentException(msg);
+      throw new FolderNotSharedException(msg);
     }
     return this.getGroupByCommunalGroupFolderId(sharedFolderRoot.get().getId());
   }

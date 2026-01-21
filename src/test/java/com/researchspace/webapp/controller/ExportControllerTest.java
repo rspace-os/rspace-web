@@ -3,7 +3,7 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.SystemPropertyTestFactory.createAnyAppWithConfigElements;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -27,7 +27,9 @@ import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.ExportSelection;
+import com.researchspace.model.dtos.ExportSelection.ExportType;
 import com.researchspace.model.dtos.NfsExportConfig;
+import com.researchspace.model.dtos.RaidGroupAssociation;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO.ArchiveDialogConfig;
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
@@ -50,6 +52,7 @@ import com.researchspace.service.archive.PostArchiveCompletion;
 import com.researchspace.service.impl.OntologyDocManager;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.ExportController.ServerPath;
+import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.io.File;
 import java.net.URI;
 import java.security.Principal;
@@ -174,9 +177,9 @@ public class ExportControllerTest {
     return repositoryConfig;
   }
 
-  private static ArchiveDialogConfig createArchiveDialogConfig() {
+  private static ArchiveDialogConfig createArchiveDialogConfig(String archiveType) {
     ArchiveDialogConfig archiveDialogConfig = new ArchiveDialogConfig();
-    archiveDialogConfig.setArchiveType("html");
+    archiveDialogConfig.setArchiveType(archiveType);
     archiveDialogConfig.setDescription("sample description");
     archiveDialogConfig.setMaxLinkLevel(3);
     archiveDialogConfig.setAllVersions(false);
@@ -191,7 +194,7 @@ public class ExportControllerTest {
       Long[] ids, String[] names, String[] types, boolean depositToRepository) {
     ExportArchiveDialogConfigDTO exportArchiveConfig = new ExportArchiveDialogConfigDTO();
     exportArchiveConfig.setExportSelection(createExportSelection(ids, names, types));
-    exportArchiveConfig.setExportConfig(createArchiveDialogConfig());
+    exportArchiveConfig.setExportConfig(createArchiveDialogConfig("html"));
     exportArchiveConfig.setNfsConfig(createNfsDialogConfig());
     exportArchiveConfig.setRepositoryConfig(createRepoDepositConfig(depositToRepository));
     return exportArchiveConfig;
@@ -226,10 +229,37 @@ public class ExportControllerTest {
 
     ExportArchiveDialogConfigDTO exportConfig = new ExportArchiveDialogConfigDTO();
     exportConfig.setExportSelection(exportSelection);
-    exportConfig.setExportConfig(createArchiveDialogConfig());
+    exportConfig.setExportConfig(createArchiveDialogConfig("html"));
     exportConfig.setNfsConfig(createNfsDialogConfig());
     exportConfig.setRepositoryConfig(createRepoDepositConfig(false));
 
+    return exportConfig;
+  }
+
+  public static ExportArchiveDialogConfigDTO
+      createExportRaidAndElnArchiveConfigSelectionForProjectGroup(
+          Long groupId, String rspaceProjectName, String username, Long id, String name) {
+    ExportSelection exportSelection = new ExportSelection();
+    exportSelection.setType(ExportType.SELECTION);
+    exportSelection.setUsername(username);
+    exportSelection.setExportIds(new Long[] {id});
+    exportSelection.setExportNames(new String[] {name});
+    exportSelection.setExportTypes(new String[] {"NORMAL"});
+
+    ExportArchiveDialogConfigDTO exportConfig = new ExportArchiveDialogConfigDTO();
+    exportConfig.setExportSelection(exportSelection);
+    exportConfig.setExportConfig(createArchiveDialogConfig("eln"));
+    exportConfig.setNfsConfig(createNfsDialogConfig());
+    exportConfig.setRaidAssociated(
+        new RaidGroupAssociation(
+            groupId,
+            rspaceProjectName,
+            new RaIDReferenceDTO("DEMO", "Raid Title1", "https://raid.org/10.12345/FGH896")));
+
+    RepoDepositConfig depositConfig = createRepoDepositConfig(false);
+    depositConfig.setExportToRaid(false);
+
+    exportConfig.setRepositoryConfig(depositConfig);
     return exportConfig;
   }
 

@@ -32,7 +32,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,7 +105,10 @@ public class RaIDServiceClientAdapterImpl
             getApiBaseUrl(serverAlias),
             getExistingAccessTokenOrRefreshIfExpired(username, serverAlias));
     return verboseRaidList.stream()
-        .map(r -> new RaIDReferenceDTO(serverAlias, r.getIdentifier().getId()))
+        .map(
+            r ->
+                new RaIDReferenceDTO(
+                    serverAlias, r.getTitle().get(0).getText(), r.getIdentifier().getId()))
         .collect(Collectors.toSet());
   }
 
@@ -119,7 +122,8 @@ public class RaIDServiceClientAdapterImpl
             getExistingAccessTokenOrRefreshIfExpired(username, serverAlias),
             raidPrefix,
             raidSuffix);
-    return new RaIDReferenceDTO(serverAlias, verboseRaid.getIdentifier().getId());
+    return new RaIDReferenceDTO(
+        serverAlias, verboseRaid.getTitle().get(0).getText(), verboseRaid.getIdentifier().getId());
   }
 
   @Override

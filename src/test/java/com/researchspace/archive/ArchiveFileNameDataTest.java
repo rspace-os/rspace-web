@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.model.record.BaseRecord;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;

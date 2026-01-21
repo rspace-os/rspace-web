@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;

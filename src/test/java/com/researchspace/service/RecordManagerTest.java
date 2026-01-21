@@ -300,8 +300,8 @@ public class RecordManagerTest extends SpringTransactionalTest {
     recordMgr.createSnippet("", "b", user);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void creatingNewSnippetWithNullContentThrowsIAE() {
+  @Test(expected = NullPointerException.class)
+  public void creatingNewSnippetWithNullContentThrowsNPE() {
     recordMgr.createSnippet("a", null, user);
   }
 
@@ -791,7 +791,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertEquals(0, noChildrens.getResults().size());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = NullPointerException.class)
   public void addStructuredDocumentArgumentCheckingNoNulls() {
     user.getRootFolder();
     flushDatabaseState();

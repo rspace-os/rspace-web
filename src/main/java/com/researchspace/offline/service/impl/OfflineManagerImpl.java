@@ -15,7 +15,7 @@ import com.researchspace.offline.service.OfflineManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.session.UserSessionTracker;
 import java.util.List;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

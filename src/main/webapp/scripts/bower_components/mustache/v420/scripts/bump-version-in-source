@@ -1,0 +1,73 @@
+#!/usr/bin/env ruby
+
+require 'json'
+
+def puts_c(color, str)
+	puts "\x1b[#{color}m#{str}\x1b[0m"
+end
+
+class Source
+	attr_accessor :path, :v_regex
+
+	def initialize(path, v_regex)
+		@path = path
+		@v_regex = v_regex
+	end
+end
+
+class Bumper
+	attr_accessor :sources, :bumped, :target_v
+
+	def initialize(sources)
+		@sources = sources
+	end
+
+	def start
+
+		# get package.json version
+		package = JSON.parse File.read 'package.json'
+		@target_v = package['version']
+
+		@bumped = false
+		@sources.each {|source| bump_source(source)}
+
+		# if bumped, do extra stuff and notify the user
+		if @bumped
+			`git add mustache.js`
+			`git commit --amend --no-edit`
+
+			puts_c 32, "successfully bumped version to #{@target_v}!"
+			puts_c 33, "don't forget to `npm publish`!"
+		end
+
+		exit 0
+	end
+
+	def bump_source(source)
+		file_buffer = File.read source.path
+		if match = file_buffer.match(source.v_regex)
+			file_v = match.captures[0]
+			if @target_v != file_v
+				did_bump
+				puts "> bumping version in file '#{source.path}': #{file_v} -> #{@target_v}..."
+				file_buffer[source.v_regex, 1] = @target_v
+				File.open(source.path, 'w') { |f| f.write file_buffer }
+			end
+		else
+			puts_c 31, "ERROR: Can't find version in '#{source.path}'"
+			exit 1
+		end
+	end
+
+	def did_bump
+		if !@bumped
+			puts 'bump detected!'
+		end
+		@bumped = true
+	end
+end
+
+bumper = Bumper.new([
+	Source.new('mustache.js', /version: '([^']+)'/),
+])
+bumper.start

@@ -6,7 +6,7 @@ import static com.researchspace.service.impl.OntologyDocManager.RSPACE_EXTONTOLO
 import static com.researchspace.service.impl.OntologyDocManager.RSPACE_EXTONTOLOGY_URL_DELIMITER;
 import static com.researchspace.service.impl.OntologyDocManager.RSPACE_EXTONTOLOGY_VERSION_DELIM;
 import static com.researchspace.service.impl.OntologyDocManager.RSPACE_EXTONTOLOGY_VERSION_ONTOLOGYFILES;
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.RecordDao;
@@ -38,7 +38,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

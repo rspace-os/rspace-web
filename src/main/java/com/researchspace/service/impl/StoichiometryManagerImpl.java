@@ -10,6 +10,7 @@ import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
+import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.AuditManager;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -45,7 +47,8 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       RSChemElementManager rsChemElementManager,
       ChemicalSearcher chemicalSearcher,
       AuditManager auditManager,
-      StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager) {
+      // avoids circular dependency
+      @Lazy StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager) {
     super(stoichiometryDao);
     this.stoichiometryDao = stoichiometryDao;
     this.rsChemElementManager = rsChemElementManager;
@@ -110,6 +113,17 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       }
     }
 
+    // Set first reactant as limiting reagent
+    if (stoichiometry.getMolecules() != null && !stoichiometry.getMolecules().isEmpty()) {
+      Optional<StoichiometryMolecule> firstReactant =
+          stoichiometry.getMolecules().stream()
+              .filter(molecule -> molecule.getRole() == MoleculeRole.REACTANT)
+              .findFirst();
+
+      firstReactant.ifPresent(
+          stoichiometryMolecule -> stoichiometryMolecule.setLimitingReagent(true));
+    }
+
     return save(stoichiometry);
   }
 
@@ -166,6 +180,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
             .stoichiometryMoleculeId(copy.getId())
             .quantity(sourceMol.getInventoryLink().getQuantity().getNumericValue())
             .unitId(sourceMol.getInventoryLink().getQuantity().getUnitId())
+            .reducesStock(false) // copied links do not reduce stock by default
             .build();
     stoichiometryInventoryLinkManager.createLink(link, user);
   }

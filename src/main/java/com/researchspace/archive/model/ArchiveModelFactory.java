@@ -41,7 +41,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 /** Factory class that will create Java objects for XML persistence from entity objects. */
 public class ArchiveModelFactory {

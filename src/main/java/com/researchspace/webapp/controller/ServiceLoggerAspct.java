@@ -2,7 +2,7 @@ package com.researchspace.webapp.controller;
 
 import com.researchspace.licensews.LicenseExpiredException;
 import com.researchspace.service.LicenseService;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterThrowing;

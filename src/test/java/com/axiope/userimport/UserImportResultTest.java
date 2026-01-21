@@ -2,7 +2,6 @@ package com.axiope.userimport;
 
 import static org.junit.Assert.assertNotNull;
 
-import com.researchspace.model.dto.UserRegistrationInfo;
 import com.researchspace.model.field.ErrorList;
 import java.util.Collections;
 import org.junit.After;
@@ -17,12 +16,12 @@ public class UserImportResultTest {
   @After
   public void tearDown() throws Exception {}
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = NullPointerException.class)
   public void testUserImportResultNoNullArgs1() {
-    new UserImportResult(Collections.<UserRegistrationInfo>emptyList(), null, null, null);
+    new UserImportResult(Collections.emptyList(), null, null, null);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = NullPointerException.class)
   public void testUserImportResultNoNullArgs2() {
     new UserImportResult(null, null, null, new ErrorList());
   }
@@ -30,8 +29,7 @@ public class UserImportResultTest {
   @Test
   public void testUserImportResultGroupsCanBeNull() {
     UserImportResult result =
-        new UserImportResult(
-            Collections.<UserRegistrationInfo>emptyList(), null, null, new ErrorList());
+        new UserImportResult(Collections.emptyList(), null, null, new ErrorList());
     assertNotNull(result);
   }
 }
