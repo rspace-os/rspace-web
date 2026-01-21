@@ -31,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.orm.ObjectRetrievalFailureException;
 
 @ExtendWith(MockitoExtension.class)
 public class StoichiometryServiceImplTest {
@@ -52,12 +53,14 @@ public class StoichiometryServiceImplTest {
   }
 
   @Test
-  void create_whenOwningRecordMissing_throwsAuth() {
+  void createFromReaction_recordNotFound_passesExceptionOn() throws IOException {
     when(chemistryService.getChemicalElementByRevision(2L, null, user))
-        .thenReturn(mock(RSChemElement.class));
-    when(recordManager.get(123L)).thenReturn(null);
+        .thenReturn(TestFactory.createChemElement(null, 2L));
+    when(recordManager.get(123L))
+        .thenThrow(new ObjectRetrievalFailureException(Record.class, 123L));
 
-    assertThrows(AuthorizationException.class, () -> service.createFromReaction(123L, 2L, user));
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> service.createFromReaction(123L, 2L, user));
   }
 
   @Test
@@ -107,7 +110,7 @@ public class StoichiometryServiceImplTest {
     StoichiometryException ex =
         assertThrows(
             StoichiometryException.class, () -> service.createFromReaction(123L, 2L, user));
-    assertTrue(ex.getMessage().contains("Unable to generate stoichiometry"));
+    assertEquals("Unable to generate stoichiometry for chemId=2: chemistry provider returned no analysis", ex.getMessage());
   }
 
   @Test
@@ -157,9 +160,11 @@ public class StoichiometryServiceImplTest {
   }
 
   @Test
-  void createEmpty_whenRecordMissing_throwsAuth() {
-    when(recordManager.get(123L)).thenReturn(null);
-    assertThrows(AuthorizationException.class, () -> service.createEmpty(123L, user));
+  void createEmpty_whenRecordMissing_throwsNotFound() {
+    when(recordManager.get(123L))
+        .thenThrow(new ObjectRetrievalFailureException(Record.class, 123L));
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> service.createEmpty(123L, user));
   }
 
   @Test
@@ -176,7 +181,6 @@ public class StoichiometryServiceImplTest {
     Record record = TestFactory.createAnySD();
     when(recordManager.get(123L)).thenReturn(record);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
-    lenient().when(stoichiometryManager.findByRecordId(123L)).thenReturn(Optional.empty());
 
     Stoichiometry emptyStoich = new Stoichiometry();
     emptyStoich.setId(456L);
@@ -224,7 +228,7 @@ public class StoichiometryServiceImplTest {
   }
 
   @Test
-  void update_whenDirectRecord_returnsUpdatedStoichiometry() throws Exception {
+  void updateOfEmptyStoichiometry_returnsUpdatedStoichiometry() throws Exception {
     Stoichiometry existing = makeStoichiometryWithRecord(123L);
     when(stoichiometryManager.get(1L)).thenReturn(existing);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
