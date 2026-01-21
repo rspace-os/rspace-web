@@ -1718,7 +1718,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>rsdev-874-stoich-without-reaction-SNAPSHOT</version>
+      <version>5a98ee6cb6</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
