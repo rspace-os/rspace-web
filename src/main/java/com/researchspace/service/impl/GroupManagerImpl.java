@@ -4,6 +4,7 @@ import static com.researchspace.service.RecordDeletionManager.MIN_PATH_LENGTH_TO
 import static com.researchspace.service.UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX;
 
 import com.researchspace.Constants;
+import com.researchspace.api.v1.model.ApiGroupInfo;
 import com.researchspace.core.util.FilterCriteria;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.ObjectToStringPropertyTransformer;
@@ -355,6 +356,15 @@ public class GroupManagerImpl implements GroupManager {
   @Override
   public Group getGroup(Long groupId) {
     return groupDao.get(groupId);
+  }
+
+  @Override
+  public Optional<ApiGroupInfo> getGroupInfoById(Long groupId) {
+    Set<Group> groups = this.listGroupsForUser();
+    return groups.stream()
+        .filter(g -> g.getId().equals(groupId))
+        .findFirst()
+        .map(ApiGroupInfo::new);
   }
 
   @Override
