@@ -20,7 +20,7 @@ public class ApiRecordTreeItemListing extends ApiPaginatedResultList<RecordTreeI
   @JsonProperty("folderId")
   private Long folderId;
 
-  @JsonIgnore private boolean omitParentIdInSearchEndpointString;
+  @JsonIgnore private boolean omitFolderIdInSearchEndpointString;
 
   private static String endpointFormat = BaseApiController.FOLDER_TREE_ENDPOINT + "/%d";
 
@@ -29,7 +29,7 @@ public class ApiRecordTreeItemListing extends ApiPaginatedResultList<RecordTreeI
 
   @Override
   protected String getSearchEndpoint() {
-    return folderId == null || omitParentIdInSearchEndpointString
+    return folderId == null || omitFolderIdInSearchEndpointString
         ? BaseApiController.FOLDER_TREE_ENDPOINT
         : String.format(endpointFormat, folderId);
   }

@@ -203,7 +203,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       DocumentApiPaginationCriteria pgCrit,
       BindingResult errors,
       Supplier<Folder> folderSupplier,
-      boolean omitParentIdInLinks)
+      boolean omitFolderIdInLinks)
       throws BindException {
     // validate
     throwBindExceptionIfErrors(errors);
@@ -221,7 +221,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
     // process results
     ApiRecordTreeItemListing apiRecordTreeItemListing = new ApiRecordTreeItemListing();
     apiRecordTreeItemListing.setFolderId(folderToList.getId());
-    apiRecordTreeItemListing.setOmitParentIdInSearchEndpointString(omitParentIdInLinks);
+    apiRecordTreeItemListing.setOmitFolderIdInSearchEndpointString(omitFolderIdInLinks);
 
     List<RecordTreeItemInfo> fileList = new ArrayList<>();
     convertISearchResults(
