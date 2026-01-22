@@ -13,12 +13,12 @@ import lombok.EqualsAndHashCode;
 /** FileSearchResult */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@JsonPropertyOrder({"totalHits", "pageNumber", "files", "_links"})
+@JsonPropertyOrder({"folderId", "totalHits", "pageNumber", "records", "_links"})
 public class ApiRecordTreeItemListing extends ApiPaginatedResultList<RecordTreeItemInfo> {
 
-  /** The id of the containing folder of this list */
-  @JsonProperty("parentId")
-  private Long parentId;
+  /** The id of the folder for which the listing was calculated */
+  @JsonProperty("folderId")
+  private Long folderId;
 
   @JsonIgnore private boolean omitParentIdInSearchEndpointString;
 
@@ -29,9 +29,9 @@ public class ApiRecordTreeItemListing extends ApiPaginatedResultList<RecordTreeI
 
   @Override
   protected String getSearchEndpoint() {
-    return parentId == null || omitParentIdInSearchEndpointString
+    return folderId == null || omitParentIdInSearchEndpointString
         ? BaseApiController.FOLDER_TREE_ENDPOINT
-        : String.format(endpointFormat, parentId);
+        : String.format(endpointFormat, folderId);
   }
 
   @Override

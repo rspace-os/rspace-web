@@ -220,7 +220,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
 
     // process results
     ApiRecordTreeItemListing apiRecordTreeItemListing = new ApiRecordTreeItemListing();
-    apiRecordTreeItemListing.setParentId(folderToList.getId());
+    apiRecordTreeItemListing.setFolderId(folderToList.getId());
     apiRecordTreeItemListing.setOmitParentIdInSearchEndpointString(omitParentIdInLinks);
 
     List<RecordTreeItemInfo> fileList = new ArrayList<>();

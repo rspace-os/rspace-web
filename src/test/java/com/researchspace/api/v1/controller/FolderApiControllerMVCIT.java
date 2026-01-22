@@ -50,12 +50,10 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertFalse(createdFolder.isNotebook());
     assertNotNull(createdFolder.getId());
     // ... and delete it:
-    result =
-        this.mockMvc
-            .perform(
-                createBuilderForDelete(apiKey, "/folders/{id}", anyUser, createdFolder.getId()))
-            .andExpect(status().isNoContent())
-            .andReturn();
+    this.mockMvc
+        .perform(createBuilderForDelete(apiKey, "/folders/{id}", anyUser, createdFolder.getId()))
+        .andExpect(status().isNoContent())
+        .andReturn();
 
     // create a notebook
     folderPost.setNotebook(true);
@@ -81,11 +79,10 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(createdNb, retrievedNb);
 
     // delete notebook:
-    result =
-        this.mockMvc
-            .perform(createBuilderForDelete(apiKey, "/folders/{id}", anyUser, createdNb.getId()))
-            .andExpect(status().isNoContent())
-            .andReturn();
+    this.mockMvc
+        .perform(createBuilderForDelete(apiKey, "/folders/{id}", anyUser, createdNb.getId()))
+        .andExpect(status().isNoContent())
+        .andReturn();
     // no longer found
     result =
         this.mockMvc
@@ -170,7 +167,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
   @Test
   public void folderTreeRootListing() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
-    StructuredDocument document = createBasicDocumentInRootFolderWithText(anyUser, "any");
+    createBasicDocumentInRootFolderWithText(anyUser, "any");
     String apiKey = createNewApiKeyForUser(anyUser);
     MvcResult result = performRootFolderListing(anyUser, apiKey);
     ApiRecordTreeItemListing listing =
@@ -188,7 +185,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     String selfLink = listing.getLinks().get(0).getLink();
     assertTrue(
         selfLink, selfLink.endsWith(BaseApiController.FOLDER_TREE_ENDPOINT + "?pageNumber=0"));
-    assertEquals(anyUser.getRootFolder().getId(), listing.getParentId());
+    assertEquals(anyUser.getRootFolder().getId(), listing.getFolderId());
 
     final int expectedDocumentCount = 1;
     // we are ignoring the document we just created
@@ -222,11 +219,11 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
 
     // none of these can be deleted:
     for (RecordTreeItemInfo info : galleryListing.getRecords()) {
-      result = deleteByIdFailsWith4xxStatus(anyUser, apiKey, info.getId());
+      deleteByIdFailsWith4xxStatus(anyUser, apiKey, info.getId());
     }
     // now check we can navigate into Gallery folders with 200 responses:
     for (RecordTreeItemInfo info : galleryListing.getRecords()) {
-      galleryListing = performFolderListingById(anyUser, apiKey, info.getId());
+      performFolderListingById(anyUser, apiKey, info.getId());
     }
   }
 
@@ -257,7 +254,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     // fixed 3 folders inside shared folder can't be deleted
     assertEquals(3, sharedListing.getTotalHits().intValue());
     for (RecordTreeItemInfo info : sharedListing.getRecords()) {
-      result = deleteByIdFailsWith4xxStatus(u1, apiKey, info.getId());
+      deleteByIdFailsWith4xxStatus(u1, apiKey, info.getId());
     }
 
     long labGroupsId = getIdFromNameForListing(Folder.LAB_GROUPS_FOLDER_NAME, sharedListing);
@@ -267,7 +264,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     // labgroup folder can't be deleted either.
     assertEquals(1, labGroupsListing.getTotalHits().intValue());
     for (RecordTreeItemInfo info : labGroupsListing.getRecords()) {
-      result = deleteByIdFailsWith4xxStatus(u1, apiKey, info.getId());
+      deleteByIdFailsWith4xxStatus(u1, apiKey, info.getId());
     }
 
     // user shouldn't be able to create content inside these folders either.
@@ -276,20 +273,18 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     folderPost.setParentFolderId(sharedId);
 
     // create a folder inside Shared folder is forbidden
-    result =
-        this.mockMvc
-            .perform(folderCreate(u1, apiKey, folderPost))
-            .andExpect(status().is4xxClientError())
-            .andReturn();
+    this.mockMvc
+        .perform(folderCreate(u1, apiKey, folderPost))
+        .andExpect(status().is4xxClientError())
+        .andReturn();
     // and is also forbidden in LabGroup folder
     folderPost.setParentFolderId(labGroupsId);
-    result =
-        this.mockMvc
-            .perform(folderCreate(u1, apiKey, folderPost))
-            .andExpect(status().is4xxClientError())
-            .andReturn();
+    this.mockMvc
+        .perform(folderCreate(u1, apiKey, folderPost))
+        .andExpect(status().is4xxClientError())
+        .andReturn();
 
-    // now let's login as a PI and ensure they can't delete user folder
+    // now lets login as a PI and ensure they can't delete user folder
     logoutAndLoginAs(group.getPi());
     String piApiKey = createNewApiKeyForUser(group.getPi());
     ApiRecordTreeItemListing labGroupsListingForPi =
@@ -298,8 +293,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(1, labGroupsListingForPi.getTotalHits().intValue());
 
     // pi can't delete user folder:
-    result =
-        deleteByIdFailsWith4xxStatus(group.getPi(), piApiKey, getRootFolderForUser(u1).getId());
+    deleteByIdFailsWith4xxStatus(group.getPi(), piApiKey, getRootFolderForUser(u1).getId());
   }
 
   @Test
@@ -332,7 +326,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
         selfLink,
         selfLink.endsWith(
             BaseApiController.FOLDER_TREE_ENDPOINT + "/" + groupSharedFolderId + "?pageNumber=0"));
-    assertEquals(groupSharedFolderId, sharedFolderListing.getParentId());
+    assertEquals(groupSharedFolderId, sharedFolderListing.getFolderId());
   }
 
   private long getIdFromNameForListing(String name, ApiRecordTreeItemListing listing) {

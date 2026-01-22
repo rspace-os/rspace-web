@@ -53,7 +53,7 @@ info:
     rich language bindings and example code for `Python`, `Java` and others.
     Please suggest any use-cases or ideas for improving the API!
 
-  version: "1.116"
+  version: "2.19"
 
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit
@@ -1485,13 +1485,13 @@ paths:
           schema:
             title: Folder listing
             properties:
+              folderId:
+                type: number
+                description: The id of the requested folder, for which the listing was generated.
               totalHits:
                 type: number
               pageNumber:
                 type: number
-              parentId:
-                type: number
-                description: The id of the parent of the listed folder. For listings of the Workspace Home Folder, this will be null.
               records:
                 $ref: '#/definitions/RecordTreeInfoList'
               _links:
@@ -1524,13 +1524,13 @@ paths:
           schema:
             title: Folder listing
             properties:
+              folderId:
+                type: number
+                description: The id of the requested folder, for which the listing was generated.
               totalHits:
                 type: number
               pageNumber:
                 type: number
-              parentId:
-                type: number
-                description: The id of the parent of the listed folder. For listings of the Workspace Home Folder, this will be null.
               records:
                 $ref: '#/definitions/RecordTreeInfoList'
               _links:
