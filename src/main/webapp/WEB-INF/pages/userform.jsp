@@ -423,86 +423,107 @@
 	</div>
 
 	<div id="changePasswordDialog" style="display: none;">
-		<table>
-			<tr>
-				<td>
-					<label for="currentPasswordInput">
-						<fmt:message key="dialogs.changePassword.label.current"></fmt:message>
-					</label>
-				</td>
-				<td><input type="password" value="" id="currentPasswordInput" class="form-control" /></td>
-			</tr>
-			<tr>
-				<td>
-					<label for="newPasswordInput">
-						<fmt:message key="dialogs.changePassword.label.new"></fmt:message>
-					</label>
-				</td>
-				<td><input type="password" value="" id="newPasswordInput" class="form-control" /></td>
-			</tr>
-			<tr>
-				<td>
-					<label for="newPasswordConfirm">
-						<fmt:message key="dialogs.changePassword.label.confirm"></fmt:message>
-					</label>
-				</td>
-				<td><input type="password" value="" id="newPasswordConfirm" class="form-control" /></td>
-			</tr>
-		</table>
+		<form id="changePasswordForm">
+			<table>
+				<tr>
+					<td>
+						<label for="currentPasswordInput">
+							<fmt:message key="dialogs.changePassword.label.current"></fmt:message>
+						</label>
+					</td>
+					<td><input type="password" value="" id="currentPasswordInput" class="form-control" /></td>
+				</tr>
+				<tr>
+					<td>
+						<label for="newPasswordInput">
+							<fmt:message key="dialogs.changePassword.label.new"></fmt:message>
+						</label>
+					</td>
+					<td style="display: flex; flex-direction: column;">
+						<input type="password" value="" id="newPasswordInput" class="form-control"
+							   pattern="[ -~]{8,50}"
+							   title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~"
+						/>
+						<p>8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<label for="newPasswordConfirm">
+							<fmt:message key="dialogs.changePassword.label.confirm"></fmt:message>
+						</label>
+					</td>
+					<td><input type="password" value="" id="newPasswordConfirm" class="form-control" /></td>
+				</tr>
+			</table>
+		</form>
 		<div id="msgAreaPassword" class="msgArea"></div>
 	</div>
 
 	<div id="changeVerificationPasswordDialog" style="display: none;">
-		<table>
-		    <tr>
-               <td colspan="2">
-                 <div style="max-width: 600px; white-space: normal;"><fmt:message key="dialogs.verificationPassword.description"/></div>
-
-               </td>
-            <tr>
-			<tr>
-				<td>
-					<label for="currentVerificationPasswordInput">
-						<fmt:message key="dialogs.changeVerificationPassword.label.current"></fmt:message>
-					</label>
-				</td>
-				<td><input type="password" value="" id="currentVerificationPasswordInput" class="form-control" /></td>
-			</tr>
-			<tr>
-				<td>
-					<label for="newVerificationPasswordInput">
-						<fmt:message key="dialogs.changeVerificationPassword.label.new"></fmt:message>
-					</label>
-				</td>
-				<td><input type="password" value="" id="newVerificationPasswordInput" class="form-control" /></td>
-			</tr>
-			<tr>
-				<td>
-					<label for="newVerificationPasswordConfirm">
-						<fmt:message key="dialogs.changeVerificationPassword.label.confirm"></fmt:message>
-					</label>
-				</td>
-				<td><input type="password" value="" id="newVerificationPasswordConfirm" class="form-control" /></td>
-			</tr>
-		</table>
+        <form id="changeVerificationPasswordForm">
+            <table>
+                <tr>
+                   <td colspan="2" style="white-space: initial">
+                     <p><fmt:message key="dialogs.verificationPassword.description"/></p>
+                   </td>
+                <tr>
+                <tr>
+                    <td>
+                        <label for="currentVerificationPasswordInput">
+                            <fmt:message key="dialogs.changeVerificationPassword.label.current"></fmt:message>
+                        </label>
+                    </td>
+                    <td><input type="password" value="" id="currentVerificationPasswordInput" class="form-control" /></td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="newVerificationPasswordInput">
+                            <fmt:message key="dialogs.changeVerificationPassword.label.new"></fmt:message>
+                        </label>
+                    </td>
+                    <td style="display: flex; flex-direction: column;">
+                        <input type="password" value="" id="newVerificationPasswordInput" class="form-control"
+                               pattern="[ -~]{8,50}"
+                               title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~"
+                        />
+                        <p>8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="newVerificationPasswordConfirm">
+                            <fmt:message key="dialogs.changeVerificationPassword.label.confirm"></fmt:message>
+                        </label>
+                    </td>
+                    <td><input type="password" value="" id="newVerificationPasswordConfirm" class="form-control" /></td>
+                </tr>
+            </table>
+        </form>
 		<div id="msgAreaVerificationPassword" class="msgArea"></div>
 	</div>
 
 	<div id="setVerificationPasswordDialog" style="display: none;">
 		<table>
 		    <tr>
-		     <td colspan="2">
-		      <div style="max-width: 600px; white-space: normal;">
-		      <fmt:message key="dialogs.verificationPassword.description"/>
-		       </div>
-		     </td>
+		        <td colspan="2" style="white-space: initial">
+		            <p>
+		                <fmt:message key="dialogs.verificationPassword.description"/>
+                    </p>
+                </td>
 			<tr>
-				<td>
+				<td style="width: 35%">
 					<label for="newSetVerificationPasswordInput">
 						<fmt:message key="dialogs.setVerificationPassword.label.new"></fmt:message>
 					</label>
 				</td>
-				<td><input type="password" value="" id="newSetVerificationPasswordInput" class="form-control" /></td>
+                <td style="display: flex; flex-direction: column;">
+                    <input type="password" value="" id="newSetVerificationPasswordInput" class="form-control"
+                           pattern="[ -~]{8,50}"
+                           title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~"
+                    />
+                    <p>8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
+                </td>
 			</tr>
 			<tr>
 				<td>

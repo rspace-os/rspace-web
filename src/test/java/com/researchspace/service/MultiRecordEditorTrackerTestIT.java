@@ -16,7 +16,7 @@ import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.Map;
 import java.util.TreeMap;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.shiro.subject.Subject;
 import org.junit.After;
 import org.junit.Before;

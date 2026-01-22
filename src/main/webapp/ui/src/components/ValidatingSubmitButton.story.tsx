@@ -124,29 +124,6 @@ export const HighContrastExample = ({
     onClick();
   };
 
-  React.useEffect(() => {
-    const originalMatchMedia = window.matchMedia;
-    window.matchMedia = function (query) {
-      if (query === "(prefers-contrast: more)") {
-        return {
-          matches: true,
-          media: query,
-          onchange: null,
-          addListener: () => {},
-          removeListener: () => {},
-          addEventListener: () => {},
-          removeEventListener: () => {},
-          dispatchEvent: () => true,
-        };
-      }
-      return originalMatchMedia.call(this, query);
-    };
-
-    return () => {
-      window.matchMedia = originalMatchMedia;
-    };
-  }, []);
-
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <div style={{ padding: "20px" }}>

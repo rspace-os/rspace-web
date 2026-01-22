@@ -22,9 +22,10 @@ import static com.researchspace.service.IntegrationsHandler.OMERO_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.OWNCLOUD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
@@ -133,6 +134,7 @@ public class IntegrationController extends BaseController {
     rc.put(MSTEAMS_APP_NAME, integrationsHandler.getIntegration(user, MSTEAMS_APP_NAME));
     rc.put(PROTOCOLS_IO_APP_NAME, integrationsHandler.getIntegration(user, PROTOCOLS_IO_APP_NAME));
     rc.put(PYRAT_APP_NAME, integrationsHandler.getIntegration(user, PYRAT_APP_NAME));
+    rc.put(RAID_APP_NAME, integrationsHandler.getIntegration(user, RAID_APP_NAME));
     rc.put(DMPTOOL_APP_NAME, integrationsHandler.getIntegration(user, DMPTOOL_APP_NAME));
     rc.put(DMPONLINE_APP_NAME, integrationsHandler.getIntegration(user, DMPONLINE_APP_NAME));
     rc.put(

@@ -1,7 +1,7 @@
 package com.researchspace.dao.hibernate;
 
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -25,8 +25,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.criterion.DetachedCriteria;
@@ -215,7 +215,7 @@ public class RecordGroupSharingDaoHibernateImpl
   public List<String> getTextDataFromOntologiesSharedWithUserIfSharedWithAGroup(
       User subject, Long[] ontologyIDsSharedWithAGroup) {
     Criteria docsSharedWithUser = getOntologiesSharedWithUserQuery(subject);
-    docsSharedWithUser.add(Restrictions.in("shared.id", ontologyIDsSharedWithAGroup));
+    docsSharedWithUser.add(Restrictions.in("shared.id", (Object[]) ontologyIDsSharedWithAGroup));
     docsSharedWithUser.setProjection(Projections.distinct(Projections.property("field.rtfData")));
     return docsSharedWithUser.list();
   }

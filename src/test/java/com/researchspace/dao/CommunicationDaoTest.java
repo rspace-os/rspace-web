@@ -1,10 +1,10 @@
 package com.researchspace.dao;
 
 import static com.researchspace.core.util.TransformerUtils.toSet;
-import static com.researchspace.model.comms.CommsTestUtils.createAGroupRequest;
-import static com.researchspace.model.comms.CommsTestUtils.createARequest;
-import static com.researchspace.model.comms.CommsTestUtils.createAnyNotification;
-import static com.researchspace.model.comms.CommsTestUtils.createRequestOfType;
+import static com.researchspace.testutils.CommsTestUtils.createAGroupRequest;
+import static com.researchspace.testutils.CommsTestUtils.createARequest;
+import static com.researchspace.testutils.CommsTestUtils.createAnyNotification;
+import static com.researchspace.testutils.CommsTestUtils.createRequestOfType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -37,8 +37,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.persistence.PersistenceException;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.hibernate.Session;
 import org.junit.After;
 import org.junit.Before;

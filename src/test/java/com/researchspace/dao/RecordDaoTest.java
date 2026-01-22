@@ -1,7 +1,5 @@
 package com.researchspace.dao;
 
-// import org.compass.core.CompassTemplate;
-// import org.compass.gps.CompassGps;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -19,8 +17,8 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.RecordTypeFilter;
+import com.researchspace.testutils.TestFactory;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +31,6 @@ public class RecordDaoTest extends BaseDaoTestCase {
   static RecordFactory factoryAPI;
   static StructuredDocument d1, d2, d3;
   static Folder f1, f2;
-  static StructuredDocument sd = TestFactory.createAnySD(TestFactory.createAnyForm());
   static User anyuser = new User("any");
 
   @Autowired private RecordDao dao;
@@ -42,22 +39,16 @@ public class RecordDaoTest extends BaseDaoTestCase {
   @Autowired private FormDao formDao;
 
   @Test(expected = ObjectRetrievalFailureException.class)
-  public void testGetRecordInvalid() throws Exception {
-    // should throw DataAccessException
+  public void testGetRecordInvalid() {
     dao.get(-1000L);
   }
 
-  public void testIsRecord() throws Exception {
+  public void testIsRecord() {
     assertFalse(dao.isRecord(-1000L));
     User u = createAndSaveRandomUser();
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(u, "any");
     assertTrue(dao.isRecord(doc.getId()));
     assertFalse(dao.isRecord(folderDao.getRootRecordForUser(u).getId()));
-  }
-
-  @Test
-  public void testGetAllRecords() {
-    System.err.println(dao.getAll().size());
   }
 
   @Test

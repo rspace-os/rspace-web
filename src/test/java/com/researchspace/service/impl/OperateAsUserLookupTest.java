@@ -5,9 +5,9 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.UserView;
 import com.researchspace.service.UserManager;
+import com.researchspace.testutils.TestFactory;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
 import org.junit.Rule;

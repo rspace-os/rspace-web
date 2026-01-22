@@ -1,5 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.service.SystemPropertyName.valueOfPropertyName;
+
 import com.researchspace.core.util.DefaultURLPaginator;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.PaginationObject;
@@ -21,7 +23,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -324,7 +326,7 @@ public class CommunityAdminController extends BaseController {
     assertUserCanEditCommunity(subject, communityService.get(communityId));
 
     SystemPropertyValue systemPropertyValueBySysAdmin =
-        systemPropertyManager.findByName(propertyName);
+        systemPropertyManager.findByName(valueOfPropertyName(propertyName));
     // If system admin denies something, the setting cannot be overridden
     if (systemPropertyValueBySysAdmin
             .getValue()

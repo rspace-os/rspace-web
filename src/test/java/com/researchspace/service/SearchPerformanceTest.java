@@ -19,13 +19,13 @@ import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
+import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,8 +39,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -177,7 +177,6 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
 
     sw.stop();
     long uniqueTime = sw.getTime();
-    System.out.println(" search for unique string took " + uniqueTime);
     assertEquals(numDocsPerUser, results.getResults().size());
 
     sw.reset();
@@ -193,7 +192,6 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
     sw.stop();
     assertEquals(numDocsPerUser, results.getResults().size());
     long commonTime = sw.getTime();
-    System.out.println(" search for common string = " + commonTime + " ms ");
     // test that search for common term is roughly comparable with unique
     // term
     assertTrue(commonTime < uniqueTime * 2);
@@ -209,20 +207,16 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
     sw.start();
     results = searchMgr.searchWorkspaceRecords(config, users[0]);
     sw.stop();
-    System.out.println("advanced search = " + sw.getTime() + " ms ");
     assertEquals(numDocsPerUser, results.getResults().size());
   }
 
   @Test
   @RunIfSystemPropertyDefined(value = "nightly")
-  public void testIndexingSingleThread() throws IOException, ParseException {
+  public void testIndexingSingleThread() throws IOException {
     RandomTextFileGenerator tfgg = new RandomTextFileGenerator();
-    System.out.println("generating setup");
     List<FileSearchTerms> created = tfgg.generate(randomFilefolder.getRoot(), 100, 100);
-    System.out.println("file generation completed");
     assertEquals(100, created.size());
     for (FileSearchTerms toIndex : created) {
-      System.out.println("indexing " + toIndex.getFile());
       fileIndexer.indexFile(toIndex.getFile());
     }
 
@@ -230,7 +224,6 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
       List<FileSearchResult> results =
           fileIndexSearcher.getFileSearchStrategy().searchFiles(term.getTerms()[0], anyUser);
       assertTrue("No results for " + term, results.size() > 0);
-      System.out.println("searching " + term.getFile() + ", found " + results.size() + " hits");
     }
   }
 
@@ -262,11 +255,6 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
                   FileSearchTerms toIndex2 = toIndexqueue.poll();
                   try {
                     fileIndexer.indexFile(toIndex2.getFile());
-                    System.out.println(
-                        "indexing "
-                            + toIndex2.getFile()
-                            + " from thread "
-                            + Thread.currentThread().getName());
                   } catch (IOException e) {
                     e.printStackTrace();
                   }
@@ -277,7 +265,6 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
     // wait for all indexing threads to finish
     for (Future<?> job : submittedAll) {
       job.get(300, TimeUnit.SECONDS);
-      System.out.println("job done");
     }
     log.info("searching sequentially");
     for (FileSearchTerms term : created) {
@@ -285,7 +272,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
     }
   }
 
-  private void assertSearchOK(FileSearchTerms term) throws IOException, ParseException {
+  private void assertSearchOK(FileSearchTerms term) throws IOException {
     List<FileSearchResult> results =
         fileIndexSearcher.getFileSearchStrategy().searchFiles(term.getTerms()[0], anyUser);
     assertTrue("No results for " + term, results.size() > 0);
@@ -303,11 +290,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
   @Test
   @RunIfSystemPropertyDefined(value = "nightly")
   public void testIndexingAndSearchingAtSameTime()
-      throws IOException,
-          ParseException,
-          InterruptedException,
-          ExecutionException,
-          TimeoutException {
+      throws IOException, InterruptedException, ExecutionException, TimeoutException {
     RandomTextFileGenerator tfgg = new RandomTextFileGenerator();
     List<FileSearchTerms> created = tfgg.generate(randomFilefolder.getRoot(), 100, 200);
     // each tread will index one file at a time from the queue
@@ -356,7 +339,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
                               + Thread.currentThread().getName());
                       log.info("current search queue size:  " + toSearchQueue.size());
                       assertSearchOK(toSearch);
-                    } catch (IOException | ParseException e) {
+                    } catch (IOException e) {
                       e.printStackTrace();
                     }
                   }

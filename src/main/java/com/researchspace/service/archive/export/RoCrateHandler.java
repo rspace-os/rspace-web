@@ -21,10 +21,12 @@ import com.researchspace.archive.ArchiveFolder;
 import com.researchspace.archive.ArchiveManifest;
 import com.researchspace.archive.model.IArchiveExportConfig;
 import com.researchspace.model.EcatMediaFile;
+import com.researchspace.model.dtos.RaidGroupAssociation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.archive.ExportImport;
 import edu.kit.datamanager.ro_crate.RoCrate;
 import edu.kit.datamanager.ro_crate.entities.contextual.ContextualEntity;
+import edu.kit.datamanager.ro_crate.entities.contextual.ContextualEntity.ContextualEntityBuilder;
 import edu.kit.datamanager.ro_crate.entities.contextual.OrganizationEntity;
 import edu.kit.datamanager.ro_crate.entities.contextual.PersonEntity;
 import edu.kit.datamanager.ro_crate.entities.data.DataEntity;
@@ -50,8 +52,9 @@ import java.util.Date;
 import java.util.List;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.crypto.hash.Sha256Hash;
+import org.jetbrains.annotations.NotNull;
 
 public class RoCrateHandler {
 
@@ -110,7 +113,7 @@ public class RoCrateHandler {
                 rspaceParentID -> {
                   if (rspaceParentID.equals(roCrateLogicalFolderCompared.getRspaceID())) {
                     roCrateLogicalFolderCompared.addToHasPart(roCrateLogicalFolder.getId());
-                    roCrateLogicalFolder.isPartOf(roCrateLogicalFolderCompared.getId());
+                    roCrateLogicalFolder.addToIsPartOf(roCrateLogicalFolderCompared.getId());
                   }
                 });
       }
@@ -252,6 +255,10 @@ public class RoCrateHandler {
         exportedNFS.addProperty("text", "Contains remote nfs files linked by exported documents");
         roCrate.addDataEntity(exportedNFS.build(), true);
       }
+      if (aconfig.hasRaidAssociation()) {
+        ContextualEntityBuilder raidContext = createRaidContextEntity(aconfig);
+        roCrate.addContextualEntity(raidContext.build());
+      }
       // TODO - add a license when we go opensource??
       RootDataEntity rde = roCrate.getRootDataEntity();
       // Recommended to be a DOI - change this to be a DOI if we ever have one for RSpace instances
@@ -272,6 +279,18 @@ public class RoCrateHandler {
       folderRoCrateWriter.save(roCrate, exportContext.getArchiveAssmblyFlder().getPath());
       replaceSingleKeyWordsInRoCrate(exportContext);
     }
+  }
+
+  @NotNull
+  private static ContextualEntityBuilder createRaidContextEntity(IArchiveExportConfig aconfig) {
+    RaidGroupAssociation raidGroupAssociation = aconfig.getRaidGroupAssociation();
+    ContextualEntityBuilder raidContext = new ContextualEntityBuilder();
+    raidContext.addType("ResearchProject");
+    raidContext.setId(raidGroupAssociation.getRoCrateId());
+    raidContext.addProperty("name", raidGroupAssociation.getRspaceProjectName());
+    raidContext.addProperty(IDENTIFIER, raidGroupAssociation.getRaid().getBriefIdentifier());
+    raidContext.addProperty("url", raidGroupAssociation.getRaid().getRaidIdentifier());
+    return raidContext;
   }
 
   private static File makeSchemasFolder(

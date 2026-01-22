@@ -34,6 +34,7 @@ import com.researchspace.model.audittrail.HistoricalEvent;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dto.SharingResult;
 import com.researchspace.model.dto.UserPublicInfo;
+import com.researchspace.model.dtos.NotebookCreationResult;
 import com.researchspace.model.dtos.RecordTagData;
 import com.researchspace.model.dtos.ShareConfigCommand;
 import com.researchspace.model.dtos.ShareConfigElement;
@@ -101,8 +102,8 @@ import javax.servlet.http.HttpSession;
 import lombok.Setter;
 import lombok.Value;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -407,38 +408,25 @@ public class WorkspaceController extends BaseController {
       Principal principal) {
     Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = getUserByUsername(principal.getName());
-    Long targetFolderId = parentRecordId;
-    Folder originalParentFolder = null;
-    List<RecordGroupSharing> sharedWithGroup = null;
 
-    originalParentFolder = folderManager.getFolder(parentRecordId, user);
-    if (originalParentFolder != null && originalParentFolder.isSharedFolder()) {
-      targetFolderId = folderManager.getRootFolderForUser(user).getId();
-    }
-    Long newNotebookId = createNotebook(targetFolderId, notebookName, principal);
+    NotebookCreationResult result =
+        workspaceService.createNotebook(notebookName, parentRecordId, grandParentId, user);
 
-    if (originalParentFolder != null && originalParentFolder.isSharedFolder()) {
-      sharedWithGroup =
-          recordShareHandler.shareIntoSharedFolderOrNotebook(
-              user, originalParentFolder, newNotebookId, grandParentId);
-      grandParentId = grandParentId != null ? grandParentId : originalParentFolder.getId();
-    } else {
-      grandParentId = grandParentId != null ? grandParentId : targetFolderId;
-    }
-
-    return getNotebookRedirectUrl(newNotebookId, grandParentId, sharedWithGroup);
+    return getNotebookRedirectUrl(
+        result.getNotebookId(), result.getGrandParentId(), result.getGroupName());
   }
 
   @NotNull
   private static String getNotebookRedirectUrl(
-      Long newNotebookId, Long grandParentId, List<RecordGroupSharing> sharedWithGroup) {
+      Long newNotebookId, Long grandParentId, String groupName) {
     String redirectUrl = "redirect:/notebookEditor/" + newNotebookId;
-    if (!(sharedWithGroup == null || sharedWithGroup.isEmpty())) {
+    if (StringUtils.isNotBlank(groupName)) {
       redirectUrl +=
           "?sharedWithGroup="
-              + URLEncoder.encode(
-                  sharedWithGroup.get(0).getSharee().getDisplayName(), StandardCharsets.UTF_8);
-      return redirectUrl + "&grandParentId=" + grandParentId;
+              + URLEncoder.encode(groupName, StandardCharsets.UTF_8)
+              + "&grandParentId="
+              + grandParentId;
+      return redirectUrl;
     }
     return redirectUrl + "?grandParentId=" + grandParentId;
   }

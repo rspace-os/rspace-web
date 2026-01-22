@@ -7,9 +7,11 @@ import java.util.Map;
 /** Handler for IntegrationsController /RSPAC-838 */
 public interface IntegrationsHandler {
 
+  String PROVIDER_USER_ID = "providerUserId";
   String SLACK_APP_NAME = "SLACK";
   String DATAVERSE_APP_NAME = "DATAVERSE";
   String ORCID_APP_NAME = "ORCID";
+  String RAID_APP_NAME = "RAID";
   String GITHUB_APP_NAME = "GITHUB";
   String FIGSHARE_APP_NAME = "FIGSHARE";
   String OWNCLOUD_APP_NAME = "OWNCLOUD";
@@ -69,7 +71,7 @@ public interface IntegrationsHandler {
    * @param newInfo
    * @return the updated user preference
    * @throws IllegalArgumentException if<code>propertyName</code> in the supplied <code>newInfo
-   *     </code> argument is not recognised
+   *                                  </code> argument is not recognised
    */
   IntegrationInfo updateIntegrationInfo(User subject, IntegrationInfo newInfo);
 

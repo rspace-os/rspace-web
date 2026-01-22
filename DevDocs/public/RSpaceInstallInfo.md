@@ -44,8 +44,8 @@ The examples below refer to Debian/Ubuntu installations
 
 ## RSpace database
 
--  standard MariaDB 10.3 - 10.6 or MySQL 5.7
--  Restart: `sudo systemctl restart mariadb` or `sudo systemctl restart mysql`
+-  standard MariaDB 10.6 - 10.11
+-  Restart: `sudo systemctl restart mariadb`
 
 ## Important log files
 

@@ -26,7 +26,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.time.Year;
 import java.util.List;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.hibernate.Session;
 import org.junit.After;
 import org.junit.Before;

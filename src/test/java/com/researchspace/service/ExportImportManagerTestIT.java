@@ -12,7 +12,7 @@ import static com.researchspace.service.archive.export.HTMLArchiveExporter.NFS_L
 import static com.researchspace.testutils.ArchiveTestUtils.assertPredicateOnHtmlFile;
 import static com.researchspace.testutils.ArchiveTestUtils.getAllHTMLFilesInArchive;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
@@ -48,6 +48,7 @@ import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.core.util.ZipUtils;
 import com.researchspace.dao.EcatImageDao;
+import com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother;
 import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldElementLinkPairs;
 import com.researchspace.model.ArchivalCheckSum;
@@ -68,6 +69,9 @@ import com.researchspace.model.comms.data.NotificationData;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalWorkFlowDataBuilder;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -80,7 +84,6 @@ import com.researchspace.model.record.IconEntity;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFolderDetails;
@@ -99,6 +102,7 @@ import com.researchspace.testutils.ArchiveTestUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.SearchTestUtils;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.TestGroup;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -183,6 +187,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   @Qualifier("standardPostExportCompletionImpl")
   @InjectMocks
   private PostArchiveCompletion standardPostExport;
+
+  @Autowired private ExternalWorkFlowDataManager externalWorkFlowDataManager;
 
   @Before
   public void setUp() throws Exception {
@@ -1083,12 +1089,22 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             tempImportFolder2.getRoot(), meta.getLinkFile() + ".xml"));
 
     Collection<File> archiveContents = ArchiveTestUtils.getAllFilesInArchive(zipFolder);
-    assertEquals(28, archiveContents.size());
+    assertEquals(29, archiveContents.size());
     assertTrue(
         ArchiveTestUtils.archiveContainsFile(tempImportFolder2.getRoot(), image.getFileName()));
     assertTrue(
         ArchiveTestUtils.archiveContainsFile(
             tempImportFolder2.getRoot(), updatedImage.getFileName()));
+  }
+
+  public static ExternalWorkFlowData createExternalWorkFlowData(
+      long fieldId, long dataId, String extId) {
+    ExternalWorkFlowDataBuilder builder =
+        ExternalWorkFlowTestMother.getBuilderWithNonNullValuesSet();
+    builder.rspacecontainerId(fieldId);
+    builder.rspacedataid(dataId);
+    builder.extId(extId);
+    return builder.build();
   }
 
   @Test
@@ -1146,6 +1162,54 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertTrue(DATA_TYPE_ANNOTATION.equals(imgElements.get(1).attr("data-type")));
     assertTrue(DATA_TYPE_ANNOTATION.equals(imgElements.get(2).attr("data-type")));
     assertFalse(DATA_TYPE_ANNOTATION.equals(imgElements.get(3).attr("data-type")));
+  }
+
+  @Test
+  public void testExportImportExternalWorkFlowData() throws Exception {
+    User u1 = createInitAndLoginAnyUser();
+    StructuredDocument sdoc = createBasicDocumentInRootFolderWithText(u1, "source");
+    Field textField = sdoc.getFields().get(0);
+    ContentBuilder builder = new ContentBuilder(u1, textField);
+    builder.addImage().addMath().addImageAnnotation().addImageAnnotation().addImage();
+    textField = fieldMgr.getWithLoadedMediaLinks(textField.getId(), u1).get();
+    ExternalWorkFlowData externalWorkFlowData =
+        createExternalWorkFlowData(
+            textField.getId(),
+            textField.getLinkedMediaFiles().iterator().next().getMediaFile().getId(),
+            "ext123");
+    externalWorkFlowDataManager.save(externalWorkFlowData);
+    final ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
+    ArchiveResult result =
+        exportImportMgr
+            .asyncExportSelectionToArchive(
+                getSingleRecordExportSelection(sdoc.getId(), RecordType.NORMAL.toString()),
+                cfg,
+                u1,
+                anyURI(),
+                standardPostExport)
+            .get();
+
+    ArchivalImportConfig importCfg =
+        createDefaultArchiveImportConfig(u1, tempImportFolder2.getRoot());
+    ImportArchiveReport report =
+        exportImportMgr.importArchive(
+            fileToMultipartfile(result.getExportFile().getName(), result.getExportFile()),
+            u1.getUsername(),
+            importCfg,
+            NULL_MONITOR,
+            importStrategy::doImport);
+    assertTrue(report.isSuccessful());
+    // now check field content
+    StructuredDocument imported = report.getImportedRecords().iterator().next().asStrucDoc();
+    List<Field> textFields =
+        imported.getFields().stream().filter(f -> f.isTextField()).collect(toList());
+    assertEquals(1, textFields.size());
+    assertEquals(
+        1,
+        externalWorkFlowDataManager
+            .findWorkFlowDataByRSpaceContainerIdAndServiceType(
+                textFields.get(0).getId(), ExternalService.GALAXY)
+            .size());
   }
 
   private Elements getImageTagsInDocument(String content) {

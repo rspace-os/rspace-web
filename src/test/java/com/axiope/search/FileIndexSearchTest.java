@@ -1,6 +1,6 @@
 package com.axiope.search;
 
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;

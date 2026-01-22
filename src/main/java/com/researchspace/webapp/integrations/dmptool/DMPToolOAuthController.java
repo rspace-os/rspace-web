@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.dmptool;
 
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
 
 import com.researchspace.dmptool.model.DMPPlanScope;
 import com.researchspace.dmptool.model.DMPToolDMP;
@@ -23,7 +24,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -74,7 +75,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     String redirectUrl = String.valueOf(new URL(getServerUrl(), "/apps/dmptool/callback"));
     String pathAndQuery =
         String.format(
-            "/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=read_dmps",
+            "/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=read_dmps+edit_dmps",
             clientId, URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8));
     String dmptoolAuthUrl = String.valueOf(new URL(baseUrl, pathAndQuery));
     return new RedirectView(dmptoolAuthUrl);
@@ -83,7 +84,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
   @DeleteMapping("/connect")
   public void disconnect(Principal principal) {
     int deletedConnCount =
-        userConnectionManager.deleteByUserAndProvider(DMPTOOL_APP_NAME, principal.getName());
+        userConnectionManager.deleteByUserAndProvider(principal.getName(), DMPTOOL_APP_NAME);
     log.info("Deleted {} DMPTool connection(s) for user {}", deletedConnCount, principal.getName());
   }
 
@@ -110,8 +111,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     conn.setAccessToken(accessToken.getAccessToken());
     conn.setExpireTime(getExpireTime(accessToken.getExpiresIn()));
     conn.setDisplayName("DMPTool access token");
-    conn.setId(
-        new UserConnectionId(principal.getName(), DMPTOOL_APP_NAME, "ProviderUserIdNotNeeded"));
+    conn.setId(new UserConnectionId(principal.getName(), DMPTOOL_APP_NAME, PROVIDER_USER_ID));
     userConnectionManager.save(conn);
     log.info("Connected DMPTool for user {}", principal.getName());
 

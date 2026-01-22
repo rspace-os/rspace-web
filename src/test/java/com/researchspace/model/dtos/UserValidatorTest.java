@@ -2,18 +2,19 @@ package com.researchspace.model.dtos;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.model.Organisation.MAX_INDEXABLE_UTF_LENGTH;
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.ProductType;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
-import org.apache.commons.lang.RandomStringUtils;
+import com.researchspace.testutils.TestFactory;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,7 +33,8 @@ public class UserValidatorTest {
 
   @BeforeEach
   public void setUp() throws Exception {
-    user = TestFactory.createAnyUser("XXXXXX");
+    /* plaintext password, so validation rules are applied to the actual password, not the hash */
+    user = TestFactory.createAnyUserWithPlainTextPassword("XXXXXX");
     ResourceBundleMessageSource msgSource = new ResourceBundleMessageSource();
     msgSource.setUseCodeAsDefaultMessage(true);
     userValidator.setMessages(new MessageSourceUtils(msgSource));
@@ -226,26 +228,24 @@ public class UserValidatorTest {
 
   @Test
   public void validatePassword() {
-    assertFalse(userValidator.validatePasswords(null, null, "user").equals(UserValidator.FIELD_OK));
-    assertFalse(
-        userValidator
-            .validatePasswords("xxxxxxxx", "yyyyyyyy", "user")
-            .equals(UserValidator.FIELD_OK));
+    // invalid password scenarios
+    assertNotEquals(UserValidator.FIELD_OK, userValidator.validatePasswords(null, null, "user"));
+    assertNotEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords("xxxxxxxx", "yyyyyyyy", "user"));
+    String toolong = RandomStringUtils.randomAlphabetic(User.MAX_PWD_LENGTH + 1);
+    assertNotEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords(toolong, toolong, "user"));
+    assertNotEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords("xxxx", "yyyy", "user"));
+    assertNotEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords("password", "password", "user"));
 
-    String toolong = RandomStringUtils.randomAlphabetic(User.DEFAULT_MAXFIELD_LEN + 1);
-    assertFalse(
-        userValidator.validatePasswords(toolong, toolong, "user").equals(UserValidator.FIELD_OK));
-
-    assertFalse(
-        userValidator.validatePasswords("xxxx", "yyyy", "user").equals(UserValidator.FIELD_OK));
-    assertFalse(
-        userValidator
-            .validatePasswords("password", "password", "user")
-            .equals(UserValidator.FIELD_OK));
-    assertTrue(
-        userValidator
-            .validatePasswords("goodpwd23", "goodpwd23", "user")
-            .equals(UserValidator.FIELD_OK));
+    // valid password scenarios
+    assertEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords("goodpwd23", "goodpwd23", "user"));
+    String notTooLong = RandomStringUtils.randomAlphabetic(User.MAX_PWD_LENGTH);
+    assertEquals(
+        UserValidator.FIELD_OK, userValidator.validatePasswords(notTooLong, notTooLong, "user"));
   }
 
   @Test

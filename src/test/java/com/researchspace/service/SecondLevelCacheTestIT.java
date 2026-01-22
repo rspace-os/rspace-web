@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Random;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Ehcache;
-import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.time.StopWatch;
 import org.hibernate.CacheMode;
 import org.junit.After;
 import org.junit.Before;
@@ -65,7 +65,6 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
     // create 1000 objects
     List<String> ids = addNArchiveCSum(NUM_OBJECTS);
 
-    System.err.println("loading cache...");
     Ehcache cache = cacheMgr.getEhcache("com.researchspace.model.ArchivalCheckSum");
     cache.setStatisticsEnabled(true);
     cache.setSampledStatisticsEnabled(true);
@@ -78,7 +77,6 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
     }
     commitTransaction();
 
-    System.err.println("hitting cache..");
     openTransaction();
     // now, load again, should restore from cached
     long start = System.currentTimeMillis();
@@ -86,25 +84,14 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
       archiveDao.get(ids.get(i));
     }
     commitTransaction();
-    long end = System.currentTimeMillis();
-    long time = end - start;
-    System.err.println(" cache :" + time);
-    System.err.println(
-        " hit count is " + sessionFactory.getStatistics().getSecondLevelCacheHitCount());
 
     openTransaction();
     sessionFactory.getCurrentSession().setCacheMode(CacheMode.IGNORE);
     sessionFactory.getStatistics().clear();
-    long start2 = System.currentTimeMillis();
     for (int i = 0; i < 1000; i++) {
       archiveDao.get(ids.get(i));
     }
     commitTransaction();
-    long end2 = System.currentTimeMillis();
-    long time2 = end2 - start2;
-    System.err.println(" no cache :" + time2);
-    System.err.println(
-        " hit count is " + sessionFactory.getStatistics().getSecondLevelCacheHitCount());
   }
 
   List<String> addNArchiveCSum(int n) {
@@ -112,7 +99,6 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
     openTransaction();
     for (int i = 0; i < n; i++) {
       if (i % 500 == 0) {
-        System.err.print(".");
         sessionFactory.getCurrentSession().flush();
       }
       ArchivalCheckSum acs = new ArchivalCheckSum();
@@ -171,8 +157,6 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
     for (Long id : ids) {
       iconDao.getIconEntity(id);
     }
-    System.err.println(
-        "With caching of " + numToCache + " iconEntities : time =" + stopWatch.getTime() + " ms.");
     commitTransaction();
     openTransaction();
     sessionFactory.getCurrentSession().setCacheMode(CacheMode.IGNORE);
@@ -183,12 +167,6 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
     for (Long id : ids) {
       iconDao.getIconEntity(id);
     }
-    System.err.println(
-        "With NO caching of "
-            + numToCache
-            + " iconEntities : time ="
-            + stopWatch.getTime()
-            + " ms.");
     commitTransaction();
   }
 

@@ -1,7 +1,7 @@
 package com.researchspace.export.pdf;
 
-import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.archive.model.ArchiveModelFactory;
@@ -26,13 +26,14 @@ import com.researchspace.service.AuditManager;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserExternalIdResolver;
+import com.researchspace.service.archive.export.ImageFieldExporter;
 import com.researchspace.session.SessionTimeZoneUtils;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Document.OutputSettings;
@@ -120,14 +121,14 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
   public ExportProcesserInput extractHtmlStr(
       StructuredDocument strucDoc, StructuredDocumentHTMLViewConfig exportConfig) {
     StringBuffer sbf = new StringBuffer();
-    String docName = escapeHtml(strucDoc.getName());
+    String docName = escapeHtml4(strucDoc.getName());
     String globalidLink = makeGlobalIdLink(strucDoc.getGlobalIdentifier());
     String nameLink = "<p>" + docName + "&nbsp;" + globalidLink + "</p>";
     sbf.append(nameLink);
     List<Field> flds = strucDoc.getFields();
     for (Field field : flds) {
       try {
-        String fieldName = escapeHtml(field.getName());
+        String fieldName = escapeHtml4(field.getName());
         sbf.append("<h3>" + fieldName + "</h3>");
         String fieldContent =
             !(field instanceof ChoiceField)
@@ -156,6 +157,8 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     }
     String htmlStr = sbf.toString();
     org.jsoup.nodes.Document jsoupDoc = Jsoup.parse(htmlStr);
+    ImageFieldExporter.addImageAltToImages(jsoupDoc);
+    ImageFieldExporter.resizeChemImages(jsoupDoc);
     preProcess(jsoupDoc);
     addMetaData(strucDoc, jsoupDoc);
     List<CommentAppendix> comments = new ArrayList<>();
@@ -258,7 +261,7 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
 
   private void addMetaData(StructuredDocument strucDoc, Document jsoupDoc) {
     Element el = jsoupDoc.getElementsByTag("head").iterator().next();
-    el.appendElement("meta").attr("name", "name").attr("content", escapeHtml(strucDoc.getName()));
+    el.appendElement("meta").attr("name", "name").attr("content", escapeHtml4(strucDoc.getName()));
     el.appendElement("meta").attr("name", "provenance").attr("content", "rspace");
     el.appendElement("meta")
         .attr("name", "globalId")
@@ -269,7 +272,7 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     if (!isEmpty(strucDoc.getDocTag())) {
       el.appendElement("meta")
           .attr("name", "tags")
-          .attr("content", escapeHtml(strucDoc.getDocTag()));
+          .attr("content", escapeHtml4(strucDoc.getDocTag()));
     }
     if (!isEmpty(urlPrefix)) {
       el.appendElement("meta").attr("name", "baseURL").attr("content", urlPrefix);
@@ -343,7 +346,7 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
           EcatCommentItem itm1 = cms.get(j);
           String username = itm1.getLastUpdater();
           String dt1 = itm1.getFormatDate();
-          String content = escapeHtml(itm1.getItemContent());
+          String content = escapeHtml4(itm1.getItemContent());
           commentAppendx.add(username, dt1, content);
         }
         capx.add(commentAppendx);

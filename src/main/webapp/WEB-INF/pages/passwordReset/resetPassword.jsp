@@ -11,28 +11,26 @@
             <h2 class="form-signup-heading">Change ${passwordType.toString()}</h2>
         </div>
     </div>
-    <div style="max-width:450px;margin: 0 auto;margin-top:30px;text-align:center;">
-        Please enter your new ${passwordType.toString()}:
-        <br/><br/>
+    <div style="max-width:450px; margin: 30px auto 0; display: flex; flex-direction: column;">
+        <p>Please enter your new ${passwordType.toString()}:</p>
         <form:form action="${(passwordType == PasswordType.VERIFICATION_PASSWORD) ?
         '/vfpwd/verificationPasswordResetReply' : '/signup/passwordResetReply'}"
                    modelAttribute="passwordResetCommand">
             <form:errors class="rs-tooltip error" path="password"></form:errors>
-            <div style="text-align:right;padding-right:100px;">
+            <div>
                 <label for="password">New ${passwordType.toString()}</label>
-                <form:password path="password"/>
-                <br/>
+                <form:password path="password" pattern="[ -~]{8,50}" style="width: 100%" title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~" />
+                <p class="form-text">8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
                 <label for="confirmPassword">Confirm ${passwordType.toString()}</label>
-                <form:password path="confirmPassword"/>
+                <form:password path="confirmPassword" style="width: 100%" pattern="[ -~]{8,50}" />
                 <form:hidden path="token"/>
             </div>
-            <br/>
-            <span class="bootstrap-custom-flat">
+            <div class="bootstrap-custom-flat" style="margin-top: 10px;">
                 <button class="btn btn-primary" type="submit" role="button"
                         aria-disabled="false" name="reset" value="Reset">
                  <span>Reset</span>
                </button>
-             </span>
+             </div>
         </form:form>
     </div>
 </div>

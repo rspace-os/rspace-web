@@ -1,7 +1,7 @@
 package com.researchspace.search.impl;
 
 import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
-import static com.researchspace.model.record.TestFactory.createNRecords;
+import static com.researchspace.testutils.TestFactory.createNRecords;
 import static org.junit.Assert.*;
 
 import java.util.Collections;

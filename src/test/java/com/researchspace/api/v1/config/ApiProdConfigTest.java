@@ -5,7 +5,7 @@ import static org.junit.Assert.assertTrue;
 import com.researchspace.api.v1.controller.ApiAccountInitialiser;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InjectMocks;

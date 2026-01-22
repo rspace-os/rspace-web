@@ -1,7 +1,7 @@
 package com.axiope.webapp.taglib;
 
 import static java.lang.Math.min;
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.core.util.ObjectToStringPropertyTransformer;
 import java.io.IOException;
@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.TagSupport;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,6 +96,6 @@ public class JoinPropertyStringFromCollection extends TagSupport {
     if (propertyList.size() > maxSize) {
       rc = rc + "...";
     }
-    return StringEscapeUtils.escapeHtml(rc);
+    return StringEscapeUtils.escapeHtml4(rc);
   }
 }

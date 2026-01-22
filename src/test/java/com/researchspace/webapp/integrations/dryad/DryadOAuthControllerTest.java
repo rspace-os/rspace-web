@@ -9,10 +9,10 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.testutils.TestFactory;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;

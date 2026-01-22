@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -83,7 +83,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
   @DeleteMapping("/connect")
   public void disconnect(Principal principal) {
     int deleted =
-        userConnectionManager.deleteByUserAndProvider(PROTOCOLS_IO_APP_NAME, principal.getName());
+        userConnectionManager.deleteByUserAndProvider(principal.getName(), PROTOCOLS_IO_APP_NAME);
     log.info("Deleted {} ProtocolsIO connection(s) for user {}", deleted, principal.getName());
   }
 

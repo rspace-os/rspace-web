@@ -22,7 +22,7 @@
       <script src="<c:url value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
       <link href="<c:url value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
       <script src="<c:url value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
-      <script src="<c:url value='/scripts/bower_components/mustache/mustache.min.js'/>"></script>
+      <script src="<c:url value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
     </rst:hasDeploymentProperty> 
     
     <link href="/styles/sign-in-up-common.css" rel="stylesheet">

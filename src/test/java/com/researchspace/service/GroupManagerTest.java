@@ -24,7 +24,6 @@ import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
 import com.researchspace.model.permissions.FormPermissionAdapter;
 import com.researchspace.model.permissions.PermissionDomain;
-import com.researchspace.model.permissions.PermissionTestUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.RecordPermissionAdapter;
 import com.researchspace.model.preference.HierarchicalPermission;
@@ -35,10 +34,10 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.TestGroup;
 import java.util.Arrays;
 import org.apache.shiro.authz.AuthorizationException;
@@ -56,7 +55,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testAddRemoveGrp() {
+  public void testSaveGroup() {
     User u1 = createAndSaveUserIfNotExists("any");
     Group g1 = new Group("unique", u1);
     grpMgr.saveGroup(g1, u1);
@@ -180,7 +179,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     assertEquals(1, g2.getPermissions().size());
     ConstraintBasedPermission reloaded =
         (ConstraintBasedPermission) g2.getPermissions().iterator().next();
-    PermissionTestUtils.assertPermissionsAreEquivalent(reloaded, permOb);
+    assertEquals(reloaded.toString(), permOb.toString());
 
     // now remove and test
     g2.removePermission(reloaded);

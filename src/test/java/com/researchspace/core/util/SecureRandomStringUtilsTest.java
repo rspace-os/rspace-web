@@ -3,7 +3,7 @@ package com.researchspace.core.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
 public class SecureRandomStringUtilsTest {

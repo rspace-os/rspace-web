@@ -69,9 +69,9 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
   private User testUser;
 
   private static final String PIC1_MAIN_IMAGE_CONTENT_HASH =
-      "b1c4808af0cd7e946d9a5cbac42cd9e0e7bae46f3bff0698ef08d94519360498";
+      "6624312783e502f98c018690891dde44e1387f2781256457e9fe56185a7c7fcc";
   private static final String PIC1_THUMBNAIL_CONTENT_HASH =
-      "9ffa3fa76ae55473cdc319ae72218c1cd375fca2f75c63ff782b6b26bc2debbe";
+      "5ea6a96ab0150456ef34ca30e086c991696f8f59f18439a9e8cd5e565189f13b";
 
   @Before
   public void setUp() {
@@ -678,7 +678,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
 
   @Test
   public void contentsHashSetInFileProperty() throws Exception {
-    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    InputStream imageFile =
+        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
 
     ApiSample updatedSample = updateSampleWithImage(imageBytes);
@@ -691,7 +692,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
 
   @Test
   public void linksUrlsCreatedWithContentsHash() throws Exception {
-    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    InputStream imageFile =
+        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
 
     ApiSample updatedSample = updateSampleWithImage(imageBytes);
@@ -722,7 +724,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples sample1 = createBasicSampleForUser(user, "Sample 1");
 
-    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    InputStream imageFile =
+        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
     sample1.setNewBase64Image(imageBytes);
     ApiSample updatedSample1 =
@@ -743,7 +746,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
 
   @Test
   public void differentUserUploadingSameImageGeneratesNewFileProperty() throws Exception {
-    InputStream imageFile = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    InputStream imageFile =
+        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.base64");
     String imageBytes = Arrays.toString(imageFile.readAllBytes());
 
     User user1 = createInitAndLoginAnyUser();

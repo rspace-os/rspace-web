@@ -37,8 +37,8 @@ import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPag
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.junit.Before;
@@ -313,7 +313,6 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     List<StructuredDocument> created = new ArrayList<>();
     List<RSChemElement> chems = new ArrayList<>();
     List<String> urls = new ArrayList<>();
-    System.err.println("setting up");
     for (int i = 0; i < NUM_CHEMS; i++) {
       StructuredDocument sd = createBasicDocumentInRootFolderWithText(user, "any");
       created.add(sd);
@@ -324,8 +323,6 @@ public class RSChemControllerMVCIT extends MVCTestBase {
       urls.add(src);
     }
 
-    // load all elements for the first time
-    System.err.println("starting uncached test");
     // load first element before timer starts as that may be possibly slower independent of caching
     mockMvc.perform(get(urls.get(0)).principal(principal)).andReturn();
     StopWatch sw = new StopWatch();
@@ -335,10 +332,8 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     }
     sw.stop();
     long uncached = sw.getTime();
-    System.err.println("uncached time is " + uncached);
 
     // load all elements for the second time (should be cached)
-    System.err.println("starting cached test");
     sw.reset();
     sw.start();
     for (int i = 0; i < NUM_CHEMS; i++) {
@@ -346,7 +341,6 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     }
     sw.stop();
     long cached = sw.getTime();
-    System.err.println("Cached time is " + cached);
 
     double SPEEDUP = 1.33; // is around 1.5 on new jenkins, but 1.33 is conservative estimate
     assertTrue(

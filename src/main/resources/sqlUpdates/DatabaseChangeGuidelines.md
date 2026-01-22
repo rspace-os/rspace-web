@@ -7,10 +7,12 @@ please ask rather than 'commit-and-hope'.
 This document is written in Markdown format.
 
 ### Are you creating a new table? If so: 
+- Add the entity in the `hibernate.cfg.xml` file
+- Add the entity on `HibernateTest.recordClasses()` method
 - Update `DatabaseCleaner cleanup ()` to clean up the table during test runs. 
 - Explicitly set charset and collation:  `character set utf8mb4 collate  utf8mb4_unicode_ci`.
   (As an example, see src/main/resources/sqlUpdates/changeLog-1.76.xml : ```<sql>alter table ClustermarketEquipment engine=InnoDB, CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</sql>```)
-  This is to overcome variations in collation between different OS/MariaDB/MySQL/ countries.
+  This is to overcome variations in collation between different OS/MariaDB countries.
 - Does it need an accompanying _AUD table to record revision history?   
 - If it has FK references to any BaseRecord or User/Group table, we need to update UserDeletionManagerImpl to support the 'Delete User' use case.
 - If you've written some JUnit tests that extend from RealTRansactionSpringTestBase (i.e. test  cases that run real transactions) then remember to add to the 'DatabaseCleaner.cleanUp' method

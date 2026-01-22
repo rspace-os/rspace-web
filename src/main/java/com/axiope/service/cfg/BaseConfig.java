@@ -18,6 +18,10 @@ import com.researchspace.auth.PostOAuthLoginHelperImpl;
 import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.auth.WhiteListIPCheckerImpl;
 import com.researchspace.core.util.ResponseUtil;
+import com.researchspace.dataverse.api.v1.DataverseAPI;
+import com.researchspace.dataverse.http.DataverseAPIImpl;
+import com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository;
+import com.researchspace.dataverse.rspaceadapter.DataverseRepoConfigurer;
 import com.researchspace.dcd.rspaceadapter.DigitalCommonsDataRepository;
 import com.researchspace.document.importer.DocumentImporterFromWord2HTML;
 import com.researchspace.document.importer.EvernoteEnexImporter;
@@ -70,6 +74,7 @@ import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.properties.PropertyHolder;
 import com.researchspace.repository.spi.IRepository;
+import com.researchspace.repository.spi.RepositoryConfigurer;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.service.ApiAvailabilityHandler;
@@ -256,7 +261,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
@@ -269,6 +274,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.retry.annotation.EnableRetry;
@@ -400,6 +406,39 @@ public abstract class BaseConfig {
             + velocityExtDir);
 
     return vEngine;
+  }
+
+  /**
+   * Create a new stateful repository adapter per request. <br>
+   * The name is created from appName+'Repository' as IRepository beans are created on-demand at
+   * export time.
+   */
+  @Bean(name = "dataverseRepository")
+  @Scope(value = WebApplicationContext.SCOPE_REQUEST)
+  public IRepository dataverseRepository() {
+    DataverseRSpaceRepository repo = new DataverseRSpaceRepository();
+    repo.setConfigurer(dataverseRepoConfigurer());
+    repo.setDvAPI(dataverseAPI());
+    logSettingRepositoryImplementation(repo);
+    return repo;
+  }
+
+  private void logSettingRepositoryImplementation(IRepository repo) {
+    log.info("Setting in repository implementation {}", repo);
+  }
+
+  @Bean
+  @Scope(value = "prototype")
+  public DataverseAPI dataverseAPI() {
+    return new DataverseAPIImpl();
+  }
+
+  @Bean(name = "configurerDataverse")
+  public RepositoryConfigurer dataverseRepoConfigurer() {
+    DataverseRepoConfigurer rc = new DataverseRepoConfigurer();
+    ClassPathResource subjects = new ClassPathResource("subjects.txt");
+    rc.setResource(subjects);
+    return rc;
   }
 
   @Bean

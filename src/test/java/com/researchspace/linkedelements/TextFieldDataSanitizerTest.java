@@ -3,7 +3,7 @@ package com.researchspace.linkedelements;
 import static org.junit.Assert.*;
 
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,7 +74,6 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
 
     String newHTml = "<img src=\"image.png\" onerror=\"alert('1');\">";
     newHTml = fieldDataSanitizer.cleanData(newHTml);
-    System.err.println(newHTml);
     assertFalse(newHTml.contains("alert"));
   }
 

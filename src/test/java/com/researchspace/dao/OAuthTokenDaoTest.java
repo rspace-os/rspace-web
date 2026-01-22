@@ -12,7 +12,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;

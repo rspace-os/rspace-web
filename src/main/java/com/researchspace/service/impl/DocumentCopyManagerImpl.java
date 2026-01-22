@@ -3,7 +3,6 @@ package com.researchspace.service.impl;
 import com.researchspace.dao.EcatCommentDao;
 import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.dao.FieldDao;
-import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.dao.RSMathDao;
 import com.researchspace.dao.RecordDao;
@@ -59,7 +58,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-@Service("DocumentCopyManagerImpl")
+@Service
 public class DocumentCopyManagerImpl implements DocumentCopyManager {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -76,7 +75,6 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
   private @Autowired FieldParser fieldParser;
   private @Autowired RecordDao recordDao;
   private @Autowired IPermissionUtils permissionUtils;
-  private @Autowired FolderDao folderDao;
   private @Autowired InternalLinkDao internalLinkDao;
   private @Autowired @Qualifier("compositeFileStore") FileStore fileStore;
 
@@ -163,7 +161,7 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
         if (destFieldId != null) {
           try {
             if (stoichiometryManager.findByParentReactionId(origChem.getId()).isPresent()) {
-              stoichiometryManager.copyForReaction(origChem.getId(), copyChem, user);
+              stoichiometryManager.copy(origChem.getId(), copyChem, user);
             }
           } catch (Exception e) {
             log.error(

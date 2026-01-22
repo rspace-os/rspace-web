@@ -32,7 +32,6 @@ public class ImageRSpaceView implements OmeroRSpaceView {
   private String base64ThumbnailData;
   private final Long parentId;
 
-  @SneakyThrows
   public ImageRSpaceView(
       JsonObject imageJson, long parentID, String base64ThumbnailData, List<String> annotations) {
     this(imageJson, parentID, base64ThumbnailData, annotations, "");

@@ -25,6 +25,8 @@ public class RepoDepositConfig {
   /** A list of 0 or more selected DMPUser internal IDs */
   private List<Long> selectedDMPs = new ArrayList<>();
 
+  private boolean exportToRaid = false;
+
   /**
    * @return {@code}true{@code} if 1 or more DMP ids were selected
    */

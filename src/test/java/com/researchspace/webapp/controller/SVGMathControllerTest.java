@@ -1,15 +1,15 @@
 package com.researchspace.webapp.controller;
 
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.RSMath;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
+import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.util.Locale;
 import org.junit.After;

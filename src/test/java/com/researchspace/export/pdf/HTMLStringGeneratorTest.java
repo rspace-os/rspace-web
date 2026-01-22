@@ -1,9 +1,9 @@
 package com.researchspace.export.pdf;
 
-import static com.researchspace.model.netfiles.NetFilesTestFactory.createAnyNfsFileStore;
-import static com.researchspace.model.record.TestFactory.createAnySD;
-import static com.researchspace.model.record.TestFactory.createAnySDWithText;
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.NetFilesTestFactory.createAnyNfsFileStore;
+import static com.researchspace.testutils.TestFactory.createAnySD;
+import static com.researchspace.testutils.TestFactory.createAnySDWithText;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -22,13 +22,13 @@ import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserExternalIdResolver;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.VelocityTestUtils;
 import java.util.List;
 import java.util.Optional;
@@ -293,8 +293,7 @@ public class HTMLStringGeneratorTest {
     // html chars in name escaped
     assertFalse(data.contains("special html chars &∅∈∌"));
     assertTrue(
-        "unexpected:" + data,
-        data.contains("special html chars &amp;amp;&amp;empty;&amp;isin;&amp;#8716;"));
+        "unexpected:" + data, data.contains("special html chars &amp;amp;&amp;empty;&amp;isin;∌"));
   }
 
   @Test

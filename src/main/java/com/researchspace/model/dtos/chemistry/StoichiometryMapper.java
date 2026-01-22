@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos.chemistry;
 
+import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import java.util.ArrayList;
@@ -9,31 +10,6 @@ import java.util.stream.Collectors;
 public final class StoichiometryMapper {
 
   private StoichiometryMapper() {}
-
-  public static StoichiometryDTO toDTO(Stoichiometry stoichiometry) {
-    if (stoichiometry == null) {
-      return null;
-    }
-
-    List<StoichiometryMoleculeDTO> moleculeDTOs = new ArrayList<>();
-    if (stoichiometry.getMolecules() != null) {
-      moleculeDTOs =
-          stoichiometry.getMolecules().stream()
-              .map(StoichiometryMapper::moleculeToDTO)
-              .collect(Collectors.toList());
-    }
-
-    Long parentReactionId = null;
-    if (stoichiometry.getParentReaction() != null) {
-      parentReactionId = stoichiometry.getParentReaction().getId();
-    }
-
-    return StoichiometryDTO.builder()
-        .id(stoichiometry.getId())
-        .molecules(moleculeDTOs)
-        .parentReactionId(parentReactionId)
-        .build();
-  }
 
   public static StoichiometryDTO toDTO(Stoichiometry stoichiometry, Long revision) {
     if (stoichiometry == null) {
@@ -83,9 +59,14 @@ public final class StoichiometryMapper {
     }
     Long rsChemElementId =
         molecule.getRsChemElement() != null ? molecule.getRsChemElement().getId() : null;
+    StoichiometryInventoryLinkDTO inventoryLink =
+        molecule.getInventoryLink() == null
+            ? null
+            : new StoichiometryInventoryLinkDTO(molecule.getInventoryLink());
     return StoichiometryMoleculeDTO.builder()
         .id(molecule.getId())
         .rsChemElementId(rsChemElementId)
+        .inventoryLink(inventoryLink)
         .role(molecule.getRole())
         .formula(molecule.getFormula())
         .name(molecule.getName())

@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.crypto.hash.Sha256Hash;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -255,8 +255,14 @@ public class ExportObjectGenerator {
     addSketchesToExport(context, fieldContents);
     addAttachmentFilesToExport(context, fieldContents);
     updateInteralLinksInExport(context, fieldContents, exportList);
+    addExternalWorkFlowData(context, fieldContents);
     addResourcesFiles(archiveField);
     updateIframeLinks(archiveField);
+  }
+
+  private void addExternalWorkFlowData(FieldExportContext context, FieldContents fieldContents) {
+    ExternalWorkFlowExporter externalWorkFlowExporter = new ExternalWorkFlowExporter(support);
+    externalWorkFlowExporter.addExternalWorkflowDataToExport(context, fieldContents);
   }
 
   private void updateIframeLinks(ArchivalField archiveField) {

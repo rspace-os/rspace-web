@@ -30,7 +30,7 @@ import com.researchspace.service.impl.license.NoCheckLicenseService;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -535,8 +535,6 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
             + groupWithCommaInDisplayNameJSON
             + "]}";
 
-    // System.out.println("sending problematicGroupsJson: " + problematicGroupsJson);
-
     MvcResult result =
         mockMvc
             .perform(
@@ -550,7 +548,6 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
 
     // all problems should be reported
     ErrorList errorList = mvcUtils.getErrorListFromAjaxReturnObject(result);
-    // JSONObject errorList = (JSONObject) resultMap.get("errorMsg");
     List<String> errorMsgs = errorList.getErrorMessages();
     assertEquals(7, errorMsgs.size());
     assertEquals(
@@ -585,7 +582,6 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     String json =
         "{ \"parsedUsers\":[" + piInfo + "], " + "\"parsedCommunities\":[" + communityInfo + "]}";
 
-    System.out.println("problematic community json: " + json);
     MvcResult result =
         mockMvc
             .perform(

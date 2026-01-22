@@ -16,9 +16,9 @@ Our build toolchain requires Java 17. Currently using a different Java version t
 
 -   Install Java JDK17 via [Adoptium](https://adoptium.net/temurin/releases/?version=17)
 -   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
--   Install MariaDB 10.3.39, or later. MariaDB 11.3 is used fine on dockerized RSpace version. Later versions of MariaDB 11 are untested and we have seen some compatability issues with those.
+-   Install MariaDB 10.6 or 10.11. If your OS pre-installs MariaDB 11.3 you can try it - it's used fine in the dockerized RSpace version. Later versions of MariaDB 11 are not tested yet and may have compatibility issues.
 
-Historically we were running RSpace on MySQL 5.7 version, so some docs still mention it, but you should go with MariaDB.
+Historically we were running RSpace on MySQL database, so some docs may still mention MySQL, but go with MariaDB.
 Database installation can be skipped if your only goal is to compile/build the project.
 
 ### Recommended software
@@ -58,13 +58,9 @@ path to your java installation.
 
 Current location of the codebase is https://github.com/rspace-os/rspace-web
 
-It's best to use a Git client to download and update source code.
-Alternatively, for one-off installation, you can download project directly from the page as a zip package.
+(if you are a member of ResearchSpace Dev Team, please clone our fork of the codebase located at https://github.com/ResearchSpace-ELN/rspace-web)
 
-#### (only if running RSpace version < 2.1.0) Download required non-public RSpace dependencies 
-
-This is no longer needed for RSpace 2.1.0 version (or later), but if you're trying to run an older version, check the historical revision of this document,
-which describes how to download and install an additional package of dependencies from https://github.com/rspace-os/rspace-web/releases page. 
+We recommend using a Git client to download and update the source code.
 
 #### Sanity check
 
@@ -94,19 +90,19 @@ mvn clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD
 You can also check top-level Jenkinsfile file to see how internal tests builds are created by
 ResearchSpace dev team (check 'Build prodRelease-like package' stage script).  
 
-### Set up MariaDB/MySQL database
+### Set up MariaDB database
 
-**You can now use the Docker MariaDB setup guide [here](/DevDOcs/DeveloperNotes/GettingStarted/dockerMariaDB.md)**
+**You can now use the Docker MariaDB setup guide [here](/DevDocs/DeveloperNotes/GettingStarted/dockerMariaDB.md)**
 
-#### MariaDB/MySQL initialisation
+#### MariaDB initialisation
 
-Take these steps if you do not have MariaDB/MySQL or have a fresh installation of MariaDB/MySQL and ***are using standalone DB instead of docker image***.
+Take these steps if you do not have MariaDB, or have a fresh installation of MariaDB and ***are using standalone DB instead of docker image***.
 
 ```bash
-# These steps are specific to Linux and MySQL5.7, adapt as needed
+# These steps are specific to Ubuntu and latest MariaDB, adapt as needed
 
-# 1. Install the database package (your package manager might be apt, dnf, yum, ...)
-nix-env --install mysql57
+# 1. Install the database package (your package manager might be apt, dnf, yum etc., here is apt)
+sudo apt update && sudo apt install mariadb-server
 
 # 2. Initialise the database before starting the systemd service
 mysqld --initialize
@@ -116,41 +112,12 @@ mysqladmin --user=root --password="PASSWORD-FROM-STEP-2" password "password"
 
 # 4. Start the systemd service
 mysqld
-
-# 5. By default, MySQL listens on 0.0.0.0, for security reasons let's replace this with localhost
-echo "
-[mysqld]
-bind-address = 127.0.0.1
-" > ~/.my.cnf
 ```
-
-Finally, there may be a configuration change to set up - in MySQL prompt run:
-
-       SELECT @@sql_mode;
-
-If the result contains 'ONLY_FULL_GROUP_BY' option, that option needs to be removed,
-otherwise some pages will fail to load (e.g. /system page for sysadmmin).
-That option doesn't seem to be present on MariaDB 10.3.39, so if you run that, you can move on.
-
-The sql_mode can be overridden for a single session by running the following command in MySQL prompt, e.g.
-
-       set global sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"
-
-You can make this permanent / applied on startup by adding a line to a MySQL configuration file (e.g. /etc/mysql/my.cnf on Linux, you may need to create this file):
-
-       sql_mode = STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
-
-On windows, these instructions should work for Mysql 5.7X. After installation locate the hidden folder PROGRAMDATA : 'alt + r' (run) -> search for %PROGRAMDATA%.
-Then look for the file my.ini inside the MYSQL install - mine was at "C:\ProgramData\MySQL\MySQL Server 5.7\my.ini". **This file already contains an entry for
-sql-mode** - locate and edit that entry, do not just attempt to add a new entry. After editing my.ini, restart the Mysql service and the changes can be queried
-as mysqladmin.
-
-After adding/updating the file and restarting mysql confirm that `SELECT @@sql_mode;` no longer contains the 'ONLY_FULL_GROUP_BY' option.
 
 #### RSpace table setup (***for standalone install - ignore this if using docker***)
 
-1.  Make sure MariaDB/MySQL is installed and running on your machine.
-2.  Set up an 'rspacedbuser' user and 'rspace' database on your MariaDB/MySQL using this command:
+1.  Make sure MariaDB is installed and running on your machine.
+2.  Set up an 'rspacedbuser' user and 'rspace' database on your MariaDB using this command:
 
 ```bash
 mysql -u "root" -p"password" -e "

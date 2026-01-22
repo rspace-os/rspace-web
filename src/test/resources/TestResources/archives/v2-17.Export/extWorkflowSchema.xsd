@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="ExternalWorkFlows" type="allArchiveExternalWorkFlowMetaData"/>
+
+  <xs:element name="archivalGalleryMetadata" type="archivalGalleryMetadata"/>
+
+  <xs:complexType name="allArchiveExternalWorkFlowMetaData">
+    <xs:complexContent>
+      <xs:extension base="archivalGalleryMetadata">
+        <xs:sequence>
+          <xs:element name="exported-externalWorkFlow" type="archiveExternalWorkFlow" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="archivalGalleryMetadata">
+    <xs:sequence>
+      <xs:element name="schemaVersion" type="xs:int"/>
+      <xs:element name="parentId" type="xs:long"/>
+      <xs:element name="originalId" type="xs:long" minOccurs="0"/>
+      <xs:element name="fileName" type="xs:string" minOccurs="0"/>
+      <xs:element name="name" type="xs:string" minOccurs="0"/>
+      <xs:element name="linkFile" type="xs:string" minOccurs="0"/>
+      <xs:element name="contentType" type="xs:string" minOccurs="0"/>
+      <xs:element name="extension" type="xs:string" minOccurs="0"/>
+      <xs:element name="annotation" type="xs:string" minOccurs="0"/>
+      <xs:element name="creationDate" type="xs:dateTime" minOccurs="0"/>
+      <xs:element name="modificationDate" type="xs:dateTime" minOccurs="0"/>
+      <xs:element name="createdBy" type="xs:string" minOccurs="0"/>
+      <xs:element name="description" type="xs:string" minOccurs="0"/>
+      <xs:element name="chemElementsFormat" type="xs:string" minOccurs="0"/>
+      <xs:element name="version" type="xs:long" minOccurs="0"/>
+      <xs:element name="originalVersion" type="xs:long" minOccurs="0"/>
+      <xs:element name="linkToOriginalFile" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:long" use="required"/>
+    <xs:attribute name="parentGalleryFolderId" type="xs:long"/>
+  </xs:complexType>
+
+  <xs:complexType name="archiveExternalWorkFlow">
+    <xs:complexContent>
+      <xs:extension base="archivalGalleryMetadata">
+        <xs:sequence>
+          <xs:element name="extId" type="xs:string" minOccurs="0"/>
+          <xs:element name="externalService" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</xs:schema>
+

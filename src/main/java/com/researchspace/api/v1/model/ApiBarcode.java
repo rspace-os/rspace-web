@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
  *     indicate that the cached ApiFile should be evicted.
  */
 @Data
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @JsonPropertyOrder(
     value = {"id", "data", "format", "description", "created", "createdBy", "_links"})

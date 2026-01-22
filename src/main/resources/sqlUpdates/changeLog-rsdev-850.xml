@@ -1,0 +1,59 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- RaID integration -->
+    <changeSet id="2025-10-27a" context="run" author="nico">
+        <comment>Create a new app - RaID</comment>
+        <insert tableName="App">
+            <column name="id" type="NUMERIC" value="NULL" />
+            <column name="label" type="STRING" value="RaID" />
+            <column name="name" type="STRING" value="app.raid" />
+            <column name="defaultEnabled" type="BOOLEAN" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
+    <changeSet id="2025-10-27b" context="run" author="nico">
+        <comment>Property Descriptors for RaID App</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="" />
+            <column name="name" type="STRING" value="RAID_OAUTH_CONNECTED" />
+            <column name="type" type="NUMERIC" value="2" />
+        </insert>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="" />
+            <column name="name" type="STRING" value="RAID_URL" />
+            <column name="type" type="NUMERIC" value="2" />
+        </insert>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="" />
+            <column name="name" type="STRING" value="RAID_ALIAS" />
+            <column name="type" type="NUMERIC" value="2" />
+        </insert>
+    </changeSet>
+
+    <changeSet id="2025-10-27c" context="run" author="nico">
+        <comment>AppConfigElementDescriptor for RaID App: id, descriptor_id, app_id</comment>
+        <sql>insert into AppConfigElementDescriptor (descriptor_id, app_id)
+             select pd.id as descriptor_id, app.id as app_id
+             from PropertyDescriptor pd, App app
+             where app.name='app.raid' and pd.name='RAID_OAUTH_CONNECTED';</sql>
+        <sql>insert into AppConfigElementDescriptor (id, descriptor_id, app_id)
+             select null, pd.id, app.id
+             from PropertyDescriptor pd, App app
+             where app.name="app.raid" and pd.name='RAID_URL';
+        </sql>
+        <sql>insert into AppConfigElementDescriptor (id, descriptor_id, app_id)
+             select null, pd.id, app.id
+             from PropertyDescriptor pd, App app
+             where app.name = "app.raid" and pd.name = 'RAID_ALIAS';
+        </sql>
+    </changeSet>
+
+
+</databaseChangeLog>

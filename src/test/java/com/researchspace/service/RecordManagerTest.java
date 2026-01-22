@@ -67,7 +67,6 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.FolderRecordPair;
 import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.model.views.RecordCopyResult;
@@ -77,8 +76,8 @@ import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.TestGroup;
-import com.researchspace.webapp.controller.WorkspaceController;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
@@ -105,7 +104,6 @@ public class RecordManagerTest extends SpringTransactionalTest {
   private @Autowired BaseRecordAdaptable baseRecordAdapter;
   private @Autowired FieldDao fieldDao;
   private @Autowired SharingHandler sharingHandler;
-  private @Autowired WorkspaceController workspaceController;
 
   private RSForm anyForm;
   private User user;
@@ -302,8 +300,8 @@ public class RecordManagerTest extends SpringTransactionalTest {
     recordMgr.createSnippet("", "b", user);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void creatingNewSnippetWithNullContentThrowsIAE() {
+  @Test(expected = NullPointerException.class)
+  public void creatingNewSnippetWithNullContentThrowsNPE() {
     recordMgr.createSnippet("a", null, user);
   }
 
@@ -793,7 +791,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertEquals(0, noChildrens.getResults().size());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = NullPointerException.class)
   public void addStructuredDocumentArgumentCheckingNoNulls() {
     user.getRootFolder();
     flushDatabaseState();
@@ -1684,7 +1682,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testCreateNewStructuredDocumentIntoSharedNotebook() {
+  public void testCreateNewStructuredDocumentIntoSharedNotebook() throws InterruptedException {
     User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
     Group group = new Group(CoreTestUtils.getRandomName(10), admin);
     group.addMember(user, RoleInGroup.DEFAULT);
@@ -1703,8 +1701,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
         recordMgr.listFolderRecords(rootFolder.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
     anyForm = formDao.getAll().get(0);
 
-    Long notebookId =
-        workspaceController.createNotebook(sharedFolderId, "notebook", new MockPrincipal(admin));
+    long notebookId = createNotebookWithNEntries(sharedFolderId, "notebook", 0, admin).getId();
     flushDatabaseState();
 
     sharingHandler.shareIntoSharedFolderOrNotebook(admin, sharedGroupFolder, notebookId, null);

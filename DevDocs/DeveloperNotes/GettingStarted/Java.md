@@ -1,7 +1,7 @@
 # Getting started as a Java developer
 
 First, follow the [GettingStarted.md](GettingStarted.md) doc, which
-describes local Maven/MySQL setup necessary to run RSpace. At the end
+describes local Maven/MariaDB setup necessary to run RSpace. At the end
 of that guide you should have RSpace instance running on your localhost.
 
 Second, you'll need an IDE of your choice to edit files. Instructions

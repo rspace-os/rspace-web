@@ -8,7 +8,7 @@ import com.researchspace.model.field.ErrorList;
 import java.util.Collections;
 import java.util.List;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 /** Holds the result of parsing a batch of users and groups */
 @NoArgsConstructor

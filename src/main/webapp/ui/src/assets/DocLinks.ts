@@ -3,7 +3,7 @@ import { type URL } from "../util/types";
 const mkDocLink = (pageId: string, hash: string = ""): URL =>
   `https://researchspace.helpdocs.io/article/${pageId}#${hash}`;
 
-const docLinks: { [name: string]: URL } = {
+const docLinks: Record<string, URL> = {
   listOfMaterials: mkDocLink("cdrc4ed67l"),
   attachments: mkDocLink("ory7fu1uw9"),
   gettingStarted: mkDocLink("tffkwcpizj"),
@@ -55,6 +55,7 @@ const docLinks: { [name: string]: URL } = {
   galaxy: mkDocLink("zzsl46jo5y"),
   cloudstorage: mkDocLink("j2z5f5r90q"),
   jove: mkDocLink("mopbqzzdf5"),
+  jupyter: mkDocLink("gg0ao0rqpt"),
   chemistry: mkDocLink("wfxm4xwtio"),
   pubchem: mkDocLink(
     "wfxm4xwtio",
@@ -78,6 +79,7 @@ const docLinks: { [name: string]: URL } = {
   fieldmark: mkDocLink("idbaaggghu"),
   orcid: mkDocLink("yhkbtnj61a"),
   gallery: mkDocLink("sl6mo1i9do"),
+  raid: mkDocLink("zb4c2c8a4b")
 };
 
 /**

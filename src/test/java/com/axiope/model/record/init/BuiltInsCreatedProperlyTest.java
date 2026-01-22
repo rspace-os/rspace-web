@@ -9,7 +9,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;

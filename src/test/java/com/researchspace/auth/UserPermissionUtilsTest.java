@@ -1,14 +1,14 @@
 package com.researchspace.auth;
 
-import static com.researchspace.model.record.TestFactory.createAnyUserWithRole;
+import static com.researchspace.testutils.TestFactory.createAnyUserWithRole;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.Community;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.UserManager;
+import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;

@@ -25,6 +25,7 @@ import Galaxy from "./integrations/Galaxy";
 import GitHub from "./integrations/GitHub";
 import GoogleDrive from "./integrations/GoogleDrive";
 import Jove from "./integrations/Jove";
+import Jupyter from "./integrations/Jupyter";
 import MSTeams from "./integrations/MSTeams";
 import NextCloud from "./integrations/NextCloud";
 import Omero from "./integrations/Omero";
@@ -37,6 +38,7 @@ import Zenodo from "./integrations/Zenodo";
 import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
+import RaIDIntergrationCard from "@/eln/apps/integrations/RaID/RaIDIntegrationCard";
 
 type CardListingArgs = {
   /*
@@ -297,6 +299,15 @@ function CardListing({
     [update, integrationStates.PYRAT],
   );
 
+  const raidUpdate = React.useCallback(
+    (newState: IntegrationStates["RAID"]) => {
+      void runInAction(async () => {
+        integrationStates.RAID = await update("RAID", newState);
+      });
+    },
+    [update, integrationStates.RAID],
+  );
+
   const slackUpdate = React.useCallback(
     (newState: IntegrationStates["SLACK"]) => {
       void runInAction(async () => {
@@ -346,6 +357,7 @@ function CardListing({
         />
       )}
       {integrationStates.API_DIRECT.mode === mode && <ApiDirect />}
+      { integrationStates.API_DIRECT.mode === mode && <Jupyter />}
       {integrationStates.ASCENSCIA.mode === mode && (
         <Ascenscia
           integrationState={integrationStates.ASCENSCIA}
@@ -482,6 +494,12 @@ function CardListing({
         <Pyrat
           integrationState={integrationStates.PYRAT}
           update={pyratUpdate}
+        />
+      )}
+      {integrationStates.RAID.mode === mode && (
+        <RaIDIntergrationCard
+          integrationState={integrationStates.RAID}
+          update={raidUpdate}
         />
       )}
       {integrationStates.SLACK.mode === mode && (

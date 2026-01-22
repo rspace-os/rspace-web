@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.model.record.TestFactory.createAnyRecord;
+import static com.researchspace.testutils.TestFactory.createAnyRecord;
 import static com.researchspace.webapp.controller.AuditTrailSearchResultCsvGenerator.MAX_RESULTS_EXCEEDED;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -20,8 +20,8 @@ import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.model.record.Record;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
+import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.time.Instant;
 import org.junit.Test;

@@ -26,8 +26,8 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpSession;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -233,7 +233,7 @@ public class JournalController extends BaseController {
         fieldContent = latestField.getFieldData();
       }
       if (!(latestField instanceof TextField)) {
-        fieldContent = StringEscapeUtils.escapeHtml(fieldContent);
+        fieldContent = StringEscapeUtils.escapeHtml4(fieldContent);
       }
 
       buffer.append(fieldContent);

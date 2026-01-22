@@ -39,6 +39,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -199,7 +200,7 @@ public class SharingHandlerImpl implements SharingHandler {
   }
 
   @Override
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public SharingResult moveIntoSharedNotebook(
       Group group, BaseRecord baseRecordToMove, Notebook targetSharedNotebook) {
     Validate.isTrue(

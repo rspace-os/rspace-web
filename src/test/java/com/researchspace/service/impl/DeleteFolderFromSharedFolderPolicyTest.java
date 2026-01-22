@@ -1,16 +1,16 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.model.record.TestFactory.createAFolder;
-import static com.researchspace.model.record.TestFactory.createANotebookWithNEntries;
-import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static com.researchspace.testutils.TestFactory.createAFolder;
+import static com.researchspace.testutils.TestFactory.createANotebookWithNEntries;
+import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertEquals;
 
 import com.researchspace.dao.FolderDao;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.DeletionPlan;
+import com.researchspace.testutils.TestFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

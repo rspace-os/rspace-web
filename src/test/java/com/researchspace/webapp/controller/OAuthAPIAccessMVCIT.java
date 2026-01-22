@@ -32,7 +32,7 @@ public class OAuthAPIAccessMVCIT extends API_MVC_TestBase {
             .param("client_secret", testOAuthAppClientSecret)
             .param("grant_type", "password")
             .param("username", user.getUsername())
-            .param("password", "testpass");
+            .param("password", TESTPASSWD);
 
     // get access token
     MvcResult result = mockMvc.perform(accessTokenRequest).andExpect(status().isOk()).andReturn();

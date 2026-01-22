@@ -29,7 +29,7 @@ import javax.servlet.http.HttpSession;
 import lombok.Data;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -340,7 +340,7 @@ public class NextCloudController extends BaseOAuth2Controller {
   @DeleteMapping("/connect")
   public void disconnect(Principal principal) {
     int deleted =
-        userConnectionManager.deleteByUserAndProvider(NEXTCLOUD_APP_NAME, principal.getName());
+        userConnectionManager.deleteByUserAndProvider(principal.getName(), NEXTCLOUD_APP_NAME);
     log.info("Deleted {} nextcloud connection(s) for user {}", deleted, principal.getName());
   }
 }

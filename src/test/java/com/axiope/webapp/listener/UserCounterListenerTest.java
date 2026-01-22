@@ -5,10 +5,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.TestFactory;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.http.HttpSession;

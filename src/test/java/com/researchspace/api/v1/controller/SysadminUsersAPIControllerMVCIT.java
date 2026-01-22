@@ -20,7 +20,6 @@ import com.researchspace.api.v1.model.ApiGroupInfo;
 import com.researchspace.api.v1.model.ApiSysadminUserSearchResult;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.apiutils.ApiError;
-import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.Role;
@@ -258,14 +257,12 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
     String apiKey = createNewApiKeyForUser(sysadmin);
     String unameString = getRandomAlphabeticString("u1");
     UserApiPost userToPost = createAnyUserPost(unameString);
-    System.err.println(JacksonUtil.toJson(userToPost));
 
     MvcResult res =
         mockMvc
             .perform(
                 createBuilderForPostWithJSONBody(apiKey, "/sysadmin/users", sysadmin, userToPost))
             .andReturn();
-    System.err.println(res.getResponse().getContentAsString());
     ApiUser createdApiUser = getFromJsonResponseBody(res, ApiUser.class);
     assertNotNull(createdApiUser);
     assertNotNull(createdApiUser.getHomeFolderId()); // account is initialised

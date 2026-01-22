@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -11,10 +12,10 @@ import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.dto.IntegrationInfo;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.integrations.dmptool.DMPToolDMPProviderImpl;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -76,10 +77,13 @@ public class DMPUpdateHandlerTest {
     final long dmpUserId = -1;
     IntegrationInfo usableInfo = usableInfo();
     DMPUser dmpUser = createMultipleDMPusers(List.of(dmpUserId)).get(0);
+    dmpUser.setDoiLink("https://doi.org/ORIGINAL");
     mockIntegrationsHandler(usableInfo);
     mockSuccessfulDMPAPIcall();
+    assertFalse(urlSupplier().get().toString().equals(dmpUser.getDoiLink().toString()));
     when(dmpManager.findDMPsForUser(anyUser)).thenReturn(List.of(dmpUser));
     dmpUpdateHandler.updateDMPS(urlSupplier(), anyUser, List.of(dmpUserId));
+    assertFalse(urlSupplier().get().toString().equals(dmpUser.getDoiLink().toString()));
     verifyAttemptToAddDoi();
   }
 

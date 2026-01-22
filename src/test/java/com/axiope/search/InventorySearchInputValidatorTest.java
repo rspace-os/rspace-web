@@ -9,8 +9,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
-import org.apache.commons.lang.RandomStringUtils;
+import com.researchspace.testutils.TestFactory;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.validation.BeanPropertyBindingResult;

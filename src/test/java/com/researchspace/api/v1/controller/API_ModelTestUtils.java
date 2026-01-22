@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.supercsv.cellprocessor.CellProcessorAdaptor;
 import org.supercsv.cellprocessor.ParseEnum;
@@ -104,7 +104,6 @@ public class API_ModelTestUtils {
     assertEquals(testDoc.getName(), apiDocInfo.getName());
     assertEquals(testDoc.isSigned(), apiDocInfo.getSigned());
     assertEquals(testDoc.getDocTag(), apiDocInfo.getTags());
-    System.err.println(testDoc.getCreationDate() + "," + new Date(apiDocInfo.getCreatedMillis()));
     assertEquals(testDoc.getCreationDate().getTime(), apiDocInfo.getCreatedMillis().longValue());
     assertEquals(testDoc.getModificationDateMillis(), apiDocInfo.getLastModifiedMillis());
 

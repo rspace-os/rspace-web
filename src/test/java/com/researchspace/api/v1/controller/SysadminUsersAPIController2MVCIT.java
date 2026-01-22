@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.api.v1.controller.SysadminApiController.UserApiPost;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.apiutils.ApiError;
-import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,14 +36,12 @@ public class SysadminUsersAPIController2MVCIT extends API_MVC_TestBase {
     String apiKey = createNewApiKeyForUser(sysadmin);
     String unameString = getRandomAlphabeticString("u1");
     UserApiPost userToPost = createAnyUserPost(unameString);
-    System.err.println(JacksonUtil.toJson(userToPost));
 
     MvcResult res =
         mockMvc
             .perform(
                 createBuilderForPostWithJSONBody(apiKey, "/sysadmin/users", sysadmin, userToPost))
             .andReturn();
-    System.err.println(res.getResponse().getContentAsString());
     ApiUser createdApiUser = getFromJsonResponseBody(res, ApiUser.class);
     assertNotNull(createdApiUser);
     assertNotNull(createdApiUser.getHomeFolderId()); // account is initialised

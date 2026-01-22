@@ -6,6 +6,7 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.dtos.RaidGroupAssociation;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.repository.spi.IRepository;
 import java.io.File;
@@ -15,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Holds user-supplied export configuration and export results. <br>
@@ -41,6 +42,8 @@ public class ArchiveExportConfig implements IArchiveExportConfig {
   private String description = "";
 
   private ExportScope exportScope;
+
+  private RaidGroupAssociation raidGroupAssociation;
 
   private ProgressMonitor progressMonitor = ProgressMonitor.NULL_MONITOR;
 
@@ -171,5 +174,10 @@ public class ArchiveExportConfig implements IArchiveExportConfig {
   @Override
   public boolean isGroupScope() {
     return ExportScope.GROUP.equals(exportScope);
+  }
+
+  @Override
+  public boolean hasRaidAssociation() {
+    return this.raidGroupAssociation != null;
   }
 }

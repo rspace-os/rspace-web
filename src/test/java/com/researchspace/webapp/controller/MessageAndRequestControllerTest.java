@@ -18,12 +18,11 @@ import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.permissions.IPermissionUtils;
-import com.researchspace.model.record.TestFactory;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.PermissionsUtilsStub;
-import java.io.IOException;
+import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.Set;
 import net.fortuna.ical4j.validate.ValidationException;
@@ -119,7 +118,7 @@ public class MessageAndRequestControllerTest {
   }
 
   @Test
-  public void creatCalendarEntry() throws ValidationException, IOException {
+  public void creatCalendarEntry() throws ValidationException {
     CalendarEvent event = new CalendarEvent();
     event.setStart("2020-05-19T13:00:00Z");
     event.setEnd("2020-05-19T15:00:00Z");
@@ -130,10 +129,6 @@ public class MessageAndRequestControllerTest {
     AjaxReturnObject<Boolean> aro = ctrller.createCalendarEvent(event, request);
     assertNull(aro.getData());
     assertEquals(1, aro.getError().getErrorMessages().size());
-
-    String icString =
-        (String) request.getSession().getAttribute(MessageAndRequestController.CALENDAR_FILE_BODY);
-    System.err.println(icString);
   }
 
   @Test

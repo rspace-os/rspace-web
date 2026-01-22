@@ -4,6 +4,7 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.dtos.NfsExportConfig;
+import com.researchspace.model.dtos.RaidGroupAssociation;
 import com.researchspace.model.repository.RepoDepositConfig;
 import java.util.HashSet;
 import java.util.Set;
@@ -40,6 +41,7 @@ public class ExportArchiveDialogConfigDTO {
   @Valid private ArchiveDialogConfig exportConfig;
   @Valid private NfsExportConfig nfsConfig;
   @Valid private RepoDepositConfig repositoryConfig;
+  @Valid private RaidGroupAssociation raidAssociated;
 
   public ArchiveExportConfig toArchiveExportConfig() {
     ArchiveExportConfig archiveExportCfg = new ArchiveExportConfig();
@@ -52,6 +54,7 @@ public class ExportArchiveDialogConfigDTO {
     archiveExportCfg.setDescription(exportConfig.getDescription());
     archiveExportCfg.setHasAllVersion(exportConfig.getAllVersions());
     archiveExportCfg.setExportScope(ExportScope.valueOf(exportSelection.getType().name()));
+    archiveExportCfg.setRaidGroupAssociation(this.getRaidAssociated());
 
     if (repositoryConfig != null) {
       archiveExportCfg.setDeposit(repositoryConfig.isDepositToRepository());

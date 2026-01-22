@@ -4,7 +4,7 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
 import com.researchspace.core.testutil.JavaxValidatorTest;
 import com.researchspace.model.User;
-import com.researchspace.model.record.TestFactory;
+import com.researchspace.testutils.TestFactory;
 import org.junit.Test;
 
 public class ApiSubsampleNoteValidationTest extends JavaxValidatorTest {
