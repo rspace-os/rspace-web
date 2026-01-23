@@ -182,7 +182,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       @RequestAttribute(name = "user") User user)
       throws BindException {
     return doListing(
-        typesToInclude, pgCrit, errors, user, () -> folderMgr.getRootFolderForUser(user), false);
+        typesToInclude, pgCrit, errors, () -> folderMgr.getRootFolderForUser(user), true);
   }
 
   @Override
@@ -195,22 +195,15 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       throws BindException {
     // validates read permission
     Folder toListFolder = loadFolder(id, user);
-    return doListing(
-        recordTypes,
-        pgCrit,
-        errors,
-        user,
-        () -> toListFolder,
-        toListFolder.hasAncestorOfType(RecordType.ROOT_MEDIA, true));
+    return doListing(recordTypes, pgCrit, errors, () -> toListFolder, false);
   }
 
   private ApiRecordTreeItemListing doListing(
       Set<String> typesToInclude,
       DocumentApiPaginationCriteria pgCrit,
       BindingResult errors,
-      User user,
       Supplier<Folder> folderSupplier,
-      boolean isMediaFolder)
+      boolean omitFolderIdInLinks)
       throws BindException {
     // validate
     throwBindExceptionIfErrors(errors);
@@ -227,20 +220,19 @@ public class FolderApiController extends BaseApiController implements FolderApi 
 
     // process results
     ApiRecordTreeItemListing apiRecordTreeItemListing = new ApiRecordTreeItemListing();
+    apiRecordTreeItemListing.setFolderId(folderToList.getId());
+    apiRecordTreeItemListing.setOmitFolderIdInSearchEndpointString(omitFolderIdInLinks);
 
     List<RecordTreeItemInfo> fileList = new ArrayList<>();
     convertISearchResults(
         pgCrit,
         null,
-        user,
         results,
         apiRecordTreeItemListing,
         fileList,
         file -> new RecordTreeItemInfo(file, folderToList.getId()),
         info -> buildAndAddSelfLink(calculateSelfLink(info), info));
-    folderNavigationService
-        .findParentForUser(user, folderToList)
-        .ifPresent(parent -> apiRecordTreeItemListing.setParentId(parent.getId()));
+
     return apiRecordTreeItemListing;
   }
 

@@ -53,7 +53,7 @@ info:
     rich language bindings and example code for `Python`, `Java` and others.
     Please suggest any use-cases or ideas for improving the API!
 
-  version: "1.116"
+  version: "2.19"
 
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit
@@ -1485,13 +1485,13 @@ paths:
           schema:
             title: Folder listing
             properties:
+              folderId:
+                type: number
+                description: The id of the requested folder, for which the listing was generated.
               totalHits:
                 type: number
               pageNumber:
                 type: number
-              parentId:
-                type: number
-                description: The id of the parent of the listed folder. For listings of the Workspace Home Folder, this will be null.
               records:
                 $ref: '#/definitions/RecordTreeInfoList'
               _links:
@@ -1524,13 +1524,13 @@ paths:
           schema:
             title: Folder listing
             properties:
+              folderId:
+                type: number
+                description: The id of the requested folder, for which the listing was generated.
               totalHits:
                 type: number
               pageNumber:
                 type: number
-              parentId:
-                type: number
-                description: The id of the parent of the listed folder. For listings of the Workspace Home Folder, this will be null.
               records:
                 $ref: '#/definitions/RecordTreeInfoList'
               _links:
@@ -4690,6 +4690,8 @@ definitions:
         type: integer
         format: int64
         description: Unique identifier for shared group snippets folder.
+      raid:
+        $ref: '#/definitions/RaIDReferenceDTO'
       members:
         type: array
         description: A Listing of the group's members and their roles
@@ -4701,6 +4703,10 @@ definitions:
       type: LAB_GROUP
       sharedFolderId: 123
       sharedSnippetFolderId: 456
+      raid:
+        - raidServerAlias: DEMO
+          raidTitle: Test_Raid_Univerity_Edinburgh
+          raidIdentifier: https://raid.org/10.12345&/FGKS987
       members:
         - id: 12345
           username: jsmith
@@ -4722,6 +4728,22 @@ definitions:
       role:
         type: string
         description: 'The user''s role in the group. One of ''PI'', ''LAB_ADMIN'' or ''USER'''
+    example:
+      id: 12345
+      username: jsmith
+      role: PI
+  RaIDReferenceDTO:
+    description: Representation of RaID
+    properties:
+      raidServerAlias:
+        type: string
+        description: Server alias where the RaID has been mint
+      raidTitle:
+        type: string
+        description: The title of the given RaID
+      raidIdentifier:
+        type: string
+        description: The unique identifier for the given server alias
     example:
       id: 12345
       username: jsmith
