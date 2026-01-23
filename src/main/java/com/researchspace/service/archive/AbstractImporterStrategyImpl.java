@@ -488,7 +488,10 @@ abstract class AbstractImporterStrategyImpl {
     importVideo(fld, archiveFld, user, recordFolder, oldIdToNewGalleryItem);
     fld = importAttachments(fld, archiveFld, user, recordFolder, oldIdToNewGalleryItem);
     fld = importChemistryFiles(fld, archiveFld, user, recordFolder, oldIdToNewGalleryItem);
-    fld = importChemElements(fld, archiveFld, user, recordFolder, oldIdToNewGalleryItem);
+    fld =
+        importChemElementsAndStoichiometries(
+            fld, archiveFld, user, recordFolder, oldIdToNewGalleryItem);
+    fld = importEmptyStoichiometries(archiveFld, fld, user);
     fld = importMath(fld, archiveFld, recordFolder);
     fld = importImageAnnotation(fld, archiveFld, recordFolder, oldIdToNewGalleryItem);
     importLinkedRecords(fld, archiveFld, recordFolder, linkRecord);
@@ -848,7 +851,17 @@ abstract class AbstractImporterStrategyImpl {
       "xsi:schemaLocation=\"http://www.chemaxon.com"
           + " http://www.chemaxon.com/marvin/schema/mrvSchema";
 
-  private Field importChemElements(
+  private Field importEmptyStoichiometries(ArchivalField archiveFld, Field newField, User user) {
+    List<StoichiometryDTO> stoichiometries = archiveFld.getStoichiometries();
+    for (StoichiometryDTO aStoichiometry : stoichiometries) {
+      if (aStoichiometry.getParentReactionId() == null) {
+        stoichiometryService.createEmpty(newField.getStructuredDocument().getId(), user);
+      }
+    }
+    return newField;
+  }
+
+  private Field importChemElementsAndStoichiometries(
       Field fld,
       ArchivalField archiveFld,
       User user,

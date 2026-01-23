@@ -242,7 +242,8 @@ public class ExportObjectGenerator {
     FieldExportContext context =
         new FieldExportContext(
             aconfig, archiveField, recordFolder, exportFolder, revision, nfsContext, exportList);
-    try { // the 'addElementsToExport' code has multiple unnecessary layers of indirection; simpler to add new export classes in the sections below
+    try { // the 'addElementsToExport' code has multiple unnecessary layers of indirection; simpler
+      // to add new export classes in the sections below
       // which call export explicitly eg 'addImageAnnotationsToExport', 'addSketchesToExport' etc
       addElementsToExport(
           context, fieldContents, RsChemElementFieldExporter.class, RSChemElement.class);
