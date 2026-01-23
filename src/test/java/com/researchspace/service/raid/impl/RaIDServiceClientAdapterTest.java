@@ -212,7 +212,6 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
 
   @Test
   public void testUpdateRaIDRelatedObject() throws Exception {
-    // TODO[nik]: add test here
     // GIVEN
     when(mockedRaidClient.updateRaIDRelatedObject(
             eq(API_BASE_URL), eq(OLD_ACCESS_TOKEN), eq(RAID_PREFIX), eq(RAID_SUFFIX), any()))
