@@ -291,7 +291,7 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
     RSChemElement reaction = addReactionToField(field, user);
 
     Stoichiometry stoich =
-        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, user);
+        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, doc, user);
     return stoich.getMolecules().get(0);
   }
 

@@ -39,7 +39,7 @@ public class StoichiometryMoleculeManagerTest extends SpringTransactionalTest {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "some text");
     RSChemElement reaction = addReactionToField(doc.getFields().get(0), user);
     Stoichiometry stoich =
-        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, user);
+        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, doc, user);
     Long createdId = stoich.getMolecules().get(0).getId();
     StoichiometryMolecule retrieved = stoichiometryMoleculeManager.getById(createdId);
     assertEquals(createdId, retrieved.getId());
@@ -51,7 +51,7 @@ public class StoichiometryMoleculeManagerTest extends SpringTransactionalTest {
     RSChemElement reaction = addReactionToField(createdDoc.getFields().get(0), user);
 
     Stoichiometry stoich =
-        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, user);
+        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, createdDoc, user);
     StoichiometryMolecule molecule = stoich.getMolecules().get(0);
     StructuredDocument retrievedDoc =
         stoichiometryMoleculeManager.getDocContainingMolecule(molecule);

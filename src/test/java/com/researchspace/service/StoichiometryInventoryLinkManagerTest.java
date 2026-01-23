@@ -47,7 +47,7 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     RSChemElement reaction = addReactionToField(field, user);
 
     Stoichiometry stoich =
-        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, user);
+        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, doc, user);
     StoichiometryMolecule molecule = stoich.getMolecules().get(0);
 
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
@@ -98,7 +98,7 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     RSChemElement reaction = addReactionToField(field, user);
 
     Stoichiometry stoich =
-        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, user);
+        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, doc, user);
     StoichiometryMolecule molecule = stoich.getMolecules().get(0);
 
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
@@ -130,7 +130,7 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     RSChemElement reaction = addReactionToField(field, user);
 
     Stoichiometry stoich =
-        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, user);
+        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, doc, user);
     StoichiometryMolecule molecule = stoich.getMolecules().get(0);
 
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);

@@ -39,6 +39,7 @@ export interface Editor {
     select: (node: HTMLElement) => void;
   };
   getDoc: () => Document;
+  getParam: (name: string) => any;
 }
 
 // Declare the global tinymce object
@@ -63,6 +64,7 @@ class StoichiometryPlugin {
         open: false,
         onClose: () => {},
         chemId: null,
+        recordId: recordId,
         stoichiometryId: undefined,
         stoichiometryRevision: undefined,
         onTableCreated: () => {},
@@ -101,12 +103,14 @@ class StoichiometryPlugin {
       throw new Error("tinymce-stoichiometry container not found");
     }
 
+    const recordId = editor.getParam("recordId") as number;
     const dialogRenderer = renderDialog(container);
     dialogRenderer.next();
     const initialProps: React.ComponentProps<typeof StoichiometryDialog> = {
       open: false,
       onClose: () => {},
       chemId: null,
+      recordId,
       stoichiometryId: undefined,
       stoichiometryRevision: undefined,
       onTableCreated: () => {},
