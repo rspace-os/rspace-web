@@ -1,6 +1,7 @@
 package com.researchspace.archive;
 
 import com.researchspace.archive.elninventory.ArchivalListOfMaterials;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +35,8 @@ import javax.xml.bind.annotation.XmlType;
       "listsOfMaterials",
       "nfsElements",
       "externalWorkFlowData",
-      "externalWorkFlowInvocations"
+      "externalWorkFlowInvocations",
+      "stoichiometries"
     })
 public class ArchivalField {
   long fieldId;
@@ -56,6 +58,7 @@ public class ArchivalField {
   List<ArchivalGalleryMetadata> sktchMeta = new ArrayList<>();
   List<ArchivalGalleryMetadata> mathMeta = new ArrayList<>();
   Set<ArchiveExternalWorkFlowData> externalWorkFlowData = new HashSet<>();
+  List<StoichiometryDTO> stoichiometries = new ArrayList<>();
   Set<ArchiveExternalWorkFlowInvocation> externalWorkFlowInvocations = new HashSet<>();
   List<ArchivalNfsFile> nfsElements = new ArrayList<>();
   List<ArchivalListOfMaterials> listsOfMaterials = new ArrayList<>();
@@ -136,6 +139,12 @@ public class ArchivalField {
   @XmlElement(name = "externalWorkFlowData")
   public Set<ArchiveExternalWorkFlowData> getExternalWorkFlowData() {
     return externalWorkFlowData;
+  }
+
+  @XmlElementWrapper(name = "allStoichiometries")
+  @XmlElement(name = "stoichiometry")
+  public List<StoichiometryDTO> getStoichiometries() {
+    return stoichiometries;
   }
 
   @XmlElementWrapper(name = "externalWorkFlowInvocations")
@@ -236,6 +245,10 @@ public class ArchivalField {
 
   public void addArchivalExternalWorkFlowData(ArchiveExternalWorkFlowData extWFD) {
     externalWorkFlowData.add(extWFD);
+  }
+
+  public void addStoichiometry(StoichiometryDTO stoichiometryDTO) {
+    stoichiometries.add(stoichiometryDTO);
   }
 
   public void addArchivalComment(ArchiveComment acm) {

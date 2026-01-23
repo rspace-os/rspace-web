@@ -270,12 +270,17 @@ public interface MediaManager {
    * @param chem : JSON string is used to populate the chem sketcher widgets.
    * @param format ChemElements format type.
    * @param fieldId : it's the id of parent field.
-   * @param format ChemElements format type.
+   * @param ecatChemFieldId
    * @return RSChemElement
    * @throws Exception
    */
   RSChemElement importChemElement(
-      InputStream inputStream, String chem, ChemElementsFormat format, long fieldId, Record record)
+      InputStream inputStream,
+      String chem,
+      ChemElementsFormat format,
+      long fieldId,
+      Record record,
+      Long ecatChemFieldId)
       throws IOException;
 
   /**

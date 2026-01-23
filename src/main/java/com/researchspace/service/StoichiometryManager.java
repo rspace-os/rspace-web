@@ -4,6 +4,7 @@ import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.stoichiometry.Stoichiometry;
@@ -15,6 +16,9 @@ public interface StoichiometryManager extends GenericManager<Stoichiometry, Long
   Optional<Stoichiometry> findByParentReactionId(Long parentReactionId);
 
   Optional<Stoichiometry> findByRecordId(Long recordId);
+
+  Stoichiometry createFromExistingStoichiometry(
+      StoichiometryDTO existing, RSChemElement parentReaction, User user) throws IOException;
 
   Stoichiometry createFromAnalysis(
       ElementalAnalysisDTO analysisDTO, RSChemElement parentReaction, Record record, User user)

@@ -8,6 +8,8 @@ import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.record.Record;
@@ -74,6 +76,31 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       return auditManager.getNewestRevisionForEntity(Stoichiometry.class, id);
     }
     return auditManager.getObjectForRevision(Stoichiometry.class, id, revision);
+  }
+
+  @Override
+  public Stoichiometry createFromExistingStoichiometry(
+      StoichiometryDTO existing, RSChemElement parentReaction, User user) throws IOException {
+    Stoichiometry stoichiometry = Stoichiometry.builder().parentReaction(parentReaction).build();
+    stoichiometry = save(stoichiometry);
+    for (StoichiometryMoleculeDTO moleculeDTO : existing.getMolecules()) {
+      RSChemElement molecule =
+          RSChemElement.builder().chemElements(moleculeDTO.getSmiles()).build();
+      molecule = rsChemElementManager.save(molecule, user);
+      StoichiometryMolecule stoichiometryMolecule =
+          StoichiometryMolecule.builder()
+              .stoichiometry(stoichiometry)
+              .rsChemElement(molecule)
+              .role(moleculeDTO.getRole())
+              .smiles(moleculeDTO.getSmiles())
+              .molecularWeight(moleculeDTO.getMass())
+              .name(moleculeDTO.getName())
+              .formula(moleculeDTO.getFormula())
+              .limitingReagent(false)
+              .build();
+      stoichiometry.addMolecule(stoichiometryMolecule);
+    }
+    return save(stoichiometry);
   }
 
   @Override

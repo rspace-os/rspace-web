@@ -28,6 +28,7 @@ import com.researchspace.model.EcatVideo;
 import com.researchspace.model.IFieldLinkableElement;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RSMath;
+import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.record.RecordInformation;
@@ -46,6 +47,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.formula.functions.T;
 import org.apache.shiro.crypto.hash.Sha256Hash;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -234,13 +236,14 @@ public class ExportObjectGenerator {
       Number revision,
       NfsExportContext nfsContext,
       ImmutableExportRecordList exportList) {
-
+    // Simpler to ignore this when adding new export classes, see below
     FieldContents fieldContents =
         fieldParser.findFieldElementsInContent(archiveField.getFieldData());
     FieldExportContext context =
         new FieldExportContext(
             aconfig, archiveField, recordFolder, exportFolder, revision, nfsContext, exportList);
-    try {
+    try { // multiple unnecessary layers of indirection; add new export classes in the section
+      // ********* add new export code here *********
       addElementsToExport(
           context, fieldContents, RsChemElementFieldExporter.class, RSChemElement.class);
       addElementsToExport(context, fieldContents, MathFieldExporter.class, RSMath.class);
@@ -250,14 +253,26 @@ public class ExportObjectGenerator {
     } catch (InstantiationException | IllegalAccessException e) {
       log.warn("exception parsing content of archive field " + archiveField.getFieldId(), e);
     }
-    // these don't fit into the generic mechanism easily
+    // ********* add new export code here *********
+    // in order to reduce the number of pointless layers of indirection, follow the below examples
+    // and ignore the code above
     addImageAnnotationsToExport(context, fieldContents);
     addSketchesToExport(context, fieldContents);
     addAttachmentFilesToExport(context, fieldContents);
     updateInteralLinksInExport(context, fieldContents, exportList);
     addExternalWorkFlowData(context, fieldContents);
+    addStoichiometryData(context, fieldContents, aconfig.getExporter());
     addResourcesFiles(archiveField);
     updateIframeLinks(archiveField);
+  }
+
+  private void addStoichiometryData(
+      FieldExportContext context, FieldContents fieldContents, User exporter) {
+    if (context.getArchiveField().getFieldData().contains("data-stoichiometry-table")) {
+      StoichiometryExporter stoichiometryExporterExporter =
+          new StoichiometryExporter(support, exporter);
+      stoichiometryExporterExporter.addStoichiometriesToExport(context, fieldContents);
+    }
   }
 
   private void addExternalWorkFlowData(FieldExportContext context, FieldContents fieldContents) {
