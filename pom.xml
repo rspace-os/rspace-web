@@ -4,7 +4,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>rspace-core-util</artifactId>
-	<version>1.0.5</version>
+	<version>1.1.0</version>
 	<name>rspace-core-util</name>
 	<description>Core utility classes</description>
 

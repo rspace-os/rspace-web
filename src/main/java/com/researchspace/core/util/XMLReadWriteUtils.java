@@ -38,6 +38,8 @@ import javax.xml.validation.SchemaFactory;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -46,6 +48,7 @@ import org.xml.sax.SAXException;
  * Useful utility methods for writing XML files
  */
 public class XMLReadWriteUtils {
+	private static final Logger logger = LoggerFactory.getLogger(XMLReadWriteUtils.class);
 
 	/**
 	 * Marshalls the specified class to XML
@@ -69,8 +72,8 @@ public class XMLReadWriteUtils {
 	// this seems to be a bug in xalan 2.7.2 which has not been fixed. 
 	private static void writeFormattedXML(File ouF, StringWriter sw) throws FileNotFoundException,
 			TransformerFactoryConfigurationError, TransformerConfigurationException, TransformerException, IOException {
-		System.err.println(sw.toString());
-		System.err.println("sw to string is :" + ArrayUtils.toString(sw.toString().getBytes()));
+		logger.debug("StringWriter content: {}", sw.toString());
+		logger.debug("sw to string is: {}", ArrayUtils.toString(sw.toString().getBytes()));
 		try (FileOutputStream fos = new FileOutputStream(ouF)) {
 			TransformerFactory factory = TransformerFactory.newInstance();
 			Transformer transformer = factory.newTransformer();
@@ -109,17 +112,15 @@ public class XMLReadWriteUtils {
 
 		if (schemaFile != null) {
 			SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-			sf.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-			sf.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+			sf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+			sf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 			Schema schema = sf.newSchema(schemaFile);
 			unmarshaller.setSchema(schema);
 			if (eventHandler != null) {
 				unmarshaller.setEventHandler(eventHandler);
 			}
 		}
-		T adc = (T) unmarshaller.unmarshal(source);
-		return adc;
-
+		return (T) unmarshaller.unmarshal(source);
 	}
 
 	public static <T> void generateSchemaFromXML(File outFile, Class<T> clazz) throws JAXBException, IOException {
