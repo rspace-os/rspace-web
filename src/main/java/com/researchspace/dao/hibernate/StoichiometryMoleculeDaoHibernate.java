@@ -20,10 +20,8 @@ public class StoichiometryMoleculeDaoHibernate
     Query<Record> query =
         getSession()
             .createQuery(
-                "select r from StoichiometryMolecule m "
+                "select s.record from StoichiometryMolecule m "
                     + " join m.stoichiometry s "
-                    + " join s.parentReaction pr "
-                    + " join pr.record r "
                     + " where m = :molecule",
                 Record.class);
     query.setParameter("molecule", molecule);

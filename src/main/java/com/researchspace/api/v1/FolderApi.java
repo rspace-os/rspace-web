@@ -55,7 +55,7 @@ public interface FolderApi {
   void deleteFolder(@PathVariable Long id, User user);
 
   /**
-   * Lists root folder
+   * Lists root folder of the current user
    *
    * @param recordTypes empty list, null or or list of any of "notebook", "folder", "document"
    * @param pgCrit

@@ -25,4 +25,13 @@ public class StoichiometryDaoHibernate extends GenericDaoHibernate<Stoichiometry
     query.setParameter("parentReactionId", parentReactionId);
     return Optional.ofNullable(query.uniqueResult());
   }
+
+  @Override
+  public Optional<Stoichiometry> findByRecordId(Long recordId) {
+    Query<Stoichiometry> query =
+        getSession()
+            .createQuery("from Stoichiometry s where s.record.id = :recordId", Stoichiometry.class);
+    query.setParameter("recordId", recordId);
+    return Optional.ofNullable(query.uniqueResult());
+  }
 }

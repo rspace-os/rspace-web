@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import com.researchspace.api.v1.model.ApiGroupInfo;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
@@ -13,6 +14,7 @@ import com.researchspace.model.views.GroupInvitation;
 import com.researchspace.model.views.UserView;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 
@@ -30,6 +32,9 @@ public interface GroupManager {
 
   /** Get a group by its id */
   Group getGroup(Long groupId);
+
+  /** Get a ApiGroupInfo by its id */
+  Optional<ApiGroupInfo> getGroupInfoById(Long groupId);
 
   /** Gets all the Groups */
   List<Group> list();
