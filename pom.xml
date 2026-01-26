@@ -1349,10 +1349,6 @@
       <artifactId>hibernate-envers</artifactId>
       <version>${hibernate.version}</version>
       <exclusions>
-        <exclusion>
-          <groupId>org.dom4j</groupId>
-          <artifactId>dom4j</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -2358,6 +2354,10 @@
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.dom4j</groupId>
+          <artifactId>dom4j</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
