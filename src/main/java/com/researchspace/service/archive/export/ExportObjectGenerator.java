@@ -47,7 +47,6 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.formula.functions.T;
 import org.apache.shiro.crypto.hash.Sha256Hash;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -269,10 +268,11 @@ public class ExportObjectGenerator {
 
   private void addStoichiometryData(
       FieldExportContext context, FieldContents fieldContents, User exporter) {
-    if (context.getArchiveField().getFieldData().contains("data-stoichiometry-table")) {
+    String htmlContent = context.getArchiveField().getFieldData();
+    if (htmlContent.contains("data-stoichiometry-table")) {
       StoichiometryExporter stoichiometryExporterExporter =
-          new StoichiometryExporter(support, exporter);
-      stoichiometryExporterExporter.addStoichiometriesToExport(context, fieldContents);
+          new StoichiometryExporter(support, new StoichiometryReader(), exporter);
+      stoichiometryExporterExporter.addStoichiometriesAndExport(context, htmlContent);
     }
   }
 

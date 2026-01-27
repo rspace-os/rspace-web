@@ -20,8 +20,7 @@ public class LinkableStoichiometry implements IFieldLinkableElement {
 
   @Override
   public GlobalIdentifier getOid() {
-    // FIXME
-    return new GlobalIdentifier(GlobalIdPrefix.SD, stoichiometry.getParentReactionId());
+    return new GlobalIdentifier(GlobalIdPrefix.SD, stoichiometry.getRecordId());
   }
 
   public StoichiometryDTO getStoichiometry() {

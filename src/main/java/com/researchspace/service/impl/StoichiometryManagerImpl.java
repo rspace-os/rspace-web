@@ -80,25 +80,29 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
 
   @Override
   public Stoichiometry createFromExistingStoichiometry(
-      StoichiometryDTO existing, RSChemElement parentReaction, User user) throws IOException {
-    Stoichiometry stoichiometry = Stoichiometry.builder().parentReaction(parentReaction).build();
+      StoichiometryDTO existing, RSChemElement parentReaction, Record record, User user)
+      throws IOException {
+    Stoichiometry stoichiometry =
+        Stoichiometry.builder().parentReaction(parentReaction).record(record).build();
     stoichiometry = save(stoichiometry);
-    for (StoichiometryMoleculeDTO moleculeDTO : existing.getMolecules()) {
-      RSChemElement molecule =
-          RSChemElement.builder().chemElements(moleculeDTO.getSmiles()).build();
-      molecule = rsChemElementManager.save(molecule, user);
-      StoichiometryMolecule stoichiometryMolecule =
-          StoichiometryMolecule.builder()
-              .stoichiometry(stoichiometry)
-              .rsChemElement(molecule)
-              .role(moleculeDTO.getRole())
-              .smiles(moleculeDTO.getSmiles())
-              .molecularWeight(moleculeDTO.getMass())
-              .name(moleculeDTO.getName())
-              .formula(moleculeDTO.getFormula())
-              .limitingReagent(false)
-              .build();
-      stoichiometry.addMolecule(stoichiometryMolecule);
+    if (existing.getMolecules() != null) {
+      for (StoichiometryMoleculeDTO moleculeDTO : existing.getMolecules()) {
+        RSChemElement molecule =
+            RSChemElement.builder().chemElements(moleculeDTO.getSmiles()).build();
+        molecule = rsChemElementManager.save(molecule, user);
+        StoichiometryMolecule stoichiometryMolecule =
+            StoichiometryMolecule.builder()
+                .stoichiometry(stoichiometry)
+                .rsChemElement(molecule)
+                .role(moleculeDTO.getRole())
+                .smiles(moleculeDTO.getSmiles())
+                .molecularWeight(moleculeDTO.getMass())
+                .name(moleculeDTO.getName())
+                .formula(moleculeDTO.getFormula())
+                .limitingReagent(false)
+                .build();
+        stoichiometry.addMolecule(stoichiometryMolecule);
+      }
     }
     return save(stoichiometry);
   }

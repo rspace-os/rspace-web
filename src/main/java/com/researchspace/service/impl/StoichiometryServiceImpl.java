@@ -171,10 +171,10 @@ public class StoichiometryServiceImpl implements StoichiometryService {
 
   @Override
   public Stoichiometry createFromExistingStoichiometry(
-      StoichiometryDTO stoichiometryDTO, RSChemElement chemElement, User user) {
+      StoichiometryDTO stoichiometryDTO, RSChemElement chemElement, Record record, User user) {
     try {
       return stoichiometryManager.createFromExistingStoichiometry(
-          stoichiometryDTO, chemElement, user);
+          stoichiometryDTO, chemElement, record, user);
     } catch (IOException e) {
       throw new StoichiometryException(
           "Problem while creating new Stoichiometry from existing: " + e.getMessage());

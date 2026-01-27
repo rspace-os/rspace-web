@@ -1,8 +1,6 @@
 package com.researchspace.service.archive.export;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.archive.ArchivalField;
-import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldElementLinkPair;
 import com.researchspace.linkedelements.FieldElementLinkPairs;
 import com.researchspace.model.User;
@@ -10,34 +8,44 @@ import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.service.archive.export.stoichiometry.LinkableStoichiometry;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.List;
 import lombok.SneakyThrows;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 /** Exports ExternalWorkFlow data associated with an RSpace Field in a Structured Doc. */
 public class StoichiometryExporter extends AbstractFieldExporter<LinkableStoichiometry> {
 
   private final User exporter;
+  private final StoichiometryReader reader;
 
-  public StoichiometryExporter(FieldExporterSupport support, User exporter) {
+  public StoichiometryExporter(
+      FieldExporterSupport support, StoichiometryReader reader, User exporter) {
     super(support);
     this.exporter = exporter;
+    this.reader = reader;
   }
 
   @SneakyThrows
-  public void addStoichiometriesToExport(
-      FieldExportContext fieldExportContext, FieldContents fieldContents) {
+  public void addStoichiometriesAndExport(
+      FieldExportContext fieldExportContext, String htmlContent) {
     FieldElementLinkPairs<LinkableStoichiometry> stoichiometryDataLinks =
         new FieldElementLinkPairs<>(LinkableStoichiometry.class);
-    String htmlContent = fieldExportContext.getArchiveField().getFieldData();
-    Document doc = Jsoup.parse(htmlContent);
-    Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");
-    for (Element stoichiometryElement : stoichiometryElements) {
-      String stoichiometryAttribute = stoichiometryElement.attr("data-stoichiometry-table");
-      StoichiometryDTO extracted =
-          new ObjectMapper().readValue(stoichiometryAttribute, StoichiometryDTO.class);
+    List<StoichiometryDTO> extractedStoichiometries =
+        reader.extractStoichiometriesFromFieldContents(htmlContent);
+    //    String htmlContent = fieldExportContext.getArchiveField().getFieldData();
+    //    Document doc = Jsoup.parse(htmlContent);
+    //    Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");
+    //    for (Element stoichiometryElement : stoichiometryElements) {
+    //      String stoichiometryAttribute = stoichiometryElement.attr("data-stoichiometry-table");
+    //      StoichiometryDTO extracted =
+    //          new ObjectMapper().readValue(stoichiometryAttribute, StoichiometryDTO.class);
+    //      StoichiometryDTO stoichiometryDTO =
+    //          support
+    //              .getStoichiometryService()
+    //              .getById(extracted.getId(), extracted.getRevision(), exporter);
+    //      stoichiometryDataLinks.add(
+    //          new FieldElementLinkPair<>(new LinkableStoichiometry(stoichiometryDTO), ""));
+    //    }
+    for (StoichiometryDTO extracted : extractedStoichiometries) {
       StoichiometryDTO stoichiometryDTO =
           support
               .getStoichiometryService()
@@ -59,8 +67,6 @@ public class StoichiometryExporter extends AbstractFieldExporter<LinkableStoichi
   void createFieldArchiveObject(
       LinkableStoichiometry item, String archiveLink, FieldExportContext context) {
     ArchivalField archiveField = context.getArchiveField();
-    //        ArchiveExternalWorkFlowData aEWFMeta =
-    //            new ArchiveExternalWorkFlowData(item, archiveLink, archiveField);
     archiveField.addStoichiometry(item.getStoichiometry());
   }
 

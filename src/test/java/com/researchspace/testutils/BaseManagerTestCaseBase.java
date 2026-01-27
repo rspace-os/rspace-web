@@ -118,6 +118,8 @@ import com.researchspace.service.RSMathManager;
 import com.researchspace.service.RSpaceRequestManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
+import com.researchspace.service.StoichiometryManager;
+import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
@@ -291,6 +293,8 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   protected @Autowired InventoryIdentifierApiManager inventoryIdentifierApiMgr;
   protected @Autowired BasketApiManager basketApiMgr;
   protected @Autowired InventoryPermissionUtils invPermissionUtils;
+  protected @Autowired StoichiometryManager stoichiometryMgr;
+  protected @Autowired StoichiometryService stoichiometryService;
 
   @Autowired
   @Qualifier("securityManagerTest")

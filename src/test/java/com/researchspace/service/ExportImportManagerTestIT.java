@@ -54,6 +54,7 @@ import com.researchspace.linkedelements.FieldElementLinkPairs;
 import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatAudio;
+import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
@@ -69,6 +70,7 @@ import com.researchspace.model.comms.data.NotificationData;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalWorkFlowDataBuilder;
@@ -84,6 +86,7 @@ import com.researchspace.model.record.IconEntity;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFolderDetails;
@@ -97,6 +100,7 @@ import com.researchspace.service.archive.ImportStrategy;
 import com.researchspace.service.archive.PostArchiveCompletion;
 import com.researchspace.service.archive.export.ArchiveRemover;
 import com.researchspace.service.archive.export.ExportRemovalPolicy;
+import com.researchspace.service.archive.export.StoichiometryReader;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.testutils.ArchiveTestUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -129,7 +133,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.io.FileUtils;
@@ -1162,6 +1168,95 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertTrue(DATA_TYPE_ANNOTATION.equals(imgElements.get(1).attr("data-type")));
     assertTrue(DATA_TYPE_ANNOTATION.equals(imgElements.get(2).attr("data-type")));
     assertFalse(DATA_TYPE_ANNOTATION.equals(imgElements.get(3).attr("data-type")));
+  }
+
+  @FunctionalInterface
+  public interface TriFunction<A, B, C, R> {
+    R apply(A a, B b, C c);
+  }
+
+  public void testExportImportStoichiometriesWithChemOrEmpty(
+      TriFunction<Long, Long, User, Stoichiometry> stoichiometryCreator) throws Exception {
+    User u1 = createInitAndLoginAnyUser();
+    StructuredDocument sdoc = createBasicDocumentInRootFolderWithText(u1, "source");
+    Field textField = sdoc.getFields().get(0);
+    textField.setName("testTextField");
+    ContentBuilder builder = new ContentBuilder(u1, textField);
+    builder.addImage().addMath().addImageAnnotation().addImageAnnotation().addImage();
+    textField = fieldMgr.getWithLoadedMediaLinks(textField.getId(), u1).get();
+    EcatChemistryFile createdForTest = addChemistryFileToGallery("Aminoglutethimide.mol", u1);
+    RSChemElement createdForChemFile =
+        rsChemElementManager.getRSChemElementsLinkedToFile(createdForTest.getId(), u1).get(0);
+    createdForChemFile.setParentId(textField.getId());
+    rsChemElementManager.save(createdForChemFile, u1);
+    Stoichiometry stoichiometry =
+        stoichiometryCreator.apply(createdForChemFile.getId(), sdoc.getId(), u1);
+    Long stoichiometryID = stoichiometry.getId();
+    Long stoichiometryRevision =
+        stoichiometryService.getById(stoichiometryID, null, u1).getRevision();
+    textField.setFieldData(
+        "<img id=\""
+            + createdForChemFile.getId()
+            + "\" class=\"chem\" src=\"/thumbnail/data?sourceType=CHEM&amp;sourceId="
+            + createdForChemFile.getId()
+            + "&amp;sourceParentId="
+            + textField.getId()
+            + "\" "
+            + "data-stoichiometry-table=\"{&quot;id&quot;:"
+            + stoichiometryID
+            + ",&quot;revision&quot;:"
+            + stoichiometryRevision
+            + "}\">");
+    fieldMgr.save(textField, u1);
+    final ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
+    ArchiveResult result =
+        exportImportMgr
+            .asyncExportSelectionToArchive(
+                getSingleRecordExportSelection(sdoc.getId(), RecordType.NORMAL.toString()),
+                cfg,
+                u1,
+                anyURI(),
+                standardPostExport)
+            .get();
+
+    ArchivalImportConfig importCfg =
+        createDefaultArchiveImportConfig(u1, tempImportFolder2.getRoot());
+    ImportArchiveReport report =
+        exportImportMgr.importArchive(
+            fileToMultipartfile(result.getExportFile().getName(), result.getExportFile()),
+            u1.getUsername(),
+            importCfg,
+            NULL_MONITOR,
+            importStrategy::doImport);
+    assertTrue(report.isSuccessful());
+    // now check field content
+    StructuredDocument importedDoc = report.getImportedRecords().iterator().next().asStrucDoc();
+    Stoichiometry importedStoichiometry =
+        stoichiometryMgr
+            .findByRecordId(importedDoc.getId())
+            .orElseThrow(() -> new RuntimeException("Stoichiometry not found after import"));
+    assertNotEquals(stoichiometryID, importedStoichiometry.getId());
+    List<StoichiometryDTO> importedInDocRtfGData =
+        new StoichiometryReader()
+            .extractStoichiometriesFromFieldContents(
+                importedDoc.getField("testTextField").getFieldData());
+    assertEquals(1, importedInDocRtfGData.size());
+    // rtf data of field has been changed to have the new stoichiometry's ID and null as revision.
+    assertEquals(importedStoichiometry.getId(), importedInDocRtfGData.get(0).getId());
+    assertNull(importedInDocRtfGData.get(0).getRevision());
+    assertEquals(importedStoichiometry.getMolecules().size(), stoichiometry.getMolecules().size());
+  }
+  @Test
+  public void testExportImportEmptyStoichiometries() throws Exception {
+    TriFunction<Long,Long,User, Stoichiometry> creator = (a,b, user) ->
+      stoichiometryService.createEmpty(b,user);
+    testExportImportStoichiometriesWithChemOrEmpty(creator);
+  }
+  @Test
+  public void testExportImportNonEmptyStoichiometries() throws Exception {
+    TriFunction<Long,Long,User, Stoichiometry> creator = (a,b, user) ->
+        stoichiometryService.createFromReaction(b,a,user);
+    testExportImportStoichiometriesWithChemOrEmpty(creator);
   }
 
   @Test

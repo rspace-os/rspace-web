@@ -18,7 +18,8 @@ public interface StoichiometryManager extends GenericManager<Stoichiometry, Long
   Optional<Stoichiometry> findByRecordId(Long recordId);
 
   Stoichiometry createFromExistingStoichiometry(
-      StoichiometryDTO existing, RSChemElement parentReaction, User user) throws IOException;
+      StoichiometryDTO existing, RSChemElement parentReaction, Record record, User user)
+      throws IOException;
 
   Stoichiometry createFromAnalysis(
       ElementalAnalysisDTO analysisDTO, RSChemElement parentReaction, Record record, User user)

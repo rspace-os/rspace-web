@@ -51,6 +51,7 @@ import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.ExternalWorkFlowDataManager;
@@ -61,6 +62,8 @@ import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.StoichiometryService;
+import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
+import com.researchspace.service.archive.export.StoichiometryReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -855,7 +858,15 @@ abstract class AbstractImporterStrategyImpl {
     List<StoichiometryDTO> stoichiometries = archiveFld.getStoichiometries();
     for (StoichiometryDTO aStoichiometry : stoichiometries) {
       if (aStoichiometry.getParentReactionId() == null) {
-        stoichiometryService.createEmpty(newField.getStructuredDocument().getId(), user);
+        Stoichiometry created =
+            stoichiometryService.createEmpty(newField.getStructuredDocument().getId(), user);
+        IdAndRevision newDTO = new IdAndRevision();
+        newDTO.id = created.getId();
+        String updatedStoichiometriesFieldContent =
+            new StoichiometryReader()
+                .replaceTargetStoichiometryWithNew(newField.getFieldData(), aStoichiometry, newDTO);
+        newField.setFieldData(updatedStoichiometriesFieldContent);
+        fieldManager.save(newField, user);
       }
     }
     return newField;
@@ -869,6 +880,10 @@ abstract class AbstractImporterStrategyImpl {
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws IOException {
     List<ArchivalGalleryMetadata> chemMeta = archiveFld.getChemElementMeta();
+    StoichiometryImporter stoichiometryImporter = null;
+    stoichiometryImporter =
+        new StoichiometryImporter(
+            stoichiometryService, new StoichiometryReader(), archiveFld, fld, fieldManager, user);
     if (chemMeta != null && !chemMeta.isEmpty()) {
       int cnt = 0;
       for (ArchivalGalleryMetadata agm : chemMeta) {
@@ -896,8 +911,11 @@ abstract class AbstractImporterStrategyImpl {
                     : ChemElementsFormat.MOL;
           }
           try (FileInputStream fis = new FileInputStream(dataImageFile)) {
-            Long ecatChemFieldId =
-                oldIdToNewGalleryItem.get(agm.getEcatChemFieldId() + "-null").getId();
+            Long ecatChemFieldId = null;
+            if (oldIdToNewGalleryItem.get(agm.getEcatChemFieldId() + "-null") != null) {
+              ecatChemFieldId =
+                  oldIdToNewGalleryItem.get(agm.getEcatChemFieldId() + "-null").getId();
+            }
             currentChem =
                 mediaManager.importChemElement(
                     fis,
@@ -906,14 +924,7 @@ abstract class AbstractImporterStrategyImpl {
                     fld.getId(),
                     fld.getStructuredDocument(),
                     ecatChemFieldId);
-            StoichiometryDTO matching =
-                archiveFld.getStoichiometries().stream()
-                    .filter(s -> s.getId() == agm.getId())
-                    .findFirst()
-                    .orElse(null);
-            if (matching != null) {
-              stoichiometryService.createFromExistingStoichiometry(matching, currentChem, user);
-            }
+            stoichiometryImporter.importStoichiometries(agm, currentChem);
             Map<String, String> mp =
                 rtu.makeChemImageAttributes(Long.toString(currentChem.getId()));
             fld =
