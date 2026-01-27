@@ -10,7 +10,7 @@ import com.researchspace.dao.RaIDDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.User;
-import com.researchspace.model.dtos.RaidGroupAssociation;
+import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.raid.UserRaid;
 import com.researchspace.service.impl.RaIDServiceManagerImpl;
 import com.researchspace.testutils.TestFactory;
@@ -59,13 +59,13 @@ public class RaIDServiceManagerTest {
   @Test
   public void testGetAssociatedRaidsByUserAndAlias() {
     // WHEN
-    Set<RaidGroupAssociation> actualResult =
+    Set<RaidGroupAssociationDTO> actualResult =
         raIDServiceManager.getAssociatedRaidsByUserAndAlias(piUser, SERVER_ALIAS);
 
     // THEN
     assertNotNull(actualResult);
     assertEquals(1, actualResult.size());
-    RaidGroupAssociation actualReferenceDTO = actualResult.iterator().next();
+    RaidGroupAssociationDTO actualReferenceDTO = actualResult.iterator().next();
     assertEquals(USER_RAID_ID, actualReferenceDTO.getRaid().getId());
     assertEquals(SERVER_ALIAS, actualReferenceDTO.getRaid().getRaidServerAlias());
     assertEquals(RAID_IDENTIFIER, actualReferenceDTO.getRaid().getRaidIdentifier());
@@ -76,7 +76,7 @@ public class RaIDServiceManagerTest {
     // WHEN
     raIDServiceManager.bindRaidToGroupAndSave(
         piUser,
-        new RaidGroupAssociation(
+        new RaidGroupAssociationDTO(
             projectGroup.getId(),
             projectGroup.getDisplayName(),
             new RaIDReferenceDTO(SERVER_ALIAS, RAID_TITLE, RAID_IDENTIFIER)));

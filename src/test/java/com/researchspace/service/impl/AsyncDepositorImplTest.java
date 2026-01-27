@@ -1,17 +1,25 @@
 package com.researchspace.service.impl;
 
+import static com.researchspace.model.apps.App.APP_DATAVERSE;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.researchspace.model.User;
+import com.researchspace.model.apps.App;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.service.CommunicationManager;
+import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.testutils.VelocityTestUtils;
+import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.Before;
@@ -26,13 +34,15 @@ public class AsyncDepositorImplTest {
 
   public @Rule MockitoRule mockito = MockitoJUnit.rule();
   @Mock CommunicationManager comm;
+  private @Mock RaIDServiceClientAdapter mockRaidServiceClientAdapter;
 
   VelocityEngine engine;
-  AsyncDepositorImplTSS impl;
-  User any;
+  AsyncDepositorImplTSS underTest;
+  User anyUser;
   File testFile;
 
   class AsyncDepositorImplTSS extends AsyncDepositorImpl {
+
     boolean updateDMPsCalled = false;
 
     void updateDMPS(
@@ -43,42 +53,90 @@ public class AsyncDepositorImplTest {
 
   @Before
   public void setUp() throws Exception {
-    impl = new AsyncDepositorImplTSS();
+    underTest = new AsyncDepositorImplTSS();
     engine =
         VelocityTestUtils.setupVelocity(
             "src/main/resources/velocityTemplates/messageAndNotificationEmails");
-    impl.setVelocity(engine);
-    impl.setCommMgr(comm);
-    any = createAnyUser("any");
+    underTest.setVelocity(engine);
+    underTest.setCommMgr(comm);
+    underTest.setRaIDServiceClientAdapter(mockRaidServiceClientAdapter);
+    anyUser = createAnyUser("any");
     testFile = File.createTempFile("test", ".txt");
   }
 
   @Test
   public void testMessageNoLink() {
     RepositoryOperationResult result = new RepositoryOperationResult(true, "hello", null);
-    impl.postDeposit(
-        result, SystemPropertyTestFactory.createAnyApp(), any, testFile, new RepoDepositConfig());
+    underTest.postDeposit(
+        result,
+        SystemPropertyTestFactory.createAnyApp(),
+        anyUser,
+        testFile,
+        new RepoDepositConfig());
     Mockito.verify(comm)
         .systemNotify(
             Mockito.any(NotificationType.class),
             Mockito.contains("hello"),
-            Mockito.eq(any.getUsername()),
+            Mockito.eq(anyUser.getUsername()),
             Mockito.eq(true));
-    assertTrue(impl.updateDMPsCalled);
+    Mockito.verifyNoInteractions(mockRaidServiceClientAdapter);
+    assertTrue(underTest.updateDMPsCalled);
   }
 
   @Test
   public void testMessageLink() throws MalformedURLException {
     RepositoryOperationResult result =
         new RepositoryOperationResult(true, "hello", new URL("http://www.bbc.co.uk"));
-    impl.postDeposit(
-        result, SystemPropertyTestFactory.createAnyApp(), any, testFile, new RepoDepositConfig());
+    underTest.postDeposit(
+        result,
+        SystemPropertyTestFactory.createAnyApp(),
+        anyUser,
+        testFile,
+        new RepoDepositConfig());
     Mockito.verify(comm)
         .systemNotify(
             Mockito.any(NotificationType.class),
             (Mockito.contains("http://www.bbc.co.uk")),
-            Mockito.eq(any.getUsername()),
+            Mockito.eq(anyUser.getUsername()),
             Mockito.eq(true));
-    assertTrue(impl.updateDMPsCalled);
+    assertTrue(underTest.updateDMPsCalled);
+    Mockito.verifyNoInteractions(mockRaidServiceClientAdapter);
+  }
+
+  @Test
+  public void testMessageDoiLinkWithRaid()
+      throws MalformedURLException, URISyntaxException, JsonProcessingException {
+    // GIVEN
+    String expectedResultUrl =
+        "https://dataverse.org/dataset.xhtml?persistentId=doi:10.70122/FK2/FNGEGH";
+    String expectedDoiLink = "https://doi.org/10.70122/FK2/FNGEGH";
+    RaIDReferenceDTO expectedRaidReference =
+        new RaIDReferenceDTO("serverAlias1", "RaidTitle", "https://raid.org/10.12345/ERTY88");
+    when(mockRaidServiceClientAdapter.updateRaIDRelatedObject(
+            anyUser.getUsername(), expectedRaidReference, expectedDoiLink))
+        .thenReturn(true);
+
+    RepoDepositConfig raidDepositConfig = new RepoDepositConfig();
+    raidDepositConfig.setExportToRaid(true);
+    raidDepositConfig.setAppName(APP_DATAVERSE);
+    raidDepositConfig.setRaidAssociated(
+        new RaidGroupAssociationDTO(1L, "RsapceProjectName", expectedRaidReference));
+    RepositoryOperationResult result =
+        new RepositoryOperationResult(true, "hello", new URL(expectedResultUrl));
+
+    // WHEN
+    underTest.postDeposit(
+        result, new App(APP_DATAVERSE, APP_DATAVERSE, true), anyUser, testFile, raidDepositConfig);
+
+    // THEN
+    Mockito.verify(comm)
+        .systemNotify(
+            Mockito.any(NotificationType.class),
+            (Mockito.contains(expectedResultUrl)),
+            Mockito.eq(anyUser.getUsername()),
+            Mockito.eq(true));
+    assertTrue(underTest.updateDMPsCalled);
+    Mockito.verify(mockRaidServiceClientAdapter)
+        .updateRaIDRelatedObject(anyUser.getUsername(), expectedRaidReference, expectedDoiLink);
   }
 }

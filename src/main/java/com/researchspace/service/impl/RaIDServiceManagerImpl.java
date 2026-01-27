@@ -3,7 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.dao.RaIDDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
-import com.researchspace.model.dtos.RaidGroupAssociation;
+import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.raid.UserRaid;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
@@ -29,17 +29,17 @@ public class RaIDServiceManagerImpl implements RaIDServiceManager {
   }
 
   @Override
-  public Set<RaidGroupAssociation> getAssociatedRaidsByUserAndAlias(
+  public Set<RaidGroupAssociationDTO> getAssociatedRaidsByUserAndAlias(
       User user, String raidServerAlias) {
     List<UserRaid> userRaidList = raidDao.getAssociatedRaidByUserAndAlias(user, raidServerAlias);
-    return userRaidList.stream().map(RaidGroupAssociation::new).collect(Collectors.toSet());
+    return userRaidList.stream().map(RaidGroupAssociationDTO::new).collect(Collectors.toSet());
   }
 
   @Override
-  public Optional<RaidGroupAssociation> getAssociatedRaidByUserAliasAndProjectId(
+  public Optional<RaidGroupAssociationDTO> getAssociatedRaidByUserAliasAndProjectId(
       User user, String raidServerAlias, Long projectGroupId) {
-    Optional<RaidGroupAssociation> result = Optional.empty();
-    Set<RaidGroupAssociation> userRaidAlreadyAssociated =
+    Optional<RaidGroupAssociationDTO> result = Optional.empty();
+    Set<RaidGroupAssociationDTO> userRaidAlreadyAssociated =
         this.getAssociatedRaidsByUserAndAlias(user, raidServerAlias);
     if (!userRaidAlreadyAssociated.isEmpty()) {
       result =
@@ -51,14 +51,14 @@ public class RaIDServiceManagerImpl implements RaIDServiceManager {
   }
 
   @Override
-  public Optional<RaidGroupAssociation> getAssociatedRaidByFolderId(User user, Long folderId) {
+  public Optional<RaidGroupAssociationDTO> getAssociatedRaidByFolderId(User user, Long folderId) {
     Folder currentFolder = folderManagerImpl.getFolder(folderId, user);
     Group projectGroup = grpManager.getGroupFromAnyLevelOfSharedFolder(user, currentFolder, null);
-    return Optional.of(new RaidGroupAssociation(projectGroup.getRaid()));
+    return Optional.of(new RaidGroupAssociationDTO(projectGroup.getRaid()));
   }
 
   @Override
-  public void bindRaidToGroupAndSave(User user, RaidGroupAssociation raidToGroupAssociation) {
+  public void bindRaidToGroupAndSave(User user, RaidGroupAssociationDTO raidToGroupAssociation) {
     Group projectGroup = grpManager.getGroup(raidToGroupAssociation.getProjectGroupId());
     projectGroup.setRaid(
         new UserRaid(

@@ -18,7 +18,7 @@ import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.CreateCloudGroup;
-import com.researchspace.model.dtos.RaidGroupAssociation;
+import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.raid.UserRaid;
 import com.researchspace.model.record.Folder;
@@ -62,10 +62,15 @@ public class RaIDControllerMCVIT extends MVCTestBase {
   private static final String SERVER_ALIAS_1 = "alias1";
   private static final String SERVER_ALIAS_2 = "alias2";
   private static final String RAID_TITLE_1 = "Raid Title 1";
+  private static final String RAID_TITLE_2 = "Raid Title 2";
   private static final String IDENTIFIER_ASSOCIATED_1 =
       "https://static.demo.raid.org.au/10.83334/c74980b1";
-  private static final RaIDReferenceDTO RAID_ASSOCIATED_1 =
+  private static final String IDENTIFIER_ASSOCIATED_2 =
+      "https://static.demo.raid.org.au/10.83334/5b94e1cf";
+  private static final RaIDReferenceDTO EXPECTED_RAID_ASSOCIATED_1 =
       new RaIDReferenceDTO(SERVER_ALIAS_1, RAID_TITLE_1, IDENTIFIER_ASSOCIATED_1);
+  private static final RaIDReferenceDTO RAID_ASSOCIATED_2 =
+      new RaIDReferenceDTO(SERVER_ALIAS_1, RAID_TITLE_2, IDENTIFIER_ASSOCIATED_2);
 
   @Autowired private RaIDController raidController;
 
@@ -96,7 +101,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     projectGroupCreationWithRaid = new CreateCloudGroup();
     projectGroupCreationWithRaid.setGroupName("ProjectGroupWithRaid");
     projectGroupCreationWithRaid.setSessionUser(piUser);
-    projectGroupCreationWithRaid.setRaid(RAID_ASSOCIATED_1);
+    projectGroupCreationWithRaid.setRaid(EXPECTED_RAID_ASSOCIATED_1);
     projectGroupCreationWithRaid.setPiEmail(piUser.getEmail());
 
     projectGroupCreationWithoutRaid = new CreateCloudGroup();
@@ -217,12 +222,12 @@ public class RaIDControllerMCVIT extends MVCTestBase {
                     .principal(piUser::getUsername))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    RaidGroupAssociation actualResult =
+    RaidGroupAssociationDTO actualResult =
         extractRaid(projectGroupCreationWithRaid.getGroupName(), result);
 
     assertNotNull(actualResult);
     assertEquals(newProjectGroupId, actualResult.getProjectGroupId());
-    assertEquals(RAID_ASSOCIATED_1, actualResult.getRaid());
+    assertEquals(EXPECTED_RAID_ASSOCIATED_1, actualResult.getRaid());
   }
 
   @Test
@@ -250,13 +255,13 @@ public class RaIDControllerMCVIT extends MVCTestBase {
                     .principal(piUser::getUsername))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    RaidGroupAssociation actualResult =
+    RaidGroupAssociationDTO actualResult =
         extractRaid(projectGroupCreationWithRaid.getGroupName(), result);
 
     // THEN a RaID is returned
     assertNotNull(actualResult);
     assertEquals(newProjectGroupId, actualResult.getProjectGroupId());
-    assertEquals(RAID_ASSOCIATED_1, actualResult.getRaid());
+    assertEquals(EXPECTED_RAID_ASSOCIATED_1, actualResult.getRaid());
 
     // WHEN get the associated raid to the workspace root folder ID
     result =
@@ -276,7 +281,78 @@ public class RaIDControllerMCVIT extends MVCTestBase {
   }
 
   @Test
-  public void testAssociateRaidToGroup() throws Exception {
+  public void testSuccessfullyAssociateRaidToGroup() throws Exception {
+    // GIVEN
+    Map<String, RaIDServerConfigurationDTO> serverByAlias =
+        Map.of(
+            SERVER_ALIAS_1,
+            new RaIDServerConfigurationDTO(SERVER_ALIAS_1, API_BASE_URL_1, AUTH_BASE_URL_1));
+    when(mockedRaidClientAdapter.getServerMapByAlias()).thenReturn(serverByAlias);
+    when(mockedUserConnectionManager.findByUserNameProviderName(
+            piUser.getUsername(), RAID_APP_NAME, SERVER_ALIAS_1))
+        .thenReturn(Optional.of(new UserConnection()));
+    when(mockedRaidClientAdapter.getRaIDList(piUser.getUsername(), SERVER_ALIAS_1))
+        .thenReturn(new HashSet<>(Set.of(EXPECTED_RAID_ASSOCIATED_1)));
+
+    // GIVEN a Raid was NOT associated to a group
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/projectGroup/createProjectGroup")
+                    .content(JacksonUtil.toJson(projectGroupCreationWithoutRaid))
+                    .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    newProjectGroupId = extractProjectGroupId(result);
+
+    Group actualProjectGroup = grpMgr.getGroup(newProjectGroupId);
+    assertNull(actualProjectGroup.getRaid());
+
+    // WHEN
+    RaidGroupAssociationDTO raidToGroupAssociation =
+        new RaidGroupAssociationDTO(
+            newProjectGroupId,
+            projectGroupCreationWithoutRaid.getGroupName(),
+            new RaIDReferenceDTO(
+                EXPECTED_RAID_ASSOCIATED_1.getRaidServerAlias(),
+                EXPECTED_RAID_ASSOCIATED_1.getRaidTitle(),
+                EXPECTED_RAID_ASSOCIATED_1.getRaidIdentifier()));
+    raidToGroupAssociation.getRaid().setRaidTitle("Wrong title deliberately added to be decorated");
+
+    result =
+        mockMvc
+            .perform(
+                post("/apps/raid/associate", newProjectGroupId)
+                    .principal(piUser::getUsername)
+                    .content(JacksonUtil.toJson(raidToGroupAssociation))
+                    .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+
+    // THEN
+    actualProjectGroup = grpMgr.getGroup(newProjectGroupId);
+    assertNotNull(actualProjectGroup.getRaid());
+
+    UserRaid expectedCreatedUserRaid =
+        raidServiceManager.getUserRaid(actualProjectGroup.getRaid().getId());
+    assertEquals(expectedCreatedUserRaid, actualProjectGroup.getRaid());
+    assertEquals(EXPECTED_RAID_ASSOCIATED_1.getRaidTitle(), expectedCreatedUserRaid.getRaidTitle());
+  }
+
+  @Test
+  public void testFailureAssociatingRaidToGroup() throws Exception {
+    // GIVEN
+    Map<String, RaIDServerConfigurationDTO> serverByAlias =
+        Map.of(
+            SERVER_ALIAS_1,
+            new RaIDServerConfigurationDTO(SERVER_ALIAS_1, API_BASE_URL_1, AUTH_BASE_URL_1));
+    when(mockedRaidClientAdapter.getServerMapByAlias()).thenReturn(serverByAlias);
+    when(mockedUserConnectionManager.findByUserNameProviderName(
+            piUser.getUsername(), RAID_APP_NAME, SERVER_ALIAS_1))
+        .thenReturn(Optional.of(new UserConnection()));
+    when(mockedRaidClientAdapter.getRaIDList(piUser.getUsername(), SERVER_ALIAS_1))
+        .thenReturn(new HashSet<>(Set.of(EXPECTED_RAID_ASSOCIATED_1)));
+
     // GIVEN a Raid was NOT associated to a group
     MvcResult result =
         mockMvc
@@ -292,25 +368,32 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     assertNull(expectedProjectGroup.getRaid());
 
     // WHEN
-    RaidGroupAssociation raidToGroupAssociation =
-        new RaidGroupAssociation(
-            newProjectGroupId, projectGroupCreationWithoutRaid.getGroupName(), RAID_ASSOCIATED_1);
+    RaidGroupAssociationDTO raidToGroupAssociation =
+        new RaidGroupAssociationDTO(
+            newProjectGroupId, projectGroupCreationWithoutRaid.getGroupName(), RAID_ASSOCIATED_2);
     result =
         mockMvc
             .perform(
                 post("/apps/raid/associate", newProjectGroupId)
+                    .principal(piUser::getUsername)
                     .content(JacksonUtil.toJson(raidToGroupAssociation))
                     .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
 
     // THEN
+    assertTrue(
+        result
+            .getResolvedException()
+            .getMessage()
+            .contains(
+                "Not able to associate RaID to group: "
+                    + "The RaID \""
+                    + IDENTIFIER_ASSOCIATED_2
+                    + "\" is not currently available "
+                    + "on the system to be associated"));
     expectedProjectGroup = grpMgr.getGroup(newProjectGroupId);
-    assertNotNull(expectedProjectGroup.getRaid());
-
-    UserRaid expectedCreatedUserRaid =
-        raidServiceManager.getUserRaid(expectedProjectGroup.getRaid().getId());
-    assertEquals(expectedCreatedUserRaid, expectedProjectGroup.getRaid());
+    assertNull(expectedProjectGroup.getRaid());
   }
 
   @Test
@@ -363,14 +446,14 @@ public class RaIDControllerMCVIT extends MVCTestBase {
   }
 
   @NotNull
-  private RaidGroupAssociation extractRaid(String groupName, MvcResult result)
+  private RaidGroupAssociationDTO extractRaid(String groupName, MvcResult result)
       throws JsonProcessingException, UnsupportedEncodingException {
     Map mapResult = mapper.readValue(result.getResponse().getContentAsString(), Map.class);
     assertNull((mapResult.get("error")));
     assertTrue((boolean) mapResult.get("success"));
     Map<String, Map<String, String>> groupAssociation =
         (Map<String, Map<String, String>>) mapResult.get("data");
-    return new RaidGroupAssociation(
+    return new RaidGroupAssociationDTO(
         Long.valueOf(((Map<String, Integer>) mapResult.get("data")).get("projectGroupId")),
         groupName,
         new RaIDReferenceDTO(

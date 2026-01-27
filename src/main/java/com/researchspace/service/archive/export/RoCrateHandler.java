@@ -21,7 +21,7 @@ import com.researchspace.archive.ArchiveFolder;
 import com.researchspace.archive.ArchiveManifest;
 import com.researchspace.archive.model.IArchiveExportConfig;
 import com.researchspace.model.EcatMediaFile;
-import com.researchspace.model.dtos.RaidGroupAssociation;
+import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.archive.ExportImport;
 import edu.kit.datamanager.ro_crate.RoCrate;
@@ -283,7 +283,7 @@ public class RoCrateHandler {
 
   @NotNull
   private static ContextualEntityBuilder createRaidContextEntity(IArchiveExportConfig aconfig) {
-    RaidGroupAssociation raidGroupAssociation = aconfig.getRaidGroupAssociation();
+    RaidGroupAssociationDTO raidGroupAssociation = aconfig.getRaidGroupAssociated();
     ContextualEntityBuilder raidContext = new ContextualEntityBuilder();
     raidContext.addType("ResearchProject");
     raidContext.setId(raidGroupAssociation.getRoCrateId());
