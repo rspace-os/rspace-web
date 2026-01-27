@@ -133,9 +133,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.io.FileUtils;
@@ -1246,16 +1244,18 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertNull(importedInDocRtfGData.get(0).getRevision());
     assertEquals(importedStoichiometry.getMolecules().size(), stoichiometry.getMolecules().size());
   }
+
   @Test
   public void testExportImportEmptyStoichiometries() throws Exception {
-    TriFunction<Long,Long,User, Stoichiometry> creator = (a,b, user) ->
-      stoichiometryService.createEmpty(b,user);
+    TriFunction<Long, Long, User, Stoichiometry> creator =
+        (a, b, user) -> stoichiometryService.createEmpty(b, user);
     testExportImportStoichiometriesWithChemOrEmpty(creator);
   }
+
   @Test
   public void testExportImportNonEmptyStoichiometries() throws Exception {
-    TriFunction<Long,Long,User, Stoichiometry> creator = (a,b, user) ->
-        stoichiometryService.createFromReaction(b,a,user);
+    TriFunction<Long, Long, User, Stoichiometry> creator =
+        (a, b, user) -> stoichiometryService.createFromReaction(b, a, user);
     testExportImportStoichiometriesWithChemOrEmpty(creator);
   }
 
