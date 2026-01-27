@@ -321,9 +321,6 @@ public class RaIDController extends BaseOAuth2Controller {
         StringUtils.isNotBlank(raidGroupAssociation.getRaid().getRaidIdentifier()),
         "raidIdentifier is missing");
     Validate.isTrue(
-        StringUtils.isNotBlank(raidGroupAssociation.getRaid().getRaidTitle()),
-        "raidTitle is missing");
-    Validate.isTrue(
         StringUtils.isNotBlank(raidGroupAssociation.getRaid().getRaidServerAlias()),
         "raidServerAlias is missing");
   }

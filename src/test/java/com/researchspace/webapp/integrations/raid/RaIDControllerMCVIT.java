@@ -317,7 +317,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
                 EXPECTED_RAID_ASSOCIATED_1.getRaidServerAlias(),
                 EXPECTED_RAID_ASSOCIATED_1.getRaidTitle(),
                 EXPECTED_RAID_ASSOCIATED_1.getRaidIdentifier()));
-    raidToGroupAssociation.getRaid().setRaidTitle("Wrong title deliberately added to be decorated");
+    raidToGroupAssociation.getRaid().setRaidTitle(null);
 
     result =
         mockMvc
