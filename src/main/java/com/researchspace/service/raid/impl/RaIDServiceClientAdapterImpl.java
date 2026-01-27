@@ -127,6 +127,20 @@ public class RaIDServiceClientAdapterImpl
   }
 
   @Override
+  public boolean updateRaIDRelatedObject(String username, RaIDReferenceDTO raid, String doiLink)
+      throws URISyntaxException, JsonProcessingException {
+    RaID newUpdatedRaid =
+        raidClient.updateRaIDRelatedObject(
+            getApiBaseUrl(raid.getRaidServerAlias()),
+            getExistingAccessTokenOrRefreshIfExpired(username, raid.getRaidServerAlias()),
+            raid.getRaidPrefix(),
+            raid.getRaidSuffix(),
+            doiLink);
+    return !newUpdatedRaid.getRelatedObject().isEmpty()
+        && doiLink.equals(newUpdatedRaid.getRelatedObject().get(0).getId());
+  }
+
+  @Override
   public String performRedirectConnect(String serverAlias)
       throws HttpServerErrorException, URISyntaxException {
     return raidClient.getRedirectUriToConnect(

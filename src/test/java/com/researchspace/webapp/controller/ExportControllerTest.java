@@ -29,7 +29,7 @@ import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.dtos.ExportSelection.ExportType;
 import com.researchspace.model.dtos.NfsExportConfig;
-import com.researchspace.model.dtos.RaidGroupAssociation;
+import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO.ArchiveDialogConfig;
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
@@ -251,7 +251,7 @@ public class ExportControllerTest {
     exportConfig.setExportConfig(createArchiveDialogConfig("eln"));
     exportConfig.setNfsConfig(createNfsDialogConfig());
     exportConfig.setRaidAssociated(
-        new RaidGroupAssociation(
+        new RaidGroupAssociationDTO(
             groupId,
             rspaceProjectName,
             new RaIDReferenceDTO("DEMO", "Raid Title1", "https://raid.org/10.12345/FGH896")));

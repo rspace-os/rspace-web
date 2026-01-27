@@ -5,7 +5,7 @@ import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.User;
-import com.researchspace.model.dtos.RaidGroupAssociation;
+import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.service.FolderNotSharedException;
@@ -68,53 +68,11 @@ public class RaIDController extends BaseOAuth2Controller {
   @ResponseBody
   @ResponseStatus(HttpStatus.OK)
   public AjaxReturnObject<Set<RaIDReferenceDTO>> getRaidListByUser(Principal principal) {
-    Set<RaIDReferenceDTO> result = new HashSet<>();
     RaIDReferenceDTO errorBean = new RaIDReferenceDTO();
     BindingResult errors = new BeanPropertyBindingResult(errorBean, "RaIDReferenceDTO");
-    try {
-      Map<String, RaIDServerConfigurationDTO> serverByAlias =
-          raidServiceClientAdapter.getServerMapByAlias();
-      Set<RaIDReferenceDTO> externalRaIDList = null;
-      // for each server get the list of RaID
-      for (String currentServerAlias : serverByAlias.keySet()) {
-        try {
-          Optional<UserConnection> serverAliasConnection =
-              userConnection.findByUserNameProviderName(
-                  principal.getName(), RAID_APP_NAME, currentServerAlias);
-          if (serverAliasConnection.isPresent()) {
-            errorBean.setRaidServerAlias(currentServerAlias);
-            externalRaIDList =
-                raidServiceClientAdapter.getRaIDList(principal.getName(), currentServerAlias);
-            if (externalRaIDList != null && !externalRaIDList.isEmpty()) {
-              // remove from the external list the RaID that have already been associated
-              // by this user
-              Set<RaIDReferenceDTO> userRaidAlreadyAssociated =
-                  raidServiceManager
-                      .getAssociatedRaidsByUserAndAlias(
-                          userManager.getUserByUsername(principal.getName()), currentServerAlias)
-                      .stream()
-                      .map(RaidGroupAssociation::getRaid)
-                      .collect(Collectors.toSet());
-              externalRaIDList.removeAll(userRaidAlreadyAssociated);
+    Set<RaIDReferenceDTO> result =
+        getAvailableRaidsWithPossibleErrors(principal, errorBean, errors);
 
-              result.addAll(externalRaIDList);
-            }
-          }
-        } catch (HttpClientErrorException e) {
-          log.warn("error connecting to RaID for server alias \"{}\":", currentServerAlias, e);
-          errors.rejectValue(
-              "raidServerAlias",
-              "connectionError",
-              "no connection to RaID for server alias \"" + currentServerAlias + "\"");
-        }
-      }
-    } catch (Exception ex) {
-      log.error("Not able to get RaID list for the user \"{}\":", principal.getName(), ex);
-      errors.reject(
-          "raidList",
-          null,
-          "Not able to get RaID list for the user \"" + principal.getName() + "\"");
-    }
     if (errors.hasErrors()) {
       ErrorList el = inputValidator.populateErrorList(errors, new ErrorList());
       return new AjaxReturnObject<>(result, el);
@@ -132,11 +90,11 @@ public class RaIDController extends BaseOAuth2Controller {
   @GetMapping("/{raidServerAlias}/projects/{projectGroupId}")
   @ResponseBody
   @ResponseStatus(HttpStatus.OK)
-  public AjaxReturnObject<RaidGroupAssociation> getAssociatedRaidToProject(
+  public AjaxReturnObject<RaidGroupAssociationDTO> getAssociatedRaidToProject(
       @PathVariable String raidServerAlias,
       @PathVariable Long projectGroupId,
       Principal principal) {
-    Optional<RaidGroupAssociation> result = Optional.empty();
+    Optional<RaidGroupAssociationDTO> result = Optional.empty();
     BindingResult errors = new BeanPropertyBindingResult(null, "raidGroupAssociation");
     try {
       result =
@@ -153,7 +111,7 @@ public class RaIDController extends BaseOAuth2Controller {
       ErrorList el = inputValidator.populateErrorList(errors, new ErrorList());
       return new AjaxReturnObject<>(null, el);
     }
-    return new AjaxReturnObject<>(result.orElse(new RaidGroupAssociation()), null);
+    return new AjaxReturnObject<>(result.orElse(new RaidGroupAssociationDTO()), null);
   }
 
   /***
@@ -166,9 +124,9 @@ public class RaIDController extends BaseOAuth2Controller {
   @GetMapping("/byFolder/{sharedFolderId}")
   @ResponseBody
   @ResponseStatus(HttpStatus.OK)
-  public AjaxReturnObject<RaidGroupAssociation> getRaidByFolderId(
+  public AjaxReturnObject<RaidGroupAssociationDTO> getRaidByFolderId(
       @PathVariable Long sharedFolderId, Principal principal) {
-    Optional<RaidGroupAssociation> result = Optional.empty();
+    Optional<RaidGroupAssociationDTO> result = Optional.empty();
     BindingResult errors = new BeanPropertyBindingResult(null, "raidGroupAssociation");
     String errorMsg = "";
     try {
@@ -198,12 +156,13 @@ public class RaIDController extends BaseOAuth2Controller {
     if (errors.hasErrors()) {
       el = inputValidator.populateErrorList(errors, new ErrorList());
     }
-    return new AjaxReturnObject<>(result.orElse(new RaidGroupAssociation()), el);
+    return new AjaxReturnObject<>(result.orElse(new RaidGroupAssociationDTO()), el);
   }
 
   @PostMapping("/associate")
   @ResponseStatus(HttpStatus.CREATED)
-  public void associateRaidToGroup(@RequestBody RaidGroupAssociation raidGroupAssociation)
+  public void associateRaidToGroup(
+      @RequestBody RaidGroupAssociationDTO raidGroupAssociation, Principal principal)
       throws BindException {
     validateInput(raidGroupAssociation);
     BindingResult errors =
@@ -212,30 +171,23 @@ public class RaIDController extends BaseOAuth2Controller {
     try {
       User user = userManager.getAuthenticatedUserInSession();
       group = groupManager.getGroup(raidGroupAssociation.getProjectGroupId());
-      Validate.isTrue(
-          group.getGroupType().equals(GroupType.PROJECT_GROUP),
-          "Only Project Group can be associated to RaID");
+      raidGroupAssociation.setRaid(
+          validateGroupRaidAssociationAndDecorateWithRaidTitle(
+              raidGroupAssociation.getRaid(), group, principal));
 
-      if (group.getRaid() == null) {
-        raidServiceManager.bindRaidToGroupAndSave(user, raidGroupAssociation);
-        log.info(
-            "ProjectGroupId \""
-                + group.getId()
-                + "\" has been associated to RaID \""
-                + raidGroupAssociation.getRaid().getRaidIdentifier()
-                + "\"");
-      } else {
-        String message =
-            "The group with projectGroupId"
-                + raidGroupAssociation.getProjectGroupId()
-                + " was had already a RaID association. Please remove it first before to associate"
-                + " another RaID";
-        errors.rejectValue("projectGroupId", "raid.alreadyAssociated", message);
-        log.error(message);
-      }
+      raidServiceManager.bindRaidToGroupAndSave(user, raidGroupAssociation);
+      log.info(
+          "ProjectGroupId \""
+              + group.getId()
+              + "\" has been associated to the RaID identifier"
+              + " \""
+              + raidGroupAssociation.getRaid().getRaidIdentifier()
+              + "\" of the \""
+              + raidGroupAssociation.getRaid().getRaidServerAlias()
+              + "\" server");
     } catch (Exception e) {
       errors.reject(
-          "associateRaidToGroup", "Not able to associate RaID to group: " + e.getMessage());
+          "raidGroupAssociation", null, "Not able to associate RaID to group: " + e.getMessage());
       log.error("Not able to associate RaID to group: " + e.getMessage());
     }
     throwBindExceptionIfErrors(errors);
@@ -255,15 +207,16 @@ public class RaIDController extends BaseOAuth2Controller {
       @PathVariable Long projectGroupId,
       @PathVariable String raidServerAlias,
       @PathVariable String raidTitle,
-      @RequestParam(name = "raidIdentifier") String raidIdentifier)
+      @RequestParam(name = "raidIdentifier") String raidIdentifier,
+      Principal principal)
       throws BindException {
 
-    RaidGroupAssociation input =
-        new RaidGroupAssociation(
+    RaidGroupAssociationDTO input =
+        new RaidGroupAssociationDTO(
             projectGroupId,
             groupManager.getGroup(projectGroupId).getDisplayName(),
             new RaIDReferenceDTO(raidServerAlias, raidTitle, raidIdentifier));
-    associateRaidToGroup(input);
+    associateRaidToGroup(input, principal);
   }
 
   @PostMapping("/disassociate/{projectGroupId}")
@@ -302,7 +255,67 @@ public class RaIDController extends BaseOAuth2Controller {
     throwBindExceptionIfErrors(errors);
   }
 
-  private static void validateInput(RaidGroupAssociation raidGroupAssociation) {
+  private Set<RaIDReferenceDTO> getAvailableRaids(Principal principal) {
+    return getAvailableRaidsWithPossibleErrors(principal, null, null);
+  }
+
+  private Set<RaIDReferenceDTO> getAvailableRaidsWithPossibleErrors(
+      Principal principal, RaIDReferenceDTO errorBean, BindingResult errors) {
+    Set<RaIDReferenceDTO> result = new HashSet<>();
+    try {
+      Map<String, RaIDServerConfigurationDTO> serverByAlias =
+          raidServiceClientAdapter.getServerMapByAlias();
+      Set<RaIDReferenceDTO> externalRaIDList = null;
+      // for each server get the list of RaID
+      for (String currentServerAlias : serverByAlias.keySet()) {
+        try {
+          Optional<UserConnection> serverAliasConnection =
+              userConnection.findByUserNameProviderName(
+                  principal.getName(), RAID_APP_NAME, currentServerAlias);
+          if (serverAliasConnection.isPresent()) {
+            if (errorBean != null) {
+              errorBean.setRaidServerAlias(currentServerAlias);
+            }
+            externalRaIDList =
+                raidServiceClientAdapter.getRaIDList(principal.getName(), currentServerAlias);
+            if (externalRaIDList != null && !externalRaIDList.isEmpty()) {
+              // remove from the external list the RaID that have already been associated
+              // by this user
+              Set<RaIDReferenceDTO> userRaidAlreadyAssociated =
+                  raidServiceManager
+                      .getAssociatedRaidsByUserAndAlias(
+                          userManager.getUserByUsername(principal.getName()), currentServerAlias)
+                      .stream()
+                      .map(RaidGroupAssociationDTO::getRaid)
+                      .collect(Collectors.toSet());
+              externalRaIDList.removeAll(userRaidAlreadyAssociated);
+
+              result.addAll(externalRaIDList);
+            }
+          }
+        } catch (HttpClientErrorException e) {
+          log.warn("error connecting to RaID for server alias \"{}\":", currentServerAlias, e);
+          if (errors != null) {
+            errors.rejectValue(
+                "raidServerAlias",
+                "connectionError",
+                "no connection to RaID for server alias \"" + currentServerAlias + "\"");
+          }
+        }
+      }
+    } catch (Exception ex) {
+      log.error("Not able to get RaID list for the user \"{}\":", principal.getName(), ex);
+      if (errors != null) {
+        errors.reject(
+            "raidList",
+            null,
+            "Not able to get RaID list for the user \"" + principal.getName() + "\"");
+      }
+    }
+    return result;
+  }
+
+  private static void validateInput(RaidGroupAssociationDTO raidGroupAssociation) {
     Validate.isTrue(raidGroupAssociation.getProjectGroupId() != null, "projectGroupId is missing");
     Validate.isTrue(
         StringUtils.isNotBlank(raidGroupAssociation.getRaid().getRaidIdentifier()),
@@ -313,6 +326,27 @@ public class RaIDController extends BaseOAuth2Controller {
     Validate.isTrue(
         StringUtils.isNotBlank(raidGroupAssociation.getRaid().getRaidServerAlias()),
         "raidServerAlias is missing");
+  }
+
+  private RaIDReferenceDTO validateGroupRaidAssociationAndDecorateWithRaidTitle(
+      RaIDReferenceDTO raidReference, Group group, Principal principal) {
+    Validate.isTrue(
+        group.getGroupType().equals(GroupType.PROJECT_GROUP),
+        "Only Project Group can be associated to RaID");
+    Validate.isTrue(
+        group.getRaid() == null,
+        "The group with projectGroupId"
+            + group.getId()
+            + " is already associated to a RaID. Please remove it first before to associate"
+            + " another RaID");
+    Set<RaIDReferenceDTO> availableRaids = getAvailableRaids(principal);
+    Validate.isTrue(
+        availableRaids.contains(raidReference),
+        "The RaID \""
+            + raidReference.getRaidIdentifier()
+            + "\" is not currently available on the system to be associated");
+    availableRaids.retainAll(Set.of(raidReference));
+    return availableRaids.stream().findFirst().get();
   }
 
   private void throwBindExceptionIfErrors(BindingResult errors) throws BindException {
