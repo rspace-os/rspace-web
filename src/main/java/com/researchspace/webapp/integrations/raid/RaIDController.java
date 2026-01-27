@@ -171,7 +171,9 @@ public class RaIDController extends BaseOAuth2Controller {
     try {
       User user = userManager.getAuthenticatedUserInSession();
       group = groupManager.getGroup(raidGroupAssociation.getProjectGroupId());
-      validateGroupRaidAssociation(raidGroupAssociation.getRaid(), group, principal);
+      raidGroupAssociation.setRaid(
+          validateGroupRaidAssociationAndDecorateWithRaidTitle(
+              raidGroupAssociation.getRaid(), group, principal));
 
       raidServiceManager.bindRaidToGroupAndSave(user, raidGroupAssociation);
       log.info(
@@ -326,7 +328,7 @@ public class RaIDController extends BaseOAuth2Controller {
         "raidServerAlias is missing");
   }
 
-  private void validateGroupRaidAssociation(
+  private RaIDReferenceDTO validateGroupRaidAssociationAndDecorateWithRaidTitle(
       RaIDReferenceDTO raidReference, Group group, Principal principal) {
     Validate.isTrue(
         group.getGroupType().equals(GroupType.PROJECT_GROUP),
@@ -337,11 +339,14 @@ public class RaIDController extends BaseOAuth2Controller {
             + group.getId()
             + " is already associated to a RaID. Please remove it first before to associate"
             + " another RaID");
+    Set<RaIDReferenceDTO> availableRaids = getAvailableRaids(principal);
     Validate.isTrue(
-        getAvailableRaids(principal).contains(raidReference),
+        availableRaids.contains(raidReference),
         "The RaID \""
             + raidReference.getRaidIdentifier()
             + "\" is not currently available on the system to be associated");
+    availableRaids.retainAll(Set.of(raidReference));
+    return availableRaids.stream().findFirst().get();
   }
 
   private void throwBindExceptionIfErrors(BindingResult errors) throws BindException {

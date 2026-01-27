@@ -67,7 +67,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
       "https://static.demo.raid.org.au/10.83334/c74980b1";
   private static final String IDENTIFIER_ASSOCIATED_2 =
       "https://static.demo.raid.org.au/10.83334/5b94e1cf";
-  private static final RaIDReferenceDTO RAID_ASSOCIATED_1 =
+  private static final RaIDReferenceDTO EXPECTED_RAID_ASSOCIATED_1 =
       new RaIDReferenceDTO(SERVER_ALIAS_1, RAID_TITLE_1, IDENTIFIER_ASSOCIATED_1);
   private static final RaIDReferenceDTO RAID_ASSOCIATED_2 =
       new RaIDReferenceDTO(SERVER_ALIAS_1, RAID_TITLE_2, IDENTIFIER_ASSOCIATED_2);
@@ -101,7 +101,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     projectGroupCreationWithRaid = new CreateCloudGroup();
     projectGroupCreationWithRaid.setGroupName("ProjectGroupWithRaid");
     projectGroupCreationWithRaid.setSessionUser(piUser);
-    projectGroupCreationWithRaid.setRaid(RAID_ASSOCIATED_1);
+    projectGroupCreationWithRaid.setRaid(EXPECTED_RAID_ASSOCIATED_1);
     projectGroupCreationWithRaid.setPiEmail(piUser.getEmail());
 
     projectGroupCreationWithoutRaid = new CreateCloudGroup();
@@ -227,7 +227,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
 
     assertNotNull(actualResult);
     assertEquals(newProjectGroupId, actualResult.getProjectGroupId());
-    assertEquals(RAID_ASSOCIATED_1, actualResult.getRaid());
+    assertEquals(EXPECTED_RAID_ASSOCIATED_1, actualResult.getRaid());
   }
 
   @Test
@@ -261,7 +261,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     // THEN a RaID is returned
     assertNotNull(actualResult);
     assertEquals(newProjectGroupId, actualResult.getProjectGroupId());
-    assertEquals(RAID_ASSOCIATED_1, actualResult.getRaid());
+    assertEquals(EXPECTED_RAID_ASSOCIATED_1, actualResult.getRaid());
 
     // WHEN get the associated raid to the workspace root folder ID
     result =
@@ -292,7 +292,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             piUser.getUsername(), RAID_APP_NAME, SERVER_ALIAS_1))
         .thenReturn(Optional.of(new UserConnection()));
     when(mockedRaidClientAdapter.getRaIDList(piUser.getUsername(), SERVER_ALIAS_1))
-        .thenReturn(new HashSet<>(Set.of(RAID_ASSOCIATED_1)));
+        .thenReturn(new HashSet<>(Set.of(EXPECTED_RAID_ASSOCIATED_1)));
 
     // GIVEN a Raid was NOT associated to a group
     MvcResult result =
@@ -305,13 +305,20 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             .andReturn();
     newProjectGroupId = extractProjectGroupId(result);
 
-    Group expectedProjectGroup = grpMgr.getGroup(newProjectGroupId);
-    assertNull(expectedProjectGroup.getRaid());
+    Group actualProjectGroup = grpMgr.getGroup(newProjectGroupId);
+    assertNull(actualProjectGroup.getRaid());
 
     // WHEN
     RaidGroupAssociationDTO raidToGroupAssociation =
         new RaidGroupAssociationDTO(
-            newProjectGroupId, projectGroupCreationWithoutRaid.getGroupName(), RAID_ASSOCIATED_1);
+            newProjectGroupId,
+            projectGroupCreationWithoutRaid.getGroupName(),
+            new RaIDReferenceDTO(
+                EXPECTED_RAID_ASSOCIATED_1.getRaidServerAlias(),
+                EXPECTED_RAID_ASSOCIATED_1.getRaidTitle(),
+                EXPECTED_RAID_ASSOCIATED_1.getRaidIdentifier()));
+    raidToGroupAssociation.getRaid().setRaidTitle("Wrong title deliberately added to be decorated");
+
     result =
         mockMvc
             .perform(
@@ -323,12 +330,13 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             .andReturn();
 
     // THEN
-    expectedProjectGroup = grpMgr.getGroup(newProjectGroupId);
-    assertNotNull(expectedProjectGroup.getRaid());
+    actualProjectGroup = grpMgr.getGroup(newProjectGroupId);
+    assertNotNull(actualProjectGroup.getRaid());
 
     UserRaid expectedCreatedUserRaid =
-        raidServiceManager.getUserRaid(expectedProjectGroup.getRaid().getId());
-    assertEquals(expectedCreatedUserRaid, expectedProjectGroup.getRaid());
+        raidServiceManager.getUserRaid(actualProjectGroup.getRaid().getId());
+    assertEquals(expectedCreatedUserRaid, actualProjectGroup.getRaid());
+    assertEquals(EXPECTED_RAID_ASSOCIATED_1.getRaidTitle(), expectedCreatedUserRaid.getRaidTitle());
   }
 
   @Test
@@ -343,7 +351,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             piUser.getUsername(), RAID_APP_NAME, SERVER_ALIAS_1))
         .thenReturn(Optional.of(new UserConnection()));
     when(mockedRaidClientAdapter.getRaIDList(piUser.getUsername(), SERVER_ALIAS_1))
-        .thenReturn(new HashSet<>(Set.of(RAID_ASSOCIATED_1)));
+        .thenReturn(new HashSet<>(Set.of(EXPECTED_RAID_ASSOCIATED_1)));
 
     // GIVEN a Raid was NOT associated to a group
     MvcResult result =

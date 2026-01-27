@@ -135,6 +135,12 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       // https://dataverse.org/dataset.xhtml?persistentId=doi:10.70122/FK2/FNGEGH
       try {
         String doiLink = "https://doi.org/" + result.getUrl().toString().split("=doi:")[1];
+        log.info(
+            "Updating DOI link: \""
+                + doiLink
+                + "\" to the RelatedObject section of the RaID \""
+                + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
+                + "\"");
         raidUpdated =
             raIDServiceClientAdapter.updateRaIDRelatedObject(
                 subject.getUsername(), repoDepositConfig.getRaidAssociated().getRaid(), doiLink);
