@@ -101,11 +101,14 @@ function FormatChoice({
                 return keys.map(
                   (k) =>
                     ({
+                      ...repo,
                       repoCfg: k,
                       //@ts-expect-error Options is poorly typed
                       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                       label: repo.options[k]._label,
-                      ...repo,
+                      //@ts-expect-error Options is poorly typed
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                      metadataLanguages: repo.options[k].metadataLanguages,
                     }) as Repo,
                 );
               }

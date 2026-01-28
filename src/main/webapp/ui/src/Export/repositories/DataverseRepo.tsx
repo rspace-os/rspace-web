@@ -19,6 +19,12 @@ type DataverseArgs = {
       value: string;
     };
   }) => void;
+  handleMetadataLanguageChange: (event: {
+    target: {
+      name: "metadataLanguage";
+      value: string;
+    };
+  }) => void;
   inputValidations: StandardValidations;
   submitAttempt: boolean;
   updatePeople: (people: Array<Person>) => void;
@@ -35,6 +41,7 @@ type DataverseArgs = {
     version: string;
   }>;
   fetchingTags: boolean;
+  metadataLanguage: string;
 };
 
 /**
@@ -52,11 +59,14 @@ export default function DataverseRepo({
   title,
   description,
   subject,
+  metadataLanguage,
+  handleMetadataLanguageChange,
   license,
   tags,
   onTagsChange,
   fetchingTags,
 }: DataverseArgs): React.ReactNode {
+  const metaLanguagesVisible = repo.metadataLanguages && repo.metadataLanguages.length > 0;
   return (
     <Grid container sx={{ width: "100%" }}>
       <Grid item xs={12}>
@@ -87,7 +97,7 @@ export default function DataverseRepo({
           value={description}
         />
       </Grid>
-      <Grid item xs={5}>
+      <Grid item xs={metaLanguagesVisible ? 4 : 5}>
         <TextField
           error={submitAttempt && !inputValidations.subject}
           name="subject"
@@ -108,8 +118,28 @@ export default function DataverseRepo({
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={2}></Grid>
-      <Grid item xs={5}>
+      {metaLanguagesVisible && (<Grid item xs={4}>
+        <TextField
+            name="metadataLanguage"
+            select
+            label="Metadata language"
+            defaultValue={null}
+            // @ts-expect-error React event handlers are not parameterised by the name prop
+            onChange={handleMetadataLanguageChange}
+            helperText="Please select your metadata language (if target Dataverse supports it)"
+            margin="normal"
+            fullWidth
+            value={metadataLanguage}
+        >
+          {repo.metadataLanguages && repo.metadataLanguages.map((option) => (
+              <MenuItem key={option.title} value={option.locale}>
+                {option.title}
+              </MenuItem>
+          ))}
+        </TextField>
+      </Grid>)}
+      {!metaLanguagesVisible && (<Grid item xs={2}></Grid>)}
+      <Grid item xs={metaLanguagesVisible ?  4 : 5}>
         <TextField
           name="license"
           select

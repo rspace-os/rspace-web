@@ -66,6 +66,7 @@ public interface RepositoryDepositHandler {
    * Retrieves information from the repository implementation on how the UI should be configured.
    *
    * @param appCfg
+   * @param options
    * @return
    */
   RepoUIConfigInfo getDataverseRepoUIConfigInfo(AppConfigElementSet appCfg, User user)

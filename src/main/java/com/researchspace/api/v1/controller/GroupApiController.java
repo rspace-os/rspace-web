@@ -20,17 +20,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 
-/**
- * Gets users groups
- */
+/** Gets users groups */
 @ApiController
 public class GroupApiController extends BaseApiController implements GroupApi {
 
   protected @Autowired GroupManager groupManager;
 
-  /**
-   * Gets groups for API client ordered by display name
-   */
+  /** Gets groups for API client ordered by display name */
   @Override
   public List<ApiGroupInfo> listCurrentUserGroups(@RequestAttribute(name = "user") User user) {
     return user.getGroups().stream()
@@ -65,7 +61,9 @@ public class GroupApiController extends BaseApiController implements GroupApi {
   public ApiGroupInfo getUserGroupById(
       @PathVariable("id") Long id, @RequestAttribute(name = "user") User user) {
     Optional<ApiGroupInfo> groupInfoOptional = groupManager.getGroupInfoById(id);
-    return groupInfoOptional.orElseThrow(() -> new NotFoundException(
-        "Group with id: " + id + " not found, or the user isn't a member."));
+    return groupInfoOptional.orElseThrow(
+        () ->
+            new NotFoundException(
+                "Group with id: " + id + " not found, or the user isn't a member."));
   }
 }
