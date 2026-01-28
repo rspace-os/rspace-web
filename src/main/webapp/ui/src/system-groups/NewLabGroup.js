@@ -12,6 +12,7 @@ import axios from "@/common/axios";
 import { createRoot } from "react-dom/client";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
+import Stack from "@mui/material/Stack";
 
 const scrollToRef = (ref) => window.scrollTo(0, ref.current.offsetTop);
 const PROJECT_GROUP = "PROJECT_GROUP";
@@ -96,7 +97,8 @@ export default function NewLabGroup() {
       ? values.groupOwners.map((m) => m.username)
       : values.groupOwners;
     params.groupType = values.groupType;
-    params.memberString = params.displayName = values.name;
+    params.memberString = values.name;
+    params.displayName = values.name;
     params.memberString = values.members.map((m) => m.username);
     if (values.groupType === LAB_GROUP) {
       params.memberString = params.memberString.concat(values.pis[0].username);
@@ -154,28 +156,33 @@ export default function NewLabGroup() {
               </Grid>
             </Grid>
             <Grid item xs={12}>
-              <Typography
-                style={{ margin: "20px 0px 10px 0px" }}
-                variant="subtitle1"
-                gutterBottom
-                color={"inherit"}
-              >
-                Select a group type*
-              </Typography>
-              <Select
-                value={values.groupType}
-                onChange={updateSelectedDropdown("groupType")}
-              >
-                <MenuItem value={LAB_GROUP} data-test-id="groupType-labGroup">
-                  Lab Group
-                </MenuItem>
-                <MenuItem
-                  value={PROJECT_GROUP}
-                  data-test-id="groupType-projectGroup"
+              <Stack spacing={2}>
+                <Typography variant="subtitle1" gutterBottom color={"inherit"}>
+                  Select a group type*
+                </Typography>
+                <Select
+                  value={values.groupType}
+                  onChange={updateSelectedDropdown("groupType")}
+                  variant="standard"
+                  size="small"
                 >
-                  Project Group
-                </MenuItem>
-              </Select>
+                  <MenuItem value={LAB_GROUP} data-test-id="groupType-labGroup">
+                    Lab Group
+                  </MenuItem>
+                  <MenuItem
+                    value={PROJECT_GROUP}
+                    data-test-id="groupType-projectGroup"
+                  >
+                    Project Group
+                  </MenuItem>
+                </Select>
+                {values.groupType === PROJECT_GROUP && (
+                  <Typography variant="body2">
+                    If RaID has been set up, you can associate a RaID identifier
+                    with the project group after it has been created.
+                  </Typography>
+                )}
+              </Stack>
             </Grid>
             <Grid item xs={12}>
               {values.groupType === LAB_GROUP && (

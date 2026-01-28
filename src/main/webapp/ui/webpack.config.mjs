@@ -81,6 +81,8 @@ const config = {
     associatedInventoryRecords:
       "./src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
     sysadminUsers: "./src/eln/sysadmin/users/index.tsx",
+    raidConnections:
+      "./src/my-rspace/profile/RaIDConnections/RaIDConnectionsEntrypoint.tsx",
   },
   output: {
     filename: "[name].js",
