@@ -331,6 +331,9 @@ The following optional properties enable RSpace to connect to Figshare API (if t
 * **figshare.categories.path** An optional file path of a static json file representing custom figshare categories selectable when making an export to figshare
 * **figshare.licenses.path** The optional file path of a static json file representing custom figshare licenses selectable when making an export to figshare
 
+The following optional properties allow configuring RSpace integration with Dataverse:
+* **dataverse.metadataLanguages** An optional json array of objects with title/locale props, converted to a list of metadata languages user can select during export 
+
 The following optional properties enable RSpace to connect to Slack (if this integration is enabled):
 * **slack.client.id** Client id of Slack App registered for given RSpace instance
 * **slack.secret** Client secret of Slack App registered for given RSpace instance

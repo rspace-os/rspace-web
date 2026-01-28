@@ -5,6 +5,7 @@ import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
@@ -78,6 +79,43 @@ class RepositoryConfigurationControllerTest {
         repositoryConfigurationController.getAllActiveRepositories();
     assertEquals(1, activeRepos.size());
     assertEquals("test", activeRepos.get(0).getOtherProperties().get(0).getName());
+  }
+
+  @Test
+  void getDataverseOptions() throws Exception {
+
+    RepoUIConfigInfo info = new RepoUIConfigInfo("A repo", null, null, null);
+    mockRepoConfigInfo(info);
+    UserAppConfig appCfg = createValidDataverseApp();
+    when(appCfgMgr.getByAppName("app.dataverse", exporter)).thenReturn(appCfg);
+    IntegrationInfo datverseIntegrationInfo = createEnabledAvailableInfo(DATAVERSE_APP_NAME);
+    addDataverseConfig(datverseIntegrationInfo);
+    when(integrationsHandler.getIntegration(eq(exporter), eq(DATAVERSE_APP_NAME)))
+        .thenReturn(datverseIntegrationInfo);
+
+    List<RepoUIConfigInfo> activeRepos =
+        repositoryConfigurationController.getAllActiveRepositories();
+    assertEquals(1, activeRepos.size());
+    assertEquals(1, activeRepos.get(0).getOptions().size());
+    Map<String, Object> dataverseUIConfigOptions = activeRepos.get(0).getOptions();
+    Map<String, Object> configOptionsMap = (Map<String, Object>) dataverseUIConfigOptions.get("1");
+    assertEquals(1, configOptionsMap.size());
+    assertNull(configOptionsMap.get("metadataLanguages"));
+
+    repositoryConfigurationController.setMetadataLanguagesMap(
+        "[{\"title\": \"English\", \"locale\": \"en\"}, {\"title\": \"Hungarian\", \"locale\":"
+            + " \"hu\"}]");
+    activeRepos = repositoryConfigurationController.getAllActiveRepositories();
+    assertEquals(1, activeRepos.size());
+    assertEquals(1, activeRepos.get(0).getOptions().size());
+    dataverseUIConfigOptions = activeRepos.get(0).getOptions();
+    configOptionsMap = (Map<String, Object>) dataverseUIConfigOptions.get("1");
+    assertEquals(2, configOptionsMap.size());
+    assertEquals(
+        List.of(
+            Map.of("title", "English", "locale", "en"),
+            Map.of("title", "Hungarian", "locale", "hu")),
+        configOptionsMap.get("metadataLanguages"));
   }
 
   // this test mocks out calls to underlying repositories and integrations
@@ -157,7 +195,7 @@ class RepositoryConfigurationControllerTest {
   private void addDataverseConfig(IntegrationInfo datverseIntegrationInfo) {
     // now set to be active (has >1 config set)
     Map<String, Object> config = new HashMap<>();
-    config.put("1", "someValue");
+    config.put("1", new HashMap<>(Map.of("someKey", "someValue")));
     datverseIntegrationInfo.setOptions(config);
   }
 
