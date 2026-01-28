@@ -16,6 +16,7 @@ import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.RSChemElementManager;
+import com.researchspace.service.RecordManager;
 import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.chemistry.ChemistryProvider;
@@ -36,6 +37,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   private final IPermissionUtils permissionUtils;
   private final ChemistryProvider chemistryProvider;
   private final RSChemElementManager rsChemElementManager;
+  private final RecordManager recordManager;
 
   @Autowired
   public StoichiometryServiceImpl(
@@ -43,12 +45,14 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       StoichiometryManager stoichiometryManager,
       IPermissionUtils permissionUtils,
       ChemistryProvider chemistryProvider,
-      RSChemElementManager rsChemElementManager) {
+      RSChemElementManager rsChemElementManager,
+      RecordManager recordManager) {
     this.chemistryService = chemistryService;
     this.stoichiometryManager = stoichiometryManager;
     this.permissionUtils = permissionUtils;
     this.chemistryProvider = chemistryProvider;
     this.rsChemElementManager = rsChemElementManager;
+    this.recordManager = recordManager;
   }
 
   private boolean hasPermissions(Record record, User user, PermissionType permission) {
@@ -64,7 +68,8 @@ public class StoichiometryServiceImpl implements StoichiometryService {
     AuditedEntity<Stoichiometry> stoichiometryRevision =
         stoichiometryManager.getRevision(stoichiometryId, revision, user);
     Stoichiometry stoichiometry = stoichiometryRevision.getEntity();
-    if (!hasPermissions(stoichiometry.getParentReaction().getRecord(), user, PermissionType.READ)) {
+    Record owningRecord = stoichiometry.getRecord();
+    if (!hasPermissions(owningRecord, user, PermissionType.READ)) {
       throw new AuthorizationException(
           "User does not have read permissions on document containing stoichiometry");
     }
@@ -73,12 +78,9 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   }
 
   @Override
-  public Stoichiometry create(long chemId, User user) {
+  public Stoichiometry createFromReaction(long recordId, long chemId, User user) {
     RSChemElement chemical = chemistryService.getChemicalElementByRevision(chemId, null, user);
-    Record owningRecord = chemical != null ? chemical.getRecord() : null;
-    if (owningRecord == null) {
-      throw new NotFoundException("Record containing chemical with id " + chemId + " not found");
-    }
+    Record owningRecord = recordManager.get(recordId);
     if (!permissionUtils.isPermitted((BaseRecord) owningRecord, PermissionType.WRITE, user)) {
       throw new AuthorizationException(
           "User does not have write permissions on document containing stoichiometry");
@@ -99,7 +101,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
                 + chemId
                 + ": chemistry provider returned no analysis");
       }
-      return stoichiometryManager.createFromAnalysis(analysis.get(), chemical, user);
+      return stoichiometryManager.createFromAnalysis(analysis.get(), chemical, owningRecord, user);
     } catch (IOException e) {
       throw new StoichiometryException(
           "Problem while creating new Stoichiometry: " + e.getMessage());
@@ -107,10 +109,19 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   }
 
   @Override
+  public Stoichiometry createEmpty(long recordId, User user) {
+    Record record = recordManager.get(recordId);
+    if (!permissionUtils.isPermitted((BaseRecord) record, PermissionType.WRITE, user)) {
+      throw new AuthorizationException("User does not have write permissions on record");
+    }
+    return stoichiometryManager.createEmpty(record, user);
+  }
+
+  @Override
   public Stoichiometry update(
       long stoichiometryId, StoichiometryUpdateDTO stoichiometryUpdateDTO, User user) {
     Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
-    Record owningRecord = stoichiometry.getParentReaction().getRecord();
+    Record owningRecord = stoichiometry.getRecord();
     if (owningRecord == null) {
       throw new NotFoundException(
           "Record containing stoichiometry with id " + stoichiometryId + " not found");
@@ -126,7 +137,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   @Override
   public void delete(long stoichiometryId, User user) {
     Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
-    Record owningRecord = stoichiometry.getParentReaction().getRecord();
+    Record owningRecord = stoichiometry.getRecord();
     if (!hasPermissions(owningRecord, user, PermissionType.WRITE)) {
       throw new AuthorizationException(
           "User does not have write permissions on document containing stoichiometry");

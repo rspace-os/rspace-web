@@ -87,9 +87,11 @@ export default function useStoichiometry(): {
    * This performs a POST request to generate/calculate the data.
    */
   calculateStoichiometry: ({
+    recordId,
     chemId,
   }: {
-    chemId: number;
+    recordId: number;
+    chemId?: number;
   }) => Promise<StoichiometryResponse>;
 
   /**
@@ -136,13 +138,18 @@ export default function useStoichiometry(): {
   const { getToken } = useOauthToken();
 
   async function calculateStoichiometry({
+    recordId,
     chemId,
   }: {
-    chemId: number;
+    recordId: number;
+    chemId?: number;
   }): Promise<StoichiometryResponse> {
     try {
       const formData = new FormData();
-      formData.append("chemId", chemId.toString());
+      formData.append("recordId", recordId.toString());
+      if (chemId !== undefined) {
+        formData.append("chemId", chemId.toString());
+      }
       const { data } = await axios.post<StoichiometryResponse>(
         "/api/v1/stoichiometry",
         formData,

@@ -25,6 +25,7 @@ function StandaloneDialogInner({
   open,
   onClose,
   chemId,
+  recordId,
   stoichiometryId,
   stoichiometryRevision,
   onTableCreated,
@@ -34,6 +35,7 @@ function StandaloneDialogInner({
   open: boolean;
   onClose: () => void;
   chemId: number | null;
+  recordId: number;
   stoichiometryId: number | undefined;
   stoichiometryRevision: number | undefined;
   onTableCreated?: (id: number, version: number) => void;
@@ -103,7 +105,10 @@ function StandaloneDialogInner({
     doNotAwait(async () => {
       try {
         if (!chemId) throw new Error("chemId is required");
-        const { id, revision } = await calculateStoichiometry({ chemId });
+        const { id, revision } = await calculateStoichiometry({
+          chemId: chemId || undefined,
+          recordId: recordId,
+        });
         setShowTable(true);
         onTableCreated?.(id, revision);
       } catch (e) {

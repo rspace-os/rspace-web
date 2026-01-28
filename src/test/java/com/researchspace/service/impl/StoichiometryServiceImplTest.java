@@ -16,6 +16,7 @@ import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.RSChemElementManager;
+import com.researchspace.service.RecordManager;
 import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.chemistry.StoichiometryException;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.orm.ObjectRetrievalFailureException;
 
 @ExtendWith(MockitoExtension.class)
 public class StoichiometryServiceImplTest {
@@ -39,6 +41,7 @@ public class StoichiometryServiceImplTest {
   @Mock private IPermissionUtils permissionUtils;
   @Mock private ChemistryProvider chemistryProvider;
   @Mock private RSChemElementManager rsChemElementManager;
+  @Mock private RecordManager recordManager;
 
   @InjectMocks private StoichiometryServiceImpl service;
 
@@ -50,12 +53,14 @@ public class StoichiometryServiceImplTest {
   }
 
   @Test
-  void create_whenOwningRecordMissing_throwsNotFound() {
+  void createFromReaction_recordNotFound_passesExceptionOn() throws IOException {
     when(chemistryService.getChemicalElementByRevision(2L, null, user))
-        .thenReturn(mock(RSChemElement.class));
-    NotFoundException ex = assertThrows(NotFoundException.class, () -> service.create(2L, user));
+        .thenReturn(TestFactory.createChemElement(null, 2L));
+    when(recordManager.get(123L))
+        .thenThrow(new ObjectRetrievalFailureException(Record.class, 123L));
 
-    assertTrue(ex.getMessage().contains("Record containing chemical with id 2 not found"));
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> service.createFromReaction(123L, 2L, user));
   }
 
   @Test
@@ -65,9 +70,10 @@ public class StoichiometryServiceImplTest {
     chem.setRecord(record);
 
     when(chemistryService.getChemicalElementByRevision(2L, null, user)).thenReturn(chem);
+    when(recordManager.get(123L)).thenReturn(record);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(false);
 
-    assertThrows(AuthorizationException.class, () -> service.create(2L, user));
+    assertThrows(AuthorizationException.class, () -> service.createFromReaction(123L, 2L, user));
   }
 
   @Test
@@ -76,6 +82,7 @@ public class StoichiometryServiceImplTest {
     Record record = TestFactory.createAnySD();
     chem.setRecord(record);
     when(chemistryService.getChemicalElementByRevision(2L, null, user)).thenReturn(chem);
+    when(recordManager.get(123L)).thenReturn(record);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
 
     Stoichiometry existing = new Stoichiometry();
@@ -83,7 +90,8 @@ public class StoichiometryServiceImplTest {
     when(stoichiometryManager.findByParentReactionId(2L)).thenReturn(Optional.of(existing));
 
     StoichiometryException ex =
-        assertThrows(StoichiometryException.class, () -> service.create(2L, user));
+        assertThrows(
+            StoichiometryException.class, () -> service.createFromReaction(123L, 2L, user));
     assertTrue(ex.getMessage().contains("Stoichiometry already exists for reaction chemId=2"));
   }
 
@@ -93,14 +101,18 @@ public class StoichiometryServiceImplTest {
     Record record = TestFactory.createAnySD();
     chem.setRecord(record);
     when(chemistryService.getChemicalElementByRevision(2L, null, user)).thenReturn(chem);
+    when(recordManager.get(123L)).thenReturn(record);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
     when(stoichiometryManager.findByParentReactionId(2L)).thenReturn(Optional.empty());
 
     when(chemistryProvider.getStoichiometry(chem)).thenReturn(Optional.empty());
 
     StoichiometryException ex =
-        assertThrows(StoichiometryException.class, () -> service.create(2L, user));
-    assertTrue(ex.getMessage().contains("Unable to generate stoichiometry"));
+        assertThrows(
+            StoichiometryException.class, () -> service.createFromReaction(123L, 2L, user));
+    assertEquals(
+        "Unable to generate stoichiometry for chemId=2: chemistry provider returned no analysis",
+        ex.getMessage());
   }
 
   @Test
@@ -109,16 +121,18 @@ public class StoichiometryServiceImplTest {
     Record record = TestFactory.createAnySD();
     chem.setRecord(record);
     when(chemistryService.getChemicalElementByRevision(2L, null, user)).thenReturn(chem);
+    when(recordManager.get(123L)).thenReturn(record);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
     when(stoichiometryManager.findByParentReactionId(2L)).thenReturn(Optional.empty());
 
     ElementalAnalysisDTO analysis = mock(ElementalAnalysisDTO.class);
     when(chemistryProvider.getStoichiometry(chem)).thenReturn(Optional.of(analysis));
-    when(stoichiometryManager.createFromAnalysis(eq(analysis), eq(chem), eq(user)))
+    when(stoichiometryManager.createFromAnalysis(eq(analysis), eq(chem), eq(record), eq(user)))
         .thenThrow(new IOException("IO fail"));
 
     StoichiometryException ex =
-        assertThrows(StoichiometryException.class, () -> service.create(2L, user));
+        assertThrows(
+            StoichiometryException.class, () -> service.createFromReaction(123L, 2L, user));
     assertTrue(ex.getMessage().contains("Problem while creating new Stoichiometry: IO fail"));
   }
 
@@ -128,6 +142,7 @@ public class StoichiometryServiceImplTest {
     Record record = TestFactory.createAnySD();
     chem.setRecord(record);
     when(chemistryService.getChemicalElementByRevision(2L, null, user)).thenReturn(chem);
+    when(recordManager.get(123L)).thenReturn(record);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
     when(stoichiometryManager.findByParentReactionId(2L)).thenReturn(Optional.empty());
 
@@ -137,12 +152,47 @@ public class StoichiometryServiceImplTest {
     Stoichiometry created = new Stoichiometry();
     created.setId(7L);
     created.setParentReaction(chem);
-    when(stoichiometryManager.createFromAnalysis(eq(analysis), eq(chem), eq(user)))
+    created.setRecord(record);
+    when(stoichiometryManager.createFromAnalysis(eq(analysis), eq(chem), eq(record), eq(user)))
         .thenReturn(created);
 
-    Stoichiometry result = service.create(2L, user);
+    Stoichiometry result = service.createFromReaction(123L, 2L, user);
     assertEquals(7L, result.getId().longValue());
     assertEquals(chem, result.getParentReaction());
+  }
+
+  @Test
+  void createEmpty_whenRecordMissing_throwsNotFound() {
+    when(recordManager.get(123L))
+        .thenThrow(new ObjectRetrievalFailureException(Record.class, 123L));
+    assertThrows(ObjectRetrievalFailureException.class, () -> service.createEmpty(123L, user));
+  }
+
+  @Test
+  void createEmpty_whenNoWritePermission_throwsAuth() {
+    Record record = TestFactory.createAnySD();
+    when(recordManager.get(123L)).thenReturn(record);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(false);
+
+    assertThrows(AuthorizationException.class, () -> service.createEmpty(123L, user));
+  }
+
+  @Test
+  void createEmpty_whenOk_returnsNewStoichiometry() throws Exception {
+    Record record = TestFactory.createAnySD();
+    when(recordManager.get(123L)).thenReturn(record);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+
+    Stoichiometry emptyStoich = new Stoichiometry();
+    emptyStoich.setId(456L);
+    emptyStoich.setRecord(record);
+    when(stoichiometryManager.createEmpty(eq(record), eq(user))).thenReturn(emptyStoich);
+
+    Stoichiometry result = service.createEmpty(123L, user);
+
+    assertNotNull(result);
+    assertEquals(456L, result.getId());
+    assertEquals(record, result.getRecord());
   }
 
   @Test
@@ -161,11 +211,13 @@ public class StoichiometryServiceImplTest {
   }
 
   @Test
-  void update_whenNoWritePermission_throwsAuthz() throws Exception {
+  void update_whenNoWritePermission_throwsAuthException() throws Exception {
     Stoichiometry existing = new Stoichiometry();
     existing.setId(3L);
+    Record record = TestFactory.createAnySD();
+    existing.setRecord(record);
     RSChemElement parent = TestFactory.createChemElement(null, 123L);
-    parent.setRecord(TestFactory.createAnySD());
+    parent.setRecord(record);
     existing.setParentReaction(parent);
     when(stoichiometryManager.get(3L)).thenReturn(existing);
 
@@ -177,28 +229,23 @@ public class StoichiometryServiceImplTest {
   }
 
   @Test
-  void update_whenOk_returnsUpdatedStoichiometry() throws Exception {
-    Stoichiometry existing = new Stoichiometry();
-    existing.setId(3L);
-    RSChemElement parent = TestFactory.createChemElement(null, 123L);
-    parent.setRecord(TestFactory.createAnySD());
-    existing.setParentReaction(parent);
-    when(stoichiometryManager.get(3L)).thenReturn(existing);
-
+  void updateOfEmptyStoichiometry_returnsUpdatedStoichiometry() throws Exception {
+    Stoichiometry existing = makeStoichiometryWithRecord(123L);
+    when(stoichiometryManager.get(1L)).thenReturn(existing);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
 
     Stoichiometry updated = new Stoichiometry();
-    updated.setId(3L);
+    updated.setId(1L);
     when(stoichiometryManager.update(any(StoichiometryUpdateDTO.class), eq(user)))
         .thenReturn(updated);
 
-    Stoichiometry result = service.update(3L, mock(StoichiometryUpdateDTO.class), user);
+    Stoichiometry result = service.update(1L, mock(StoichiometryUpdateDTO.class), user);
     assertEquals(updated, result);
   }
 
   @Test
   void delete_whenNoWritePermission_throwsAuthz() throws Exception {
-    Stoichiometry existing = makeStoichiometryWithRecord(5L);
+    Stoichiometry existing = makeStoichiometryWithReaction(5L);
     when(stoichiometryManager.get(5L)).thenReturn(existing);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(false);
 
@@ -207,7 +254,7 @@ public class StoichiometryServiceImplTest {
 
   @Test
   void delete_whenRemoveFails_throwsStoich() throws Exception {
-    Stoichiometry existing = makeStoichiometryWithRecord(5L);
+    Stoichiometry existing = makeStoichiometryWithReaction(5L);
     when(stoichiometryManager.get(5L)).thenReturn(existing);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
 
@@ -220,7 +267,7 @@ public class StoichiometryServiceImplTest {
 
   @Test
   void delete_whenOk_callsRemove() throws Exception {
-    Stoichiometry existing = makeStoichiometryWithRecord(5L);
+    Stoichiometry existing = makeStoichiometryWithReaction(5L);
     when(stoichiometryManager.get(5L)).thenReturn(existing);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
 
@@ -261,12 +308,23 @@ public class StoichiometryServiceImplTest {
     assertThrows(NotFoundException.class, () -> service.getMoleculeInfo("CCO"));
   }
 
-  private Stoichiometry makeStoichiometryWithRecord(Long reactionId) throws Exception {
+  private Stoichiometry makeStoichiometryWithReaction(Long reactionId) throws Exception {
     RSChemElement parent = TestFactory.createChemElement(null, reactionId);
-    parent.setRecord(TestFactory.createAnySD());
+    Record record = TestFactory.createAnySD();
+    parent.setRecord(record);
     Stoichiometry s = new Stoichiometry();
     s.setId(1L);
     s.setParentReaction(parent);
+    s.setRecord(record);
+    return s;
+  }
+
+  private Stoichiometry makeStoichiometryWithRecord(Long recordId) throws Exception {
+    Record record = TestFactory.createAnySD();
+    record.setId(recordId);
+    Stoichiometry s = new Stoichiometry();
+    s.setId(1L);
+    s.setRecord(record);
     return s;
   }
 }

@@ -32,6 +32,7 @@ export function StoichiometryDialogWithCalculateButtonStory({
             open={open}
             onClose={() => setOpen(false)}
             chemId={12345}
+            recordId={1}
             stoichiometryId={stoichiometryId}
             stoichiometryRevision={stoichiometryRevision}
             onTableCreated={handleTableCreated}
@@ -60,6 +61,7 @@ export function StoichiometryDialogWithTableStory({
             open={open}
             onClose={() => setOpen(false)}
             chemId={12345}
+            recordId={1}
             stoichiometryId={1}
             stoichiometryRevision={1}
             onSave={onSave}
@@ -93,6 +95,7 @@ export function StoichiometryDialogClosedStory(): React.ReactNode {
             open={false}
             onClose={() => {}}
             chemId={12345}
+            recordId={1}
             stoichiometryId={stoichiometryId}
             stoichiometryRevision={stoichiometryRevision}
             onTableCreated={handleTableCreated}
