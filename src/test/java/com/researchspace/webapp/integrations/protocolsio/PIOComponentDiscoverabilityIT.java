@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -127,10 +128,14 @@ public class PIOComponentDiscoverabilityIT {
     if (!unknownComponents.isEmpty()) {
       unknownComponents.forEach(
           (protocolId, component) -> {
-            log.warn(
-                "Unknown Id found in Protocol {} with type_id: {}",
-                protocolId,
-                component.getInt("type_id"));
+            try {
+              log.warn(
+                  "Unknown Id found in Protocol {} with type_id: {}",
+                  protocolId,
+                  component.getInt("type_id"));
+            } catch (JSONException e) {
+              throw new RuntimeException(e);
+            }
             log.warn("Unknown Component: {}", component);
           });
     }

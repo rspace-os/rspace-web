@@ -94,8 +94,8 @@ public class SVGMathController extends BaseController {
 
   private String validateSVGXML(String svg, String msg) {
     SAXBuilder builder = new SAXBuilder();
-    builder.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-    builder.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+    builder.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+    builder.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
     // build a JDOM2 Document using the SAXBuilder.
     try {
       Document jdomDoc = builder.build(new StringReader(svg));
@@ -104,7 +104,7 @@ public class SVGMathController extends BaseController {
         msg = getText("errors.invalidxml.ns", new Object[] {"SVG", SVG_NS, ns.getURI()});
       }
     } catch (JDOMException | IOException e) {
-      log.warn(e.getMessage());
+      log.warn("SVG validation failed: {}", e.getMessage());
       msg = getText("errors.invalidxml", new Object[] {"SVG", StringUtils.abbreviate(svg, 255)});
     }
     return msg;

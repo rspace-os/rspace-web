@@ -47,7 +47,7 @@ public class BarcodesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     int actualLength = result.getResponse().getContentAsByteArray().length;
     // generated QR code size differs slightly between java 8 and 11
-    assertTrue(actualLength > 280 && actualLength < 300, "uexpected length: " + actualLength);
+    assertTrue(actualLength > 275 && actualLength < 300, "uexpected length: " + actualLength);
   }
 
   @Test

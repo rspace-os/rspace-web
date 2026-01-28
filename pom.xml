@@ -5,7 +5,6 @@
 
   <modelVersion>4.0.0</modelVersion>
   <artifactId>researchspace</artifactId>
-  <groupId>com.github.rspace-os</groupId>
   <packaging>war</packaging>
   <version>2.19.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
   <name>ResearchSpace</name>
@@ -549,7 +548,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-exec</artifactId>
-      <version>1.3</version>
+      <version>1.4.0</version>
     </dependency>
     <dependency>
       <groupId>commons-logging</groupId>
@@ -703,12 +702,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>snapgene-java-client</artifactId>
-      <version>1.0.2</version>
+      <version>1.0.3</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-audit</artifactId>
-      <version>0.14.2</version>
+      <version>0.14.3</version>
       <exclusions>
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>
@@ -721,10 +720,6 @@
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-core-util</artifactId>
         </exclusion>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -929,10 +924,9 @@
       <scope>runtime</scope>
     </dependency>
     <dependency>
-      <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-parsers</artifactId>
-      <version>1.17</version>
+      <artifactId>tika-parsers-standard-package</artifactId>
+      <version>3.2.2</version>
       <exclusions>
         <exclusion>
           <groupId>org.opengis</groupId>
@@ -957,6 +951,10 @@
         <exclusion>
           <groupId>commons-codec</groupId>
           <artifactId>commons-codec</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-exec</artifactId>
         </exclusion>
         <exclusion>
           <groupId>com.google.guava</groupId>
@@ -1007,6 +1005,10 @@
           <artifactId>pdfbox</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.pdfbox</groupId>
+          <artifactId>fontbox</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.quartz-scheduler</groupId>
           <artifactId>quartz</artifactId>
         </exclusion>
@@ -1030,6 +1032,22 @@
           <groupId>org.bouncycastle</groupId>
           <artifactId>bcprov-jdk15on</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcprov-jdk18on</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-api</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -1045,11 +1063,25 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <!-- tika-parsers 1.17 internally-conflicting dependency -->
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>1.17</version>
+      <version>3.2.2</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>2.1.1</version>
     </dependency>
     <dependency>
       <groupId>org.jdom</groupId>
@@ -1212,7 +1244,7 @@
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
-      <version>2.0.25</version>
+      <version>2.0.31</version>
     </dependency>
     <dependency>
       <groupId>com.jayway.jsonpath</groupId>
@@ -1373,7 +1405,7 @@
     <dependency>
       <groupId>xml-apis</groupId>
       <artifactId>xml-apis</artifactId>
-      <version>1.0.b2</version>
+      <version>1.4.01</version>
     </dependency>
     <dependency>
       <groupId>org.apache.velocity</groupId>
@@ -1544,12 +1576,8 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dataverse-adapter</artifactId>
-      <version>2.1.1</version>
+      <version>2.1.2</version>
       <exclusions>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-core-util</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-repository-spi</artifactId>
@@ -1713,21 +1741,13 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-util</artifactId>
-      <version>1.0.5</version>
+      <version>1.1.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>2.18.1</version>
+      <version>2.18.2</version>
       <exclusions>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-core-util</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-audit</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>commons-io</groupId>
           <artifactId>commons-io</artifactId>
@@ -1780,12 +1800,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-figshare-adapter</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.1</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dryad-adapter</artifactId>
-      <version>1.0.2</version>
+      <version>1.0.3</version>
       <exclusions>
         <exclusion>
           <groupId>org.springframework</groupId>
@@ -2084,12 +2104,8 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-rest-api-utils</artifactId>
-      <version>1.3.3</version>
+      <version>1.3.4</version>
       <exclusions>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-core-util</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>commons-io</groupId>
           <artifactId>commons-io</artifactId>
@@ -2205,9 +2221,25 @@
       <version>1.1.3</version>
     </dependency>
     <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.13.2</version>
+    </dependency>
+    <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
       <version>${jaxb.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.core</groupId>
+      <artifactId>jersey-common</artifactId>
+      <version>2.47</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.core</groupId>
+      <artifactId>jersey-server</artifactId>
+      <version>2.47</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>javax.xml.bind</groupId>
@@ -2243,6 +2275,10 @@
           <groupId>com.google.code.findbugs</groupId>
           <artifactId>jsr305</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.google.errorprone</groupId>
+          <artifactId>error_prone_annotations</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -2266,7 +2302,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-snapgene-adapter</artifactId>
-      <version>1.0.2</version>
+      <version>1.0.3</version>
     </dependency>
     <dependency>
       <groupId>com.thoughtworks.xstream</groupId>
@@ -2276,7 +2312,7 @@
     <dependency>
       <groupId>org.xhtmlrenderer</groupId>
       <artifactId>flying-saucer-pdf</artifactId>
-      <version>9.7.1</version>
+      <version>9.13.3</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.code.findbugs</groupId>
@@ -2285,6 +2321,10 @@
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.dom4j</groupId>
+          <artifactId>dom4j</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -3118,7 +3158,7 @@
     <hibernate.showSQL>false</hibernate.showSQL>
 
     <aspectj.version>1.9.7</aspectj.version>
-    <apache.batik.version>1.14</apache.batik.version>
+    <apache.batik.version>1.19</apache.batik.version>
     <aws.sdk.version>2.16.63</aws.sdk.version>
     <commons.fileupload.version>1.4</commons.fileupload.version>
     <ehcache.version>2.6.11</ehcache.version>
