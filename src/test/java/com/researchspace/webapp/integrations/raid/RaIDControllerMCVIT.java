@@ -383,10 +383,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
 
     // THEN
     assertTrue(
-        result
-            .getResolvedException()
-            .getMessage()
-            .contains(
+        extractErrorMessage(result).contains(
                 "Not able to associate RaID to group: "
                     + "The RaID \""
                     + IDENTIFIER_ASSOCIATED_2
@@ -443,6 +440,13 @@ public class RaIDControllerMCVIT extends MVCTestBase {
                     new RaIDReferenceDTO(
                         el.get("raidServerAlias"), el.get("raidTitle"), el.get("raidIdentifier")))
             .collect(Collectors.toSet());
+  }
+
+  @NotNull
+  private String extractErrorMessage(MvcResult result)
+      throws JsonProcessingException, UnsupportedEncodingException {
+    Map mapResult = mapper.readValue(result.getResponse().getContentAsString(), Map.class);
+    return ((Map<String, List<String>>) mapResult.get("error")).get("errorMessages").get(0);
   }
 
   @NotNull
