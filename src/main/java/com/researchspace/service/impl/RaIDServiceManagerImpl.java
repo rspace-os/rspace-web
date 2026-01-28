@@ -29,24 +29,17 @@ public class RaIDServiceManagerImpl implements RaIDServiceManager {
   }
 
   @Override
-  public Set<RaidGroupAssociationDTO> getAssociatedRaidsByUserAndAlias(
-      User user, String raidServerAlias) {
-    List<UserRaid> userRaidList = raidDao.getAssociatedRaidByUserAndAlias(user, raidServerAlias);
-    return userRaidList.stream().map(RaidGroupAssociationDTO::new).collect(Collectors.toSet());
-  }
-
-  @Override
   public Set<RaidGroupAssociationDTO> getAssociatedRaidsByAlias(String raidServerAlias) {
     List<UserRaid> userRaidList = raidDao.getAssociatedRaidByAlias(raidServerAlias);
     return userRaidList.stream().map(RaidGroupAssociationDTO::new).collect(Collectors.toSet());
   }
 
   @Override
-  public Optional<RaidGroupAssociationDTO> getAssociatedRaidByUserAliasAndProjectId(
-      User user, String raidServerAlias, Long projectGroupId) {
+  public Optional<RaidGroupAssociationDTO> getAssociatedRaidByAliasAndProjectId(
+      String raidServerAlias, Long projectGroupId) {
     Optional<RaidGroupAssociationDTO> result = Optional.empty();
     Set<RaidGroupAssociationDTO> userRaidAlreadyAssociated =
-        this.getAssociatedRaidsByUserAndAlias(user, raidServerAlias);
+        this.getAssociatedRaidsByAlias(raidServerAlias);
     if (!userRaidAlreadyAssociated.isEmpty()) {
       result =
           userRaidAlreadyAssociated.stream()
@@ -72,7 +65,8 @@ public class RaIDServiceManagerImpl implements RaIDServiceManager {
             projectGroup,
             raidToGroupAssociation.getRaid().getRaidServerAlias(),
             raidToGroupAssociation.getRaid().getRaidTitle(),
-            raidToGroupAssociation.getRaid().getRaidIdentifier()));
+            raidToGroupAssociation.getRaid().getRaidIdentifier(),
+            raidToGroupAssociation.getRaid().getRaidAgencyUrl()));
     grpManager.saveGroup(projectGroup, false, user);
   }
 

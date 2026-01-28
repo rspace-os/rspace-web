@@ -254,7 +254,7 @@ public class ExportControllerTest {
         new RaidGroupAssociationDTO(
             groupId,
             rspaceProjectName,
-            new RaIDReferenceDTO("DEMO", "Raid Title1", "https://raid.org/10.12345/FGH896")));
+            new RaIDReferenceDTO("DEMO", "https://raid.org/10.12345/FGH896")));
 
     RepoDepositConfig depositConfig = createRepoDepositConfig(false);
     depositConfig.setExportToRaid(false);

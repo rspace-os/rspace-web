@@ -27,18 +27,16 @@ public class RaIDServiceManagerTest {
 
   private static final String SERVER_ALIAS = "raidServerAlias";
   private static final String RAID_IDENTIFIER = "https://raid.org/10.12345/FJK987";
+  private static final String RAID_URL = "https://demo.static.raid.org.au/raid/10.12345/FJK987";
   private static final String RAID_TITLE = "Raid Title 1";
   public static final long USER_RAID_ID = 1L;
   public static final long PROJECT_GROUP_ID = 2L;
 
-  @InjectMocks
-  private RaIDServiceManager raIDServiceManager = new RaIDServiceManagerImpl();
+  @InjectMocks private RaIDServiceManager raIDServiceManager = new RaIDServiceManagerImpl();
 
-  @Mock
-  private RaIDDao raidDao;
+  @Mock private RaIDDao raidDao;
 
-  @Mock
-  private GroupManager groupManager;
+  @Mock private GroupManager groupManager;
 
   private User piUser;
   private Group projectGroup;
@@ -51,11 +49,10 @@ public class RaIDServiceManagerTest {
     projectGroup = TestFactory.createAnyGroup(piUser);
     projectGroup.setId(PROJECT_GROUP_ID);
     projectGroup.setGroupType(GroupType.PROJECT_GROUP);
-    userRaid = new UserRaid(piUser, projectGroup, SERVER_ALIAS, RAID_TITLE, RAID_IDENTIFIER);
+    userRaid =
+        new UserRaid(piUser, projectGroup, SERVER_ALIAS, RAID_TITLE, RAID_IDENTIFIER, RAID_URL);
     userRaid.setId(USER_RAID_ID);
 
-    when(raidDao.getAssociatedRaidByUserAndAlias(piUser, SERVER_ALIAS)).thenReturn(
-        List.of(userRaid));
     when(raidDao.getAssociatedRaidByAlias(SERVER_ALIAS)).thenReturn(List.of(userRaid));
     when(groupManager.getGroup(projectGroup.getId())).thenReturn(projectGroup);
   }
@@ -64,7 +61,7 @@ public class RaIDServiceManagerTest {
   public void testGetAssociatedRaidsByUserAndAlias() {
     // WHEN
     Set<RaidGroupAssociationDTO> actualResult =
-        raIDServiceManager.getAssociatedRaidsByUserAndAlias(piUser, SERVER_ALIAS);
+        raIDServiceManager.getAssociatedRaidsByAlias(SERVER_ALIAS);
 
     // THEN
     assertNotNull(actualResult);
@@ -98,7 +95,7 @@ public class RaIDServiceManagerTest {
         new RaidGroupAssociationDTO(
             projectGroup.getId(),
             projectGroup.getDisplayName(),
-            new RaIDReferenceDTO(SERVER_ALIAS, RAID_TITLE, RAID_IDENTIFIER)));
+            new RaIDReferenceDTO(SERVER_ALIAS, RAID_TITLE, RAID_IDENTIFIER, RAID_URL)));
 
     // THEN
     verify(groupManager).getGroup(projectGroup.getId());

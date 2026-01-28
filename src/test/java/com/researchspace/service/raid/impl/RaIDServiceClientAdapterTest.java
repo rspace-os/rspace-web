@@ -177,7 +177,10 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
             .map(
                 el ->
                     new RaIDReferenceDTO(
-                        SERVER_ALIAS, el.getTitle().get(0).getText(), el.getIdentifier().getId()))
+                        SERVER_ALIAS,
+                        el.getTitle().get(0).getText(),
+                        el.getIdentifier().getId(),
+                        el.getIdentifier().getRaidAgencyUrl()))
             .collect(Collectors.toSet());
     raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
 
@@ -198,7 +201,8 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
         new RaIDReferenceDTO(
             SERVER_ALIAS,
             expectedRaid.getTitle().get(0).getText(),
-            expectedRaid.getIdentifier().getId());
+            expectedRaid.getIdentifier().getId(),
+            expectedRaid.getIdentifier().getRaidAgencyUrl());
     raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
 
     // WHEN
@@ -224,7 +228,8 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
         new RaIDReferenceDTO(
             SERVER_ALIAS,
             expectedRaidWithRelatedObject.getTitle().get(0).getText(),
-            expectedRaidWithRelatedObject.getIdentifier().getId());
+            expectedRaidWithRelatedObject.getIdentifier().getId(),
+            expectedRaidWithRelatedObject.getIdentifier().getRaidAgencyUrl());
     raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
 
     assertFalse(
