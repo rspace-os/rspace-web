@@ -22,6 +22,7 @@ import javax.xml.bind.ValidationEventHandler;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
@@ -31,6 +32,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -38,14 +40,19 @@ import javax.xml.validation.SchemaFactory;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
 
 /**
  * Useful utility methods for writing XML files
  */
 public class XMLReadWriteUtils {
+	private static final Logger logger = LoggerFactory.getLogger(XMLReadWriteUtils.class);
 
 	/**
 	 * Marshalls the specified class to XML
@@ -69,19 +76,26 @@ public class XMLReadWriteUtils {
 	// this seems to be a bug in xalan 2.7.2 which has not been fixed. 
 	private static void writeFormattedXML(File ouF, StringWriter sw) throws FileNotFoundException,
 			TransformerFactoryConfigurationError, TransformerConfigurationException, TransformerException, IOException {
-		System.err.println(sw.toString());
-		System.err.println("sw to string is :" + ArrayUtils.toString(sw.toString().getBytes()));
+		logger.debug("StringWriter content: {}", sw.toString());
+		logger.debug("sw to string is: {}", ArrayUtils.toString(sw.toString().getBytes()));
 		try (FileOutputStream fos = new FileOutputStream(ouF)) {
-			TransformerFactory factory = TransformerFactory.newInstance();
-			Transformer transformer = factory.newTransformer();
-			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-			transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+			Transformer transformer = configureTransformer();
 
 			StreamResult result = new StreamResult(fos);
 
 			transformer.transform(new StreamSource(new StringReader(sw.toString())), result);
 			fos.flush();
 		}
+	}
+
+	private static Transformer configureTransformer() throws TransformerConfigurationException {
+		TransformerFactory factory = TransformerFactory.newInstance();
+		factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+		factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+		Transformer transformer = factory.newTransformer();
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+		return transformer;
 	}
 
 	/**
@@ -101,14 +115,13 @@ public class XMLReadWriteUtils {
 	public static <T> T fromXML(File xmlFile, Class<T> clazz, File schemaFile, ValidationEventHandler eventHandler)
 			throws JAXBException, SAXException, FileNotFoundException {
 
-		Source source;
-		source = new StreamSource(new BufferedInputStream(new FileInputStream(xmlFile)));
-
 		JAXBContext jc = JAXBContext.newInstance(clazz);
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 
 		if (schemaFile != null) {
 			SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+			sf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+			sf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 			sf.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
 			sf.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
 			Schema schema = sf.newSchema(schemaFile);
@@ -117,9 +130,18 @@ public class XMLReadWriteUtils {
 				unmarshaller.setEventHandler(eventHandler);
 			}
 		}
-		T adc = (T) unmarshaller.unmarshal(source);
-		return adc;
 
+		SAXParserFactory spf = SAXParserFactory.newInstance();
+		spf.setNamespaceAware(true);
+		try {
+			spf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			spf.setXIncludeAware(false);
+			XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+			Source source = new SAXSource(xmlReader, new InputSource(new BufferedInputStream(new FileInputStream(xmlFile))));
+			return (T) unmarshaller.unmarshal(source);
+		} catch (ParserConfigurationException e) {
+			throw new SAXException("Error configuring SAX parser", e);
+		}
 	}
 
 	public static <T> void generateSchemaFromXML(File outFile, Class<T> clazz) throws JAXBException, IOException {
@@ -143,6 +165,9 @@ public class XMLReadWriteUtils {
 
 		// Create the Document
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		dbf.setXIncludeAware(false);
+
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document document = db.newDocument();
 
@@ -169,9 +194,7 @@ public class XMLReadWriteUtils {
 			throws TransformerFactoryConfigurationError, TransformerException, FileNotFoundException {
 		Validate.noNullElements(new Object[] { document, outStream },
 				format("Arguments cannot be null but were: " + document + ", " + outStream));
-		Transformer transformer = TransformerFactory.newInstance().newTransformer();
-		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+		Transformer transformer = configureTransformer();
 		StreamResult streamResult = new StreamResult(outStream);
 		DOMSource domSource = new DOMSource(document);
 		transformer.transform(domSource, streamResult);

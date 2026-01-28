@@ -11,21 +11,12 @@ import java.io.File;
 import java.nio.charset.Charset;
 
 import javax.xml.bind.UnmarshalException;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 public class XMLReadWriteUtilsTest {
 	private static final String TEST_XML_ROOT_OBJECT_ELEMENT_NAME = "testXMLRootObject";
@@ -77,7 +68,7 @@ public class XMLReadWriteUtilsTest {
 	public void roundTripWithInvalidSchemaThrowsUnmarshalException() throws Exception {
 		TestXMLRootObject af = new TestXMLRootObject(1L, "y");
 		XMLReadWriteUtils.toXML(tmpFile, af, TestXMLRootObject.class);
-		File invalidSchema = getResource("zipSchema.xsd");
+		File invalidSchema = new File("src/test/resources/zipSchema.xsd");
 		assertThrows(UnmarshalException.class, ()->XMLReadWriteUtils.fromXML(tmpFile, TestXMLRootObject.class, invalidSchema, null));
 	}
 	
@@ -95,31 +86,25 @@ public class XMLReadWriteUtilsTest {
 		Document doc = XMLReadWriteUtils.convertObjectToW3CDocument(toConvert, TestXMLRootObject.class);
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			XMLReadWriteUtils.writeFormattedXML(doc, baos);
-			String output = new String(baos.toByteArray(), Charset.defaultCharset());
+			String output = baos.toString(Charset.defaultCharset());
 			assertTrue (output.contains(TEST_XML_ROOT_OBJECT_ELEMENT_NAME));
 		}
 		
 	}
-	@XmlType()
-	@XmlRootElement
-	@XmlAccessorType(XmlAccessType.FIELD)
-	@AllArgsConstructor
-	@NoArgsConstructor
-	@Data
-	static class XFoo {
-		@XmlElement
-		private String foo;
-	}
+	@Test
+	public void fromXMLWithDocTypeThrowsException() throws Exception {
+		String xxeXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+						"<!DOCTYPE testXMLRootObject>\n" +
+						"<testXMLRootObject id=\"1\">\n" +
+						"  <data>&xxe;</data>\n" +
+						"</testXMLRootObject>";
+		FileUtils.writeStringToFile(tmpFile, xxeXml, Charset.defaultCharset());
+		
+		UnmarshalException exception = assertThrows(UnmarshalException.class, () -> {
+			XMLReadWriteUtils.fromXML(tmpFile, TestXMLRootObject.class, null, null);
+		});
 
-	/**
-	 * GEts a test file, specified by its name.
-	 * 
-	 * @param fileName
-	 * @return
-	 */
-	static File getResource(String fileName) {
-		File resource = new File("src/test/resources/" + fileName);
-		return resource;
+		assertTrue(exception.toString().contains("DOCTYPE is disallowed when the feature " +
+						"\"http://apache.org/xml/features/disallow-doctype-decl\" set to true."));
 	}
-
 }
