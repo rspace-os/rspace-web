@@ -1,5 +1,10 @@
 ## Changelog
 
+## 1.1.0 2026-01-26
+- switch to parent-pom 2.1.3
+- harden XML parsing to avoid XXE attacks
+- upgrade minor version of packages (commons-exec 1.3 -> 1.4.0, google.zxing 3.4.0 -> 3.5.4)
+
 ## 1.0.5 2026-01-14
 - switch to parent-pom 2.1.2 (spring 5.3.25 -> 5.3.39, commons-codec 1.11 -> 1.13)
 - update commons-compress (1.26.2 -> 1.28.0) and commons-io (2.14 -> 2.20)
