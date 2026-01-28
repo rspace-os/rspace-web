@@ -123,7 +123,6 @@ export default function DataverseRepo({
             name="metadataLanguage"
             select
             label="Metadata language"
-            defaultValue={null}
             // @ts-expect-error React event handlers are not parameterised by the name prop
             onChange={handleMetadataLanguageChange}
             helperText="Please select your metadata language (if target Dataverse supports it)"
@@ -139,7 +138,7 @@ export default function DataverseRepo({
         </TextField>
       </Grid>)}
       {!metaLanguagesVisible && (<Grid item xs={2}></Grid>)}
-      <Grid item xs={metaLanguagesVisible ?  4 : 5}>
+      <Grid item xs={metaLanguagesVisible ? 4 : 5}>
         <TextField
           name="license"
           select
