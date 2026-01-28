@@ -140,7 +140,7 @@ public class RepositoryConfigurationController extends BaseController {
       throws MalformedURLException {
     RepoUIConfigInfo info = null;
     if (DATAVERSE_APP_NAME.equals(integrationInfoName)) {
-      // retrieve general dataverse options from 1st found dataverse user config
+      // apply common dataverse settings taken from 1st found dataverse user config
       UserAppConfig appCfg =
           userAppConfigMgr.getByAppName(getAppNameFromIntegrationName(integrationInfoName), user);
       var appConfigElementSet =
