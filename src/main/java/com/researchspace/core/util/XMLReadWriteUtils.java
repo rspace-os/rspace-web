@@ -122,6 +122,8 @@ public class XMLReadWriteUtils {
 			SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 			sf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
 			sf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			sf.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+			sf.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
 			Schema schema = sf.newSchema(schemaFile);
 			unmarshaller.setSchema(schema);
 			if (eventHandler != null) {
