@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 //@flow
-/* eslint-env jest */
+import { describe, it, test, expect } from "vitest";
 import fc, { type Arbitrary } from "fast-check";
 import { Optional } from "../optional";
 
@@ -91,3 +91,5 @@ describe("optional", () => {
     });
   });
 });
+
+

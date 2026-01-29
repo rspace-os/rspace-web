@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 
+import { vi } from "vitest";
 import { type Factory } from "../../../definitions/Factory";
 import PersonModel from "../../../models/PersonModel";
 import { type PersonAttrs } from "../../Person";
@@ -30,13 +30,15 @@ type FactoryOverrides = {
 
 export const mockFactory = (overrides?: FactoryOverrides): Factory => {
   const f = (): Factory => ({
-    newRecord: jest.fn(),
-    newPerson: jest.fn().mockReturnValue({} as PersonModel),
-    newBarcode: jest.fn().mockReturnValue({} as BarcodeRecord),
-    newIdentifier: jest.fn().mockReturnValue({} as Identifier),
-    newDocument: jest.fn().mockReturnValue({} as Document),
-    newFactory: jest.fn().mockImplementation(f),
+    newRecord: vi.fn(),
+    newPerson: vi.fn().mockReturnValue({} as PersonModel),
+    newBarcode: vi.fn().mockReturnValue({} as BarcodeRecord),
+    newIdentifier: vi.fn().mockReturnValue({} as Identifier),
+    newDocument: vi.fn().mockReturnValue({} as Document),
+    newFactory: vi.fn().mockImplementation(f),
     ...overrides,
   });
   return f();
 };
+
+

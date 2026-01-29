@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, test, expect } from "vitest";
 import * as ArrayUtils from "../../ArrayUtils";
 
 describe("filterNull", () => {
@@ -19,3 +19,5 @@ describe("filterNull", () => {
     expect(withFilterNull).toEqual([1, 2]);
   });
 });
+
+

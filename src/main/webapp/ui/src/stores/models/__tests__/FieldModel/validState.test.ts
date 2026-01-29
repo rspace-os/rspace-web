@@ -1,15 +1,15 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
 
-jest.mock("../../../../common/InvApiService", () => {});
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -74,3 +74,5 @@ describe("method: validate", () => {
     expect(field.validate().isError).toBe(false);
   });
 });
+
+

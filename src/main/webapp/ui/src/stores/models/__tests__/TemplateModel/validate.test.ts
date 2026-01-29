@@ -1,12 +1,12 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { makeMockTemplate } from "./mocking";
 import fc from "fast-check";
 
-jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
+vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 
 describe("method: validate", () => {
   describe("Asserts subSampleAlias", () => {
@@ -75,31 +75,34 @@ describe("method: validate", () => {
   });
 
   describe("All field names should be unique.", () => {
-    fc.assert(
-      fc.property(fc.string(), (name) => {
-        const template = makeMockTemplate({
-          fields: [
-            {
-              type: "text",
-              name,
-              selectedOptions: null,
-              columnIndex: 0,
-              attachment: null,
-              mandatory: false,
-            },
-            {
-              type: "text",
-              name,
-              selectedOptions: null,
-              columnIndex: 1,
-              attachment: null,
-              mandatory: false,
-            },
-          ],
-        });
+    test("Returns false when field names are duplicated.", () => {
+      fc.assert(
+        fc.property(fc.string(), (name) => {
+          const template = makeMockTemplate({
+            fields: [
+              {
+                type: "text",
+                name,
+                selectedOptions: null,
+                columnIndex: 0,
+                attachment: null,
+                mandatory: false,
+              },
+              {
+                type: "text",
+                name,
+                selectedOptions: null,
+                columnIndex: 1,
+                attachment: null,
+                mandatory: false,
+              },
+            ],
+          });
 
-        expect(template.validate().isOk).toBe(false);
-      })
-    );
+          expect(template.validate().isOk).toBe(false);
+        })
+      );
+    });
   });
 });
+

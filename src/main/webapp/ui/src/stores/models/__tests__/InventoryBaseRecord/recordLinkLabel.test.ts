@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi } from "vitest";
 import fc from "fast-check";
 import { makeMockSample } from "../SampleModel/mocking";
 import { makeMockBench, makeMockContainer } from "../ContainerModel/mocking";
@@ -22,8 +22,10 @@ const mockRootStore = {
   },
 };
 
-jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => mockRootStore);
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => mockRootStore,
+}));
 
 describe("computed: recordLinkLabel", () => {
   test("Samples should always return their name.", () => {
@@ -78,3 +80,4 @@ describe("computed: recordLinkLabel", () => {
     expect(bench.recordLinkLabel).toBe("Joe Bloggs's Bench");
   });
 });
+

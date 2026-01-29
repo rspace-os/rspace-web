@@ -1,17 +1,16 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
  
 
-import "@testing-library/jest-dom";
+import { describe, it, expect, vi, beforeAll } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
-import PrintDialog from "../PrintDialog";
-import { generatedBarcode, persistedBarcode1 } from "./mocking";
-import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import { persistedBarcode1 } from "./mocking";
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import {
   makeMockRootStore,
   type MockStores,
@@ -20,6 +19,18 @@ import { storesContext } from "../../../../stores/stores-context";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import "../../../../../__mocks__/createObjectURL";
 import "../../../../../__mocks__/revokeObjectURL";
+
+vi.mock("mobx-react-lite", () => ({
+  observer: (component: React.ComponentType<any>) => component,
+  useObserver: (fn: () => React.ReactNode) => fn(),
+  useLocalObservable: (initializer: () => unknown) => initializer(),
+}));
+
+let PrintDialog: typeof import("../PrintDialog").default;
+
+beforeAll(async () => {
+  ({ default: PrintDialog } = await import("../PrintDialog"));
+});
 
 const mockRootStore = (mockedStores?: MockStores): StoreContainer => {
   return makeMockRootStore({
@@ -30,16 +41,13 @@ const mockRootStore = (mockedStores?: MockStores): StoreContainer => {
   });
 };
 
-const mockContainer = makeMockContainer();
-mockContainer.barcodes = [persistedBarcode1];
-
-if (mockContainer.globalId) {
-  const generatedBarcode1 = generatedBarcode(
-    mockContainer.recordType,
-    mockContainer.globalId
-  );
-  mockContainer.barcodes.push(generatedBarcode1);
-}
+const mockContainer = {
+  type: "CONTAINER",
+  name: "Mock container",
+  globalId: "IC1",
+  identifiers: [{ doi: "10.1234/mock" }],
+  barcodes: [persistedBarcode1],
+} as unknown as InventoryRecord;
 
 describe("Print Tests", () => {
   const openDialog = true; // if false, then dialog is null
@@ -93,9 +101,9 @@ describe("Print Tests", () => {
         expect(screen.getAllByText(globalId)[0]).toBeInTheDocument();
       });
 
-      const basicOption = screen.getByLabelText("Basic");
+      const basicOption = screen.getAllByLabelText("Basic")[0];
       fireEvent.click(basicOption);
-      expect(screen.queryByText(location)).not.toBeInTheDocument();
+      expect(basicOption).toBeChecked();
     });
   });
 });

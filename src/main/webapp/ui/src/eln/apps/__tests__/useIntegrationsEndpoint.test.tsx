@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React, { useEffect } from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
@@ -12,7 +12,7 @@ import { Optional } from "../../../util/optional";
 import "../../../../__mocks__/matchMedia";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -45,3 +45,5 @@ describe("useIntegrationsEndpoint", () => {
     });
   });
 });
+
+

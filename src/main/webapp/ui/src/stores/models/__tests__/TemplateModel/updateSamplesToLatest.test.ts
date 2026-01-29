@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach } from "vitest";
 import { makeMockTemplate } from "./mocking";
 import { sampleAttrs } from "../SampleModel/mocking";
 
@@ -20,27 +20,31 @@ import {
  */
 const mockRootStore = {
   uiStore: {
-    confirm: jest.fn(() => Promise.resolve(true)),
-    addAlert: jest.fn(() => {}),
+    confirm: vi.fn(() => Promise.resolve(true)),
+    addAlert: vi.fn(() => {}),
   },
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
 };
 
-jest.mock("../../../stores/RootStore", () => () => mockRootStore);
-jest.mock("../../../../common/InvApiService", () => ({
-  post: jest.fn(),
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => mockRootStore,
+}));
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+    post: vi.fn(),
+  },
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("action: updateSampleToLatest", () => {
   describe("When there are two samples, of which only one can be updated, there should", () => {
     beforeEach(() => {
-      jest.spyOn(InvApiService, "post").mockImplementation(
+      vi.spyOn(InvApiService, "post").mockImplementation(
         (): Promise<AxiosResponse<unknown>> =>
           Promise.resolve({
             data: {
@@ -69,7 +73,7 @@ describe("action: updateSampleToLatest", () => {
       );
     });
     test("Be two toasts, detailing the error and the success.", async () => {
-      const addAlertSpy = jest.spyOn(getRootStore().uiStore, "addAlert");
+      const addAlertSpy = vi.spyOn(getRootStore().uiStore, "addAlert");
       const template = makeMockTemplate();
       await template.updateSamplesToLatest();
 
@@ -82,3 +86,4 @@ describe("action: updateSampleToLatest", () => {
     });
   });
 });
+

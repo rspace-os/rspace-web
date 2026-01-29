@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import {
   cleanup,
@@ -10,7 +10,7 @@ import {
   waitFor,
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import Slack from "../Slack";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
@@ -18,13 +18,14 @@ import { observable } from "mobx";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 import { Optional } from "../../../../util/optional";
-import { axe, toHaveNoViolations } from "jest-axe";
+import { axe } from "vitest-axe";
+import { toHaveNoViolations } from "vitest-axe/matchers";
 import "../../../../../__mocks__/matchMedia";
 
-expect.extend(toHaveNoViolations);
+expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -102,7 +103,7 @@ describe("Slack", () => {
         ],
       },
     };
-    jest.spyOn(window, "open").mockImplementation(
+    vi.spyOn(window, "open").mockImplementation(
       () =>
         ({
           document: {
@@ -116,7 +117,7 @@ describe("Slack", () => {
           close: () => {},
         } as unknown as Window)
     );
-    jest
+    vi
       .spyOn(window, "setInterval")
       .mockImplementation((f) => f() as unknown as NodeJS.Timeout);
   });
@@ -434,3 +435,5 @@ describe("Slack", () => {
     expect(integrationState.credentials.length).toBe(0);
   });
 });
+
+

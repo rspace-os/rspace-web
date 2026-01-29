@@ -1,18 +1,19 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import Omero from "../Omero";
-import { axe, toHaveNoViolations } from "jest-axe";
+import { axe } from "vitest-axe";
+import { toHaveNoViolations } from "vitest-axe/matchers";
 import "../../../../../__mocks__/matchMedia";
 
-expect.extend(toHaveNoViolations);
+expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -57,3 +58,5 @@ describe("Omero", () => {
     expect(screen.getByLabelText("Password")).toBeVisible();
   });
 });
+
+

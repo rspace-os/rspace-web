@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import {
   render,
@@ -11,7 +11,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import ExportFileStore from "../ExportFileStore";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
@@ -22,7 +22,7 @@ import userEvent from "@testing-library/user-event";
 const mockAxios = new MockAdapter(axios);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -193,3 +193,5 @@ describe("ExportFileStore", () => {
     );
   });
 });
+
+

@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import Search from "../../../../stores/models/Search";
 import SearchContext from "../../../../stores/contexts/Search";
@@ -12,13 +12,14 @@ import MoveInstructions from "../MoveInstructions";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
 
-jest.mock("../../../../common/InvApiService", () => ({
-  query: jest.fn(() => {
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  query: vi.fn(() => {
     return Promise.resolve({
       data: {
         id: 1,
@@ -39,7 +40,8 @@ jest.mock("../../../../common/InvApiService", () => ({
       },
     });
   }),
-}));
+
+  }}));
 
 describe("MoveInstructions", () => {
   test("Visual container without locations image", async () => {
@@ -48,7 +50,7 @@ describe("MoveInstructions", () => {
     });
 
     const scopedResult = makeMockContainer({});
-    jest.spyOn(scopedResult, "fetchImage").mockImplementation((name) => {
+    vi.spyOn(scopedResult, "fetchImage").mockImplementation((name) => {
       if (name === "locationsImage") scopedResult.locationsImage = null;
       return Promise.resolve(null);
     });
@@ -77,7 +79,7 @@ describe("MoveInstructions", () => {
     });
 
     const scopedResult = makeMockContainer({});
-    jest.spyOn(scopedResult, "fetchImage").mockImplementation((name) => {
+    vi.spyOn(scopedResult, "fetchImage").mockImplementation((name) => {
       if (name === "locationsImage") scopedResult.locationsImage = "foo";
       return Promise.resolve("foo");
     });
@@ -104,3 +106,5 @@ describe("MoveInstructions", () => {
     );
   });
 });
+
+

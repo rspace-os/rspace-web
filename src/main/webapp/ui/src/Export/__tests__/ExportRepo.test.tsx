@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import ExportRepo from "../ExportRepo";
 import React from "react";
 import {
@@ -11,7 +11,7 @@ import {
   within,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import repoList from "./repoList.json";
 import repoConfig from "./repoConfig.json";
 import funders from "./funders.json";
@@ -27,7 +27,7 @@ type DMP = {
   dmpId: string;
 };
 
-window.fetch = jest.fn(() =>
+window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
@@ -36,7 +36,7 @@ window.fetch = jest.fn(() =>
 );
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -165,3 +165,5 @@ describe("ExportRepo", () => {
     30 * 1000,
   );
 });
+
+

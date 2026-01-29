@@ -1,12 +1,13 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, test, expect, vi } from "vitest";
 import { makeMockContainer, containerAttrs } from "./mocking";
 import LocationModel from "../../LocationModel";
 
-jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../use-stores", () => () => {});
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   moveStore: {
     selectedResults: [
       {
@@ -14,6 +15,7 @@ jest.mock("../../../stores/RootStore", () => () => ({
       },
     ],
   },
+})
 }));
 
 describe("computed: hasEnoughSpace", () => {
@@ -137,3 +139,5 @@ describe("computed: hasEnoughSpace", () => {
     expect(container.hasEnoughSpace).toBe(false);
   });
 });
+
+

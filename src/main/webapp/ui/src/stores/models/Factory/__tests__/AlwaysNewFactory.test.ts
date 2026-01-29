@@ -1,16 +1,18 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 
 import { containerAttrs } from "../../__tests__/ContainerModel/mocking";
 import { personAttrs } from "../../__tests__/PersonModel/mocking";
 import AlwaysNewFactory from "../AlwaysNewFactory";
 import { type GlobalId } from "../../../definitions/BaseRecord";
 
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   peopleStore: {},
+})
 })); // break import cycle
 
 describe("AlwaysNewFactory", () => {
@@ -41,3 +43,5 @@ describe("AlwaysNewFactory", () => {
     });
   });
 });
+
+

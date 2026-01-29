@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
 import PersonModel from "../../../models/PersonModel";
 import { makeMockContainer } from "../../../models/__tests__/ContainerModel/mocking";
@@ -13,7 +13,7 @@ import ContainerModel from "../../../models/ContainerModel";
 describe("method: createNewContainer", () => {
   test("Should return a new container model", async () => {
     const { searchStore, peopleStore } = getRootStore();
-    jest
+    vi
       .spyOn(peopleStore, "fetchCurrentUsersGroups")
       .mockImplementation(() => Promise.resolve([]));
     const container = await searchStore.createNewContainer();
@@ -25,7 +25,7 @@ describe("method: createNewContainer", () => {
       id: 9,
       globalId: "BE1",
     });
-    jest
+    vi
       .spyOn(PersonModel.prototype, "getBench")
       .mockImplementation(() => Promise.resolve(bench));
 
@@ -41,7 +41,7 @@ describe("method: createNewContainer", () => {
       workbenchId: 1,
       _links: [],
     });
-    jest
+    vi
       .spyOn(peopleStore, "fetchCurrentUsersGroups")
       .mockImplementation(() => Promise.resolve([]));
 
@@ -53,7 +53,7 @@ describe("method: createNewContainer", () => {
     await fc.assert(
       fc.asyncProperty(fc.array(arbitraryGroup), async (groups) => {
         const bench = makeMockContainer({ id: 9, globalId: "BE1" });
-        jest
+        vi
           .spyOn(PersonModel.prototype, "getBench")
           .mockImplementation(() => Promise.resolve(bench));
 
@@ -69,7 +69,7 @@ describe("method: createNewContainer", () => {
           workbenchId: 1,
           _links: [],
         });
-        jest
+        vi
           .spyOn(peopleStore, "fetchCurrentUsersGroups")
           .mockImplementation(() => Promise.resolve(groups));
 
@@ -88,8 +88,10 @@ describe("method: createNewContainer", () => {
 
   test("Should not call fetchAdditionalInfo on the new container.", async () => {
     const { searchStore } = getRootStore();
-    const spy = jest.spyOn(ContainerModel.prototype, "fetchAdditionalInfo");
+    const spy = vi.spyOn(ContainerModel.prototype, "fetchAdditionalInfo");
     await searchStore.createNewContainer();
     expect(spy).not.toHaveBeenCalled();
   });
 });
+
+

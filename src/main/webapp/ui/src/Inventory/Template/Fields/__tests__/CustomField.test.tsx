@@ -1,11 +1,11 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mocking";
 import CustomField from "../CustomField";
 import { ThemeProvider } from "@mui/material/styles";
@@ -13,18 +13,20 @@ import materialTheme from "../../../../theme";
 import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
-jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
+})
 }));
-jest.mock("../../../../components/Ketcher/KetcherDialog", () =>
-  jest.fn(() => <div></div>)
-);
+vi.mock("../../../../components/Ketcher/KetcherDialog", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 
 afterEach(cleanup);
 
@@ -39,7 +41,7 @@ describe("CustomField", () => {
         },
         selectedOptions: ["foo"],
       });
-      const onRemove = jest.fn();
+      const onRemove = vi.fn();
 
       render(
         <ThemeProvider theme={materialTheme}>
@@ -70,7 +72,7 @@ describe("CustomField", () => {
         },
         selectedOptions: ["foo"],
       });
-      const onRemove = jest.fn();
+      const onRemove = vi.fn();
 
       render(
         <ThemeProvider theme={materialTheme}>
@@ -96,3 +98,4 @@ describe("CustomField", () => {
     });
   });
 });
+

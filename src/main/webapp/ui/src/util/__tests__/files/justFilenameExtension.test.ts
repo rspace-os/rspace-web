@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, it, test, expect } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { justFilenameExtension } from "../../files";
 
 describe("justFilenameExtension", () => {
@@ -21,3 +21,5 @@ describe("justFilenameExtension", () => {
     expect(justFilenameExtension("testing")).toBe("testing");
   });
 });
+
+

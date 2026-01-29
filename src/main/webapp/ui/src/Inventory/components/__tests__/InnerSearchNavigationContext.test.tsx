@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
@@ -16,7 +16,7 @@ import { AxiosResponse } from "axios";
 import "../../../__tests__/assertUrlSearchParams";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -55,7 +55,7 @@ const TriggersPermalinkNavigate = () => {
 
 describe("InnerSearchNavigationContext", () => {
   test("navigate calls should update the search parameters.", () => {
-    const querySpy = jest
+    const querySpy = vi
       .spyOn(ApiServiceBase.prototype, "query")
       .mockImplementation(() =>
         Promise.resolve({
@@ -94,7 +94,7 @@ describe("InnerSearchNavigationContext", () => {
 
   describe("when the parent context is AlwaysNewWindowNavigationContext", () => {
     test("navigate calls with skipToParentContext set to true should open /inventory/search calls in a new window.", () => {
-      const openSpy = jest.spyOn(window, "open").mockImplementation(() => null);
+      const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 
       const search = new Search({
         factory: new AlwaysNewFactory(),
@@ -120,7 +120,7 @@ describe("InnerSearchNavigationContext", () => {
       expect(openSpy).toHaveBeenCalled();
     });
     test("navigate calls to permalink pages should always open in a new window.", () => {
-      const openSpy = jest.spyOn(window, "open").mockImplementation(() => null);
+      const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 
       const search = new Search({
         factory: new AlwaysNewFactory(),
@@ -148,7 +148,7 @@ describe("InnerSearchNavigationContext", () => {
   });
 
   test("Pre-existing search parameters are kept, enforcing the parentGlobalId restriction", () => {
-    const querySpy = jest
+    const querySpy = vi
       .spyOn(ApiServiceBase.prototype, "query")
       .mockImplementation(() =>
         Promise.resolve({
@@ -188,3 +188,5 @@ describe("InnerSearchNavigationContext", () => {
     );
   });
 });
+
+

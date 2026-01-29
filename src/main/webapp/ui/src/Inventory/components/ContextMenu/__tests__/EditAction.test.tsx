@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import {
   render,
@@ -10,7 +10,7 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import EditAction from "../EditAction";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
@@ -19,7 +19,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -34,7 +34,7 @@ describe("EditAction", () => {
     test("call uiStore's setVisiblePanel", async () => {
       const rootStore = makeMockRootStore({
         uiStore: {
-          setVisiblePanel: jest.fn(() => {}),
+          setVisiblePanel: vi.fn(() => {}),
         },
         searchStore: {
           search: {
@@ -60,7 +60,7 @@ describe("EditAction", () => {
         </ThemeProvider>,
       );
 
-      const setVisiblePanelSpy = jest.spyOn(
+      const setVisiblePanelSpy = vi.spyOn(
         rootStore.uiStore,
         "setVisiblePanel",
       );
@@ -77,3 +77,5 @@ describe("EditAction", () => {
     });
   });
 });
+
+

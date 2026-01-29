@@ -1,4 +1,4 @@
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import fc from "fast-check";
 import { isUrl } from "../../Util";
 
@@ -16,3 +16,5 @@ describe("isUrl", () => {
    * string could quite easily be a valid URL.
    */
 });
+
+

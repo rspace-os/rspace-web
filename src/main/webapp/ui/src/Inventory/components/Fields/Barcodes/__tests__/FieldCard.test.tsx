@@ -1,20 +1,22 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { mockFactory } from "../../../../../stores/definitions/__tests__/Factory/mocking";
 import FieldCard from "../FieldCard";
 import userEvent from "@testing-library/user-event";
 
-jest.mock("../../../../../common/InvApiService", () => {});
-jest.mock("../../../../../stores/stores/RootStore", () => () => ({}));
+vi.mock("../../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../../stores/stores/RootStore", () => ({
+  default: () => ({})
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -23,7 +25,7 @@ describe("FieldCard", () => {
   describe("Has a delete button", () => {
     test("That behaves correctly when tapped when deletedCopy returns an object.", async () => {
       const user = userEvent.setup();
-      const setFieldsDirty = jest.fn();
+      const setFieldsDirty = vi.fn();
       render(
         <FieldCard
           fieldOwner={{
@@ -85,7 +87,7 @@ describe("FieldCard", () => {
     });
     test("That behaves correctly when tapped when deletedCopy returns null.", async () => {
       const user = userEvent.setup();
-      const setFieldsDirty = jest.fn();
+      const setFieldsDirty = vi.fn();
       render(
         <FieldCard
           fieldOwner={{
@@ -169,3 +171,5 @@ describe("FieldCard", () => {
     });
   });
 });
+
+

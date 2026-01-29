@@ -1,11 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-/// <reference types="jest" />
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import {
   CELSIUS,
   type Temperature,
@@ -15,7 +14,9 @@ import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 
-jest.mock("@mui/material/Button", () => jest.fn(() => <></>));
+vi.mock("@mui/material/Button", () => ({
+  default: vi.fn(() => <></>),
+}));
 
 const mockFieldOwner = (mockedParts: {
   fieldValues: {
@@ -25,11 +26,11 @@ const mockFieldOwner = (mockedParts: {
   isFieldEditable: () => boolean;
 }) => {
   const defaults = {
-    isFieldEditable: jest.fn(() => false),
+    isFieldEditable: vi.fn(() => false),
     fieldValues: {},
-    setFieldsDirty: jest.fn(),
+    setFieldsDirty: vi.fn(),
     canChooseWhichToEdit: false,
-    setFieldEditable: jest.fn(),
+    setFieldEditable: vi.fn(),
     noValueLabel: {
       storageTempMin: null,
       storageTempMax: null,
@@ -40,7 +41,7 @@ const mockFieldOwner = (mockedParts: {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);

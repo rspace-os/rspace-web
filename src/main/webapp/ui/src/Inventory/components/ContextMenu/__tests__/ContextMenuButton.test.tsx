@@ -1,17 +1,17 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import ContextMenuButton from "../ContextMenuButton";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -36,3 +36,5 @@ describe("ContextMenuButton", () => {
     });
   });
 });
+
+

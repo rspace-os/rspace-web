@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen, waitFor, act } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import * as FetchingData from "../../../util/fetchingData";
 import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
@@ -14,7 +14,7 @@ import page1 from "./getUploadedFiles_1.json";
 import page2 from "./getUploadedFiles_2.json";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -123,3 +123,5 @@ describe("useGalleryListing", () => {
     expect(getUploadedFilesCalls[1].params.get("pageNumber")).toBe("1");
   });
 });
+
+

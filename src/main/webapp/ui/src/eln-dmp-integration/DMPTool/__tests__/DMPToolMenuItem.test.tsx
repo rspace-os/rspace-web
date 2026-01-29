@@ -1,11 +1,11 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "../../../../__mocks__/matchMedia";
 import React from "react";
 import { render, cleanup, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import DMPToolMenuItem from "../DMPToolMenuItem";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
@@ -15,7 +15,7 @@ import { ThemeProvider } from "@mui/material/styles";
 const mockAxios = new MockAdapter(axios);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -53,3 +53,5 @@ describe("DMPToolMenuItem", () => {
     ).toBeVisible();
   });
 });
+
+

@@ -1,21 +1,23 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen, act, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../../stores/stores-context";
 import PreviewAction from "../PreviewAction";
 import { mockAttachment } from "../../../../../stores/definitions/__tests__/Attachment/mocking";
 import userEvent from "@testing-library/user-event";
 
-jest.mock("../../../../../common/InvApiService", () => {});
-jest.mock("../../../../../stores/stores/RootStore", () => () => ({}));
+vi.mock("../../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../../stores/stores/RootStore", () => ({
+  default: () => ({})
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -28,7 +30,7 @@ describe("PreviewAction", () => {
         addAlert: () => {},
       },
     });
-    const addAlertMock = jest
+    const addAlertMock = vi
       .spyOn(rootStore.uiStore, "addAlert")
       .mockImplementation(() => {});
 
@@ -52,3 +54,5 @@ describe("PreviewAction", () => {
     });
   });
 });
+
+

@@ -1,17 +1,17 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import DeleteButton from "../DeleteButton";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -47,7 +47,7 @@ describe("DeleteButton", () => {
 
   test("Shows after clicked tooltip.", async () => {
     const user = userEvent.setup();
-    const onClick = jest.fn(() => {});
+    const onClick = vi.fn(() => {});
     renderDeleteButton({ onClick });
     await user.click(screen.getByRole("button"));
     expect(onClick).toHaveBeenCalled();
@@ -56,10 +56,12 @@ describe("DeleteButton", () => {
 
   test("Becomes disabled once clicked.", async () => {
     const user = userEvent.setup();
-    const onClick = jest.fn(() => {});
+    const onClick = vi.fn(() => {});
     renderDeleteButton({ onClick });
 
     await user.click(screen.getByRole("button"));
     expect(screen.getByRole("button")).toBeDisabled();
   });
 });
+
+

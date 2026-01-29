@@ -1,16 +1,19 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { makeMockSubSample, subsampleAttrs } from "./mocking";
 import { sampleAttrs } from "../SampleModel/mocking";
 import InvApiService from "../../../../common/InvApiService";
+import { type SpyInstance, describe, test, expect, vi } from "vitest";
 
-jest.mock("../../../../common/InvApiService", () => ({
-  query: jest.fn(() => ({})),
-}));
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  query: vi.fn(() => ({})),
+
+  }}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   uiStore: {
     addAlert: () => {},
     setPageNavigationConfirmation: () => {},
@@ -22,12 +25,13 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
+})
 }));
 
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const subsample = makeMockSubSample();
-    (jest.spyOn(InvApiService, "query") as jest.SpyInstance).mockImplementation(
+    (vi.spyOn(InvApiService, "query") as SpyInstance).mockImplementation(
       () =>
         Promise.resolve({
           data: {
@@ -50,3 +54,5 @@ describe("fetchAdditionalInfo", () => {
     expect(firstCallDone).toBe(true);
   });
 });
+
+

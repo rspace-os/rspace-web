@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import CreateDialog from "../CreateDialog";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
@@ -18,7 +18,8 @@ import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateMo
 import userEvent from "@testing-library/user-event";
 import AlertContext, { type Alert } from "../../../../stores/contexts/Alert";
 
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
@@ -33,13 +34,14 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
   authStore: {
     isSynchronizing: false,
   },
+})
 }));
 
 // Mock AlertContext
-const mockAddAlert = jest.fn();
+const mockAddAlert = vi.fn();
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -49,7 +51,7 @@ describe("CreateDialog", () => {
     test("Subsamples", async () => {
       const user = userEvent.setup();
       const subsample = makeMockSubSample({});
-      jest
+      vi
         .spyOn(subsample, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
@@ -74,13 +76,13 @@ describe("CreateDialog", () => {
     test("Subsamples, with too many copies", async () => {
       const user = userEvent.setup();
       const subsample = makeMockSubSample({});
-      jest
+      vi
         .spyOn(subsample, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: jest.fn() }}
+            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
           >
             <CreateDialog
               existingRecord={subsample}
@@ -105,7 +107,7 @@ describe("CreateDialog", () => {
     test("Samples, when there is one subsample", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      jest
+      vi
         .spyOn(sample, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
@@ -138,13 +140,13 @@ describe("CreateDialog", () => {
     test("Samples, with too many copies", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      jest
+      vi
         .spyOn(sample, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: jest.fn() }}
+            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
           >
             <CreateDialog
               existingRecord={sample}
@@ -172,13 +174,13 @@ describe("CreateDialog", () => {
       const sample = makeMockSample({
         subSamples: [subsampleAttrs(), subsampleAttrs()],
       });
-      jest
+      vi
         .spyOn(sample, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: jest.fn() }}
+            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
           >
             <CreateDialog
               existingRecord={sample}
@@ -203,13 +205,13 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: true,
       });
-      jest
+      vi
         .spyOn(container, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: jest.fn() }}
+            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
           >
             <CreateDialog
               existingRecord={container}
@@ -249,13 +251,13 @@ describe("CreateDialog", () => {
         canStoreContainers: false,
         canStoreSamples: true,
       });
-      jest
+      vi
         .spyOn(container, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: jest.fn() }}
+            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
           >
             <CreateDialog
               existingRecord={container}
@@ -280,13 +282,13 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: true,
       });
-      jest
+      vi
         .spyOn(container, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <AlertContext.Provider
-            value={{ addAlert: jest.fn(), removeAlert: jest.fn() }}
+            value={{ addAlert: vi.fn(), removeAlert: vi.fn() }}
           >
             <CreateDialog
               existingRecord={container}
@@ -325,13 +327,13 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: false,
       });
-      jest
+      vi
         .spyOn(container, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: jest.fn() }}
+            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
           >
             <CreateDialog
               existingRecord={container}
@@ -353,13 +355,13 @@ describe("CreateDialog", () => {
     test("Success case", async () => {
       const user = userEvent.setup();
       const template = makeMockTemplate({});
-      jest
+      vi
         .spyOn(template, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: jest.fn() }}
+            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
           >
             <CreateDialog
               existingRecord={template}
@@ -387,13 +389,13 @@ describe("CreateDialog", () => {
     test("No fields", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      jest
+      vi
         .spyOn(sample, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: jest.fn() }}
+            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
           >
             <CreateDialog
               existingRecord={sample}
@@ -428,13 +430,13 @@ describe("CreateDialog", () => {
     test("Name that's too short", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      jest
+      vi
         .spyOn(sample, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: jest.fn() }}
+            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
           >
             <CreateDialog
               existingRecord={sample}
@@ -466,13 +468,13 @@ describe("CreateDialog", () => {
     test("Success case", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      jest
+      vi
         .spyOn(sample, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
           <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: jest.fn() }}
+            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
           >
             <CreateDialog
               existingRecord={sample}
@@ -522,7 +524,7 @@ describe("CreateDialog", () => {
     test("Clearing the quantity field disables the submit button", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      jest
+      vi
         .spyOn(sample, "fetchAdditionalInfo")
         .mockImplementation(() => Promise.resolve());
       render(
@@ -557,3 +559,5 @@ describe("CreateDialog", () => {
     });
   });
 });
+
+

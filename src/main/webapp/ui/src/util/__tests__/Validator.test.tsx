@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React, { useState, useEffect } from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { type Validator, mkValidator } from "../Validator";
@@ -12,7 +12,7 @@ import { runInAction, observable } from "mobx";
 import { doNotAwait } from "../Util";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -81,3 +81,5 @@ describe("Validator", () => {
     expect(await screen.findByText("Child 2")).toBeVisible();
   });
 });
+
+

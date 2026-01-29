@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import {
   render,
@@ -11,7 +11,7 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import Alias from "../Alias";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
@@ -19,7 +19,7 @@ import { type Alias as AliasType } from "../../../../stores/definitions/Sample";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -68,3 +68,5 @@ describe("Alias", () => {
     ).not.toBeChecked();
   });
 });
+
+

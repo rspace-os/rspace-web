@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet } from "../../../../util/__tests__/set/helpers";
 import { arbitraryRecord } from "../../../../stores/definitions/__tests__/Record/helper";
@@ -15,7 +15,7 @@ import materialTheme from "../../../../theme";
 import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -44,3 +44,5 @@ describe("BatchEditingItemsTable", () => {
     );
   });
 });
+
+

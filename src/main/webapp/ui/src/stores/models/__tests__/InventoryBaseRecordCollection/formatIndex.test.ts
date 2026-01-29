@@ -1,10 +1,12 @@
-/* eslint-env jest */
+import { describe, it, test, expect, vi } from "vitest";
 import fc from "fast-check";
 import { formatIndex } from "../../InventoryBaseRecordCollection";
 import { take, incrementForever } from "../../../../util/iterators";
 import RsSet from "../../../../util/set";
 
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({})
+}));
 
 // even a max of 1000 is probably overkill
 const arbitraryInput = fc.nat(1000);
@@ -67,3 +69,5 @@ describe("formatIndex", () => {
     );
   });
 });
+
+

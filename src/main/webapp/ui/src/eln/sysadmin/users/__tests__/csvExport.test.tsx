@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { UsersPage } from "..";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
@@ -24,7 +24,7 @@ window.RS = { newFileStoresExportEnabled: false };
 const mockAxios = new MockAdapter(axios);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -33,12 +33,12 @@ describe("CSV Export", () => {
   describe("Selection", () => {
     test("When no rows are selected, every row of the current page should be included in the export.", async () => {
       let blob: Blob | undefined;
-      const createObjectURL = jest.fn().mockImplementation((b: Blob) => {
+      const createObjectURL = vi.fn().mockImplementation((b: Blob) => {
         blob = b;
         return "";
       });
       window.URL.createObjectURL = createObjectURL;
-      window.URL.revokeObjectURL = jest.fn();
+      window.URL.revokeObjectURL = vi.fn();
 
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
 
@@ -73,12 +73,12 @@ describe("CSV Export", () => {
 
     test("When one rows is selected, just it should be included in the csv export.", async () => {
       let blob: Blob | undefined;
-      const createObjectURL = jest.fn().mockImplementation((b: Blob) => {
+      const createObjectURL = vi.fn().mockImplementation((b: Blob) => {
         blob = b;
         return "";
       });
       window.URL.createObjectURL = createObjectURL;
-      window.URL.revokeObjectURL = jest.fn();
+      window.URL.revokeObjectURL = vi.fn();
 
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
 
@@ -120,12 +120,12 @@ describe("CSV Export", () => {
   describe("Column", () => {
     test("All of the columns should be included in the CSV file.", async () => {
       let blob: Blob | undefined;
-      const createObjectURL = jest.fn().mockImplementation((b: Blob) => {
+      const createObjectURL = vi.fn().mockImplementation((b: Blob) => {
         blob = b;
         return "";
       });
       window.URL.createObjectURL = createObjectURL;
-      window.URL.revokeObjectURL = jest.fn();
+      window.URL.revokeObjectURL = vi.fn();
 
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
 
@@ -172,12 +172,12 @@ describe("CSV Export", () => {
     test("The usage column should be a precise number.", async () => {
       const user = userEvent.setup();
       let blob: Blob | undefined;
-      const createObjectURL = jest.fn().mockImplementation((b: Blob) => {
+      const createObjectURL = vi.fn().mockImplementation((b: Blob) => {
         blob = b;
         return "";
       });
       window.URL.createObjectURL = createObjectURL;
-      window.URL.revokeObjectURL = jest.fn();
+      window.URL.revokeObjectURL = vi.fn();
 
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
 
@@ -213,3 +213,5 @@ describe("CSV Export", () => {
     });
   });
 });
+
+

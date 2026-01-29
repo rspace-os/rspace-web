@@ -1,19 +1,21 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { Material, type Quantity } from "../../MaterialsModel";
 import { makeMockContainer } from "../ContainerModel/mocking";
 import { makeMockSample } from "../SampleModel/mocking";
 import { makeMockSubSample } from "../SubSampleModel/mocking";
 import fc, { type Arbitrary } from "fast-check";
 
-jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
+})
 }));
 
 const arbitraryQuantity: Arbitrary<Quantity> = fc.record({
@@ -54,3 +56,5 @@ describe("canEditQuantity", () => {
     expect(material.canEditQuantity).toBe(false);
   });
 });
+
+

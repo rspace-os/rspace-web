@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import * as React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import SearchContext from "../../../../stores/contexts/Search";
 import Search from "../../../../stores/models/Search";
 import {
@@ -22,12 +22,12 @@ import * as ArrayUtils from "../../../../util/ArrayUtils";
 import { take, incrementForever } from "../../../../util/iterators";
 import fc from "fast-check";
 
-jest.mock("../../../components/ContextMenu/ContextMenuButton", () =>
-  jest.fn(() => <div></div>),
-);
+vi.mock("../../../components/ContextMenu/ContextMenuButton", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -144,3 +144,4 @@ describe("ContentContextMenu", () => {
     );
   });
 });
+

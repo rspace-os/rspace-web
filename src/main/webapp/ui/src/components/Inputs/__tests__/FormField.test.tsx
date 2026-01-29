@@ -1,15 +1,15 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import FormField from "../FormField";
 import StringField from "../StringField";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -56,3 +56,5 @@ describe("FormField", () => {
     expect(screen.getByRole("heading")).toBeInTheDocument();
   });
 });
+
+

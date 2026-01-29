@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import InitialScreen from "../InitialScreen";
 import Header from "../Header";
 import Sidebar from "../Sidebar";
@@ -12,11 +12,15 @@ import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
-jest.mock("../Header", () => jest.fn(() => <></>));
-jest.mock("../Sidebar", () => jest.fn(() => <></>));
+vi.mock("../Header", () => ({
+  default: vi.fn(() => <></>),
+}));
+vi.mock("../Sidebar", () => ({
+  default: vi.fn(() => <></>),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);

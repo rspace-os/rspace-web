@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React, { useState } from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import BatchName from "../BatchName";
 import { type BatchName as BatchNameType } from "../../../../stores/models/InventoryBaseRecordCollection";
 import fc from "fast-check";
@@ -20,7 +20,7 @@ function lengthOfSuffix(suffix: string): number {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -76,7 +76,7 @@ describe("BatchName", () => {
           .filter((name) => /\S+/.test(name)),
         (name) => {
           cleanup();
-          const onErrorStateChange = jest.fn();
+          const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue(
             { common: "", suffix: "NONE" },
             onErrorStateChange
@@ -112,7 +112,7 @@ describe("BatchName", () => {
         ),
         ([common, suffix]) => {
           cleanup();
-          const onErrorStateChange = jest.fn();
+          const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue(
             { common: "", suffix },
             onErrorStateChange
@@ -138,7 +138,7 @@ describe("BatchName", () => {
           fc.string({ minLength: 256 - lengthOfSuffix("NONE") }),
           (common) => {
             cleanup();
-            const onErrorStateChange = jest.fn();
+            const onErrorStateChange = vi.fn();
             const { container } = renderWithJustFieldValue(
               { common: "", suffix: "NONE" },
               onErrorStateChange
@@ -163,7 +163,7 @@ describe("BatchName", () => {
           fc.string({ minLength: 256 - lengthOfSuffix("INDEX_NUMBER") }),
           (common) => {
             cleanup();
-            const onErrorStateChange = jest.fn();
+            const onErrorStateChange = vi.fn();
             const { container } = renderWithJustFieldValue(
               { common: "", suffix: "INDEX_NUMBER" },
               onErrorStateChange
@@ -188,7 +188,7 @@ describe("BatchName", () => {
           fc.string({ minLength: 256 - lengthOfSuffix("INDEX_LETTER") }),
           (common) => {
             cleanup();
-            const onErrorStateChange = jest.fn();
+            const onErrorStateChange = vi.fn();
             const { container } = renderWithJustFieldValue(
               { common: "", suffix: "INDEX_LETTER" },
               onErrorStateChange
@@ -213,7 +213,7 @@ describe("BatchName", () => {
           fc.string({ minLength: 256 - lengthOfSuffix("CREATED") }),
           (common) => {
             cleanup();
-            const onErrorStateChange = jest.fn();
+            const onErrorStateChange = vi.fn();
             const { container } = renderWithJustFieldValue(
               { common: "", suffix: "CREATED" },
               onErrorStateChange
@@ -250,7 +250,7 @@ describe("BatchName", () => {
         ),
         ([firstValidValue, secondInvalidValue]) => {
           cleanup();
-          const onErrorStateChange = jest.fn();
+          const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue(
             { common: "", suffix: "NONE" },
             onErrorStateChange
@@ -286,7 +286,7 @@ describe("BatchName", () => {
           .filter((name) => /^\s+$/.test(name)),
         (name) => {
           cleanup();
-          const onErrorStateChange = jest.fn();
+          const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue(
             { common: "", suffix: "NONE" },
             onErrorStateChange
@@ -318,7 +318,7 @@ describe("BatchName", () => {
         ),
         ([generatedName, suffix]) => {
           cleanup();
-          const onErrorStateChange = jest.fn();
+          const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue(
             { common: "", suffix },
             onErrorStateChange
@@ -336,3 +336,5 @@ describe("BatchName", () => {
     );
   });
 });
+
+

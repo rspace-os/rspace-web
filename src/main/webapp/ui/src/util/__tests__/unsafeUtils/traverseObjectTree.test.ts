@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 
+import { describe, test, expect } from "vitest";
 import { traverseObjectTree } from "../../unsafeUtils";
 
 describe("traverseObjectTree", () => {
@@ -22,3 +22,5 @@ describe("traverseObjectTree", () => {
     ).toBe("test");
   });
 });
+
+

@@ -1,20 +1,21 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import GridLayoutConfig from "../GridLayoutConfig";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
-import { axe, toHaveNoViolations } from "jest-axe";
+import { axe } from "vitest-axe";
+import { toHaveNoViolations } from "vitest-axe/matchers";
 
-expect.extend(toHaveNoViolations);
+expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -40,3 +41,5 @@ describe("GridLayoutConfig", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 });
+
+

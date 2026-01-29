@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, it, test, expect } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { formatFileSize } from "../../files";
 import fc from "fast-check";
 
@@ -32,3 +32,5 @@ describe("formatFileSize", () => {
     );
   });
 });
+
+

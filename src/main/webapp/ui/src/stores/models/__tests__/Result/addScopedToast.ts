@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { expect } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import InventoryBaseRecord from "../../InventoryBaseRecord";
 import { type Alert } from "../../../contexts/Alert";
 import { type Model } from "./common";
@@ -31,3 +31,5 @@ export class AddScopedToastCommand
     return "addScopedToast";
   }
 }
+
+

@@ -1,11 +1,11 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
 import { action, observable } from "mobx";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
@@ -19,16 +19,22 @@ import "__mocks__/matchMedia";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import userEvent from "@testing-library/user-event";
 
-jest.mock("../../../Search/SearchView", () => jest.fn(() => <></>));
-jest.mock("@mui/material/Dialog", () =>
-  jest.fn(({ children }: { children: React.ReactNode }) => <>{children}</>)
-);
+vi.mock("../../../Search/SearchView", () => ({
+  default: vi.fn(() => <></>),
+}));
+vi.mock("@mui/material/Dialog", () => ({
+  default: vi.fn(({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  )),
+}));
 
 // this is because the Search component renders hidden "Cancel" buttons
-jest.mock("../../../Search/Search", () => jest.fn(() => <></>));
+vi.mock("../../../Search/Search", () => ({
+  default: vi.fn(() => <></>),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -62,7 +68,7 @@ describe("MoveAction", () => {
       })
     );
 
-    const closeMenu = jest.fn(() => {});
+    const closeMenu = vi.fn(() => {});
     render(
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={rootStore}>

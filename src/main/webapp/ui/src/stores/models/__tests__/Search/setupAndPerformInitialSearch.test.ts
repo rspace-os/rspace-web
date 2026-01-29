@@ -1,12 +1,13 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import Search from "../../Search";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 
-jest.mock("../../../../common/InvApiService", () => ({
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
   query: () =>
     Promise.resolve({
       data: {
@@ -15,20 +16,22 @@ jest.mock("../../../../common/InvApiService", () => ({
         containers: [],
       },
     }),
-}));
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+
+  }}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   uiStore: {
     addAlert: () => {},
   },
   peopleStore: {
-    getUser: jest.fn(() => {
+    getUser: vi.fn(() => {
       return new Promise((resolve) => {
         setTimeout(() => {
           resolve(null);
         }, 100);
       });
     }),
-    getPersonFromBenchId: jest.fn(() => {
+    getPersonFromBenchId: vi.fn(() => {
       return new Promise((resolve) => {
         setTimeout(() => {
           resolve(null);
@@ -36,6 +39,7 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
       });
     }),
   },
+})
 }));
 
 describe("setupAndPerformInitialSearch", () => {
@@ -57,3 +61,5 @@ describe("setupAndPerformInitialSearch", () => {
     expect(search.fetcher.parentGlobalId).toEqual(null);
   });
 });
+
+

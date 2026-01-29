@@ -1,36 +1,24 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, it, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import Search from "../../Search";
 import ApiServiceBase from "../../../../common/ApiServiceBase";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import "../../../../__tests__/assertUrlSearchParams";
 
-// Add type definition for the custom matcher
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace jest {
-    interface Matchers<R> {
-      urlSearchParamContaining: (expected: Record<string, string>) => R;
-    }
-    interface Expect {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      urlSearchParamContaining: (expected: Record<string, string>) => any;
-    }
-  }
-}
-
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   authStore: {
     isSynchronizing: false,
   },
   uiStore: {
-    addAlert: jest.fn(),
+    addAlert: vi.fn(),
   },
+})
 })); // break import cycle
-jest.mock("../../../stores/SearchStore", () => {}); // break import cycle
+vi.mock("../../../stores/SearchStore", () => {}); // break import cycle
 
 describe("action: setTypeFilter", () => {
   describe("When called with any value it should", () => {
@@ -38,7 +26,7 @@ describe("action: setTypeFilter", () => {
       const search = new Search({
         factory: mockFactory(),
       });
-      const querySpy = jest
+      const querySpy = vi
         .spyOn(ApiServiceBase.prototype, "query")
         .mockImplementation(() =>
           Promise.resolve({
@@ -67,3 +55,4 @@ describe("action: setTypeFilter", () => {
     });
   });
 });
+

@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import SortControls from "../SortControls";
 import { sortProperties } from "../../../../stores/models/InventoryBaseRecord";
 import SearchContext from "../../../../stores/contexts/Search";
@@ -14,7 +14,7 @@ import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -52,3 +52,5 @@ describe("SortControls", () => {
     ).toHaveAttribute("aria-current", "true");
   });
 });
+
+

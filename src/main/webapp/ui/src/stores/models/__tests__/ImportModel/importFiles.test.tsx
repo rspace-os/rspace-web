@@ -1,11 +1,11 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach } from "vitest";
 import InvApiService from "../../../../common/InvApiService";
 import getRootStore from "../../../stores/RootStore";
 import ImportModel from "../../ImportModel";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { templateAttrs } from "../TemplateModel/mocking";
 import { runInAction } from "mobx";
 import {
@@ -14,12 +14,14 @@ import {
   InternalAxiosRequestConfig,
 } from "@/common/axios";
 
-jest.mock("../../../../common/InvApiService", () => ({
-  post: jest.fn(),
-}));
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  post: vi.fn(),
+
+  }}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 const mockErrorMsg =
@@ -28,7 +30,7 @@ const mockErrorMsg =
 describe("method: importFile", () => {
   describe("When the server responds with some errors,", () => {
     beforeEach(() => {
-      jest
+      vi
         .spyOn(InvApiService, "post")
         .mockImplementation((_resource: string, _params: object | FormData) => {
           const mockResponse: AxiosResponse = {
@@ -60,10 +62,10 @@ describe("method: importFile", () => {
           };
           return Promise.resolve(mockResponse);
         });
-      jest
+      vi
         .spyOn(ImportModel.prototype, "transformTemplateInfoForSubmission")
         .mockImplementation(() => ({ fields: [], name: "Template" }));
-      jest
+      vi
         .spyOn(ImportModel.prototype, "makeMappingsObject")
         .mockImplementation(() => ({}));
     });
@@ -71,12 +73,12 @@ describe("method: importFile", () => {
     test("they should have the correct index.", async () => {
       const uploadModel = new ImportModel("SAMPLES");
 
-      const addAlertSpy = jest.fn();
+      const addAlertSpy = vi.fn();
       runInAction(() => {
         getRootStore().uiStore.addAlert = addAlertSpy;
       });
 
-      jest
+      vi
         .spyOn(uploadModel.state, "transitionTo")
         .mockImplementation(() => {});
 
@@ -101,3 +103,5 @@ describe("method: importFile", () => {
     });
   });
 });
+
+

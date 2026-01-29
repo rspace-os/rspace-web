@@ -1,14 +1,16 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi } from "vitest";
 import { makeMockSample } from "./mocking";
 
-jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
+})
 }));
 
 describe("method: validate", () => {
@@ -22,3 +24,5 @@ describe("method: validate", () => {
     });
   });
 });
+
+

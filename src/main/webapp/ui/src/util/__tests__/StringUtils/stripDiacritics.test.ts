@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import { stripDiacritics } from "../../StringUtils";
 
 describe("stripDiacritics", () => {
@@ -9,3 +9,5 @@ describe("stripDiacritics", () => {
     expect(stripDiacritics("Zoë")).toEqual("Zoe");
   });
 });
+
+

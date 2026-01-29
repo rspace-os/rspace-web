@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import { mkAlert } from "../../contexts/Alert";
 
 describe("Alert", () => {
@@ -12,3 +12,5 @@ describe("Alert", () => {
     expect(alert1.id).not.toEqual(alert2.id);
   });
 });
+
+

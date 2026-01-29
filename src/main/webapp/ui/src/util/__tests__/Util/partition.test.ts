@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import fc from "fast-check";
 import * as ArrayUtils from "../../ArrayUtils";
 
@@ -74,3 +74,5 @@ describe("partition", () => {
     );
   });
 });
+
+

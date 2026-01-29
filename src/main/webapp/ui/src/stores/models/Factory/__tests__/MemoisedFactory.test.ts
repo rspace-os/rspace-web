@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 
 import { containerAttrs } from "../../__tests__/ContainerModel/mocking";
 import { personAttrs } from "../../__tests__/PersonModel/mocking";
@@ -10,8 +10,10 @@ import MemoisedFactory from "../MemoisedFactory";
 import ContainerModel from "../../ContainerModel";
 import { GlobalId } from "@/stores/definitions/BaseRecord";
 
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   peopleStore: {},
+})
 })); // break import cycle
 
 describe("MemoisedFactory", () => {
@@ -64,3 +66,5 @@ describe("MemoisedFactory", () => {
     });
   });
 });
+
+

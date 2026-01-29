@@ -1,22 +1,22 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
 import { render, cleanup, fireEvent, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import Fields from "../Fields";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 
-jest.mock("../../../../../components/Ketcher/KetcherDialog", () =>
-  jest.fn(() => <div></div>)
-);
+vi.mock("../../../../../components/Ketcher/KetcherDialog", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -42,7 +42,7 @@ describe("Fields", () => {
           },
         ],
       });
-      jest
+      vi
         .spyOn(activeResult, "setAttributesDirty")
         .mockImplementation(() => {});
 
@@ -82,7 +82,7 @@ describe("Fields", () => {
           },
         ],
       });
-      jest
+      vi
         .spyOn(activeResult, "setAttributesDirty")
         .mockImplementation(() => {});
 
@@ -97,3 +97,4 @@ describe("Fields", () => {
     });
   });
 });
+

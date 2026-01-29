@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import { getErrorMessage } from "../error";
 
 describe("getErrorMessage", () => {
@@ -112,3 +112,5 @@ describe("getErrorMessage", () => {
     expect(getErrorMessage(error, "fallback")).toBe("fallback");
   });
 });
+
+

@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach } from "vitest";
 import "../../../../__mocks__/matchMedia";
 import React from "react";
 import { screen, waitFor, fireEvent } from "@testing-library/react";
@@ -51,7 +51,7 @@ describe.skip("DMPDialog", () => {
     );
   })
   test("Should render mock data correctly.", async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
       data: {
         totalCount: 2,
@@ -167,7 +167,7 @@ describe.skip("DMPDialog", () => {
       "Changing the page size should make the right API call.",
       async () => {
         const user = userEvent.setup();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
           data: {
             totalCount: 2,
@@ -247,7 +247,7 @@ describe.skip("DMPDialog", () => {
       "Label filter should make the right API call.",
       async () => {
         const user = userEvent.setup();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
           data: {
             totalCount: 2,
@@ -319,3 +319,5 @@ describe.skip("DMPDialog", () => {
     );
   });
 });
+
+

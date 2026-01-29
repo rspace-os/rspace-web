@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, vi, beforeEach, afterEach } from "vitest";
 import "../../../../__mocks__/matchMedia";
 import * as React from "react";
 import {
@@ -11,7 +11,7 @@ import {
   within,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { storesContext } from "../../../stores/stores-context";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
 import ResultsTable from "../ResultsTable";
@@ -26,7 +26,7 @@ import MemoisedFactory from "../../../stores/models/Factory/MemoisedFactory";
 import { personAttrs } from "../../../stores/models/__tests__/PersonModel/mocking";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -38,7 +38,7 @@ describe("Results Table", () => {
         factory: new MemoisedFactory(),
       });
 
-      jest.spyOn(ApiServiceBase.prototype, "query").mockImplementation(
+      vi.spyOn(ApiServiceBase.prototype, "query").mockImplementation(
         () =>
           Promise.resolve({
             data: {
@@ -103,3 +103,5 @@ describe("Results Table", () => {
     });
   });
 });
+
+

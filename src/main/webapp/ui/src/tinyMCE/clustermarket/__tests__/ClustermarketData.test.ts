@@ -1,4 +1,4 @@
-/* eslint-env jest */
+import { describe, it, expect } from "vitest";
 import {
   makeBookingAndEquipmentData,
   makeEquipmentWithBookingData,
@@ -203,3 +203,5 @@ describe("Get most recent booking for equipment", () => {
     expect(booking).toBeNull();
   });
 });
+
+

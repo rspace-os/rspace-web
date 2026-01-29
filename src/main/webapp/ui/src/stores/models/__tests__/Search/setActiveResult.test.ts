@@ -1,19 +1,19 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import Search from "../../Search";
 import { makeMockContainer } from "../ContainerModel/mocking";
 import LocationModel from "../../LocationModel";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 
-jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
+vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 
 describe("setActiveResult", () => {
   describe("callback", () => {
     test("should only be called after fetchAdditionalInfo has completed.", async () => {
-      const callback = jest.fn().mockImplementation((c) => {
+      const callback = vi.fn().mockImplementation((c) => {
         expect(c.locations.length).toBe(1);
       });
 
@@ -26,7 +26,7 @@ describe("setActiveResult", () => {
 
       const container = makeMockContainer();
       // Mock the fetchAdditionalInfo method
-      const mockFetch = jest.spyOn(container, "fetchAdditionalInfo");
+      const mockFetch = vi.spyOn(container, "fetchAdditionalInfo");
       mockFetch.mockImplementation(() => {
         container.locations = [
           new LocationModel({
@@ -56,3 +56,5 @@ describe("setActiveResult", () => {
     });
   });
 });
+
+

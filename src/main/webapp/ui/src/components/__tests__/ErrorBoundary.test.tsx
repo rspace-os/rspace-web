@@ -1,14 +1,14 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import ErrorBoundary from "../ErrorBoundary";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -22,10 +22,10 @@ describe("ErrorBoundary", () => {
     /*
      * This is needed because the `render` function will report any errors
      * using console.error, even though the ErrorBoundary catches them, which
-     * just pollutes the output of the jest CLI runner
+     * just pollutes the output of the vi CLI runner
      */
      
-    jest.spyOn(global.console, "error").mockImplementation(() => {});
+    vi.spyOn(global.console, "error").mockImplementation(() => {});
 
     const { container } = render(
       <ErrorBoundary>
@@ -36,3 +36,5 @@ describe("ErrorBoundary", () => {
     expect(container).toHaveTextContent("support@researchspace.com");
   });
 });
+
+

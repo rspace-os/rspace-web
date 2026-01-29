@@ -1,15 +1,15 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
 import TemplateModel from "../../../models/TemplateModel";
 
 describe("method: createNewTemplate", () => {
   test("Should return a new template model", async () => {
     const { searchStore, peopleStore } = getRootStore();
-    jest
+    vi
       .spyOn(peopleStore, "fetchCurrentUsersGroups")
       .mockImplementation(() => Promise.resolve([]));
     const template = await searchStore.createNewTemplate();
@@ -18,8 +18,10 @@ describe("method: createNewTemplate", () => {
 
   test("Should not call fetchAdditionalInfo on the new template", async () => {
     const { searchStore } = getRootStore();
-    const spy = jest.spyOn(TemplateModel.prototype, "fetchAdditionalInfo");
+    const spy = vi.spyOn(TemplateModel.prototype, "fetchAdditionalInfo");
     await searchStore.createNewTemplate();
     expect(spy).not.toHaveBeenCalled();
   });
 });
+
+

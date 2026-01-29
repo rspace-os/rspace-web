@@ -1,18 +1,20 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 
+import { describe, test, expect, vi } from "vitest";
 import InvApiService from "../../../../common/InvApiService";
 import { makeMockTemplate, templateAttrs } from "./mocking";
 import { AxiosResponse } from "axios";
 
-jest.mock("../../../../common/InvApiService", () => ({
-  query: jest.fn(),
-  post: jest.fn(),
-  delete: jest.fn(),
-  get: jest.fn(),
-}));
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  query: vi.fn(),
+  post: vi.fn(),
+  delete: vi.fn(),
+  get: vi.fn(),
+
+  }}));
 
 describe("method: setEditing", () => {
   test("Properties should be reset.", async () => {
@@ -60,9 +62,9 @@ describe("method: setEditing", () => {
     } as AxiosResponse;
 
     // Setup the mock implementations
-    jest.spyOn(InvApiService, "get").mockResolvedValue(getMockResponse);
-    jest.spyOn(InvApiService, "post").mockResolvedValue(postMockResponse);
-    jest.spyOn(InvApiService, "delete").mockResolvedValue(deleteMockResponse);
+    vi.spyOn(InvApiService, "get").mockResolvedValue(getMockResponse);
+    vi.spyOn(InvApiService, "post").mockResolvedValue(postMockResponse);
+    vi.spyOn(InvApiService, "delete").mockResolvedValue(deleteMockResponse);
 
     const template = makeMockTemplate();
     await template.setEditing(true, undefined, false);
@@ -74,3 +76,5 @@ describe("method: setEditing", () => {
     expect(template.name).toBe("oldName");
   });
 });
+
+

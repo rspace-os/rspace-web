@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { RecordLink } from "../RecordLink";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
 import {
@@ -17,7 +17,7 @@ import materialTheme from "../../../theme";
 import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -33,7 +33,7 @@ describe("RecordLink", () => {
         trackEvent: () => {},
       },
     });
-    const spy = jest.spyOn(rootStore.uiStore, "setVisiblePanel");
+    const spy = vi.spyOn(rootStore.uiStore, "setVisiblePanel");
     const bench = makeMockBench({});
     render(
       <ThemeProvider theme={materialTheme}>
@@ -55,7 +55,7 @@ describe("RecordLink", () => {
         trackEvent: () => {},
       },
     });
-    const spy = jest.spyOn(rootStore.uiStore, "setVisiblePanel");
+    const spy = vi.spyOn(rootStore.uiStore, "setVisiblePanel");
     const container = makeMockContainer();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -68,3 +68,5 @@ describe("RecordLink", () => {
     expect(spy).toHaveBeenCalledWith("right");
   });
 });
+
+

@@ -1,10 +1,10 @@
-/* eslint-env jest */
 
+import { test, expect } from "vitest";
 import fc, { type Arbitrary } from "fast-check";
 import * as ArrayUtils from "../ArrayUtils";
 
 /*
- * This file contains a bunch of generic helper code for writing Inventory jest
+ * This file contains a bunch of generic helper code for writing Inventory vi
  * tests.
  */
 
@@ -21,11 +21,11 @@ export const arrayOfSameElements = <T>(
   );
 
 /**
- * Performs the combination of asserting that the value is not null for jest,
+ * Performs the combination of asserting that the value is not null for vi,
  * and performing type refinement for flow.
  */
 export const assertNotNull = <T>(x: T | null | undefined): T => {
-  // first we assert that x is not null for the purposes of the jest test
+  // first we assert that x is not null for the purposes of the vi test
   expect(x).not.toBeNull();
 
   // but flow still thinks that x could be null, so we refine the type
@@ -114,3 +114,5 @@ export const monoids: Array<
   maximum,
   minimum,
 ];
+
+

@@ -1,4 +1,4 @@
-/* eslint-env jest */
+import { describe, it, test, expect } from "vitest";
 import { take, incrementForever } from "../../iterators";
 import fc from "fast-check";
 
@@ -46,3 +46,5 @@ describe("take", () => {
     );
   });
 });
+
+

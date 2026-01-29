@@ -1,13 +1,15 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { ExistingAttachment } from "../../AttachmentModel";
 import ApiService from "../../../../common/InvApiService";
 import { AxiosResponse } from "@/common/axios";
 
-jest.mock("../../../stores/RootStore", () => {}); // break import cycle
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({}),
+})); // break import cycle
 
 describe("getFile", () => {
   test("Should memoise the result, i.e. only fetch the file once.", async () => {
@@ -23,7 +25,7 @@ describe("getFile", () => {
       "",
       () => {}
     );
-    const spy = jest.spyOn(ApiService, "query").mockImplementation(() =>
+    const spy = vi.spyOn(ApiService, "query").mockImplementation(() =>
       Promise.resolve({
         data: new Blob(),
         status: 200,
@@ -38,3 +40,4 @@ describe("getFile", () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 });
+

@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React, { useState } from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import Name from "../Name";
 import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
@@ -12,7 +12,7 @@ import materialTheme from "../../../../theme";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -68,7 +68,7 @@ describe("Name", () => {
           .filter((name) => /\S/.test(name)),
         (name) => {
           cleanup();
-          const onErrorStateChange = jest.fn();
+          const onErrorStateChange = vi.fn();
           const { container } = renderNameField("", onErrorStateChange);
 
           fireEvent.input(screen.getByRole("textbox"), {
@@ -90,7 +90,7 @@ describe("Name", () => {
         fc.string({ minLength: 3, maxLength: 255 }),
         (generatedName) => {
           cleanup();
-          const onErrorStateChange = jest.fn();
+          const onErrorStateChange = vi.fn();
           const { container } = renderNameField("", onErrorStateChange);
 
           fireEvent.change(screen.getByRole("textbox"), {
@@ -113,7 +113,7 @@ describe("Name", () => {
     fc.assert(
       fc.property(fc.string({ minLength: 256 }), (name) => {
         cleanup();
-        const onErrorStateChange = jest.fn();
+        const onErrorStateChange = vi.fn();
         const { container } = renderNameField("", onErrorStateChange);
 
         fireEvent.change(screen.getByRole("textbox"), {
@@ -136,7 +136,7 @@ describe("Name", () => {
           .filter((name) => /^\s+$/.test(name)),
         (name) => {
           cleanup();
-          const onErrorStateChange = jest.fn();
+          const onErrorStateChange = vi.fn();
           const { container } = renderNameField("", onErrorStateChange);
 
           fireEvent.change(screen.getByRole("textbox"), {
@@ -166,7 +166,7 @@ describe("Name", () => {
         ),
         ([firstValidValue, secondInvalidValue]) => {
           cleanup();
-          const onErrorStateChange = jest.fn();
+          const onErrorStateChange = vi.fn();
           const { container } = renderNameField("", onErrorStateChange);
 
           fireEvent.change(screen.getByRole("textbox"), {
@@ -197,7 +197,7 @@ describe("Name", () => {
         fc.string({ minLength: 3, maxLength: 255 }),
         (generatedName) => {
           cleanup();
-          const onErrorStateChange = jest.fn();
+          const onErrorStateChange = vi.fn();
           const { container } = renderNameField("", onErrorStateChange);
 
           fireEvent.change(screen.getByRole("textbox"), {
@@ -235,3 +235,5 @@ describe("Name", () => {
     expect(screen.getByRole("link", { name: "IC1" })).toBeVisible();
   });
 });
+
+

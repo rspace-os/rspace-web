@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { blobToBase64 } from "../../files";
 
 describe("blobToBase64", () => {
@@ -12,3 +12,5 @@ describe("blobToBase64", () => {
     );
   });
 });
+
+

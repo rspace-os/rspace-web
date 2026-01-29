@@ -1,11 +1,11 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { DeploymentPropertyContext } from "../../hooks/api/useDeploymentProperty";
 import { render, cleanup, screen, act } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import FormatChoice from "../FormatChoice";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
@@ -14,7 +14,7 @@ import { mkValidator } from "../../util/Validator";
 const mockAxios = new MockAdapter(axios);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -334,3 +334,5 @@ describe("FormatChoice", () => {
     });
   });
 });
+
+

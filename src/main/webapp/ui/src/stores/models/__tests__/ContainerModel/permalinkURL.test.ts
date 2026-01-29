@@ -1,12 +1,14 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { makeMockContainer } from "./mocking";
 
-jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({})
+}));
 
 describe("permalinkURL", () => {
   test("When the container has not yet been saved, the permalinkURL should be null.", () => {
@@ -14,3 +16,5 @@ describe("permalinkURL", () => {
     expect(container.permalinkURL).toBe(null);
   });
 });
+
+

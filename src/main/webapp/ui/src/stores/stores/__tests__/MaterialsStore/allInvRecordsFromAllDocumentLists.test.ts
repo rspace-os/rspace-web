@@ -1,9 +1,9 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
 import { subsampleAttrs } from "../../../models/__tests__/SubSampleModel/mocking";
@@ -11,7 +11,7 @@ import { sampleAttrs } from "../../../models/__tests__/SampleModel/mocking";
 import { ListOfMaterials } from "../../../models/MaterialsModel";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -94,3 +94,5 @@ describe("allInvRecordsFromAllDocumentLists", () => {
     expect(materialsStore.allInvRecordsFromAllDocumentLists.size).toBe(2);
   });
 });
+
+

@@ -1,21 +1,22 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
  
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import RadioField from "../../RadioField";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import each from "jest-each";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
-jest.mock("@mui/material/FormControlLabel", () => jest.fn(() => <div></div>));
+vi.mock("@mui/material/FormControlLabel", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -71,7 +72,7 @@ const expectJustFoo = () => {
 
 describe("RadioField", () => {
   describe("Renders correctly", () => {
-    each`
+    it.each`
       disabled     | hideWhenDisabled | value      | expectFn
       ${true}      | ${true}          | ${null}    | ${expectNoOptions}
       ${true}      | ${true}          | ${"foo"}   | ${expectJustFoo}
@@ -91,7 +92,7 @@ describe("RadioField", () => {
       ${undefined} | ${false}         | ${"foo"}   | ${expectAllOptionsAreShown}
       ${undefined} | ${undefined}     | ${null}    | ${expectAllOptionsAreShown}
       ${undefined} | ${undefined}     | ${["foo"]} | ${expectAllOptionsAreShown}
-    `.test(
+    `(
       "{disabled = $disabled, hideWhenDisabled = $hideWhenDisabled, value = $value}",
       ({
         disabled,
@@ -110,3 +111,4 @@ describe("RadioField", () => {
     );
   });
 });
+

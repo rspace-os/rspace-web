@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, it, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 
 import SampleModel from "../../SampleModel";
 import SubSampleModel from "../../SubSampleModel";
@@ -11,11 +11,13 @@ import { subsampleAttrs } from "../SubSampleModel/mocking";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import { type Factory } from "../../../definitions/Factory";
 
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   peopleStore: {},
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
+})
 })); // break import cycle
 
 function mockSampleWithTwoSubsamples(factory: Factory) {
@@ -50,7 +52,7 @@ describe("constructor", () => {
       let factoryRef!: Factory;
 
       // Create mock implementation that returns either SampleModel or SubSampleModel
-      const mockNewRecord = jest
+      const mockNewRecord = vi
         .fn()
         .mockImplementation((attrs: any) =>
           /^SA\d+/.test(attrs.globalId)
@@ -62,7 +64,7 @@ describe("constructor", () => {
       const createFactory = (): Factory =>
         mockFactory({
           newRecord: mockNewRecord,
-          newFactory: jest.fn().mockImplementation(createFactory),
+          newFactory: vi.fn().mockImplementation(createFactory),
         });
 
       // Initialize factory
@@ -91,3 +93,5 @@ describe("constructor", () => {
     });
   });
 });
+
+

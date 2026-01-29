@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
-import { render, screen, act } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen, act, cleanup } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import RsSet from "../../../util/set";
 import { useGalleryActions, rootDestination } from "../useGalleryActions";
@@ -14,8 +14,9 @@ import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
+afterEach(cleanup);
 
 describe("useGalleryActions", () => {
   describe("duplicateFiles", () => {
@@ -76,7 +77,7 @@ describe("useGalleryActions", () => {
       );
 
       await act(async () => {
-        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("button", { name: /click me/i }));
       });
 
       const toast = await screen.findByRole("alert");
@@ -100,7 +101,7 @@ describe("useGalleryActions", () => {
       );
 
       await act(async () => {
-        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("button", { name: /click me/i }));
       });
 
       const toast = await screen.findByRole("alert");
@@ -166,7 +167,7 @@ describe("useGalleryActions", () => {
       );
 
       await act(async () => {
-        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("button", { name: /click me/i }));
       });
 
       const toast = await screen.findByRole("alert");
@@ -190,7 +191,7 @@ describe("useGalleryActions", () => {
       );
 
       await act(async () => {
-        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("button", { name: /click me/i }));
       });
 
       const toast = await screen.findByRole("alert");
@@ -258,7 +259,7 @@ describe("useGalleryActions", () => {
       );
 
       await act(async () => {
-        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("button", { name: /click me/i }));
       });
 
       const toast = await screen.findByRole("alert");
@@ -282,7 +283,7 @@ describe("useGalleryActions", () => {
       );
 
       await act(async () => {
-        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("button", { name: /click me/i }));
       });
 
       const toast = await screen.findByRole("alert");
@@ -354,7 +355,7 @@ describe("useGalleryActions", () => {
       );
 
       await act(async () => {
-        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("button", { name: /click me/i }));
       });
 
       const toast = await screen.findByRole("alert");
@@ -380,7 +381,7 @@ describe("useGalleryActions", () => {
       );
 
       await act(async () => {
-        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("button", { name: /click me/i }));
         // Wait a bit for the async error handling to complete
         await new Promise((resolve) => setTimeout(resolve, 100));
       });
@@ -394,3 +395,4 @@ describe("useGalleryActions", () => {
     });
   });
 });
+

@@ -1,16 +1,18 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi } from "vitest";
 import { makeMockSubSample } from "./mocking";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 
-jest.mock("../../../../common/InvApiService", () => ({})); // break import cycle
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  }})); // break import cycle
 
 describe("method: validate", () => {
   describe("Asserts quantity.", () => {
     test("Returns false when the numericQuantity is the empty string.", () => {
-      jest
+      vi
         .spyOn(global.Storage.prototype, "getItem")
         .mockImplementation(
           () =>
@@ -27,3 +29,5 @@ describe("method: validate", () => {
     });
   });
 });
+
+

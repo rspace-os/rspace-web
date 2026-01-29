@@ -1,16 +1,15 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
  
+import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import AttachmentField from "../AttachmentField";
 import TextField from "@mui/material/TextField";
 import FileField from "../../../../../components/Inputs/FileField";
 import { ExistingAttachment } from "../../../../../stores/models/AttachmentModel";
-import each from "jest-each";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import { containerAttrs } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
@@ -18,16 +17,18 @@ import ContainerModel from "../../../../../stores/models/ContainerModel";
 import MemoisedFactory from "../../../../../stores/models/Factory/MemoisedFactory";
 import type { Attachment } from "../../../../../stores/definitions/Attachment";
 
-jest.mock("@mui/material/TextField", () => jest.fn(() => <div></div>));
-jest.mock("../../../../../components/Inputs/FileField", () =>
-  jest.fn(() => <div></div>),
-);
-jest.mock("../../../../../components/Ketcher/KetcherDialog", () =>
-  jest.fn(() => <div></div>),
-);
+vi.mock("@mui/material/TextField", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../../../../../components/Inputs/FileField", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../../../../../components/Ketcher/KetcherDialog", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -63,7 +64,7 @@ const makeAttachment = (attrs?: { name: string }) =>
 
 describe("AttachmentField", () => {
   describe("Description field", () => {
-    each`
+    it.each`
       disabled     | value    | noValueLabel | expectFn
       ${true}      | ${""}    | ${undefined} | ${expectLabel("No description")}
       ${true}      | ${""}    | ${"foo"}     | ${expectLabel("foo")}
@@ -77,7 +78,7 @@ describe("AttachmentField", () => {
       ${undefined} | ${""}    | ${"foo"}     | ${expectTextField("")}
       ${undefined} | ${"bar"} | ${undefined} | ${expectTextField("bar")}
       ${undefined} | ${"bar"} | ${"foo"}     | ${expectTextField("bar")}
-    `.test(
+    `(
       '$# {disabled = $disabled, value = "$value", noValueLabel = $noValueLabel}',
       ({
         disabled,
@@ -146,7 +147,7 @@ describe("AttachmentField", () => {
     });
   });
   describe("File Selector", () => {
-    each`
+    describe.each`
       disableFileUpload | attachment          | showFileField | showNoAttachmentLabel
       ${true}           | ${null}             | ${false}      | ${false}
       ${true}           | ${makeAttachment()} | ${false}      | ${false}
@@ -154,7 +155,7 @@ describe("AttachmentField", () => {
       ${false}          | ${makeAttachment()} | ${true}       | ${false}
       ${undefined}      | ${null}             | ${true}       | ${true}
       ${undefined}      | ${makeAttachment()} | ${true}       | ${false}
-    `.describe(
+    `(
       "$# {disableFileUpload = $disableFileUpload, attachment }",
       ({
         disableFileUpload,

@@ -1,25 +1,25 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "../../../../../__mocks__/matchMedia";
 import React, { useState } from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import Description from "../Description";
 import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
 
-jest.mock("@tinymce/tinymce-react", () => ({
+vi.mock("@tinymce/tinymce-react", () => ({
   __esModule: true,
-  Editor: jest.fn(({ onEditorChange, value }) => (
+  Editor: vi.fn(({ onEditorChange, value }) => (
     <input
       value={value}
       onChange={(e) => {
@@ -69,7 +69,7 @@ describe("Description", () => {
     fc.assert(
       fc.property(fc.string({ maxLength: 250 }), (generatedDescription) => {
         cleanup();
-        const onErrorStateChange = jest.fn();
+        const onErrorStateChange = vi.fn();
         const { container } = renderDescriptionField("foo", onErrorStateChange);
 
         fireEvent.change(screen.getByRole("textbox"), {
@@ -88,7 +88,7 @@ describe("Description", () => {
     fc.assert(
       fc.property(fc.string({ minLength: 251 }), (generatedDescription) => {
         cleanup();
-        const onErrorStateChange = jest.fn();
+        const onErrorStateChange = vi.fn();
         const { container } = renderDescriptionField("", onErrorStateChange);
 
         fireEvent.change(screen.getByRole("textbox"), {
@@ -107,7 +107,7 @@ describe("Description", () => {
     fc.assert(
       fc.property(fc.string({ maxLength: 250 }), (generatedDescription) => {
         cleanup();
-        const onErrorStateChange = jest.fn();
+        const onErrorStateChange = vi.fn();
         const { container } = renderDescriptionField("", onErrorStateChange);
 
         fireEvent.change(screen.getByRole("textbox"), {
@@ -121,3 +121,5 @@ describe("Description", () => {
     );
   });
 });
+
+

@@ -1,9 +1,9 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import { isRecord } from "../../parsers";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 
 describe("isRecord", () => {
   test("should pass for an object literal", () => {
@@ -22,3 +22,5 @@ describe("isRecord", () => {
     expect(isRecord(new Set()).isOk).toBe(false);
   });
 });
+
+

@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
@@ -12,7 +12,7 @@ import * as FetchingData from "../../util/fetchingData";
 import fc from "fast-check";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -121,3 +121,5 @@ describe("integrationHelpers", () => {
     });
   });
 });
+
+

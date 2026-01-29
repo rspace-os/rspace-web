@@ -1,8 +1,10 @@
+import { vi } from "vitest";
 Object.defineProperty(window, "ResizeObserver", {
   writeable: false,
-  value: jest.fn<[void], { ... }>().mockImplementation(() => ({
+  value: vi.fn<[void], { ... }>().mockImplementation(() => ({
     observe: () => {},
     disconnect: () => {},
   })),
 });
+
 

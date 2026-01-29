@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, test, expect } from "vitest";
 import * as ArrayUtils from "../../ArrayUtils";
 import { Optional } from "../../optional";
 import fc from "fast-check";
@@ -98,3 +98,5 @@ describe("mapOptional", () => {
     );
   });
 });
+
+

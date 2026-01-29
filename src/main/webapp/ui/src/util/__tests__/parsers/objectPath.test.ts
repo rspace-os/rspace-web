@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import { objectPath } from "../../parsers";
 import Result from "../../result";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 
 describe("objectPath", () => {
   test("Recursive example", () => {
@@ -43,3 +43,5 @@ describe("objectPath", () => {
       });
   });
 });
+
+

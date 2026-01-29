@@ -1,15 +1,19 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { makeMockSubSample } from "./mocking";
 
-jest.mock("../../../../common/InvApiService", () => ({}));
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  }}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
+})
 }));
 
 describe("permalinkURL", () => {
@@ -18,3 +22,5 @@ describe("permalinkURL", () => {
     expect(subsample.permalinkURL).toBe(null);
   });
 });
+
+

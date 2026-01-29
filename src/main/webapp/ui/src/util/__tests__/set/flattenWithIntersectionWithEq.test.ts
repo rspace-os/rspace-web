@@ -1,4 +1,4 @@
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import RsSet, { flattenWithIntersectionWithEq } from "../../set";
 
 describe("flattenWithIntersectionWithEq", () => {

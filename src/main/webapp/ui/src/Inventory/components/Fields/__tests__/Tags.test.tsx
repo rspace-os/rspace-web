@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import Tags from "../Tags";
 import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
@@ -12,7 +12,7 @@ import materialTheme from "../../../../theme";
 import { Optional } from "../../../../util/optional";
 import "../../../../../__mocks__/matchMedia";
 
-window.fetch = jest.fn(() =>
+window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
@@ -21,7 +21,7 @@ window.fetch = jest.fn(() =>
 );
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -66,3 +66,5 @@ describe("Tags", () => {
     );
   });
 });
+
+

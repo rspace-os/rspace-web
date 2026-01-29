@@ -1,17 +1,17 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import RemoveButton from "../RemoveButton";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
 import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -19,7 +19,7 @@ afterEach(cleanup);
 describe("RemoveButton", () => {
   test("Should invoke onClick when clicked.", async () => {
     const user = userEvent.setup();
-    const onClick = jest.fn();
+    const onClick = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
         <RemoveButton onClick={onClick} />
@@ -41,3 +41,5 @@ describe("RemoveButton", () => {
     screen.getByLabelText("Delete");
   });
 });
+
+

@@ -1,14 +1,16 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi } from "vitest";
 import InventoryBaseRecordCollection from "../../InventoryBaseRecordCollection";
 import { PersistedBarcode } from "../../Barcode";
 import { makeMockContainer } from "../ContainerModel/mocking";
 import RsSet from "../../../../util/set";
 
-jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({})
+}));
 
 describe("Computed: fieldValues", () => {
   describe("Should support batch editing of barcodes.", () => {
@@ -79,3 +81,5 @@ describe("Computed: fieldValues", () => {
     });
   });
 });
+
+

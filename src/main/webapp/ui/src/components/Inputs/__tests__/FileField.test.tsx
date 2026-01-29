@@ -1,24 +1,24 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 
 import FileField from "../FileField";
 import Alert from "@mui/material/Alert";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 
-jest.mock("@mui/material/Alert", () =>
-  jest.fn(() => {
+vi.mock("@mui/material/Alert", () => ({
+  default: vi.fn(() => {
     return <div data-testid="Alert"></div>;
-  })
-);
+  }),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -52,3 +52,4 @@ describe("FileField", () => {
     });
   });
 });
+

@@ -1,3 +1,4 @@
+import { it } from "vitest";
 import fc, { type Arbitrary } from "fast-check";
 import { type Id, type GlobalId, type GlobalIdPrefix } from "../../BaseRecord";
 import { type Record as Foo } from "../../Record";
@@ -36,3 +37,5 @@ export const arbitraryRecord: Arbitrary<Foo> = fc
     recordDetails: fc.constant({}),
   })
   .map((arbs) => arbs as Foo);
+
+

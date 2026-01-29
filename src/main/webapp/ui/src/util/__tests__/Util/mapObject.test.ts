@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 
+import { describe, it, test, expect } from "vitest";
 import { mapObject } from "../../Util";
 import fc from "fast-check";
 
@@ -57,3 +57,5 @@ describe("mapObject", () => {
     );
   });
 });
+
+

@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import {
   render,
@@ -10,7 +10,7 @@ import {
   fireEvent,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import DryadRepo from "../DryadRepo";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
@@ -18,7 +18,7 @@ import axios from "@/common/axios";
 const mockAxios = new MockAdapter(axios);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -81,7 +81,7 @@ describe("DryadRepo", () => {
   });
 
   test("Upon editing, title should be set to the entered value.", async () => {
-    const handleChange = jest.fn();
+    const handleChange = vi.fn();
     await act(() => void renderDryadRepo({ handleChange }));
 
     fireEvent.change(screen.getByRole("textbox", { name: /Title/ }), {
@@ -99,7 +99,7 @@ describe("DryadRepo", () => {
   });
 
   test("Upon editing, description should be set to the entered value.", async () => {
-    const handleChange = jest.fn();
+    const handleChange = vi.fn();
     await act(() => void renderDryadRepo({ handleChange }));
 
     fireEvent.change(screen.getByRole("textbox", { name: /Add an abstract/ }), {
@@ -116,3 +116,5 @@ describe("DryadRepo", () => {
     );
   });
 });
+
+

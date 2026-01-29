@@ -1,11 +1,11 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { cleanup, screen, waitFor, fireEvent } from "@testing-library/react";
 import { action, observable } from "mobx";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import MoveDialog from "../MoveDialog";
@@ -13,8 +13,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import Search from "../../../../stores/models/Search";
-import Dialog from "@mui/material/Dialog";
 import "__mocks__/matchMedia";
+import Dialog from "@mui/material/Dialog";
 import {
   makeMockSubSample,
   subSampleAttrsArbitrary,
@@ -26,18 +26,28 @@ import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import userEvent from "@testing-library/user-event";
 import { render, within } from "../../../../__tests__/customQueries";
 
-jest.mock("../../../Search/SearchView", () => jest.fn(() => <></>));
-jest.mock("@mui/material/Dialog", () =>
-  jest.fn(({ children }) => <>{children}</>)
-);
-jest.mock("../../../../components/Inputs/DateField", () => <></>);
-jest.mock("../../../../components/Inputs/TimeField", () => <></>);
+vi.mock("../../../Search/SearchView", () => ({
+  default: vi.fn(() => <></>),
+}));
+vi.mock("@mui/material/Dialog", () => ({
+  default: vi.fn(({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  )),
+}));
+vi.mock("../../../../components/Inputs/DateField", () => ({
+  default: () => <></>,
+}));
+vi.mock("../../../../components/Inputs/TimeField", () => ({
+  default: () => <></>,
+}));
 
 // this is because the Search component renders hidden "Cancel" buttons
-jest.mock("../../../Search/Search", () => jest.fn(() => <></>));
+vi.mock("../../../Search/Search", () => ({
+  default: vi.fn(() => <></>),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -152,7 +162,7 @@ describe("MoveDialog", () => {
             const [headerRow, ...bodyRows] = within(table).getAllByRole("row");
 
             const indexOfNameColumn =
-              // @ts-expect-error TS does not recognise the jest.extend
+              // @ts-expect-error TS does not recognise the vi.extend
               within(headerRow).getIndexOfTableCell("Name");
 
             const allNameCells = bodyRows.map(

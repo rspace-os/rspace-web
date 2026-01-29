@@ -1,11 +1,11 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, expect, beforeEach } from "vitest";
 import React from "react";
 import axios from "@/common/axios";
 import {render, screen, fireEvent, waitFor} from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import ExternalWorkflowInvocations, {InvocationsAndDataCount} from "../ExternalWorkflowInvocations";
 
@@ -39,12 +39,12 @@ describe("Renders with table of  data ", () => {
   });
 
   it("displays WorkFlow Data table headers", async () => {
-    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
-    expect(await screen.findByRole("button")).toBeDisabled();
-    await waitFor(() => expect(screen.getByRole("button")).toBeEnabled(), {
-      timeout: 5000,
+    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
+    const toggleButton = await screen.findByRole("button", {
+      name: /Show computational workflows associated with this field/i,
     });
-    fireEvent.click(screen.getByRole("button"));
+    expect(toggleButton).toBeEnabled();
+    fireEvent.click(toggleButton);
     expect(await screen.findByText(/Galaxy WorkFlow Data/i)).toBeInTheDocument();
     expect(await screen.findByText("Data Uploaded")).toBeInTheDocument();
     expect(await screen.findByText("Container/Galaxy History")).toBeInTheDocument();
@@ -53,13 +53,13 @@ describe("Renders with table of  data ", () => {
     expect(await screen.findByText("Invocation Created")).toBeInTheDocument();
   });
   it("displays WorkFlow Data ", async () => {
-    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
-    expect(await screen.findByRole("button")).toBeDisabled();
-    await waitFor(() => expect(screen.getByRole("button")).toBeEnabled(), {
-      timeout: 5000,
+    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
+    const toggleButton = await screen.findByRole("button", {
+      name: /Show computational workflows associated with this field/i,
     });
-    expect(await screen.findByRole("button")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button"));
+    expect(toggleButton).toBeEnabled();
+    expect(toggleButton).toBeInTheDocument();
+    fireEvent.click(toggleButton);
     expect(await screen.findByText(/Galaxy WorkFlow Data/i)).toBeInTheDocument();
     const gridCells = screen.getAllByRole("gridcell");
     expect(gridCells[0]).toHaveTextContent('Galaxy1-_anaphase_1750407920234.jpg__1753183694203.jpg');
@@ -80,8 +80,8 @@ describe("Handles errors", () => {
     mockAxios
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(404, []);
-    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
-    expect(await screen.findByText("Error")).toBeInTheDocument();
+    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
+    expect((await screen.findAllByText("Error"))[0]).toBeInTheDocument();
     expect(
         await screen.findByText(/Unable to retrieve any relevant results./i)
     ).toBeInTheDocument();
@@ -90,8 +90,8 @@ describe("Handles errors", () => {
     mockAxios
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(403, []);
-    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
-    expect(await screen.findByText("Error")).toBeInTheDocument();
+    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
+    expect((await screen.findAllByText("Error"))[0]).toBeInTheDocument();
     expect(
         await screen.findByText(/Invalid Galaxy API Key Please re-enter your API Key on the Apps page/i)
     ).toBeInTheDocument();
@@ -101,10 +101,14 @@ describe("Handles errors", () => {
     mockAxios
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(500, []);
-    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
-    expect(await screen.findByText("Error")).toBeInTheDocument();
+    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
+    expect((await screen.findAllByText("Error"))[0]).toBeInTheDocument();
     expect(
-        await screen.findByText(/Unknown issue, please investigate whether your Galaxy Server/i)
+        await screen.findByText((content) =>
+          content.includes(
+            "Unknown issue, please investigate whether your Galaxy Server"
+          )
+        )
     ).toBeInTheDocument();
   })
 });

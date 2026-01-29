@@ -1,21 +1,22 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
  
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import NumberField from "../NumberField";
 import TextField from "@mui/material/TextField";
-import each from "jest-each";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 
-jest.mock("@mui/material/TextField", () => jest.fn(() => <div></div>));
+vi.mock("@mui/material/TextField", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -31,7 +32,7 @@ const expectTextField = (value: string | number | null) => () =>
 
 describe("NumberField", () => {
   describe("Renders correctly", () => {
-    each`
+    it.each`
       disabled     | value   | noValueLabel | expectFn
       ${true}      | ${0}    | ${undefined} | ${expectTextField(0)}
       ${true}      | ${0}    | ${"foo"}     | ${expectTextField(0)}
@@ -45,7 +46,7 @@ describe("NumberField", () => {
       ${undefined} | ${0}    | ${"foo"}     | ${expectTextField(0)}
       ${undefined} | ${""}   | ${undefined} | ${expectTextField("")}
       ${undefined} | ${""}   | ${"foo"}     | ${expectTextField("")}
-    `.test(
+    `(
       "{disabled = $disabled, value = $value, noValueLabel = $noValueLabel}",
       ({
         disabled,
@@ -72,3 +73,4 @@ describe("NumberField", () => {
     );
   });
 });
+

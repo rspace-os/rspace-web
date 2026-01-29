@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { cleanup, screen, fireEvent, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import MSTeams from "../MSTeams";
 import { Optional } from "../../../../util/optional";
 import { render, within } from "../../../../__tests__/customQueries";
@@ -16,7 +16,7 @@ import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 import "../../../../../__mocks__/matchMedia";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -170,3 +170,5 @@ describe("MSTeams", () => {
     });
   });
 });
+
+

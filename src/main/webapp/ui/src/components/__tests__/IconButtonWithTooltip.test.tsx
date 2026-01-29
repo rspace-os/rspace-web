@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import { ThemeProvider } from "@mui/material/styles";
@@ -12,7 +12,7 @@ import materialTheme from "../../theme";
 import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -29,7 +29,7 @@ describe("IconButtonWithTooltip", () => {
   });
   test("onClick functions correctly.", async () => {
     const user = userEvent.setup();
-    const onClick = jest.fn();
+    const onClick = vi.fn();
 
     render(
       <ThemeProvider theme={materialTheme}>
@@ -46,3 +46,5 @@ describe("IconButtonWithTooltip", () => {
     expect(onClick).toHaveBeenCalled();
   });
 });
+
+

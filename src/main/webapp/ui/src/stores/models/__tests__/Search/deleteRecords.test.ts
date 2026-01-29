@@ -1,9 +1,9 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call */
-import "@testing-library/jest-dom";
+import { describe, it, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { makeMockContainer, containerAttrs } from "../ContainerModel/mocking";
 import Search from "../../Search";
 import InvApiService, {
@@ -14,19 +14,21 @@ import { type AxiosResponse } from "axios";
 
 import { mkAlert } from "../../../contexts/Alert";
 
-jest.mock("../../../contexts/Alert", () => ({
-  mkAlert: jest.fn(() => ({})),
+vi.mock("../../../contexts/Alert", () => ({
+  mkAlert: vi.fn(() => ({})),
 }));
 
-jest.mock("../../../../common/InvApiService", () => ({
-  bulk: jest.fn(),
-  query: jest.fn(),
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+    bulk: vi.fn(),
+    query: vi.fn(),
+  },
 }));
 
 describe("action: deleteRecords", () => {
   describe("When it is called,", () => {
     test("the search should be refreshed.", async () => {
-      jest
+      vi
         .spyOn(InvApiService, "bulk")
         .mockImplementation(
           (
@@ -53,7 +55,7 @@ describe("action: deleteRecords", () => {
       const factory = mockFactory({
         newFactory: () =>
           mockFactory({
-            newRecord: jest
+            newRecord: vi
               .fn()
               .mockImplementation((attrs: unknown) =>
                 makeMockContainer(
@@ -65,7 +67,7 @@ describe("action: deleteRecords", () => {
 
       const search = new Search({ factory });
 
-      const searchSpy = jest
+      const searchSpy = vi
         .spyOn(search.fetcher as any, "search")
         .mockImplementation((...args: any[]) => {
           // Call the callback with empty results if it exists
@@ -84,7 +86,7 @@ describe("action: deleteRecords", () => {
       expect(searchSpy).toHaveBeenCalledWith(null, expect.any(Function));
     });
     test("and there is an error, there should be a helpful error message.", async () => {
-      jest
+      vi
         .spyOn(InvApiService, "bulk")
         .mockImplementation(
           (
@@ -124,7 +126,7 @@ describe("action: deleteRecords", () => {
       const factory = mockFactory({
         newFactory: () =>
           mockFactory({
-            newRecord: jest
+            newRecord: vi
               .fn()
               .mockImplementation((attrs: unknown) =>
                 makeMockContainer(
@@ -136,7 +138,7 @@ describe("action: deleteRecords", () => {
 
       const search = new Search({ factory });
 
-      jest
+      vi
         .spyOn(search.fetcher as any, "search")
         .mockImplementation((...args: any[]) => {
           // Call the callback with empty results if it exists
@@ -162,3 +164,4 @@ describe("action: deleteRecords", () => {
     });
   });
 });
+

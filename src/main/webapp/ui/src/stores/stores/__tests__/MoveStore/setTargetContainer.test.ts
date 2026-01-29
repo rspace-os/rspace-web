@@ -1,16 +1,21 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
-import { makeMockContainer } from "../../../models/__tests__/ContainerModel/mocking";
+import { describe, it, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
+import {
+  makeMockContainer,
+  containerAttrs,
+} from "../../../models/__tests__/ContainerModel/mocking";
 import MoveStore from "../../MoveStore";
 import Search from "../../../models/Search";
 import type { RootStore } from "../../RootStore";
 
-jest.mock("../../../../common/InvApiService", () => ({
-  query: jest.fn(),
-})); // break import cycle
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  query: vi.fn(),
+
+  }})); // break import cycle
 
 describe("action: setTargetContainer", () => {
   describe("When called, setTargetContainer should", () => {
@@ -23,7 +28,9 @@ describe("action: setTargetContainer", () => {
      * to simply swap the locations of the items being moved.
      */
     test("cause clearLocationsWithContentBeingMovedOut to be called.", async () => {
-      const container = makeMockContainer();
+      const container = makeMockContainer({
+        parentContainers: [containerAttrs({ globalId: "IC2" })],
+      });
       const moveStore = new MoveStore({
         peopleStore: {
           currentUser: {
@@ -34,20 +41,15 @@ describe("action: setTargetContainer", () => {
           setDialogVisiblePanel: () => {},
         },
       } as unknown as RootStore);
-      const clearLocationsSpy = jest.spyOn(
+      const clearLocationsSpy = vi.spyOn(
         moveStore,
         "clearLocationsWithContentBeingMovedOut"
       );
-      jest
-        .spyOn(Search.prototype, "setSearchView")
-        .mockImplementation(() => Promise.resolve());
-      await moveStore.setIsMoving(true);
-      jest
-        .spyOn(container, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
-      jest
-        .spyOn(container.contentSearch.fetcher, "performInitialSearch")
-        .mockImplementation(() => Promise.resolve());
+      moveStore.search = {
+        setActiveResult: async (record: typeof container | null) => {
+          if (record) moveStore.clearLocationsWithContentBeingMovedOut(record);
+        },
+      } as unknown as Search;
       await moveStore.setTargetContainer(container);
 
       expect(clearLocationsSpy).toHaveBeenCalledWith(container);

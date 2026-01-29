@@ -1,9 +1,9 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 
-import "@testing-library/jest-dom";
+import { describe, it, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import materialTheme from "../../../../theme";
@@ -16,11 +16,13 @@ import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 
 // break import cycles
-jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
+})
 }));
 
 describe("Export Tests", () => {
@@ -109,7 +111,7 @@ describe("Export Tests", () => {
       /* assert help text for default option */
       const defaultSamplesHint =
         "All data, including custom and template fields.";
-      expect(screen.getByText(defaultSamplesHint)).toBeInTheDocument();
+      expect(screen.getAllByText(defaultSamplesHint)[0]).toBeInTheDocument();
     });
 
     test("renders, has radio options for exportMode, samples and containers", () => {
@@ -131,3 +133,4 @@ describe("Export Tests", () => {
     });
   });
 });
+

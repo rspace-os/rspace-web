@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 
+import { describe, it, test, expect } from "vitest";
 import theme from "../../../theme";
 import { mapObject } from "../../../util/Util";
 
@@ -95,3 +95,5 @@ describe("theme.palette.record", () => {
     });
   });
 });
+
+

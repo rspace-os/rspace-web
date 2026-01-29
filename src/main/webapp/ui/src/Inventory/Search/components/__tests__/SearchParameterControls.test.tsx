@@ -1,10 +1,9 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import Search from "../../../../stores/models/Search";
@@ -15,17 +14,22 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
+import { type Mock, describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 
-jest.mock("../../../../common/InvApiService", () => ({}));
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  }}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   searchStore: {
     search: null,
     savedSearches: [{ name: "Test search", resultType: "SAMPLE" }],
     savedBaskets: [],
   },
+})
 }));
 
-window.fetch = jest.fn(() =>
+window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
@@ -43,10 +47,10 @@ window.fetch = jest.fn(() =>
     formData: () => Promise.resolve(new FormData()),
     text: () => Promise.resolve(""),
   } as Response)
-) as jest.Mock;
+) as Mock;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -91,3 +95,5 @@ describe("SearchParameterControls", () => {
     });
   });
 });
+
+

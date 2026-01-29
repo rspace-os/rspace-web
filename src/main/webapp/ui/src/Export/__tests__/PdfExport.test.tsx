@@ -1,14 +1,14 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import PdfExport from "../PdfExport";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -16,7 +16,7 @@ afterEach(cleanup);
 describe("PdfExport", () => {
   test("Toggling a switch should set a boolean value.", () => {
     const updateExportDetails: (key: string, exportDetail: unknown) => void =
-      jest.fn();
+      vi.fn();
 
     render(
       <PdfExport
@@ -51,3 +51,5 @@ describe("PdfExport", () => {
     expect(updateExportDetails).toHaveBeenCalledWith("provenance", true);
   });
 });
+
+

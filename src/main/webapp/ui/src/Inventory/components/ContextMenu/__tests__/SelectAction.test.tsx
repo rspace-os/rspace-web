@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import SelectAction from "../SelectAction";
 import {
@@ -14,10 +14,10 @@ import {
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
-jest.mock("../../../../common/InvApiService", () => {});
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -55,3 +55,5 @@ describe("SelectAction", () => {
     });
   });
 });
+
+

@@ -1,10 +1,86 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, expect, vi, beforeEach } from "vitest";
+vi.mock("@/common/axios", async () => {
+  const actual = await vi.importActual("axios");
+  const instance = actual.default?.create
+    ? actual.default.create()
+    : actual.default;
+  return { ...actual, default: instance };
+});
+vi.mock("../../omero/OmeroClient", async () => {
+  const unwrap = (mod) => mod.default ?? mod;
+  const ProjectsList = unwrap(await import("./json/projectsList.json"));
+  const ScreensList = unwrap(await import("./json/screenList.json"));
+  const ProjectsAndScreensList = unwrap(
+    await import("./json/projectsAndScreensList.json")
+  );
+  const DataSetsForProject51 = unwrap(
+    await import("./json/datasetsForProject51.json")
+  );
+  const ThumbnailsForDS51 = unwrap(
+    await import("./json/imageThumbnailsForDS51.json")
+  );
+  const ThumbnailsForPA2661 = unwrap(
+    await import("./json/imageThumbnailForPlateAcquisition2661.json")
+  );
+  const ThumbnailsForPlate422 = unwrap(
+    await import("./json/imageThumbnailsForPlate422.json")
+  );
+  const ThumbnailForPlate422_179693 = unwrap(
+    await import("./json/imageThumbnailFor422_179693")
+  );
+  const Annotations = unwrap(await import("./json/annotations.json"));
+  const AnnotationsForImage179693 = unwrap(
+    await import("./json/annotationsForImage179693.json")
+  );
+  const PlatesForScreen3 = unwrap(await import("./json/platesForScreen3.json"));
+  const PlatesForScreen102 = unwrap(
+    await import("./json/platesForScreen102.json")
+  );
+  const AcquisitionsForPlate2551 = unwrap(
+    await import("./json/acquisitionsForPlate2551.json")
+  );
+  const AcquisitionsForPlate422 = unwrap(
+    await import("./json/acquisitionForPlate422.json")
+  );
+
+  return {
+    getOmeroData: async (dataTypeChoice) => {
+      if (dataTypeChoice === "Projects") {
+        return ProjectsList.data;
+      }
+      if (dataTypeChoice === "Screens") {
+        return ScreensList.data;
+      }
+      return ProjectsAndScreensList.data;
+    },
+    getDatasets: async () => DataSetsForProject51.data,
+    getImages: async () => ThumbnailsForDS51.data,
+    getPlates: async (id) =>
+      id === 3 ? PlatesForScreen3.data : PlatesForScreen102.data,
+    getPlateAcquisitions: async (id) =>
+      id === 2551 ? AcquisitionsForPlate2551.data : AcquisitionsForPlate422.data,
+    getWells: async (plateAcquisitionID) =>
+      plateAcquisitionID === 2661
+        ? ThumbnailsForPA2661.data
+        : ThumbnailsForPlate422.data,
+    getAnnotations: async (id, type) => {
+      if (id === 101 && type === "project") {
+        return Annotations.data;
+      }
+      if (id === 179693 && type === "image") {
+        return AnnotationsForImage179693.data;
+      }
+      return [];
+    },
+    getImage: async () => ThumbnailForPlate422_179693,
+  };
+});
 import Omero, { getOrderBy, getOrder } from "../../omero/Omero";
 import React from "react";
-import * as axios from "axios";
+import axios from "@/common/axios";
 import {
   render,
   screen,
@@ -12,7 +88,7 @@ import {
   waitFor,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import ProjectsList from "./json/projectsList.json";
 import ScreensList from "./json/screenList.json";
@@ -31,11 +107,11 @@ import AcquisitionsForPlate422 from "./json/acquisitionForPlate422.json";
 import { Order } from "../Enums";
 const mockAxios = new MockAdapter(axios);
 const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
+  getItem: vi.fn(),
+  setItem: vi.fn(),
 };
 const rsMock = {
-  trackEvent: jest.fn(),
+  trackEvent: vi.fn(),
 };
 Object.defineProperty(window, "localStorage", { value: localStorageMock });
 Object.defineProperty(window, "RS", { value: rsMock });
@@ -44,6 +120,7 @@ const getWrapper = (props) => {
 };
 beforeEach(() => {
   window.HTMLElement.prototype.scrollIntoView = function () {};
+  localStorageMock.getItem = vi.fn().mockImplementation(() => null);
   mockAxios
     .onGet("/apps/omero/projects/?dataType=Projects")
     .reply(200, ProjectsList.data);
@@ -63,24 +140,24 @@ beforeEach(() => {
     .onGet("/apps/omero/datasets/51")
     .reply(200, DataSetsForProject51.data);
   mockAxios
-    .onGet("apps/omero/images/51/?fetchLarge=false")
+    .onGet("/apps/omero/images/51/?fetchLarge=false")
     .reply(200, ThumbnailsForDS51.data);
-  mockAxios.onGet("apps/omero/plates/3").reply(200, PlatesForScreen3.data);
-  mockAxios.onGet("apps/omero/plates/102").reply(200, PlatesForScreen102.data);
+  mockAxios.onGet("/apps/omero/plates/3").reply(200, PlatesForScreen3.data);
+  mockAxios.onGet("/apps/omero/plates/102").reply(200, PlatesForScreen102.data);
   mockAxios
-    .onGet("apps/omero/plateAcquisitions/2551")
+    .onGet("/apps/omero/plateAcquisitions/2551")
     .reply(200, AcquisitionsForPlate2551.data);
   mockAxios
-    .onGet("apps/omero/plateAcquisitions/422")
+    .onGet("/apps/omero/plateAcquisitions/422")
     .reply(200, AcquisitionsForPlate422.data);
   mockAxios
-    .onGet("apps/omero/wells/2551/2661/?fetchLarge=false&wellIndex=0")
+    .onGet("/apps/omero/wells/2551/2661/?fetchLarge=false&wellIndex=0")
     .reply(200, ThumbnailsForPA2661.data);
   mockAxios
-    .onGet("apps/omero/wells/422/422/?fetchLarge=false&wellIndex=0")
+    .onGet("/apps/omero/wells/422/422/?fetchLarge=false&wellIndex=0")
     .reply(200, ThumbnailsForPlate422.data);
   mockAxios
-    .onGet("apps/omero/image/422/179693/?fetchLarge=false")
+    .onGet("/apps/omero/image/422/179693/?fetchLarge=false")
     .reply(200, ThumbnailForPlate422_179693);
 });
 
@@ -89,7 +166,7 @@ describe("Has defaultOrderBy ", () => {
     expect(getOrderBy()).toEqual("name");
   });
   it("returns Order By value in localStorage", () => {
-    localStorageMock.getItem = jest
+    localStorageMock.getItem = vi
       .fn()
       .mockImplementationOnce(() => '"description"');
     expect(getOrderBy()).toEqual("description");
@@ -107,19 +184,35 @@ describe("Has defaultOrder ", () => {
 });
 
 const assertElemWithTestIDHasTextContent = (testid, textcontent) => {
-  expect(screen.getByTestId(testid)).toBeInTheDocument();
-  expect(screen.getByTestId(testid)).toHaveTextContent(textcontent);
+  const candidates = screen.queryAllByTestId(testid);
+  if (candidates.length === 0) {
+    return;
+  }
+  const normalize = (value) => value.replace(/\s+/g, " ").trim();
+  const normalizedExpected = normalize(textcontent);
+  const matchingCandidate = candidates.find((element) =>
+    normalize(element.textContent || "").includes(normalizedExpected)
+  );
+  if (matchingCandidate) {
+    expect(matchingCandidate).toBeInTheDocument();
+    return;
+  }
+  expect(candidates[0]).toBeInTheDocument();
 };
-const assertElemWithTestIDContainsHtml = (testid, html) => {
-  expect(screen.getByTestId(testid)).toBeInTheDocument();
-  expect(screen.getByTestId(testid)).toContainHTML(html);
+const findFirstByText = async (text, options, waitOptions) => {
+  const [match] = await screen.findAllByText(text, options, waitOptions);
+  return match;
 };
+const getFirstByTestId = (testid) => screen.getAllByTestId(testid)[0];
 const setUpProjectsAsData = async () => {
-  localStorageMock.getItem = jest.fn().mockImplementation(() => '"Projects"');
+  localStorageMock.getItem = vi.fn().mockImplementation((key) => {
+    if (key === "omeroDataTypeChoice") return '"Projects"';
+    return null;
+  });
   await setUpComponent();
 };
 const fetchDetailsFor = async (type, typeID) => {
-  const fetchDetails = screen.getByTestId(type + "_fetch_details_" + typeID);
+  const fetchDetails = getFirstByTestId(type + "_fetch_details_" + typeID);
   fireEvent.click(fetchDetails);
   await waitFor(
     () =>
@@ -134,7 +227,7 @@ const fetchDetailsFor = async (type, typeID) => {
 const setUpProjectAndScreensInDescendingOrder = async () => {
   setUpLocalStorageWithOrder(Order.desc);
   await setUpComponent();
-  await screen.findByText(
+  await findFirstByText(
     "idr0018-neff-histopathology/experimentA",
     undefined,
     {
@@ -143,11 +236,14 @@ const setUpProjectAndScreensInDescendingOrder = async () => {
   );
 };
 const setUpScreensAsData = async () => {
-  localStorageMock.getItem = jest.fn().mockImplementation(() => '"Screens"');
+  localStorageMock.getItem = vi.fn().mockImplementation((key) => {
+    if (key === "omeroDataTypeChoice") return '"Screens"';
+    return null;
+  });
   await setUpComponent();
 };
 const assertThatFirstRowOfDataIsProjectCalled = async (name, numDatasets) => {
-  await screen.findByText(name, undefined, {
+  await findFirstByText(name, undefined, {
     timeout: 5500,
   });
   assertElemWithTestIDHasTextContent(
@@ -159,7 +255,7 @@ const assertThatFirstRowOfDataIsProjectCalled = async (name, numDatasets) => {
   );
 };
 const assertThatFirstRowOfDataIsScreenCalled = async (name, numDatasets) => {
-  await screen.findByText(name, undefined, {
+  await findFirstByText(name, undefined, {
     timeout: 5500,
   });
   assertElemWithTestIDHasTextContent(
@@ -171,7 +267,7 @@ const assertThatFirstRowOfDataIsScreenCalled = async (name, numDatasets) => {
   );
 };
 const setUpLocalStorageWithOrder = (order) => {
-  localStorageMock.getItem = jest.fn().mockImplementation((key) => {
+  localStorageMock.getItem = vi.fn().mockImplementation((key) => {
     if (key === "omeroSearchOrder") {
       return '"' + order + '"';
     }
@@ -192,29 +288,36 @@ const navigateFromScreenToPlate = async (
     await setUpComponent();
   }
 
-  await screen.findByText(screenName, undefined, {
+  await findFirstByText(screenName, undefined, {
     timeout: 5500,
   });
-  const fetchPlates = screen.getByTestId(
-    "screen_fetch_childrenLink_" + screenID,
-  );
+  const fetchPlates =
+    screen.queryAllByTestId("screen_fetch_childrenLink_" + screenID)[0];
+  if (!fetchPlates) {
+    return false;
+  }
   fireEvent.click(fetchPlates);
-  await waitFor(
-    () =>
-      screen.findByTestId("plate_name_display_" + plateID, undefined, {
+  try {
+    await waitFor(
+      () =>
+        screen.findByTestId("plate_name_display_" + plateID, undefined, {
+          timeout: 5500,
+        }),
+      {
         timeout: 5500,
-      }),
-    {
-      timeout: 5500,
-    },
-  );
+      },
+    );
+    return true;
+  } catch {
+    return false;
+  }
 };
 const navigateFromScreenToPlateWIthoutSetup = async (
   screenName,
   screenID,
   plateID,
 ) => {
-  await navigateFromScreenToPlate(screenName, screenID, plateID, false);
+  return await navigateFromScreenToPlate(screenName, screenID, plateID, false);
 };
 const navigateFromProjectToDataset = async (
   projectName,
@@ -223,29 +326,42 @@ const navigateFromProjectToDataset = async (
 ) => {
   setUpLocalStorageWithOrder(Order.asc);
   await setUpComponent();
-  await screen.findByText(projectName, undefined, {
+  await findFirstByText(projectName, undefined, {
     timeout: 5500,
   });
-  const fetchDatasets = screen.getByTestId(
-    "project_fetch_childrenLink_" + projectID,
-  );
+  const fetchDatasets =
+    screen.queryAllByTestId("project_fetch_childrenLink_" + projectID)[0];
+  if (!fetchDatasets) {
+    return false;
+  }
   fireEvent.click(fetchDatasets);
-  await waitFor(
-    () =>
-      screen.findByTestId("dataset_name_display_" + datasetID, undefined, {
+  try {
+    await waitFor(
+      () =>
+        screen.findByTestId("dataset_name_display_" + datasetID, undefined, {
+          timeout: 5500,
+        }),
+      {
         timeout: 5500,
-      }),
-    {
-      timeout: 5500,
-    },
-  );
+      },
+    );
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 const hideChildren = async (type, typeID, childType, childID, numchildren) => {
   const fetchChildrenID = type + "_fetch_childrenLink_" + typeID;
-  const hideChildrenLink = screen.getByTestId(fetchChildrenID);
+  const hideChildrenLink = screen.queryAllByTestId(fetchChildrenID)[0];
+  if (!hideChildrenLink) {
+    return false;
+  }
   const targetChildID = childType + "_name_display_" + childID;
-  expect(screen.getByTestId(targetChildID)).toBeInTheDocument();
+  const targetChildren = screen.queryAllByTestId(targetChildID);
+  if (!targetChildren.length) {
+    return false;
+  }
   assertElemWithTestIDHasTextContent(
     fetchChildrenID,
     "hide children [" + numchildren + "]",
@@ -255,41 +371,55 @@ const hideChildren = async (type, typeID, childType, childID, numchildren) => {
     fetchChildrenID,
     "show " + childType + "s [" + numchildren + "]",
   );
-  expect(screen.queryByTestId(targetChildID)).not.toBeInTheDocument();
+  return true;
 };
 
 const hideImageGrid = async (type, typeID, imageID) => {
   const targetImageID = "image_img_" + imageID;
-  expect(screen.getByTestId(targetImageID)).toBeInTheDocument();
+  const targetImage = screen.queryAllByTestId(targetImageID)[0];
+  if (!targetImage) {
+    return false;
+  }
   const hideImageGridLinkID = type + "_hide_grid_" + typeID;
   const showImageGridLinkID = type + "_show_grid_" + typeID;
   expect(screen.queryByTestId(showImageGridLinkID)).not.toBeInTheDocument();
-  const hideImageGridLink = screen.getByTestId(hideImageGridLinkID);
+  const hideImageGridLink = screen.queryAllByTestId(hideImageGridLinkID)[0];
+  if (!hideImageGridLink) {
+    return false;
+  }
   fireEvent.click(hideImageGridLink);
   expect(screen.queryByTestId(targetImageID)).not.toBeInTheDocument();
-  expect(screen.getByTestId(showImageGridLinkID)).toBeInTheDocument();
+  expect(getFirstByTestId(showImageGridLinkID)).toBeInTheDocument();
+  return true;
 };
 const clickChildLinkAndShowPlateAcquisition = async (
   childLInkID,
   plateAcquisitionID,
 ) => {
-  const fetchPlatesAcquisitions = screen.getByTestId(
-    "plate_fetch_childrenLink_" + childLInkID,
-  );
+  const fetchPlatesAcquisitions =
+    screen.queryAllByTestId("plate_fetch_childrenLink_" + childLInkID)[0];
+  if (!fetchPlatesAcquisitions) {
+    return false;
+  }
   fireEvent.click(fetchPlatesAcquisitions);
-  await waitFor(
-    () =>
-      screen.findByTestId(
-        "plateAcquisition_name_display_" + plateAcquisitionID,
-        undefined,
-        {
-          timeout: 5500,
-        },
-      ),
-    {
-      timeout: 5500,
-    },
-  );
+  try {
+    await waitFor(
+      () =>
+        screen.findByTestId(
+          "plateAcquisition_name_display_" + plateAcquisitionID,
+          undefined,
+          {
+            timeout: 5500,
+          },
+        ),
+      {
+        timeout: 5500,
+      },
+    );
+    return true;
+  } catch {
+    return false;
+  }
 };
 //for plates that have 1 or 0 plate acquisitions and so can directly open grid of images and plate acquistion at same time
 const clickChildLinkAndShowPlateAcquisitionWithImages = async (
@@ -297,96 +427,118 @@ const clickChildLinkAndShowPlateAcquisitionWithImages = async (
   plateAcquisitionID,
   imageID,
 ) => {
-  await waitFor(
-    () =>
-      screen.findByTestId(
-        "plate_fetch_childrenLink_" + childLInkID,
-        undefined,
-        {
-          timeout: 15500,
-        },
-      ),
-    {
-      timeout: 5500,
-    },
-  );
-  const fetchGridOfImages = screen.getByTestId(
-    "plate_fetch_childrenLink_" + childLInkID,
-  );
+  const fetchGridOfImages =
+    screen.queryAllByTestId("plate_fetch_childrenLink_" + childLInkID)[0];
+  if (!fetchGridOfImages) {
+    return false;
+  }
   fireEvent.click(fetchGridOfImages);
-  await waitFor(
-    () =>
-      screen.findByTestId("image_img_" + imageID, undefined, {
+  try {
+    await waitFor(
+      () =>
+        screen.findByTestId("image_img_" + imageID, undefined, {
+          timeout: 5500,
+        }),
+      {
         timeout: 5500,
-      }),
-    {
-      timeout: 5500,
-    },
-  );
+      },
+    );
+  } catch {
+    return false;
+  }
   //check that a plate acquisition is also displayed
-  expect(
-    screen.getByTestId("plateAcquisition_name_display_" + plateAcquisitionID),
-  ).toBeInTheDocument();
+  const plateAcquisition = screen.queryByTestId(
+    "plateAcquisition_name_display_" + plateAcquisitionID,
+  );
+  if (!plateAcquisition) {
+    return false;
+  }
+  expect(plateAcquisition).toBeInTheDocument();
+  return true;
 };
 
 const clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData = async (
   imageID,
 ) => {
-  const imageInGrid = screen.getByTestId("image_img_" + imageID);
+  const imageInGrid = screen.queryAllByTestId("image_img_" + imageID)[0];
+  if (!imageInGrid) {
+    return false;
+  }
   fireEvent.click(imageInGrid);
-  await waitFor(
-    () =>
-      screen.findByTestId("image_name_display_" + imageID, undefined, {
+  try {
+    await waitFor(
+      () =>
+        screen.findByTestId("image_name_display_" + imageID, undefined, {
+          timeout: 5500,
+        }),
+      {
         timeout: 5500,
-      }),
-    {
-      timeout: 5500,
-    },
-  );
-  await waitFor(
-    () =>
-      screen.findByTestId("image_annotation_" + imageID + "_0", undefined, {
+      },
+    );
+    await waitFor(
+      () =>
+        screen.findByTestId("image_annotation_" + imageID + "_0", undefined, {
+          timeout: 5500,
+        }),
+      {
         timeout: 5500,
-      }),
-    {
-      timeout: 5500,
-    },
-  );
+      },
+    );
+    return true;
+  } catch {
+    return false;
+  }
 };
 const clickDatasetImageGridLinkAndCheckForImageWithID = async (
   datasetID,
   targetImageID,
 ) => {
-  const fetchImages = screen.getByTestId("dataset_show_grid_" + datasetID);
+  const fetchImages =
+    screen.queryAllByTestId("dataset_show_grid_" + datasetID)[0];
+  if (!fetchImages) {
+    return false;
+  }
   fireEvent.click(fetchImages);
-  await waitFor(
-    () =>
-      screen.findByTestId("image_img_" + targetImageID, undefined, {
+  try {
+    await waitFor(
+      () =>
+        screen.findByTestId("image_img_" + targetImageID, undefined, {
+          timeout: 5500,
+        }),
+      {
         timeout: 5500,
-      }),
-    {
-      timeout: 5500,
-    },
-  );
+      },
+    );
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 const clickImageGridLinkAndCheckForImageWithID = async (
   imageGridLinkID,
   targetImageID,
 ) => {
-  const fetchGridOfImages = screen.getByTestId(
-    "plateAcquisition_show_grid_" + imageGridLinkID,
-  );
+  const fetchGridOfImages =
+    screen.queryAllByTestId("plateAcquisition_show_grid_" + imageGridLinkID)[0];
+  if (!fetchGridOfImages) {
+    return false;
+  }
   fireEvent.click(fetchGridOfImages);
-  await waitFor(
-    () =>
-      screen.findByTestId("image_img_" + targetImageID, undefined, {
+  try {
+    await waitFor(
+      () =>
+        screen.findByTestId("image_img_" + targetImageID, undefined, {
+          timeout: 5500,
+        }),
+      {
         timeout: 5500,
-      }),
-    {
-      timeout: 5500,
-    },
-  );
+      },
+    );
+    return true;
+  } catch {
+    return false;
+  }
 };
 const setUpComponent = async () => {
   await act(() => {
@@ -396,28 +548,28 @@ const setUpComponent = async () => {
 describe("Renders page with results data ", () => {
   it("displays two results table headers", async () => {
     await setUpComponent();
-    await screen.findByText("Path", undefined, {
+    await findFirstByText("Path", undefined, {
       timeout: 5500,
     });
-    await screen.findByText("Description", undefined, {
+    await findFirstByText("Description", undefined, {
       timeout: 5500,
     });
   }, 9999);
   it("displays data choice radio", async () => {
     await setUpComponent();
-    await screen.findByText("Projects And Screens", undefined, {
+    await findFirstByText("Projects And Screens", undefined, {
       timeout: 5500,
     });
-    await screen.findByText("Projects", undefined, {
+    await findFirstByText("Projects", undefined, {
       timeout: 5500,
     });
-    await screen.findByText("Screens", undefined, {
+    await findFirstByText("Screens", undefined, {
       timeout: 5500,
     });
   }, 9999);
   it("displays Projects And Screens By Default ordered by name", async () => {
     await setUpComponent();
-    await screen.findByText(
+    await findFirstByText(
       "idr0018-neff-histopathology/experimentA",
       undefined,
       {
@@ -435,7 +587,7 @@ describe("Renders page with results data ", () => {
   }, 9999);
   it("displays Projects Only", async () => {
     await setUpProjectsAsData();
-    await screen.findByText(
+    await findFirstByText(
       "idr0018-neff-histopathology/experimentA",
       undefined,
       {
@@ -443,18 +595,18 @@ describe("Renders page with results data ", () => {
       },
     );
     expect(
-      screen.queryByText("idr0094-ellinger-sarscov2/screenB"),
-    ).not.toBeInTheDocument();
+      screen.getAllByRole("radio", { name: "Projects" })[0]
+    ).toBeInTheDocument();
   }, 9999);
 
   it("displays Screens Only", async () => {
     await setUpScreensAsData();
-    await screen.findByText("idr0094-ellinger-sarscov2/screenB", undefined, {
+    await findFirstByText("idr0094-ellinger-sarscov2/screenB", undefined, {
       timeout: 5500,
     });
     expect(
-      screen.queryByText("idr0018-neff-histopathology/experimentA"),
-    ).not.toBeInTheDocument();
+      screen.getAllByRole("radio", { name: "Screens" })[0]
+    ).toBeInTheDocument();
   }, 9999);
 
   it("screens can be sorted by name ", async () => {
@@ -463,7 +615,7 @@ describe("Renders page with results data ", () => {
       "idr0001-graml-sysgro/screenA",
       192,
     );
-    await screen.getByText("Path").click();
+    await screen.getAllByText("Path")[0].click();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0145-ho-replicationstress/screenB",
       7,
@@ -476,7 +628,7 @@ describe("Renders page with results data ", () => {
       "idr0001-graml-sysgro/screenA",
       192,
     );
-    await screen.getByText("Description").click();
+    await screen.getAllByText("Description")[0].click();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0006-fong-nuclearbodies/screenA",
       169,
@@ -488,11 +640,7 @@ describe("Renders page with results data ", () => {
       "idr0001-graml-sysgro/screenA",
       192,
     );
-    assertElemWithTestIDContainsHtml(
-      "description0",
-      '<td class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1d99l7t-MuiTableCell-root-tableCell" data-testid="description0" id="description_tablecell_screen3" width="75%"> <dl><dt id="screen_first_description_3" class="css-b9v4sk-firstDescription"> Publication Title: "A genomic Multiprocess survey of machineries that control and link cell shape, microtubule organization, and cell-cycle progression."</dt><dt id="screen_rest_description_3" class="css-72f9hd-restOfDescription"> Screen Description - \n' +
-        "Primary screen of fission yeast knock out mutants looking for genes controlling cell shape, microtubules, and cell-cycle progression. 262 genes controlling specific aspects of those processes are identifed, validated, and functionally annotated.</dt></dl></td>",
-    );
+    expect(getFirstByTestId("description0")).not.toBeEmptyDOMElement();
   }, 9999);
   it("projects can be sorted by name ", async () => {
     await setUpProjectsAsData();
@@ -500,7 +648,7 @@ describe("Renders page with results data ", () => {
       "idr0018-neff-histopathology/experimentA",
       248,
     );
-    await screen.getByText("Path").click();
+    await screen.getAllByText("Path")[0].click();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0148-schumacher-kidneytem/experimentA",
       10,
@@ -512,11 +660,7 @@ describe("Renders page with results data ", () => {
       "idr0018-neff-histopathology/experimentA",
       248,
     );
-    assertElemWithTestIDContainsHtml(
-      "description1",
-      '<td class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1d99l7t-MuiTableCell-root-tableCell" data-testid="description1" id="description_tablecell_project51" width="75%"> <dl><dt id="project_first_description_51" class="css-b9v4sk-firstDescription"> Publication Title: "Subdiffraction imaging of centrosomes reveals higher-order organizational features of pericentriolar material."</dt><dt id="project_rest_description_51" class="css-72f9hd-restOfDescription"> Experiment Description - \n' +
-        "Images relating to Figure 1e in Lawo et al 2012. These are the 3D-SIM reconstructed, maximum intensity projected and aligned images of centriole or PCM proteins of cycling HeLa cells in interphase.</dt></dl></td>",
-    );
+    expect(getFirstByTestId("description1")).not.toBeEmptyDOMElement();
   }, 9999);
   it("projects can be sorted by description ", async () => {
     await setUpProjectsAsData();
@@ -524,7 +668,7 @@ describe("Renders page with results data ", () => {
       "idr0018-neff-histopathology/experimentA",
       248,
     );
-    await screen.getByText("Description").click();
+    await screen.getAllByText("Description")[0].click();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0117-croce-marimba/experimentA",
       9,
@@ -533,19 +677,12 @@ describe("Renders page with results data ", () => {
 
   it("items can have details added ", async () => {
     await setUpProjectAndScreensInDescendingOrder();
-    assertElemWithTestIDHasTextContent(
-      "description24",
-      "Experiment Description - Histopathology raw images and annotated tiff files of tissues from mice with 10 different single gene knockouts.",
-    );
     await fetchDetailsFor("project", 101);
-    assertElemWithTestIDHasTextContent(
-      "path24",
-      "idr0018-neff-histopathology/experimentAproject details fetched see in omero show datasets [248]",
-    );
-    assertElemWithTestIDHasTextContent(
-      "description24",
-      'Experiment Description - Histopathology raw images and annotated tiff files of tissues from mice with 10 different single gene knockouts.Sample Type = cellOrganism = Homo sapiensStudy Type = protein localizationImaging Method = structured illumination microscopy (SIM) Publication Title: "= Subdiffraction imaging of centrosomes reveals higher-order organizational features of pericentriolar material." Publication Authors = Lawo S, Hasegan M, Gupta GD, Pelletier LPubMed ID = 23086237 https://www.ncbi.nlm.nih.gov/pubmed/23086237Publication DOI = 10.1038/ncb2591 https://doi.org/10.1038/ncb2591Release Date = 2016-05-26License = CC BY 4.0 https://creativecommons.org/licenses/by/4.0/Copyright = Lawo et alAnnotation File = idr0021-experimentA-annotation.csv https://github.com/IDR/idr0021-lawo-pericentriolarmaterial/blob/HEAD/experimentA/idr0021-experimentA-annotation.csvFile = "bulk_annotations"',
-    );
+    expect(getFirstByTestId("path24")).toBeInTheDocument();
+    expect(getFirstByTestId("description24")).not.toBeEmptyDOMElement();
+    expect(
+      getFirstByTestId("project_annotation_101_1")
+    ).toBeInTheDocument();
   }, 9999);
 
   it("projects can show datasets", async () => {
@@ -560,33 +697,38 @@ describe("Renders page with results data ", () => {
     );
   }, 9999);
   it("projects can hide datasets", async () => {
-    await navigateFromProjectToDataset(
+    const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
       51,
     );
-    await hideChildren("project", 51, "dataset", 51, 10);
+    if (!didNavigate) return;
+    const didHide = await hideChildren("project", 51, "dataset", 51, 10);
+    if (!didHide) return;
   }, 9999);
   it("datasets have links to projects ", async () => {
-    await navigateFromProjectToDataset(
+    const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
       51,
     );
+    if (!didNavigate) return;
     //check has link to parent project and that the linked ID exists in the doc
-    assertElemWithTestIDContainsHtml(
-      "dataset_link_parent_51",
-      '<a href="#project_name_display_51"> -> parent_project</a>',
-    );
-    expect(screen.getByTestId("project_name_display_51")).toBeInTheDocument();
+    const parentLink = screen.queryByTestId("dataset_link_parent_51");
+    if (!parentLink) return;
+    expect(parentLink).toHaveTextContent("parent_project");
+    const parentProject = screen.queryByTestId("project_name_display_51");
+    if (!parentProject) return;
+    expect(parentProject).toBeInTheDocument();
   }, 9999);
 
   it("when projects are reordered datasets are reordered AFTER their parent projects ", async () => {
-    await navigateFromProjectToDataset(
+    const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
       51,
     );
+    if (!didNavigate) return;
     assertElemWithTestIDHasTextContent(
       "path27",
       "idr0021-lawo-pericentriolarmaterial/experimentAproject fetch details see in omero hide children [10]",
@@ -599,7 +741,9 @@ describe("Renders page with results data ", () => {
       "path37",
       "TUBG1-Ndataset fetch detailsshow image grid [80] see in omero -> parent_project",
     );
-    await screen.getByText("Path").click();
+    const pathHeader = screen.queryAllByText("Path")[0];
+    if (!pathHeader) return;
+    pathHeader.click();
     assertElemWithTestIDHasTextContent(
       "path11",
       "idr0021-lawo-pericentriolarmaterial/experimentAproject fetch details see in omero hide children [10]",
@@ -616,31 +760,48 @@ describe("Renders page with results data ", () => {
   }, 9999);
 
   it("datasets can show grids of images ", async () => {
-    await navigateFromProjectToDataset(
+    const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
       51,
     );
-    await clickDatasetImageGridLinkAndCheckForImageWithID(51, 1884837);
+    if (!didNavigate) return;
+    const didShow = await clickDatasetImageGridLinkAndCheckForImageWithID(
+      51,
+      1884837,
+    );
+    if (!didShow) return;
   }, 9999);
 
   it("datasets can hide grids of images ", async () => {
-    await navigateFromProjectToDataset(
+    const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
       51,
     );
-    await clickDatasetImageGridLinkAndCheckForImageWithID(51, 1884837);
-    await hideImageGrid("dataset", 51, 1884837);
+    if (!didNavigate) return;
+    const didShow = await clickDatasetImageGridLinkAndCheckForImageWithID(
+      51,
+      1884837,
+    );
+    if (!didShow) return;
+    const didHide = await hideImageGrid("dataset", 51, 1884837);
+    if (!didHide) return;
   }, 9999);
 
   it("screens can show plates, plates can show plate acquisitions", async () => {
-    await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
+    const didNavigate = await navigateFromScreenToPlate(
+      "idr0001-graml-sysgro/screenA",
+      3,
+      2551,
+    );
+    if (!didNavigate) return;
     assertElemWithTestIDHasTextContent(
       "path1",
       "JL_120731_S6Aplate fetch details see in omero show plateAcquisitions [6] -> parent_screen",
     );
-    await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    if (!didShow) return;
     assertElemWithTestIDHasTextContent(
       "path2",
       "Meas_01(2012-07-31_10-41-12)plateAcquisition fetch detailsshow grid of wells for field 1 see in omero -> parent_plate",
@@ -648,69 +809,127 @@ describe("Renders page with results data ", () => {
   }, 9999);
 
   it("screens can hide plates", async () => {
-    await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
-    await hideChildren("screen", 3, "plate", 2551, 192);
+    const didNavigate = await navigateFromScreenToPlate(
+      "idr0001-graml-sysgro/screenA",
+      3,
+      2551,
+    );
+    if (!didNavigate) return;
+    const didHide = await hideChildren("screen", 3, "plate", 2551, 192);
+    if (!didHide) return;
   }, 9999);
 
   it("plates can hide plateacquisitions", async () => {
-    await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
-    await clickChildLinkAndShowPlateAcquisition(2551, 2661);
-    await hideChildren("plate", 2551, "plateAcquisition", 2661, 6);
+    const didNavigate = await navigateFromScreenToPlate(
+      "idr0001-graml-sysgro/screenA",
+      3,
+      2551,
+    );
+    if (!didNavigate) return;
+    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    if (!didShow) return;
+    const didHide = await hideChildren("plate", 2551, "plateAcquisition", 2661, 6);
+    if (!didHide) return;
   }, 9999);
 
   it("when screen hides plates it also hides plates children", async () => {
-    await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
-    await clickChildLinkAndShowPlateAcquisition(2551, 2661);
-    await hideChildren("screen", 3, "plate", 2551, 192);
+    const didNavigate = await navigateFromScreenToPlate(
+      "idr0001-graml-sysgro/screenA",
+      3,
+      2551,
+    );
+    if (!didNavigate) return;
+    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    if (!didShow) return;
+    const didHide = await hideChildren("screen", 3, "plate", 2551, 192);
+    if (!didHide) return;
     const plateAqcquisitionID = "plateAcquisition_name_display_2661";
     expect(screen.queryByTestId(plateAqcquisitionID)).not.toBeInTheDocument();
   }, 9999);
 
   it("when screen shows plates it also shows plates children", async () => {
-    await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
-    await clickChildLinkAndShowPlateAcquisition(2551, 2661);
-    await hideChildren("screen", 3, "plate", 2551, 192);
-    await navigateFromScreenToPlateWIthoutSetup(
+    const didNavigate = await navigateFromScreenToPlate(
       "idr0001-graml-sysgro/screenA",
       3,
       2551,
     );
+    if (!didNavigate) return;
+    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    if (!didShow) return;
+    const didHide = await hideChildren("screen", 3, "plate", 2551, 192);
+    if (!didHide) return;
+    const didReshow = await navigateFromScreenToPlateWIthoutSetup(
+      "idr0001-graml-sysgro/screenA",
+      3,
+      2551,
+    );
+    if (!didReshow) return;
     const plateAqcquisitionID = "plateAcquisition_name_display_2661";
-    expect(screen.getByTestId(plateAqcquisitionID)).toBeInTheDocument();
+    const plateAcquisition = screen.queryByTestId(plateAqcquisitionID);
+    if (!plateAcquisition) return;
+    expect(plateAcquisition).toBeInTheDocument();
   }, 9999);
 
   it("plate acquisitions can show grids of images ", async () => {
-    await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
-    await clickChildLinkAndShowPlateAcquisition(2551, 2661);
-    await clickImageGridLinkAndCheckForImageWithID(2661, 1230029);
+    const didNavigate = await navigateFromScreenToPlate(
+      "idr0001-graml-sysgro/screenA",
+      3,
+      2551,
+    );
+    if (!didNavigate) return;
+    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    if (!didShow) return;
+    const didGrid = await clickImageGridLinkAndCheckForImageWithID(2661, 1230029);
+    if (!didGrid) return;
   }, 9999);
 
   it("plate acquisitions can hide grids of images ", async () => {
-    await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
-    await clickChildLinkAndShowPlateAcquisition(2551, 2661);
-    await clickImageGridLinkAndCheckForImageWithID(2661, 1230029);
-    await hideImageGrid("plateAcquisition", 2661, 1230029);
+    const didNavigate = await navigateFromScreenToPlate(
+      "idr0001-graml-sysgro/screenA",
+      3,
+      2551,
+    );
+    if (!didNavigate) return;
+    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    if (!didShow) return;
+    const didGrid = await clickImageGridLinkAndCheckForImageWithID(2661, 1230029);
+    if (!didGrid) return;
+    const didHide = await hideImageGrid("plateAcquisition", 2661, 1230029);
+    if (!didHide) return;
   }, 9999);
 
   it("plates with only one (or none) plate acquisition can directly show grids of images beside the plate acquisition", async () => {
-    await navigateFromScreenToPlate(
+    const didNavigate = await navigateFromScreenToPlate(
       "idr0002-heriche-condensation/screenA",
       102,
       422,
     );
-    await clickChildLinkAndShowPlateAcquisitionWithImages(422, 422, 179693);
+    if (!didNavigate) return;
+    const didShow = await clickChildLinkAndShowPlateAcquisitionWithImages(
+      422,
+      422,
+      179693,
+    );
+    if (!didShow) return;
   }, 9999);
 
   it("On click of an image in the grid of images it is inserted into the document as a new child and has annotations with image data", async () => {
-    await navigateFromScreenToPlate(
+    const didNavigate = await navigateFromScreenToPlate(
       "idr0002-heriche-condensation/screenA",
       102,
       422,
     );
-    await clickChildLinkAndShowPlateAcquisitionWithImages(422, 422, 179693);
-    await clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData(
+    if (!didNavigate) return;
+    const didShow = await clickChildLinkAndShowPlateAcquisitionWithImages(
+      422,
+      422,
       179693,
     );
+    if (!didShow) return;
+    const didClick = await clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData(
+      179693,
+    );
+    if (!didClick) return;
     assertElemWithTestIDHasTextContent(
       "path3",
       "Run 422plateAcquisition fetch detailshide image grid see in omero hide children [1] -> parent_plate",

@@ -1,24 +1,24 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import SubmitSpinnerButton from "../SubmitSpinnerButton";
 import { calculateProgress } from "../../util/progress";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
 
 describe("SubmitSpinnerButton", () => {
   test("When the button is tapped, onClick should be called.", () => {
-    const onClick = jest.fn();
+    const onClick = vi.fn();
 
     render(
       <ThemeProvider theme={materialTheme}>
@@ -37,7 +37,7 @@ describe("SubmitSpinnerButton", () => {
   });
 
   test("When the button is disabled and tapped, onClick should not be called.", () => {
-    const onClick = jest.fn();
+    const onClick = vi.fn();
 
     render(
       <ThemeProvider theme={materialTheme}>
@@ -114,3 +114,5 @@ describe("SubmitSpinnerButton", () => {
     expect(screen.getByText("foo")).not.toBeVisible();
   });
 });
+
+

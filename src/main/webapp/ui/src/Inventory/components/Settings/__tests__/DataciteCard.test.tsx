@@ -1,19 +1,20 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import DataciteCard from "../DataciteCard";
-import { axe, toHaveNoViolations } from "jest-axe";
+import { axe } from "vitest-axe";
+import { toHaveNoViolations } from "vitest-axe/matchers";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
-expect.extend(toHaveNoViolations);
+expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -37,3 +38,5 @@ describe("DataciteCard", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 });
+
+

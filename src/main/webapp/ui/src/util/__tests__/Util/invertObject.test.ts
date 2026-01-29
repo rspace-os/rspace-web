@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { invertObject } from "../../Util";
 
 describe("invertObject", () => {
@@ -18,3 +18,5 @@ describe("invertObject", () => {
     });
   });
 });
+
+

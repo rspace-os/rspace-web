@@ -1,10 +1,9 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 import React from "react";
 import { render, cleanup, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import InvApiService from "../../../../common/InvApiService";
 import TemplatePicker from "../TemplatePicker";
 import materialTheme from "../../../../theme";
@@ -16,12 +15,16 @@ import "__mocks__/resizeObserver";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
+import { type Mock, describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 
-jest.mock("../../../../common/InvApiService", () => ({
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
   get: () => ({}),
   query: () => ({}),
-}));
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+
+  }}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   searchStore: {
     savedSearches: [{ name: "Dummy saved search", query: "foo" }],
   },
@@ -39,9 +42,10 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
       _links: [],
     },
   },
+})
 }));
 
-(window.fetch as jest.Mock) = jest.fn(() =>
+(window.fetch as Mock) = vi.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
@@ -62,7 +66,7 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
 );
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -79,7 +83,7 @@ describe("TemplatePicker", () => {
         },
       });
 
-      jest.spyOn(InvApiService, "query").mockImplementation((endpoint) => {
+      vi.spyOn(InvApiService, "query").mockImplementation((endpoint) => {
         if (endpoint === "sampleTemplates")
           return Promise.resolve({
             data: {
@@ -133,3 +137,5 @@ describe("TemplatePicker", () => {
     });
   });
 });
+
+

@@ -1,4 +1,4 @@
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import Result from "../../result";
 
 describe("any", () => {
@@ -44,3 +44,5 @@ describe("any", () => {
     });
   });
 });
+
+

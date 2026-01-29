@@ -1,13 +1,15 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi } from "vitest";
 import { makeMockContainer, containerAttrs } from "./mocking";
 import LocationModel from "../../LocationModel";
 import { type ContainerAttrs } from "../../ContainerModel";
 
-jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../stores/RootStore", () => () => ({}));
+vi.mock("../../../use-stores", () => () => {});
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({})
+}));
 
 describe("computed: paramsForBackend", () => {
   /*
@@ -103,3 +105,5 @@ describe("computed: paramsForBackend", () => {
     });
   });
 });
+
+

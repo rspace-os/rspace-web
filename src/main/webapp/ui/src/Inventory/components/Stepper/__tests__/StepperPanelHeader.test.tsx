@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React, { useState } from "react";
 import {
   render,
@@ -10,7 +10,7 @@ import {
   fireEvent,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import {
   StepperPanelHeader,
   useFormSectionError,
@@ -28,7 +28,7 @@ import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -300,3 +300,5 @@ describe("StepperPanelHeader", () => {
     expect(screen.getByLabelText("Expand section")).not.toHaveTextContent("1");
   });
 });
+
+

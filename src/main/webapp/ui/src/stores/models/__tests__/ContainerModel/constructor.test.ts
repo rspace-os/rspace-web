@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, it, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 
 import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
 import { containerAttrs } from "./mocking";
@@ -10,8 +10,10 @@ import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import { type Factory } from "../../../definitions/Factory";
 import { type InventoryRecord } from "../../../definitions/InventoryRecord";
 
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   peopleStore: {},
+})
 })); // break import cycle
 
 function mockContainerWithTwoContents(factory: Factory) {
@@ -56,7 +58,7 @@ describe("constructor", () => {
       const mockFactoryRef: any = {};
 
       // Create a mock newRecord implementation
-      const mockNewRecord = jest
+      const mockNewRecord = vi
         .fn()
         .mockImplementation(
           (attrs: Record<string, unknown> & { globalId: string | null }) => {
@@ -69,7 +71,7 @@ describe("constructor", () => {
       const factory = mockFactory({
         newRecord: mockNewRecord,
          
-        newFactory: jest.fn().mockReturnValue(mockFactoryRef),
+        newFactory: vi.fn().mockReturnValue(mockFactoryRef),
       });
 
       // Assign the factory to the reference to resolve circular dependency
@@ -108,3 +110,5 @@ describe("constructor", () => {
     });
   });
 });
+
+

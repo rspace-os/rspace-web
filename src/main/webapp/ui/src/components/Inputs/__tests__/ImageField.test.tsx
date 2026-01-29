@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import ImageIcon from "@mui/icons-material/Image";
 import { __setIsMobile } from "react-device-detect";
@@ -16,32 +16,36 @@ declare module "react-device-detect" {
   export const __setIsMobile: (value: boolean) => void;
 }
 
-jest.mock("@mui/icons-material/CameraAlt", () => jest.fn(() => <div></div>));
-jest.mock("@mui/icons-material/Image", () => jest.fn(() => <div></div>));
-jest.mock("../FileField", () =>
-  jest.fn(({ icon, InputProps: { endAdornment } }) => {
+vi.mock("@mui/icons-material/CameraAlt", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("@mui/icons-material/Image", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../FileField", () => ({
+  default: vi.fn(({ icon, InputProps: { endAdornment } }) => {
     return (
       <>
         <div id="icon">{icon}</div>
         <div id="endAdornment">{endAdornment}</div>
       </>
     );
-  })
-);
-jest.mock("@mui/material/Button", () =>
-  jest.fn(({ children, onClick }) => {
+  }),
+}));
+vi.mock("@mui/material/Button", () => ({
+  default: vi.fn(({ children, onClick }) => {
     return <div onClick={onClick}>{children}</div>;
-  })
-);
-jest.mock("react-device-detect");
-jest.mock("../DynamicallyLoadedImageEditor", () =>
-  jest.fn(() => {
+  }),
+}));
+vi.mock("react-device-detect");
+vi.mock("../DynamicallyLoadedImageEditor", () => ({
+  default: vi.fn(() => {
     return <div></div>;
-  })
-);
+  }),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -117,3 +121,4 @@ describe("ImageField", () => {
     });
   });
 });
+

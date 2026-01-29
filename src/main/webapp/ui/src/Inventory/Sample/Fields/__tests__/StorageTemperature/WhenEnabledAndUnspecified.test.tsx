@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import StorageTemperature from "../../StorageTemperature";
 import {
   CELSIUS,
@@ -35,18 +35,18 @@ type MockFieldOwnerProps = {
 const mockFieldOwner = (
   mockedParts: MockFieldOwnerProps
 ): HasEditableFields<MockFields> => ({
-  isFieldEditable: jest
+  isFieldEditable: vi
     .fn()
     .mockImplementation((_field: string) => mockedParts.isFieldEditable()),
   fieldValues: mockedParts.fieldValues,
-  setFieldsDirty: jest.fn(),
+  setFieldsDirty: vi.fn(),
   canChooseWhichToEdit: false,
-  setFieldEditable: jest.fn(),
+  setFieldEditable: vi.fn(),
   noValueLabel: mockedParts.noValueLabel,
 });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -66,7 +66,7 @@ describe("StorageTemperature", () => {
         },
         isFieldEditable: () => true,
       });
-      const spy = jest.spyOn(fieldOwner, "setFieldsDirty");
+      const spy = vi.spyOn(fieldOwner, "setFieldsDirty");
 
       render(
         <ThemeProvider theme={materialTheme}>
@@ -84,3 +84,5 @@ describe("StorageTemperature", () => {
     });
   });
 });
+
+

@@ -1,18 +1,20 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import NoValue from "../../../components/NoValue";
 
 import DateField from "../DateField";
 
-jest.mock("../../../components/NoValue", () => jest.fn(() => <></>));
+vi.mock("../../../components/NoValue", () => ({
+  default: vi.fn(() => <></>),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -39,3 +41,4 @@ describe("DateField", () => {
     });
   });
 });
+

@@ -1,11 +1,11 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
 import { render, cleanup, waitFor, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import {
   makeMockTemplate,
   templateAttrs,
@@ -23,40 +23,44 @@ import "__mocks__/resizeObserver";
 import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
 
-jest.mock("../../../../../common/InvApiService", () => ({
-  query: jest.fn(() => {}),
-  get: jest.fn(() => {}),
+vi.mock("../../../../../common/InvApiService", () => ({
+  default: {
+    query: vi.fn(() => {}),
+    get: vi.fn(() => {}),
+  },
 }));
-jest.mock("../../../../../stores/stores/RootStore", () => () => ({
-  searchStore: {
-    search: null,
-    savedSearches: [],
-  },
-  uiStore: {
-    addAlert: () => {},
-    setVisiblePanel: () => {},
-  },
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-  peopleStore: {
-    currentUser: {
-      id: 1,
-      username: "jb",
-      firstName: "joe",
-      lastName: "bloggs",
-      email: null,
-      workbenchId: 1,
-      _links: [],
+vi.mock("../../../../../stores/stores/RootStore", () => ({
+  default: () => ({
+    searchStore: {
+      search: null,
+      savedSearches: [],
     },
-  },
+    uiStore: {
+      addAlert: () => {},
+      setVisiblePanel: () => {},
+    },
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+    peopleStore: {
+      currentUser: {
+        id: 1,
+        username: "jb",
+        firstName: "joe",
+        lastName: "bloggs",
+        email: null,
+        workbenchId: 1,
+        _links: [],
+      },
+    },
+  }),
 }));
-jest.mock("../../../../Container/Content/ImageView/PreviewImage", () =>
-  jest.fn(() => <></>)
-);
+vi.mock("../../../../Container/Content/ImageView/PreviewImage", () => ({
+  default: vi.fn(() => <></>),
+}));
 
 // Mock fetch
-window.fetch = jest.fn().mockImplementation(() =>
+window.fetch = vi.fn().mockImplementation(() =>
   Promise.resolve({
     status: 200,
     ok: true,
@@ -65,7 +69,7 @@ window.fetch = jest.fn().mockImplementation(() =>
 );
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -76,7 +80,7 @@ describe("Template", () => {
       const oldVersionOfTemplate = makeMockTemplate({
         historicalVersion: true,
       });
-      jest
+      vi
         .spyOn(oldVersionOfTemplate, "getLatest")
         .mockImplementation(() => {});
       const sample = makeMockSample({
@@ -112,7 +116,7 @@ describe("Template", () => {
   describe("When a template is chosen", () => {
     test("all of the template's fields should be copied to the sample.", async () => {
       const user = userEvent.setup();
-      jest.spyOn(ApiService, "query").mockImplementation((endpoint, params) => {
+      vi.spyOn(ApiService, "query").mockImplementation((endpoint, params) => {
         if (params.get("resultType") === "TEMPLATE") {
           return Promise.resolve({
             data: {
@@ -133,7 +137,7 @@ describe("Template", () => {
           config: {},
         } as AxiosResponse);
       });
-      jest.spyOn(ApiService, "get").mockImplementation(async (endpoint) => {
+      vi.spyOn(ApiService, "get").mockImplementation(async (endpoint) => {
         if (endpoint === "sampleTemplates") {
           await sleep(500);
           return {
@@ -165,7 +169,7 @@ describe("Template", () => {
         id: null,
         globalId: null,
       });
-      jest.spyOn(sample, "checkLock").mockImplementation(() => {
+      vi.spyOn(sample, "checkLock").mockImplementation(() => {
         return Promise.resolve({
           status: "LOCKED_OK",
           remainingTimeInSeconds: 100,
@@ -176,7 +180,7 @@ describe("Template", () => {
           },
         });
       });
-      jest.spyOn(sample, "handleLockExpiry").mockImplementation(() => {});
+      vi.spyOn(sample, "handleLockExpiry").mockImplementation(() => {});
 
       const rootStore = makeMockRootStore({
         searchStore: {
@@ -208,3 +212,4 @@ describe("Template", () => {
     });
   });
 });
+

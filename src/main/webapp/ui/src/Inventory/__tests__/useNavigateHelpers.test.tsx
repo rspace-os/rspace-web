@@ -1,18 +1,56 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  beforeAll,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
-import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
+import { render, cleanup, screen, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
+import {
+  makeMockContainer,
+  containerAttrs,
+} from "../../stores/models/__tests__/ContainerModel/mocking";
 import NavigateContext from "../../stores/contexts/Navigate";
-import Search from "../../stores/models/Search";
-import useNavigateHelpers from "../useNavigateHelpers";
 import userEvent from "@testing-library/user-event";
 
+const setActiveResult = vi.fn(() => Promise.resolve());
+const generateNewQuery = vi.fn(() => new URLSearchParams("query=foo"));
+const toggleSidebar = vi.fn();
+const setVisiblePanel = vi.fn();
+
+vi.mock("../../stores/use-stores", () => ({
+  default: () => ({
+    searchStore: {
+      search: {
+        setActiveResult,
+      },
+      fetcher: {
+        generateNewQuery,
+      },
+    },
+    uiStore: {
+      isVerySmall: false,
+      toggleSidebar,
+      setVisiblePanel,
+    },
+  }),
+}));
+
+let useNavigateHelpers: typeof import("../useNavigateHelpers").default;
+
+beforeAll(async () => {
+  ({ default: useNavigateHelpers } = await import("../useNavigateHelpers"));
+});
+
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -21,7 +59,9 @@ describe("useNavigateHelpers", () => {
   describe("navigateToRecord should", () => {
     test("call setActiveResult", async () => {
       const user = userEvent.setup();
-      const mockContainer = makeMockContainer();
+      const mockContainer = makeMockContainer({
+        parentContainers: [containerAttrs({ globalId: "IC2" })],
+      });
       const FunctionComponent = () => {
         const { navigateToRecord } = useNavigateHelpers();
         return (
@@ -35,21 +75,21 @@ describe("useNavigateHelpers", () => {
         );
       };
 
-      const setActiveResultSpy = jest.spyOn(
-        Search.prototype,
-        "setActiveResult"
-      );
-
       render(
         <NavigateContext.Provider
-          value={{ useNavigate: jest.fn(), useLocation: jest.fn() }}
+          value={{
+            useNavigate: vi.fn().mockImplementation(() => () => {}),
+            useLocation: vi.fn(),
+          }}
         >
           <FunctionComponent />
         </NavigateContext.Provider>
       );
       await user.click(screen.getByText("Click me."));
 
-      expect(setActiveResultSpy).toHaveBeenCalledWith(mockContainer);
+      await waitFor(() =>
+        expect(setActiveResult).toHaveBeenCalledWith(mockContainer)
+      );
     });
   });
 
@@ -70,16 +110,11 @@ describe("useNavigateHelpers", () => {
         );
       };
 
-      const setActiveResultSpy = jest.spyOn(
-        Search.prototype,
-        "setActiveResult"
-      );
-
       render(
         <NavigateContext.Provider
           value={{
-            useNavigate: jest.fn().mockImplementation(() => () => {}),
-            useLocation: jest.fn(),
+            useNavigate: vi.fn().mockImplementation(() => () => {}),
+            useLocation: vi.fn(),
           }}
         >
           <FunctionComponent />
@@ -87,7 +122,7 @@ describe("useNavigateHelpers", () => {
       );
       await user.click(screen.getByText("Click me."));
 
-      expect(setActiveResultSpy).not.toHaveBeenCalled();
+      expect(setActiveResult).not.toHaveBeenCalled();
     });
   });
 });

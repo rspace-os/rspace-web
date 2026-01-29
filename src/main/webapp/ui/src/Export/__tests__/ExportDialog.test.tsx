@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "../../../__mocks__/matchMedia";
 import React, { useState } from "react";
 import {
@@ -13,19 +13,27 @@ import {
   within,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import ExportDialog from "../ExportDialog";
 import { type ExportSelection } from "../common";
 import fc from "fast-check";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
-import each from "jest-each";
 import Alerts from "../../components/Alerts/Alerts";
 import { sleep } from "../../util/Util";
 import userEvent from "@testing-library/user-event";
 
-window.fetch = jest.fn(() =>
+vi.mock("react-transition-group", () => ({
+  Transition: ({ children, in: inProp }) =>
+    typeof children === "function"
+      ? children(inProp ? "entered" : "exited", {})
+      : children ?? null,
+  CSSTransition: ({ children }) => children ?? null,
+  TransitionGroup: ({ children }) => children ?? null,
+}));
+
+window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
@@ -36,7 +44,7 @@ window.fetch = jest.fn(() =>
 const mockAxios = new MockAdapter(axios);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -602,7 +610,7 @@ describe("ExportDialog", () => {
       });
     });
     describe("The page size displayed on the second page should be set by a call to /defaultPDFConfig", () => {
-      each(["A4", "LETTER"]).test("PDF export: pageSize = %s", (pageSize) => {
+      test.each(["A4", "LETTER"])("PDF export: pageSize = %s", (pageSize) => {
         const user = userEvent.setup();
         fc.assert(
           fc
@@ -634,7 +642,7 @@ describe("ExportDialog", () => {
           { numRuns: 1 }
         );
       });
-      each(["A4", "LETTER"]).test("DOC export: pageSize = %s", (pageSize) => {
+      test.each(["A4", "LETTER"])("DOC export: pageSize = %s", (pageSize) => {
         const user = userEvent.setup();
         fc.assert(
           fc

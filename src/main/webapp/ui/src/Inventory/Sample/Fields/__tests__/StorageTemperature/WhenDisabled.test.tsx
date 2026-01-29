@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import {
   CELSIUS,
   KELVIN,
@@ -17,7 +17,7 @@ import materialTheme from "../../../../../theme";
 import StorageTemperature from "../../StorageTemperature";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -34,14 +34,14 @@ const mockFieldOwner = (mockedParts: {
   };
 }) => {
   const defaults = {
-    isFieldEditable: jest.fn().mockImplementation(() => false),
+    isFieldEditable: vi.fn().mockImplementation(() => false),
     fieldValues: {
       storageTempMin: null,
       storageTempMax: null,
     },
-    setFieldsDirty: jest.fn(),
+    setFieldsDirty: vi.fn(),
     canChooseWhichToEdit: false,
-    setFieldEditable: jest.fn(),
+    setFieldEditable: vi.fn(),
     noValueLabel: {
       storageTempMin: null,
       storageTempMax: null,
@@ -220,3 +220,5 @@ describe("StorageTemperature", () => {
     });
   });
 });
+
+

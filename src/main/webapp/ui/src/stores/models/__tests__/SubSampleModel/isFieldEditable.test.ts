@@ -1,11 +1,13 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { makeMockSubSample } from "./mocking";
 
-jest.mock("../../../../common/InvApiService", () => ({}));
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  }}));
 
 describe("isFieldEditable", () => {
   describe("When the Subsample is deleted, isFieldEditable should", () => {
@@ -18,3 +20,5 @@ describe("isFieldEditable", () => {
     });
   });
 });
+
+

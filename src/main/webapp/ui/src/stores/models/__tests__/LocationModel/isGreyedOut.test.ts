@@ -1,11 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, it, test, expect } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import LocationModel from "../../LocationModel";
 import { makeMockContainer } from "../ContainerModel/mocking";
-import each from "jest-each";
 
 describe("method: isGreyedOut", () => {
   /*
@@ -26,7 +25,7 @@ describe("method: isGreyedOut", () => {
    *    such, this only has a value when both performingSearch and hasContent
    *    are true.
    */
-  each`
+  it.each`
     alwaysFilterOut | performingSearch | hasContent | inSearchResults | isGreyedOut
     ${false}        | ${false}         | ${false}   | ${null}         | ${false}
     ${false}        | ${false}         | ${true}    | ${null}         | ${false}
@@ -38,7 +37,7 @@ describe("method: isGreyedOut", () => {
     ${true}         | ${true}          | ${false}   | ${null}         | ${true}
     ${true}         | ${true}          | ${true}    | ${false}        | ${true}
     ${true}         | ${true}          | ${true}    | ${true}         | ${true}
-  `.test(
+  `(
     "{" +
       "alwaysFilterOut = $alwaysFilterOut," +
       "performingSearch = $performingSearch," +
@@ -81,3 +80,5 @@ describe("method: isGreyedOut", () => {
     }
   );
 });
+
+

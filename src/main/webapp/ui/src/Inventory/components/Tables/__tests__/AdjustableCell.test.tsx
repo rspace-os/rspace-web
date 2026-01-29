@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import {
   type AdjustableTableRow,
   type CellContent,
@@ -13,10 +13,12 @@ import AdjustableCell from "../AdjustableCell";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import RecordLocation from "../../../../Inventory/components/RecordLocation";
 
-jest.mock("../../RecordLocation", () => jest.fn(() => <span></span>));
+vi.mock("../../RecordLocation", () => ({
+  default: vi.fn(() => <span></span>),
+}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -55,3 +57,4 @@ describe("AdjustableCell", () => {
     });
   });
 });
+

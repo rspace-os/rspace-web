@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import * as ArrayUtils from "../../ArrayUtils";
 
 describe("intersperse", () => {
@@ -14,3 +14,5 @@ describe("intersperse", () => {
     ]);
   });
 });
+
+

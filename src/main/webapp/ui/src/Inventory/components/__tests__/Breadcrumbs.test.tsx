@@ -1,22 +1,24 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { makeMockSubSample } from "../../../stores/models/__tests__/SubSampleModel/mocking";
 import Breadcrumbs from "../Breadcrumbs";
 
-jest.mock("../../../common/InvApiService", () => {});
-jest.mock("../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
+})
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -34,3 +36,5 @@ describe("Breadcrumbs", () => {
     });
   });
 });
+
+

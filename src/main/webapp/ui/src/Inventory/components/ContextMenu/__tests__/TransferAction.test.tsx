@@ -1,26 +1,26 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import TransferAction from "../TransferAction";
-import Dialog from "@mui/material/Dialog";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import userEvent from "@testing-library/user-event";
+import Dialog from "@mui/material/Dialog";
 
-jest.mock("@mui/material/Dialog", () =>
-  jest.fn(({ children }) => {
-    return <>{children}</>;
-  })
-);
-jest.mock("../../../../common/InvApiService", () => ({}));
+vi.mock("@mui/material/Dialog", () => ({
+  default: vi.fn(({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  )),
+}));
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);

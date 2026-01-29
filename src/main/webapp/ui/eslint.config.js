@@ -132,7 +132,17 @@ export default defineConfig([
 
   // Test files configuration
   {
-    files: ["**/__tests__/**/*.[jt]s?(x)"],
+    files: [
+      "**/__tests__/**/*.[jt]s?(x)",
+      "**/__mocks__/**/*.[jt]s?(x)",
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.vitest,
+      },
+    },
     plugins: {
       react,
       "react-hooks": reactHooks,

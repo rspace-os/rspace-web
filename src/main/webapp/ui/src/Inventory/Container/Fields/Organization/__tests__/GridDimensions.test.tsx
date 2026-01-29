@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import {
   render,
@@ -10,7 +10,7 @@ import {
   within,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { storesContext } from "../../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";
@@ -48,7 +48,7 @@ function makeRootStoreWithGridContainer(): {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -303,7 +303,7 @@ describe("GridDimensions", () => {
   test("Selecting 96-well should save cols: 12 and rows: 8.", async () => {
     const user = userEvent.setup();
     const { rootStore, gridContainer } = makeRootStoreWithGridContainer();
-    const spy = jest.spyOn(gridContainer, "setAttributesDirty");
+    const spy = vi.spyOn(gridContainer, "setAttributesDirty");
     render(
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={rootStore}>
@@ -349,7 +349,7 @@ describe("GridDimensions", () => {
         const option = menuOptions[unboundedIndex % menuOptions.length];
 
         let gridLayout: any;
-        jest
+        vi
           .spyOn(gridContainer, "setAttributesDirty")
           .mockImplementation((args: any) => {
             gridLayout = args.gridLayout;
@@ -376,3 +376,5 @@ describe("GridDimensions", () => {
     );
   });
 });
+
+

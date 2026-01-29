@@ -1,4 +1,4 @@
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import { calculateProgress, asPercentageString } from "../progress";
 import fc from "fast-check";
 
@@ -39,3 +39,5 @@ describe("progress", () => {
     );
   });
 });
+
+

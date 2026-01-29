@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import { sum } from "../../iterators";
 
 describe("sum", () => {
@@ -13,3 +13,5 @@ describe("sum", () => {
     expect(sum(new Set([1, 2, 3]))).toBe(6);
   });
 });
+
+

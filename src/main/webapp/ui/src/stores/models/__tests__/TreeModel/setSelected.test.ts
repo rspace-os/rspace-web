@@ -1,20 +1,25 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 
+import { describe, it, test, expect, vi } from "vitest";
 import Search from "../../Search";
 import { makeMockSubSample } from "../SubSampleModel/mocking";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 
-jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../stores/RootStore", () => () => ({
-  uiStore: {
-    setVisiblePanel: () => {},
-  },
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
+vi.mock("../../../use-stores", () => () => {});
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
+    uiStore: {
+      setVisiblePanel: () => {},
+    },
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+    peopleStore: {
+      currentUser: { username: "user" },
+    },
+  }),
 }));
 
 describe("method: setSelected", () => {
@@ -26,12 +31,16 @@ describe("method: setSelected", () => {
       const search = new Search({
         factory: mockFactory(),
       });
-      const setActiveResultSpy = jest
+      const setActiveResultSpy = vi
         .spyOn(search, "setActiveResult")
         .mockImplementation(() => Promise.resolve());
 
       const subsample = makeMockSubSample();
       const sample = subsample.sample;
+      sample.newSampleSubSamplesCount = 1;
+      sample.newSampleSubSampleTargetLocations = [
+        { containerId: 1, location: { id: 1 } },
+      ];
       search.fetcher.setResults([sample]);
       search.tree.setSelected(sample.globalId);
       expect(setActiveResultSpy).toHaveBeenCalledWith(sample);
@@ -46,7 +55,7 @@ describe("method: setSelected", () => {
       const search = new Search({
         factory: mockFactory(),
       });
-      const setActiveResultSpy = jest
+      const setActiveResultSpy = vi
         .spyOn(search, "setActiveResult")
         .mockImplementation(() => Promise.resolve());
 

@@ -1,18 +1,19 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi, beforeEach } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
 import * as PersonMocking from "../../../models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../models/PersonModel";
 import { runInAction } from "mobx";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
-jest.mock("../../../../common/ElnApiService", () => ({
+vi.mock("../../../../common/ElnApiService", () => ({
+  default: {
   get: () => {
     return Promise.resolve({
       data: {
@@ -27,7 +28,8 @@ jest.mock("../../../../common/ElnApiService", () => ({
       },
     });
   },
-}));
+
+  }}));
 
 describe("fetchMembersOfSameGroup", () => {
   test("Error message should be returned as promise.reject", async () => {
@@ -43,3 +45,5 @@ describe("fetchMembersOfSameGroup", () => {
     }
   });
 });
+
+

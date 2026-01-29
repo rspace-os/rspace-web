@@ -1,11 +1,13 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi } from "vitest";
 import { makeMockContainer } from "./mocking";
 
-jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../stores/RootStore", () => () => ({}));
+vi.mock("../../../use-stores", () => () => {});
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({})
+}));
 
 describe("computed: availableLocations", () => {
   test("List containers have infinite capacity.", () => {
@@ -74,3 +76,5 @@ describe("computed: availableLocations", () => {
     });
   });
 });
+
+

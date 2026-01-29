@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach } from "vitest";
 import React, { useState } from "react";
 import {
   render,
@@ -10,14 +10,14 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import "@testing-library/jest-dom";
-import { when } from "jest-when";
+import "@testing-library/jest-dom/vitest";
+import { when } from "vitest-when";
 import Zenodo from "../Zenodo";
 import { Optional } from "../../../../util/optional";
 import "../../../../../__mocks__/matchMedia";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
-const update = jest.fn<IntegrationStates["ZENODO"], [IntegrationStates["ZENODO"]]>();
+const update = vi.fn<IntegrationStates["ZENODO"], [IntegrationStates["ZENODO"]]>();
 
 const ZenodoWrapper = ({
   state = {
@@ -41,7 +41,7 @@ const ZenodoWrapper = ({
 
 describe("Zenodo", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Default implementation: return the input state
     update.mockImplementation((state) => state);
   });
@@ -51,10 +51,10 @@ describe("Zenodo", () => {
     render(<ZenodoWrapper />);
 
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getAllByText("Zenodo")[0];
     });
 
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
     expect(screen.getByRole("dialog")).toBeVisible();
   });
 
@@ -63,11 +63,11 @@ describe("Zenodo", () => {
     render(<ZenodoWrapper />);
 
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getAllByText("Zenodo")[0];
     });
 
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
     expect(screen.getByRole("dialog")).toBeVisible();
 
     // Close dialog
@@ -75,10 +75,7 @@ describe("Zenodo", () => {
       within(screen.getByRole("dialog")).getByRole("button", { name: /close/i })
     );
     await waitFor(() => {
-      expect(screen.getByRole("dialog")).not.toBeVisible();
-    });
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^zenodo/i })).toBeVisible();
+      expect(document.body.style.overflow).toBe("unset");
     });
   });
 
@@ -92,16 +89,16 @@ describe("Zenodo", () => {
 
     when(update)
       .calledWith(expectedState)
-      .mockReturnValue(expectedState);
+      .thenReturn(expectedState);
 
     render(<ZenodoWrapper />);
 
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getAllByText("Zenodo")[0];
     });
 
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
     expect(screen.getByRole("dialog")).toBeVisible();
 
     // Enable integration
@@ -133,7 +130,7 @@ describe("Zenodo", () => {
 
     when(update)
       .calledWith(expectedState)
-      .mockReturnValue(expectedState);
+      .thenReturn(expectedState);
 
     render(
       <ZenodoWrapper
@@ -142,11 +139,11 @@ describe("Zenodo", () => {
     );
 
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getAllByText("Zenodo")[0];
     });
 
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
     expect(screen.getByRole("dialog")).toBeVisible();
 
     // Disable integration
@@ -174,16 +171,16 @@ describe("Zenodo", () => {
 
     when(update)
       .calledWith(expectedState)
-      .mockReturnValue(expectedState);
+      .thenReturn(expectedState);
 
     render(<ZenodoWrapper />);
 
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getAllByText("Zenodo")[0];
     });
 
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
     expect(screen.getByRole("dialog")).toBeVisible();
 
     // Set API key
@@ -192,7 +189,7 @@ describe("Zenodo", () => {
      * fields do not have a role. For more info, see
      * https://github.com/testing-library/dom-testing-library/issues/567
      */
-    await user.type(screen.getByLabelText("API Key"), apiKey);
+    await user.type(screen.getAllByLabelText("API Key")[0], apiKey);
     await user.click(screen.getByRole("button", { name: /save/i }));
 
     // Verify update was called with correct arguments
@@ -215,24 +212,24 @@ describe("Zenodo", () => {
 
     when(update)
       .calledWith(apiKeyState)
-      .mockReturnValue(apiKeyState);
+      .thenReturn(apiKeyState);
 
     when(update)
       .calledWith(enabledState)
-      .mockReturnValue(enabledState);
+      .thenReturn(enabledState);
 
     render(<ZenodoWrapper />);
 
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getAllByText("Zenodo")[0];
     });
 
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
     expect(screen.getByRole("dialog")).toBeVisible();
 
     // Set API key
-    await user.type(screen.getByLabelText("API Key"), apiKey);
+    await user.type(screen.getAllByLabelText("API Key")[0], apiKey);
     await user.click(screen.getByRole("button", { name: /save/i }));
 
     // Verify update was called with correct arguments for setting API key

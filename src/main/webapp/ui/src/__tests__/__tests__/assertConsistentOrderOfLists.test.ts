@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import fc from "fast-check";
 import { toHaveConsistentOrdering } from "../assertConsistentOrderOfLists";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -104,3 +104,5 @@ describe("assertConsistentOrderOfLists", () => {
     );
   });
 });
+
+

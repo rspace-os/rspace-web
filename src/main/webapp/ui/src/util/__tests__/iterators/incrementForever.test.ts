@@ -1,4 +1,4 @@
-/* eslint-env jest */
+import { describe, test, expect } from "vitest";
 import fc from "fast-check";
 import { incrementForever } from "../../iterators";
 import * as ArrayUtils from "../../ArrayUtils";
@@ -41,3 +41,5 @@ describe("incrementForever", () => {
     );
   });
 });
+
+

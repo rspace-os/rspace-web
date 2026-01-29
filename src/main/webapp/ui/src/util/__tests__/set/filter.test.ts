@@ -1,5 +1,5 @@
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet } from "./helpers";
 
@@ -30,3 +30,5 @@ describe("filter", () => {
     );
   });
 });
+
+

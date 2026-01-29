@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "../../../../__mocks__/matchMedia";
 import React from "react";
 import {
@@ -11,7 +11,7 @@ import {
   fireEvent,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import DMPDialog from "../DMPDialog";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
@@ -22,7 +22,7 @@ import { sleep } from "../../../util/Util";
 const mockAxios = new MockAdapter(axios);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -92,3 +92,5 @@ describe("DMPDialog", () => {
     });
   });
 });
+
+

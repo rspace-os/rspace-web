@@ -1,16 +1,16 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import ZenodoRepo from "../ZenodoRepo";
 import "../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 
    
   global.fetch = () =>
@@ -24,7 +24,7 @@ afterEach(cleanup);
 describe("ZenodoRepo", () => {
   test("Upon editing, title should be set to the entered value.", async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
+    const handleChange = vi.fn();
 
     const Wrapper = ({ onChange }: { onChange: typeof handleChange }) => {
       const [title, setTitle] = React.useState("");
@@ -69,7 +69,7 @@ describe("ZenodoRepo", () => {
 
   test("Upon editing, description should be set to the entered value.", async () => {
     const user = userEvent.setup();
-    const handleChange = jest.fn();
+    const handleChange = vi.fn();
 
     const Wrapper = ({ onChange }: { onChange: typeof handleChange }) => {
       const [description, setDescription] = React.useState("");
@@ -116,7 +116,7 @@ describe("ZenodoRepo", () => {
   });
 
   test("Author and Contact should be set automatically to dummy values.", () => {
-    const updatePeople = jest.fn();
+    const updatePeople = vi.fn();
 
     render(
       <ZenodoRepo
@@ -155,7 +155,7 @@ describe("ZenodoRepo", () => {
   });
 
   test("Subject should be set automatically to a dummy value.", () => {
-    const handleChange = jest.fn();
+    const handleChange = vi.fn();
 
     render(
       <ZenodoRepo
@@ -187,3 +187,5 @@ describe("ZenodoRepo", () => {
     );
   });
 });
+
+

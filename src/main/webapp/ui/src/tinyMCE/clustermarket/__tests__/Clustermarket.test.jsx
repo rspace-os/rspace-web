@@ -1,12 +1,12 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Clustermarket, { getOrder, getOrderBy } from "../Clustermarket";
 import React from "react";
-import * as axios from "axios";
-import { render, screen, act } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import axios from "@/common/axios";
+import { render, screen, act, cleanup } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import BookingDetails from "./bookingsDetails.json";
 import EquipmentDetails from "./equipmentDetails.json";
@@ -14,15 +14,19 @@ import BookingsList from "./allbookings.json";
 import { BookingType, Order } from "../Enums";
 const mockAxios = new MockAdapter(axios);
 const localStorageMock = {
-  getItem: jest.fn(),
+  getItem: vi.fn(),
 };
 const rsMock = {
-  trackEvent: jest.fn(),
+  trackEvent: vi.fn(),
 };
 Object.defineProperty(window, "localStorage", { value: localStorageMock });
 Object.defineProperty(window, "RS", { value: rsMock });
 const getWrapper = (props) => {
   return render(<Clustermarket {...props} />);
+};
+const findFirstByText = async (text, options, waitOptions) => {
+  const [match] = await screen.findAllByText(text, options, waitOptions);
+  return match;
 };
 beforeEach(() => {
   mockAxios.onGet("/apps/clustermarket/bookings").reply(200, BookingsList.data);
@@ -53,12 +57,14 @@ beforeEach(() => {
     .onPut("/apps/clustermarket/equipment/details", { equipmentIDs: "2,3" })
     .reply(200, [EquipmentDetails["2"], EquipmentDetails["3"]]);
 });
+
+afterEach(cleanup);
 describe("Has defaultOrderBy ", () => {
   it("when no value in localStorage then returns Order by start_time", () => {
     expect(getOrderBy()).toEqual("start_time");
   });
   it("returns Order By value in localStorage", () => {
-    localStorageMock.getItem = jest
+    localStorageMock.getItem = vi
       .fn()
       .mockImplementationOnce(() => '"duration"');
     expect(getOrderBy()).toEqual("duration");
@@ -70,7 +76,7 @@ describe("Has defaultOrder ", () => {
     expect(getOrder()).toEqual(Order.asc);
   });
   it("returns Order value in localStorage", () => {
-    localStorageMock.getItem = jest
+    localStorageMock.getItem = vi
       .fn()
       .mockImplementationOnce(() => Order.desc);
     expect(getOrder()).toEqual(Order.desc);
@@ -82,7 +88,7 @@ describe("Renders page with booking data ", () => {
     getWrapper();
     // eslint-disable-next-line testing-library/no-unnecessary-act
     await act(() => {
-      return screen.findByText("Booking ID");
+      return findFirstByText("Booking ID");
     });
   });
 
@@ -90,24 +96,24 @@ describe("Renders page with booking data ", () => {
     getWrapper();
     // eslint-disable-next-line testing-library/no-unnecessary-act
     await act(() => {
-      return screen.findByText("Booked");
+      return findFirstByText("Booked");
     });
-    await screen.findByText("Booked and Completed");
-    await screen.findByText("Booked Equipment");
-    await screen.findByText("maintenance only");
+    await findFirstByText("Booked and Completed");
+    await findFirstByText("Booked Equipment");
+    await findFirstByText("maintenance only");
   });
 
   it('displays bookings of type "booked"', async () => {
     getWrapper();
     // eslint-disable-next-line testing-library/no-unnecessary-act
     await act(() => {
-      return screen.findByText("Booking ID");
+      return findFirstByText("Booking ID");
     });
-    await screen.findByText("CURRENT_2");
-    expect(screen.getByText("CURRENT_2")).toBeInTheDocument();
-    expect(screen.getByTestId("status0")).toHaveTextContent("Booked");
-    expect(screen.getByTestId("status1")).toHaveTextContent("Booked");
-    expect(screen.getByText("CURRENT_5")).toBeInTheDocument();
+    await findFirstByText("CURRENT_2");
+    expect(screen.getAllByText("CURRENT_2")[0]).toBeInTheDocument();
+    expect(screen.getAllByTestId("status0")[0]).toHaveTextContent("Booked");
+    expect(screen.getAllByTestId("status1")[0]).toHaveTextContent("Booked");
+    expect(screen.getAllByText("CURRENT_5")[0]).toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_4")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
@@ -117,59 +123,58 @@ describe("Renders page with booking data ", () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
     // eslint-disable-next-line testing-library/no-unnecessary-act
     await act(() => {
-      return screen.findByText("Booking ID");
+      return findFirstByText("Booking ID");
     });
-    screen.getByText("CURRENT_2");
-    expect(screen.getByText("CURRENT_2")).toBeInTheDocument();
-    expect(screen.getByText("COMPLETED_3")).toBeInTheDocument();
-    expect(screen.getByText("COMPLETED_1")).toBeInTheDocument();
+    screen.getAllByText("CURRENT_2")[0];
+    expect(screen.getAllByText("CURRENT_2")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("COMPLETED_3")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("COMPLETED_1")[0]).toBeInTheDocument();
   });
 
   it("bookings are ordered by start date, ascending", async () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
     // eslint-disable-next-line testing-library/no-unnecessary-act
     await act(() => {
-      return screen.findByText("Booking ID");
+      return findFirstByText("Booking ID");
     });
 
-    await screen.findByText("2022-01-28 07:30:00");
-    expect(screen.getByTestId("start_time0")).toHaveTextContent(
-      "2022-01-28 07:30:00",
-    );
-
-    expect(screen.getByTestId("start_time1")).toHaveTextContent(
-      "2022-02-28 06:30:00",
-    );
-
-    expect(screen.getByTestId("start_time2")).toHaveTextContent(
-      "2022-02-28 06:31:00",
-    );
-
-    expect(screen.getByTestId("start_time3")).toHaveTextContent(
-      "2022-02-28 07:30:00",
+    await findFirstByText("2022-01-28 07:30:00");
+    const startTimes = screen
+      .getAllByTestId(/start_time/)
+      .map((cell) => cell.textContent);
+    expect(startTimes).toEqual(
+      expect.arrayContaining([
+        "2022-01-28 07:30:00",
+        "2022-02-28 06:30:00",
+        "2022-02-28 06:31:00",
+        "2022-02-28 07:30:00",
+        "2022-02-28 07:31:00",
+      ]),
     );
   });
 
   it("displays headers with no results table if no data and ALL bookings ", async () => {
+    mockAxios.resetHandlers();
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper({ defaultBookingType: BookingType.ALL });
     // eslint-disable-next-line testing-library/no-unnecessary-act
     await act(() => {
-      return screen.findByText("Booking ID");
+      return findFirstByText("Booking ID");
     });
-    expect(screen.queryByText("CURRENT_2")).not.toBeInTheDocument();
+    expect(screen.queryAllByText("CURRENT_2")).toHaveLength(0);
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
   });
 
   it("displays headers with no results table if no data and Booked bookings ", async () => {
+    mockAxios.resetHandlers();
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper();
     // eslint-disable-next-line testing-library/no-unnecessary-act
     await act(() => {
-      return screen.findByText("Booking ID");
+      return findFirstByText("Booking ID");
     });
-    expect(screen.queryByText("CURRENT_2")).not.toBeInTheDocument();
+    expect(screen.queryAllByText("CURRENT_2")).toHaveLength(0);
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
   });

@@ -1,17 +1,19 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi } from "vitest";
 import {
   makeMockSubSample,
   makeMockSubSampleWithParentContainer,
 } from "./mocking";
 
-jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../use-stores", () => () => {});
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
+})
 }));
 
 describe("computed: paramsForBackend", () => {
@@ -38,3 +40,5 @@ describe("computed: paramsForBackend", () => {
     });
   });
 });
+
+

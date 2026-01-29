@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 
+import { describe, it, test, expect } from "vitest";
 import { mapObjectKeyAndValue } from "../../Util";
 import fc from "fast-check";
 import { incrementForever } from "../../iterators";
@@ -73,3 +73,5 @@ describe("mapObjectKeyAndValue", () => {
     );
   });
 });
+
+

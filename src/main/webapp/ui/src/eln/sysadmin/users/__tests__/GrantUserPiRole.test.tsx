@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import {
   render,
@@ -11,7 +11,7 @@ import {
   act,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { UsersPage } from "..";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
@@ -26,7 +26,7 @@ const mockAxios = new MockAdapter(axios);
 window.RS = { newFileStoresExportEnabled: false };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -36,9 +36,9 @@ describe("Grant User PI Role", () => {
     "When `checkVerificationPasswordNeeded` returns true, a message should be shown.",
     async () => {
       const user = userEvent.setup();
-      const createObjectURL = jest.fn().mockImplementation(() => "");
+      const createObjectURL = vi.fn().mockImplementation(() => "");
       window.URL.createObjectURL = createObjectURL;
-      window.URL.revokeObjectURL = jest.fn();
+      window.URL.revokeObjectURL = vi.fn();
 
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
 
@@ -105,9 +105,9 @@ describe("Grant User PI Role", () => {
     "When `checkVerificationPasswordNeeded` returns false, a message should not be shown.",
     async () => {
       const user = userEvent.setup();
-      const createObjectURL = jest.fn().mockImplementation(() => "");
+      const createObjectURL = vi.fn().mockImplementation(() => "");
       window.URL.createObjectURL = createObjectURL;
-      window.URL.revokeObjectURL = jest.fn();
+      window.URL.revokeObjectURL = vi.fn();
 
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
 
@@ -168,3 +168,5 @@ describe("Grant User PI Role", () => {
     40 * 1000,
   );
 });
+
+

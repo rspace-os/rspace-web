@@ -1,5 +1,5 @@
-/* eslint-env jest */
 
+import { expect, vi } from "vitest";
 type Assertion = {
   pass: boolean;
   message: (() => string) | undefined;
@@ -69,9 +69,9 @@ const formatErrorMessage = (
  * topological sorting.
  */
 export function toHaveConsistentOrdering(
-  this: jest.MatcherUtils & Readonly<jest.MatcherState>,
+  this: vi.MatcherUtils & Readonly<vi.MatcherState>,
   mapOfListsOfNumbers: Map<ListName, Array<string>>
-): jest.CustomMatcherResult {
+): vi.CustomMatcherResult {
   /*
    * This Map map pairs of strings (x,y) to the list in which they are found
    * in a given order.
@@ -135,11 +135,9 @@ export function toHaveConsistentOrdering(
   };
 }
 
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toHaveConsistentOrdering(): R;
-    }
+declare module "vitest" {
+  interface Assertion<T = unknown> {
+    toHaveConsistentOrdering(): T;
   }
 }
 
@@ -152,3 +150,4 @@ export function assertConsistentOrderOfLists(
 ): void {
   expect(lists).toHaveConsistentOrdering();
 }
+

@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 
 import CoreFetcher from "../../CoreFetcher";
 import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";
@@ -11,13 +11,18 @@ import InvApiService from "../../../../../common/InvApiService";
 import "../../../../../__tests__/assertUrlSearchParams";
 import { AxiosResponse } from "axios";
 
-jest.mock("../../../../stores/RootStore", () => () => ({
+vi.mock("../../../../stores/RootStore", () => ({
+  default: () => ({
+  default: {
   uiStore: {
     addAlert: () => {},
   },
+
+  }})
 }));
-jest.mock("../../../../../common/InvApiService", () => ({
-  query: jest.fn(
+vi.mock("../../../../../common/InvApiService", () => ({
+  default: {
+  query: vi.fn(
     () =>
       new Promise<AxiosResponse>((resolve) =>
         resolve({
@@ -32,12 +37,13 @@ jest.mock("../../../../../common/InvApiService", () => ({
         })
       )
   ),
-}));
+
+  }}));
 
 describe("search", () => {
   describe("When a new search is performed,", () => {
     test("a new factory should be created.", async () => {
-      const mockNewFactory = jest.fn<any, any>().mockReturnValue({} as Factory);
+      const mockNewFactory = vi.fn<any, any>().mockReturnValue({} as Factory);
       const factory = mockFactory({
         newFactory: mockNewFactory,
       });
@@ -47,7 +53,7 @@ describe("search", () => {
       expect(mockNewFactory).toHaveBeenCalled();
     });
     test("and a page size is not specified, then 10 is passed in API call.", async () => {
-      const querySpy = jest
+      const querySpy = vi
         .spyOn(InvApiService, "query")
         .mockImplementation(() =>
           Promise.resolve({
@@ -59,7 +65,7 @@ describe("search", () => {
           })
         );
 
-      const mockNewFactory = jest.fn<any, any>().mockReturnValue({} as Factory);
+      const mockNewFactory = vi.fn<any, any>().mockReturnValue({} as Factory);
       const factory = mockFactory({
         newFactory: mockNewFactory,
       });
@@ -73,3 +79,5 @@ describe("search", () => {
     });
   });
 });
+
+

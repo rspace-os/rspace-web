@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { sampleAttrs } from "../../../stores/models/__tests__/SampleModel/mocking";
 import { subsampleAttrs } from "../../../stores/models/__tests__/SubSampleModel/mocking";
 import { ListOfMaterials } from "../../../stores/models/MaterialsModel";
@@ -12,8 +12,9 @@ import MaterialsTable from "../MaterialsTable";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 
-jest.mock("../../../common/InvApiService", () => {});
-jest.mock("../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({
       id: 1,
@@ -24,10 +25,11 @@ jest.mock("../../../stores/stores/RootStore", () => () => ({
     unitsOfCategory: () => [],
   },
   materialsStore: { canEdit: true },
+})
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -76,3 +78,5 @@ describe("MaterialsTable", () => {
     });
   });
 });
+
+

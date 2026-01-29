@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 
+import { describe, test, expect } from "vitest";
 import { Optional } from "../../optional";
 
 describe("orElseTry", () => {
@@ -15,3 +15,5 @@ describe("orElseTry", () => {
     next.do((value) => expect(value).toBe("foo"));
   });
 });
+
+

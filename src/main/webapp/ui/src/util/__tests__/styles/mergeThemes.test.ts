@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 
+import { describe, test, expect } from "vitest";
 import { mergeThemes } from "../../styles";
 import { ThemeOptions } from "@mui/material";
 
@@ -98,3 +98,5 @@ describe("mergeThemes", () => {
     });
   });
 });
+
+

@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, act } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import ExportRepoUser from "../ExportRepoUser";
 import { type Person } from "../repositories/common";
 import MockAdapter from "axios-mock-adapter";
@@ -13,7 +13,7 @@ import axios from "@/common/axios";
 const mockAxios = new MockAdapter(axios, { onNoMatch: "throwException" });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -44,7 +44,7 @@ describe("ExportRepoUser", () => {
       },
     });
 
-    const updatePeople = jest.fn<[Array<Person>], unknown[]>();
+    const updatePeople = vi.fn<[Array<Person>], unknown[]>();
     await act(() => renderExportRepoUser({ people: [], updatePeople }));
     expect(updatePeople).toHaveBeenCalled();
   });
@@ -53,7 +53,7 @@ describe("ExportRepoUser", () => {
     // `/directory/ajax/subject` is not mocked so that if ExportRepoUser
     // attempts to the make a call the test fails
 
-    const updatePeople = jest.fn<[Array<Person>], unknown[]>();
+    const updatePeople = vi.fn<[Array<Person>], unknown[]>();
     await act(() =>
       renderExportRepoUser({
         people: [
@@ -69,3 +69,5 @@ describe("ExportRepoUser", () => {
     expect(updatePeople).not.toHaveBeenCalled();
   });
 });
+
+

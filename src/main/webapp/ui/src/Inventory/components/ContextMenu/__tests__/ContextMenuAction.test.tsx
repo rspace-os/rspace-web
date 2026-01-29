@@ -1,15 +1,15 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import ContextMenuAction from "../ContextMenuAction";
 import fc from "fast-check";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -30,7 +30,7 @@ function InnerComponent() {
 
 describe("ContextMenuAction", () => {
   test("When as a menuitem, keyDown events should not propagated through ContextMenuAction", async () => {
-    const onKeyDown = jest.fn();
+    const onKeyDown = vi.fn();
     render(
       <OuterComponent onKeyDown={onKeyDown}>
         <ContextMenuAction
@@ -73,3 +73,5 @@ describe("ContextMenuAction", () => {
     });
   });
 });
+
+

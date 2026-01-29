@@ -1,14 +1,11 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { Heading, HeadingContext } from "../DynamicHeadingLevel";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -135,3 +132,5 @@ describe("DynamicHeadingLevel", () => {
     ).toMatch(/MuiTypography-h3/);
   });
 });
+
+

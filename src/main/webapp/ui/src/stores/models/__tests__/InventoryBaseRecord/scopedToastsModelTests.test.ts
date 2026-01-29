@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import InventoryBaseRecord from "../../InventoryBaseRecord";
 import fc, { type Command } from "fast-check";
 import { mkAlert } from "../../../contexts/Alert";
@@ -11,12 +11,14 @@ import { ClearAllScopedToastsCommand } from "./clearAllScopedToasts";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import { type Model } from "./common";
 
-jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   searchStore: {},
   uiStore: {
-    removeAlert: jest.fn(() => {}),
+    removeAlert: vi.fn(() => {}),
   },
+})
 }));
 
 describe("Scoped Toasts Model Tests", () => {
@@ -40,3 +42,5 @@ describe("Scoped Toasts Model Tests", () => {
     );
   });
 });
+
+

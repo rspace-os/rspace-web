@@ -1,9 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { mockIGSNIdentifier } from "./mocking";
 import { IdentifiersList } from "../Identifiers";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
@@ -15,7 +16,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -48,3 +49,5 @@ describe("Identifiers section", () => {
     });
   });
 });
+
+

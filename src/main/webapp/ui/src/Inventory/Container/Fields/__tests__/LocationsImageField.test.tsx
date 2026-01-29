@@ -1,12 +1,12 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import { storesContext } from "../../../../stores/stores-context";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import ContainerModel from "../../../../stores/models/ContainerModel";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import {
@@ -24,22 +24,29 @@ import userEvent from "@testing-library/user-event";
 
 let storeImageFunction: (arg: { dataUrl: string; file: Blob }) => void;
 
-jest.mock("../../../../stores/stores/RootStore", () => jest.fn(() => ({})));
-jest.mock("../../../../components/Inputs/ImageField", () =>
-  jest.fn(({ storeImage, endAdornment }) => {
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: vi.fn(() => ({
+    uiStore: {
+      setPageNavigationConfirmation: vi.fn(),
+      setDirty: vi.fn(),
+    },
+  })),
+}));
+vi.mock("../../../../components/Inputs/ImageField", () => ({
+  default: vi.fn(({ storeImage, endAdornment }) => {
     storeImageFunction = storeImage;
     return <div data-testid="ImageField">{endAdornment}</div>;
-  })
-);
-jest.mock("../LocationsImageMarkersDialog", () =>
-  jest.fn(({ close }) => {
+  }),
+}));
+vi.mock("../LocationsImageMarkersDialog", () => ({
+  default: vi.fn(({ close }) => {
     return (
       <div>
         <button onClick={close}>Close</button>
       </div>
     );
-  })
-);
+  }),
+}));
 
 class ResizeObserver {
   observe(): void {}
@@ -48,7 +55,7 @@ class ResizeObserver {
 window.ResizeObserver = ResizeObserver as any;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -60,14 +67,17 @@ const mockRootStore = (
     cType: "IMAGE",
   });
   activeResult.editing = true;
+  activeResult.lastEditInput = new Date();
   activeResult.updateFieldsState();
   return [
     makeMockRootStore({
       ...mockedStores,
       uiStore: {
         isSingleColumnLayout: false,
-        addAlert: jest.fn(),
-        removeAlert: jest.fn(),
+        addAlert: vi.fn(),
+        removeAlert: vi.fn(),
+        setPageNavigationConfirmation: vi.fn(),
+        setDirty: vi.fn(),
       },
       searchStore: {
         activeResult,
@@ -130,7 +140,7 @@ describe("LocationImageField", () => {
   describe("When an image is uploaded or edited there should", () => {
     test("be a call to setImage.", () => {
       const rootStore = mockRootStore()[0];
-      const setImageSpy = jest.spyOn(
+      const setImageSpy = vi.spyOn(
         rootStore.searchStore.activeResult! as any,
         "setImage"
       );
@@ -163,17 +173,17 @@ describe("LocationImageField", () => {
 
     test("be an alert to update the preview image, if the container doesn't have a preview image.", () => {
       const rootStore = mockRootStore()[0];
-      const addScopedToastSpy = jest.spyOn(
+      const addScopedToastSpy = vi.spyOn(
         rootStore.searchStore.activeResult! as any,
         "addScopedToast"
       );
-      const setImageSpy = jest.spyOn(
+      const setImageSpy = vi.spyOn(
         rootStore.searchStore.activeResult! as any,
         "setImage"
       );
 
       let setPreviewImageFunction: () => void;
-      const addAlertMock = jest
+      const addAlertMock = vi
         .spyOn(rootStore.uiStore, "addAlert")
         .mockImplementation(({ onActionClick }) => {
           setPreviewImageFunction = onActionClick;
@@ -202,13 +212,13 @@ describe("LocationImageField", () => {
 
     test("not be an alert, if the container already has a preview image.", () => {
       const [rootStore, container] = mockRootStore();
-      const addScopedToastSpy = jest.spyOn(
+      const addScopedToastSpy = vi.spyOn(
         rootStore.searchStore.activeResult! as any,
         "addScopedToast"
       );
       container.image = "theBlobUrlOfSomeImage";
 
-      const addAlertMock = jest.spyOn(rootStore.uiStore, "addAlert");
+      const addAlertMock = vi.spyOn(rootStore.uiStore, "addAlert");
 
       render(
         <ThemeProvider theme={materialTheme}>

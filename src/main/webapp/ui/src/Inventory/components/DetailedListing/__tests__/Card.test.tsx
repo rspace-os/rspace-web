@@ -1,10 +1,10 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import * as React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 
@@ -13,20 +13,22 @@ import { personAttrs } from "../../../../stores/models/__tests__/PersonModel/moc
 
 import Card from "../Card";
 
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   searchStore: {
     search: {
       alwaysFilterOut: () => false,
       fetcher: { basketSearch: false },
     },
   },
+})
 }));
-jest.mock("react-router", () => ({
+vi.mock("react-router", () => ({
   useNavigate: () => ({}),
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -53,3 +55,5 @@ describe("Card", () => {
     });
   });
 });
+
+

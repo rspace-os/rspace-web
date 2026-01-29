@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { encodeTags } from "../ParseEncodedTagStrings";
 import { Optional } from "../../../util/optional";
 
@@ -71,3 +71,5 @@ describe("ParseEncodedTagStrings", () => {
     });
   });
 });
+
+

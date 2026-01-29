@@ -1,12 +1,12 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
 
-jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
+vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 
 describe("constructor", () => {
   test("The content of number fields is parsed correctly.", () => {
@@ -29,3 +29,5 @@ describe("constructor", () => {
     expect(field.content).toBe(2.03);
   });
 });
+
+

@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import {
   render,
@@ -11,7 +11,7 @@ import {
   within,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import SearchContext from "../../../../stores/contexts/Search";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
@@ -21,14 +21,14 @@ import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mo
 import "__mocks__/resizeObserver";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
 
 describe("Searchbar", () => {
   test("If lots of text is entered then the expanded field dialog it available.", () => {
-    const handleSearch = jest.fn<void, [string]>();
+    const handleSearch = vi.fn<void, [string]>();
     const search = new Search({
       factory: mockFactory(),
     });
@@ -84,3 +84,5 @@ describe("Searchbar", () => {
     expect(screen.getByRole("searchbox")).toHaveValue("foo");
   });
 });
+
+

@@ -1,27 +1,31 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { makeMockContainer, containerAttrs } from "./mocking";
 import InvApiService from "../../../../common/InvApiService";
 import { type AxiosResponse, type AxiosRequestConfig } from "@/common/axios";
 
-jest.mock("../../../../common/InvApiService", () => ({
-  query: jest.fn(() => {}),
-}));
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  query: vi.fn(() => {}),
+
+  }}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   uiStore: {
     addAlert: () => {},
     setPageNavigationConfirmation: () => {},
     setDirty: () => {},
   },
+})
 }));
 
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const container = makeMockContainer();
-    jest.spyOn(InvApiService, "query").mockImplementation(() =>
+    vi.spyOn(InvApiService, "query").mockImplementation(() =>
       Promise.resolve({
         data: containerAttrs(),
         status: 200,
@@ -44,3 +48,5 @@ describe("fetchAdditionalInfo", () => {
     expect(firstCallDone).toBe(true);
   });
 });
+
+

@@ -1,7 +1,7 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import {
   screen,
@@ -10,7 +10,8 @@ import {
   render,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { axe, toHaveNoViolations } from "jest-axe";
+import { axe } from "vitest-axe";
+import { toHaveNoViolations } from "vitest-axe/matchers";
 import materialTheme from "@/theme";
 import { ThemeProvider } from "@mui/material/styles";
 import "../../../../../../__mocks__/matchMedia";
@@ -20,12 +21,12 @@ import RaIDIntegrationCard, {
 } from "@/eln/apps/integrations/RaID/RaIDIntegrationCard";
 import { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
 
-expect.extend(toHaveNoViolations);
+expect.extend({ toHaveNoViolations });
 
-const mockSaveAppOptions = jest.fn();
-const mockDeleteAppOptions = jest.fn();
+const mockSaveAppOptions = vi.fn();
+const mockDeleteAppOptions = vi.fn();
 
-jest.mock("@/eln/apps/useIntegrationsEndpoint", () => ({
+vi.mock("@/eln/apps/useIntegrationsEndpoint", () => ({
   useIntegrationsEndpoint: () => ({
     saveAppOptions: mockSaveAppOptions,
     deleteAppOptions: mockDeleteAppOptions,
@@ -33,7 +34,7 @@ jest.mock("@/eln/apps/useIntegrationsEndpoint", () => ({
 }));
 
 const broadcastHandlers: Array<(e: MessageEvent<RaIDConnectedMessage>) => void> = [];
-jest.mock("use-broadcast-channel", () => ({
+vi.mock("use-broadcast-channel", () => ({
   useBroadcastChannel: (_channel: string, handler: (e: MessageEvent<RaIDConnectedMessage>) => void) => {
     broadcastHandlers.push(handler);
   },
@@ -43,8 +44,8 @@ const renderWithProviders = (
   integrationState: IntegrationStates["RAID"],
   update: (s: IntegrationStates["RAID"]) => void = () => {}
 ) => {
-  const addAlert = jest.fn();
-  const removeAlert = jest.fn();
+  const addAlert = vi.fn();
+  const removeAlert = vi.fn();
   const result = {
     addAlert,
     removeAlert,
@@ -61,7 +62,7 @@ const renderWithProviders = (
 
 describe("RaIDIntegrationCard", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("Accessibility", () => {
@@ -74,7 +75,7 @@ describe("RaIDIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       expect(await screen.findByRole("dialog")).toBeVisible();
 
       expect(await axe(baseElement)).toHaveNoViolations();
@@ -91,8 +92,8 @@ describe("RaIDIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button"));
-      expect(screen.getByText(/No authenticated servers./i)).toBeVisible();
+      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      expect(screen.getAllByText(/No authenticated servers./i)[0]).toBeVisible();
     });
 
     it("Renders server alias and URL link.", async () => {
@@ -109,7 +110,7 @@ describe("RaIDIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       expect(screen.getByText("srvA")).toBeVisible();
       expect(screen.getByRole("link", { name: /https:\/\/a.example/i })).toBeVisible();
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
@@ -128,7 +129,7 @@ describe("RaIDIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
 
       act(() => {
@@ -137,7 +138,7 @@ describe("RaIDIntegrationCard", () => {
 
       expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
       expect(addAlert).toHaveBeenCalled();
-      const alertArg = (jest.mocked(addAlert).mock.calls[0] as Alert[])[0];
+      const alertArg = (vi.mocked(addAlert).mock.calls[0] as Alert[])[0];
       expect(alertArg.message).toContain("Successfully connected to srvA RaID server.");
     });
 
@@ -152,7 +153,7 @@ describe("RaIDIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
 
       act(() => {
@@ -174,7 +175,7 @@ describe("RaIDIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
 
       act(() => {
@@ -210,7 +211,7 @@ describe("RaIDIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       await userEvent.click(screen.getByRole("button", { name: /add/i }));
       const menuItem = await screen.findByRole("menuitem", { name: /srvB/i });
       await userEvent.click(menuItem);
@@ -236,7 +237,7 @@ describe("RaIDIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       const disconnectBtn = screen.getByRole("button", { name: /disconnect/i });
       await userEvent.click(disconnectBtn);
 
@@ -264,7 +265,7 @@ describe("RaIDIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       const disconnectBtn = screen.getByRole("button", { name: /disconnect/i });
       await userEvent.click(disconnectBtn);
 
@@ -293,7 +294,7 @@ describe("RaIDIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       const disconnectBtn = screen.getByRole("button", { name: /disconnect/i });
       await userEvent.click(disconnectBtn);
 
@@ -324,7 +325,7 @@ describe("RaIDIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       const deleteBtn = screen.getByRole("button", { name: /delete/i });
       await userEvent.click(deleteBtn);
 

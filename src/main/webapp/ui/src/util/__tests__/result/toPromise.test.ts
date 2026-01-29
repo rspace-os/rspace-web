@@ -1,9 +1,9 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, it, test, expect } from "vitest";
 import Result from "../../result";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 
 describe("toPromise", () => {
@@ -36,3 +36,5 @@ describe("toPromise", () => {
     }
   });
 });
+
+

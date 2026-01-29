@@ -1,14 +1,14 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import useViewportDimensions from "../useViewportDimensions";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -24,3 +24,5 @@ describe("useViewportDimensions", () => {
     expect(screen.getByText("1024")).toBeVisible();
   });
 });
+
+

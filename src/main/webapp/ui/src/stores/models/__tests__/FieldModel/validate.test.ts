@@ -1,12 +1,12 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
 
-jest.mock("../../../../common/InvApiService", () => {});
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 
 describe("method: validState", () => {
   test("Error flag should be asserted.", () => {
@@ -30,3 +30,5 @@ describe("method: validState", () => {
     expect(field.validate().isOk).toBe(false);
   });
 });
+
+

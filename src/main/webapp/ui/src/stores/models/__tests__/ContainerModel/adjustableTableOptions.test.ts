@@ -1,8 +1,8 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, test, expect } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { makeMockContainer } from "./mocking";
 import { personAttrs } from "../PersonModel/mocking";
 import { assertNotNull } from "../../../../util/__tests__/helpers";
@@ -64,3 +64,5 @@ describe("adjustableTableOptions", () => {
     });
   });
 });
+
+

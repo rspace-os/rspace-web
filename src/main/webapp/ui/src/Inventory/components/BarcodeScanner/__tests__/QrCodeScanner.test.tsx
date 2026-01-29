@@ -1,21 +1,21 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
 import * as React from "react";
 import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import "../../../../../__mocks__/barcode-detection-api";
 import QrCodeScanner from "../QrCodeScanner";
 import { type BarcodeInput } from "../BarcodeScannerSkeleton";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
+import { type Mock, describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 
-jest.mock("qr-scanner");
+vi.mock("qr-scanner");
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -23,7 +23,7 @@ afterEach(cleanup);
 describe("QrCodeScanner", () => {
   test("Should scan correctly.", async () => {
     const user = userEvent.setup();
-    const onScan = jest.fn() as jest.Mock<void, [BarcodeInput]>;
+    const onScan = vi.fn() as Mock<void, [BarcodeInput]>;
 
     render(
       <ThemeProvider theme={materialTheme}>
@@ -39,3 +39,5 @@ describe("QrCodeScanner", () => {
     });
   });
 });
+
+

@@ -1,17 +1,17 @@
 /*
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-/* eslint-env jest */
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import IntegrationCard from "../IntegrationCard";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import "../../../../__mocks__/matchMedia";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -141,7 +141,7 @@ describe("IntegrationCard", () => {
   });
 
   test("When tapped, the enable button should invoke update.", () => {
-    const update = jest.fn();
+    const update = vi.fn();
 
     render(
       <ThemeProvider theme={materialTheme}>
@@ -169,7 +169,7 @@ describe("IntegrationCard", () => {
   });
 
   test("When tapped, the disable button should invoke update.", () => {
-    const update = jest.fn();
+    const update = vi.fn();
 
     render(
       <ThemeProvider theme={materialTheme}>
@@ -196,3 +196,5 @@ describe("IntegrationCard", () => {
     expect(update).toHaveBeenCalledWith("DISABLED");
   });
 });
+
+
