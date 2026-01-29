@@ -44,6 +44,7 @@ public interface IntegrationsHandler {
   String ACCESS_TOKEN_SETTING = "ACCESS_TOKEN";
   String GALAXY_CONFIGURED_SERVERS = "GALAXY_CONFIGURED_SERVERS";
   String GALAXY_ALIAS = "GALAXY_ALIAS";
+  String DSW_APP_NAME = "DSW";
 
   /**
    * Boolean test as to whether the supplied <code>integrationName</code> is a valid name whose data

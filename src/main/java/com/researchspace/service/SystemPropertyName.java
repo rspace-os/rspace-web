@@ -49,7 +49,8 @@ public enum SystemPropertyName {
   OWNCLOUD_AVAILABLE("owncloud.available"),
   PROTOCOLS_IO_AVAILABLE("protocols_io.available"),
   PYRAT_AVAILABLE("pyrat.available"),
-  ZENODO_AVAILABLE("zenodo.available");
+  ZENODO_AVAILABLE("zenodo.available"),
+  DSW_AVAILABLE("dsw.available");
 
   private String propertyName;
 
