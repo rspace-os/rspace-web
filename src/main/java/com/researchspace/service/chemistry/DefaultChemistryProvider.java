@@ -25,7 +25,7 @@ public class DefaultChemistryProvider implements ChemistryProvider {
 
   /**
    * This value will be returned for all 'convert' operations. This allows integration tests to
-   * create RSChemElements with actual data and therefore Stoichiometries that have molecules.
+   * create RSChemElements with actual data.
    */
   public void setChemString(String chemString) {
     this.chemString = chemString;
@@ -33,7 +33,7 @@ public class DefaultChemistryProvider implements ChemistryProvider {
 
   /**
    * This value will be returned for all 'convert' operations. This allows integration tests to
-   * create RSChemElements with actual data and therefore Stoichiometries that have molecules.
+   * create RSChemElements with actual data.
    */
   public void setConvertedChemString(String convertedChemString) {
     this.convertedChemString = convertedChemString;
@@ -90,6 +90,9 @@ public class DefaultChemistryProvider implements ChemistryProvider {
     return ChemElementsFormat.MOL;
   }
 
+  /**
+   * Set this to allow Stoichiometries to be created that will have molecules
+   */
   public void setElementalAnalysisDTO(
       ElementalAnalysisDTO elementalAnalysisDTO) {
     this.elementalAnalysisDTO = elementalAnalysisDTO;
