@@ -9,6 +9,7 @@ import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryMapper;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
@@ -225,21 +226,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
 
   public static StoichiometryMolecule buildMolecule(
       StoichiometryMolecule sourceMol, Stoichiometry target, RSChemElement newMol) {
-    return StoichiometryMolecule.builder()
-        .stoichiometry(target)
-        .rsChemElement(newMol)
-        .role(sourceMol.getRole())
-        .smiles(sourceMol.getSmiles())
-        .name(sourceMol.getName())
-        .formula(sourceMol.getFormula())
-        .molecularWeight(sourceMol.getMolecularWeight())
-        .coefficient(sourceMol.getCoefficient())
-        .mass(sourceMol.getMass())
-        .actualAmount(sourceMol.getActualAmount())
-        .actualYield(sourceMol.getActualYield())
-        .limitingReagent(sourceMol.getLimitingReagent())
-        .notes(sourceMol.getNotes())
-        .build();
+    return buildMolecule(StoichiometryMapper.moleculeToDTO(sourceMol), target, newMol);
   }
 
   public static StoichiometryMolecule buildMolecule(
