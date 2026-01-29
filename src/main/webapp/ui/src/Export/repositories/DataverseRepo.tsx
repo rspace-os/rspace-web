@@ -66,7 +66,6 @@ export default function DataverseRepo({
   onTagsChange,
   fetchingTags,
 }: DataverseArgs): React.ReactNode {
-  const metaLanguagesVisible = repo.metadataLanguages && repo.metadataLanguages.length > 0;
   return (
     <Grid container sx={{ width: "100%" }}>
       <Grid item xs={12}>
@@ -97,7 +96,7 @@ export default function DataverseRepo({
           value={description}
         />
       </Grid>
-      <Grid item xs={metaLanguagesVisible ? 4 : 5}>
+      <Grid item xs={12}>
         <TextField
           error={submitAttempt && !inputValidations.subject}
           name="subject"
@@ -118,14 +117,14 @@ export default function DataverseRepo({
           ))}
         </TextField>
       </Grid>
-      {metaLanguagesVisible && (<Grid item xs={4}>
+      {repo.metadataLanguages && repo.metadataLanguages.length > 0 && (<Grid item xs={12}>
         <TextField
             name="metadataLanguage"
             select
             label="Metadata language"
             // @ts-expect-error React event handlers are not parameterised by the name prop
             onChange={handleMetadataLanguageChange}
-            helperText="Please select your metadata language (if target Dataverse supports it)"
+            helperText="Please select your metadata language (only if selected Dataverse supports it)"
             margin="normal"
             fullWidth
             value={metadataLanguage}
@@ -137,8 +136,7 @@ export default function DataverseRepo({
           ))}
         </TextField>
       </Grid>)}
-      {!metaLanguagesVisible && (<Grid item xs={2}></Grid>)}
-      <Grid item xs={metaLanguagesVisible ? 4 : 5}>
+      <Grid item xs={12}>
         <TextField
           name="license"
           select

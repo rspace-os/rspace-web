@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -102,9 +103,11 @@ public class RepositoryConfigurationController extends BaseController {
       if (integrationOptions != null && StringUtils.isNotEmpty(metadataLanguagesMap)) {
         List<Map<String, String>> languagesMapList =
             JacksonUtil.fromJson(metadataLanguagesMap, List.class);
-        for (var collectionObject : integrationOptions.entrySet()) {
-          var collection = (Map<String, Object>) collectionObject.getValue();
-          collection.put("metadataLanguages", languagesMapList);
+        if (CollectionUtils.isNotEmpty(languagesMapList)) {
+          for (var collectionObject : integrationOptions.entrySet()) {
+            var collection = (Map<String, Object>) collectionObject.getValue();
+            collection.put("metadataLanguages", languagesMapList);
+          }
         }
       }
     }
