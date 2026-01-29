@@ -97,7 +97,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   private final Map<SystemProperty, List<SystemProperty>> parent2ChildMap = new HashMap<>();
 
-  private final Map<String, String> encodeApiKeyApps =
+  private final Map<String, String> encodeApiKeyForApps =
       Map.ofEntries(Map.entry(PYRAT_APP_NAME, PYRAT_APIKEY), Map.entry(DSW_APP_NAME, DSW_APIKEY));
 
   public void init() {
@@ -481,7 +481,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else if (GALAXY_APP_NAME.equals(appName) && optionsId != null) {
       saveNewUserConnectionForMultipleOptionApp(
           options.get(GALAXY_APIKEY), user, GALAXY_APP_NAME, options.get(GALAXY_ALIAS));
-    } else if (DSW_APP_NAME.equals(appName)) { // && optionsId != null) {
+    } else if (DSW_APP_NAME.equals(appName)) {
       saveNewUserConnectionForMultipleOptionApp(
           options.get(DSW_APIKEY), user, DSW_APP_NAME, options.get(DSW_ALIAS));
     }
@@ -563,9 +563,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       User user) {
     Map<String, String> options;
     // remove the apiKey from the option otherwise it is saved in clear on the database
-    if (encodeApiKeyApps.keySet().contains(appName)) {
+    if (encodeApiKeyForApps.keySet().contains(appName)) {
       Map<String, String> safeMap = new HashMap<>(originalOptions);
-      safeMap.remove(encodeApiKeyApps.get(appName));
+      safeMap.remove(encodeApiKeyForApps.get(appName));
       options = safeMap;
     } else {
       options = originalOptions;
