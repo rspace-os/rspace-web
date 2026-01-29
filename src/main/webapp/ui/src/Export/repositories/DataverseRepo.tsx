@@ -124,7 +124,7 @@ export default function DataverseRepo({
             label="Metadata language"
             // @ts-expect-error React event handlers are not parameterised by the name prop
             onChange={handleMetadataLanguageChange}
-            helperText="Please select your metadata language (only if selected Dataverse supports it)"
+            helperText="Please select your metadata language (only if target Dataverse supports it)"
             margin="normal"
             fullWidth
             value={metadataLanguage}
