@@ -17,7 +17,7 @@ import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
-import com.researchspace.service.archive.export.StoichiometryReaderWriter;
+import com.researchspace.service.archive.export.StoichiometryReader;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
@@ -42,7 +42,7 @@ public class StoichiometryImporterTest {
   @Mock private StoichiometryDTO existingStoich;
   @Mock private StructuredDocument strucDoc;
   @Mock private FieldManager fieldManager;
-  @Mock private StoichiometryReaderWriter reader;
+  @Mock private StoichiometryReader reader;
 
   @Before
   public void setUp() throws Exception {
@@ -90,7 +90,7 @@ public class StoichiometryImporterTest {
     IdAndRevision idAndRevision = new IdAndRevision();
     idAndRevision.id = 33L;
     verify(reader)
-        .replaceTargetStoichiometryWithNew(
+        .createReplacementHtmlContentForTargetStoichiometryInFieldData(
             eq(NEW_FIELD_FIELDDATA), eq(existingStoich), eq(idAndRevision));
   }
 
@@ -103,7 +103,7 @@ public class StoichiometryImporterTest {
     when(newField.getFieldData()).thenReturn(NEW_FIELD_FIELDDATA_REAL);
     testee =
         new StoichiometryImporter(
-            service, new StoichiometryReaderWriter(), oldField, newField, fieldManager, user);
+            service, new StoichiometryReader(), oldField, newField, fieldManager, user);
     testee.importStoichiometries(oldChemElement, currentChem);
     verify(service)
         .createNewFromDataWithoutInventoryLinks(eq(existingStoich), eq(currentChem), eq(user));

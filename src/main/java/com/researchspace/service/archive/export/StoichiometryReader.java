@@ -12,7 +12,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class StoichiometryReaderWriter {
+public class StoichiometryReader {
 
   @SneakyThrows
   public List<StoichiometryDTO> extractStoichiometriesFromFieldContents(String htmlContent) {
@@ -29,7 +29,7 @@ public class StoichiometryReaderWriter {
   }
 
   @SneakyThrows
-  public String replaceTargetStoichiometryWithNew(
+  public String createReplacementHtmlContentForTargetStoichiometryInFieldData(
       String htmlContent, StoichiometryDTO target, IdAndRevision newStoichiometry) {
     Document doc = Jsoup.parse(htmlContent);
     Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");

@@ -63,7 +63,7 @@ import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
-import com.researchspace.service.archive.export.StoichiometryReaderWriter;
+import com.researchspace.service.archive.export.StoichiometryReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -863,8 +863,8 @@ abstract class AbstractImporterStrategyImpl {
         IdAndRevision newDTO = new IdAndRevision();
         newDTO.id = created.getId();
         String updatedStoichiometriesFieldContent =
-            new StoichiometryReaderWriter()
-                .replaceTargetStoichiometryWithNew(newField.getFieldData(), aStoichiometry, newDTO);
+            new StoichiometryReader()
+                .createReplacementHtmlContentForTargetStoichiometryInFieldData(newField.getFieldData(), aStoichiometry, newDTO);
         newField.setFieldData(updatedStoichiometriesFieldContent);
         fieldManager.save(newField, user);
       }
@@ -884,7 +884,7 @@ abstract class AbstractImporterStrategyImpl {
     stoichiometryImporter =
         new StoichiometryImporter(
             stoichiometryService,
-            new StoichiometryReaderWriter(),
+            new StoichiometryReader(),
             archiveFld,
             fld,
             fieldManager,

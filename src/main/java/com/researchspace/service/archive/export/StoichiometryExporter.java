@@ -15,10 +15,10 @@ import lombok.SneakyThrows;
 public class StoichiometryExporter extends AbstractFieldExporter<LinkableStoichiometry> {
 
   private final User exporter;
-  private final StoichiometryReaderWriter reader;
+  private final StoichiometryReader reader;
 
   public StoichiometryExporter(
-      FieldExporterSupport support, StoichiometryReaderWriter reader, User exporter) {
+      FieldExporterSupport support, StoichiometryReader reader, User exporter) {
     super(support);
     this.exporter = exporter;
     this.reader = reader;

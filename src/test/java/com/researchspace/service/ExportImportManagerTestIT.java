@@ -103,7 +103,7 @@ import com.researchspace.service.archive.ImportStrategy;
 import com.researchspace.service.archive.PostArchiveCompletion;
 import com.researchspace.service.archive.export.ArchiveRemover;
 import com.researchspace.service.archive.export.ExportRemovalPolicy;
-import com.researchspace.service.archive.export.StoichiometryReaderWriter;
+import com.researchspace.service.archive.export.StoichiometryReader;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.chemistry.DefaultChemistryProvider;
 import com.researchspace.testutils.ArchiveTestUtils;
@@ -1257,7 +1257,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .orElseThrow(() -> new RuntimeException("Stoichiometry not found after import"));
     assertNotEquals(stoichiometryID, importedStoichiometry.getId());
     List<StoichiometryDTO> importedInDocRtfGData =
-        new StoichiometryReaderWriter()
+        new StoichiometryReader()
             .extractStoichiometriesFromFieldContents(
                 importedDoc.getField("testTextField").getFieldData());
     assertEquals(1, importedInDocRtfGData.size());
