@@ -53,7 +53,7 @@ info:
     rich language bindings and example code for `Python`, `Java` and others.
     Please suggest any use-cases or ideas for improving the API!
 
-  version: "1.116"
+  version: "2.19"
 
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit
@@ -1485,13 +1485,13 @@ paths:
           schema:
             title: Folder listing
             properties:
+              folderId:
+                type: number
+                description: The id of the requested folder, for which the listing was generated.
               totalHits:
                 type: number
               pageNumber:
                 type: number
-              parentId:
-                type: number
-                description: The id of the parent of the listed folder. For listings of the Workspace Home Folder, this will be null.
               records:
                 $ref: '#/definitions/RecordTreeInfoList'
               _links:
@@ -1524,13 +1524,13 @@ paths:
           schema:
             title: Folder listing
             properties:
+              folderId:
+                type: number
+                description: The id of the requested folder, for which the listing was generated.
               totalHits:
                 type: number
               pageNumber:
                 type: number
-              parentId:
-                type: number
-                description: The id of the parent of the listed folder. For listings of the Workspace Home Folder, this will be null.
               records:
                 $ref: '#/definitions/RecordTreeInfoList'
               _links:
@@ -2838,15 +2838,22 @@ paths:
   /stoichiometry:
 
     post:
-      summary: Create stoichiometry for a chemical
+      summary: Create stoichiometry for a chemical or record
       tags:
         - Chemistry
       parameters:
-        - name: chemId
+        - name: recordId
           in: query
           required: true
           type: integer
           format: int64
+          description: The ID of the record the stoichiometry belongs to.
+        - name: chemId
+          in: query
+          required: false
+          type: integer
+          format: int64
+          description: The ID of the chemical reaction. If provided, the stoichiometry will be initialized from this reaction.
         - name: revision
           in: query
           required: false
@@ -4683,6 +4690,8 @@ definitions:
         type: integer
         format: int64
         description: Unique identifier for shared group snippets folder.
+      raid:
+        $ref: '#/definitions/RaIDReferenceDTO'
       members:
         type: array
         description: A Listing of the group's members and their roles
@@ -4694,6 +4703,10 @@ definitions:
       type: LAB_GROUP
       sharedFolderId: 123
       sharedSnippetFolderId: 456
+      raid:
+        - raidServerAlias: DEMO
+          raidTitle: Test_Raid_Univerity_Edinburgh
+          raidIdentifier: https://raid.org/10.12345&/FGKS987
       members:
         - id: 12345
           username: jsmith
@@ -4715,6 +4728,22 @@ definitions:
       role:
         type: string
         description: 'The user''s role in the group. One of ''PI'', ''LAB_ADMIN'' or ''USER'''
+    example:
+      id: 12345
+      username: jsmith
+      role: PI
+  RaIDReferenceDTO:
+    description: Representation of RaID
+    properties:
+      raidServerAlias:
+        type: string
+        description: Server alias where the RaID has been mint
+      raidTitle:
+        type: string
+        description: The title of the given RaID
+      raidIdentifier:
+        type: string
+        description: The unique identifier for the given server alias
     example:
       id: 12345
       username: jsmith
@@ -4786,7 +4815,7 @@ definitions:
         type: string
         example: 'some notes'
   StoichiometryDTO:
-    description: Stoichiometry data for a reaction
+    description: Stoichiometry data for a reaction or record
     properties:
       id:
         type: integer
@@ -4797,6 +4826,11 @@ definitions:
       parentReactionId:
         type: integer
         format: int64
+        description: The ID of the chemical reaction this stoichiometry belongs to. This will be null if the stoichiometry is tied directly to a record.
+      recordId:
+        type: integer
+        format: int64
+        description: The ID of the record this stoichiometry belongs to.
       molecules:
         type: array
         items:

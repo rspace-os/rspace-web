@@ -5,6 +5,8 @@ import static java.net.URLEncoder.encode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -58,8 +60,11 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
   private static final String SERVER_ALIAS = "DEMO";
   private static final String OLD_ACCESS_TOKEN = "ACCESS_TOKEN";
   private static final String NEW_ACCESS_TOKEN = "NEW_ACCESS_TOKEN";
-  private static final String RAID_PREFIX = "yyprefixy";
-  private static final String RAID_SUFFIX = "xxSuffixxx";
+  private static final String RAID_PREFIX = "10.83334";
+  private static final String RAID_SUFFIX = "c74980b1";
+  private static final String DOI_PREFIX = "10.12345";
+  private static final String DOI_SUFFIX = "5UFF1X";
+  private static final String DOI_LINK = "https://doi.org/" + DOI_PREFIX + "/" + DOI_SUFFIX;
 
   @Autowired private IPropertyHolder properties;
   @Autowired private UserConnectionManager userConnectionManager;
@@ -72,6 +77,7 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
   private String jsonRefreshToken;
   private AccessToken expectedRefreshToken;
   private RaID expectedRaid;
+  private RaID expectedRaidWithRelatedObject;
   private List<RaID> expectedRaidList;
   private RaIDServicePoint expectedServicePoint;
   private List<RaIDServicePoint> expectedServicePointList;
@@ -97,6 +103,13 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
         mapper.readValue(
             IOUtils.resourceToString(
                 "/TestResources/raid/json/raid-test-1.json", Charset.defaultCharset()),
+            RaID.class);
+
+    expectedRaidWithRelatedObject =
+        mapper.readValue(
+            IOUtils.resourceToString(
+                "/TestResources/raid/json/raid-test-1-with-related-object.json",
+                Charset.defaultCharset()),
             RaID.class);
 
     expectedRaidList =
@@ -161,7 +174,10 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
     when(mockedRaidClient.getRaIDList(API_BASE_URL, OLD_ACCESS_TOKEN)).thenReturn(expectedRaidList);
     Set<RaIDReferenceDTO> expectedRaidReferenceDTOList =
         expectedRaidList.stream()
-            .map(el -> new RaIDReferenceDTO(SERVER_ALIAS, el.getIdentifier().getId()))
+            .map(
+                el ->
+                    new RaIDReferenceDTO(
+                        SERVER_ALIAS, el.getTitle().get(0).getText(), el.getIdentifier().getId()))
             .collect(Collectors.toSet());
     raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
 
@@ -179,7 +195,10 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
     when(mockedRaidClient.getRaID(API_BASE_URL, OLD_ACCESS_TOKEN, RAID_PREFIX, RAID_SUFFIX))
         .thenReturn(expectedRaid);
     RaIDReferenceDTO expectedRaidReferenceDTO =
-        new RaIDReferenceDTO(SERVER_ALIAS, expectedRaid.getIdentifier().getId());
+        new RaIDReferenceDTO(
+            SERVER_ALIAS,
+            expectedRaid.getTitle().get(0).getText(),
+            expectedRaid.getIdentifier().getId());
     raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
 
     // WHEN
@@ -189,6 +208,32 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
 
     // THEN
     assertEquals(expectedRaidReferenceDTO, actualRaidDTO);
+  }
+
+  @Test
+  public void testUpdateRaIDRelatedObject() throws Exception {
+    // GIVEN
+    when(mockedRaidClient.updateRaIDRelatedObject(
+            eq(API_BASE_URL), eq(OLD_ACCESS_TOKEN), eq(RAID_PREFIX), eq(RAID_SUFFIX), any()))
+        .thenReturn(expectedRaid);
+    when(mockedRaidClient.updateRaIDRelatedObject(
+            eq(API_BASE_URL), eq(OLD_ACCESS_TOKEN), eq(RAID_PREFIX), eq(RAID_SUFFIX), eq(DOI_LINK)))
+        .thenReturn(expectedRaidWithRelatedObject);
+
+    RaIDReferenceDTO raidReference =
+        new RaIDReferenceDTO(
+            SERVER_ALIAS,
+            expectedRaidWithRelatedObject.getTitle().get(0).getText(),
+            expectedRaidWithRelatedObject.getIdentifier().getId());
+    raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
+
+    assertFalse(
+        raidServiceClientAdapter.updateRaIDRelatedObject(
+            user.getUsername(), raidReference, DOI_LINK + "ANOTHER_LINK"));
+
+    assertTrue(
+        raidServiceClientAdapter.updateRaIDRelatedObject(
+            user.getUsername(), raidReference, DOI_LINK));
   }
 
   @Test

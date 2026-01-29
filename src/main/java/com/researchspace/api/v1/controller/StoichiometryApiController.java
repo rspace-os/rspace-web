@@ -10,6 +10,7 @@ import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.StoichiometryService;
+import com.researchspace.service.chemistry.StoichiometryException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @ApiController
@@ -37,9 +38,18 @@ public class StoichiometryApiController extends BaseApiController implements Sto
   }
 
   @Override
-  public StoichiometryDTO saveStoichiometry(long chemId, User user) {
-    Stoichiometry stoichiometry = stoichiometryService.create(chemId, user);
-    // Get latest revision number after save
+  public StoichiometryDTO createStoichiometry(Long recordId, Long chemId, User user) {
+    if (recordId == null) {
+      throw new StoichiometryException("recordId must be provided");
+    }
+
+    Stoichiometry stoichiometry;
+    if (chemId != null) {
+      stoichiometry = stoichiometryService.createFromReaction(recordId, chemId, user);
+    } else {
+      stoichiometry = stoichiometryService.createEmpty(recordId, user);
+    }
+    // Get the latest revision number after save
     AuditedEntity<Stoichiometry> latestRevision =
         auditManager.getNewestRevisionForEntity(Stoichiometry.class, stoichiometry.getId());
     Long revisionNumber = latestRevision != null ? latestRevision.getRevision().longValue() : null;

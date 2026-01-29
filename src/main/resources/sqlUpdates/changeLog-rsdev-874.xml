@@ -1,0 +1,69 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-01-14a" context="run" author="fraser">
+        <comment>Add record_id column to Stoichiometry</comment>
+        <addColumn tableName="Stoichiometry">
+            <column type="BIGINT" name="record_id">
+                <constraints nullable="true" foreignKeyName="fk_stoichiometry_record"
+                             references="BaseRecord(id)"/>
+            </column>
+        </addColumn>
+        
+        <addColumn tableName="Stoichiometry_AUD">
+            <column type="BIGINT" name="record_id">
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2026-01-14b" context="run" author="fraser">
+        <comment>Drop the not null constraint on parent_reaction_id, as stoichiometry can be created without being attached to a chemical</comment>
+        <dropNotNullConstraint tableName="Stoichiometry" columnName="parent_reaction_id" columnDataType="BIGINT"/>
+    </changeSet>
+
+    <changeSet id="2026-01-15" author="fraser">
+        <comment>Backfill record_id for existing Stoichiometry records and make it mandatory</comment>
+
+        <update tableName="Stoichiometry">
+            <column name="record_id" valueComputed="(SELECT rce.record_id FROM RSChemElement rce WHERE rce.id = Stoichiometry.parent_reaction_id)"/>
+            <where>record_id IS NULL AND parent_reaction_id IS NOT NULL</where>
+        </update>
+
+        <update tableName="Stoichiometry_AUD">
+            <column name="record_id" valueComputed="(SELECT rce.record_id FROM RSChemElement rce WHERE rce.id = Stoichiometry_AUD.parent_reaction_id)"/>
+            <where>record_id IS NULL AND parent_reaction_id IS NOT NULL</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="2026-01-19" context="run" author="fraser">
+        <comment>Add not null to record_id after backfilling</comment>
+        <addNotNullConstraint tableName="Stoichiometry" columnName="record_id" columnDataType="BIGINT"/>
+    </changeSet>
+
+    <changeSet id="2026-01-19-uuid" context="run" author="fraser">
+        <comment>Add uuid column to Stoichiometry and backfill</comment>
+        <addColumn tableName="Stoichiometry">
+            <column type="VARCHAR(36)" name="uuid">
+                <constraints nullable="true" unique="true"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="Stoichiometry_AUD">
+            <column type="VARCHAR(36)" name="uuid">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <sql>
+            UPDATE Stoichiometry SET uuid = UUID() WHERE uuid IS NULL;
+            UPDATE Stoichiometry_AUD SET uuid = (SELECT s.uuid FROM Stoichiometry s WHERE s.id = Stoichiometry_AUD.id) WHERE uuid IS NULL;
+        </sql>
+
+        <addNotNullConstraint tableName="Stoichiometry" columnName="uuid" columnDataType="VARCHAR(36)"/>
+    </changeSet>
+    
+    
+
+</databaseChangeLog>

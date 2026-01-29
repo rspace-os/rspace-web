@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class RaidGroupAssociation implements Serializable {
+public class RaidGroupAssociationDTO implements Serializable {
 
   private Long projectGroupId;
   private String rspaceProjectName;
@@ -17,16 +17,17 @@ public class RaidGroupAssociation implements Serializable {
 
   @JsonIgnore private String roCrateId;
 
-  public RaidGroupAssociation(UserRaid userRaid) {
+  public RaidGroupAssociationDTO(UserRaid userRaid) {
     this.projectGroupId = userRaid.getGroupAssociated().getId();
     this.raid =
         new RaIDReferenceDTO(
-            userRaid.getId(), userRaid.getRaidServerAlias(), userRaid.getRaidIdentifier());
+            userRaid.getId(), userRaid.getRaidServerAlias(),
+            userRaid.getRaidTitle(), userRaid.getRaidIdentifier());
     this.rspaceProjectName = userRaid.getGroupAssociated().getDisplayName();
     initRoCrateId();
   }
 
-  public RaidGroupAssociation(
+  public RaidGroupAssociationDTO(
       Long projectGroupId, String rspaceProjectName, RaIDReferenceDTO raid) {
     this.projectGroupId = projectGroupId;
     this.raid = raid;

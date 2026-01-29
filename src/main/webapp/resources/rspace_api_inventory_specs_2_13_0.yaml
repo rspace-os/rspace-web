@@ -5,7 +5,7 @@ info:
   description: >
     Welcome to the RSpace Inventory API.
 
-  version: "1.113"
+  version: "2.13"
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit headers.
   license:
@@ -134,16 +134,16 @@ paths:
         | Creates a sample with three default subsamples, each placed within a different container. When placing into LIST container (with id=11) location should be empty;
         when placing within GRID container (with id=21) grid coordinates have to be provided; when placing in VISUAL container (with id=31), the id of a target location must be provided.
 
-        `{ "name": "My Sample", "tags": [{"value":"api","uri":"http://uri","ontologyName":"name","ontologyVersion":"version"}], "quantity": { "unitId" : "3", "numericValue" : "50" }, "subSamples": [ { "name": "subSample A", "parentContainers": [ { "id": 11 } ] },
+        `{ "name": "My Sample", "tags": [{"value":"api"}], "quantity": { "unitId" : "3", "numericValue" : "50" }, "subSamples": [ { "name": "subSample A", "parentContainers": [ { "id": 11 } ] },
                           { "name": "subSample B", "parentContainers": [ { "id": 11 } ] } ] }`
-        | Creates a sample named "My Sample", with 50ml quantity and a 'api' tag, with two subsamples placed inside a container with id = 11.
+        | Creates a sample named "My Sample", with 50ml quantity and a non-ontology 'api' tag, with two subsamples placed inside a container with id = 11.
 
         `{ "name": "My Sample", "tags": [{"value":"api","uri":"http://uri","ontologyName":"name","ontologyVersion":"version"}], "quantity": { "unitId" : "3", "numericValue" : "50" }, "subSamples": [ { "name": "subSample A", "parentContainers": [ { "id": 11 } ] },
                           { "name": "subSample B", "parentContainers": [ { "id": 11 } ] } ] }`
-        | Creates a sample named "My Sample", with 50ml quantity and a 'api' tag, with two subsamples placed inside a container with id = 11.
+        | Creates a sample named "My Sample", with 50ml quantity and an 'api' tag from uploaded ontology (with uri/name/version), with two subsamples placed inside a container with id = 11.
 
-        `{ "name": "My Sample", "tags": [{"value":"api","uri":"http://uri","ontologyName":"name","ontologyVersion":"version"}], "quantity": { "unitId" : "3", "numericValue" : "50" },"expiryDate":"2021-06-30", "subSamples": [ { "name": "subSample A", "parentLocation": { "id": 21 } } ] }`
-        | Creates a sample named "My Sample", with 50ml quantity and a 'api' tag, with an expiration date, with one subsample named "subSample A" placed inside a container location with id = 21.
+        `{ "name": "My Sample", "quantity": { "unitId" : "3", "numericValue" : "50" },"expiryDate":"2021-06-30", "subSamples": [ { "name": "subSample A", "parentLocation": { "id": 21 } } ] }`
+        | Creates a sample named "My Sample", with 50ml quantity and an expiration date, with one subsample named "subSample A" placed inside a container location with id = 21.
 
         `{ "name": "My Refrigerated Sample", "quantity": { "unitId" : "3", "numericValue" : "10" }, "newSampleSubSamplesCount": 2,
           "storageTempMin" : { "numericValue" : 3.00, "unitId" : 8 },
@@ -224,7 +224,7 @@ paths:
         | Body | Explanation |
         | --- | --- |
         `{}` | Update Sample's last modified date, but doesn't change any of the properties.
-        `{ "name": "new name", "tags": [{"value":"new tags","uri":"http://uri","ontologyName":"name","ontologyVersion":"version"}] }` | Updates sample 'name' and 'tags' properties
+        `{ "name": "new name", "tags": [{"value":"new tag","uri":"http://uri","ontologyName":"name","ontologyVersion":"version"}] }` | Updates sample 'name' and replaces 'tags' with newly provided ones
         `{ "fields": [ { "id": 11, "content": "2020-01-09" } ] }` | Updates sample field (with id 11) with new content
         `{ "extraFields": [ { "id": 21, "content": "...updated" }, { "newFieldRequest": true, "name": "my field", "content": "new field" }, { "id": 22, "deleteFieldRequest": true } ] }` | Updates extra field 21 with new content, deletes extra field 22, and creates new text extra field
         `{ "identifiers": [ { "id": 23, "title": "updated title", "publisher": "ResearchsSpace", "publicationYear": 2023 } ] }` | Update title property of existing sample's IGSN identifier with id 23
@@ -964,9 +964,9 @@ paths:
 
         | --- | --- |
 
-        `{}` | Update Sample's last modified date, but doesn't change any of the properties.
+        `{}` | Update last modified date of the template, but doesn't change any of the properties.
 
-        `{ "name": "new name", "tags": [{"value":"new tags","uri":"http://uri","ontologyName":"name","ontologyVersion":"version"}] }` | Updates sample 'name' and 'tags' properties
+        `{ "name": "new name", "tags": [{"value":"new tags","uri":"http://uri","ontologyName":"name","ontologyVersion":"version"}] }` | Updates template 'name' and replaces 'tags' with newly provided ones
 
         `{ "sharingMode": "WHITELIST", "sharedWith": [ {"group": { "uniqueName": "user3GroupOiCr" }, "shared": true} ] }` | Update sharing setup of the template, so it's now shared only with user3GroupOiCr
 
@@ -1242,8 +1242,8 @@ paths:
 
         `{ "name": "-70 freezer", "cType": "LIST", "removeFromParentContainerRequest": true }` | Creates a  List Container with given name, as a top-level container.
 
-        `{ "name": "My Container", "cType": "LIST", "tags": [{"value":"api","uri":"http://uri","ontologyName":"name","ontologyVersion":"version"}], "extraFields": [{ "name": "myData", "content" : "extra text content" }] }`
-        | Creates  Container named "My Container", with a tag and extra field, in Workbench
+        `{ "name": "My Container", "cType": "LIST", "tags": [{"value":"api"}], "extraFields": [{ "name": "myData", "content" : "extra text content" }] }`
+        | Creates  Container named "My Container", with a non-ontology tag and extra field, in Workbench
 
         `{ "name": "My Subcontainer #1", "cType": "LIST", "parentContainers": [ { "id": 11 } ] }`
         | Creates default Container named "My Subcontainer", placed inside a list container with id = 11.
@@ -3151,7 +3151,7 @@ definitions:
     example:
       name: Restriction enzyme.
       description: A template for commercial restriction enzymes used in our lab
-      tags: 'enzyme, molbiol'
+      tags: [{"value":"enzyme"}, {"value":"molbiol"}]
       subSampleAlias:
         alias: subsample
         plural: subsamples

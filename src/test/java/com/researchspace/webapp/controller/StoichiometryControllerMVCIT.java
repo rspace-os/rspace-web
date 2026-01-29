@@ -212,6 +212,42 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
+  public void testCreateEmptyStoichiometryWithoutReaction() throws Exception {
+    doc1 = createBasicDocumentInRootFolderWithText(user, "any");
+
+    MvcResult createResult =
+        mockMvc
+            .perform(
+                post(URL)
+                    .param("recordId", doc1.getId().toString())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    StoichiometryDTO createdStoichiometry =
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
+    assertNotNull(createdStoichiometry.getId());
+    assertEquals(doc1.getId(), createdStoichiometry.getRecordId());
+    assertNull(createdStoichiometry.getParentReactionId());
+
+    MvcResult getResult =
+        mockMvc
+            .perform(
+                get(URL)
+                    .param("stoichiometryId", createdStoichiometry.getId().toString())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    StoichiometryDTO retrievedStoichiometry =
+        getFromJsonResponseBody(getResult, StoichiometryDTO.class);
+    assertEquals(createdStoichiometry.getId(), retrievedStoichiometry.getId());
+    assertEquals(doc1.getId(), retrievedStoichiometry.getRecordId());
+  }
+
+  @Test
   public void testSaveStoichiometryAlreadyExists() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field docField = doc1.getFields().get(0);
@@ -225,6 +261,29 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     String responseContent = failResult.getResponse().getContentAsString();
     assertEquals(HttpStatus.BAD_REQUEST.value(), failResult.getResponse().getStatus());
     assertTrue(responseContent.contains("Stoichiometry already exists for reaction chemId="));
+  }
+
+  @Test
+  public void testSaveStoichiometryBothIdsProvided() throws Exception {
+    doc1 = createBasicDocumentInRootFolderWithText(user, "any");
+    Field docField = doc1.getFields().get(0);
+    RSChemElement reaction = addReactionToField(docField, user);
+
+    mockMvc
+        .perform(
+            post(URL)
+                .param("chemId", reaction.getId().toString())
+                .param("recordId", doc1.getId().toString())
+                .principal(principal)
+                .header("apiKey", apiKey))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  public void testSaveStoichiometryNoIdsProvided() throws Exception {
+    mockMvc
+        .perform(post(URL).principal(principal).header("apiKey", apiKey))
+        .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -588,11 +647,15 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
   @Test
   public void createStoichiometry_withInvalidChemId_returnsBadRequest() throws Exception {
+    doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     MvcResult result =
         mockMvc
             .perform(
-                post(URL).param("chemId", "-999").principal(principal).header("apiKey", apiKey))
-            .andExpect(status().isInternalServerError())
+                post(URL)
+                    .param("recordId", doc1.getId().toString())
+                    .param("chemId", "-999")
+                    .principal(principal)
+                    .header("apiKey", apiKey))
             .andReturn();
 
     String body = result.getResponse().getContentAsString();
@@ -606,6 +669,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     return mockMvc
         .perform(
             post(URL)
+                .param("recordId", reaction.getRecord().getId().toString())
                 .param("chemId", reaction.getId().toString())
                 .principal(principal)
                 .header("apiKey", apiKey))

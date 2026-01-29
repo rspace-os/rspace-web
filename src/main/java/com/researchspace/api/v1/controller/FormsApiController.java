@@ -96,7 +96,6 @@ public class FormsApiController extends BaseApiController implements FormsApi {
     convertISearchResults(
         pgCrit,
         apiSrchConfig,
-        user,
         internalForms,
         apiFormsSearchResults,
         formInfoList,

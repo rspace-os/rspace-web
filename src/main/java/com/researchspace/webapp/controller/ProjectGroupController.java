@@ -10,7 +10,7 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.CreateCloudGroup;
 import com.researchspace.model.dtos.CreateCloudGroupValidator;
-import com.researchspace.model.dtos.RaidGroupAssociation;
+import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.RaIDServiceManager;
 import com.researchspace.service.cloud.CloudGroupManager;
@@ -93,7 +93,7 @@ public class ProjectGroupController extends BaseController {
       validateRaidInput(createCloudGroup.getRaid());
       raidServiceManager.bindRaidToGroupAndSave(
           creator,
-          new RaidGroupAssociation(
+          new RaidGroupAssociationDTO(
               newLabGroup.getId(), newLabGroup.getDisplayName(), createCloudGroup.getRaid()));
     }
     sendInvites(request, creator, listEmails, newLabGroup);

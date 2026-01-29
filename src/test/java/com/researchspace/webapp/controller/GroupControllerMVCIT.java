@@ -27,7 +27,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationStatus;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
-import com.researchspace.model.dtos.RaidGroupAssociation;
+import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
@@ -160,10 +160,11 @@ public class GroupControllerMVCIT extends MVCTestBase {
 
     raIDServiceManager.bindRaidToGroupAndSave(
         pi1,
-        new RaidGroupAssociation(
+        new RaidGroupAssociationDTO(
             g1.getId(),
             g1.getDisplayName(),
-            new RaIDReferenceDTO("raidServerAlias", "https://raid.org/10.12345/FKJ897")));
+            new RaIDReferenceDTO(
+                "raidServerAlias", "Raid Title1", "https://raid.org/10.12345/FKJ897")));
 
     // make sure group can be deleted.
     grpMgr.removeGroup(g1.getId(), pi1);

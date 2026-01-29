@@ -11,7 +11,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -224,7 +223,7 @@ public class FolderApiControllerTest {
   public void bindExceptionThrownIfValidationFails() throws BindException {
     ApiFolder toCreate = createApiFolderToPost();
     // validation is not actually performed in this test, this is just an example
-    toCreate.setName(RandomStringUtils.randomAlphabetic(300));
+    toCreate.setName(RandomStringUtils.insecure().nextAlphabetic(300));
     BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
     errors.reject("some.value");
     controller.createNewFolder(toCreate, errors, subject);
@@ -277,7 +276,7 @@ public class FolderApiControllerTest {
   }
 
   @Test(expected = NotFoundException.class)
-  public void getFolderThrowsNotFoundExIfNoExists() throws BindException {
+  public void getFolderThrowsNotFoundExIfNoExists() {
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.empty());
     controller.getFolder(1L, false, null, subject);
   }
@@ -291,7 +290,7 @@ public class FolderApiControllerTest {
   }
 
   @Test
-  public void recordFilterWorkspace() throws Exception {
+  public void recordFilterWorkspace() {
     RecordTypeFilter actualFilter = controller.generateRecordFilter(Collections.emptySet());
     assertEquals(EnumSet.allOf(RecordType.class), actualFilter.getWantedTypes());
     actualFilter = controller.generateRecordFilter(toSet("notebook"));
@@ -304,7 +303,7 @@ public class FolderApiControllerTest {
   }
 
   @Test
-  public void recordFilterGallery() throws Exception {
+  public void recordFilterGallery() {
     RecordTypeFilter actualFilter = controller.generateRecordFilter(Collections.emptySet());
     assertEquals(EnumSet.allOf(RecordType.class), actualFilter.getWantedTypes());
     actualFilter = controller.generateRecordFilter(toSet("folder"));
@@ -317,7 +316,7 @@ public class FolderApiControllerTest {
   }
 
   @Test
-  public void rejectInvalidFolderTreeFilter() throws BindException {
+  public void rejectInvalidFolderTreeFilter() {
     DocumentApiPaginationCriteria pgCriteria = new DocumentApiPaginationCriteria();
     CoreTestUtils.assertIllegalArgumentException(
         () ->
@@ -344,7 +343,7 @@ public class FolderApiControllerTest {
     ApiRecordTreeItemListing listing =
         controller.rootFolderTree(null, pgCriteria, errorsObject(pgCriteria), subject);
     assertEquals(3, listing.getRecords().size());
-    assertNull(listing.getParentId());
+    assertEquals(subject.getRootFolder().getId(), listing.getFolderId());
     assertSelfLink(FOLDER_TREE_ENDPOINT, listing);
 
     RecordTreeItemInfo docInfo = findResultById(docId, listing);
@@ -378,7 +377,7 @@ public class FolderApiControllerTest {
         controller.folderTreeById(
             subFolder.getId(), null, pgCriteria, errorsObject(pgCriteria), subject);
     assertEquals(0, listing.getRecords().size());
-    assertEquals(root.getId(), listing.getParentId());
+    assertEquals(subFolder.getId(), listing.getFolderId());
   }
 
   private void mockFolderLoad(Folder folder) {
@@ -414,7 +413,7 @@ public class FolderApiControllerTest {
             errorsObject(pgCriteria),
             subject);
     assertEquals(1, listing.getRecords().size());
-    assertEquals(folderSetup.getMediaImgExamples().getParent().getId(), listing.getParentId());
+    assertEquals(folderSetup.getMediaImgExamples().getId(), listing.getFolderId());
   }
 
   private ISearchResults<BaseRecord> createMediaResults(EcatMediaFile imgFile) {
@@ -492,7 +491,7 @@ public class FolderApiControllerTest {
 
   private ServiceOperationResultCollection<CompositeRecordOperationResult, Long> successResult() {
     ServiceOperationResultCollection<CompositeRecordOperationResult, Long> result =
-        new ServiceOperationResultCollection<CompositeRecordOperationResult, Long>();
+        new ServiceOperationResultCollection<>();
     result.addResult(new CompositeRecordOperationResult(null, null, null));
     return result;
   }
