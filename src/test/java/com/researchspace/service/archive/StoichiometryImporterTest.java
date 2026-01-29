@@ -17,7 +17,7 @@ import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
-import com.researchspace.service.archive.export.StoichiometryReader;
+import com.researchspace.service.archive.export.StoichiometryReaderWriter;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
@@ -42,7 +42,7 @@ public class StoichiometryImporterTest {
   @Mock private StoichiometryDTO existingStoich;
   @Mock private StructuredDocument strucDoc;
   @Mock private FieldManager fieldManager;
-  @Mock private StoichiometryReader reader;
+  @Mock private StoichiometryReaderWriter reader;
 
   @Before
   public void setUp() throws Exception {
@@ -52,8 +52,8 @@ public class StoichiometryImporterTest {
     when(oldChemElement.getId()).thenReturn(1L);
     when(newField.getStructuredDocument()).thenReturn(strucDoc);
     when(newField.getFieldData()).thenReturn(NEW_FIELD_FIELDDATA);
-    when(service.createFromExistingStoichiometry(
-            eq(existingStoich), eq(currentChem), eq(strucDoc), eq(user)))
+    when(service.createNewFromDataWithoutInventoryLinks(
+            eq(existingStoich), eq(currentChem), eq(user)))
         .thenReturn(newStoichIometry);
     testee = new StoichiometryImporter(service, reader, oldField, newField, fieldManager, user);
   }
@@ -86,8 +86,7 @@ public class StoichiometryImporterTest {
     when(existingStoich.getParentReactionId()).thenReturn(1L);
     testee.importStoichiometries(oldChemElement, currentChem);
     verify(service)
-        .createFromExistingStoichiometry(
-            eq(existingStoich), eq(currentChem), eq(strucDoc), eq(user));
+        .createNewFromDataWithoutInventoryLinks(eq(existingStoich), eq(currentChem), eq(user));
     IdAndRevision idAndRevision = new IdAndRevision();
     idAndRevision.id = 33L;
     verify(reader)
@@ -104,11 +103,10 @@ public class StoichiometryImporterTest {
     when(newField.getFieldData()).thenReturn(NEW_FIELD_FIELDDATA_REAL);
     testee =
         new StoichiometryImporter(
-            service, new StoichiometryReader(), oldField, newField, fieldManager, user);
+            service, new StoichiometryReaderWriter(), oldField, newField, fieldManager, user);
     testee.importStoichiometries(oldChemElement, currentChem);
     verify(service)
-        .createFromExistingStoichiometry(
-            eq(existingStoich), eq(currentChem), eq(strucDoc), eq(user));
+        .createNewFromDataWithoutInventoryLinks(eq(existingStoich), eq(currentChem), eq(user));
     verify(newField)
         .setFieldData(
             "<img data-stoichiometry-table=\"{&quot;id&quot;:33,&quot;revision&quot;:null}\">");

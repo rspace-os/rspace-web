@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static com.researchspace.service.StoichiometryTestMother.createStoichiometry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -78,7 +79,7 @@ public class StoichiometryManagerImplTest {
   @Test
   public void whenFindByParentReactionId_thenReturnsFromDao() {
     Long parentReactionId = 1L;
-    Stoichiometry expectedStoichiometry = createStoichiometry(1L, parentReactionId);
+    Stoichiometry expectedStoichiometry = createStoichiometry(1L, parentReactionId, record);
     when(stoichiometryDao.findByParentReactionId(parentReactionId))
         .thenReturn(Optional.of((expectedStoichiometry)));
 
@@ -306,7 +307,7 @@ public class StoichiometryManagerImplTest {
   public void whenUpdateWithNonExistentMoleculeId_thenThrowException() {
     Long stoichiometryId = 1L;
     Long nonExistentMoleculeId = 999L;
-    Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L);
+    Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L, record);
 
     StoichiometryUpdateDTO stoichiometryUpdateDTO = new StoichiometryUpdateDTO();
     stoichiometryUpdateDTO.setId(stoichiometryId);
@@ -369,7 +370,7 @@ public class StoichiometryManagerImplTest {
   @Test
   public void whenUpdate_withNewMolecules_thenAddsThemCorrectly() throws Exception {
     Long stoichiometryId = 1L;
-    Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L);
+    Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L, record);
     Long existingMoleculeId = existingStoichiometry.getMolecules().get(0).getId();
     RSChemElement newMolecule = createRSChemElement(99L);
 
@@ -619,33 +620,8 @@ public class StoichiometryManagerImplTest {
     assertEquals(46.07, molecule.getMolecularWeight(), 0.001);
   }
 
-  private Stoichiometry createStoichiometry(Long id, Long parentReactionId) {
-    RSChemElement parentReaction = createRSChemElement(parentReactionId);
-    Stoichiometry stoichiometry =
-        Stoichiometry.builder()
-            .id(id)
-            .parentReaction(parentReaction)
-            .molecules(new ArrayList<>())
-            .build();
-
-    StoichiometryMolecule molecule =
-        StoichiometryMolecule.builder()
-            .id(2L)
-            .stoichiometry(stoichiometry)
-            .rsChemElement(createRSChemElement(3L))
-            .role(MoleculeRole.REACTANT)
-            .formula("C2H6O")
-            .name("Ethanol")
-            .smiles("CCO")
-            .molecularWeight(46.07)
-            .build();
-    stoichiometry.addMolecule(molecule);
-
-    return stoichiometry;
-  }
-
   private Stoichiometry createStoichiometryWith2Molecules(Long id, Long parentReactionId) {
-    Stoichiometry stoichiometry = createStoichiometry(id, parentReactionId);
+    Stoichiometry stoichiometry = createStoichiometry(id, parentReactionId, record);
 
     StoichiometryMolecule reactant =
         StoichiometryMolecule.builder()

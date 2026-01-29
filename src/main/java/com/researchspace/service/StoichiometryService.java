@@ -4,7 +4,6 @@ import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
-import com.researchspace.model.record.Record;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 
@@ -23,6 +22,6 @@ public interface StoichiometryService {
 
   StoichiometryMolecule getMoleculeInfo(String smiles);
 
-  Stoichiometry createFromExistingStoichiometry(
-      StoichiometryDTO matching, RSChemElement currentChem, Record record, User user);
+  Stoichiometry createNewFromDataWithoutInventoryLinks(
+      StoichiometryDTO stoichiometryDTO, RSChemElement chemElement, User user);
 }

@@ -15,10 +15,10 @@ import lombok.SneakyThrows;
 public class StoichiometryExporter extends AbstractFieldExporter<LinkableStoichiometry> {
 
   private final User exporter;
-  private final StoichiometryReader reader;
+  private final StoichiometryReaderWriter reader;
 
   public StoichiometryExporter(
-      FieldExporterSupport support, StoichiometryReader reader, User exporter) {
+      FieldExporterSupport support, StoichiometryReaderWriter reader, User exporter) {
     super(support);
     this.exporter = exporter;
     this.reader = reader;
@@ -31,25 +31,12 @@ public class StoichiometryExporter extends AbstractFieldExporter<LinkableStoichi
         new FieldElementLinkPairs<>(LinkableStoichiometry.class);
     List<StoichiometryDTO> extractedStoichiometries =
         reader.extractStoichiometriesFromFieldContents(htmlContent);
-    //    String htmlContent = fieldExportContext.getArchiveField().getFieldData();
-    //    Document doc = Jsoup.parse(htmlContent);
-    //    Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");
-    //    for (Element stoichiometryElement : stoichiometryElements) {
-    //      String stoichiometryAttribute = stoichiometryElement.attr("data-stoichiometry-table");
-    //      StoichiometryDTO extracted =
-    //          new ObjectMapper().readValue(stoichiometryAttribute, StoichiometryDTO.class);
-    //      StoichiometryDTO stoichiometryDTO =
-    //          support
-    //              .getStoichiometryService()
-    //              .getById(extracted.getId(), extracted.getRevision(), exporter);
-    //      stoichiometryDataLinks.add(
-    //          new FieldElementLinkPair<>(new LinkableStoichiometry(stoichiometryDTO), ""));
-    //    }
     for (StoichiometryDTO extracted : extractedStoichiometries) {
+      // ignore revision in case the rtfData is not uptodate with changes made via the API
       StoichiometryDTO stoichiometryDTO =
-          support
-              .getStoichiometryService()
-              .getById(extracted.getId(), extracted.getRevision(), exporter);
+          support.getStoichiometryService().getById(extracted.getId(), null, exporter);
+      // for now, remove inventory links because we do not export inventory data
+      stoichiometryDTO.getMolecules().forEach(m -> m.setInventoryLink(null));
       stoichiometryDataLinks.add(
           new FieldElementLinkPair<>(new LinkableStoichiometry(stoichiometryDTO), ""));
     }

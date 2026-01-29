@@ -271,7 +271,7 @@ public class ExportObjectGenerator {
     String htmlContent = context.getArchiveField().getFieldData();
     if (htmlContent.contains("data-stoichiometry-table")) {
       StoichiometryExporter stoichiometryExporterExporter =
-          new StoichiometryExporter(support, new StoichiometryReader(), exporter);
+          new StoichiometryExporter(support, new StoichiometryReaderWriter(), exporter);
       stoichiometryExporterExporter.addStoichiometriesAndExport(context, htmlContent);
     }
   }

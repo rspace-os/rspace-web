@@ -12,7 +12,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class StoichiometryReader {
+public class StoichiometryReaderWriter {
 
   @SneakyThrows
   public List<StoichiometryDTO> extractStoichiometriesFromFieldContents(String htmlContent) {

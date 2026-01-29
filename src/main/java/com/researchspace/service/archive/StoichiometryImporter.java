@@ -9,7 +9,7 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.StoichiometryService;
-import com.researchspace.service.archive.export.StoichiometryReader;
+import com.researchspace.service.archive.export.StoichiometryReaderWriter;
 import lombok.EqualsAndHashCode;
 
 public class StoichiometryImporter {
@@ -18,7 +18,7 @@ public class StoichiometryImporter {
   private final ArchivalField oldField;
   private final Field newField;
   private final User user;
-  private final StoichiometryReader reader;
+  private final StoichiometryReaderWriter reader;
   private final FieldManager fieldManager;
 
   @EqualsAndHashCode(of = "id")
@@ -29,7 +29,7 @@ public class StoichiometryImporter {
 
   public StoichiometryImporter(
       StoichiometryService service,
-      StoichiometryReader reader,
+      StoichiometryReaderWriter reader,
       ArchivalField oldField,
       Field newField,
       FieldManager fieldmanager,
@@ -54,8 +54,7 @@ public class StoichiometryImporter {
             .orElse(null);
     if (matching != null) {
       Stoichiometry created =
-          service.createFromExistingStoichiometry(
-              matching, currentChem, newField.getStructuredDocument(), user);
+          service.createNewFromDataWithoutInventoryLinks(matching, currentChem, user);
       IdAndRevision newDTO = new IdAndRevision();
       newDTO.id = created.getId();
       String updatedStoichiometriesFieldContent =

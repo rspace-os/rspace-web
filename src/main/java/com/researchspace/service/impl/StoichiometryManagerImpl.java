@@ -79,29 +79,19 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   }
 
   @Override
-  public Stoichiometry createFromExistingStoichiometry(
-      StoichiometryDTO existing, RSChemElement parentReaction, Record record, User user)
-      throws IOException {
+  public Stoichiometry createNewFromDataWithoutInventoryLinks(
+      StoichiometryDTO existing, RSChemElement parentReaction, User user) {
     Stoichiometry stoichiometry =
-        Stoichiometry.builder().parentReaction(parentReaction).record(record).build();
+        Stoichiometry.builder()
+            .parentReaction(parentReaction)
+            .record(parentReaction.getRecord())
+            .build();
     stoichiometry = save(stoichiometry);
     if (existing.getMolecules() != null) {
       for (StoichiometryMoleculeDTO moleculeDTO : existing.getMolecules()) {
-        RSChemElement molecule =
-            RSChemElement.builder().chemElements(moleculeDTO.getSmiles()).build();
-        molecule = rsChemElementManager.save(molecule, user);
-        StoichiometryMolecule stoichiometryMolecule =
-            StoichiometryMolecule.builder()
-                .stoichiometry(stoichiometry)
-                .rsChemElement(molecule)
-                .role(moleculeDTO.getRole())
-                .smiles(moleculeDTO.getSmiles())
-                .molecularWeight(moleculeDTO.getMass())
-                .name(moleculeDTO.getName())
-                .formula(moleculeDTO.getFormula())
-                .limitingReagent(false)
-                .build();
-        stoichiometry.addMolecule(stoichiometryMolecule);
+        RSChemElement molecule = createNewRsChemElement(user, moleculeDTO);
+        StoichiometryMolecule copyMolecule = buildMolecule(moleculeDTO, stoichiometry, molecule);
+        stoichiometry.addMolecule(copyMolecule);
       }
     }
     return save(stoichiometry);
@@ -233,7 +223,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
     stoichiometryInventoryLinkManager.createLink(link, user);
   }
 
-  private static StoichiometryMolecule buildMolecule(
+  public static StoichiometryMolecule buildMolecule(
       StoichiometryMolecule sourceMol, Stoichiometry target, RSChemElement newMol) {
     return StoichiometryMolecule.builder()
         .stoichiometry(target)
@@ -252,12 +242,38 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
         .build();
   }
 
+  public static StoichiometryMolecule buildMolecule(
+      StoichiometryMoleculeDTO sourceMol, Stoichiometry target, RSChemElement newMol) {
+    return StoichiometryMolecule.builder()
+        .stoichiometry(target)
+        .rsChemElement(newMol)
+        .role(sourceMol.getRole())
+        .smiles(sourceMol.getSmiles())
+        .name(sourceMol.getName())
+        .formula(sourceMol.getFormula())
+        .molecularWeight(sourceMol.getMolecularWeight())
+        .coefficient(sourceMol.getCoefficient())
+        .mass(sourceMol.getMass())
+        .actualAmount(sourceMol.getActualAmount())
+        .actualYield(sourceMol.getActualYield())
+        .limitingReagent(sourceMol.getLimitingReagent())
+        .notes(sourceMol.getNotes())
+        .build();
+  }
+
+  private RSChemElement createNewRsChemElement(User user, StoichiometryMoleculeDTO sourceMol) {
+    return createNewRsChemElement(user, sourceMol.getSmiles());
+  }
+
   private RSChemElement createNewRsChemElement(User user, StoichiometryMolecule sourceMol) {
+    return createNewRsChemElement(user, sourceMol.getSmiles());
+  }
+
+  private RSChemElement createNewRsChemElement(User user, String smiles) {
     RSChemElement newMol;
     try {
       newMol =
-          rsChemElementManager.save(
-              RSChemElement.builder().chemElements(sourceMol.getSmiles()).build(), user);
+          rsChemElementManager.save(RSChemElement.builder().chemElements(smiles).build(), user);
     } catch (IOException e) {
       throw new StoichiometryException(
           "Problem saving molecule from SMILES during stoichiometry copy", e);

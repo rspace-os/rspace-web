@@ -7,6 +7,7 @@ import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
 import static com.researchspace.model.core.RecordType.MEDIA_FILE;
 import static com.researchspace.model.core.RecordType.NORMAL;
 import static com.researchspace.model.netfiles.NfsElement.FULL_PATH_DATA_ATTR_NAME;
+import static com.researchspace.service.StoichiometryTestMother.createStoichiometryInventoryLinkRequest;
 import static com.researchspace.service.archive.ExportImport.NFS_EXPORT_XML;
 import static com.researchspace.service.archive.export.HTMLArchiveExporter.NFS_LINKS_HTML;
 import static com.researchspace.testutils.ArchiveTestUtils.assertPredicateOnHtmlFile;
@@ -31,6 +32,8 @@ import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 
 import com.axiope.search.SearchConstants;
 import com.researchspace.Constants;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
 import com.researchspace.archive.ArchivalDocumentParserRef;
 import com.researchspace.archive.ArchivalGalleryMetadata;
 import com.researchspace.archive.ArchivalImportConfig;
@@ -100,8 +103,9 @@ import com.researchspace.service.archive.ImportStrategy;
 import com.researchspace.service.archive.PostArchiveCompletion;
 import com.researchspace.service.archive.export.ArchiveRemover;
 import com.researchspace.service.archive.export.ExportRemovalPolicy;
-import com.researchspace.service.archive.export.StoichiometryReader;
+import com.researchspace.service.archive.export.StoichiometryReaderWriter;
 import com.researchspace.service.aws.S3Utilities;
+import com.researchspace.service.chemistry.DefaultChemistryProvider;
 import com.researchspace.testutils.ArchiveTestUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
@@ -193,6 +197,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   private PostArchiveCompletion standardPostExport;
 
   @Autowired private ExternalWorkFlowDataManager externalWorkFlowDataManager;
+  @Autowired
+  private StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager;
 
   @Before
   public void setUp() throws Exception {
@@ -1175,6 +1181,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
   public void testExportImportStoichiometriesWithChemOrEmpty(
       TriFunction<Long, Long, User, Stoichiometry> stoichiometryCreator) throws Exception {
+    ((DefaultChemistryProvider) chemistryProvider).setElementalAnalysisDTO(StoichiometryTestMother.createAnalysisDTOWithMultipleReactants());
     User u1 = createInitAndLoginAnyUser();
     StructuredDocument sdoc = createBasicDocumentInRootFolderWithText(u1, "source");
     Field textField = sdoc.getFields().get(0);
@@ -1182,7 +1189,11 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     ContentBuilder builder = new ContentBuilder(u1, textField);
     builder.addImage().addMath().addImageAnnotation().addImageAnnotation().addImage();
     textField = fieldMgr.getWithLoadedMediaLinks(textField.getId(), u1).get();
-    EcatChemistryFile createdForTest = addChemistryFileToGallery("Aminoglutethimide.mol", u1);
+    EcatChemistryFile createdForTest =
+        addChemistryFileToGallery(
+            "Aminoglutethimide.mol",
+            null,
+            u1);
     RSChemElement createdForChemFile =
         rsChemElementManager.getRSChemElementsLinkedToFile(createdForTest.getId(), u1).get(0);
     createdForChemFile.setParentId(textField.getId());
@@ -1192,6 +1203,17 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     Long stoichiometryID = stoichiometry.getId();
     Long stoichiometryRevision =
         stoichiometryService.getById(stoichiometryID, null, u1).getRevision();
+    if(!stoichiometry.getMolecules().isEmpty()) {
+      Long stoichiometryMolID = stoichiometry.getMolecules().get(0).getId();
+      ApiSampleWithFullSubSamples sample = createBasicSampleForUser(u1);
+      StoichiometryInventoryLinkRequest invLinkRequest =
+          createStoichiometryInventoryLinkRequest(stoichiometryMolID, sample.getGlobalId());
+      stoichiometryInventoryLinkManager.createLink(invLinkRequest, u1);
+      stoichiometryRevision =
+          stoichiometryService.getById(stoichiometryID, null, u1).getRevision();
+      stoichiometry = stoichiometryMgr.get(stoichiometryID);
+      assertTrue(stoichiometry.getMolecules().get(0).getInventoryLink() != null);
+    }
     textField.setFieldData(
         "<img id=\""
             + createdForChemFile.getId()
@@ -1235,7 +1257,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .orElseThrow(() -> new RuntimeException("Stoichiometry not found after import"));
     assertNotEquals(stoichiometryID, importedStoichiometry.getId());
     List<StoichiometryDTO> importedInDocRtfGData =
-        new StoichiometryReader()
+        new StoichiometryReaderWriter()
             .extractStoichiometriesFromFieldContents(
                 importedDoc.getField("testTextField").getFieldData());
     assertEquals(1, importedInDocRtfGData.size());
@@ -1243,6 +1265,9 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(importedStoichiometry.getId(), importedInDocRtfGData.get(0).getId());
     assertNull(importedInDocRtfGData.get(0).getRevision());
     assertEquals(importedStoichiometry.getMolecules().size(), stoichiometry.getMolecules().size());
+    if(!importedStoichiometry.getMolecules().isEmpty()) {
+      assertTrue(importedStoichiometry.getMolecules().get(0).getInventoryLink() == null);
+    }
   }
 
   @Test

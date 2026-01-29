@@ -19,6 +19,26 @@ import org.springframework.stereotype.Service;
 @Service
 public class DefaultChemistryProvider implements ChemistryProvider {
 
+  private String chemString = "";
+  private String convertedChemString = "";
+  private ElementalAnalysisDTO elementalAnalysisDTO = new ElementalAnalysisDTO();
+
+  /**
+   * This value will be returned for all 'convert' operations. This allows integration tests to
+   * create RSChemElements with actual data and therefore Stoichiometries that have molecules.
+   */
+  public void setChemString(String chemString) {
+    this.chemString = chemString;
+  }
+
+  /**
+   * This value will be returned for all 'convert' operations. This allows integration tests to
+   * create RSChemElements with actual data and therefore Stoichiometries that have molecules.
+   */
+  public void setConvertedChemString(String convertedChemString) {
+    this.convertedChemString = convertedChemString;
+  }
+
   @Override
   public byte[] exportToImage(
       String chemicalString, String inputFormat, ChemicalExportFormat chemicalExportFormat) {
@@ -32,22 +52,22 @@ public class DefaultChemistryProvider implements ChemistryProvider {
 
   @Override
   public String convertToDefaultFormat(String chemical) {
-    return "";
+    return convertedChemString;
   }
 
   @Override
   public String convert(String chemical, String outputFormat) {
-    return "";
+    return chemString;
   }
 
   @Override
   public String convert(File chemical) throws IOException {
-    return "";
+    return chemString;
   }
 
   @Override
   public Optional<ElementalAnalysisDTO> getProperties(String chemical) {
-    return Optional.of(new ElementalAnalysisDTO());
+    return Optional.of(this.elementalAnalysisDTO);
   }
 
   @Override
@@ -62,11 +82,16 @@ public class DefaultChemistryProvider implements ChemistryProvider {
 
   @Override
   public Optional<ElementalAnalysisDTO> getStoichiometry(RSChemElement chemicalElement) {
-    return Optional.of(new ElementalAnalysisDTO());
+    return Optional.of(this.elementalAnalysisDTO);
   }
 
   @Override
   public ChemElementsFormat defaultFormat() {
     return ChemElementsFormat.MOL;
+  }
+
+  public void setElementalAnalysisDTO(
+      ElementalAnalysisDTO elementalAnalysisDTO) {
+    this.elementalAnalysisDTO = elementalAnalysisDTO;
   }
 }

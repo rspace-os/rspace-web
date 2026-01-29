@@ -17,10 +17,6 @@ public interface StoichiometryManager extends GenericManager<Stoichiometry, Long
 
   Optional<Stoichiometry> findByRecordId(Long recordId);
 
-  Stoichiometry createFromExistingStoichiometry(
-      StoichiometryDTO existing, RSChemElement parentReaction, Record record, User user)
-      throws IOException;
-
   Stoichiometry createFromAnalysis(
       ElementalAnalysisDTO analysisDTO, RSChemElement parentReaction, Record record, User user)
       throws IOException;
@@ -32,4 +28,7 @@ public interface StoichiometryManager extends GenericManager<Stoichiometry, Long
   Stoichiometry copy(Long sourceParentReactionId, RSChemElement newParentReaction, User user);
 
   AuditedEntity<Stoichiometry> getRevision(long id, Long revisionId, User user);
+
+  Stoichiometry createNewFromDataWithoutInventoryLinks(
+      StoichiometryDTO stoichiometryDTO, RSChemElement chemElement, User user);
 }
