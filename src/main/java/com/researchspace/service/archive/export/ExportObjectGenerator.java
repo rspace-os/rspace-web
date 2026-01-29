@@ -235,15 +235,15 @@ public class ExportObjectGenerator {
       Number revision,
       NfsExportContext nfsContext,
       ImmutableExportRecordList exportList) {
-    // Simpler to ignore this when adding new export classes, see below
     FieldContents fieldContents =
         fieldParser.findFieldElementsInContent(archiveField.getFieldData());
     FieldExportContext context =
         new FieldExportContext(
             aconfig, archiveField, recordFolder, exportFolder, revision, nfsContext, exportList);
-    try { // the 'addElementsToExport' code has multiple unnecessary layers of indirection; simpler
-      // to add new export classes in the sections below
-      // which call export explicitly eg 'addImageAnnotationsToExport', 'addSketchesToExport' etc
+    try {
+      // New export classes may be added in the sections below
+      // which call export explicitly eg 'addImageAnnotationsToExport', 'addSketchesToExport' etc.
+      // It is not necessary to make more calls to 'addElementsToExport'
       addElementsToExport(
           context, fieldContents, RsChemElementFieldExporter.class, RSChemElement.class);
       addElementsToExport(context, fieldContents, MathFieldExporter.class, RSMath.class);
@@ -253,9 +253,8 @@ public class ExportObjectGenerator {
     } catch (InstantiationException | IllegalAccessException e) {
       log.warn("exception parsing content of archive field " + archiveField.getFieldId(), e);
     }
-    // ********* add new export code here *********
-    // in order to reduce the number of layers of indirection, follow the below examples
-    // and ignore the 'addElementsToExport' code above
+    // ********* may add new export code here *********
+    // These explicit method calls reduce the number of layers of indirection
     addImageAnnotationsToExport(context, fieldContents);
     addSketchesToExport(context, fieldContents);
     addAttachmentFilesToExport(context, fieldContents);
