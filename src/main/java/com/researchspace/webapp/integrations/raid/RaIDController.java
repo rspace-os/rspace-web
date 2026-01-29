@@ -59,8 +59,7 @@ public class RaIDController extends BaseOAuth2Controller {
   private UserConnectionManager userConnection;
 
   /***
-   * Gets the list of the created raid by the user and remove from it
-   * the ones that have been already associated in RSpace
+   * Gets the list of the available raids to be associated
    *
    * @param principal
    * @return the list of RaID created by the user without the ones that have been already associated
@@ -68,7 +67,7 @@ public class RaIDController extends BaseOAuth2Controller {
   @GetMapping()
   @ResponseBody
   @ResponseStatus(HttpStatus.OK)
-  public AjaxReturnObject<Set<RaIDReferenceDTO>> getRaidListByUser(Principal principal) {
+  public AjaxReturnObject<Set<RaIDReferenceDTO>> getAvailableRaidList(Principal principal) {
     RaIDReferenceDTO errorBean = new RaIDReferenceDTO();
     BindingResult errors = new BeanPropertyBindingResult(errorBean, "RaIDReferenceDTO");
     Set<RaIDReferenceDTO> result =
@@ -296,14 +295,11 @@ public class RaIDController extends BaseOAuth2Controller {
             if (externalRaIDList != null && !externalRaIDList.isEmpty()) {
               // remove from the external list the RaID that have already been associated
               // by this user
-              Set<RaIDReferenceDTO> userRaidAlreadyAssociated =
-                  raidServiceManager
-                      .getAssociatedRaidsByUserAndAlias(
-                          userManager.getUserByUsername(principal.getName()), currentServerAlias)
-                      .stream()
+              Set<RaIDReferenceDTO> raidsAlreadyAssociated =
+                  raidServiceManager.getAssociatedRaidsByAlias(currentServerAlias).stream()
                       .map(RaidGroupAssociationDTO::getRaid)
                       .collect(Collectors.toSet());
-              externalRaIDList.removeAll(userRaidAlreadyAssociated);
+              externalRaIDList.removeAll(raidsAlreadyAssociated);
 
               result.addAll(externalRaIDList);
             }

@@ -7,4 +7,6 @@ import java.util.List;
 public interface RaIDDao extends GenericDao<UserRaid, Long> {
 
   List<UserRaid> getAssociatedRaidByUserAndAlias(User user, String serverAlias);
+
+  List<UserRaid> getAssociatedRaidByAlias(String serverAlias);
 }

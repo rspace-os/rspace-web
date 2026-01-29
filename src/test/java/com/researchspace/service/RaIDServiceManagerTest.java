@@ -31,11 +31,14 @@ public class RaIDServiceManagerTest {
   public static final long USER_RAID_ID = 1L;
   public static final long PROJECT_GROUP_ID = 2L;
 
-  @InjectMocks private RaIDServiceManager raIDServiceManager = new RaIDServiceManagerImpl();
+  @InjectMocks
+  private RaIDServiceManager raIDServiceManager = new RaIDServiceManagerImpl();
 
-  @Mock private RaIDDao raidDao;
+  @Mock
+  private RaIDDao raidDao;
 
-  @Mock private GroupManager groupManager;
+  @Mock
+  private GroupManager groupManager;
 
   private User piUser;
   private Group projectGroup;
@@ -51,8 +54,9 @@ public class RaIDServiceManagerTest {
     userRaid = new UserRaid(piUser, projectGroup, SERVER_ALIAS, RAID_TITLE, RAID_IDENTIFIER);
     userRaid.setId(USER_RAID_ID);
 
-    when(raidDao.getAssociatedRaidByUserAndAlias(piUser, SERVER_ALIAS))
-        .thenReturn(List.of(userRaid));
+    when(raidDao.getAssociatedRaidByUserAndAlias(piUser, SERVER_ALIAS)).thenReturn(
+        List.of(userRaid));
+    when(raidDao.getAssociatedRaidByAlias(SERVER_ALIAS)).thenReturn(List.of(userRaid));
     when(groupManager.getGroup(projectGroup.getId())).thenReturn(projectGroup);
   }
 
@@ -61,6 +65,21 @@ public class RaIDServiceManagerTest {
     // WHEN
     Set<RaidGroupAssociationDTO> actualResult =
         raIDServiceManager.getAssociatedRaidsByUserAndAlias(piUser, SERVER_ALIAS);
+
+    // THEN
+    assertNotNull(actualResult);
+    assertEquals(1, actualResult.size());
+    RaidGroupAssociationDTO actualReferenceDTO = actualResult.iterator().next();
+    assertEquals(USER_RAID_ID, actualReferenceDTO.getRaid().getId());
+    assertEquals(SERVER_ALIAS, actualReferenceDTO.getRaid().getRaidServerAlias());
+    assertEquals(RAID_IDENTIFIER, actualReferenceDTO.getRaid().getRaidIdentifier());
+  }
+
+  @Test
+  public void testGetAssociatedRaidsByAlias() {
+    // WHEN
+    Set<RaidGroupAssociationDTO> actualResult =
+        raIDServiceManager.getAssociatedRaidsByAlias(SERVER_ALIAS);
 
     // THEN
     assertNotNull(actualResult);

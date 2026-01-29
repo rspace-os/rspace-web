@@ -12,6 +12,8 @@ public interface RaIDServiceManager {
 
   Set<RaidGroupAssociationDTO> getAssociatedRaidsByUserAndAlias(User user, String raidServerAlias);
 
+  Set<RaidGroupAssociationDTO> getAssociatedRaidsByAlias(String raidServerAlias);
+
   Optional<RaidGroupAssociationDTO> getAssociatedRaidByUserAliasAndProjectId(
       User user, String raidServerAlias, Long projectGroupId);
 

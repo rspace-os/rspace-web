@@ -25,4 +25,13 @@ public class RaIDDaoHibernate extends GenericDaoHibernate<UserRaid, Long> implem
         .setParameter("serverAlias", serverAlias)
         .list();
   }
+
+  @Override
+  public List<UserRaid> getAssociatedRaidByAlias(String serverAlias) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("from UserRaid ur where ur.raidServerAlias = :serverAlias", UserRaid.class)
+        .setParameter("serverAlias", serverAlias)
+        .list();
+  }
 }
