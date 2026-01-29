@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 import { describe, it, test, expect, vi } from "vitest";
 import { makeMockContainer, containerAttrs } from "./mocking";

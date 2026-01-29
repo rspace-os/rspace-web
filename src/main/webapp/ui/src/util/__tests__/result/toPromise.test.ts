@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 import { describe, it, test, expect } from "vitest";
 import Result from "../../result";

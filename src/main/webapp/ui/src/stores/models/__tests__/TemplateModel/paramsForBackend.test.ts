@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 import { describe, test, expect, vi } from "vitest";
 import { makeMockTemplate } from "./mocking";

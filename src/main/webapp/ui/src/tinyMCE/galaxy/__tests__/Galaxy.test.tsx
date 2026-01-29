@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 import Galaxy, {AttachedRecords} from "../Galaxy";
 import React from "react";

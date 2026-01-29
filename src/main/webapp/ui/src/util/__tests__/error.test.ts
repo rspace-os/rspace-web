@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 import { describe, test, expect } from "vitest";
 import { getErrorMessage } from "../error";

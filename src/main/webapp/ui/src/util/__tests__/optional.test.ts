@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 //@flow
 import { describe, it, test, expect } from "vitest";

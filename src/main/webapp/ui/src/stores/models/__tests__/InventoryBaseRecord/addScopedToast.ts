@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 import { expect } from "vitest";
 import "@testing-library/jest-dom/vitest";

@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 import { describe, test, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";

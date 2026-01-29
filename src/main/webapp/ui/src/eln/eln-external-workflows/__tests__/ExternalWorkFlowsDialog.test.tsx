@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 import { describe, it, expect, beforeEach } from "vitest";
 import React from "react";

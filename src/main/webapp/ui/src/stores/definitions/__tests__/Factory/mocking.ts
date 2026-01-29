@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 
 import { vi } from "vitest";

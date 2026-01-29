@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "../../../__mocks__/matchMedia";
@@ -610,9 +609,11 @@ describe("ExportDialog", () => {
       });
     });
     describe("The page size displayed on the second page should be set by a call to /defaultPDFConfig", () => {
-      test.each(["A4", "LETTER"])("PDF export: pageSize = %s", (pageSize) => {
+      test.each(["A4", "LETTER"])(
+        "PDF export: pageSize = %s",
+        async (pageSize) => {
         const user = userEvent.setup();
-        fc.assert(
+        await fc.assert(
           fc
             .asyncProperty(
               arbDocumentSelection().filter(({ exportTypes }) =>
@@ -632,19 +633,22 @@ describe("ExportDialog", () => {
                 );
                 await user.click(screen.getByRole("button", { name: "Next" }));
                 await waitFor(() => {
-                  expect(
-                    screen.getByRole("button", { name: pageSize })
-                  ).toBeVisible();
+                  expect(screen.getByRole("combobox")).toHaveTextContent(
+                    new RegExp(pageSize, "i")
+                  );
                 });
               }
             )
             .afterEach(cleanup),
           { numRuns: 1 }
         );
-      });
-      test.each(["A4", "LETTER"])("DOC export: pageSize = %s", (pageSize) => {
+      }
+      );
+      test.each(["A4", "LETTER"])(
+        "DOC export: pageSize = %s",
+        async (pageSize) => {
         const user = userEvent.setup();
-        fc.assert(
+        await fc.assert(
           fc
             .asyncProperty(
               arbDocumentSelection({ max: 1 }).filter(({ exportTypes }) =>
@@ -664,16 +668,17 @@ describe("ExportDialog", () => {
                 );
                 await user.click(screen.getByRole("button", { name: "Next" }));
                 await waitFor(() => {
-                  expect(
-                    screen.getByRole("button", { name: pageSize })
-                  ).toBeVisible();
+                  expect(screen.getByRole("combobox")).toHaveTextContent(
+                    new RegExp(pageSize, "i")
+                  );
                 });
               }
             )
             .afterEach(cleanup),
           { numRuns: 1 }
         );
-      });
+      }
+      );
     });
   });
 });

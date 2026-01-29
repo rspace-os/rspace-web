@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
 import React, { useState } from "react";

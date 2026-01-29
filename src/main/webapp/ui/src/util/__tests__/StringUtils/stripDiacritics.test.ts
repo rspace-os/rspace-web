@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 import { describe, test, expect } from "vitest";
 import { stripDiacritics } from "../../StringUtils";

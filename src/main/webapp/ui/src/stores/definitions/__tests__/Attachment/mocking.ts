@@ -1,5 +1,4 @@
 /*
- * @vitest-environment jsdom
  */
 
 import { type Attachment } from "../../Attachment";
