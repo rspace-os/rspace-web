@@ -79,6 +79,6 @@ public class StoichiometryExporter extends AbstractFieldExporter<LinkableStoichi
   @Override
   String getReplacementUrl(FieldExportContext context, LinkableStoichiometry item)
       throws URISyntaxException, IOException {
-    return ""; // FIXME ?
+    return "";
   }
 }
