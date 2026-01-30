@@ -2,6 +2,7 @@ package com.researchspace.webapp.integrations.raid;
 
 import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 
+import com.researchspace.api.v1.model.ApiGroupInfo;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.User;
@@ -161,14 +162,14 @@ public class RaIDController extends BaseOAuth2Controller {
 
   @PostMapping("/associate")
   @ResponseStatus(HttpStatus.CREATED)
-  public void associateRaidToGroup(
-      @RequestBody RaidGroupAssociationDTO raidGroupAssociation, Principal principal)
-      throws BindException {
-    validateInput(raidGroupAssociation);
+  @ResponseBody
+  public AjaxReturnObject<ApiGroupInfo> associateRaidToGroup(
+      @RequestBody RaidGroupAssociationDTO raidGroupAssociation, Principal principal) {
     BindingResult errors =
         new BeanPropertyBindingResult(raidGroupAssociation, "raidGroupAssociation");
     Group group = null;
     try {
+      validateInput(raidGroupAssociation);
       User user = userManager.getAuthenticatedUserInSession();
       group = groupManager.getGroup(raidGroupAssociation.getProjectGroupId());
       raidGroupAssociation.setRaid(
@@ -190,38 +191,20 @@ public class RaIDController extends BaseOAuth2Controller {
           "raidGroupAssociation", null, "Not able to associate RaID to group: " + e.getMessage());
       log.error("Not able to associate RaID to group: " + e.getMessage());
     }
-    throwBindExceptionIfErrors(errors);
-  }
 
-  // TODO[nik]:  remove the GET once the UI is complete RSDEV-852 and RSDEV-853
-  @GetMapping("/disassociate/{projectGroupId}")
-  @ResponseStatus(HttpStatus.CREATED)
-  public void disassociateRaidToGroup_GET(@PathVariable Long projectGroupId) throws BindException {
-    disassociateRaidFromGroup(projectGroupId);
-  }
-
-  // TODO[nik]:  remove the GET once the UI is complete RSDEV-852 and RSDEV-853
-  @GetMapping("/associate/{projectGroupId}/{raidServerAlias}/{raidTitle}")
-  @ResponseStatus(HttpStatus.CREATED)
-  public void associateRaidToGroup_GET(
-      @PathVariable Long projectGroupId,
-      @PathVariable String raidServerAlias,
-      @PathVariable String raidTitle,
-      @RequestParam(name = "raidIdentifier") String raidIdentifier,
-      Principal principal)
-      throws BindException {
-
-    RaidGroupAssociationDTO input =
-        new RaidGroupAssociationDTO(
-            projectGroupId,
-            groupManager.getGroup(projectGroupId).getDisplayName(),
-            new RaIDReferenceDTO(raidServerAlias, raidTitle, raidIdentifier));
-    associateRaidToGroup(input, principal);
+    ErrorList el = null;
+    if (errors.hasErrors()) {
+      el = inputValidator.populateErrorList(errors, new ErrorList());
+    }
+    return new AjaxReturnObject<>(
+        groupManager.getGroupInfoById(raidGroupAssociation.getProjectGroupId()).orElse(null), el);
   }
 
   @PostMapping("/disassociate/{projectGroupId}")
   @ResponseStatus(HttpStatus.CREATED)
-  public void disassociateRaidFromGroup(@PathVariable Long projectGroupId) throws BindException {
+  @ResponseBody
+  public AjaxReturnObject<ApiGroupInfo> disassociateRaidFromGroup(
+      @PathVariable Long projectGroupId) {
     Group group = null;
     BindingResult errors = new BeanPropertyBindingResult(projectGroupId, "projectGroupId");
     try {
@@ -252,7 +235,39 @@ public class RaIDController extends BaseOAuth2Controller {
           "Not able to disassociate RaID from group: " + e.getMessage());
       log.error("Not able to disassociate RaID from group: " + e.getMessage());
     }
-    throwBindExceptionIfErrors(errors);
+    ErrorList el = null;
+    if (errors.hasErrors()) {
+      el = inputValidator.populateErrorList(errors, new ErrorList());
+    }
+    return new AjaxReturnObject<>(groupManager.getGroupInfoById(projectGroupId).orElse(null), el);
+  }
+
+  // TODO[nik]:  remove the GET once the UI is complete RSDEV-852 and RSDEV-853
+  @GetMapping("/disassociate/{projectGroupId}")
+  @ResponseStatus(HttpStatus.CREATED)
+  @ResponseBody
+  public AjaxReturnObject<ApiGroupInfo> disassociateRaidToGroup_GET(
+      @PathVariable Long projectGroupId) {
+    return disassociateRaidFromGroup(projectGroupId);
+  }
+
+  // TODO[nik]:  remove the GET once the UI is complete RSDEV-852 and RSDEV-853
+  @GetMapping("/associate/{projectGroupId}/{raidServerAlias}/{raidTitle}")
+  @ResponseStatus(HttpStatus.CREATED)
+  @ResponseBody
+  public AjaxReturnObject<ApiGroupInfo> associateRaidToGroup_GET(
+      @PathVariable Long projectGroupId,
+      @PathVariable String raidServerAlias,
+      @PathVariable String raidTitle,
+      @RequestParam(name = "raidIdentifier") String raidIdentifier,
+      Principal principal) {
+
+    RaidGroupAssociationDTO input =
+        new RaidGroupAssociationDTO(
+            projectGroupId,
+            groupManager.getGroup(projectGroupId).getDisplayName(),
+            new RaIDReferenceDTO(raidServerAlias, raidTitle, raidIdentifier));
+    return associateRaidToGroup(input, principal);
   }
 
   private Set<RaIDReferenceDTO> getAvailableRaids(Principal principal) {
@@ -320,9 +335,6 @@ public class RaIDController extends BaseOAuth2Controller {
     Validate.isTrue(
         StringUtils.isNotBlank(raidGroupAssociation.getRaid().getRaidIdentifier()),
         "raidIdentifier is missing");
-    Validate.isTrue(
-        StringUtils.isNotBlank(raidGroupAssociation.getRaid().getRaidTitle()),
-        "raidTitle is missing");
     Validate.isTrue(
         StringUtils.isNotBlank(raidGroupAssociation.getRaid().getRaidServerAlias()),
         "raidServerAlias is missing");
