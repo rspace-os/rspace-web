@@ -7,6 +7,7 @@ import {
   it,
   vi,
 } from "vitest";
+import "@/__tests__/mocks/useUiPreference";
 import React,
   { useEffect,
   useContext } from "react";
@@ -79,5 +80,4 @@ describe("SynchroniseFormSections", () => {
     );
   });
 });
-
 

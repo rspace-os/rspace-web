@@ -7,6 +7,7 @@ import {
   it,
   vi,
 } from "vitest";
+import "@/__tests__/mocks/useUiPreference";
 import React from "react";
 import {
   screen,
@@ -72,5 +73,4 @@ describe("Table Listing", () => {
     ).toHaveTextContent("0 B");
   });
 });
-
 

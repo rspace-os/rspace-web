@@ -7,6 +7,7 @@ import {
   it,
   vi,
 } from "vitest";
+import "@/__tests__/mocks/useOauthToken";
 import React from "react";
 import {
   render,
@@ -28,10 +29,6 @@ beforeEach(() => {
 
 
 const mockAxios = new MockAdapter(axios);
-
-mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
-  data: "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MzQzNDI5NTYsImV4cCI6MTczNDM0NjU1NiwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.HCKre3g_P1wmGrrrnQncvFeT9pAePFSc4UPuyP5oehI",
-});
 
 function WrapperComponent() {
   const listingOf = React.useMemo(
@@ -129,4 +126,3 @@ describe("useGalleryListing", () => {
     expect(getUploadedFilesCalls[1].params.get("pageNumber")).toBe("1");
   });
 });
-

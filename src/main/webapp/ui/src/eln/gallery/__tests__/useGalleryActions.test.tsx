@@ -7,6 +7,7 @@ import {
   it,
   vi,
 } from "vitest";
+import "@/__tests__/mocks/useOauthToken";
 import React from "react";
 import {
   render,

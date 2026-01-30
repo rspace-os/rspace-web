@@ -1,4 +1,3 @@
-import React from "react";
 import { vi, expect, afterEach, afterAll } from "vitest";
 import createFetchMock from "vitest-fetch-mock";
 import * as matchers from "@testing-library/jest-dom/matchers";
@@ -23,83 +22,6 @@ afterAll(() => {
   restoreConsole();
   restoreStderr();
 });
-
-const TransitionMock = React.forwardRef(({ in: inProp, children }, ref) => {
-  if (inProp === false) {
-    return null;
-  }
-  if (React.isValidElement(children)) {
-    return React.cloneElement(children, { ref });
-  }
-  return children ?? null;
-});
-TransitionMock.displayName = "TransitionMock";
-
-vi.mock("@mui/material/Grow", () => ({
-  __esModule: true,
-  default: TransitionMock,
-}));
-
-vi.mock("@mui/material/Fade", () => ({
-  __esModule: true,
-  default: TransitionMock,
-}));
-
-vi.mock("react-transition-group", () => ({
-  Transition: ({ children, in: inProp }) =>
-    typeof children === "function"
-      ? children(inProp ? "entered" : "exited", {})
-      : children ?? null,
-  CSSTransition: ({ children }) => children ?? null,
-  TransitionGroup: ({ children }) => children ?? null,
-}));
-
-vi.mock("@/hooks/api/useUiPreference", async () => {
-  const actual = await vi.importActual("@/hooks/api/useUiPreference");
-  return {
-    ...actual,
-    UiPreferences: ({ children }) => children,
-    default: (_preference, opts) => [opts.defaultValue, vi.fn()],
-  };
-});
-
-vi.mock("@/hooks/auth/useOauthToken", () => ({
-  default: () => ({
-    getToken: async () => "token",
-  }),
-}));
-
-vi.mock("@/hooks/api/useWhoAmI", () => ({
-  default: () => ({
-    tag: "success",
-    value: {
-      id: 1,
-      username: "test",
-      firstName: "Test",
-      lastName: "User",
-      hasPiRole: false,
-      hasSysAdminRole: false,
-      email: "test@example.com",
-      bench: null,
-      workbenchId: null,
-      getBench: () =>
-        Promise.reject(
-          new Error("Not implemented by this Person implementation"),
-        ),
-      isCurrentUser: true,
-      fullName: "Test User",
-      label: "Test User (test)",
-    },
-  }),
-}));
-
-vi.mock("@/hooks/websockets/useWebSocketNotifications", () => ({
-  default: () => ({
-    notificationCount: 0,
-    messageCount: 0,
-    specialMessageCount: 0,
-  }),
-}));
 
 if (typeof HTMLImageElement !== "undefined") {
   Object.defineProperty(HTMLImageElement.prototype, "width", {
