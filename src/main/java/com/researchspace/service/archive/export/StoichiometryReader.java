@@ -37,8 +37,7 @@ public class StoichiometryReader {
       String stoichiometryAttribute = stoichiometryElement.attr("data-stoichiometry-table");
       ObjectMapper mapper = new ObjectMapper();
       StoichiometryDTO extracted = mapper.readValue(stoichiometryAttribute, StoichiometryDTO.class);
-      if (Objects.equals(extracted.getId(), target.getId())
-          && Objects.equals(extracted.getRevision(), target.getRevision())) {
+      if (Objects.equals(extracted.getId(), target.getId())) {
         stoichiometryElement.attr(
             "data-stoichiometry-table", mapper.writeValueAsString(newStoichiometry));
       }

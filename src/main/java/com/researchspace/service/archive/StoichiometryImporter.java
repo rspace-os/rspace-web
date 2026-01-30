@@ -58,7 +58,8 @@ public class StoichiometryImporter {
       IdAndRevision newDTO = new IdAndRevision();
       newDTO.id = created.getId();
       String updatedStoichiometriesFieldContent =
-          reader.createReplacementHtmlContentForTargetStoichiometryInFieldData(newField.getFieldData(), matching, newDTO);
+          reader.createReplacementHtmlContentForTargetStoichiometryInFieldData(
+              newField.getFieldData(), matching, newDTO);
       newField.setFieldData(updatedStoichiometriesFieldContent);
       fieldManager.save(newField, user);
     }

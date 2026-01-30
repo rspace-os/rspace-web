@@ -864,7 +864,8 @@ abstract class AbstractImporterStrategyImpl {
         newDTO.id = created.getId();
         String updatedStoichiometriesFieldContent =
             new StoichiometryReader()
-                .createReplacementHtmlContentForTargetStoichiometryInFieldData(newField.getFieldData(), aStoichiometry, newDTO);
+                .createReplacementHtmlContentForTargetStoichiometryInFieldData(
+                    newField.getFieldData(), aStoichiometry, newDTO);
         newField.setFieldData(updatedStoichiometriesFieldContent);
         fieldManager.save(newField, user);
       }
@@ -883,12 +884,7 @@ abstract class AbstractImporterStrategyImpl {
     StoichiometryImporter stoichiometryImporter = null;
     stoichiometryImporter =
         new StoichiometryImporter(
-            stoichiometryService,
-            new StoichiometryReader(),
-            archiveFld,
-            fld,
-            fieldManager,
-            user);
+            stoichiometryService, new StoichiometryReader(), archiveFld, fld, fieldManager, user);
     if (chemMeta != null && !chemMeta.isEmpty()) {
       int cnt = 0;
       for (ArchivalGalleryMetadata agm : chemMeta) {

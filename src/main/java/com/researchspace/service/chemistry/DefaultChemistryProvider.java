@@ -90,11 +90,8 @@ public class DefaultChemistryProvider implements ChemistryProvider {
     return ChemElementsFormat.MOL;
   }
 
-  /**
-   * Set this to allow Stoichiometries to be created that will have molecules
-   */
-  public void setElementalAnalysisDTO(
-      ElementalAnalysisDTO elementalAnalysisDTO) {
+  /** Set this to allow Stoichiometries to be created that will have molecules */
+  public void setElementalAnalysisDTO(ElementalAnalysisDTO elementalAnalysisDTO) {
     this.elementalAnalysisDTO = elementalAnalysisDTO;
   }
 }
