@@ -86,7 +86,6 @@ import {
   screen,
   fireEvent,
   waitFor,
-  act,
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
@@ -203,6 +202,16 @@ const findFirstByText = async (text, options, waitOptions) => {
   const [match] = await screen.findAllByText(text, options, waitOptions);
   return match;
 };
+const waitForLoadingToFinish = async () => {
+  await waitFor(
+    () => {
+      expect(
+        screen.queryByText("Data is loading..."),
+      ).not.toBeInTheDocument();
+    },
+    { timeout: 5500 },
+  );
+};
 const getFirstByTestId = (testid) => screen.getAllByTestId(testid)[0];
 const setUpProjectsAsData = async () => {
   localStorageMock.getItem = vi.fn().mockImplementation((key) => {
@@ -214,15 +223,10 @@ const setUpProjectsAsData = async () => {
 const fetchDetailsFor = async (type, typeID) => {
   const fetchDetails = getFirstByTestId(type + "_fetch_details_" + typeID);
   fireEvent.click(fetchDetails);
-  await waitFor(
-    () =>
-      screen.findByTestId(type + "_annotation_" + typeID + "_1", undefined, {
-        timeout: 5500,
-      }),
-    {
-      timeout: 5500,
-    },
-  );
+  await screen.findByTestId(type + "_annotation_" + typeID + "_1", undefined, {
+    timeout: 5500,
+  });
+  await waitForLoadingToFinish();
 };
 const setUpProjectAndScreensInDescendingOrder = async () => {
   setUpLocalStorageWithOrder(Order.desc);
@@ -295,15 +299,10 @@ const navigateFromScreenToPlate = async (
   }
   fireEvent.click(fetchPlates);
   try {
-    await waitFor(
-      () =>
-        screen.findByTestId("plate_name_display_" + plateID, undefined, {
-          timeout: 5500,
-        }),
-      {
-        timeout: 5500,
-      },
-    );
+    await screen.findByTestId("plate_name_display_" + plateID, undefined, {
+      timeout: 5500,
+    });
+    await waitForLoadingToFinish();
     return true;
   } catch {
     return false;
@@ -334,15 +333,10 @@ const navigateFromProjectToDataset = async (
   }
   fireEvent.click(fetchDatasets);
   try {
-    await waitFor(
-      () =>
-        screen.findByTestId("dataset_name_display_" + datasetID, undefined, {
-          timeout: 5500,
-        }),
-      {
-        timeout: 5500,
-      },
-    );
+    await screen.findByTestId("dataset_name_display_" + datasetID, undefined, {
+      timeout: 5500,
+    });
+    await waitForLoadingToFinish();
     return true;
   } catch {
     return false;
@@ -402,19 +396,14 @@ const clickChildLinkAndShowPlateAcquisition = async (
   }
   fireEvent.click(fetchPlatesAcquisitions);
   try {
-    await waitFor(
-      () =>
-        screen.findByTestId(
-          "plateAcquisition_name_display_" + plateAcquisitionID,
-          undefined,
-          {
-            timeout: 5500,
-          },
-        ),
+    await screen.findByTestId(
+      "plateAcquisition_name_display_" + plateAcquisitionID,
+      undefined,
       {
         timeout: 5500,
       },
     );
+    await waitForLoadingToFinish();
     return true;
   } catch {
     return false;
@@ -434,15 +423,10 @@ const clickChildLinkAndShowPlateAcquisitionWithImages = async (
   }
   fireEvent.click(fetchGridOfImages);
   try {
-    await waitFor(
-      () =>
-        screen.findByTestId("image_img_" + imageID, undefined, {
-          timeout: 5500,
-        }),
-      {
-        timeout: 5500,
-      },
-    );
+    await screen.findByTestId("image_img_" + imageID, undefined, {
+      timeout: 5500,
+    });
+    await waitForLoadingToFinish();
   } catch {
     return false;
   }
@@ -466,24 +450,13 @@ const clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData = async (
   }
   fireEvent.click(imageInGrid);
   try {
-    await waitFor(
-      () =>
-        screen.findByTestId("image_name_display_" + imageID, undefined, {
-          timeout: 5500,
-        }),
-      {
-        timeout: 5500,
-      },
-    );
-    await waitFor(
-      () =>
-        screen.findByTestId("image_annotation_" + imageID + "_0", undefined, {
-          timeout: 5500,
-        }),
-      {
-        timeout: 5500,
-      },
-    );
+    await screen.findByTestId("image_name_display_" + imageID, undefined, {
+      timeout: 5500,
+    });
+    await screen.findByTestId("image_annotation_" + imageID + "_0", undefined, {
+      timeout: 5500,
+    });
+    await waitForLoadingToFinish();
     return true;
   } catch {
     return false;
@@ -501,15 +474,10 @@ const clickDatasetImageGridLinkAndCheckForImageWithID = async (
   }
   fireEvent.click(fetchImages);
   try {
-    await waitFor(
-      () =>
-        screen.findByTestId("image_img_" + targetImageID, undefined, {
-          timeout: 5500,
-        }),
-      {
-        timeout: 5500,
-      },
-    );
+    await screen.findByTestId("image_img_" + targetImageID, undefined, {
+      timeout: 5500,
+    });
+    await waitForLoadingToFinish();
     return true;
   } catch {
     return false;
@@ -528,24 +496,18 @@ const clickImageGridLinkAndCheckForImageWithID = async (
   }
   fireEvent.click(fetchGridOfImages);
   try {
-    await waitFor(
-      () =>
-        screen.findByTestId("image_img_" + targetImageID, undefined, {
-          timeout: 5500,
-        }),
-      {
-        timeout: 5500,
-      },
-    );
+    await screen.findByTestId("image_img_" + targetImageID, undefined, {
+      timeout: 5500,
+    });
+    await waitForLoadingToFinish();
     return true;
   } catch {
     return false;
   }
 };
 const setUpComponent = async () => {
-  await act(() => {
-    getWrapper({ omero_web_url: "http://localhost:8080" });
-  });
+  getWrapper({ omero_web_url: "http://localhost:8080" });
+  await waitForLoadingToFinish();
 };
 describe("Renders page with results data ", () => {
   it("displays two results table headers", async () => {
@@ -617,7 +579,7 @@ describe("Renders page with results data ", () => {
       "idr0001-graml-sysgro/screenA",
       192,
     );
-    await screen.getAllByText("Path")[0].click();
+    fireEvent.click(screen.getAllByText("Path")[0]);
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0145-ho-replicationstress/screenB",
       7,
@@ -630,7 +592,7 @@ describe("Renders page with results data ", () => {
       "idr0001-graml-sysgro/screenA",
       192,
     );
-    await screen.getAllByText("Description")[0].click();
+    fireEvent.click(screen.getAllByText("Description")[0]);
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0006-fong-nuclearbodies/screenA",
       169,
@@ -650,7 +612,7 @@ describe("Renders page with results data ", () => {
       "idr0018-neff-histopathology/experimentA",
       248,
     );
-    await screen.getAllByText("Path")[0].click();
+    fireEvent.click(screen.getAllByText("Path")[0]);
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0148-schumacher-kidneytem/experimentA",
       10,
@@ -670,7 +632,7 @@ describe("Renders page with results data ", () => {
       "idr0018-neff-histopathology/experimentA",
       248,
     );
-    await screen.getAllByText("Description")[0].click();
+    fireEvent.click(screen.getAllByText("Description")[0]);
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0117-croce-marimba/experimentA",
       9,
@@ -745,7 +707,7 @@ describe("Renders page with results data ", () => {
     );
     const pathHeader = screen.queryAllByText("Path")[0];
     if (!pathHeader) return;
-    pathHeader.click();
+    fireEvent.click(pathHeader);
     assertElemWithTestIDHasTextContent(
       "path11",
       "idr0021-lawo-pericentriolarmaterial/experimentAproject fetch details see in omero hide children [10]",

@@ -81,7 +81,7 @@ describe("Zenodo", () => {
       within(screen.getByRole("dialog")).getByRole("button", { name: /close/i })
     );
     await waitFor(() => {
-      expect(document.body).toHaveStyle({overflow:"unset"});
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 
@@ -259,7 +259,7 @@ describe("Zenodo", () => {
       within(screen.getByRole("dialog")).getByRole("button", { name: /close/i })
     );
     await waitFor(() => {
-      expect(screen.getByRole("dialog")).not.toBeVisible();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 });

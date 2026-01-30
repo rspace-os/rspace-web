@@ -25,6 +25,7 @@ const mockAxios = new MockAdapter(axios);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockAxios.reset();
 });
 
 
@@ -343,5 +344,4 @@ describe("FormatChoice", () => {
     });
   });
 });
-
 

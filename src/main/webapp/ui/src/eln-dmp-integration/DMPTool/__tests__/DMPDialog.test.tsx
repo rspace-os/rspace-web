@@ -14,6 +14,7 @@ import {
   screen,
   fireEvent,
   waitFor,
+  act,
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import DMPDialog from "../DMPDialog";
@@ -21,7 +22,6 @@ import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
-import { sleep } from "../../../util/Util";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -55,10 +55,12 @@ describe("DMPDialog", () => {
       success: true,
     });
 
-    mockAxios.onGet("/apps/dmptool/plans?scope=PUBLIC").reply(async () => {
-      // server takes longer to process a much longer list
-      await sleep(1000);
-      return [
+    let resolvePublic: (() => void) | null = null;
+    const publicResponse = new Promise<void>((resolve) => {
+      resolvePublic = resolve;
+    });
+    mockAxios.onGet("/apps/dmptool/plans?scope=PUBLIC").reply(() =>
+      publicResponse.then(() => [
         200,
         {
           data: {
@@ -68,8 +70,8 @@ describe("DMPDialog", () => {
           },
           success: true,
         },
-      ];
-    });
+      ]),
+    );
 
     render(
       <ThemeProvider theme={materialTheme}>
@@ -83,17 +85,16 @@ describe("DMPDialog", () => {
     // but mine will return immediately
     fireEvent.click(screen.getByRole("radio", { name: "Mine" }));
 
-    /*
-     * in these two seconds, the mine request will return, and then a second
-     * later the public request will return. The public one should be ignored
-     * because the user tapped mine after.
-     */
-    await sleep(2000);
-
     await waitFor(() => {
       expect(screen.getByText("mine")).toBeVisible();
     });
+
+    await act(async () => {
+      resolvePublic?.();
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("public")).not.toBeInTheDocument();
+    });
   });
 });
-
-

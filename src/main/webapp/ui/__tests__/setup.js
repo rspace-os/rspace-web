@@ -1,5 +1,5 @@
+import React from "react";
 import { vi, expect, afterEach } from "vitest";
-import { cleanup } from "@testing-library/react";
 import createFetchMock from "vitest-fetch-mock";
 import * as matchers from "@testing-library/jest-dom/matchers";
 const fetchMocker = createFetchMock(vi);
@@ -8,7 +8,29 @@ const fetchMocker = createFetchMock(vi);
 fetchMocker.enableMocks();
 expect.extend(matchers);
 globalThis.expect = expect;
-afterEach(() => cleanup());
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+globalThis.afterEach = afterEach;
+
+const TransitionMock = React.forwardRef(({ in: inProp, children }, ref) => {
+  if (inProp === false) {
+    return null;
+  }
+  if (React.isValidElement(children)) {
+    return React.cloneElement(children, { ref });
+  }
+  return children ?? null;
+});
+TransitionMock.displayName = "TransitionMock";
+
+vi.mock("@mui/material/Grow", () => ({
+  __esModule: true,
+  default: TransitionMock,
+}));
+
+vi.mock("@mui/material/Fade", () => ({
+  __esModule: true,
+  default: TransitionMock,
+}));
 
 vi.mock("@/hooks/api/useUiPreference", async () => {
   const actual = await vi.importActual("@/hooks/api/useUiPreference");

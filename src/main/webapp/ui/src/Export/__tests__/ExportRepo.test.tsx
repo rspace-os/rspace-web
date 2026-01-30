@@ -15,6 +15,7 @@ import {
   screen,
   within,
   fireEvent,
+  waitFor,
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import repoList from "./repoList.json";
@@ -53,26 +54,35 @@ const props = {
   repoDetails: repoConfig,
   validator: mkValidator(),
   updateRepoConfig: () => {},
-  fetchTags: () => Promise.resolve([] as Array<Tag>),
+  fetchTags: vi.fn().mockResolvedValue([] as Array<Tag>),
 };
 
 describe("ExportRepo", () => {
-  test("Should display selection message", () => {
+  test("Should display selection message", async () => {
     render(<ExportRepo {...props} />);
+    await waitFor(() => {
+      expect(props.fetchTags).toHaveBeenCalled();
+    });
     expect(
       screen.getByText(
         "Please choose one of your configured repositories to submit your export to:",
       ),
     ).toBeInTheDocument();
   });
-  test("Should display repository list with two repositories", () => {
+  test("Should display repository list with two repositories", async () => {
     render(<ExportRepo {...props} />);
+    await waitFor(() => {
+      expect(props.fetchTags).toHaveBeenCalled();
+    });
     expect(screen.getByText("Repository 1")).toBeInTheDocument();
     expect(screen.getByText("Repository 2")).toBeInTheDocument();
   });
 
-  test("Should have first repository in list selected", () => {
+  test("Should have first repository in list selected", async () => {
     render(<ExportRepo {...props} />);
+    await waitFor(() => {
+      expect(props.fetchTags).toHaveBeenCalled();
+    });
     const repo1RadioButton = screen.getByTestId<HTMLInputElement>(
       "radio-button-app.repo1",
     );
@@ -125,9 +135,12 @@ describe("ExportRepo", () => {
                   repoList={generatedRepoList}
                   updateRepoConfig={() => {}}
                   validator={mkValidator()}
-                  fetchTags={() => Promise.resolve([])}
+                  fetchTags={props.fetchTags}
                 />,
               );
+              await waitFor(() => {
+                expect(props.fetchTags).toHaveBeenCalled();
+              });
               const repoChoice = await screen.findByRole("radiogroup", {
                 name: "Repository choice",
               });
@@ -161,6 +174,7 @@ describe("ExportRepo", () => {
           )
           .beforeEach(() => {
             cleanup();
+            props.fetchTags.mockClear();
           }),
 
         { numRuns: 1 }
@@ -169,5 +183,4 @@ describe("ExportRepo", () => {
     30 * 1000,
   );
 });
-
 

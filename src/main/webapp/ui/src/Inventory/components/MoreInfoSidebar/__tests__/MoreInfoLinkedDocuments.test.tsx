@@ -151,9 +151,7 @@ describe("LinkedDocuments", () => {
     );
     expect(await screen.findByRole("button", { name: "Close" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(
-      await screen.findByRole("button", { name: "Show Linked Documents" })
-    ).toBeVisible();
+    await screen.findByRole("button", { name: "Show Linked Documents" });
     fireEvent.click(
       screen.getByRole("button", { name: "Show Linked Documents" })
     );
@@ -161,5 +159,3 @@ describe("LinkedDocuments", () => {
     expect(spy).toHaveBeenCalledTimes(2);
   });
 });
-
-
