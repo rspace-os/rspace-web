@@ -12,7 +12,6 @@ import {
   render,
   screen,
   waitFor,
-  act,
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
@@ -114,9 +113,7 @@ describe("useGalleryListing", () => {
       expect(screen.getByRole("button", { name: /load more/i })).toBeVisible();
     });
 
-    await act(async () => {
-      await user.click(screen.getByRole("button", { name: /load more/i }));
-    });
+    await user.click(screen.getByRole("button", { name: /load more/i }));
 
     await waitFor(() => {
       expect(
@@ -132,5 +129,4 @@ describe("useGalleryListing", () => {
     expect(getUploadedFilesCalls[1].params.get("pageNumber")).toBe("1");
   });
 });
-
 

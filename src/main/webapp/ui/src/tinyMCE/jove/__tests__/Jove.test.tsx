@@ -19,6 +19,7 @@ import {
 import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import JoveSearchResult from "./joveSearchResult.json";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 const mockAxios = new MockAdapter(axios);
 const localStorageMock = {
   getItem: vi.fn(),
@@ -80,6 +81,7 @@ describe("Renders page with jove data ", () => {
   });
 
   it("displays error message if 404 returned", async () => {
+    const restoreConsole = silenceConsole(["log"], [/./]);
     mockAxios
       .onPost("/apps/jove/search", {
         queryString: "",
@@ -92,9 +94,11 @@ describe("Renders page with jove data ", () => {
     expect(
       screen.getByText("Unable to retrieve any relevant results.")
     ).toBeInTheDocument();
+    restoreConsole();
   });
 
   it("displays error message if 500 returned", async () => {
+    const restoreConsole = silenceConsole(["log"], [/./]);
     mockAxios
       .onPost("/apps/jove/search", {
         queryString: "",
@@ -107,5 +111,6 @@ describe("Renders page with jove data ", () => {
     expect(
       screen.getByText("Unknown issue, please attempt to relogin to RSpace.")
     ).toBeInTheDocument();
+    restoreConsole();
   });
 });

@@ -32,6 +32,15 @@ vi.mock("@mui/material/Fade", () => ({
   default: TransitionMock,
 }));
 
+vi.mock("react-transition-group", () => ({
+  Transition: ({ children, in: inProp }) =>
+    typeof children === "function"
+      ? children(inProp ? "entered" : "exited", {})
+      : children ?? null,
+  CSSTransition: ({ children }) => children ?? null,
+  TransitionGroup: ({ children }) => children ?? null,
+}));
+
 vi.mock("@/hooks/api/useUiPreference", async () => {
   const actual = await vi.importActual("@/hooks/api/useUiPreference");
   return {

@@ -193,17 +193,19 @@ function SearchParameterControls(): React.ReactNode {
         }}
         disabled={!search.showTagsFilter}
       >
-        <TagsCombobox
-          enforceOntologies={false}
-          value={new RsSet<Tag>([])}
-          onSelection={(tag) => {
-            navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
-          }}
-          onClose={() => {
-            setTagsDropdown(null);
-          }}
-          anchorEl={tagsDropdown}
-        />
+        {tagsDropdown ? (
+          <TagsCombobox
+            enforceOntologies={false}
+            value={new RsSet<Tag>([])}
+            onSelection={(tag) => {
+              navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
+            }}
+            onClose={() => {
+              setTagsDropdown(null);
+            }}
+            anchorEl={tagsDropdown}
+          />
+        ) : null}
       </DropdownButton>
       <DropdownButton
         name="Saved Searches"

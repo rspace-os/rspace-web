@@ -80,13 +80,15 @@ export default function AddTag<
         clickable={!disabled}
         skipFocusWhenDisabled
       />
-      <TagsCombobox
-        enforceOntologies={enforceOntologies}
-        onSelection={onSelection}
-        value={new RsSet(value)}
-        anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
-      />
+      {anchorEl ? (
+        <TagsCombobox
+          enforceOntologies={enforceOntologies}
+          onSelection={onSelection}
+          value={new RsSet(value)}
+          anchorEl={anchorEl}
+          onClose={() => setAnchorEl(null)}
+        />
+      ) : null}
     </>
   );
 }

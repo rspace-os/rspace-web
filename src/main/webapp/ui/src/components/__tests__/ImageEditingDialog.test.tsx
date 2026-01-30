@@ -14,7 +14,6 @@ import {
   cleanup,
   screen,
   waitFor,
-  act,
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
@@ -74,7 +73,7 @@ describe("ImageEditingDialog", () => {
     await screen.findByRole("img");
 
     // wait for image to load
-    await act(() => sleep(1000));
+    await sleep(1000);
 
     expect(await axe(baseElement)).toHaveNoViolations();
   });
@@ -121,14 +120,11 @@ describe("ImageEditingDialog", () => {
           const rotateButton = screen.getByRole("button", {
             name: "rotate " + direction,
           });
-          for (let i = 0; i < number; i++)
-            await act(async () => {
-              await user.click(rotateButton);
-            });
+          for (let i = 0; i < number; i++) {
+            await user.click(rotateButton);
+          }
 
-          await act(async () => {
-            await user.click(screen.getByRole("button", { name: /done/i }));
-          });
+          await user.click(screen.getByRole("button", { name: /done/i }));
 
           await waitFor(() => {
             expect(submitHandler).toHaveBeenCalled();
@@ -173,22 +169,18 @@ describe("ImageEditingDialog", () => {
     await screen.findByRole("img");
 
     // wait for image to load
-    await act(() => Promise.resolve());
+    await Promise.resolve();
 
     const rotateButton = screen.getByRole("button", {
       name: "rotate clockwise",
     });
 
-    await act(async () => {
-      await user.click(rotateButton);
-    });
+    await user.click(rotateButton);
 
     // wait for rotated image to load
-    await act(() => Promise.resolve());
+    await Promise.resolve();
 
-    await act(async () => {
-      await user.click(screen.getByRole("button", { name: /done/i }));
-    });
+    await user.click(screen.getByRole("button", { name: /done/i }));
 
     await waitFor(() => {
       expect(submitHandler).toHaveBeenCalled();
@@ -230,13 +222,9 @@ describe("ImageEditingDialog", () => {
     const rotateButton = screen.getByRole("button", {
       name: "rotate counter clockwise",
     });
-    await act(async () => {
-      await user.click(rotateButton);
-    });
+    await user.click(rotateButton);
 
-    await act(async () => {
-      await user.click(screen.getByRole("button", { name: /done/i }));
-    });
+    await user.click(screen.getByRole("button", { name: /done/i }));
 
     await waitFor(() => {
       expect(submitHandler).toHaveBeenCalled();
@@ -275,9 +263,7 @@ describe("ImageEditingDialog", () => {
     );
 
     await screen.findByRole("img");
-    await act(async () => {
-      await user.click(screen.getByRole("button", { name: /done/i }));
-    });
+    await user.click(screen.getByRole("button", { name: /done/i }));
     expect(close).toHaveBeenCalled();
     expect(submitHandler).not.toHaveBeenCalled();
   });
@@ -324,25 +310,20 @@ describe("ImageEditingDialog", () => {
     await screen.findByRole("img");
 
     // wait for image to load
-    await act(() => Promise.resolve());
+    await Promise.resolve();
 
     const rotateButton = screen.getByRole("button", {
       name: "rotate clockwise",
     });
 
-    await act(async () => {
-      await user.click(rotateButton);
-    });
+    await user.click(rotateButton);
 
     // wait for rotated image to load
-    await act(() => Promise.resolve());
+    await Promise.resolve();
 
-    await act(async () => {
-      await user.click(screen.getByRole("button", { name: /cancel/i }));
-    });
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
 
     expect(close).toHaveBeenCalled();
     expect(submitHandler).not.toHaveBeenCalled();
   });
 });
-

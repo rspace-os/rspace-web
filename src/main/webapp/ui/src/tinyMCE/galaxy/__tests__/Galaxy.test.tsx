@@ -91,12 +91,18 @@ describe("Galaxy Upload Data tests ", () => {
     });
     it("displays empty table when there is no attached data ", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={[]}/>);
+      await screen.findAllByRole("radio", {
+        name: /galaxy eu server/,
+      });
       const columnHeadings = await screen.findAllByRole("columnheader");
       expect(columnHeadings[1]).toHaveTextContent('File');
     });
     it("displays attached data ", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
-      const gridCells = screen.getAllByRole("gridcell");
+      await screen.findAllByRole("radio", {
+        name: /galaxy eu server/,
+      });
+      const gridCells = await screen.findAllByRole("gridcell");
       expect(gridCells[1]).toContainHTML(attachedRecords[0].html.outerHTML);
     });
     it("initial rendering posts no data selected ", async () => {
@@ -164,6 +170,7 @@ describe("Galaxy Upload Data tests ", () => {
   describe("Handles errors", () => {
     beforeEach(async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
+      await screen.findAllByRole("radio", { name: /galaxy eu server/ });
       const checkBox = await screen.getAllByRole("checkbox")[0];
       fireEvent.click(checkBox);
 

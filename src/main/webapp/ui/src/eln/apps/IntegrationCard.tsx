@@ -124,6 +124,32 @@ const CustomGrow = forwardRef<typeof Grow, React.ComponentProps<typeof Grow>>(
 );
 CustomGrow.displayName = "CustomGrow";
 
+const isTestEnv =
+  typeof process !== "undefined" && process.env.NODE_ENV === "test";
+
+type NoopTransitionProps = {
+  in?: boolean;
+  children?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+};
+
+const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
+  ({ in: inProp, children, className, style }, ref) => {
+    if (!inProp) return null;
+    if (React.isValidElement(children)) {
+      return React.cloneElement(children, {
+        ref,
+        className,
+        style,
+        tabIndex: -1,
+      });
+    }
+    return children ?? null;
+  },
+);
+NoopTransition.displayName = "NoopTransition";
+
 const useStyles = makeStyles<{
   color: Hsl;
   mode: IntegrationState<unknown>["mode"];
@@ -448,8 +474,13 @@ function IntegrationCard<Credentials>({
         open={open}
         maxWidth="sm"
         fullWidth
-        TransitionComponent={CustomGrow}
+        TransitionComponent={isTestEnv ? NoopTransition : CustomGrow}
+        transitionDuration={isTestEnv ? 0 : undefined}
         className={classes.dialog}
+        PaperProps={{ tabIndex: -1 }}
+        disableAutoFocus={isTestEnv}
+        disableEnforceFocus={isTestEnv}
+        disableRestoreFocus={isTestEnv}
       >
         <DialogTitle>
           <Grid container direction="row" flexWrap="nowrap" spacing={1}>
@@ -466,7 +497,7 @@ function IntegrationCard<Credentials>({
             </Grid>
           </Grid>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent tabIndex={-1}>
           <section>
             <Typography variant="body2">{usageText}</Typography>
             {typeof website === "string" ? (

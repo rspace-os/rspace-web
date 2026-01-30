@@ -11,7 +11,6 @@ import React from "react";
 import {
   render,
   screen,
-  act,
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
@@ -84,9 +83,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /click me/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
 
@@ -108,9 +105,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /click me/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
 
@@ -174,9 +169,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /click me/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
 
@@ -198,9 +191,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /click me/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
 
@@ -266,9 +257,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /click me/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
 
@@ -290,9 +279,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /click me/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
 
@@ -362,9 +349,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /click me/i }));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
 
@@ -388,11 +373,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /click me/i }));
-        // Wait a bit for the async error handling to complete
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
 
@@ -403,4 +384,3 @@ describe("useGalleryActions", () => {
     });
   });
 });
-

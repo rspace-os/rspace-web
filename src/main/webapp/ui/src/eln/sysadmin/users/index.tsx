@@ -330,20 +330,22 @@ const TagDialog = ({
                       setAnchorEl(e.currentTarget);
                     }}
                   />
-                  <TagsCombobox
-                    value={new RsSet(visibleTags)}
-                    anchorEl={anchorEl}
-                    onSelection={(newTag) => {
-                      if (!addedTags.includes(newTag))
-                        setAddedTags([...addedTags, newTag]);
-                      setDeletedTags(
-                        deletedTags.filter((dTag) => dTag !== newTag),
-                      );
-                    }}
-                    onClose={() => {
-                      setAnchorEl(null);
-                    }}
-                  />
+                  {anchorEl ? (
+                    <TagsCombobox
+                      value={new RsSet(visibleTags)}
+                      anchorEl={anchorEl}
+                      onSelection={(newTag) => {
+                        if (!addedTags.includes(newTag))
+                          setAddedTags([...addedTags, newTag]);
+                        setDeletedTags(
+                          deletedTags.filter((dTag) => dTag !== newTag),
+                        );
+                      }}
+                      onClose={() => {
+                        setAnchorEl(null);
+                      }}
+                    />
+                  ) : null}
                 </Grid>
               </Grid>
             </Grid>
@@ -1438,24 +1440,26 @@ const Toolbar = ({
                         }}
                         disabled={!tagsChecked}
                       />
-                      <TagsCombobox
-                        value={new RsSet(tags)}
-                        anchorEl={tagsComboboxAnchorEl}
-                        onSelection={(newTag) => {
-                          if (!tags.includes(newTag)) {
-                            const newTags = [...tags, newTag];
-                            setTags(newTags);
-                            FetchingData.getSuccessValue(userListing).do(
-                              (listing) => {
-                                void listing.applyTagsFilter(newTags);
-                              },
-                            );
-                          }
-                        }}
-                        onClose={() => {
-                          setTagsComboboxAnchorEl(null);
-                        }}
-                      />
+                      {tagsComboboxAnchorEl ? (
+                        <TagsCombobox
+                          value={new RsSet(tags)}
+                          anchorEl={tagsComboboxAnchorEl}
+                          onSelection={(newTag) => {
+                            if (!tags.includes(newTag)) {
+                              const newTags = [...tags, newTag];
+                              setTags(newTags);
+                              FetchingData.getSuccessValue(userListing).do(
+                                (listing) => {
+                                  void listing.applyTagsFilter(newTags);
+                                },
+                              );
+                            }
+                          }}
+                          onClose={() => {
+                            setTagsComboboxAnchorEl(null);
+                          }}
+                        />
+                      ) : null}
                     </Grid>
                   </Grid>
                 </Grid>

@@ -13,6 +13,7 @@ import {
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import ErrorBoundary from "../ErrorBoundary";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -31,16 +32,23 @@ describe("ErrorBoundary", () => {
      * just pollutes the output of the vi CLI runner
      */
      
-    vi.spyOn(global.console, "error").mockImplementation(() => {});
+    const restoreConsole = silenceConsole(["error"], [/./]);
+    const errorHandler = (event: ErrorEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("error", errorHandler);
 
-    const { container } = render(
-      <ErrorBoundary>
-        <AlwaysError />
-      </ErrorBoundary>
-    );
+    try {
+      const { container } = render(
+        <ErrorBoundary>
+          <AlwaysError />
+        </ErrorBoundary>
+      );
 
-    expect(container).toHaveTextContent("support@researchspace.com");
+      expect(container).toHaveTextContent("support@researchspace.com");
+    } finally {
+      window.removeEventListener("error", errorHandler);
+      restoreConsole();
+    }
   });
 });
-
-

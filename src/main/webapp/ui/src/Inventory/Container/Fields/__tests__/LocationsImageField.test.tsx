@@ -46,6 +46,9 @@ vi.mock("../../../../components/Inputs/ImageField", () => ({
     return <div data-testid="ImageField">{endAdornment}</div>;
   }),
 }));
+vi.mock("../../Content/ImageView/PlaceMarkers/ContentImage", () => ({
+  default: vi.fn(() => <div data-testid="ContentImage" />),
+}));
 vi.mock("../LocationsImageMarkersDialog", () => ({
   default: vi.fn(({ close }) => {
     return (
@@ -150,7 +153,7 @@ describe("LocationImageField", () => {
       const setImageSpy = vi.spyOn(
         rootStore.searchStore.activeResult! as any,
         "setImage"
-      );
+      ).mockImplementation(() => async () => {});
 
       render(
         <ThemeProvider theme={materialTheme}>
@@ -187,7 +190,7 @@ describe("LocationImageField", () => {
       const setImageSpy = vi.spyOn(
         rootStore.searchStore.activeResult! as any,
         "setImage"
-      );
+      ).mockImplementation(() => async () => {});
 
       let setPreviewImageFunction: () => void;
       const addAlertMock = vi
@@ -219,6 +222,10 @@ describe("LocationImageField", () => {
 
     test("not be an alert, if the container already has a preview image.", () => {
       const [rootStore, container] = mockRootStore();
+      vi.spyOn(
+        rootStore.searchStore.activeResult! as any,
+        "setImage"
+      ).mockImplementation(() => async () => {});
       const addScopedToastSpy = vi.spyOn(
         rootStore.searchStore.activeResult! as any,
         "addScopedToast"

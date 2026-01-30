@@ -26,6 +26,13 @@ import { LandmarksProvider } from "../../../../components/LandmarksContext";
 
 expect.extend({ toHaveNoViolations });
 
+vi.mock("../../../../hooks/api/integrationHelpers", () => ({
+  useIntegrationIsAllowedAndEnabled: () => ({
+    tag: "success",
+    value: false,
+  }),
+}));
+
 const mockAxios = new MockAdapter(axios);
 
 beforeEach(() => {
@@ -62,5 +69,4 @@ describe("Sidebar", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 });
-
 

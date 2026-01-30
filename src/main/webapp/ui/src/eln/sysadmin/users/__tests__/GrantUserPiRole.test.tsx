@@ -12,7 +12,6 @@ import {
   render,
   screen,
   within,
-  act,
   waitFor,
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
@@ -31,6 +30,10 @@ window.RS = { newFileStoresExportEnabled: false };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockAxios.reset();
+  mockAxios.onGet("/analyticsProperties").reply(200, {
+    analyticsEnabled: false,
+  });
 });
 
 
@@ -52,10 +55,6 @@ describe("Grant User PI Role", () => {
       mockAxios
         .onGet("/vfpwd/ajax/checkVerificationPasswordNeeded")
         .reply(200, { data: true });
-
-      mockAxios.onGet("/analyticsProperties").reply(200, {
-        analyticsEnabled: false,
-      });
 
       render(
         <ThemeProvider theme={materialTheme}>
@@ -81,18 +80,12 @@ describe("Grant User PI Role", () => {
         await screen.findByRole("row", { name: /user8h/ }),
       ).getByRole("checkbox");
 
-      await act(async () => {
-        await user.click(checkbox);
-      });
+      await user.click(checkbox);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /Actions/ }));
-      });
-      await act(async () => {
-        await user.click(
-          screen.getByRole("menuitem", { name: /Grant PI role/ }),
-        );
-      });
+      await user.click(screen.getByRole("button", { name: /Actions/ }));
+      await user.click(
+        await screen.findByRole("menuitem", { name: /Grant PI role/ }),
+      );
 
       expect(await screen.findByRole("dialog")).toBeVisible();
 
@@ -142,18 +135,12 @@ describe("Grant User PI Role", () => {
         await screen.findByRole("row", { name: /user8h/ }),
       ).getByRole("checkbox");
 
-      await act(async () => {
-        await user.click(checkbox);
-      });
+      await user.click(checkbox);
 
-      await act(async () => {
-        await user.click(screen.getByRole("button", { name: /Actions/ }));
-      });
-      await act(async () => {
-        await user.click(
-          screen.getByRole("menuitem", { name: /Grant PI role/ }),
-        );
-      });
+      await user.click(screen.getByRole("button", { name: /Actions/ }));
+      await user.click(
+        await screen.findByRole("menuitem", { name: /Grant PI role/ }),
+      );
 
       expect(await screen.findByRole("dialog")).toBeVisible();
 
@@ -171,5 +158,3 @@ describe("Grant User PI Role", () => {
     40 * 1000,
   );
 });
-
-

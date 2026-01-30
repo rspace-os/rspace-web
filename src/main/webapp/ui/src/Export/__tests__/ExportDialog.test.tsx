@@ -2,7 +2,6 @@
  */
 import {
   describe,
-  it,
   test,
   expect,
   vi,
@@ -27,7 +26,6 @@ import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
 import Alerts from "../../components/Alerts/Alerts";
-import { sleep } from "../../util/Util";
 import userEvent from "@testing-library/user-event";
 
 vi.mock("react-transition-group", () => ({
@@ -304,6 +302,7 @@ describe("ExportDialog", () => {
   describe("Controlled vocabulary terms", () => {
     // passes on its own, fails when run together
     test("Tags should be pre-populated from the tags on the documents", async () => {
+      const user = userEvent.setup();
       mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, [
         {
           repoName: "app.zenodo",
@@ -351,18 +350,18 @@ describe("ExportDialog", () => {
         });
       });
 
-      fireEvent.click(await screen.findByRole("radio", { name: /PDF/ }));
-      fireEvent.click(
+      await user.click(await screen.findByRole("radio", { name: /PDF/ }));
+      await user.click(
         screen.getByRole("checkbox", { name: /Export to a repository/ })
       );
-      fireEvent.click(screen.getByRole("button", { name: /Next/ }));
-      expect(await screen.findByRole("textbox", { name: /File name/ }));
-      fireEvent.click(screen.getByRole("button", { name: /Next/ }));
-      expect(await screen.findByRole("radio", { name: /Zenodo/ }));
+      await user.click(screen.getByRole("button", { name: /Next/ }));
+      await screen.findByRole("textbox", { name: /File name/ });
+      await user.click(screen.getByRole("button", { name: /Next/ }));
+      await screen.findByRole("radio", { name: /Zenodo/ });
 
-      await sleep(1000);
-
-      expect(screen.getByRole("button", { name: /BT-20/ })).toBeVisible();
+      expect(
+        await screen.findByRole("button", { name: /BT-20/ })
+      ).toBeVisible();
     });
   });
   describe("Completing the export, makes the right call to /export/ajax/exportArchive", () => {

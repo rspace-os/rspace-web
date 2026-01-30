@@ -12,6 +12,7 @@ import {
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { Heading, HeadingContext } from "../DynamicHeadingLevel";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -69,6 +70,7 @@ describe("DynamicHeadingLevel", () => {
   });
 
   test("Specifying level on a nested HeadingContext is not allowed.", () => {
+    const restoreConsole = silenceConsole(["error"], [/./]);
     expect(() => {
       render(
         <HeadingContext>
@@ -78,6 +80,7 @@ describe("DynamicHeadingLevel", () => {
         </HeadingContext>
       );
     }).toThrow();
+    restoreConsole();
   });
 
   test("Nesting should max out at 6.", () => {
@@ -140,5 +143,3 @@ describe("DynamicHeadingLevel", () => {
     ).toMatch(/MuiTypography-h3/);
   });
 });
-
-

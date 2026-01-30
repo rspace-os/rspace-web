@@ -29,8 +29,8 @@ beforeEach(() => {
 
 
 describe("BatchEditingItemsTable", () => {
-  test("Table body should have as many rows as records that are passed.", () => {
-    void fc.assert(
+  test("Table body should have as many rows as records that are passed.", async () => {
+    await fc.assert(
       fc.asyncProperty(
         fc.tuple(arbRsSet(arbitraryRecord), fc.string()),
         async ([records, label]) => {
@@ -52,5 +52,4 @@ describe("BatchEditingItemsTable", () => {
     );
   });
 });
-
 

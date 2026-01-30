@@ -6,6 +6,7 @@ import {
   expect,
   vi,
   beforeEach,
+  afterEach,
 } from "vitest";
 import React from "react";
 import {
@@ -25,6 +26,7 @@ import RaIDIntegrationCard, {
   RaIDConnectedMessage,
 } from "@/eln/apps/integrations/RaID/RaIDIntegrationCard";
 import { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 
 expect.extend({ toHaveNoViolations });
 
@@ -66,8 +68,15 @@ const renderWithProviders = (
 };
 
 describe("RaIDIntegrationCard", () => {
+  let restoreConsole = () => {};
+
   beforeEach(() => {
     vi.clearAllMocks();
+    restoreConsole = silenceConsole(["log"], ["RaIDIntegrationCard:"]);
+  });
+
+  afterEach(() => {
+    restoreConsole();
   });
 
   describe("Accessibility", () => {

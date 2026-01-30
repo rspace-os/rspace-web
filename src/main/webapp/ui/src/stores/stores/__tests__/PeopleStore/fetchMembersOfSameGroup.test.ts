@@ -12,6 +12,7 @@ import getRootStore from "../../RootStore";
 import * as PersonMocking from "../../../models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../models/PersonModel";
 import { runInAction } from "mobx";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -38,6 +39,7 @@ vi.mock("../../../../common/ElnApiService", () => ({
 
 describe("fetchMembersOfSameGroup", () => {
   test("Error message should be returned as promise.reject", async () => {
+    const restoreConsole = silenceConsole(["error"], [/./]);
     const { peopleStore } = getRootStore();
     runInAction(() => {
       peopleStore.currentUser = new PersonModel(PersonMocking.personAttrs());
@@ -47,8 +49,8 @@ describe("fetchMembersOfSameGroup", () => {
       fail("Shouldn't have resolved.");
     } catch (e) {
       expect((e as Error).message).toEqual("some error message");
+    } finally {
+      restoreConsole();
     }
   });
 });
-
-

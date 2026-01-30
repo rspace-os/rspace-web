@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import Clustermarket, { getOrder, getOrderBy } from "../Clustermarket";
 import React from "react";
 import axios from "@/common/axios";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import BookingDetails from "./bookingsDetails.json";
@@ -83,17 +83,13 @@ describe("Renders page with booking data ", () => {
   it("displays booking table headers", async () => {
     getWrapper();
 
-    await act(() => {
-      return findFirstByText("Booking ID");
-    });
+    await findFirstByText("Booking ID");
   });
 
   it("displays booking type radio and maintenance checkbox", async () => {
     getWrapper();
 
-    await act(() => {
-      return findFirstByText("Booked");
-    });
+    await findFirstByText("Booked");
     await findFirstByText("Booked and Completed");
     await findFirstByText("Booked Equipment");
     await findFirstByText("maintenance only");
@@ -102,9 +98,7 @@ describe("Renders page with booking data ", () => {
   it('displays bookings of type "booked"', async () => {
     getWrapper();
 
-    await act(() => {
-      return findFirstByText("Booking ID");
-    });
+    await findFirstByText("Booking ID");
     await findFirstByText("CURRENT_2");
     expect(screen.getAllByText("CURRENT_2")[0]).toBeInTheDocument();
     expect(screen.getAllByTestId("status0")[0]).toHaveTextContent("Booked");
@@ -118,9 +112,7 @@ describe("Renders page with booking data ", () => {
   it('displays bookings of type "booked and completed"', async () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
 
-    await act(() => {
-      return findFirstByText("Booking ID");
-    });
+    await findFirstByText("Booking ID");
     screen.getAllByText("CURRENT_2")[0];
     expect(screen.getAllByText("CURRENT_2")[0]).toBeInTheDocument();
     expect(screen.getAllByText("COMPLETED_3")[0]).toBeInTheDocument();
@@ -130,9 +122,7 @@ describe("Renders page with booking data ", () => {
   it("bookings are ordered by start date, ascending", async () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
 
-    await act(() => {
-      return findFirstByText("Booking ID");
-    });
+    await findFirstByText("Booking ID");
 
     await findFirstByText("2022-01-28 07:30:00");
     const startTimes = screen
@@ -154,9 +144,7 @@ describe("Renders page with booking data ", () => {
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper({ defaultBookingType: BookingType.ALL });
 
-    await act(() => {
-      return findFirstByText("Booking ID");
-    });
+    await findFirstByText("Booking ID");
     expect(screen.queryAllByText("CURRENT_2")).toHaveLength(0);
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
@@ -167,9 +155,7 @@ describe("Renders page with booking data ", () => {
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper();
 
-    await act(() => {
-      return findFirstByText("Booking ID");
-    });
+    await findFirstByText("Booking ID");
     expect(screen.queryAllByText("CURRENT_2")).toHaveLength(0);
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();

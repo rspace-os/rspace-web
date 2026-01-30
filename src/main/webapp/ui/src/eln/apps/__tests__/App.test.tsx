@@ -27,11 +27,38 @@ import "../../../../__mocks__/matchMedia";
 import allIntegrationsAreDisabled from "./allIntegrationsAreDisabled.json";
 
 const mockAxios = new MockAdapter(axios);
+const uiNavigationData = {
+  userDetails: {
+    email: "test@example.com",
+    orcidId: null,
+    orcidAvailable: false,
+    fullName: "Test User",
+    username: "test",
+    profileImgSrc: null,
+  },
+  visibleTabs: {
+    published: true,
+    inventory: true,
+    system: true,
+    myLabGroups: true,
+  },
+  extraHelpLinks: [],
+  bannerImgSrc: "",
+  operatedAs: false,
+  nextMaintenance: null,
+};
 
 expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockAxios.reset();
+  mockAxios
+    .onGet("/api/v1/userDetails/uiNavigationData")
+    .reply(200, uiNavigationData);
+  mockAxios.onGet("livechatProperties").reply(200, {
+    livechatEnabled: false,
+  });
 });
 
 
@@ -43,10 +70,6 @@ describe("Apps page", () => {
         data: null,
         error: "",
       });
-      mockAxios.onGet("livechatProperties").reply(200, {
-        livechatEnabled: false,
-      });
-
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
           <App />
@@ -54,6 +77,7 @@ describe("Apps page", () => {
       );
 
       await screen.findAllByText(/Something went wrong!/i);
+      await screen.findByAltText("branding");
 
       expect(await axe(container)).toHaveNoViolations();
     });
@@ -84,5 +108,3 @@ describe("Apps page", () => {
     ]);
   });
 });
-
-

@@ -21,16 +21,17 @@ export type ExternalWorkflowDialogArgs = {
 };
 
 function makeGalleryLinks(row: GalaxyDataSummary) {
-  const links: JSX.Element[] = [];
-  row.galaxyDataNames.forEach(dataName => {
-    links.push(
-        <Link
-            href={"/gallery/item/" + dataName.id}
-            target="_blank"
-            rel="noreferrer">{dataName.fileName + "   "}</Link>
-    );
-  });
-  return links;
+  return row.galaxyDataNames.map((dataName) => (
+    <React.Fragment key={dataName.id ?? dataName.fileName}>
+      <Link
+        href={"/gallery/item/" + dataName.id}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {dataName.fileName}
+      </Link>{" "}
+    </React.Fragment>
+  ));
 }
 
 function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWorkflowDialogArgs) {
@@ -50,10 +51,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWo
                   disableColumnSelector={true}
                   initialState={{
                     sorting: {
-                      sortModel: [{field: 'Created', sort: 'desc'}, {
-                        field: 'History',
-                        sort: 'asc'
-                      }],
+                      sortModel: [{ field: "Created", sort: "desc" }],
                     },
                   }}
                   columns={[

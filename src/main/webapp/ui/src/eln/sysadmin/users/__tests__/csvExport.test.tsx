@@ -2,7 +2,6 @@
  */
 import {
   describe,
-  it,
   test,
   expect,
   vi,
@@ -12,7 +11,6 @@ import React from "react";
 import {
   render,
   screen,
-  fireEvent,
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { UsersPage } from "..";
@@ -41,6 +39,7 @@ beforeEach(() => {
 describe("CSV Export", () => {
   describe("Selection", () => {
     test("When no rows are selected, every row of the current page should be included in the export.", async () => {
+      const user = userEvent.setup();
       let blob: Blob | undefined;
       const createObjectURL = vi.fn().mockImplementation((b: Blob) => {
         blob = b;
@@ -67,9 +66,9 @@ describe("CSV Export", () => {
         </StyledEngineProvider>,
       );
 
-      fireEvent.click(await screen.findByRole("button", { name: /Export/ }));
-      fireEvent.click(
-        screen.getByRole("menuitem", {
+      await user.click(await screen.findByRole("button", { name: /Export/ }));
+      await user.click(
+        await screen.findByRole("menuitem", {
           name: /Export this page of rows to CSV/,
         }),
       );
@@ -81,6 +80,7 @@ describe("CSV Export", () => {
     });
 
     test("When one rows is selected, just it should be included in the csv export.", async () => {
+      const user = userEvent.setup();
       let blob: Blob | undefined;
       const createObjectURL = vi.fn().mockImplementation((b: Blob) => {
         blob = b;
@@ -111,11 +111,11 @@ describe("CSV Export", () => {
         name: /Select row/,
       });
       expect(checkboxes.length).toBe(10);
-      fireEvent.click(checkboxes[0]);
+      await user.click(checkboxes[0]);
 
-      fireEvent.click(screen.getByRole("button", { name: /Export/ }));
-      fireEvent.click(
-        screen.getByRole("menuitem", {
+      await user.click(screen.getByRole("button", { name: /Export/ }));
+      await user.click(
+        await screen.findByRole("menuitem", {
           name: /Export selected rows to CSV/,
         }),
       );
@@ -128,6 +128,7 @@ describe("CSV Export", () => {
   });
   describe("Column", () => {
     test("All of the columns should be included in the CSV file.", async () => {
+      const user = userEvent.setup();
       let blob: Blob | undefined;
       const createObjectURL = vi.fn().mockImplementation((b: Blob) => {
         blob = b;
@@ -150,23 +151,25 @@ describe("CSV Export", () => {
         </StyledEngineProvider>,
       );
 
-      fireEvent.click(
+      await user.click(
         await screen.findByRole("button", { name: /Select columns/ }),
       );
-      const numberOfColumns = screen.getAllByRole("checkbox", {
-        name: (name) => {
-          if (name === "Select all rows") return false;
-          if (name === "Select row") return false;
-          if (name === "Checkbox selection") return false;
-          if (name === "Show/Hide All") return false;
-          if (name === "Full Name") return false; // First name and last name are included separately
-          return true;
-        },
-      }).length;
+      const numberOfColumns = (
+        await screen.findAllByRole("checkbox", {
+          name: (name) => {
+            if (name === "Select all rows") return false;
+            if (name === "Select row") return false;
+            if (name === "Checkbox selection") return false;
+            if (name === "Show/Hide All") return false;
+            if (name === "Full Name") return false; // First name and last name are included separately
+            return true;
+          },
+        })
+      ).length;
 
-      fireEvent.click(screen.getByRole("button", { name: /Export/ }));
-      fireEvent.click(
-        screen.getByRole("menuitem", {
+      await user.click(screen.getByRole("button", { name: /Export/ }));
+      await user.click(
+        await screen.findByRole("menuitem", {
           name: /Export this page of rows to CSV/,
         }),
       );
@@ -208,7 +211,7 @@ describe("CSV Export", () => {
 
       await user.click(await screen.findByRole("button", { name: /Export/ }));
       await user.click(
-        screen.getByRole("menuitem", {
+        await screen.findByRole("menuitem", {
           name: /Export this page of rows to CSV/,
         }),
       );
@@ -222,5 +225,3 @@ describe("CSV Export", () => {
     });
   });
 });
-
-

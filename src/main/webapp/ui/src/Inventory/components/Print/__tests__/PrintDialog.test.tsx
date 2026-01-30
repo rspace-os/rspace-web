@@ -17,6 +17,7 @@ import {
   fireEvent,
   waitFor,
 } from "@testing-library/react";
+import { act } from "react-dom/test-utils";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import { persistedBarcode1 } from "./mocking";
@@ -79,9 +80,16 @@ describe("Print Tests", () => {
     );
   };
 
+  const renderDialog = async () => {
+    render(<Dialog />);
+    await waitFor(() => {
+      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+    });
+  };
+
   describe("PrintDialog with items to print (barcodes)", () => {
-    it("renders, has radio options for printerType, printMode, printSize (plus help text)", () => {
-      render(<Dialog />);
+    it("renders, has radio options for printerType, printMode, printSize (plus help text)", async () => {
+      await renderDialog();
 
       expect(screen.getAllByRole("radio")).toHaveLength(10);
 
@@ -100,19 +108,20 @@ describe("Print Tests", () => {
 
   describe("PrintDialog with items to print (barcodes)", () => {
     it("renders, content responds to clicked options", async () => {
-      render(<Dialog />);
+      await renderDialog();
 
       const globalId = mockContainer.globalId;
       const location = "Location:";
       if (!globalId) throw new Error("Missing globalId");
 
       // on default "full" option elements are rendered, on "basic" they are not
-      await waitFor(() => {
-        expect(screen.getAllByText(globalId)[0]).toBeInTheDocument();
-      });
+      expect(screen.getAllByText(globalId)[0]).toBeInTheDocument();
 
       const basicOption = screen.getAllByLabelText("Basic")[0];
-      fireEvent.click(basicOption);
+      await act(async () => {
+        fireEvent.click(basicOption);
+        await Promise.resolve();
+      });
       expect(basicOption).toBeChecked();
     });
   });

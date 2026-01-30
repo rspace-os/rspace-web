@@ -6,6 +6,7 @@ import {
   expect,
   vi,
   beforeEach,
+  afterEach,
 } from "vitest";
 import "../../../../__mocks__/matchMedia";
 import React from "react";
@@ -22,11 +23,49 @@ import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 
 const mockAxios = new MockAdapter(axios);
+const uiNavigationData = {
+  userDetails: {
+    email: "test@example.com",
+    orcidId: null,
+    orcidAvailable: false,
+    fullName: "Test User",
+    username: "test",
+    profileImgSrc: null,
+  },
+  visibleTabs: {
+    published: true,
+    inventory: true,
+    system: true,
+    myLabGroups: true,
+  },
+  extraHelpLinks: [],
+  bannerImgSrc: "",
+  operatedAs: false,
+  nextMaintenance: null,
+};
+
+let restoreConsole = () => {};
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockAxios.reset();
+  mockAxios
+    .onGet("/api/v1/userDetails/uiNavigationData")
+    .reply(200, uiNavigationData);
+  mockAxios
+    .onGet("/apps/dmptool/baseUrlHost")
+    .reply(200, "https://dmptool.org");
+  restoreConsole = silenceConsole(
+    ["info"],
+    ["The response from this request is being discarded"]
+  );
+});
+
+afterEach(() => {
+  restoreConsole();
 });
 
 
