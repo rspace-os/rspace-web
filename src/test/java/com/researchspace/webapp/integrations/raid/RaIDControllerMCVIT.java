@@ -117,7 +117,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
   }
 
   @Test
-  public void testGetRaidListByUser() throws Exception {
+  public void testGetAvailableRaidList() throws Exception {
     // GIVEN
     Map<String, RaIDServerConfigurationDTO> serverByAlias =
         Map.of(
@@ -185,7 +185,11 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             piUser.getUsername(), RAID_APP_NAME, SERVER_ALIAS_2))
         .thenReturn(Optional.empty());
 
-    // WHEN
+    // WHEN another user
+    User anotherPiUser = createAndSaveUser("anotherPi" + getRandomName(10), Constants.PI_ROLE);
+    initUser(anotherPiUser);
+    logoutAndLoginAs(anotherPiUser);
+
     result =
         mockMvc
             .perform(get("/apps/raid").principal(piUser::getUsername))
