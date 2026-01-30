@@ -31,11 +31,6 @@ public class DSWClient {
   public static final String DSW_APIKEY = "DSW_APIKEY";
   public static final String DSW_ALIAS = "DSW_ALIAS";
 
-  @Setter
-  @Getter
-  @Value("${dsw.server.config:}")
-  private String configurationMap;
-
   private final RestTemplate restTemplate;
   private @Autowired UserConnectionManager source;
   private @Autowired UserManager userManager;

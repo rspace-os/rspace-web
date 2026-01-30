@@ -97,7 +97,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   private final Map<SystemProperty, List<SystemProperty>> parent2ChildMap = new HashMap<>();
 
-  private final Map<String, String> encodeApiKeyForApps =
+  private static final Map<String, String> ENCODE_API_KEY_FOR_APPS =
       Map.ofEntries(Map.entry(PYRAT_APP_NAME, PYRAT_APIKEY), Map.entry(DSW_APP_NAME, DSW_APIKEY));
 
   public void init() {
@@ -563,9 +563,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       User user) {
     Map<String, String> options;
     // remove the apiKey from the option otherwise it is saved in clear on the database
-    if (encodeApiKeyForApps.keySet().contains(appName)) {
+    if (ENCODE_API_KEY_FOR_APPS.keySet().contains(appName)) {
       Map<String, String> safeMap = new HashMap<>(originalOptions);
-      safeMap.remove(encodeApiKeyForApps.get(appName));
+      safeMap.remove(ENCODE_API_KEY_FOR_APPS.get(appName));
       options = safeMap;
     } else {
       options = originalOptions;
