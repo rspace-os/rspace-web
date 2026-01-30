@@ -73,7 +73,7 @@ public class StoichiometryImporterTest {
   }
 
   @Test
-  public void testWhenStoichiometriesButNoMatch() {
+  public void testWhenStoichiometriesButNoMatchToParentReaction() {
     when(oldField.getStoichiometries()).thenReturn(List.of(existingStoich));
     when(existingStoich.getParentReactionId()).thenReturn(123456789L);
     testee.importStoichiometries(oldChemElement, currentChem);
@@ -81,7 +81,7 @@ public class StoichiometryImporterTest {
   }
 
   @Test
-  public void testWhenStoichiometriesMatch() {
+  public void testWhenStoichiometriesMatchParentReaction() {
     when(oldField.getStoichiometries()).thenReturn(List.of(existingStoich));
     when(existingStoich.getParentReactionId()).thenReturn(1L);
     testee.importStoichiometries(oldChemElement, currentChem);
@@ -95,7 +95,7 @@ public class StoichiometryImporterTest {
   }
 
   @Test
-  public void testWhenStoichiometriesMatchRealStoichiometryReader() {
+  public void testWhenStoichiometriesMatchParentReactionUsingARealStoichiometryReader() {
     when(oldField.getStoichiometries()).thenReturn(List.of(existingStoich));
     when(existingStoich.getParentReactionId()).thenReturn(1L);
     when(existingStoich.getRevision()).thenReturn(10L);
