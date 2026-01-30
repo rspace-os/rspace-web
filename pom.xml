@@ -233,7 +233,6 @@
             <dependency>com.fasterxml:classmate</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.hibernate:hibernate-ehcache</dependency> <!-- used but not referenced in code -->
             <dependency>org.jetbrains.kotlin:kotlin-stdlib</dependency> <!-- used for annotations -->
-            <dependency>com.healthmarketscience.jackcess:jackcess</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.apache.tika:tika-parsers</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.codehaus.woodstox:wstx-asl</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>com.squareup.okhttp3:okhttp</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
@@ -253,7 +252,6 @@
             <dependency>org.apache.xmlgraphics:batik-codec</dependency> <!-- used but not referenced in code -->
             <dependency>org.apache.xmlgraphics:batik-constants</dependency> <!-- used but not referenced in code -->
             <dependency>org.quartz-scheduler:quartz</dependency> <!-- used but not referenced in code -->
-            <dependency>org.apache.commons:commons-csv</dependency> <!-- used to upgrade version of transitive dependency -->
           </usedDependencies>
         </configuration>
       </plugin>
@@ -708,24 +706,6 @@
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-audit</artifactId>
       <version>0.14.3</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
@@ -941,10 +921,6 @@
           <artifactId>commons-collections4</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-csv</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>commons-io</groupId>
           <artifactId>commons-io</artifactId>
         </exclusion>
@@ -1021,10 +997,6 @@
           <artifactId>tika-core</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.healthmarketscience.jackcess</groupId>
-          <artifactId>jackcess</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.bouncycastle</groupId>
           <artifactId>bcutil-jdk15on</artifactId>
         </exclusion>
@@ -1051,27 +1023,10 @@
       </exclusions>
     </dependency>
     <dependency>
-      <!-- tika-parsers internally-conflicting dependency,
-      used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
-      <groupId>com.healthmarketscience.jackcess</groupId>
-      <artifactId>jackcess</artifactId>
-      <version>2.1.8</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
       <version>3.2.2</version>
       <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
@@ -1140,10 +1095,6 @@
       <artifactId>batik-transcoder</artifactId>
       <version>${apache.batik.version}</version>
       <exclusions>
-        <exclusion>
-          <artifactId>xml-apis</artifactId>
-          <groupId>xml-apis</groupId>
-        </exclusion>
         <exclusion>
           <groupId>org.apache.xmlgraphics</groupId>
           <artifactId>xmlgraphics-commons</artifactId>
@@ -1585,10 +1536,6 @@
         <exclusion>
           <groupId>xerces</groupId>
           <artifactId>xercesImpl</artifactId>
-        </exclusion>
-        <exclusion>
-          <artifactId>xml-apis</artifactId>
-          <groupId>xml-apis</groupId>
         </exclusion>
         <exclusion>
           <artifactId>xmlParserAPIs</artifactId>
@@ -2261,11 +2208,7 @@
       <version>1.0.0</version>
     </dependency>
     <!-- transitive dependency used by tika, this forces the most up-to-date version  -->
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-csv</artifactId>
-      <version>1.9.0</version>
-    </dependency>
+
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
