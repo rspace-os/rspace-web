@@ -12,3 +12,11 @@ enableFetchMocks();
 import { TextEncoder, TextDecoder } from "util";
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
+
+import { BroadcastChannel } from "node:worker_threads";
+
+global.BroadcastChannel = BroadcastChannel;
+
+import { ReadableStream, WritableStream } from "node:stream/web";
+global.ReadableStream = ReadableStream;
+global.WritableStream = WritableStream;
