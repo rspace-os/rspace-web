@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -29,7 +29,7 @@ beforeEach(() => {
 
 describe("Figshare", () => {
   describe("Accessibility", () => {
-    test("Should have no axe violations.", async () => {
+    it("Should have no axe violations.", async () => {
       const { baseElement } = render(
         <Figshare
           integrationState={{
@@ -49,7 +49,7 @@ describe("Figshare", () => {
       expect(await axe(baseElement)).toHaveNoViolations();
     });
   });
-  test("Should have a connect button when the user is not authenticated.", () => {
+  it("Should have a connect button when the user is not authenticated.", () => {
     render(
       <Figshare
         integrationState={{
@@ -66,7 +66,7 @@ describe("Figshare", () => {
 
     expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
   });
-  test("Should have a disconnect button when the user is authenticated.", () => {
+  it("Should have a disconnect button when the user is authenticated.", () => {
     render(
       <Figshare
         integrationState={{

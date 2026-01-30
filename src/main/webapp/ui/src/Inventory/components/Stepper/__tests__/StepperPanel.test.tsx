@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React,
   { useState } from "react";
@@ -34,7 +34,7 @@ beforeEach(() => {
 
 describe("StepperPanel", () => {
   describe("Renders correctly", () => {
-    test("When expanded", () => {
+    it("When expanded", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <FormSectionsContext.Provider
@@ -52,7 +52,7 @@ describe("StepperPanel", () => {
       );
       expect(screen.getByTestId("content")).toBeVisible();
     });
-    test("When not expanded", () => {
+    it("When not expanded", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <FormSectionsContext.Provider
@@ -73,7 +73,7 @@ describe("StepperPanel", () => {
   });
 
   describe("Expands and collapses properly", () => {
-    test("Expand button works correctly", async () => {
+    it("Expand button works correctly", async () => {
       const user = userEvent.setup();
       const setExpanded = vi.fn();
       render(
@@ -95,7 +95,7 @@ describe("StepperPanel", () => {
       await user.click(screen.getByLabelText("Expand section"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", true);
     });
-    test("Collapse button works correctly", async () => {
+    it("Collapse button works correctly", async () => {
       const user = userEvent.setup();
       const setExpanded = vi.fn();
       render(
@@ -147,7 +147,7 @@ describe("StepperPanel", () => {
       );
     }
 
-    test("Collapse all", async () => {
+    it("Collapse all", async () => {
       const user = userEvent.setup();
       const setAllExpanded = vi.fn();
       render(<TestComponent setAllExpanded={setAllExpanded} openInit={true} />);
@@ -156,7 +156,7 @@ describe("StepperPanel", () => {
       await user.click(screen.getByRole("button", { name: "Collapse All" }));
       expect(setAllExpanded).toHaveBeenCalledWith("container", false);
     });
-    test("Expand all", async () => {
+    it("Expand all", async () => {
       const user = userEvent.setup();
       const setAllExpanded = vi.fn();
       render(
@@ -170,7 +170,7 @@ describe("StepperPanel", () => {
   });
 
   describe("Accessibility", () => {
-    test("Has role region", () => {
+    it("Has role region", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <SynchroniseFormSections>

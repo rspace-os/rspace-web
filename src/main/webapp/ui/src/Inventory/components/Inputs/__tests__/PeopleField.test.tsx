@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -45,7 +45,7 @@ vi.mock("../../../../common/ElnApiService", () => ({
   }}));
 
 describe("PeopleField", () => {
-  test("When the API returns an error, there should be an error alert.", async () => {
+  it("When the API returns an error, there should be an error alert.", async () => {
     const { peopleStore } = getRootStore();
     runInAction(() => {
       peopleStore.currentUser = new PersonModel(PersonMocking.personAttrs());

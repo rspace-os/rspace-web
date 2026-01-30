@@ -1,11 +1,11 @@
 /*
  */
 
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import Result from "../../result";
 
 describe("orElseTry", () => {
-  test("The types should be merged.", () => {
+  it("The types should be merged.", () => {
     const input: Result<string> = Result.Ok("foo");
     // the key bit of this test is that this type annotation doesn't error
     const next: Result<string | number> = input.orElseTry(() => Result.Ok(4));

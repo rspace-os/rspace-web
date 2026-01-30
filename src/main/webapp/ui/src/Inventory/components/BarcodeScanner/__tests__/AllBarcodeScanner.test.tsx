@@ -1,7 +1,10 @@
 /*
  */
 import React from "react";
-import { render, act, screen } from "@testing-library/react";
+import {
+ render,
+ act,
+ screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import "../../../../../__mocks__/barcode-detection-api";
 import AllBarcodeScanner from "../AllBarcodeScanner";
@@ -12,11 +15,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import {
   type Mock,
-  describe,
-  test,
-  expect,
-  vi,
-  beforeEach,
+ describe,
+ expect,
+ beforeEach,
+ it,
+ vi,
 } from "vitest";
 
 beforeEach(() => {
@@ -25,7 +28,7 @@ beforeEach(() => {
 
 
 describe("AllBarcodeScanner", () => {
-  test("Should scan correctly.", async () => {
+  it("Should scan correctly.", async () => {
     const user = userEvent.setup();
     vi.spyOn(HTMLVideoElement.prototype, "play").mockImplementation(() =>
       Promise.resolve()

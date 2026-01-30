@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { makeMockMaterial } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
@@ -17,7 +17,7 @@ describe("computed: paramsForBackend", () => {
    * valid string.
    */
   describe("paramsForBackend should be JSON serialisable when", () => {
-    test("the Material has not been edited.", () => {
+    it("the Material has not been edited.", () => {
       const Material = makeMockMaterial();
       expect(JSON.stringify(Material.paramsForBackend)).toEqual(
         expect.any(String)

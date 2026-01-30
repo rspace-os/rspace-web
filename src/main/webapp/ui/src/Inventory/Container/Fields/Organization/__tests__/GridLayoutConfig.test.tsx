@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -27,7 +27,7 @@ beforeEach(() => {
 
 
 describe("GridLayoutConfig", () => {
-  test("Should have no axe violations.", async () => {
+  it("Should have no axe violations.", async () => {
     const gridContainer = makeMockContainer({
       cType: "GRID",
       gridLayout: {

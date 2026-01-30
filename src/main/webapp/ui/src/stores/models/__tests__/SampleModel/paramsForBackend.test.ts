@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { makeMockSample, makeMockSampleWithASubsample } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
@@ -21,14 +21,14 @@ describe("computed: paramsForBackend", () => {
    * string.
    */
   describe("paramsForBackend should be JSON serialisable when", () => {
-    test("the Sample has no subsamples.", () => {
+    it("the Sample has no subsamples.", () => {
       const Sample = makeMockSample();
       expect(JSON.stringify(Sample.paramsForBackend)).toEqual(
         expect.any(String)
       );
     });
 
-    test("the Sample has a subsample.", () => {
+    it("the Sample has a subsample.", () => {
       const Sample = makeMockSampleWithASubsample();
       expect(JSON.stringify(Sample.paramsForBackend)).toEqual(
         expect.any(String)

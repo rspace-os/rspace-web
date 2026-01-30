@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import ExportRepo from "../ExportRepo";
 import React from "react";
@@ -58,7 +58,7 @@ const props = {
 };
 
 describe("ExportRepo", () => {
-  test("Should display selection message", async () => {
+  it("Should display selection message", async () => {
     render(<ExportRepo {...props} />);
     await waitFor(() => {
       expect(props.fetchTags).toHaveBeenCalled();
@@ -69,7 +69,7 @@ describe("ExportRepo", () => {
       ),
     ).toBeInTheDocument();
   });
-  test("Should display repository list with two repositories", async () => {
+  it("Should display repository list with two repositories", async () => {
     render(<ExportRepo {...props} />);
     await waitFor(() => {
       expect(props.fetchTags).toHaveBeenCalled();
@@ -78,7 +78,7 @@ describe("ExportRepo", () => {
     expect(screen.getByText("Repository 2")).toBeInTheDocument();
   });
 
-  test("Should have first repository in list selected", async () => {
+  it("Should have first repository in list selected", async () => {
     render(<ExportRepo {...props} />);
     await waitFor(() => {
       expect(props.fetchTags).toHaveBeenCalled();
@@ -104,7 +104,7 @@ describe("ExportRepo", () => {
       .uniqueArray(fc.nat(max - 1), { minLength: min, maxLength: max })
       .map((arr) => new Set(arr));
 
-  test(
+  it(
     "If chosen repository is Zenodo and more than 1 DMP is selected then a warning should be shown.",
     async () => {
       await fc.assert(

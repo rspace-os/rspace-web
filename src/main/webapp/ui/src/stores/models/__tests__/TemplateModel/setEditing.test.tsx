@@ -1,7 +1,7 @@
 /*
  */
 
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import InvApiService from "../../../../common/InvApiService";
 import { makeMockTemplate, templateAttrs } from "./mocking";
 import { AxiosResponse } from "axios";
@@ -16,7 +16,7 @@ vi.mock("../../../../common/InvApiService", () => ({
   }}));
 
 describe("method: setEditing", () => {
-  test("Properties should be reset.", async () => {
+  it("Properties should be reset.", async () => {
     // Create properly typed mock responses
     const getMockResponse = {
       data: templateAttrs({

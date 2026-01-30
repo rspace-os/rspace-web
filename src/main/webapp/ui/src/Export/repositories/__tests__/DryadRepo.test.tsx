@@ -2,11 +2,10 @@
  */
 import {
   describe,
-  it,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -84,7 +83,7 @@ describe("DryadRepo", () => {
     },
   });
 
-  test("Upon editing, title should be set to the entered value.", async () => {
+  it("Upon editing, title should be set to the entered value.", async () => {
     const handleChange = vi.fn();
     await act(() => void renderDryadRepo({ handleChange }));
 
@@ -102,7 +101,7 @@ describe("DryadRepo", () => {
     );
   });
 
-  test("Upon editing, description should be set to the entered value.", async () => {
+  it("Upon editing, description should be set to the entered value.", async () => {
     const handleChange = vi.fn();
     await act(() => void renderDryadRepo({ handleChange }));
 

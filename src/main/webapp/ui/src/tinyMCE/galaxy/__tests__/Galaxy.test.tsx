@@ -3,19 +3,22 @@
 import Galaxy, {AttachedRecords} from "../Galaxy";
 import React from "react";
 import axios from "@/common/axios";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+ fireEvent,
+ render,
+ screen,
+ waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import {act} from "react-dom/test-utils";
 import {
   type SpyInstance,
-  describe,
-  it,
-  test,
-  expect,
-  vi,
-  beforeEach,
+ describe,
+ expect,
+ beforeEach,
+ it,
+ vi,
 } from "vitest";
 
 const mockAxios = new MockAdapter(axios);

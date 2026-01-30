@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -61,7 +61,7 @@ const material1 = {
 
 describe("MaterialsTable", () => {
   describe("Location column", () => {
-    test("When the record is deleted, In Trash should be shown.", () => {
+    it("When the record is deleted, In Trash should be shown.", () => {
       const mockList = new ListOfMaterials({
         materials: [material1],
         id: 1,

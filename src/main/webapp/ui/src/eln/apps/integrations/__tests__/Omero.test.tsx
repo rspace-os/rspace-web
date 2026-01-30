@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -27,7 +27,7 @@ beforeEach(() => {
 
 
 describe("Omero", () => {
-  test("Should have no axe violations.", async () => {
+  it("Should have no axe violations.", async () => {
     const { baseElement } = render(
       <Omero
         integrationState={{
@@ -44,7 +44,7 @@ describe("Omero", () => {
 
     expect(await axe(baseElement)).toHaveNoViolations();
   });
-  test("Should render username and password fields.", () => {
+  it("Should render username and password fields.", () => {
     render(
       <Omero
         integrationState={{

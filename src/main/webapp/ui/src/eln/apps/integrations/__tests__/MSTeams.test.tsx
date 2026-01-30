@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -31,7 +31,7 @@ beforeEach(() => {
 
 describe("MSTeams", () => {
   describe("Should render correctly.", () => {
-    test("Channel names should be shown in a table.", async () => {
+    it("Channel names should be shown in a table.", async () => {
       render(
         <MSTeams
           integrationState={{
@@ -59,7 +59,7 @@ describe("MSTeams", () => {
         })
       ).toHaveTextContent("foo");
     });
-    test("Remove button should make the right API call.", async () => {
+    it("Remove button should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success: true,
@@ -111,7 +111,7 @@ describe("MSTeams", () => {
 
       expect(integrationState.credentials.length).toBe(0);
     });
-    test("Add button should make the right API call.", async () => {
+    it("Add button should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/saveAppOptions").reply(200, {
         success: true,

@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { containerAttrs } from "../../__tests__/ContainerModel/mocking";
@@ -17,7 +17,7 @@ vi.mock("../../../stores/RootStore", () => ({
 
 describe("MemoisedFactory", () => {
   describe("When called with the same Global ID, newRecord should", () => {
-    test("return the same object.", () => {
+    it("return the same object.", () => {
       const factory = new MemoisedFactory();
       const container1 = factory.newRecord(
         containerAttrs() as { globalId: GlobalId }
@@ -31,7 +31,7 @@ describe("MemoisedFactory", () => {
   });
 
   describe("When called with the same Person ID, newPerson should", () => {
-    test("return the same object.", () => {
+    it("return the same object.", () => {
       const factory = new MemoisedFactory();
       const person1 = factory.newPerson(personAttrs());
       const person2 = factory.newPerson(personAttrs());
@@ -41,7 +41,7 @@ describe("MemoisedFactory", () => {
   });
 
   describe("When called with summary record and then full record, newRecord should", () => {
-    test("not update the existing record with the new data.", () => {
+    it("not update the existing record with the new data.", () => {
       const factory = new MemoisedFactory();
 
       const containerWithLastParent = factory.newRecord(

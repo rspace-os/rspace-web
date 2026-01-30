@@ -2,9 +2,8 @@
  */
 import {
   describe,
-  it,
-  test,
   expect,
+  it,
   vi,
 } from "vitest";
 import { makeMockSubSample } from "./mocking";
@@ -43,7 +42,7 @@ describe("action: createNote", () => {
    * immeditaely saved.
    */
   describe("When called in preview state, createNote should", () => {
-    test("make a POST call.", () => {
+    it("make a POST call.", () => {
       const subSample = makeMockSubSample();
       subSample.editing = false;
       void subSample.createNote({ content: "A new note" });
@@ -59,7 +58,7 @@ describe("action: createNote", () => {
    * when the whole form is.
    */
   describe("When called in edit state, createNote should", () => {
-    test("append to notes observable.", () => {
+    it("append to notes observable.", () => {
       const subSample = makeMockSubSample();
       subSample.editing = true;
       (subSample as any).lastEditInput = new Date();

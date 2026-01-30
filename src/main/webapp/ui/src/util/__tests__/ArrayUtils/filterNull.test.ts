@@ -1,10 +1,10 @@
 /*
  */
-import { describe, it, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import * as ArrayUtils from "../../ArrayUtils";
 
 describe("filterNull", () => {
-  test("Example", () => {
+  it("Example", () => {
     const mixOfNumbersAndNulls: Array<number | null> = [1, 2, null];
 
     const withFilter: Array<number> = mixOfNumbersAndNulls.filter(

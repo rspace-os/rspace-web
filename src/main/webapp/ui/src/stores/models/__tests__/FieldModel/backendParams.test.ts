@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { makeMockField } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
@@ -21,7 +21,7 @@ describe("computed: paramsForBackend", () => {
    * string.
    */
   describe("paramsForBackend should be JSON serialisable when", () => {
-    test("the field is a number field.", () => {
+    it("the field is a number field.", () => {
       const field = makeMockField({
         type: "number",
         content: "1",
@@ -30,7 +30,7 @@ describe("computed: paramsForBackend", () => {
         expect.any(String)
       );
     });
-    test("the field is a choice field.", () => {
+    it("the field is a choice field.", () => {
       const field = makeMockField({
         type: "choice",
         definition: {

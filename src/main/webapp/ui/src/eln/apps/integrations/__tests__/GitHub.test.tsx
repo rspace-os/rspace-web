@@ -2,11 +2,10 @@
  */
 import {
   describe,
-  it,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -35,7 +34,7 @@ beforeEach(() => {
 
 describe("GitHub", () => {
   describe("Accessibility", () => {
-    test("Should have no axe violations.", async () => {
+    it("Should have no axe violations.", async () => {
       const { baseElement } = render(
         <GitHub
           integrationState={{
@@ -54,7 +53,7 @@ describe("GitHub", () => {
     });
   });
   describe("Correct rendering", () => {
-    test("When there are no repositories, there is a label.", () => {
+    it("When there are no repositories, there is a label.", () => {
       render(
         <GitHub
           integrationState={{
@@ -71,7 +70,7 @@ describe("GitHub", () => {
         screen.getByText("There are no linked repositories.")
       ).toBeVisible();
     });
-    test("The names of repositories should be shown in a table.", () => {
+    it("The names of repositories should be shown in a table.", () => {
       render(
         <GitHub
           integrationState={{
@@ -95,7 +94,7 @@ describe("GitHub", () => {
       ).toBeVisible();
     });
 
-    test("If the server responds with a missing ACCESS_TOKEN then the repo should be shown in an invalid state", () => {
+    it("If the server responds with a missing ACCESS_TOKEN then the repo should be shown in an invalid state", () => {
       render(
         <GitHub
           integrationState={{
@@ -127,7 +126,7 @@ describe("GitHub", () => {
   });
 
   describe("Adding repositories", () => {
-    test("When requested, all repositories should be listed in a table.", async () => {
+    it("When requested, all repositories should be listed in a table.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -144,7 +143,7 @@ describe("GitHub", () => {
         () =>
           ({
             document: {
-              URL: "https://test.researchspace.com/github/redirect_uri",
+              URL: "https://it.researchspace.com/github/redirect_uri",
               getElementById: () => ({ value: "oauth token" }),
             },
             addEventListener: (_: unknown, f: () => void) => {
@@ -182,7 +181,7 @@ describe("GitHub", () => {
         })
       ).toHaveTextContent("a repo");
     });
-    test("When tapped, the add button in the repositories table should make the right API call.", async () => {
+    it("When tapped, the add button in the repositories table should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -200,7 +199,7 @@ describe("GitHub", () => {
         () =>
           ({
             document: {
-              URL: "https://test.researchspace.com/github/redirect_uri",
+              URL: "https://it.researchspace.com/github/redirect_uri",
               getElementById: () => ({ value: "oauth token" }),
             },
             addEventListener: (_: unknown, f: () => void) => {
@@ -246,7 +245,7 @@ describe("GitHub", () => {
       });
     });
 
-    test("When the add button next to a repo is tapped, it should be added to the conncted repos table and removed from the all repos table.", async () => {
+    it("When the add button next to a repo is tapped, it should be added to the conncted repos table and removed from the all repos table.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -277,7 +276,7 @@ describe("GitHub", () => {
         () =>
           ({
             document: {
-              URL: "https://test.researchspace.com/github/redirect_uri",
+              URL: "https://it.researchspace.com/github/redirect_uri",
               getElementById: () => ({ value: "oauth token" }),
             },
             addEventListener: (_: unknown, f: () => void) => {
@@ -338,7 +337,7 @@ describe("GitHub", () => {
         })
       ).toHaveTextContent("There are no available repositories.");
     });
-    test("Adding a repository should mutate the integration state being passed as a prop.", async () => {
+    it("Adding a repository should mutate the integration state being passed as a prop.", async () => {
       const integrationState = observable<IntegrationStates["GITHUB"]>({
         mode: "DISABLED",
         credentials: [],
@@ -374,7 +373,7 @@ describe("GitHub", () => {
         () =>
           ({
             document: {
-              URL: "https://test.researchspace.com/github/redirect_uri",
+              URL: "https://it.researchspace.com/github/redirect_uri",
               getElementById: () => ({ value: "oauth token" }),
             },
             addEventListener: (_: unknown, f: () => void) => {
@@ -415,7 +414,7 @@ describe("GitHub", () => {
   });
 
   describe("Removing repositories", () => {
-    test("Removing a repository should make the correct API call.", async () => {
+    it("Removing a repository should make the correct API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success: true,
@@ -459,7 +458,7 @@ describe("GitHub", () => {
         ).not.toBeInTheDocument();
       });
     });
-    test("Removing a repository should mutate the integration state being passed as a prop.", async () => {
+    it("Removing a repository should mutate the integration state being passed as a prop.", async () => {
       const integrationState = observable({
         mode: "DISABLED" as const,
         credentials: [

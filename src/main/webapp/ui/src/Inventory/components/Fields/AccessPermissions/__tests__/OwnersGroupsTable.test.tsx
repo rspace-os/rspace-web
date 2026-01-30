@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -21,7 +21,7 @@ beforeEach(() => {
 
 
 describe("OwnersGroupsTable", () => {
-  test("Each name should be a link to the groups page.", () => {
+  it("Each name should be a link to the groups page.", () => {
     render(
       <OwnersGroupsTable
         groups={[

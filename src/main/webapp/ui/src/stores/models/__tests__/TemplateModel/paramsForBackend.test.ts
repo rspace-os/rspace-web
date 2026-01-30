@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { makeMockTemplate } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
@@ -17,7 +17,7 @@ describe("computed: paramsForBackend", () => {
    * string.
    */
   describe("paramsForBackend should be JSON serialisable when", () => {
-    test("a Template exists.", () => {
+    it("a Template exists.", () => {
       const Template = makeMockTemplate();
       expect(JSON.stringify(Template.paramsForBackend)).toEqual(
         expect.any(String)

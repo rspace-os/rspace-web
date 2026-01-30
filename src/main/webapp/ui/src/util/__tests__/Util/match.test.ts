@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 
@@ -15,7 +15,7 @@ const stringMatcher: (str?: string | null) => number | null = match([
 
 describe("match util", () => {
   describe("When passed an array of options (pairs)", () => {
-    test("if input matches, then the paired output should be returned.", () => {
+    it("if input matches, then the paired output should be returned.", () => {
       expect(stringMatcher("one")).toStrictEqual(1);
       expect(stringMatcher("two")).toBeGreaterThan(1);
       expect(stringMatcher("")).toEqual(0);
@@ -24,7 +24,7 @@ describe("match util", () => {
     });
   });
 
-  test("Has the same short-circuit behaviour as logical OR.", () => {
+  it("Has the same short-circuit behaviour as logical OR.", () => {
     fc.assert(
       fc.property(fc.array<unknown>(fc.anything()), (list) => {
         const matcher = match<void, unknown>([

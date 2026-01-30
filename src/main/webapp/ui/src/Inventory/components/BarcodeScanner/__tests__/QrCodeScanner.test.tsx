@@ -1,7 +1,9 @@
 /*
  */
 import * as React from "react";
-import { render, screen } from "@testing-library/react";
+import {
+ render,
+ screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import "../../../../../__mocks__/barcode-detection-api";
 import QrCodeScanner from "../QrCodeScanner";
@@ -11,11 +13,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import {
   type Mock,
-  describe,
-  test,
-  expect,
-  vi,
-  beforeEach,
+ describe,
+ expect,
+ beforeEach,
+ it,
+ vi,
 } from "vitest";
 
 vi.mock("qr-scanner");
@@ -26,7 +28,7 @@ beforeEach(() => {
 
 
 describe("QrCodeScanner", () => {
-  test("Should scan correctly.", async () => {
+  it("Should scan correctly.", async () => {
     const user = userEvent.setup();
     const onScan = vi.fn() as Mock<void, [BarcodeInput]>;
 

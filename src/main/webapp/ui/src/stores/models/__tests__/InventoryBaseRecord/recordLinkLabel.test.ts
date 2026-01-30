@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import fc from "fast-check";
 import { makeMockSample } from "../SampleModel/mocking";
 import { makeMockBench, makeMockContainer } from "../ContainerModel/mocking";
@@ -27,11 +27,11 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 }));
 
 describe("computed: recordLinkLabel", () => {
-  test("Samples should always return their name.", () => {
+  it("Samples should always return their name.", () => {
     const sample = makeMockSample();
     expect(sample.recordLinkLabel).toBe(sample.name);
   });
-  test("Subsamples should always return their name.", () => {
+  it("Subsamples should always return their name.", () => {
     fc.assert(
       fc.property(subSampleAttrsArbitrary, (subSampleAttrs) => {
         const subsample = makeMockSubSample(subSampleAttrs);
@@ -39,12 +39,12 @@ describe("computed: recordLinkLabel", () => {
       })
     );
   });
-  test("Regular containers should always return their name.", () => {
+  it("Regular containers should always return their name.", () => {
     const container = makeMockContainer();
     expect(container.recordLinkLabel).toBe(container.name);
   });
 
-  test("A bench, where the current user is unknown, should show the owner's name.", () => {
+  it("A bench, where the current user is unknown, should show the owner's name.", () => {
     const bench = makeMockBench({
       owner: {
         ...personAttrs(),
@@ -55,13 +55,13 @@ describe("computed: recordLinkLabel", () => {
     });
     expect(bench.recordLinkLabel).toBe("Joe Bloggs's Bench");
   });
-  test("A bench, where the current user is the owner, should show 'My Bench'.", () => {
+  it("A bench, where the current user is the owner, should show 'My Bench'.", () => {
     const owner = personAttrs();
     const bench = makeMockBench({ owner });
     getRootStore().peopleStore.currentUser = new PersonModel(owner);
     expect(bench.recordLinkLabel).toBe("My Bench");
   });
-  test("A bench, where the current user is not the owner, should show the owner's name.", () => {
+  it("A bench, where the current user is not the owner, should show the owner's name.", () => {
     const bench = makeMockBench({
       owner: {
         ...personAttrs(),

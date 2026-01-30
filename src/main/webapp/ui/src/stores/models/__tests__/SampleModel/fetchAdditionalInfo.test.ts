@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { makeMockSample, sampleAttrs } from "./mocking";
 import { makeMockTemplate } from "../TemplateModel/mocking";
@@ -31,7 +31,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 }));
 
 describe("fetchAdditionalInfo", () => {
-  test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
+  it("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const template = makeMockTemplate();
     mockRootStore.searchStore.getTemplate.mockImplementation(() =>
       Promise.resolve(template)
@@ -67,7 +67,7 @@ describe("fetchAdditionalInfo", () => {
      */
     expect(sample.template).toEqual(template);
   });
-  test("Calls made on a sample without a template should resolve.", async () => {
+  it("Calls made on a sample without a template should resolve.", async () => {
     const sample = makeMockSample();
     // @ts-expect-error Mock implementation return type incompatibility
     vi.spyOn(InvApiService, "query").mockImplementation(() =>

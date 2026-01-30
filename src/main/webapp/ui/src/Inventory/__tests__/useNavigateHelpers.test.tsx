@@ -2,11 +2,11 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
   beforeAll,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -58,7 +58,7 @@ beforeEach(() => {
 
 describe("useNavigateHelpers", () => {
   describe("navigateToRecord should", () => {
-    test("call setActiveResult", async () => {
+    it("call setActiveResult", async () => {
       const user = userEvent.setup();
       const mockContainer = makeMockContainer({
         parentContainers: [containerAttrs({ globalId: "IC2" })],
@@ -95,7 +95,7 @@ describe("useNavigateHelpers", () => {
   });
 
   describe("navigateToSearch should", () => {
-    test("not call setActiveResult", async () => {
+    it("not call setActiveResult", async () => {
       const user = userEvent.setup();
       const mockSearchParams = { query: "foo" } as const;
       const FunctionComponent = () => {

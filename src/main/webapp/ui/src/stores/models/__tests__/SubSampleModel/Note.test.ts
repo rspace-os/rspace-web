@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { type Note } from "../../SubSampleModel";
 
 vi.mock("../../../use-stores", () => () => {});
@@ -13,7 +13,7 @@ describe("type: Note", () => {
    * Objects of the type Note are passed to API calls when creating notes and
    * as such must be JSON serialisable.
    */
-  test("Is JSON serialisable.", () => {
+  it("Is JSON serialisable.", () => {
     const aNote: Note = {
       createdBy: {
         firstName: "Joe",

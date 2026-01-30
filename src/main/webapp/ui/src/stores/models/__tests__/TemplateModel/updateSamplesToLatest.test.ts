@@ -3,10 +3,10 @@
 
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import { makeMockTemplate } from "./mocking";
 import { sampleAttrs } from "../SampleModel/mocking";
@@ -77,7 +77,7 @@ describe("action: updateSampleToLatest", () => {
           })
       );
     });
-    test("Be two toasts, detailing the error and the success.", async () => {
+    it("Be two toasts, detailing the error and the success.", async () => {
       const addAlertSpy = vi.spyOn(getRootStore().uiStore, "addAlert");
       const template = makeMockTemplate();
       await template.updateSamplesToLatest();

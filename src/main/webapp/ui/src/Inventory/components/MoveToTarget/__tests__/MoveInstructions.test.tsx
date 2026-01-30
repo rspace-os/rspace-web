@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -50,7 +50,7 @@ vi.mock("../../../../common/InvApiService", () => ({
   }}));
 
 describe("MoveInstructions", () => {
-  test("Visual container without locations image", async () => {
+  it("Visual container without locations image", async () => {
     const search = new Search({
       factory: mockFactory(),
     });
@@ -79,7 +79,7 @@ describe("MoveInstructions", () => {
     );
   });
 
-  test("Visual container with locations image but without locations", async () => {
+  it("Visual container with locations image but without locations", async () => {
     const search = new Search({
       factory: mockFactory(),
     });

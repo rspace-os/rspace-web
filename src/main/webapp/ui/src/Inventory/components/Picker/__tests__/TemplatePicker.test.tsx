@@ -1,7 +1,10 @@
 /*
  */
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import {
+ render,
+ screen,
+ waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import InvApiService from "../../../../common/InvApiService";
 import TemplatePicker from "../TemplatePicker";
@@ -16,11 +19,11 @@ import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
 import {
   type Mock,
-  describe,
-  test,
-  expect,
-  vi,
-  beforeEach,
+ describe,
+ expect,
+ beforeEach,
+ it,
+ vi,
 } from "vitest";
 
 vi.mock("../../../../common/InvApiService", () => ({
@@ -78,7 +81,7 @@ beforeEach(() => {
 
 describe("TemplatePicker", () => {
   describe("Should support saved searches", () => {
-    test("Tapping a saved search should change the templates listed", async () => {
+    it("Tapping a saved search should change the templates listed", async () => {
       const user = userEvent.setup();
       const rootStore = makeMockRootStore({
         searchStore: {

@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import "../../../__mocks__/matchMedia";
 import React,
@@ -139,7 +139,7 @@ function renderExportDialog({
 
 describe("ExportDialog", () => {
   mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
-  test("Should be renderable", () => {
+  it("Should be renderable", () => {
     render(
       <ExportDialog
         exportSelection={{
@@ -158,7 +158,7 @@ describe("ExportDialog", () => {
 
   describe("Validations should be enforced.", () => {
     describe("Exporting with filestores links", () => {
-      test("but without being logged in should show a warning.", async () => {
+      it("but without being logged in should show a warning.", async () => {
         const user = userEvent.setup();
         mockAxios
           .onPost("/nfsExport/ajax/createQuickExportPlan")
@@ -218,7 +218,7 @@ describe("ExportDialog", () => {
         });
       });
 
-      test("but without scanning should show a warning.", async () => {
+      it("but without scanning should show a warning.", async () => {
         const user = userEvent.setup();
         /*
          * Here, we're setting loggedAs on the mocked samba file system because
@@ -301,7 +301,7 @@ describe("ExportDialog", () => {
 
   describe("Controlled vocabulary terms", () => {
     // passes on its own, fails when run together
-    test("Tags should be pre-populated from the tags on the documents", async () => {
+    it("Tags should be pre-populated from the tags on the documents", async () => {
       const user = userEvent.setup();
       mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, [
         {
@@ -375,7 +375,7 @@ describe("ExportDialog", () => {
         200,
         "Your export generation request has been submitted to the server. RSpace will notify you when the export is ready."
       );
-    test("allVersions is set by the version switch.", async () => {
+    it("allVersions is set by the version switch.", async () => {
       const user = userEvent.setup();
       await fc.assert(
         fc
@@ -436,7 +436,7 @@ describe("ExportDialog", () => {
         { numRuns: 1 }
       );
     });
-    test("Default page size checkbox should be sent.", async () => {
+    it("Default page size checkbox should be sent.", async () => {
       mockAxios
         .onGet("/export/ajax/defaultPDFConfig")
         .reply(200, { data: { pageSize: "A4" } });
@@ -492,7 +492,7 @@ describe("ExportDialog", () => {
         .onGet("/export/ajax/defaultPDFConfig")
         .reply(200, { data: { pageSize: "A4" } });
       describe("When the selected export type is PDF", () => {
-        test("and the selection is a set of documents.", async () => {
+        it("and the selection is a set of documents.", async () => {
           const user = userEvent.setup();
           await fc.assert(
             fc
@@ -523,7 +523,7 @@ describe("ExportDialog", () => {
             { numRuns: 1 }
           );
         });
-        test("and the selection is a group.", async () => {
+        it("and the selection is a group.", async () => {
           const user = userEvent.setup();
           await fc.assert(
             fc
@@ -547,7 +547,7 @@ describe("ExportDialog", () => {
             { numRuns: 1 }
           );
         });
-        test("and the selection is a user.", async () => {
+        it("and the selection is a user.", async () => {
           const user = userEvent.setup();
           await fc.assert(
             fc
@@ -573,7 +573,7 @@ describe("ExportDialog", () => {
         });
       });
       describe("When the selected export type is DOC", () => {
-        test("and the selection is a single document.", async () => {
+        it("and the selection is a single document.", async () => {
           const user = userEvent.setup();
           mockAxios
             .onGet("deploymentproperties/ajax/property")
@@ -614,7 +614,7 @@ describe("ExportDialog", () => {
       });
     });
     describe("The page size displayed on the second page should be set by a call to /defaultPDFConfig", () => {
-      test.each(["A4", "LETTER"])(
+      it.each(["A4", "LETTER"])(
         "PDF export: pageSize = %s",
         async (pageSize) => {
         const user = userEvent.setup();
@@ -649,7 +649,7 @@ describe("ExportDialog", () => {
         );
       }
       );
-      test.each(["A4", "LETTER"])(
+      it.each(["A4", "LETTER"])(
         "DOC export: pageSize = %s",
         async (pageSize) => {
         const user = userEvent.setup();

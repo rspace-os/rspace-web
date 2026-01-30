@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -103,7 +103,7 @@ describe("LocationImageField", () => {
    * has been upload, the UI should help the user upload an image.
    */
   describe("When there is no locations image there should", () => {
-    test("be some help text.", () => {
+    it("be some help text.", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={mockRootStore()[0]}>
@@ -122,7 +122,7 @@ describe("LocationImageField", () => {
       );
     });
 
-    test("be a button labelled 'Edit Locations' that can't be tapped.", () => {
+    it("be a button labelled 'Edit Locations' that can't be tapped.", () => {
       const rootStore = mockRootStore()[0];
 
       render(
@@ -148,7 +148,7 @@ describe("LocationImageField", () => {
    * have a preview image.
    */
   describe("When an image is uploaded or edited there should", () => {
-    test("be a call to setImage.", () => {
+    it("be a call to setImage.", () => {
       const rootStore = mockRootStore()[0];
       const setImageSpy = vi.spyOn(
         rootStore.searchStore.activeResult! as any,
@@ -181,7 +181,7 @@ describe("LocationImageField", () => {
       );
     });
 
-    test("be an alert to update the preview image, if the container doesn't have a preview image.", () => {
+    it("be an alert to update the preview image, if the container doesn't have a preview image.", () => {
       const rootStore = mockRootStore()[0];
       const addScopedToastSpy = vi.spyOn(
         rootStore.searchStore.activeResult! as any,
@@ -220,7 +220,7 @@ describe("LocationImageField", () => {
       expect(setImageSpy).toHaveBeenCalledWith("image", expect.any(String));
     });
 
-    test("not be an alert, if the container already has a preview image.", () => {
+    it("not be an alert, if the container already has a preview image.", () => {
       const [rootStore, container] = mockRootStore();
       vi.spyOn(
         rootStore.searchStore.activeResult! as any,
@@ -251,7 +251,7 @@ describe("LocationImageField", () => {
   });
 
   describe("When a visual container has a locationsImage there should", () => {
-    test("be a button labelled 'Edit Locations' that can be tapped.", () => {
+    it("be a button labelled 'Edit Locations' that can be tapped.", () => {
       const [rootStore, container] = mockRootStore();
       container.locationsImage = "someImage";
 
@@ -272,7 +272,7 @@ describe("LocationImageField", () => {
   });
 
   describe("When a visual container has a locationsImage but no markers there should", () => {
-    test("be some help text.", () => {
+    it("be some help text.", () => {
       const [rootStore, container] = mockRootStore();
       container.locationsImage = "someImage";
       container.locationsCount = 0;
@@ -301,7 +301,7 @@ describe("LocationImageField", () => {
    * dialog to provide markers as to where items are located in the image.
    */
   describe("When the 'Edit Locations' button is tapped there should", () => {
-    test("be a LocationsImageMarkersDialog that opens.", async () => {
+    it("be a LocationsImageMarkersDialog that opens.", async () => {
       const user = userEvent.setup();
       const [rootStore, container] = mockRootStore();
       container.locationsImage = "someImage";
@@ -324,7 +324,7 @@ describe("LocationImageField", () => {
   });
 
   describe('When the "Close" button inside the LocationsImageMarkersDialog is tapped', () => {
-    test("The dialog should close.", async () => {
+    it("The dialog should close.", async () => {
       const user = userEvent.setup();
       const [rootStore, container] = mockRootStore({
         trackingStore: {

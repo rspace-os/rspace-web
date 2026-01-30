@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -31,7 +31,7 @@ beforeEach(() => {
 
 describe("AdjustableCell", () => {
   describe("Location", () => {
-    test("render a TopLink component when passed a root level container.", () => {
+    it("render a TopLink component when passed a root level container.", () => {
       const adjustableTableRow: AdjustableTableRow<"foo"> = {
         adjustableTableOptions() {
           return new Map<"foo", () => CellContent>([

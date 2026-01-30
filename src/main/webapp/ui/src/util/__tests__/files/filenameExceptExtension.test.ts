@@ -1,23 +1,23 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { filenameExceptExtension } from "../../files";
 
 describe("filenameExceptExtension", () => {
-  test('filenameExceptExtension("testing.txt") === "testing"', () => {
+  it('filenameExceptExtension("testing.txt") === "testing"', () => {
     expect(filenameExceptExtension("testing.txt")).toBe("testing");
   });
 
-  test('filenameExceptExtension("testing.md") === "testing"', () => {
+  it('filenameExceptExtension("testing.md") === "testing"', () => {
     expect(filenameExceptExtension("testing.md")).toBe("testing");
   });
 
-  test('filenameExceptExtension("testing") === "testing"', () => {
+  it('filenameExceptExtension("testing") === "testing"', () => {
     expect(filenameExceptExtension("testing")).toBe("testing");
   });
 
-  test('filenameExceptExtension("testing.js.flow") === "testing.js"', () => {
+  it('filenameExceptExtension("testing.js.flow") === "testing.js"', () => {
     expect(filenameExceptExtension("testing.js.flow")).toBe("testing.js");
   });
 });

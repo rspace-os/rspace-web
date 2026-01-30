@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { ExistingAttachment } from "../../AttachmentModel";
 import ApiService from "../../../../common/InvApiService";
@@ -11,7 +11,7 @@ vi.mock("../../../stores/RootStore", () => ({
 })); // break import cycle
 
 describe("getFile", () => {
-  test("Should memoise the result, i.e. only fetch the file once.", async () => {
+  it("Should memoise the result, i.e. only fetch the file once.", async () => {
     const attachment = new ExistingAttachment(
       {
         id: 1,

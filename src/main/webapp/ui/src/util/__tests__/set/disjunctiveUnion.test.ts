@@ -1,11 +1,11 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet } from "./helpers";
 import RsSet from "../../set";
 
 describe("disjunctiveUnion", () => {
-  test("Involution", () => {
+  it("Involution", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), arbRsSet(fc.anything())),
@@ -17,7 +17,7 @@ describe("disjunctiveUnion", () => {
       )
     );
   });
-  test("Commutativity", () => {
+  it("Commutativity", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), arbRsSet(fc.anything())),
@@ -29,14 +29,14 @@ describe("disjunctiveUnion", () => {
       )
     );
   });
-  test("The empty set is the identity element", () => {
+  it("The empty set is the identity element", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
         expect(set.disjunctiveUnion(new RsSet()).isSame(set)).toBe(true);
       })
     );
   });
-  test("if B is a subset of A, then the disjunctive union of A and B will be the same as A subtract B", () => {
+  it("if B is a subset of A, then the disjunctive union of A and B will be the same as A subtract B", () => {
     fc.assert(
       fc.property(
         fc

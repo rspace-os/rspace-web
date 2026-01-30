@@ -1,15 +1,17 @@
 /*
  */
 import "@testing-library/jest-dom/vitest";
-import { makeMockSubSample, subsampleAttrs } from "./mocking";
+import {
+ makeMockSubSample,
+ subsampleAttrs } from "./mocking";
 import { sampleAttrs } from "../SampleModel/mocking";
 import InvApiService from "../../../../common/InvApiService";
 import {
   type SpyInstance,
-  describe,
-  test,
-  expect,
-  vi,
+ describe,
+ expect,
+ it,
+ vi,
 } from "vitest";
 
 vi.mock("../../../../common/InvApiService", () => ({
@@ -34,7 +36,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 }));
 
 describe("fetchAdditionalInfo", () => {
-  test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
+  it("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const subsample = makeMockSubSample();
     (vi.spyOn(InvApiService, "query") as SpyInstance).mockImplementation(
       () =>

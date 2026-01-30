@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -33,7 +33,7 @@ beforeEach(() => {
 
 
 describe("Table Listing", () => {
-  test("Usage should be shown in human-readable format", async () => {
+  it("Usage should be shown in human-readable format", async () => {
     mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
 
     mockAxios

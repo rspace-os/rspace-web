@@ -3,9 +3,8 @@
 
 import {
   describe,
-  it,
-  test,
   expect,
+  it,
   vi,
 } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -95,7 +94,7 @@ describe("Export Tests", () => {
   });
 
   describe("ExportDialog with selected results", () => {
-    test("renders, has radio options (and help text) for samples", () => {
+    it("renders, has radio options (and help text) for samples", () => {
       render(
         <storesContext.Provider
           value={makeMockRootStore({
@@ -122,7 +121,7 @@ describe("Export Tests", () => {
       expect(screen.getAllByText(defaultSamplesHint)[0]).toBeInTheDocument();
     });
 
-    test("renders, has radio options for exportMode, samples and containers", () => {
+    it("renders, has radio options for exportMode, samples and containers", () => {
       render(
         <storesContext.Provider
           value={makeMockRootStore({

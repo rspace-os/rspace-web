@@ -1,10 +1,10 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { stripDiacritics } from "../../StringUtils";
 
 describe("stripDiacritics", () => {
-  test("Example", () => {
+  it("Example", () => {
     expect(stripDiacritics("Zoë")).toEqual("Zoe");
   });
 });

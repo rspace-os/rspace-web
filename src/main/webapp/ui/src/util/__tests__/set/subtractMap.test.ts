@@ -1,11 +1,11 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import RsSet from "../../set";
 import { arbitraryMappableSets } from "./helpers";
 
 describe("subtractMap", () => {
-  test("Idempotence", () => {
+  it("Idempotence", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA, setB]) => {
         expect(
@@ -17,14 +17,14 @@ describe("subtractMap", () => {
       })
     );
   });
-  test("The empty set is the identity element", () => {
+  it("The empty set is the identity element", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA]) => {
         expect(setA.subtractMap(mapFn, new RsSet()).isSame(setA)).toBe(true);
       })
     );
   });
-  test("The result is a subset of the minuend (first argument)", () => {
+  it("The result is a subset of the minuend (first argument)", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA, setB]) => {
         expect(setA.subtractMap(mapFn, setB.map(mapFn)).isSubsetOf(setA)).toBe(
@@ -33,7 +33,7 @@ describe("subtractMap", () => {
       })
     );
   });
-  test("The intersection of result and subtrahend (section argument) is the empty set", () => {
+  it("The intersection of result and subtrahend (section argument) is the empty set", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA, setB]) => {
         expect(

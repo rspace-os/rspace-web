@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import * as React from "react";
 import {
@@ -42,7 +42,7 @@ beforeEach(() => {
 
 describe("Card", () => {
   describe("When the passed record has been deleted,", () => {
-    test("the card's name should be crossed through.", () => {
+    it("the card's name should be crossed through.", () => {
       const mockContainer = makeMockContainer({
         owner: personAttrs(),
       });

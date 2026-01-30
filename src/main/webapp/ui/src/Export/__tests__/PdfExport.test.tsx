@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -22,7 +22,7 @@ beforeEach(() => {
 
 
 describe("PdfExport", () => {
-  test("Toggling a switch should set a boolean value.", () => {
+  it("Toggling a switch should set a boolean value.", () => {
     const updateExportDetails: (key: string, exportDetail: unknown) => void =
       vi.fn();
 

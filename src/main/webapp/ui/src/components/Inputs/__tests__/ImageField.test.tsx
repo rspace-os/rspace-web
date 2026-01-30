@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -68,7 +68,7 @@ describe("ImageField", () => {
         __setIsMobile(true);
       });
 
-      test("be a camera icon shown.", () => {
+      it("be a camera icon shown.", () => {
         render(
           <ImageField
             storeImage={() => {}}
@@ -86,7 +86,7 @@ describe("ImageField", () => {
         __setIsMobile(false);
       });
 
-      test("be an image icon shown.", () => {
+      it("be an image icon shown.", () => {
         render(
           <ImageField
             storeImage={() => {}}
@@ -104,7 +104,7 @@ describe("ImageField", () => {
    * Tapping 'Edit Image' should open the image editor
    */
   describe("When the 'Edit Image' button is tapped there should", () => {
-    test("be a DynamicallyLoadedImageEditor that opens.", async () => {
+    it("be a DynamicallyLoadedImageEditor that opens.", async () => {
       const user = userEvent.setup();
       render(
         <ImageField

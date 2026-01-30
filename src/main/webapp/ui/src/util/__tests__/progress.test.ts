@@ -1,9 +1,9 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { calculateProgress, asPercentageString } from "../progress";
 import fc from "fast-check";
 
 describe("progress", () => {
-  test("When progress made is 0, the percentage string should be 0%.", () => {
+  it("When progress made is 0, the percentage string should be 0%.", () => {
     fc.assert(
       fc.property(fc.nat(), (total) => {
         fc.pre(total > 0);
@@ -13,7 +13,7 @@ describe("progress", () => {
     );
   });
 
-  test("When progress made is the same as the total, the percentage string should be 100%.", () => {
+  it("When progress made is the same as the total, the percentage string should be 100%.", () => {
     fc.assert(
       fc.property(fc.nat(), (total) => {
         fc.pre(total > 0);
@@ -26,7 +26,7 @@ describe("progress", () => {
     );
   });
 
-  test("When progress made is half the total, the percentage string should be 50%.", () => {
+  it("When progress made is half the total, the percentage string should be 50%.", () => {
     fc.assert(
       fc.property(fc.nat(), (progressMade) => {
         fc.pre(progressMade > 0);

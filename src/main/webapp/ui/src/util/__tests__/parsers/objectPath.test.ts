@@ -1,17 +1,17 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { objectPath } from "../../parsers";
 import Result from "../../result";
 import "@testing-library/jest-dom/vitest";
 
 describe("objectPath", () => {
-  test("Recursive example", () => {
+  it("Recursive example", () => {
     objectPath(["foo", "bar"], { foo: { bar: 3 } }).do((value) =>
       expect(value).toBe(3)
     );
   });
-  test("Error case from missing property", () => {
+  it("Error case from missing property", () => {
     objectPath(["foo", "bar"], { foo: {} })
       .orElseTry(([error]) => {
         expect(error.message).toBe("key 'bar' is missing");
@@ -21,7 +21,7 @@ describe("objectPath", () => {
         throw new Error("Should fail");
       });
   });
-  test("Error case from null", () => {
+  it("Error case from null", () => {
     objectPath(["foo", "bar"], { foo: null })
       .orElseTry(([error]) => {
         expect(error.message).toBe("Is null");
@@ -31,7 +31,7 @@ describe("objectPath", () => {
         throw new Error("Should fail");
       });
   });
-  test("Error case from not being an object", () => {
+  it("Error case from not being an object", () => {
     objectPath(["foo", "bar"], { foo: 3 })
       .orElseTry(([error]) => {
         expect(error.message).toBe("Not an object");

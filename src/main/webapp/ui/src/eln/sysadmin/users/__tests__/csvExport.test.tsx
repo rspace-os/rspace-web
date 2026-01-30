@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -38,7 +38,7 @@ beforeEach(() => {
 
 describe("CSV Export", () => {
   describe("Selection", () => {
-    test("When no rows are selected, every row of the current page should be included in the export.", async () => {
+    it("When no rows are selected, every row of the current page should be included in the export.", async () => {
       const user = userEvent.setup();
       let blob: Blob | undefined;
       const createObjectURL = vi.fn().mockImplementation((b: Blob) => {
@@ -79,7 +79,7 @@ describe("CSV Export", () => {
       expect((await blob.text()).split("\n").length).toBe(11);
     });
 
-    test("When one rows is selected, just it should be included in the csv export.", async () => {
+    it("When one rows is selected, just it should be included in the csv export.", async () => {
       const user = userEvent.setup();
       let blob: Blob | undefined;
       const createObjectURL = vi.fn().mockImplementation((b: Blob) => {
@@ -127,7 +127,7 @@ describe("CSV Export", () => {
     });
   });
   describe("Column", () => {
-    test("All of the columns should be included in the CSV file.", async () => {
+    it("All of the columns should be included in the CSV file.", async () => {
       const user = userEvent.setup();
       let blob: Blob | undefined;
       const createObjectURL = vi.fn().mockImplementation((b: Blob) => {
@@ -181,7 +181,7 @@ describe("CSV Export", () => {
         numberOfColumns,
       );
     });
-    test("The usage column should be a precise number.", async () => {
+    it("The usage column should be a precise number.", async () => {
       const user = userEvent.setup();
       let blob: Blob | undefined;
       const createObjectURL = vi.fn().mockImplementation((b: Blob) => {

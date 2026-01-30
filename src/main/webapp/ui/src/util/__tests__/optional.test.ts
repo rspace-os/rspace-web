@@ -1,7 +1,7 @@
 /*
  */
 //@flow
-import { describe, it, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import fc, { type Arbitrary } from "fast-check";
 import { Optional } from "../optional";
 
@@ -20,14 +20,14 @@ describe("optional", () => {
    * see https://en.wikipedia.org/wiki/Functor_(functional_programming)
    */
   describe("functor laws", () => {
-    test("Mapping with identity function does nothing", () => {
+    it("Mapping with identity function does nothing", () => {
       fc.assert(
         fc.property(arbOptional(fc.anything()), (opt) => {
           expect(opt.map((x) => x)).toEqual(opt);
         })
       );
     });
-    test("Mapping once with two functions is the same as mapping with each separately", () => {
+    it("Mapping once with two functions is the same as mapping with each separately", () => {
       fc.assert(
         fc.property(
           arbOptional(fc.anything()),
@@ -50,7 +50,7 @@ describe("optional", () => {
    * https://en.wikipedia.org/wiki/Monad_(functional_programming)
    */
   describe("monad laws", () => {
-    test("Left identity", () => {
+    it("Left identity", () => {
       fc.assert(
         fc.property(
           fc.anything(),
@@ -63,14 +63,14 @@ describe("optional", () => {
         )
       );
     });
-    test("Right identity", () => {
+    it("Right identity", () => {
       fc.assert(
         fc.property(arbOptional(fc.anything()), (opt) => {
           expect(opt.flatMap((x) => Optional.present(x))).toEqual(opt);
         })
       );
     });
-    test("Associativity", () => {
+    it("Associativity", () => {
       fc.assert(
         fc.property(
           arbOptional(fc.anything()),

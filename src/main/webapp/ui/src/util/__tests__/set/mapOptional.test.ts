@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet } from "./helpers";
@@ -11,7 +11,7 @@ const presentIfTrue =
     f(x) ? Optional.present(x) : Optional.empty();
 
 describe("mapOptional", () => {
-  test("Idempotence", () => {
+  it("Idempotence", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), fc.func(fc.boolean())),
@@ -27,7 +27,7 @@ describe("mapOptional", () => {
     );
   });
 
-  test("A function that always returns Optional.empty will always result in an empty set.", () => {
+  it("A function that always returns Optional.empty will always result in an empty set.", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
         expect(set.mapOptional(() => Optional.empty<unknown>()).size).toEqual(
@@ -37,7 +37,7 @@ describe("mapOptional", () => {
     );
   });
 
-  test("A function that always returns Optional.present will always result in an unchanged set.", () => {
+  it("A function that always returns Optional.present will always result in an unchanged set.", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
         expect(set.mapOptional((x) => Optional.present(x)).size).toEqual(
@@ -47,7 +47,7 @@ describe("mapOptional", () => {
     );
   });
 
-  test("Empty set in, empty set out", () => {
+  it("Empty set in, empty set out", () => {
     fc.assert(
       fc.property(
         fc.constantFrom(
@@ -61,7 +61,7 @@ describe("mapOptional", () => {
     );
   });
 
-  test("Set before is superset of set after mapOptional i.e. size is less than or equal after", () => {
+  it("Set before is superset of set after mapOptional i.e. size is less than or equal after", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), fc.func(fc.boolean())),

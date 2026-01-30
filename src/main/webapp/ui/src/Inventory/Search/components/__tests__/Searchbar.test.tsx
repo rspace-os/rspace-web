@@ -2,11 +2,10 @@
  */
 import {
   describe,
-  it,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -31,7 +30,7 @@ beforeEach(() => {
 
 
 describe("Searchbar", () => {
-  test("If lots of text is entered then the expanded field dialog it available.", () => {
+  it("If lots of text is entered then the expanded field dialog it available.", () => {
     const handleSearch = vi.fn<void, [string]>();
     const search = new Search({
       factory: mockFactory(),
@@ -62,7 +61,7 @@ describe("Searchbar", () => {
     expect(handleSearch).toHaveBeenCalled();
   });
 
-  test("When the query search parameter changes, the new value should be shown.", () => {
+  it("When the query search parameter changes, the new value should be shown.", () => {
     const search = new Search({
       factory: mockFactory(),
     });

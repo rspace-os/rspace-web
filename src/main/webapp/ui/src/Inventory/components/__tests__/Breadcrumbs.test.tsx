@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -32,7 +32,7 @@ beforeEach(() => {
 
 describe("Breadcrumbs", () => {
   describe("When the passed record is deleted", () => {
-    test("In Trash should be shown.", () => {
+    it("In Trash should be shown.", () => {
       const subsample = makeMockSubSample({
         deleted: true,
       });

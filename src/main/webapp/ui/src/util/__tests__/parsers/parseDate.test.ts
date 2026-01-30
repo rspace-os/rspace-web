@@ -1,12 +1,12 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { parseDate } from "../../parsers";
 import fc from "fast-check";
 
 describe("parseDate", () => {
-  test("Pareses ISO timestamp", () => {
+  it("Pareses ISO timestamp", () => {
     fc.assert(
       fc.property(fc.date({ noInvalidDate: true }), (d) => {
         expect(
@@ -18,7 +18,7 @@ describe("parseDate", () => {
     );
   });
 
-  test("Parses YYYY-MM-DD", () => {
+  it("Parses YYYY-MM-DD", () => {
     const input = "2021-02-02";
     const d = parseDate(input).orElseGet(([e]) => {
       throw e;
@@ -28,7 +28,7 @@ describe("parseDate", () => {
     expect(d.getDay()).toEqual(2);
   });
 
-  test("Parsers UNIX timestamp", () => {
+  it("Parsers UNIX timestamp", () => {
     const input = new Date();
     const d = parseDate(Math.floor(input.getTime())).elseThrow();
     expect(d.getFullYear()).toEqual(input.getFullYear());
@@ -36,7 +36,7 @@ describe("parseDate", () => {
     expect(d.getDay()).toEqual(input.getDay());
   });
 
-  test("Fails on invalid dates", () => {
+  it("Fails on invalid dates", () => {
     const input = "2021-13-02T00:00:00.000Z";
     const d = parseDate(input);
     d.mapError(([e]) => {

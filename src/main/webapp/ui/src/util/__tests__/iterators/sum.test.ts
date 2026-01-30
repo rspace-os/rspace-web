@@ -1,14 +1,14 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { sum } from "../../iterators";
 
 describe("sum", () => {
-  test("Works on arrays", () => {
+  it("Works on arrays", () => {
     expect(sum([1, 2, 3])).toBe(6);
   });
 
-  test("Works on sets", () => {
+  it("Works on sets", () => {
     expect(sum(new Set([1, 2, 3]))).toBe(6);
   });
 });

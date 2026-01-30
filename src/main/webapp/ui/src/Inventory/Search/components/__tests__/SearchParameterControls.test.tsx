@@ -1,7 +1,9 @@
 /*
  */
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import {
+ render,
+ screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
@@ -15,11 +17,11 @@ import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 import {
   type Mock,
-  describe,
-  test,
-  expect,
-  vi,
-  beforeEach,
+ describe,
+ expect,
+ beforeEach,
+ it,
+ vi,
 } from "vitest";
 
 vi.mock("../../../../common/InvApiService", () => ({
@@ -62,7 +64,7 @@ beforeEach(() => {
 
 describe("SearchParameterControls", () => {
   describe("Saved searches controls", () => {
-    test("If the search disallows a particular record type, saved searches with that type filter should be disabled.", async () => {
+    it("If the search disallows a particular record type, saved searches with that type filter should be disabled.", async () => {
       const user = userEvent.setup();
       const rootStore = makeMockRootStore({
         searchStore: {

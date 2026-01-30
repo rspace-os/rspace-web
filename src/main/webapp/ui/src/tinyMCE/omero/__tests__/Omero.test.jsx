@@ -1,6 +1,6 @@
 /*
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, expect, beforeEach, it, vi } from "vitest";
 vi.mock("@/common/axios", async () => {
   const actual = await vi.importActual("axios");
   const instance = actual.default?.create

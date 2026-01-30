@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -37,7 +37,7 @@ describe("FileField", () => {
    * general help.
    */
   describe("When passed a warningAlert there should", () => {
-    test("be an Alert on the page.", () => {
+    it("be an Alert on the page.", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <FileField

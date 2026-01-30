@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -24,7 +24,7 @@ beforeEach(() => {
 
 
 describe("RemoveButton", () => {
-  test("Should invoke onClick when clicked.", async () => {
+  it("Should invoke onClick when clicked.", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
     render(
@@ -38,7 +38,7 @@ describe("RemoveButton", () => {
     expect(onClick).toHaveBeenCalled();
   });
 
-  test('Has default tooltip "Delete"', () => {
+  it('Has default tooltip "Delete"', () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <RemoveButton />

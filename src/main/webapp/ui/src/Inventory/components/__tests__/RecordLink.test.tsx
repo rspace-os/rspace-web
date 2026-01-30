@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -30,7 +30,7 @@ beforeEach(() => {
 
 
 describe("RecordLink", () => {
-  test("Clicking a link to a bench should show the search results.", async () => {
+  it("Clicking a link to a bench should show the search results.", async () => {
     const user = userEvent.setup();
     const rootStore = makeMockRootStore({
       uiStore: {
@@ -52,7 +52,7 @@ describe("RecordLink", () => {
     await user.click(screen.getByRole("link", { name: /User User's Bench/ }));
     expect(spy).toHaveBeenCalledWith("left");
   });
-  test("Clicking a link to a container should show the container's details.", async () => {
+  it("Clicking a link to a container should show the container's details.", async () => {
     const user = userEvent.setup();
     const rootStore = makeMockRootStore({
       uiStore: {

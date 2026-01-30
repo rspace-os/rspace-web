@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -25,7 +25,7 @@ beforeEach(() => {
 
 
 describe("SubmitSpinnerButton", () => {
-  test("When the button is tapped, onClick should be called.", () => {
+  it("When the button is tapped, onClick should be called.", () => {
     const onClick = vi.fn();
 
     render(
@@ -44,7 +44,7 @@ describe("SubmitSpinnerButton", () => {
     expect(onClick).toHaveBeenCalled();
   });
 
-  test("When the button is disabled and tapped, onClick should not be called.", () => {
+  it("When the button is disabled and tapped, onClick should not be called.", () => {
     const onClick = vi.fn();
 
     render(
@@ -63,7 +63,7 @@ describe("SubmitSpinnerButton", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  test("When progress is set, the progress bar should have correct aria attributes.", () => {
+  it("When progress is set, the progress bar should have correct aria attributes.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <SubmitSpinnerButton
@@ -90,7 +90,7 @@ describe("SubmitSpinnerButton", () => {
     );
   });
 
-  test("When loading is not set, the label should be shown.", () => {
+  it("When loading is not set, the label should be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <SubmitSpinnerButton
@@ -106,7 +106,7 @@ describe("SubmitSpinnerButton", () => {
     expect(screen.getByText("foo")).toBeVisible();
   });
 
-  test("When loading is set, the label should not be shown.", () => {
+  it("When loading is set, the label should not be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <SubmitSpinnerButton

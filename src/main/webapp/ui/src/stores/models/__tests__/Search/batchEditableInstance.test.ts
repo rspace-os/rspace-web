@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import Search from "../../Search";
@@ -16,7 +16,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 
 describe("batchEditableInstance", () => {
   describe("Submittable", () => {
-    test("CurrentlyEditableFields is checked.", async () => {
+    it("CurrentlyEditableFields is checked.", async () => {
       const search = new Search({
         factory: mockFactory(),
       });

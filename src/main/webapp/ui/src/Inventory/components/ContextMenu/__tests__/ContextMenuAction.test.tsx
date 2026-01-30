@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -38,7 +38,7 @@ function InnerComponent() {
 }
 
 describe("ContextMenuAction", () => {
-  test("When as a menuitem, keyDown events should not propagated through ContextMenuAction", async () => {
+  it("When as a menuitem, keyDown events should not propagated through ContextMenuAction", async () => {
     const onKeyDown = vi.fn();
     render(
       <OuterComponent onKeyDown={onKeyDown}>
@@ -61,7 +61,7 @@ describe("ContextMenuAction", () => {
   });
 
   describe("Disabled state", () => {
-    test("When disabled, should render aria-disabled.", () => {
+    it("When disabled, should render aria-disabled.", () => {
       fc.assert(
         fc.property(fc.string(), (disabledHelp) => {
           cleanup();

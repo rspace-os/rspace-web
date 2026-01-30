@@ -1,9 +1,9 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import fc from "fast-check";
 import { isUrl } from "../../Util";
 
 describe("isUrl", () => {
-  test("When passed any url, isUrl should return true.", () => {
+  it("When passed any url, isUrl should return true.", () => {
     fc.assert(
       fc.property(fc.webUrl(), (url) => {
         expect(isUrl(url)).toBe(true);

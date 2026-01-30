@@ -2,9 +2,9 @@
  */
 import {
   describe,
-  test,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import "../../../../__mocks__/matchMedia";
 import * as React from "react";
@@ -35,7 +35,7 @@ beforeEach(() => {
 
 describe("Results Table", () => {
   describe("Pagination", () => {
-    test('When there are fewer items than the page size, the page size menu should show the count as "ALL"', async () => {
+    it('When there are fewer items than the page size, the page size menu should show the count as "ALL"', async () => {
       const search = new Search({
         factory: new MemoisedFactory(),
       });

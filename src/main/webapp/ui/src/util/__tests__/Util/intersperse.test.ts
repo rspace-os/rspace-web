@@ -1,11 +1,11 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import * as ArrayUtils from "../../ArrayUtils";
 
 describe("intersperse", () => {
-  test("Simple example", () => {
+  it("Simple example", () => {
     expect(ArrayUtils.intersperse(", ", ["foo", "bar"])).toEqual([
       "foo",
       ", ",

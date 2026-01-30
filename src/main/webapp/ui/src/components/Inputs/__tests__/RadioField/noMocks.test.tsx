@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -24,7 +24,7 @@ beforeEach(() => {
 
 
 describe("RadioField", () => {
-  test("When a selection is made, the onChange handler is called", () => {
+  it("When a selection is made, the onChange handler is called", () => {
     const onChange = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>

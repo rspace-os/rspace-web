@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React,
   { useContext,
@@ -34,7 +34,7 @@ function DisplaysAlert() {
 }
 
 describe("Alerts", () => {
-  test("Example of usage", () => {
+  it("Example of usage", () => {
     render(
       <Alerts>
         <DisplaysAlert />

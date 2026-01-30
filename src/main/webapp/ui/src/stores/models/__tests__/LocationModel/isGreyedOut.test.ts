@@ -1,6 +1,6 @@
 /*
  */
-import { describe, it, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import LocationModel from "../../LocationModel";
 import { makeMockContainer } from "../ContainerModel/mocking";

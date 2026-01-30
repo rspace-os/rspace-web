@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -61,7 +61,7 @@ beforeEach(() => {
 
 
 describe("MoveDialog", () => {
-  test("When cancel is pressed, the dialog should close.", async () => {
+  it("When cancel is pressed, the dialog should close.", async () => {
     const user = userEvent.setup();
     const rootStore: StoreContainer = makeMockRootStore(
       observable({
@@ -112,7 +112,7 @@ describe("MoveDialog", () => {
     );
   });
 
-  test("Table hidden in header should list all selectedResults", () => {
+  it("Table hidden in header should list all selectedResults", () => {
     fc.assert(
       fc
         .property(

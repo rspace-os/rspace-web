@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
 import PersonModel from "../../../models/PersonModel";
@@ -10,7 +10,7 @@ import { arbitraryGroup } from "../../../definitions/__tests__/Group/helper";
 import ContainerModel from "../../../models/ContainerModel";
 
 describe("method: createNewContainer", () => {
-  test("Should return a new container model", async () => {
+  it("Should return a new container model", async () => {
     const { searchStore, peopleStore } = getRootStore();
     vi
       .spyOn(peopleStore, "fetchCurrentUsersGroups")
@@ -19,7 +19,7 @@ describe("method: createNewContainer", () => {
     expect(container.id).toBe(null);
   });
 
-  test("Should return an object with a parentContainer of the current user's bench", async () => {
+  it("Should return an object with a parentContainer of the current user's bench", async () => {
     const bench = makeMockContainer({
       id: 9,
       globalId: "BE1",
@@ -48,7 +48,7 @@ describe("method: createNewContainer", () => {
     expect(container.parentContainers).toEqual([bench]);
   });
 
-  test("Should return an object with sharedWith set to current groups", async () => {
+  it("Should return an object with sharedWith set to current groups", async () => {
     await fc.assert(
       fc.asyncProperty(fc.array(arbitraryGroup), async (groups) => {
         const bench = makeMockContainer({ id: 9, globalId: "BE1" });
@@ -85,7 +85,7 @@ describe("method: createNewContainer", () => {
     );
   });
 
-  test("Should not call fetchAdditionalInfo on the new container.", async () => {
+  it("Should not call fetchAdditionalInfo on the new container.", async () => {
     const { searchStore } = getRootStore();
     const spy = vi.spyOn(ContainerModel.prototype, "fetchAdditionalInfo");
     await searchStore.createNewContainer();

@@ -3,9 +3,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call */
 import {
   describe,
-  it,
-  test,
   expect,
+  it,
   vi,
 } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -32,7 +31,7 @@ vi.mock("../../../../common/InvApiService", () => ({
 
 describe("action: deleteRecords", () => {
   describe("When it is called,", () => {
-    test("the search should be refreshed.", async () => {
+    it("the search should be refreshed.", async () => {
       vi
         .spyOn(InvApiService, "bulk")
         .mockImplementation(
@@ -90,7 +89,7 @@ describe("action: deleteRecords", () => {
        */
       expect(searchSpy).toHaveBeenCalledWith(null, expect.any(Function));
     });
-    test("and there is an error, there should be a helpful error message.", async () => {
+    it("and there is an error, there should be a helpful error message.", async () => {
       vi
         .spyOn(InvApiService, "bulk")
         .mockImplementation(

@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -34,7 +34,7 @@ beforeEach(() => {
 
 
 describe("TransferAction", () => {
-  test("Dialog should close when cancel is tapped.", async () => {
+  it("Dialog should close when cancel is tapped.", async () => {
     const user = userEvent.setup();
     render(
       <ThemeProvider theme={materialTheme}>

@@ -1,11 +1,11 @@
 /*
  */
 
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { traverseObjectTree } from "../../unsafeUtils";
 
 describe("traverseObjectTree", () => {
-  test("basic example", () => {
+  it("basic example", () => {
     expect(
       traverseObjectTree(
         {

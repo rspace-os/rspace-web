@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import CoreFetcher from "../../CoreFetcher";
@@ -41,7 +41,7 @@ vi.mock("../../../../../common/InvApiService", () => ({
 
 describe("search", () => {
   describe("When a new search is performed,", () => {
-    test("a new factory should be created.", async () => {
+    it("a new factory should be created.", async () => {
       const mockNewFactory = vi.fn<any, any>().mockReturnValue({} as Factory);
       const factory = mockFactory({
         newFactory: mockNewFactory,
@@ -51,7 +51,7 @@ describe("search", () => {
 
       expect(mockNewFactory).toHaveBeenCalled();
     });
-    test("and a page size is not specified, then 10 is passed in API call.", async () => {
+    it("and a page size is not specified, then 10 is passed in API call.", async () => {
       const querySpy = vi
         .spyOn(InvApiService, "query")
         .mockImplementation(() =>

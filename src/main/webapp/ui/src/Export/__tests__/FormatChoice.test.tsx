@@ -2,11 +2,10 @@
  */
 import {
   describe,
-  it,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import { DeploymentPropertyContext } from "../../hooks/api/useDeploymentProperty";
@@ -31,7 +30,7 @@ beforeEach(() => {
 
 describe("FormatChoice", () => {
   describe("Repository switch", () => {
-    test("When the repo/uiConfig endpoint returns an empty list, the switch should be disabled.", async () => {
+    it("When the repo/uiConfig endpoint returns an empty list, the switch should be disabled.", async () => {
       mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, []);
 
       render(
@@ -60,7 +59,7 @@ describe("FormatChoice", () => {
       ).toBeDisabled();
     });
 
-    test("When the repo/uiConfig endpoint returns a repository, the switch should be enabled.", async () => {
+    it("When the repo/uiConfig endpoint returns a repository, the switch should be enabled.", async () => {
       mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, [
         {
           repoName: "app.zenodo",
@@ -119,7 +118,7 @@ describe("FormatChoice", () => {
   });
 
   describe("Export as Word .doc is dependent on the document conversion lib aspose.", () => {
-    test("When aspose is enabled, .doc export option is available", async () => {
+    it("When aspose is enabled, .doc export option is available", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
         render(
@@ -148,7 +147,7 @@ describe("FormatChoice", () => {
       expect(wordElement).toBeInTheDocument();
     });
 
-    test("When aspose is disabled, .doc export option isn't present", async () => {
+    it("When aspose is disabled, .doc export option isn't present", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, false);
       await act(() =>
         render(
@@ -184,7 +183,7 @@ describe("FormatChoice", () => {
    * causes the radio option to be disabled.
    */
   describe("Export as Word .doc format is correctly restricted.", () => {
-    test("When more than one document is selected, .doc export should be denied.", async () => {
+    it("When more than one document is selected, .doc export should be denied.", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
         render(
@@ -216,7 +215,7 @@ describe("FormatChoice", () => {
       ).toBeDisabled();
     });
 
-    test("When the selected document is a folder, .doc export should be denied.", async () => {
+    it("When the selected document is a folder, .doc export should be denied.", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
         render(
@@ -248,7 +247,7 @@ describe("FormatChoice", () => {
       ).toBeDisabled();
     });
 
-    test("When the selected document is a notebook, .doc export should be denied.", async () => {
+    it("When the selected document is a notebook, .doc export should be denied.", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
         render(
@@ -280,7 +279,7 @@ describe("FormatChoice", () => {
       ).toBeDisabled();
     });
 
-    test("When the selected document is a media file, .doc export should be denied.", async () => {
+    it("When the selected document is a media file, .doc export should be denied.", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
         render(
@@ -313,7 +312,7 @@ describe("FormatChoice", () => {
     });
   });
   describe("Export as .pdf format is correctly restricted.", () => {
-    test("When the selected documents are all media files, .pdf export should be denied.", async () => {
+    it("When the selected documents are all media files, .pdf export should be denied.", async () => {
       await act(() =>
         render(
           <FormatChoice

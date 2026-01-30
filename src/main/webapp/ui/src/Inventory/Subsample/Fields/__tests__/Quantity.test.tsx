@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -38,7 +38,7 @@ beforeEach(() => {
 
 
 describe("Quantity", () => {
-  test("Should support scientific notation.", () => {
+  it("Should support scientific notation.", () => {
     const INITIAL_VALUE = 0;
 
     const setFieldsDirty = vi.fn();

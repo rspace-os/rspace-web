@@ -2,11 +2,11 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
   afterEach,
+  it,
+  vi,
 } from "vitest";
 import "../../../../__mocks__/matchMedia";
 import React from "react";
@@ -70,7 +70,7 @@ afterEach(() => {
 
 
 describe("DMPDialog", () => {
-  test("Label is shown when no DMPs are returned.", async () => {
+  it("Label is shown when no DMPs are returned.", async () => {
     mockAxios
       .onGet("/apps/dmptool/plans?scope=MINE")
       .reply(200, { data: { items: [] }, success: true });
@@ -86,7 +86,7 @@ describe("DMPDialog", () => {
     });
   });
 
-  test("The latest request is always the one that's shown.", async () => {
+  it("The latest request is always the one that's shown.", async () => {
     mockAxios.onGet("/apps/dmptool/plans?scope=MINE").reply(200, {
       data: {
         items: [{ dmp: { id: 1, title: "mine", description: "very mine" } }],

@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -25,7 +25,7 @@ beforeEach(() => {
 
 
 describe("IconButtonWithTooltip", () => {
-  test("Renders title and aria-label attributes.", () => {
+  it("Renders title and aria-label attributes.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IconButtonWithTooltip title="foo" icon={<CloseIcon />} />
@@ -34,7 +34,7 @@ describe("IconButtonWithTooltip", () => {
 
     screen.getByLabelText("foo");
   });
-  test("onClick functions correctly.", async () => {
+  it("onClick functions correctly.", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
 

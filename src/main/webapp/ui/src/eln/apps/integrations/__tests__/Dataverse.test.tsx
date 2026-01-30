@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -35,7 +35,7 @@ beforeEach(() => {
 
 describe("Dataverse", () => {
   describe("Accessibility", () => {
-    test("Should have no axe violations.", async () => {
+    it("Should have no axe violations.", async () => {
       const { baseElement } = render(
         <Dataverse
           integrationState={{
@@ -54,7 +54,7 @@ describe("Dataverse", () => {
     });
   });
   describe("Adding", () => {
-    test("Add should be disabled whilst a new config is being added.", () => {
+    it("Add should be disabled whilst a new config is being added.", () => {
       render(
         <Dataverse
           integrationState={{
@@ -74,7 +74,7 @@ describe("Dataverse", () => {
       expect(screen.getByRole("button", { name: /add/i })).toBeDisabled();
     });
 
-    test("Adding a configuration should mutate the integration state being passed as a prop.", async () => {
+    it("Adding a configuration should mutate the integration state being passed as a prop.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/saveAppOptions").reply(200, {
         success: true,
@@ -134,7 +134,7 @@ describe("Dataverse", () => {
   });
 
   describe("Saving", () => {
-    test("Tapping save on existing config should correctly call saveAppOptions endpoint.", () => {
+    it("Tapping save on existing config should correctly call saveAppOptions endpoint.", () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/saveAppOptions");
 
@@ -179,7 +179,7 @@ describe("Dataverse", () => {
       });
     });
 
-    test("Tapping save on a new config should correctly call saveAppOptions endpoint.", () => {
+    it("Tapping save on a new config should correctly call saveAppOptions endpoint.", () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/saveAppOptions");
 
@@ -226,7 +226,7 @@ describe("Dataverse", () => {
       });
     });
 
-    test("Saving one config should not discard changes to another.", async () => {
+    it("Saving one config should not discard changes to another.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/saveAppOptions").reply(200, {
         success: true,
@@ -303,7 +303,7 @@ describe("Dataverse", () => {
       ).toHaveValue("unsaved new name");
     });
 
-    test("Saving one config should not discard changes to a new config.", async () => {
+    it("Saving one config should not discard changes to a new config.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/saveAppOptions").reply(200, {
         success: true,
@@ -369,7 +369,7 @@ describe("Dataverse", () => {
       ).toHaveValue("unsaved new name");
     });
 
-    test("Saving a new config should not discard changes to an existing one.", async () => {
+    it("Saving a new config should not discard changes to an existing one.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/saveAppOptions").reply(200, {
         success: true,
@@ -448,7 +448,7 @@ describe("Dataverse", () => {
     });
   });
   describe("Testing", () => {
-    test("The test button should be disabled whilst there are unsaved changes.", async () => {
+    it("The test button should be disabled whilst there are unsaved changes.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/saveAppOptions").reply(200, {
         success: true,
@@ -502,7 +502,7 @@ describe("Dataverse", () => {
       });
     });
 
-    test("The test button should make the right API call.", async () => {
+    it("The test button should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios
         .onGet(new RegExp("repository/ajax/testRepository/.*"))
@@ -543,7 +543,7 @@ describe("Dataverse", () => {
     });
   });
   describe("Deleting", () => {
-    test("Deleting an existing config should make the correct API call.", async () => {
+    it("Deleting an existing config should make the correct API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success: true,
@@ -592,7 +592,7 @@ describe("Dataverse", () => {
       });
     });
 
-    test("Deleting a config should mutate the integration state being passed as a prop.", async () => {
+    it("Deleting a config should mutate the integration state being passed as a prop.", async () => {
       const integrationState = observable({
         mode: "DISABLED" as const,
         credentials: [

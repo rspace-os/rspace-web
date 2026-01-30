@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -64,7 +64,7 @@ beforeEach(() => {
 
 describe("Apps page", () => {
   describe("Accessibility", () => {
-    test("Should have no axe violations.", async () => {
+    it("Should have no axe violations.", async () => {
       mockAxios.onPost("integration/allIntegrations").reply(200, {
         success: false,
         data: null,
@@ -83,7 +83,7 @@ describe("Apps page", () => {
     });
   });
 
-  test("Has all of the correct headings.", async () => {
+  it("Has all of the correct headings.", async () => {
     mockAxios.onPost("integration/allIntegrations").reply(200, {
       success: false,
       data: null,

@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -28,7 +28,7 @@ beforeEach(() => {
 
 
 describe("SortControls", () => {
-  test("Current sort option should have aria-current attribute.", () => {
+  it("Current sort option should have aria-current attribute.", () => {
     const search = new Search({
       factory: mockFactory(),
     });

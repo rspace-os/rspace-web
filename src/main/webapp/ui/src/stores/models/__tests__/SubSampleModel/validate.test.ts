@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { makeMockSubSample } from "./mocking";
 import "@testing-library/jest-dom/vitest";
 
@@ -10,7 +10,7 @@ vi.mock("../../../../common/InvApiService", () => ({
 
 describe("method: validate", () => {
   describe("Asserts quantity.", () => {
-    test("Returns false when the numericQuantity is the empty string.", () => {
+    it("Returns false when the numericQuantity is the empty string.", () => {
       vi
         .spyOn(global.Storage.prototype, "getItem")
         .mockImplementation(

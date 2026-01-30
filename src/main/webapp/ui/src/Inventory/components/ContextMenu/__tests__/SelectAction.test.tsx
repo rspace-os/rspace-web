@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -30,7 +30,7 @@ beforeEach(() => {
 
 describe("SelectAction", () => {
   describe("Shows a badge that should", () => {
-    test("display the count of selected records.", () => {
+    it("display the count of selected records.", () => {
       fc.assert(
         fc.property(
           /*

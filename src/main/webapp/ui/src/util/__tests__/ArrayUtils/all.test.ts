@@ -1,13 +1,13 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { Optional } from "../../optional";
 import * as ArrayUtils from "../../ArrayUtils";
 
 describe("all", () => {
-  test("Zero element: Any Optional.empty will always result in Optional.empty.", () => {
+  it("Zero element: Any Optional.empty will always result in Optional.empty.", () => {
     fc.assert(
       fc.property(
         fc

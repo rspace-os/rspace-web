@@ -2,9 +2,8 @@
  */
 import {
   describe,
-  it,
-  test,
   expect,
+  it,
   vi,
 } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -27,7 +26,7 @@ vi.mock("../../../stores/SearchStore", () => {}); // break import cycle
 
 describe("action: setOwner", () => {
   describe("When called with any value it should", () => {
-    test("set the page number to 0.", () => {
+    it("set the page number to 0.", () => {
       const search = new Search({
         factory: mockFactory(),
       });

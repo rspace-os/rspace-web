@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { Material, type Quantity } from "../../MaterialsModel";
 import { makeMockContainer } from "../ContainerModel/mocking";
@@ -23,7 +23,7 @@ const arbitraryQuantity: Arbitrary<Quantity> = fc.record({
 });
 
 describe("canEditQuantity", () => {
-  test("Should return false if invRec is a deleted SubSample", () => {
+  it("Should return false if invRec is a deleted SubSample", () => {
     fc.assert(
       fc.property(
         fc.option(arbitraryQuantity, { nil: null }),
@@ -38,7 +38,7 @@ describe("canEditQuantity", () => {
       )
     );
   });
-  test("Should return false if invRec is a Sample", () => {
+  it("Should return false if invRec is a Sample", () => {
     const material = new Material({
       invRec: makeMockSample(),
       usedQuantity: null,
@@ -46,7 +46,7 @@ describe("canEditQuantity", () => {
 
     expect(material.canEditQuantity).toBe(false);
   });
-  test("Should return false if invRec is a Container", () => {
+  it("Should return false if invRec is a Container", () => {
     const material = new Material({
       invRec: makeMockContainer(),
       usedQuantity: null,

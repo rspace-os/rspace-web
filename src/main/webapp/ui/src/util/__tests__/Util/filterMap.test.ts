@@ -1,12 +1,12 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { filterMap } from "../../Util";
 
 describe("filterMap", () => {
-  test("Output should always be smaller than or equal to input.", () => {
+  it("Output should always be smaller than or equal to input.", () => {
     fc.assert(
       fc.property(
         fc.tuple(

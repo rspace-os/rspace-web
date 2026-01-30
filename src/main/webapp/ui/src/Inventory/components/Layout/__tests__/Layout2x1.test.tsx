@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -62,14 +62,14 @@ describe("Layout2x1", () => {
    * side of the 2x1 layout should be shown, ignoring `visiblePanel`.
    */
   describe("When isSingleColumnLayout = false, both sides are shown", () => {
-    test("Both sides are shown when visiblePanel = 'left'", () =>
+    it("Both sides are shown when visiblePanel = 'left'", () =>
       fooBarTest({
         isSingleColumnLayout: false,
         visiblePanel: "left",
         showFoo: true,
         showBar: true,
       }));
-    test("Both sides are shown when visiblePanel = 'right'", () =>
+    it("Both sides are shown when visiblePanel = 'right'", () =>
       fooBarTest({
         isSingleColumnLayout: false,
         visiblePanel: "right",
@@ -83,14 +83,14 @@ describe("Layout2x1", () => {
    * only one side of the 2x1 layout is shown, based on `visiblePanel`.
    */
   describe("When isSingleColumnLayout = true, one side is shown at a time", () => {
-    test("When visiblePanel = 'left', only colLeft is rendered", () =>
+    it("When visiblePanel = 'left', only colLeft is rendered", () =>
       fooBarTest({
         isSingleColumnLayout: true,
         visiblePanel: "left",
         showFoo: true,
         showBar: false,
       }));
-    test("When visiblePanel = 'right', only colRight is rendered", () =>
+    it("When visiblePanel = 'right', only colRight is rendered", () =>
       fooBarTest({
         isSingleColumnLayout: true,
         visiblePanel: "right",
@@ -100,7 +100,7 @@ describe("Layout2x1", () => {
   });
 
   describe("When isSingleColumnLayout = true and the content is the same", () => {
-    test("both sides show the same.", () => {
+    it("both sides show the same.", () => {
       fc.assert(
         fc.property(fc.constantFrom("left", "right"), (selectedItems) => {
           const rootStore = makeMockRootStore({

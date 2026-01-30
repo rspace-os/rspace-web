@@ -1,7 +1,7 @@
 /*
  */
 
-import { describe, it, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import theme from "../../../theme";
 import { mapObject } from "../../../util/Util";
 
@@ -60,7 +60,7 @@ describe("theme.palette.record", () => {
    * be legible.
    */
   describe("There is sufficient contrast when white text is rendered on the", () => {
-    test("container background color.", () => {
+    it("container background color.", () => {
       expect(
         relativeLuminosity({
           lighter: getColor("#ffffff"),
@@ -68,7 +68,7 @@ describe("theme.palette.record", () => {
         })
       ).toBeGreaterThan(WCAG_CONTRAST_THRESHOLDS.AA_large_text);
     });
-    test("sample background color.", () => {
+    it("sample background color.", () => {
       expect(
         relativeLuminosity({
           lighter: getColor("#ffffff"),
@@ -76,7 +76,7 @@ describe("theme.palette.record", () => {
         })
       ).toBeGreaterThan(WCAG_CONTRAST_THRESHOLDS.AA_large_text);
     });
-    test("subsample background color.", () => {
+    it("subsample background color.", () => {
       expect(
         relativeLuminosity({
           lighter: getColor("#ffffff"),
@@ -84,7 +84,7 @@ describe("theme.palette.record", () => {
         })
       ).toBeGreaterThan(WCAG_CONTRAST_THRESHOLDS.AA_large_text);
     });
-    test("template background color.", () => {
+    it("template background color.", () => {
       expect(
         relativeLuminosity({
           lighter: getColor("#ffffff"),

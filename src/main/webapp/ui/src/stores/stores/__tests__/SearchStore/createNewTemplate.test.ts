@@ -1,12 +1,12 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
 import TemplateModel from "../../../models/TemplateModel";
 
 describe("method: createNewTemplate", () => {
-  test("Should return a new template model", async () => {
+  it("Should return a new template model", async () => {
     const { searchStore, peopleStore } = getRootStore();
     vi
       .spyOn(peopleStore, "fetchCurrentUsersGroups")
@@ -15,7 +15,7 @@ describe("method: createNewTemplate", () => {
     expect(template.id).toBe(null);
   });
 
-  test("Should not call fetchAdditionalInfo on the new template", async () => {
+  it("Should not call fetchAdditionalInfo on the new template", async () => {
     const { searchStore } = getRootStore();
     const spy = vi.spyOn(TemplateModel.prototype, "fetchAdditionalInfo");
     await searchStore.createNewTemplate();

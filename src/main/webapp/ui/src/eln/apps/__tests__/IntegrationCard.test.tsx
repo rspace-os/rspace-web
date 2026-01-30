@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -25,7 +25,7 @@ beforeEach(() => {
 
 
 describe("IntegrationCard", () => {
-  test("Name should be shown.", () => {
+  it("Name should be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IntegrationCard
@@ -47,7 +47,7 @@ describe("IntegrationCard", () => {
     expect(screen.getByText("SomeIntegration")).toBeVisible();
   });
 
-  test("Explanatory text should be shown.", () => {
+  it("Explanatory text should be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IntegrationCard
@@ -71,7 +71,7 @@ describe("IntegrationCard", () => {
     ).toBeVisible();
   });
 
-  test("Logo image should be shown.", () => {
+  it("Logo image should be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IntegrationCard
@@ -96,7 +96,7 @@ describe("IntegrationCard", () => {
     );
   });
 
-  test("When card is tapped, a dialog should be shown.", () => {
+  it("When card is tapped, a dialog should be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IntegrationCard
@@ -122,7 +122,7 @@ describe("IntegrationCard", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  test("DialogContent should be shown once card has been tapped.", () => {
+  it("DialogContent should be shown once card has been tapped.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IntegrationCard
@@ -148,7 +148,7 @@ describe("IntegrationCard", () => {
     expect(screen.getByText("Some dialog content")).toBeInTheDocument();
   });
 
-  test("When tapped, the enable button should invoke update.", () => {
+  it("When tapped, the enable button should invoke update.", () => {
     const update = vi.fn();
 
     render(
@@ -176,7 +176,7 @@ describe("IntegrationCard", () => {
     expect(update).toHaveBeenCalledWith("ENABLED");
   });
 
-  test("When tapped, the disable button should invoke update.", () => {
+  it("When tapped, the disable button should invoke update.", () => {
     const update = vi.fn();
 
     render(

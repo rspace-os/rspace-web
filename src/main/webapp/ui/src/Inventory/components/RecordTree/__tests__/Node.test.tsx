@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -69,7 +69,7 @@ beforeEach(() => {
 
 describe("Node", () => {
   describe("When the node in question is a container with contents, there should", () => {
-    test("Be a button that navigates to the container's contents", () => {
+    it("Be a button that navigates to the container's contents", () => {
       const search = new Search({
         factory: mockFactory(),
       });
@@ -102,7 +102,7 @@ describe("Node", () => {
       );
     });
   });
-  test("When the record does not have a preview image, the record's type should be included in the treeitem's accessible name", () => {
+  it("When the record does not have a preview image, the record's type should be included in the treeitem's accessible name", () => {
     /*
      * If a record does not have a preview image, then an icon denoting the
      * record's type is shown to the left of the record's name in tree view.

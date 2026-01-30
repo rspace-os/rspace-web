@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { containerAttrs } from "../ContainerModel/mocking";
 import {
@@ -26,14 +26,14 @@ function generateListOfMaterials(attrs: Partial<ListOfMaterialsAttrs>) {
 
 describe("isValid", () => {
   describe("Name is checked", () => {
-    test("Name of length 255 is valid", () => {
+    it("Name of length 255 is valid", () => {
       const mat = generateListOfMaterials({
         name: new Array<string>(255).fill(" ").join(""),
       });
 
       expect(mat.isValid).toBe(true);
     });
-    test("Name of length 256 is invalid", () => {
+    it("Name of length 256 is invalid", () => {
       const mat = generateListOfMaterials({
         name: new Array<string>(256).fill(" ").join(""),
       });
@@ -42,14 +42,14 @@ describe("isValid", () => {
     });
   });
   describe("Description is checked", () => {
-    test("Description of length 255 is valid", () => {
+    it("Description of length 255 is valid", () => {
       const mat = generateListOfMaterials({
         description: new Array<string>(255).fill(" ").join(""),
       });
 
       expect(mat.isValid).toBe(true);
     });
-    test("Description of length 256 is invalid", () => {
+    it("Description of length 256 is invalid", () => {
       const mat = generateListOfMaterials({
         description: new Array<string>(256).fill(" ").join(""),
       });

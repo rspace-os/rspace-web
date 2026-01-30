@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -23,7 +23,7 @@ beforeEach(() => {
 
 
 describe("TypeFilter", () => {
-  test("Current type should have aria-current property", () => {
+  it("Current type should have aria-current property", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <TypeFilter

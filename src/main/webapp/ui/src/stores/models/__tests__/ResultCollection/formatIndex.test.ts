@@ -1,8 +1,7 @@
 import {
   describe,
-  it,
-  test,
   expect,
+  it,
   vi,
 } from "vitest";
 import fc from "fast-check";
@@ -44,21 +43,21 @@ const everyOutputForArbitraryNumOfRecords = arbitraryInput
  * that the number of leading zeros is the minimal number necessary.
  */
 describe("formatIndex", () => {
-  test("Output should only contain digits.", () => {
+  it("Output should only contain digits.", () => {
     fc.assert(
       fc.property(arbitraryInputs, ([index, numOfRecords]) => {
         expect(/^\d+$/.test(formatIndex(index, numOfRecords))).toBe(true);
       })
     );
   });
-  test("For a given numOfRecord, all outputs should have the same length.", () => {
+  it("For a given numOfRecord, all outputs should have the same length.", () => {
     fc.assert(
       fc.property(everyOutputForArbitraryNumOfRecords, (outputs) => {
         expect(outputs.map((s) => s.length).size).toBe(1);
       })
     );
   });
-  test("Parsed output should give index input plus one.", () => {
+  it("Parsed output should give index input plus one.", () => {
     fc.assert(
       fc.property(arbitraryInputs, ([index, numOfRecords]) => {
         expect(parseInt(formatIndex(index, numOfRecords), 10)).toEqual(
@@ -67,7 +66,7 @@ describe("formatIndex", () => {
       })
     );
   });
-  test("The number of leading zeros should be minimal.", () => {
+  it("The number of leading zeros should be minimal.", () => {
     fc.assert(
       fc.property(everyOutputForArbitraryNumOfRecords, (outputs) => {
         expect(outputs.some((x) => x[0] !== "0")).toBe(true);

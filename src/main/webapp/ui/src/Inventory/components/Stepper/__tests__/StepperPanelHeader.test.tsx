@@ -2,11 +2,10 @@
  */
 import {
   describe,
-  it,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React,
   { useState } from "react";
@@ -110,7 +109,7 @@ function DummyFormSection({ result }: { result: DummyResult }) {
 }
 
 describe("StepperPanelHeader", () => {
-  test("When useFormSectionError is passed a unique list of strings, the badge should show a number equal to the list's length.", async () => {
+  it("When useFormSectionError is passed a unique list of strings, the badge should show a number equal to the list's length.", async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.uniqueArray(fc.string({ minLength: 1, maxLength: 1 }), {
@@ -150,7 +149,7 @@ describe("StepperPanelHeader", () => {
     );
   });
 
-  test("When useFormSectionError is passed a list of strings, the badge should show a number equal to or less than the list's length.", async () => {
+  it("When useFormSectionError is passed a list of strings, the badge should show a number equal to or less than the list's length.", async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(fc.string({ minLength: 1 })),
@@ -179,7 +178,7 @@ describe("StepperPanelHeader", () => {
     );
   });
 
-  test("When opened, the header shows no badge.", async () => {
+  it("When opened, the header shows no badge.", async () => {
     const user = userEvent.setup();
     render(<DummyFormSection result={new DummyResult()} />);
 
@@ -212,7 +211,7 @@ describe("StepperPanelHeader", () => {
         ArrayUtils.takeWhere(errors, shouldRemove),
       ]);
 
-  test("Errors can be unset, decrementing the badge.", async () => {
+  it("Errors can be unset, decrementing the badge.", async () => {
     await fc.assert(
       fc.asyncProperty(
         arbitraryErrorsAndErrorsToRemove(),
@@ -273,7 +272,7 @@ describe("StepperPanelHeader", () => {
     cleanup();
   });
 
-  test("When `editing` is set to false, the errors are reset.", async () => {
+  it("When `editing` is set to false, the errors are reset.", async () => {
     const user = userEvent.setup();
     const result = new DummyResult();
     render(<DummyFormSection result={result} />);

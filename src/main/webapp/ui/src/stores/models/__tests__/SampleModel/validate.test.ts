@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { makeMockSample } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
@@ -14,7 +14,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 
 describe("method: validate", () => {
   describe("Asserts expiry date.", () => {
-    test("Returns false when expiry date is an invalid date.", () => {
+    it("Returns false when expiry date is an invalid date.", () => {
       const sample = makeMockSample({
         expiryDate: "2021-13-01",
       });

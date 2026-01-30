@@ -2,9 +2,9 @@
  */
 import {
   describe,
-  test,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import "../../../__mocks__/createObjectURL";
 import "../../../__mocks__/matchMedia";
@@ -184,7 +184,7 @@ function getSectionNames(
 }
 
 describe("Form Section Order", () => {
-  test("Across all of the forms, all of the sections should be in a consistent order.", () => {
+  it("Across all of the forms, all of the sections should be in a consistent order.", () => {
     window.ResizeObserver =
       ResizeObserver as unknown as typeof global.ResizeObserver;
     window.scrollTo = vi.fn() as any;

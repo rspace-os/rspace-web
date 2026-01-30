@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -28,7 +28,7 @@ beforeEach(() => {
 
 
 describe("Alias", () => {
-  test("Typing a custom alias should not select one of the radio buttons", async () => {
+  it("Typing a custom alias should not select one of the radio buttons", async () => {
     const template: HasEditableFields<{ subSampleAlias: AliasType }> = {
       fieldValues: { subSampleAlias: { alias: "foo", plural: "foos" } },
       isFieldEditable: () => true,

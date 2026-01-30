@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -54,7 +54,7 @@ beforeEach(() => {
 
 describe("StorageTemperature", () => {
   describe("Buttons", () => {
-    test("Five helper buttons should be shown when the temperature is editable.", () => {
+    it("Five helper buttons should be shown when the temperature is editable.", () => {
       const fieldOwner = mockFieldOwner({
         fieldValues: {
           storageTempMin: { numericValue: 0, unitId: CELSIUS },

@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { makeMockContainer } from "./mocking";
 import { personAttrs } from "../PersonModel/mocking";
@@ -8,7 +8,7 @@ import { assertNotNull } from "../../../../util/__tests__/helpers";
 
 describe("adjustableTableOptions", () => {
   describe("Number of Empty Locations", () => {
-    test("List containers should have unlimited empty locations.", () => {
+    it("List containers should have unlimited empty locations.", () => {
       const container = makeMockContainer({
         cType: "LIST",
         owner: personAttrs(),
@@ -21,7 +21,7 @@ describe("adjustableTableOptions", () => {
       expect(cellContent().data).toEqual("Unlimited");
     });
 
-    test("Empty grid containers should render the number of locations.", () => {
+    it("Empty grid containers should render the number of locations.", () => {
       const container = makeMockContainer({
         cType: "GRID",
         gridLayout: {
@@ -41,7 +41,7 @@ describe("adjustableTableOptions", () => {
       expect(cellContent().data).toEqual("6");
     });
 
-    test("If contentSummary is null, then nothing should be shown.", () => {
+    it("If contentSummary is null, then nothing should be shown.", () => {
       const container = makeMockContainer({
         cType: "GRID",
         gridLayout: {

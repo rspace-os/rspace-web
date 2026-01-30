@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -25,7 +25,7 @@ function AlwaysError(): React.ReactNode {
 }
 
 describe("ErrorBoundary", () => {
-  test("Reports the support email address.", () => {
+  it("Reports the support email address.", () => {
     /*
      * This is needed because the `render` function will report any errors
      * using console.error, even though the ErrorBoundary catches them, which

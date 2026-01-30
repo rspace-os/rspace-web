@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  it,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import Jove from "../Jove";
 import React from "react";

@@ -2,9 +2,8 @@
  */
 import {
   describe,
-  it,
-  test,
   expect,
+  it,
   vi,
 } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -57,7 +56,7 @@ describe("constructor", () => {
    * Factory it is given correctly.
    */
   describe("Factory argument", () => {
-    test("should be used in the instantiation of all child records.", () => {
+    it("should be used in the instantiation of all child records.", () => {
       // Define a mock factory with circular references
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mockFactoryRef: any = {};

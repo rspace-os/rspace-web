@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React,
   { useState } from "react";
@@ -59,7 +59,7 @@ function renderNameField(
 }
 
 describe("Name", () => {
-  test("Should initially not be in an error state even though the value is the empty string.", () => {
+  it("Should initially not be in an error state even though the value is the empty string.", () => {
     const { container } = renderNameField("", () => {});
     expect(container).not.toHaveTextContent(
       "Name must be at least 2 characters."
@@ -70,7 +70,7 @@ describe("Name", () => {
     expect(container).toHaveTextContent("0 / 255");
   });
 
-  test("Should enter an error state when value is only a single character.", () => {
+  it("Should enter an error state when value is only a single character.", () => {
     fc.assert(
       fc.property(
         fc
@@ -94,7 +94,7 @@ describe("Name", () => {
     );
   });
 
-  test("Should not enter an error state when value is longer than 1 character but shorter than 256.", () => {
+  it("Should not enter an error state when value is longer than 1 character but shorter than 256.", () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 3, maxLength: 255 }),
@@ -119,7 +119,7 @@ describe("Name", () => {
     );
   });
 
-  test("Should enter an error state when value is longer than 255 characters.", () => {
+  it("Should enter an error state when value is longer than 255 characters.", () => {
     fc.assert(
       fc.property(fc.string({ minLength: 256 }), (name) => {
         cleanup();
@@ -138,7 +138,7 @@ describe("Name", () => {
     );
   });
 
-  test("Should enter an error state when value is just whitespace.", () => {
+  it("Should enter an error state when value is just whitespace.", () => {
     fc.assert(
       fc.property(
         fc
@@ -163,7 +163,7 @@ describe("Name", () => {
     );
   });
 
-  test("Entering fewer than 2 characters, after having entered something valid, should error.", () => {
+  it("Entering fewer than 2 characters, after having entered something valid, should error.", () => {
     fc.assert(
       fc.property(
         fc.tuple(
@@ -201,7 +201,7 @@ describe("Name", () => {
     );
   });
 
-  test("When the entered text is of a valid length, there should be character count shown.", () => {
+  it("When the entered text is of a valid length, there should be character count shown.", () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 3, maxLength: 255 }),
@@ -220,7 +220,7 @@ describe("Name", () => {
     );
   });
 
-  test("When disabled, the Global ID of the passed record should be shown.", () => {
+  it("When disabled, the Global ID of the passed record should be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <Name

@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -31,7 +31,7 @@ beforeEach(() => {
 
 
 describe("ExportFileStore", () => {
-  test("Exporting document without any filestore links should show a warning.", async () => {
+  it("Exporting document without any filestore links should show a warning.", async () => {
     mockAxios.onPost("/nfsExport/ajax/createQuickExportPlan").reply(200, {
       ...CREATE_QUICK_EXPORT_PLAN,
       foundFileSystems: [],
@@ -69,7 +69,7 @@ describe("ExportFileStore", () => {
       screen.getByText("No filestore links found in exported content.")
     ).toBeVisible();
   });
-  test("Found filestore links dialog should show linked file.", async () => {
+  it("Found filestore links dialog should show linked file.", async () => {
     const user = userEvent.setup();
     mockAxios
       .onPost("/nfsExport/ajax/createQuickExportPlan")
@@ -126,7 +126,7 @@ describe("ExportFileStore", () => {
       within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i })
     );
   });
-  test("Filesystem login details dialog should show such info.", async () => {
+  it("Filesystem login details dialog should show such info.", async () => {
     const user = userEvent.setup();
     mockAxios.onPost("/nfsExport/ajax/createQuickExportPlan").reply(200, {
       ...CREATE_QUICK_EXPORT_PLAN,
@@ -196,5 +196,4 @@ describe("ExportFileStore", () => {
     );
   });
 });
-
 

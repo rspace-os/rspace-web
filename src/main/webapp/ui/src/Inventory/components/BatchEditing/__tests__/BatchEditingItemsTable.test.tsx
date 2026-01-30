@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -29,7 +29,7 @@ beforeEach(() => {
 
 
 describe("BatchEditingItemsTable", () => {
-  test("Table body should have as many rows as records that are passed.", async () => {
+  it("Table body should have as many rows as records that are passed.", async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.tuple(arbRsSet(arbitraryRecord), fc.string()),

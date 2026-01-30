@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React,
   { useEffect } from "react";
@@ -36,7 +36,7 @@ describe("useIntegrationsEndpoint", () => {
       return <></>;
     }
 
-    test("Should construct valid API call from inputs.", () => {
+    it("Should construct valid API call from inputs.", () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("integration/allIntegrations").reply(500);
       mockAxios.onPost("integration/saveAppOptions").reply(500);

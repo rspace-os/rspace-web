@@ -1,11 +1,11 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet, arbSubsetOf } from "./helpers";
 import RsSet from "../../set";
 
 describe("isSubsetOf", () => {
-  test("Works with fc.subarray", () => {
+  it("Works with fc.subarray", () => {
     fc.assert(
       fc.property(
         arbRsSet(fc.anything()).chain((set) =>
@@ -17,7 +17,7 @@ describe("isSubsetOf", () => {
       )
     );
   });
-  test("Transitivity", () => {
+  it("Transitivity", () => {
     fc.assert(
       fc.property(
         arbRsSet(fc.anything())
@@ -31,7 +31,7 @@ describe("isSubsetOf", () => {
       )
     );
   });
-  test("Reflexivity", () => {
+  it("Reflexivity", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
         expect(set.isSubsetOf(set)).toBe(true);

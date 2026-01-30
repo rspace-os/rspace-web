@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -55,7 +55,7 @@ beforeEach(() => {
 
 describe("CreateDialog", () => {
   describe("Splitting", () => {
-    test("Subsamples", async () => {
+    it("Subsamples", async () => {
       const user = userEvent.setup();
       const subsample = makeMockSubSample({});
       vi
@@ -80,7 +80,7 @@ describe("CreateDialog", () => {
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
     });
-    test("Subsamples, with too many copies", async () => {
+    it("Subsamples, with too many copies", async () => {
       const user = userEvent.setup();
       const subsample = makeMockSubSample({});
       vi
@@ -111,7 +111,7 @@ describe("CreateDialog", () => {
 
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
     });
-    test("Samples, when there is one subsample", async () => {
+    it("Samples, when there is one subsample", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
       vi
@@ -144,7 +144,7 @@ describe("CreateDialog", () => {
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
     });
-    test("Samples, with too many copies", async () => {
+    it("Samples, with too many copies", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
       vi
@@ -177,7 +177,7 @@ describe("CreateDialog", () => {
 
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
     });
-    test("Samples, when there are multiple subsamples", async () => {
+    it("Samples, when there are multiple subsamples", async () => {
       const sample = makeMockSample({
         subSamples: [subsampleAttrs(), subsampleAttrs()],
       });
@@ -206,7 +206,7 @@ describe("CreateDialog", () => {
     });
   });
   describe("New container in container", () => {
-    test("Success case for list container", async () => {
+    it("Success case for list container", async () => {
       const user = userEvent.setup();
       const container = makeMockContainer({
         canStoreContainers: true,
@@ -253,7 +253,7 @@ describe("CreateDialog", () => {
      * near enough impossible due to the need for extensive mocking and
      * accessibility issues
      */
-    test("Cannot store containers", async () => {
+    it("Cannot store containers", async () => {
       const container = makeMockContainer({
         canStoreContainers: false,
         canStoreSamples: true,
@@ -283,7 +283,7 @@ describe("CreateDialog", () => {
     });
   });
   describe("New sample in container", () => {
-    test("Success case for list containers", async () => {
+    it("Success case for list containers", async () => {
       const user = userEvent.setup();
       const container = makeMockContainer({
         canStoreContainers: true,
@@ -329,7 +329,7 @@ describe("CreateDialog", () => {
      * near enough impossible due to the need for extensive mocking and
      * accessibility issues
      */
-    test("Cannot store samples", async () => {
+    it("Cannot store samples", async () => {
       const container = makeMockContainer({
         canStoreContainers: true,
         canStoreSamples: false,
@@ -359,7 +359,7 @@ describe("CreateDialog", () => {
     });
   });
   describe("New sample from template", () => {
-    test("Success case", async () => {
+    it("Success case", async () => {
       const user = userEvent.setup();
       const template = makeMockTemplate({});
       vi
@@ -393,7 +393,7 @@ describe("CreateDialog", () => {
     });
   });
   describe("New template from sample", () => {
-    test("No fields", async () => {
+    it("No fields", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
       vi
@@ -434,7 +434,7 @@ describe("CreateDialog", () => {
       expect(screen.getByText("No fields.")).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
     });
-    test("Name that's too short", async () => {
+    it("Name that's too short", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
       vi
@@ -472,7 +472,7 @@ describe("CreateDialog", () => {
     });
   });
   describe("New subsamples without splitting", () => {
-    test("Success case", async () => {
+    it("Success case", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
       vi
@@ -528,7 +528,7 @@ describe("CreateDialog", () => {
         "4"
       );
     });
-    test("Clearing the quantity field disables the submit button", async () => {
+    it("Clearing the quantity field disables the submit button", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
       vi

@@ -2,11 +2,10 @@
  */
 import {
   describe,
-  it,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -24,7 +23,7 @@ beforeEach(() => {
 
 
 describe("NameDialog", () => {
-  test("Naming a new saved search the same name as an existing saved search should be an error.", () => {
+  it("Naming a new saved search the same name as an existing saved search should be an error.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <NameDialog

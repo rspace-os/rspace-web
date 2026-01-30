@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -32,7 +32,7 @@ beforeEach(() => {
 
 
 describe("PreviewAction", () => {
-  test("An error should be shown if the image cannot be fetched.", async () => {
+  it("An error should be shown if the image cannot be fetched.", async () => {
     const user = userEvent.setup();
     const rootStore = makeMockRootStore({
       uiStore: {

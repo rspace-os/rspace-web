@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -33,7 +33,7 @@ beforeEach(() => {
 
 
 describe("InitialScreen", () => {
-  test("Renders correctly", () => {
+  it("Renders correctly", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <BrowserRouter>

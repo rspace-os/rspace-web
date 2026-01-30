@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -22,7 +22,7 @@ beforeEach(() => {
 
 
 describe("FormField", () => {
-  test("Should render HTMLLabelElement with `for` attribute that points to HTMLInputElement.", () => {
+  it("Should render HTMLLabelElement with `for` attribute that points to HTMLInputElement.", () => {
     render(
       <FormField
         label="Test"
@@ -36,7 +36,7 @@ describe("FormField", () => {
     );
   });
 
-  test("Should not render HTMLLabelElement with `for` attribute that points to HTMLInputElement, when doNotAttachIdToLabel is true.", () => {
+  it("Should not render HTMLLabelElement with `for` attribute that points to HTMLInputElement, when doNotAttachIdToLabel is true.", () => {
     render(
       <FormField
         label="Test"
@@ -50,7 +50,7 @@ describe("FormField", () => {
       screen.getByRole("textbox")
     );
   });
-  test("When disabled is true, a heading should be rendered instead of a label", () => {
+  it("When disabled is true, a heading should be rendered instead of a label", () => {
     render(
       <FormField
         label="Test"

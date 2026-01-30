@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import * as React from "react";
 import {
@@ -42,7 +42,7 @@ beforeEach(() => {
 
 describe("ContentContextMenu", () => {
   describe("Has an open button that should", () => {
-    test("be disabled when the only location selected is empty.", () => {
+    it("be disabled when the only location selected is empty.", () => {
       const container = makeMockContainer({
         name: "A visual container",
         locations: [],
@@ -90,7 +90,7 @@ describe("ContentContextMenu", () => {
       );
     });
   });
-  test("When all locations are selected, the badge on the select all button should show the number of locations.", () => {
+  it("When all locations are selected, the badge on the select all button should show the number of locations.", () => {
     fc.assert(
       fc.property(
         fc.tuple(

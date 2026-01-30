@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet } from "../../../../util/__tests__/set/helpers";
@@ -15,14 +15,14 @@ import LocationModel from "../../LocationModel";
 import { type SubSampleAttrs } from "../../SubSampleModel";
 
 describe("computed: siblingGroups", () => {
-  test("Empty container should have zero siblingGroups.", () => {
+  it("Empty container should have zero siblingGroups.", () => {
     const container = makeMockContainer({
       locations: [],
     });
     expect(container.siblingGroups.size).toBe(0);
   });
 
-  test("Container with only containers should have zero siblingGroups.", () => {
+  it("Container with only containers should have zero siblingGroups.", () => {
     const container = makeMockContainer({
       id: 1,
       globalId: "IC1",
@@ -45,7 +45,7 @@ describe("computed: siblingGroups", () => {
     expect(container.siblingGroups.size).toBe(0);
   });
 
-  test("Container with one subsample should have one siblingGroup.", () => {
+  it("Container with one subsample should have one siblingGroup.", () => {
     const container = makeMockContainer({
       id: 1,
       globalId: "IC1",
@@ -64,7 +64,7 @@ describe("computed: siblingGroups", () => {
     expect(container.siblingGroups.size).toBe(1);
   });
 
-  test("Container with `n` subsamples, each from the same sample, should have one siblingGroup.", () => {
+  it("Container with `n` subsamples, each from the same sample, should have one siblingGroup.", () => {
     fc.assert(
       fc.property(
         fc
@@ -105,7 +105,7 @@ describe("computed: siblingGroups", () => {
     );
   });
 
-  test("Container with `n` subsamples, each from a different sample, should have `n` siblingGroups.", () => {
+  it("Container with `n` subsamples, each from a different sample, should have `n` siblingGroups.", () => {
     fc.assert(
       fc.property(
         fc

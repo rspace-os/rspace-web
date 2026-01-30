@@ -1,16 +1,16 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { encodeTags } from "../ParseEncodedTagStrings";
 import { Optional } from "../../../util/optional";
 
 describe("ParseEncodedTagStrings", () => {
   describe("encodeTags", () => {
-    test("Empty array should return empty string.", () => {
+    it("Empty array should return empty string.", () => {
       expect(encodeTags([]).isEqual(Optional.present(""))).toBe(true);
     });
-    test("Single simple tag should simply be outputted.", () => {
+    it("Single simple tag should simply be outputted.", () => {
       expect(
         encodeTags([
           {
@@ -22,7 +22,7 @@ describe("ParseEncodedTagStrings", () => {
         ]).isEqual(Optional.present("foo"))
       ).toBe(true);
     });
-    test("Single controlled vocabulary tag should be encoded correctly.", () => {
+    it("Single controlled vocabulary tag should be encoded correctly.", () => {
       expect(
         encodeTags([
           {
@@ -38,7 +38,7 @@ describe("ParseEncodedTagStrings", () => {
         )
       ).toBe(true);
     });
-    test("Multiple tags should be delimited by commas.", () => {
+    it("Multiple tags should be delimited by commas.", () => {
       expect(
         encodeTags([
           {
@@ -56,7 +56,7 @@ describe("ParseEncodedTagStrings", () => {
         ]).isEqual(Optional.present("foo,bar"))
       ).toBe(true);
     });
-    test("Invalid tag will result in Optional.empty.", () => {
+    it("Invalid tag will result in Optional.empty.", () => {
       expect(
         encodeTags([
           {

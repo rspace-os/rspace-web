@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React,
   { useState,
@@ -75,7 +75,7 @@ function ParentComponent() {
 }
 
 describe("Validator", () => {
-  test("Example", async () => {
+  it("Example", async () => {
     render(<ParentComponent />);
 
     // initially, this button will do nothing because the validator fails

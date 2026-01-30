@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -62,7 +62,7 @@ const TriggersPermalinkNavigate = () => {
 };
 
 describe("InnerSearchNavigationContext", () => {
-  test("navigate calls should update the search parameters.", () => {
+  it("navigate calls should update the search parameters.", () => {
     const querySpy = vi
       .spyOn(ApiServiceBase.prototype, "query")
       .mockImplementation(() =>
@@ -101,7 +101,7 @@ describe("InnerSearchNavigationContext", () => {
   });
 
   describe("when the parent context is AlwaysNewWindowNavigationContext", () => {
-    test("navigate calls with skipToParentContext set to true should open /inventory/search calls in a new window.", () => {
+    it("navigate calls with skipToParentContext set to true should open /inventory/search calls in a new window.", () => {
       const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 
       const search = new Search({
@@ -127,7 +127,7 @@ describe("InnerSearchNavigationContext", () => {
 
       expect(openSpy).toHaveBeenCalled();
     });
-    test("navigate calls to permalink pages should always open in a new window.", () => {
+    it("navigate calls to permalink pages should always open in a new window.", () => {
       const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 
       const search = new Search({
@@ -155,7 +155,7 @@ describe("InnerSearchNavigationContext", () => {
     });
   });
 
-  test("Pre-existing search parameters are kept, enforcing the parentGlobalId restriction", () => {
+  it("Pre-existing search parameters are kept, enforcing the parentGlobalId restriction", () => {
     const querySpy = vi
       .spyOn(ApiServiceBase.prototype, "query")
       .mockImplementation(() =>

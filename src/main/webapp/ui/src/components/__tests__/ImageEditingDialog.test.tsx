@@ -2,11 +2,10 @@
  */
 import {
   describe,
-  it,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -43,7 +42,7 @@ const readAsDataUrl = (file: Blob): Promise<string> =>
   });
 
 describe("ImageEditingDialog", () => {
-  test("Should have no axe violations.", async () => {
+  it("Should have no axe violations.", async () => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (ctx === null) throw new Error("could not get canvas");
@@ -77,7 +76,7 @@ describe("ImageEditingDialog", () => {
 
     expect(await axe(baseElement)).toHaveNoViolations();
   });
-  test("Rotating four times in either direction is a no-op.", async () => {
+  it("Rotating four times in either direction is a no-op.", async () => {
     const user = userEvent.setup();
     await fc.assert(
       fc.asyncProperty(
@@ -137,7 +136,7 @@ describe("ImageEditingDialog", () => {
     );
   });
 
-  test("Rotating by 90º clockwise should result in the correct image", async () => {
+  it("Rotating by 90º clockwise should result in the correct image", async () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -188,7 +187,7 @@ describe("ImageEditingDialog", () => {
     expect(submitHandler.mock.calls[0][0]).toBeInstanceOf(Blob);
   });
 
-  test("Rotating by 90º counter clockwise should result in the correct image", async () => {
+  it("Rotating by 90º counter clockwise should result in the correct image", async () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -232,7 +231,7 @@ describe("ImageEditingDialog", () => {
     expect(submitHandler.mock.calls[0][0]).toBeInstanceOf(Blob);
   });
 
-  test("If no change has been made, then submitHandler is not called", async () => {
+  it("If no change has been made, then submitHandler is not called", async () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -276,7 +275,7 @@ describe("ImageEditingDialog", () => {
    * ReactCrop, so perhaps that is the issue.
    */
 
-  test("Cancel button should not invoke submitHandler", async () => {
+  it("Cancel button should not invoke submitHandler", async () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");

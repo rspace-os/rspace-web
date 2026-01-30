@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -26,7 +26,7 @@ function Wrapper(): React.ReactNode {
 }
 
 describe("useViewportDimensions", () => {
-  test("Inside of a test environment, width defaults to 1024px.", () => {
+  it("Inside of a test environment, width defaults to 1024px.", () => {
     render(<Wrapper />);
     expect(screen.getByText("1024")).toBeVisible();
   });

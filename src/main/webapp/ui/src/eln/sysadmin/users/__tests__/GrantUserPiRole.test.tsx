@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -38,7 +38,7 @@ beforeEach(() => {
 
 
 describe("Grant User PI Role", () => {
-  test(
+  it(
     "When `checkVerificationPasswordNeeded` returns true, a message should be shown.",
     async () => {
       const user = userEvent.setup();
@@ -97,7 +97,7 @@ describe("Grant User PI Role", () => {
     },
     40 * 1000,
   );
-  test(
+  it(
     "When `checkVerificationPasswordNeeded` returns false, a message should not be shown.",
     async () => {
       const user = userEvent.setup();

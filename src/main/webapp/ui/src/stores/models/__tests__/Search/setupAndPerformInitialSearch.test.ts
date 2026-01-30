@@ -1,6 +1,6 @@
 /*
  */
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import Search from "../../Search";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
@@ -42,7 +42,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 }));
 
 describe("setupAndPerformInitialSearch", () => {
-  test("A second call whilst the first is being processed should cancel the first.", async () => {
+  it("A second call whilst the first is being processed should cancel the first.", async () => {
     const search = new Search({
       factory: mockFactory(),
     });

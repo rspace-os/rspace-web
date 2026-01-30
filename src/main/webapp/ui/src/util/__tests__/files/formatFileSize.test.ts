@@ -1,20 +1,20 @@
 /*
  */
-import { describe, it, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { formatFileSize } from "../../files";
 import fc from "fast-check";
 
 describe("formatFileSize", () => {
-  test('formatFileSize(1024) === "1.02 kB"', () => {
+  it('formatFileSize(1024) === "1.02 kB"', () => {
     expect(formatFileSize(1024)).toBe("1.02 kB");
   });
 
-  test('formatFileSize(9976500, 3) === "9.976 MB"', () => {
+  it('formatFileSize(9976500, 3) === "9.976 MB"', () => {
     expect(formatFileSize(9976500, 3)).toBe("9.976 MB");
   });
 
-  test("formatFileSize output should match regex", () => {
+  it("formatFileSize output should match regex", () => {
     fc.assert(
       // max nat is (2^31)-1 so 9dp is sufficient
       fc.property(fc.nat(), fc.nat(9), (bytes, dp) => {

@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React,
   { useState } from "react";
@@ -68,7 +68,7 @@ function renderWithJustFieldValue(
 }
 
 describe("BatchName", () => {
-  test("Should initially not be in an error state even though the value is the empty string.", () => {
+  it("Should initially not be in an error state even though the value is the empty string.", () => {
     const { container } = renderWithJustFieldValue({
       common: "",
       suffix: "NONE",
@@ -78,7 +78,7 @@ describe("BatchName", () => {
     );
   });
 
-  test("Should enter an error state when value is only a single character and the suffix is NONE.", () => {
+  it("Should enter an error state when value is only a single character and the suffix is NONE.", () => {
     fc.assert(
       fc.property(
         fc
@@ -109,7 +109,7 @@ describe("BatchName", () => {
    * This is because all of the suffixes have a length >= 2, and the minimum
    * length allows is also 2 chars
    */
-  test("Should not enter an error state when value is only a single character and the suffix is not NONE.", () => {
+  it("Should not enter an error state when value is only a single character and the suffix is not NONE.", () => {
     fc.assert(
       fc.property(
         fc.tuple(
@@ -142,7 +142,7 @@ describe("BatchName", () => {
   });
 
   describe("Should enter an error state when the value is too long.", () => {
-    test('When the suffix is "NONE".', () => {
+    it('When the suffix is "NONE".', () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 256 - lengthOfSuffix("NONE") }),
@@ -167,7 +167,7 @@ describe("BatchName", () => {
       );
     });
 
-    test('When the suffix is "INDEX_NUMBER".', () => {
+    it('When the suffix is "INDEX_NUMBER".', () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 256 - lengthOfSuffix("INDEX_NUMBER") }),
@@ -192,7 +192,7 @@ describe("BatchName", () => {
       );
     });
 
-    test('When the suffix is "INDEX_LETTER".', () => {
+    it('When the suffix is "INDEX_LETTER".', () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 256 - lengthOfSuffix("INDEX_LETTER") }),
@@ -217,7 +217,7 @@ describe("BatchName", () => {
       );
     });
 
-    test('When the suffix is "CREATED".', () => {
+    it('When the suffix is "CREATED".', () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 256 - lengthOfSuffix("CREATED") }),
@@ -247,7 +247,7 @@ describe("BatchName", () => {
    * Only applies when suffix is NONE because there is no minimum common for
    * the other suffixes
    */
-  test("Entering fewer than 2 characters, after having entered something valid, should error.", () => {
+  it("Entering fewer than 2 characters, after having entered something valid, should error.", () => {
     fc.assert(
       fc.property(
         fc.tuple(
@@ -288,7 +288,7 @@ describe("BatchName", () => {
     );
   });
 
-  test("Should enter an error state when value is just whitespace.", () => {
+  it("Should enter an error state when value is just whitespace.", () => {
     fc.assert(
       fc.property(
         fc
@@ -315,7 +315,7 @@ describe("BatchName", () => {
       { numRuns: 10 }
     );
   });
-  test("When the entered text is of a valid length, there should be character count shown.", () => {
+  it("When the entered text is of a valid length, there should be character count shown.", () => {
     fc.assert(
       fc.property(
         fc.tuple(

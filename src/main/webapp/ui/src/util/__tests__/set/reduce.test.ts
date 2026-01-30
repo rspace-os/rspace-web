@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { monoids } from "../helpers";
@@ -6,7 +6,7 @@ import RsSet from "../../set";
 import { arbRsSet } from "./helpers";
 
 describe("reduce", () => {
-  test("Reducing an empty set, by a monoial operation, should give the monoid's identity element.", () => {
+  it("Reducing an empty set, by a monoial operation, should give the monoid's identity element.", () => {
     fc.assert(
       fc.property(
         fc.oneof(...monoids) as any,
@@ -22,7 +22,7 @@ describe("reduce", () => {
       )
     );
   });
-  test("Reducing a set of two elements, by a monoial operation, should give the same as applying the monoid's boolean function to the two elements.", () => {
+  it("Reducing a set of two elements, by a monoial operation, should give the same as applying the monoid's boolean function to the two elements.", () => {
     fc.assert(
       fc.property(
         (fc

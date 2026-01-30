@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
@@ -38,7 +38,7 @@ vi.mock("../../../../common/ElnApiService", () => ({
   }}));
 
 describe("fetchMembersOfSameGroup", () => {
-  test("Error message should be returned as promise.reject", async () => {
+  it("Error message should be returned as promise.reject", async () => {
     const restoreConsole = silenceConsole(["error"], [/./]);
     const { peopleStore } = getRootStore();
     runInAction(() => {

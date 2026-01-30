@@ -3,11 +3,10 @@
  
 import {
   describe,
-  it,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -117,7 +116,7 @@ describe("AttachmentField", () => {
   });
   describe("Help text", () => {
     describe('value = ""', () => {
-      test("Help text is shown.", () => {
+      it("Help text is shown.", () => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
@@ -135,7 +134,7 @@ describe("AttachmentField", () => {
       });
     });
     describe('value = "foo"', () => {
-      test("Help text is not shown.", () => {
+      it("Help text is not shown.", () => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
@@ -191,7 +190,7 @@ describe("AttachmentField", () => {
           );
           textContent = container.textContent;
         }
-        test("Whether to show FileField.", () => {
+        it("Whether to show FileField.", () => {
           renderAttachmentField();
           if (showFileField) {
             expect(FileField).toHaveBeenCalled();
@@ -199,7 +198,7 @@ describe("AttachmentField", () => {
             expect(FileField).not.toHaveBeenCalled();
           }
         });
-        test('Whether to show "No File Attached" label.', () => {
+        it('Whether to show "No File Attached" label.', () => {
           renderAttachmentField();
           if (showNoAttachmentLabel) {
             expect(textContent).toEqual(
@@ -216,7 +215,7 @@ describe("AttachmentField", () => {
   });
   describe("File viewer", () => {
     describe("attachment = ExistingAttachment", () => {
-      test("Attachment's filename should be shown.", () => {
+      it("Attachment's filename should be shown.", () => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField

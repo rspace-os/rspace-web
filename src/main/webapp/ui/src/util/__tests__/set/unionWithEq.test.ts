@@ -1,11 +1,11 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import RsSet from "../../set";
 
 describe("unionWithEq", () => {
-  test("Simple example", () => {
+  it("Simple example", () => {
     expect(
       new RsSet([{ id: 1 }, { id: 2 }])
         .unionWithEq(new RsSet([{ id: 1 }, { id: 3 }]), (a, b) => a.id === b.id)

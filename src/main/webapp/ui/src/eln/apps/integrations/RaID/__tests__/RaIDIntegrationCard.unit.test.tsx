@@ -2,11 +2,11 @@
  */
 import {
   describe,
-  it,
   expect,
-  vi,
   beforeEach,
   afterEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {

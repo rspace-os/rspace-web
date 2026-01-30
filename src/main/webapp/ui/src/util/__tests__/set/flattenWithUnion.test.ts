@@ -1,11 +1,11 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet, arbSetOfSetsWithHighOverlap } from "./helpers";
 import { flattenWithUnion } from "../../set";
 
 describe("flattenWithUnion", () => {
-  test("Size of output is less than or equal to the sum of the sizes of input sets", () => {
+  it("Size of output is less than or equal to the sum of the sizes of input sets", () => {
     fc.assert(
       fc.property(arbSetOfSetsWithHighOverlap, (setOfSets) => {
         const sumOfSizes = setOfSets.reduce((acc, set) => set.size + acc, 0);
@@ -15,7 +15,7 @@ describe("flattenWithUnion", () => {
       })
     );
   });
-  test("Distributes over intersection", () => {
+  it("Distributes over intersection", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbSetOfSetsWithHighOverlap, arbRsSet(fc.anything())),

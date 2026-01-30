@@ -2,9 +2,8 @@
  */
 import {
   describe,
-  it,
-  test,
   expect,
+  it,
   vi,
 } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -32,7 +31,7 @@ describe("action: setTargetContainer", () => {
      * being moved are cleared to make it clear to the user that they are able
      * to simply swap the locations of the items being moved.
      */
-    test("cause clearLocationsWithContentBeingMovedOut to be called.", async () => {
+    it("cause clearLocationsWithContentBeingMovedOut to be called.", async () => {
       const container = makeMockContainer({
         parentContainers: [containerAttrs({ globalId: "IC2" })],
       });

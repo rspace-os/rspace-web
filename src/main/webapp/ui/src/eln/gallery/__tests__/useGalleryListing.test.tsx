@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -80,7 +80,7 @@ function WrapperComponent() {
 }
 
 describe("useGalleryListing", () => {
-  test("Load more button should disappear on last page", async () => {
+  it("Load more button should disappear on last page", async () => {
     const user = userEvent.setup();
 
     /*

@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 
 import FieldModel from "../../FieldModel";
@@ -19,7 +19,7 @@ beforeEach(() => {
 
 
 describe("method: validate", () => {
-  test("Mandatory choice fields should be allowed once they have a value.", () => {
+  it("Mandatory choice fields should be allowed once they have a value.", () => {
     const field = new FieldModel(
       {
         name: "foo",
@@ -48,7 +48,7 @@ describe("method: validate", () => {
 
     expect(field.validate().isError).toBe(false);
   });
-  test("Mandatory radio fields should be allowed once they have a value.", () => {
+  it("Mandatory radio fields should be allowed once they have a value.", () => {
     const field = new FieldModel(
       {
         name: "foo",

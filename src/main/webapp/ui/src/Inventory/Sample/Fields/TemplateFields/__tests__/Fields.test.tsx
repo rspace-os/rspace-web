@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
@@ -31,7 +31,7 @@ beforeEach(() => {
 
 describe("Fields", () => {
   describe("Sample with number field behaves correctly.", () => {
-    test("Checks validity of input", () => {
+    it("Checks validity of input", () => {
       const INITIAL_VALUE = "2";
 
       const activeResult = makeMockSample({
@@ -71,7 +71,7 @@ describe("Fields", () => {
       );
     });
 
-    test("Passed step='any' to input", () => {
+    it("Passed step='any' to input", () => {
       const INITIAL_VALUE = "2";
 
       const activeResult = makeMockSample({

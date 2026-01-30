@@ -1,9 +1,9 @@
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -20,7 +20,7 @@ beforeEach(() => {
 
 
 describe("DynamicHeadingLevel", () => {
-  test("Should default to level 1", () => {
+  it("Should default to level 1", () => {
     render(<Heading>Test</Heading>);
 
     expect(
@@ -28,7 +28,7 @@ describe("DynamicHeadingLevel", () => {
     ).toBeInTheDocument();
   });
 
-  test("Using a HeadingContext should result in a level 2", () => {
+  it("Using a HeadingContext should result in a level 2", () => {
     render(
       <HeadingContext>
         <Heading>Test</Heading>
@@ -40,7 +40,7 @@ describe("DynamicHeadingLevel", () => {
     ).toBeInTheDocument();
   });
 
-  test("Nesting HeadingContexts should increment the level.", () => {
+  it("Nesting HeadingContexts should increment the level.", () => {
     render(
       <HeadingContext>
         <HeadingContext>
@@ -54,7 +54,7 @@ describe("DynamicHeadingLevel", () => {
     ).toBeInTheDocument();
   });
 
-  test("Specifying level allows skipping levels.", () => {
+  it("Specifying level allows skipping levels.", () => {
     render(
       <>
         <h1>Top-level heading</h1>
@@ -69,7 +69,7 @@ describe("DynamicHeadingLevel", () => {
     ).toBeInTheDocument();
   });
 
-  test("Specifying level on a nested HeadingContext is not allowed.", () => {
+  it("Specifying level on a nested HeadingContext is not allowed.", () => {
     const restoreConsole = silenceConsole(["error"], [/./]);
     expect(() => {
       render(
@@ -83,7 +83,7 @@ describe("DynamicHeadingLevel", () => {
     restoreConsole();
   });
 
-  test("Nesting should max out at 6.", () => {
+  it("Nesting should max out at 6.", () => {
     render(
       <HeadingContext>
         <HeadingContext>
@@ -117,7 +117,7 @@ describe("DynamicHeadingLevel", () => {
     ).toBeInTheDocument();
   });
 
-  test("Variant should change css styles but leave element type untouched.", () => {
+  it("Variant should change css styles but leave element type untouched.", () => {
     render(
       <HeadingContext>
         <Heading variant="h5">Test</Heading>
@@ -129,7 +129,7 @@ describe("DynamicHeadingLevel", () => {
     ).toMatch(/MuiTypography-h5/);
   });
 
-  test("Variant should default to the level.", () => {
+  it("Variant should default to the level.", () => {
     render(
       <HeadingContext>
         <HeadingContext>

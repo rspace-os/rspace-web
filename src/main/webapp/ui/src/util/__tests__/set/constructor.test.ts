@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import RsSet from "../../set";
 import fc from "fast-check";
@@ -10,20 +10,20 @@ describe("constructor", () => {
       expect(new RsSet(data).size).toEqual(new Set(data).size);
     };
 
-    test("undefined", () => {
+    it("undefined", () => {
       expectSameSizeAsNativeSet();
     });
-    test("null", () => {
+    it("null", () => {
       expectSameSizeAsNativeSet(null);
     });
-    test("array", () => {
+    it("array", () => {
       fc.assert(
         fc.property(fc.array(fc.anything()), (array) => {
           expectSameSizeAsNativeSet(array);
         })
       );
     });
-    test("set", () => {
+    it("set", () => {
       fc.assert(
         fc.property(
           fc.array(fc.anything()).map((array) => new Set(array)),
@@ -33,7 +33,7 @@ describe("constructor", () => {
         )
       );
     });
-    test("RsSet", () => {
+    it("RsSet", () => {
       fc.assert(
         fc.property(arbRsSet(fc.anything()), (rsset) => {
           expectSameSizeAsNativeSet(rsset);

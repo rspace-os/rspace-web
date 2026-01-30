@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -27,7 +27,7 @@ beforeEach(() => {
 
 describe("DateField", () => {
   describe("When `null` is passed as the `value` and field is disabled,", () => {
-    test("'None' is rendered", () => {
+    it("'None' is rendered", () => {
       render(<DateField value={null} disabled onChange={() => {}} />);
       expect(NoValue).toHaveBeenCalledWith(
         {
@@ -39,7 +39,7 @@ describe("DateField", () => {
   });
 
   describe("When passed an invalid date string,", () => {
-    test("there is an error message shown.", () => {
+    it("there is an error message shown.", () => {
       const { container } = render(
         <DateField value="2021-13-01" onChange={() => {}} />
       );

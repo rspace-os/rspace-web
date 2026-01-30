@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -24,7 +24,7 @@ beforeEach(() => {
 
 
 describe("Organization", () => {
-  test("The text 'well plate' should be shown to give the user a hint to use a grid container.", () => {
+  it("The text 'well plate' should be shown to give the user a hint to use a grid container.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <Organization container={makeMockContainer({ id: null })} />

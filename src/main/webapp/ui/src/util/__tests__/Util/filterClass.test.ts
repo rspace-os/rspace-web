@@ -1,11 +1,11 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import * as ArrayUtils from "../../ArrayUtils";
 
 describe("filterClass", () => {
-  test("Simple example", () => {
+  it("Simple example", () => {
     class SuperClass {}
     class SubClassA extends SuperClass {}
     class SubClassB extends SuperClass {}

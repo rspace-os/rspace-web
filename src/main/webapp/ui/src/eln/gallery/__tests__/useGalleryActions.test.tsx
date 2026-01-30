@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -62,7 +62,7 @@ describe("useGalleryActions", () => {
       );
     }
 
-    test("errorMessages should result in an error alert", async () => {
+    it("errorMessages should result in an error alert", async () => {
       const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
 
@@ -89,7 +89,7 @@ describe("useGalleryActions", () => {
 
       expect(toast).toHaveTextContent("This is a test error message.");
     });
-    test("exceptionMessage should result in an error alert", async () => {
+    it("exceptionMessage should result in an error alert", async () => {
       const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
 
@@ -148,7 +148,7 @@ describe("useGalleryActions", () => {
       );
     }
 
-    test("errorMessages should result in an error alert", async () => {
+    it("errorMessages should result in an error alert", async () => {
       const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
 
@@ -175,7 +175,7 @@ describe("useGalleryActions", () => {
 
       expect(toast).toHaveTextContent("This is a test error message.");
     });
-    test("exceptionMessage should result in an error alert", async () => {
+    it("exceptionMessage should result in an error alert", async () => {
       const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
 
@@ -236,7 +236,7 @@ describe("useGalleryActions", () => {
       );
     }
 
-    test("errorMessages should result in an error alert", async () => {
+    it("errorMessages should result in an error alert", async () => {
       const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
 
@@ -263,7 +263,7 @@ describe("useGalleryActions", () => {
 
       expect(toast).toHaveTextContent("This is a test error message.");
     });
-    test("exceptionMessage should result in an error alert", async () => {
+    it("exceptionMessage should result in an error alert", async () => {
       const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
 
@@ -335,7 +335,7 @@ describe("useGalleryActions", () => {
       );
     }
 
-    test("successful description update should result in success alert", async () => {
+    it("successful description update should result in success alert", async () => {
       const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
 
@@ -356,7 +356,7 @@ describe("useGalleryActions", () => {
       expect(toast).toHaveTextContent("Successfully updated description.");
     });
 
-    test("exceptionMessage error response format should result in error toast", async () => {
+    it("exceptionMessage error response format should result in error toast", async () => {
       const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
 

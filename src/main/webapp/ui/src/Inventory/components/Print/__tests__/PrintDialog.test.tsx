@@ -4,10 +4,10 @@
 
 import {
   describe,
-  it,
   expect,
-  vi,
   beforeAll,
+  it,
+  vi,
 } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import React from "react";

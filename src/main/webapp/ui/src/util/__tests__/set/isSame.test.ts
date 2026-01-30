@@ -1,11 +1,11 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet, arbSubsetOf } from "./helpers";
 import RsSet from "../../set";
 
 describe("isSame", () => {
-  test("Symmetric", () => {
+  it("Symmetric", () => {
     fc.assert(
       fc.property(
         arbRsSet(fc.anything()).chain((set) =>

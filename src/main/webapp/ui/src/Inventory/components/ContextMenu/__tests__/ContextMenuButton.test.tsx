@@ -2,10 +2,10 @@
  */
 import {
   describe,
-  test,
   expect,
-  vi,
   beforeEach,
+  it,
+  vi,
 } from "vitest";
 import React from "react";
 import {
@@ -26,7 +26,7 @@ beforeEach(() => {
 
 describe("ContextMenuButton", () => {
   describe("Disabled state", () => {
-    test("When disabled, should render aria-disabled.", () => {
+    it("When disabled, should render aria-disabled.", () => {
       fc.assert(
         fc.property(fc.string(), (disabledHelp) => {
           cleanup();

@@ -1,13 +1,13 @@
 /*
  */
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { doNotAwait } from "../../Util";
 
 describe("doNotAwait", () => {
   describe("When passed a function that takes multiple arguments", () => {
-    test("all of the subsequent arguments should be passed through.", () => {
+    it("all of the subsequent arguments should be passed through.", () => {
       const sleep: (ms: number) => Promise<void> = (ms) =>
         new Promise((resolve) => setTimeout(resolve, ms));
 
