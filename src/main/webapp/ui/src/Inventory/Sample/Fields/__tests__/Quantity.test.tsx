@@ -34,6 +34,15 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 })
 }));
 
+const unitOptions = [
+  {
+    id: 1,
+    label: "foo",
+    category: "mass",
+    description: "foo is mass",
+  },
+];
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -57,15 +66,8 @@ describe("Quantity", () => {
           const rootStore = makeMockRootStore({
             uiStore: {},
             unitStore: {
-              units: [
-                {
-                  id: 1,
-                  label: "foo",
-                  category: "mass",
-                  description: "foo is mass",
-                },
-              ],
-              unitsOfCategory: () => [],
+              units: unitOptions,
+              unitsOfCategory: () => unitOptions,
             },
           });
           const { container } = render(
@@ -96,15 +98,8 @@ describe("Quantity", () => {
             const rootStore = makeMockRootStore({
               uiStore: {},
               unitStore: {
-                units: [
-                  {
-                    id: 1,
-                    label: "foo",
-                    category: "mass",
-                    description: "foo is mass",
-                  },
-                ],
-                unitsOfCategory: () => [],
+                units: unitOptions,
+                unitsOfCategory: () => unitOptions,
               },
             });
             const { container } = render(
@@ -138,15 +133,8 @@ describe("Quantity", () => {
             const rootStore = makeMockRootStore({
               uiStore: {},
               unitStore: {
-                units: [
-                  {
-                    id: 1,
-                    label: "foo",
-                    category: "mass",
-                    description: "foo is mass",
-                  },
-                ],
-                unitsOfCategory: () => [],
+                units: unitOptions,
+                unitsOfCategory: () => unitOptions,
               },
             });
             const { container } = render(
@@ -179,15 +167,8 @@ describe("Quantity", () => {
             const rootStore = makeMockRootStore({
               uiStore: {},
               unitStore: {
-                units: [
-                  {
-                    id: 1,
-                    label: "foo",
-                    category: "mass",
-                    description: "foo is mass",
-                  },
-                ],
-                unitsOfCategory: () => [],
+                units: unitOptions,
+                unitsOfCategory: () => unitOptions,
               },
             });
             const { container } = render(
@@ -202,5 +183,4 @@ describe("Quantity", () => {
     });
   });
 });
-
 
