@@ -35,7 +35,8 @@ public class DSWController {
   @ResponseBody
   public ResponseEntity<JsonNode> currentUsers(@RequestParam() String serverAlias)
       throws URISyntaxException, MalformedURLException {
-    User user = userManager.getAuthenticatedUserInSession();
+    // User user = userManager.getAuthenticatedUserInSession();
+    User user = userManager.get(3l);
     UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
     // TODO: Fix this when we have multiple instances properly supported.  (Although we
     //  might not need to change anything if there's always one result.)
@@ -44,6 +45,29 @@ public class DSWController {
             uacfg.getAppConfigElementSets().iterator().next().getId());
     try {
       return ResponseEntity.ok().body(client.currentUser(serverAlias, cfg.get()));
+    } catch (HttpClientErrorException e) {
+      JsonNode err = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
+      return ResponseEntity.status(e.getStatusCode()).body(err);
+    } catch (Exception e) {
+      return ResponseEntity.internalServerError().body(null);
+    }
+  }
+
+  @GetMapping("/availableDocs")
+  @ResponseBody
+  public ResponseEntity<JsonNode> availableDocs(@RequestParam() String serverAlias)
+      throws URISyntaxException, MalformedURLException {
+    // User user = userManager.getAuthenticatedUserInSession();
+    User user = userManager.get(3l);
+    System.out.println("@@@ Using user: " + user.getUsername());
+    UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
+    // TODO: Fix this when we have multiple instances properly supported.  (Although we
+    //  might not need to change anything if there's always one result.)
+    Optional<AppConfigElementSet> cfg =
+        userAppConfigMgr.findByAppConfigElementSetId(
+            uacfg.getAppConfigElementSets().iterator().next().getId());
+    try {
+      return ResponseEntity.ok().body(client.getDocsForCurrentUser(serverAlias, cfg.get()));
     } catch (HttpClientErrorException e) {
       JsonNode err = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
       return ResponseEntity.status(e.getStatusCode()).body(err);

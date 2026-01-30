@@ -3,13 +3,19 @@ package com.researchspace.webapp.integrations.dsw;
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.integrations.dsw.model.DSWProjects;
+import com.researchspace.webapp.integrations.dsw.model.DSWUser;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +45,7 @@ public class DSWClient {
   private final RestTemplate restTemplate;
   private @Autowired UserConnectionManager source;
   private @Autowired UserManager userManager;
+  private ObjectMapper mapper = new ObjectMapper();
 
   public DSWClient() {
     this.restTemplate = new RestTemplate();
@@ -53,7 +60,8 @@ public class DSWClient {
   }
 
   private String getApiKey(String serverAlias) {
-    User subject = userManager.getAuthenticatedUserInSession();
+    // User subject = userManager.getAuthenticatedUserInSession();
+    User subject = userManager.get(3l);
     String accessToken =
         source
             .findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, serverAlias)
@@ -81,5 +89,70 @@ public class DSWClient {
             new HttpEntity<>(getHttpHeaders(serverAlias, connCfg)),
             JsonNode.class)
         .getBody();
+  }
+
+  public JsonNode getProjectsForCurrentUser(String serverAlias, AppConfigElementSet cfg)
+      throws HttpClientErrorException, URISyntaxException, MalformedURLException {
+    DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
+
+    JsonNode currentUser = currentUser(serverAlias, cfg);
+    DSWUser dswUser = null;
+    try {
+      dswUser = mapper.readValue(currentUser.toString(), DSWUser.class);
+      System.out.println("@@@ DSW User: " + dswUser.getEmail());
+    } catch (Exception e) {
+      System.out.println("@@@ Error! " + e.getMessage());
+    }
+
+    JsonNode projects =
+        restTemplate
+            .exchange(
+                UriComponentsBuilder.fromUriString(
+                        connCfg.getRepositoryURL().get()
+                            + "/projects?userUuids="
+                            + dswUser.getUuid())
+                    .build()
+                    .toUri(),
+                HttpMethod.GET,
+                new HttpEntity<>(getHttpHeaders(serverAlias, connCfg)),
+                JsonNode.class)
+            .getBody();
+
+    return projects;
+  }
+
+  public JsonNode getDocsForCurrentUser(String serverAlias, AppConfigElementSet cfg)
+      throws HttpClientErrorException, URISyntaxException, MalformedURLException {
+    DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
+
+    JsonNode projects = getProjectsForCurrentUser(serverAlias, cfg);
+
+    DSWProjects dswProjects = null;
+    try {
+      dswProjects = mapper.readValue(projects.toString(), DSWProjects.class);
+      System.out.println("@@@ This many projects: " + dswProjects.getProjects().length);
+    } catch (Exception e) {
+      System.out.println("@@@ Error! " + e.getMessage());
+    }
+
+    List<String> projectUuids = Arrays.stream(dswProjects.getProjects())
+        .map(p -> p.getUuid())
+        .collect(Collectors.toList());
+
+    JsonNode documents = null;
+    //    documents =
+    //        restTemplate
+    //            .exchange(
+    //                UriComponentsBuilder.fromUriString(
+    //                        connCfg.getRepositoryURL().get()
+    //                            + "/projects?userUuids=")
+    //                    .build()
+    //                    .toUri(),
+    //                HttpMethod.GET,
+    //                new HttpEntity<>(getHttpHeaders(serverAlias, connCfg)),
+    //                JsonNode.class)
+    //            .getBody();
+
+    return documents;
   }
 }
