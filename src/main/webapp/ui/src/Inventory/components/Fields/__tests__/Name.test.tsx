@@ -1,8 +1,20 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import React, { useState } from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
+import React,
+  { useState } from "react";
+import {
+  render,
+  cleanup,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import Name from "../Name";
 import fc from "fast-check";
@@ -14,7 +26,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 function renderNameField(
   initialValue: string,

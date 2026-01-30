@@ -1,7 +1,15 @@
 /*
  */
-import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
-import React, { useState } from "react";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
+import React,
+  { useState } from "react";
 import {
   render,
   cleanup,
@@ -30,7 +38,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 class DummyResult {
   editing: boolean = true;

@@ -1,8 +1,20 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import React, { useState } from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
+import React,
+  { useState } from "react";
+import {
+  render,
+  cleanup,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import BatchName from "../BatchName";
 import { type BatchName as BatchNameType } from "../../../../stores/models/InventoryBaseRecordCollection";
@@ -22,7 +34,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 function renderWithJustFieldValue(
   initialValue: BatchNameType,

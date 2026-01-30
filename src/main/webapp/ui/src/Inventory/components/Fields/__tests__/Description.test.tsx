@@ -1,9 +1,21 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import "../../../../../__mocks__/matchMedia";
-import React, { useState } from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+import React,
+  { useState } from "react";
+import {
+  render,
+  cleanup,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import Description from "../Description";
 import fc from "fast-check";
@@ -14,7 +26,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 vi.mock("@tinymce/tinymce-react", () => ({
   __esModule: true,

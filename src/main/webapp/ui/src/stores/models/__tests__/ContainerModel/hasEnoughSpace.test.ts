@@ -1,6 +1,12 @@
 /*
  */
-import { describe, it, test, expect, vi } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+} from "vitest";
 import { makeMockContainer, containerAttrs } from "./mocking";
 import LocationModel from "../../LocationModel";
 

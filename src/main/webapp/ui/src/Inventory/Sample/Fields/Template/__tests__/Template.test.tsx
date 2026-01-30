@@ -1,9 +1,19 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, waitFor, screen } from "@testing-library/react";
+import {
+  render,
+  waitFor,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import {
   makeMockTemplate,
@@ -71,7 +81,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("Template", () => {
   describe("When the sample is deleted, Template field should", () => {

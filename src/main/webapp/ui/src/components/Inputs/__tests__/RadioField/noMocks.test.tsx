@@ -1,8 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import RadioField from "../../RadioField";
 import { ThemeProvider } from "@mui/material/styles";
@@ -12,7 +22,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("RadioField", () => {
   test("When a selection is made, the onChange handler is called", () => {

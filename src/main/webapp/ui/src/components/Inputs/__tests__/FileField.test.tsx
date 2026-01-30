@@ -1,8 +1,17 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import {
+  render,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 
 import FileField from "../FileField";
@@ -20,7 +29,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("FileField", () => {
   /*

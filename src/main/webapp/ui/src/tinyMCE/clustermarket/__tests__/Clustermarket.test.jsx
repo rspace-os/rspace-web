@@ -1,10 +1,10 @@
 /*
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import Clustermarket, { getOrder, getOrderBy } from "../Clustermarket";
 import React from "react";
 import axios from "@/common/axios";
-import { render, screen, act, cleanup } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import BookingDetails from "./bookingsDetails.json";
@@ -57,7 +57,6 @@ beforeEach(() => {
     .reply(200, [EquipmentDetails["2"], EquipmentDetails["3"]]);
 });
 
-afterEach(cleanup);
 describe("Has defaultOrderBy ", () => {
   it("when no value in localStorage then returns Order by start_time", () => {
     expect(getOrderBy()).toEqual("start_time");
@@ -75,9 +74,7 @@ describe("Has defaultOrder ", () => {
     expect(getOrder()).toEqual(Order.asc);
   });
   it("returns Order value in localStorage", () => {
-    localStorageMock.getItem = vi
-      .fn()
-      .mockImplementationOnce(() => Order.desc);
+    localStorageMock.getItem = vi.fn().mockImplementationOnce(() => Order.desc);
     expect(getOrder()).toEqual(Order.desc);
   });
 });
@@ -85,7 +82,7 @@ describe("Has defaultOrder ", () => {
 describe("Renders page with booking data ", () => {
   it("displays booking table headers", async () => {
     getWrapper();
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+
     await act(() => {
       return findFirstByText("Booking ID");
     });
@@ -93,7 +90,7 @@ describe("Renders page with booking data ", () => {
 
   it("displays booking type radio and maintenance checkbox", async () => {
     getWrapper();
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+
     await act(() => {
       return findFirstByText("Booked");
     });
@@ -104,7 +101,7 @@ describe("Renders page with booking data ", () => {
 
   it('displays bookings of type "booked"', async () => {
     getWrapper();
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+
     await act(() => {
       return findFirstByText("Booking ID");
     });
@@ -120,7 +117,7 @@ describe("Renders page with booking data ", () => {
 
   it('displays bookings of type "booked and completed"', async () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+
     await act(() => {
       return findFirstByText("Booking ID");
     });
@@ -132,7 +129,7 @@ describe("Renders page with booking data ", () => {
 
   it("bookings are ordered by start date, ascending", async () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+
     await act(() => {
       return findFirstByText("Booking ID");
     });
@@ -156,7 +153,7 @@ describe("Renders page with booking data ", () => {
     mockAxios.resetHandlers();
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper({ defaultBookingType: BookingType.ALL });
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+
     await act(() => {
       return findFirstByText("Booking ID");
     });
@@ -169,7 +166,7 @@ describe("Renders page with booking data ", () => {
     mockAxios.resetHandlers();
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper();
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+
     await act(() => {
       return findFirstByText("Booking ID");
     });

@@ -1,7 +1,14 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach } from "vitest";
-import React, { useState } from "react";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
+import React,
+  { useState } from "react";
 import {
   render,
   screen,
@@ -74,7 +81,7 @@ describe("Zenodo", () => {
       within(screen.getByRole("dialog")).getByRole("button", { name: /close/i })
     );
     await waitFor(() => {
-      expect(document.body.style.overflow).toBe("unset");
+      expect(document.body).toHaveStyle({overflow:"unset"});
     });
   });
 

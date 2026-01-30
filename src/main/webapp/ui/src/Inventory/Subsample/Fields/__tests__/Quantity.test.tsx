@@ -1,8 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, fireEvent, screen } from "@testing-library/react";
+import {
+  render,
+  fireEvent,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import Quantity from "../Quantity";
 import { ThemeProvider } from "@mui/material/styles";
@@ -26,7 +36,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("Quantity", () => {
   test("Should support scientific notation.", () => {

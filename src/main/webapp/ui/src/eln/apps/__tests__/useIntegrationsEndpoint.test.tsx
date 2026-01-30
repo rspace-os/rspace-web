@@ -1,8 +1,17 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import React, { useEffect } from "react";
-import { render, cleanup } from "@testing-library/react";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
+import React,
+  { useEffect } from "react";
+import {
+  render,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
 import MockAdapter from "axios-mock-adapter";
@@ -14,7 +23,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("useIntegrationsEndpoint", () => {
   describe("saveAppOptions", () => {

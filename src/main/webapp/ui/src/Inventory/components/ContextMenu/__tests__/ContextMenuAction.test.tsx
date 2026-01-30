@@ -1,8 +1,19 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+import {
+  render,
+  cleanup,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import ContextMenuAction from "../ContextMenuAction";
 import fc from "fast-check";
@@ -11,7 +22,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 function OuterComponent({
   onKeyDown,

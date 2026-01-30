@@ -1,6 +1,12 @@
 /*
  */
-import { describe, it, test, expect, vi } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+} from "vitest";
 import "@testing-library/jest-dom/vitest";
 import Search from "../../Search";
 import ApiServiceBase from "../../../../common/ApiServiceBase";

@@ -1,7 +1,13 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { cleanup } from "@testing-library/react";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
+
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
 
@@ -11,7 +17,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("method: validate", () => {
   test("Mandatory choice fields should be allowed once they have a value.", () => {

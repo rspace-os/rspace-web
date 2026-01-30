@@ -1,8 +1,16 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import {
+  render,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import Search from "../../../../stores/models/Search";
@@ -14,7 +22,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {

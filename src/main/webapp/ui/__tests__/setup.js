@@ -1,4 +1,5 @@
-import { vi, expect } from "vitest";
+import { vi, expect, afterEach } from "vitest";
+import { cleanup } from "@testing-library/react";
 import createFetchMock from "vitest-fetch-mock";
 import * as matchers from "@testing-library/jest-dom/matchers";
 const fetchMocker = createFetchMock(vi);
@@ -7,6 +8,7 @@ const fetchMocker = createFetchMock(vi);
 fetchMocker.enableMocks();
 expect.extend(matchers);
 globalThis.expect = expect;
+afterEach(() => cleanup());
 
 vi.mock("@/hooks/api/useUiPreference", async () => {
   const actual = await vi.importActual("@/hooks/api/useUiPreference");
@@ -62,7 +64,7 @@ if (typeof HTMLImageElement !== "undefined") {
   });
   const originalDescriptor = Object.getOwnPropertyDescriptor(
     HTMLImageElement.prototype,
-    "src"
+    "src",
   );
   Object.defineProperty(HTMLImageElement.prototype, "src", {
     configurable: true,

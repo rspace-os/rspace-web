@@ -1,8 +1,19 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen, waitFor, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import * as FetchingData from "../../../util/fetchingData";
@@ -16,7 +27,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 const mockAxios = new MockAdapter(axios);
 

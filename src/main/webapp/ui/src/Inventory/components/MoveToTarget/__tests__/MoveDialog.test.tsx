@@ -1,8 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { cleanup, screen, waitFor, fireEvent } from "@testing-library/react";
+import {
+  screen,
+  waitFor,
+  fireEvent,
+} from "@testing-library/react";
 import { action, observable } from "mobx";
 import "@testing-library/jest-dom/vitest";
 import { storesContext } from "../../../../stores/stores-context";
@@ -49,7 +59,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("MoveDialog", () => {
   test("When cancel is pressed, the dialog should close.", async () => {
@@ -175,7 +184,7 @@ describe("MoveDialog", () => {
             ).toBe(true);
           }
         )
-        .afterEach(cleanup),
+,
       { numRuns: 1 }
     );
   });

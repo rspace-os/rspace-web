@@ -1,10 +1,16 @@
 /*
  */
-import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
 import {
   render,
-  cleanup,
   screen,
   fireEvent,
   act,
@@ -20,7 +26,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("DryadRepo", () => {
   /*

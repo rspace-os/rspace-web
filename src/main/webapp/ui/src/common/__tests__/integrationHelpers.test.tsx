@@ -1,8 +1,17 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, waitFor } from "@testing-library/react";
+import {
+  render,
+  waitFor,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
@@ -14,7 +23,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("integrationHelpers", () => {
   describe("useIntegrationIsAllowedAndEnabled", () => {

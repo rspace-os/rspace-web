@@ -1,9 +1,17 @@
 /*
  */
  
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import {
+  render,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import RadioField from "../../RadioField";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -18,7 +26,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 const renderRadioField = (props: {
   disabled?: boolean;

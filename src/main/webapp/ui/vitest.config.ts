@@ -27,7 +27,10 @@ export default defineConfig({
       },
       {
         find: /^react-photoswipe-gallery$/,
-        replacement: path.resolve(__dirname, "src/test-stubs/PhotoswipeStub.js"),
+        replacement: path.resolve(
+          __dirname,
+          "src/test-stubs/PhotoswipeStub.js",
+        ),
       },
     ],
   },
@@ -37,7 +40,27 @@ export default defineConfig({
     setupFiles: ["./__tests__/setup.js"],
     include: ["**/?*.test.(js|cjs|mjs|jsx|ts|tsx)"],
     testTimeout: 20000,
-    reporters: ["default", "junit", "./__tests__/reporters/slowest-vitest"],
+    reporters: [
+      "default",
+      "junit",
+      {
+        onTestRunEnd(testModules, unhandledErrors, reason) {
+          const tests = testModules.flatMap((m) => [...m.children.allTests()]);
+          tests.sort(
+            (x, y) => x.diagnostic()?.duration! - y.diagnostic()?.duration!,
+          );
+          tests.reverse();
+          console.log(
+            Object.fromEntries(
+              tests.map((t) => [
+                `${t.module.moduleId} | ${t.fullName}`,
+                t.diagnostic()?.duration,
+              ]),
+            ),
+          );
+        },
+      },
+    ],
     outputFile: {
       junit: "./junit.xml",
     },

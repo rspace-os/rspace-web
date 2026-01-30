@@ -1,11 +1,18 @@
 /*
  */
-import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import "../../../__mocks__/matchMedia";
-import React, { useState } from "react";
+import React,
+  { useState } from "react";
 import {
   render,
-  cleanup,
   screen,
   act,
   waitFor,
@@ -46,7 +53,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 const arbUserSelection = fc.record<{
   type: "user";
@@ -427,7 +433,7 @@ describe("ExportDialog", () => {
                 .archiveType
             ).toBe("xml");
           })
-          .afterEach(cleanup),
+,
         { numRuns: 1 }
       );
     });
@@ -514,7 +520,7 @@ describe("ExportDialog", () => {
                   );
                 }
               )
-              .afterEach(cleanup),
+,
             { numRuns: 1 }
           );
         });
@@ -538,7 +544,7 @@ describe("ExportDialog", () => {
                   selection.groupName + " - all work"
                 );
               })
-              .afterEach(cleanup),
+,
             { numRuns: 1 }
           );
         });
@@ -562,7 +568,7 @@ describe("ExportDialog", () => {
                   selection.username + " - all work"
                 );
               })
-              .afterEach(cleanup),
+,
             { numRuns: 1 }
           );
         });
@@ -602,7 +608,7 @@ describe("ExportDialog", () => {
                   );
                 }
               )
-              .afterEach(cleanup),
+,
             { numRuns: 1 }
           );
         });
@@ -639,7 +645,7 @@ describe("ExportDialog", () => {
                 });
               }
             )
-            .afterEach(cleanup),
+,
           { numRuns: 1 }
         );
       }
@@ -674,7 +680,7 @@ describe("ExportDialog", () => {
                 });
               }
             )
-            .afterEach(cleanup),
+,
           { numRuns: 1 }
         );
       }

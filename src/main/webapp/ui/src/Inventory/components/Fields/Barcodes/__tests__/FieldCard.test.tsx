@@ -1,9 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import {
+  render,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { mockFactory } from "../../../../../stores/definitions/__tests__/Factory/mocking";
 import FieldCard from "../FieldCard";
@@ -18,7 +27,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("FieldCard", () => {
   describe("Has a delete button", () => {

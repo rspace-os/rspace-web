@@ -1,9 +1,17 @@
 /*
  */
  
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import {
+  render,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import InputWrapper from "../InputWrapper";
 import { ThemeProvider } from "@mui/material/styles";
@@ -13,7 +21,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 const expectText = (text: string) => (container: Element) => {
   expect(container).toHaveTextContent("Nothing here" + text);

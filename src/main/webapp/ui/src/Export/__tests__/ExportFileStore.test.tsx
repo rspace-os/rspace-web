@@ -1,10 +1,15 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
 import {
   render,
-  cleanup,
   screen,
   act,
   waitFor,
@@ -24,7 +29,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("ExportFileStore", () => {
   test("Exporting document without any filestore links should show a warning.", async () => {

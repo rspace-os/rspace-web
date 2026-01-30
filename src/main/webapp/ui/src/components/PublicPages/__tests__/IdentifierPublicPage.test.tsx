@@ -1,9 +1,19 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import "../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import IdentifierPublicPage from "../IdentifierPublicPage";
 import { mockIGSNAttrs } from "../../../Inventory/components/Fields/Identifiers/__tests__/mocking";
@@ -22,7 +32,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("IdentifierPublicPage", () => {
   describe("Optional Fields", () => {

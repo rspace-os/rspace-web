@@ -1,9 +1,18 @@
 /*
  */
  
-import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import {
+  render,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import AttachmentField from "../AttachmentField";
 import TextField from "@mui/material/TextField";
@@ -30,7 +39,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 const expectLabel = (text: string) => (container: HTMLElement) =>
   expect(container).toHaveTextContent(text);

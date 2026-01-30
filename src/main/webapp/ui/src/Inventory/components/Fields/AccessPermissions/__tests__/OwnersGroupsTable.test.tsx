@@ -1,8 +1,17 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import {
+  render,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import OwnersGroupsTable from "../OwnersGroupsTable";
 
@@ -10,7 +19,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("OwnersGroupsTable", () => {
   test("Each name should be a link to the groups page.", () => {

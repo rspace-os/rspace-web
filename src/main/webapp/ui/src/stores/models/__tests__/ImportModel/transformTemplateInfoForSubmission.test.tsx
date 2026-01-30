@@ -1,6 +1,12 @@
 /*
  */
-import { describe, it, test, expect, vi } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+} from "vitest";
 import { makeMockImportDataUsingExistingTemplate } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});

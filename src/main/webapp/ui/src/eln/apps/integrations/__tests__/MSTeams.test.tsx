@@ -1,8 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { cleanup, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import MSTeams from "../MSTeams";
 import { Optional } from "../../../../util/optional";
@@ -18,7 +28,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("MSTeams", () => {
   describe("Should render correctly.", () => {

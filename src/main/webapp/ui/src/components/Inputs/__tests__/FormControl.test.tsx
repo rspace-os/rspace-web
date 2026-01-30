@@ -1,8 +1,16 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import {
+  render,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import FormLabel from "@mui/material/FormLabel";
 import FormControl from "../FormControl";
@@ -17,7 +25,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("FormControl", () => {
   describe("Label correctly", () => {

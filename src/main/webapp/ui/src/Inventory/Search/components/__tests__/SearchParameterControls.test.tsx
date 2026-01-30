@@ -1,7 +1,7 @@
 /*
  */
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
@@ -13,7 +13,14 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
-import { type Mock, describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  type Mock,
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
@@ -52,7 +59,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("SearchParameterControls", () => {
   describe("Saved searches controls", () => {

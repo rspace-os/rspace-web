@@ -1,8 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import ValidatingSubmitButton from "../ValidatingSubmitButton";
 import Result from "../../util/result";
@@ -14,7 +24,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("ValidatingSubmitButton", () => {
   test("When validationResult is OK and the button is tapped, onClick should be called.", () => {

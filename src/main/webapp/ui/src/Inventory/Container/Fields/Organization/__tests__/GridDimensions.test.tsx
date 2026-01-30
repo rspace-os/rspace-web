@@ -1,6 +1,13 @@
 /*
  */
-import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
 import {
   render,
@@ -50,7 +57,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("GridDimensions", () => {
   test("Each of the standard dimension menu options sets the rows and columns to a valid number.", async () => {

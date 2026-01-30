@@ -1,8 +1,16 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import {
+  render,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { mockIGSNIdentifier } from "./mocking";
 import { IdentifiersList } from "../Identifiers";
@@ -18,7 +26,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 const sample1: InventoryRecord = makeMockSample();
 sample1.identifiers = [mockIGSNIdentifier("sample")];

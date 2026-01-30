@@ -1,8 +1,17 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import {
+  render,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
@@ -13,7 +22,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("Organization", () => {
   test("The text 'well plate' should be shown to give the user a hint to use a grid container.", () => {

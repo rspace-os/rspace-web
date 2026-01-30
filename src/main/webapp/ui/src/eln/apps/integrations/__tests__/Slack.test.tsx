@@ -1,9 +1,14 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
 import {
-  cleanup,
   screen,
   fireEvent,
   waitFor,
@@ -27,7 +32,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("Slack", () => {
   describe("Accessibility", () => {

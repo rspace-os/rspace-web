@@ -1,8 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import {
+  render,
+  cleanup,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet } from "../../../../util/__tests__/set/helpers";
@@ -17,7 +27,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("BatchEditingItemsTable", () => {
   test("Table body should have as many rows as records that are passed.", () => {

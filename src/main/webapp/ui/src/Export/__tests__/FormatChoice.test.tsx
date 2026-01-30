@@ -1,9 +1,20 @@
 /*
  */
-import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
 import { DeploymentPropertyContext } from "../../hooks/api/useDeploymentProperty";
-import { render, cleanup, screen, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  act,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import FormatChoice from "../FormatChoice";
 import MockAdapter from "axios-mock-adapter";
@@ -16,7 +27,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("FormatChoice", () => {
   describe("Repository switch", () => {

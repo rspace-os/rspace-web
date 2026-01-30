@@ -1,8 +1,19 @@
 /*
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import React, { useContext } from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
+import React,
+  { useContext } from "react";
+import {
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import NavigationContext from "../NavigationContext";
@@ -14,7 +25,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 type NavigateToProps = {
   url: string;

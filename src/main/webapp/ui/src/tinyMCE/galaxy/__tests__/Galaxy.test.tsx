@@ -8,7 +8,15 @@ import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import {act} from "react-dom/test-utils";
-import { type SpyInstance, describe, it, test, expect, vi, beforeEach } from "vitest";
+import {
+  type SpyInstance,
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 
 const mockAxios = new MockAdapter(axios);
 // simulating the actual events fired in plugin.min.js code for galaxy upload button
@@ -101,7 +109,7 @@ describe("Galaxy Upload Data tests ", () => {
       const user = userEvent.setup();
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
       await screen.findAllByRole("radio", { name: /galaxy eu server/ });
-      const checkBoxes = await screen.getAllByRole("checkbox", {
+      const checkBoxes =  screen.getAllByRole("checkbox", {
         name: /select row/i,
       });
       const checkBox = checkBoxes[0];

@@ -1,8 +1,19 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import React, { useContext, useEffect } from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
+import React,
+  { useContext,
+  useEffect } from "react";
+import {
+  render,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Alerts from "../Alerts";
@@ -11,7 +22,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 function DisplaysAlert() {
   const { addAlert } = useContext(AlertContext);

@@ -1,9 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import {
+  render,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mocking";
 import CustomField from "../CustomField";
@@ -27,7 +36,6 @@ vi.mock("../../../../components/Ketcher/KetcherDialog", () => ({
   default: vi.fn(() => <div></div>),
 }));
 
-afterEach(cleanup);
 
 describe("CustomField", () => {
   describe("Should be able to delete the field", () => {

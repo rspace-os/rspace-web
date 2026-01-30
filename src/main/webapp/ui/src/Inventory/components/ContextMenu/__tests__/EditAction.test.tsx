@@ -1,10 +1,15 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
 import {
   render,
-  cleanup,
   waitFor,
   screen,
   fireEvent,
@@ -21,7 +26,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("EditAction", () => {
   describe("When tapped the context action should", () => {

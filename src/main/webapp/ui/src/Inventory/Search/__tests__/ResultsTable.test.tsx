@@ -1,11 +1,15 @@
 /*
  */
-import { describe, test, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  vi,
+  beforeEach,
+} from "vitest";
 import "../../../../__mocks__/matchMedia";
 import * as React from "react";
 import {
   render,
-  cleanup,
   screen,
   within,
   waitFor,
@@ -28,7 +32,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("Results Table", () => {
   describe("Pagination", () => {

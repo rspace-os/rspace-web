@@ -1,6 +1,12 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import ExportRepo from "../ExportRepo";
 import React from "react";
 import {
@@ -38,7 +44,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 const props = {
   repoList: repoList.map((repo) => ({

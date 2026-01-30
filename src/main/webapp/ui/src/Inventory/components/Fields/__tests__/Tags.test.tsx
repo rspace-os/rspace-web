@@ -1,8 +1,17 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import {
+  render,
+  cleanup,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import Tags from "../Tags";
 import fc from "fast-check";
@@ -23,7 +32,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("Tags", () => {
   test("Should enter an error state when value is longer than 8000 characters.", () => {

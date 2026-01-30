@@ -1,8 +1,17 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, act } from "@testing-library/react";
+import {
+  render,
+  act,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import ExportRepoUser from "../ExportRepoUser";
 import { type Person } from "../repositories/common";
@@ -15,7 +24,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 function renderExportRepoUser({
   people,

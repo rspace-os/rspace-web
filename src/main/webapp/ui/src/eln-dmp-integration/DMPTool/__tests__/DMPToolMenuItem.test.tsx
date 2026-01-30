@@ -1,9 +1,19 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import "../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import DMPToolMenuItem from "../DMPToolMenuItem";
 import MockAdapter from "axios-mock-adapter";
@@ -17,7 +27,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("DMPToolMenuItem", () => {
   test("If the DMPTool is enabled but the user is not authenticated then the menu item should be disabled.", async () => {

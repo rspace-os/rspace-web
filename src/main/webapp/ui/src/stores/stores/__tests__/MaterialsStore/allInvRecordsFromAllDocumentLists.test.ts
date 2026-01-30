@@ -1,7 +1,13 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { cleanup } from "@testing-library/react";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
+
 import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
@@ -13,7 +19,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("allInvRecordsFromAllDocumentLists", () => {
   test("The same record across multiple lists of materials of one field should list the record once.", () => {

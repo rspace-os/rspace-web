@@ -1,4 +1,10 @@
-import { describe, it, test, expect, vi } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+} from "vitest";
 import fc from "fast-check";
 import { formatIndex } from "../../InventoryBaseRecordCollection";
 import { take, incrementForever } from "../../../../util/iterators";

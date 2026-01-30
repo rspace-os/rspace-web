@@ -1,8 +1,20 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import React, { useState, useEffect } from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
+import React,
+  { useState,
+  useEffect } from "react";
+import {
+  render,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
@@ -14,7 +26,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 function Child1({ validator }: { validator: Validator }) {
   const [state] = useState(observable({ text: "" }));

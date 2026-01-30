@@ -1,8 +1,17 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import {
+  render,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { sampleAttrs } from "../../../stores/models/__tests__/SampleModel/mocking";
 import { subsampleAttrs } from "../../../stores/models/__tests__/SubSampleModel/mocking";
@@ -31,7 +40,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 const sample1 = sampleAttrs({
   id: 1,

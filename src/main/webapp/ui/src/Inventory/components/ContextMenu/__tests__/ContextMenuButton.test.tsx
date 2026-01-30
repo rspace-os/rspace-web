@@ -1,8 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import {
+  render,
+  cleanup,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import ContextMenuButton from "../ContextMenuButton";
@@ -13,7 +23,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("ContextMenuButton", () => {
   describe("Disabled state", () => {

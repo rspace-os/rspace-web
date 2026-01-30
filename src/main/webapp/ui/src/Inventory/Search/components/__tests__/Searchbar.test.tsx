@@ -1,10 +1,16 @@
 /*
  */
-import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
 import {
   render,
-  cleanup,
   screen,
   fireEvent,
   within,
@@ -23,7 +29,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("Searchbar", () => {
   test("If lots of text is entered then the expanded field dialog it available.", () => {

@@ -1,7 +1,13 @@
 /*
  */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call */
-import { describe, it, test, expect, vi } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+} from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { makeMockContainer, containerAttrs } from "../ContainerModel/mocking";
 import Search from "../../Search";

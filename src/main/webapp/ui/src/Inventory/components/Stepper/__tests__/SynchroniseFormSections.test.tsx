@@ -1,8 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import React, { useEffect, useContext } from "react";
-import { render, cleanup } from "@testing-library/react";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
+import React,
+  { useEffect,
+  useContext } from "react";
+import {
+  render,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import SynchroniseFormSections from "../SynchroniseFormSections";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
@@ -12,7 +22,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 function MockFormSectionInOuterContext() {
   const formSectionContext = useContext(FormSectionsContext);

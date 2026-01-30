@@ -1,8 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, screen, act, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  act,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import RsSet from "../../../util/set";
@@ -15,7 +25,6 @@ import axios from "@/common/axios";
 beforeEach(() => {
   vi.clearAllMocks();
 });
-afterEach(cleanup);
 
 describe("useGalleryActions", () => {
   describe("duplicateFiles", () => {

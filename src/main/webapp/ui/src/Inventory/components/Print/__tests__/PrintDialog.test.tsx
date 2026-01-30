@@ -2,10 +2,21 @@
  */
  
 
-import { describe, it, expect, vi, beforeAll } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+} from "vitest";
 import "@testing-library/jest-dom/vitest";
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import { persistedBarcode1 } from "./mocking";

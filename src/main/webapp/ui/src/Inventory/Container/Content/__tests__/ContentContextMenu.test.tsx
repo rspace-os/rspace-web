@@ -1,8 +1,18 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import * as React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import {
+  render,
+  cleanup,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import SearchContext from "../../../../stores/contexts/Search";
 import Search from "../../../../stores/models/Search";
@@ -29,7 +39,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("ContentContextMenu", () => {
   describe("Has an open button that should", () => {

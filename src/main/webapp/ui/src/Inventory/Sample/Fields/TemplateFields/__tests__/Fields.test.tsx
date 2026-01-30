@@ -1,9 +1,19 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, fireEvent, screen } from "@testing-library/react";
+import {
+  render,
+  fireEvent,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import Fields from "../Fields";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
@@ -18,7 +28,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("Fields", () => {
   describe("Sample with number field behaves correctly.", () => {

@@ -1,8 +1,17 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import {
+  render,
+  screen,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import ZenodoRepo from "../ZenodoRepo";
 import "../../../../__mocks__/matchMedia";
@@ -18,7 +27,6 @@ beforeEach(() => {
     } as Response);
 });
 
-afterEach(cleanup);
 
 describe("ZenodoRepo", () => {
   test("Upon editing, title should be set to the entered value.", async () => {

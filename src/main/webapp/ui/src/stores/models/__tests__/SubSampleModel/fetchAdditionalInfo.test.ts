@@ -4,7 +4,13 @@ import "@testing-library/jest-dom/vitest";
 import { makeMockSubSample, subsampleAttrs } from "./mocking";
 import { sampleAttrs } from "../SampleModel/mocking";
 import InvApiService from "../../../../common/InvApiService";
-import { type SpyInstance, describe, test, expect, vi } from "vitest";
+import {
+  type SpyInstance,
+  describe,
+  test,
+  expect,
+  vi,
+} from "vitest";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {

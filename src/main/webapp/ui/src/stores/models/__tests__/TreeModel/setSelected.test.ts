@@ -1,7 +1,13 @@
 /*
  */
 
-import { describe, it, test, expect, vi } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+} from "vitest";
 import Search from "../../Search";
 import { makeMockSubSample } from "../SubSampleModel/mocking";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";

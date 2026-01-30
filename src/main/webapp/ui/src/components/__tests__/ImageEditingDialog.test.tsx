@@ -1,8 +1,21 @@
 /*
  */
-import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen, waitFor, act } from "@testing-library/react";
+import {
+  render,
+  cleanup,
+  screen,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import ImageEditingDialog from "../ImageEditingDialog";
@@ -17,7 +30,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 const readAsDataUrl = (file: Blob): Promise<string> =>
   new Promise((resolve, reject) => {

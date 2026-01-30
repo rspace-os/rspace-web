@@ -1,7 +1,7 @@
 /*
  */
 import React from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import InvApiService from "../../../../common/InvApiService";
 import TemplatePicker from "../TemplatePicker";
@@ -14,7 +14,14 @@ import "__mocks__/resizeObserver";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
-import { type Mock, describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  type Mock,
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
@@ -68,7 +75,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("TemplatePicker", () => {
   describe("Should support saved searches", () => {

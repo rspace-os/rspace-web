@@ -6,11 +6,14 @@ import {
   expect,
   vi,
   beforeEach,
-  afterEach,
   beforeAll,
 } from "vitest";
 import React from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import {
   makeMockContainer,
@@ -52,7 +55,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("useNavigateHelpers", () => {
   describe("navigateToRecord should", () => {

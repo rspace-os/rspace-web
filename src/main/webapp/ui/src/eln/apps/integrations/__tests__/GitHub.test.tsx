@@ -1,8 +1,19 @@
 /*
  */
-import { describe, it, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { cleanup, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import GitHub from "../GitHub";
 import { Optional } from "../../../../util/optional";
@@ -21,7 +32,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("GitHub", () => {
   describe("Accessibility", () => {

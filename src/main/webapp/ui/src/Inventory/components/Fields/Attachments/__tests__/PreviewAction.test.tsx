@@ -1,8 +1,19 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { render, cleanup, screen, act, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  act,
+  waitFor,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../../stores/stores-context";
@@ -19,7 +30,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("PreviewAction", () => {
   test("An error should be shown if the image cannot be fetched.", async () => {

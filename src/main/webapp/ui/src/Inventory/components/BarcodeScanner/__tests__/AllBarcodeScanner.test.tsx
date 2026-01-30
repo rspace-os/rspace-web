@@ -1,7 +1,7 @@
 /*
  */
 import React from "react";
-import { render, cleanup, act, screen } from "@testing-library/react";
+import { render, act, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import "../../../../../__mocks__/barcode-detection-api";
 import AllBarcodeScanner from "../AllBarcodeScanner";
@@ -10,13 +10,19 @@ import { type BarcodeInput } from "../BarcodeScannerSkeleton";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-import { type Mock, describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  type Mock,
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("AllBarcodeScanner", () => {
   test("Should scan correctly.", async () => {

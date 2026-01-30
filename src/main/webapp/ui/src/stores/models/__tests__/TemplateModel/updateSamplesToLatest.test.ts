@@ -1,7 +1,13 @@
 /*
  */
 
-import { describe, test, expect, vi, beforeEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import { makeMockTemplate } from "./mocking";
 import { sampleAttrs } from "../SampleModel/mocking";
 

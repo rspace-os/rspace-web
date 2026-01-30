@@ -1,8 +1,17 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { cleanup, screen, fireEvent } from "@testing-library/react";
+import {
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import LinkedDocuments from "../LinkedDocuments";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
@@ -23,7 +32,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("LinkedDocuments", () => {
   test("Assert that correct API endpoint is called with Global ID", async () => {

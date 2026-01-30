@@ -1,10 +1,20 @@
 /*
  */
-import { describe, test, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  vi,
+  beforeEach,
+} from "vitest";
 import "../../../__mocks__/createObjectURL";
 import "../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen, within } from "@testing-library/react";
+import {
+  render,
+  cleanup,
+  screen,
+  within,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import RsSet from "../../util/set";
 import ContainerForm from "../Container/Form";
@@ -115,7 +125,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 type MakeRootStoreArgs = {
   activeResult: InventoryRecord | null;
@@ -168,7 +177,7 @@ function getSectionNames(
   const sectionNames = screen
     .getAllByRole("region")
     .map(
-      (r) => within(r).getByRole("heading", { level: 3 }).textContent as string
+      (r) => within(r).getByRole("heading", { level: 3 }).textContent
     );
   cleanup();
   return sectionNames;

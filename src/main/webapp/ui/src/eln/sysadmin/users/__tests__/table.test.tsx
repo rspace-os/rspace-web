@@ -1,8 +1,17 @@
 /*
  */
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  test,
+  expect,
+  vi,
+  beforeEach,
+} from "vitest";
 import React from "react";
-import { cleanup, screen, waitFor } from "@testing-library/react";
+import {
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { UsersPage } from "..";
 import { ThemeProvider } from "@mui/material/styles";
@@ -22,7 +31,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
 
 describe("Table Listing", () => {
   test("Usage should be shown in human-readable format", async () => {
