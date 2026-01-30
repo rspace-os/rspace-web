@@ -185,8 +185,6 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
 
     Field contentFld = null;
     String suffix = FilenameUtils.getExtension(fx.getName()).toLowerCase();
-    Tika tika = new Tika();
-    tika.setMaxStringLength(1_000_000);
     if (suffix.equals("pdf")) {
       PDDocument pdoc = PDDocument.load(fx);
       String content = new PDFTextStripper().getText(pdoc);
@@ -194,6 +192,8 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
       pdoc.close();
     } else {
       try {
+        Tika tika = new Tika();
+        tika.setMaxStringLength(1_000_000);
         String wordText = tika.parseToString(fx);
         log.debug("Parsed string is {}", wordText);
         contentFld = new Field(FIELD_CONTENTS, wordText, Field.Store.NO, Field.Index.ANALYZED);

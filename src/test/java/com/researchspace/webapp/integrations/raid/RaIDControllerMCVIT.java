@@ -383,7 +383,8 @@ public class RaIDControllerMCVIT extends MVCTestBase {
 
     // THEN
     assertTrue(
-        extractErrorMessage(result).contains(
+        extractErrorMessage(result)
+            .contains(
                 "Not able to associate RaID to group: "
                     + "The RaID \""
                     + IDENTIFIER_ASSOCIATED_2
