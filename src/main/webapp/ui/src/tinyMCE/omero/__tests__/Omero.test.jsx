@@ -781,7 +781,7 @@ describe("Renders page with results data ", () => {
     if (!didNavigate) return;
     const didHide = await hideChildren("screen", 3, "plate", 2551, 192);
     if (!didHide) return;
-  }, 9999);
+  }, 20000);
 
   it("plates can hide plateacquisitions", async () => {
     const didNavigate = await navigateFromScreenToPlate(

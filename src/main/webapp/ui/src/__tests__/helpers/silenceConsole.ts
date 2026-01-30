@@ -1,6 +1,7 @@
 import { vi } from "vitest";
 
 type ConsoleMethod = "log" | "info" | "warn" | "error";
+type ProcessStream = "stderr" | "stdout";
 type Matcher = string | RegExp;
 
 const normalizeMatcher = (matcher: Matcher): Matcher => {
@@ -40,6 +41,37 @@ export const silenceConsole = (
       }
       original(...(args as any[]));
     });
+    return () => spy.mockRestore();
+  });
+
+  return () => {
+    restores.forEach((restore) => restore());
+  };
+};
+
+export const silenceProcessOutput = (
+  streams: ProcessStream[],
+  matchers: Matcher[]
+): (() => void) => {
+  if (typeof process === "undefined") {
+    return () => {};
+  }
+  const normalizedMatchers = matchers.map(normalizeMatcher);
+  const restores = streams.map((stream) => {
+    const target = process[stream];
+    const originalWrite = target.write.bind(target);
+    const spy = vi.spyOn(target, "write").mockImplementation(
+      (chunk: unknown, encoding?: any, callback?: () => void) => {
+        const text = String(chunk);
+        if (shouldSilence([text], normalizedMatchers)) {
+          if (typeof callback === "function") {
+            callback();
+          }
+          return true;
+        }
+        return originalWrite(chunk as any, encoding as any, callback as any);
+      }
+    );
     return () => spy.mockRestore();
   });
 

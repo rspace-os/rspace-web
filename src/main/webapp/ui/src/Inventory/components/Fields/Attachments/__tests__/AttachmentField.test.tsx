@@ -23,6 +23,7 @@ import { containerAttrs } from "../../../../../stores/models/__tests__/Container
 import ContainerModel from "../../../../../stores/models/ContainerModel";
 import MemoisedFactory from "../../../../../stores/models/Factory/MemoisedFactory";
 import type { Attachment } from "../../../../../stores/definitions/Attachment";
+import { DeploymentPropertyContext } from "../../../../../hooks/api/useDeploymentProperty";
 
 vi.mock("@mui/material/TextField", () => ({
   default: vi.fn(() => <div></div>),
@@ -38,6 +39,14 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+const renderWithDeploymentProperties = (ui: React.ReactElement) =>
+  render(
+    <DeploymentPropertyContext.Provider
+      value={new Map([["chemistry.provider", ""]])}
+    >
+      {ui}
+    </DeploymentPropertyContext.Provider>,
+  );
 
 const expectLabel = (text: string) => (container: HTMLElement) =>
   expect(container).toHaveTextContent(text);
@@ -97,7 +106,7 @@ describe("AttachmentField", () => {
         noValueLabel: undefined | string;
         expectFn: (container: HTMLElement) => void;
       }) => {
-        const { container } = render(
+        const { container } = renderWithDeploymentProperties(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
               attachment={null}
@@ -117,7 +126,7 @@ describe("AttachmentField", () => {
   describe("Help text", () => {
     describe('value = ""', () => {
       it("Help text is shown.", () => {
-        const { container } = render(
+        const { container } = renderWithDeploymentProperties(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
               attachment={null}
@@ -135,7 +144,7 @@ describe("AttachmentField", () => {
     });
     describe('value = "foo"', () => {
       it("Help text is not shown.", () => {
-        const { container } = render(
+        const { container } = renderWithDeploymentProperties(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
               attachment={null}
@@ -176,7 +185,7 @@ describe("AttachmentField", () => {
       }) => {
         let textContent: string | null;
         function renderAttachmentField(): void {
-          const { container } = render(
+          const { container } = renderWithDeploymentProperties(
             <ThemeProvider theme={materialTheme}>
               <AttachmentField
                 attachment={attachment}
@@ -216,7 +225,7 @@ describe("AttachmentField", () => {
   describe("File viewer", () => {
     describe("attachment = ExistingAttachment", () => {
       it("Attachment's filename should be shown.", () => {
-        const { container } = render(
+        const { container } = renderWithDeploymentProperties(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
               attachment={makeAttachment({ name: "image.png" })}

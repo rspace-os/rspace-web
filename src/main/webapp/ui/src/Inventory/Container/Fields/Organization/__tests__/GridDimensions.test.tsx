@@ -331,7 +331,7 @@ describe("GridDimensions", () => {
 
   it("When a menu option is chosen, the same values should be passed to setAttributesDirty as displayed in the numerical fields.", async () => {
     const user = userEvent.setup();
-    fc.assert(
+    await fc.assert(
       fc.asyncProperty(fc.nat(), async (unboundedIndex) => {
         cleanup();
         const { rootStore, gridContainer } = makeRootStoreWithGridContainer();
@@ -380,5 +380,4 @@ describe("GridDimensions", () => {
     );
   });
 });
-
 

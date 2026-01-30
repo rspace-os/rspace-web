@@ -1,7 +1,11 @@
 import React from "react";
-import { vi, expect, afterEach } from "vitest";
+import { vi, expect, afterEach, afterAll } from "vitest";
 import createFetchMock from "vitest-fetch-mock";
 import * as matchers from "@testing-library/jest-dom/matchers";
+import {
+  silenceConsole,
+  silenceProcessOutput,
+} from "@/__tests__/helpers/silenceConsole";
 const fetchMocker = createFetchMock(vi);
 
 // sets globalThis.fetch and globalThis.fetchMock to our mocked version
@@ -10,6 +14,15 @@ expect.extend(matchers);
 globalThis.expect = expect;
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 globalThis.afterEach = afterEach;
+
+const restoreConsole = silenceConsole(["error"], [
+  "Could not fetch set of users in the same group as current user",
+]);
+const restoreStderr = silenceProcessOutput(["stderr"], ["AggregateError"]);
+afterAll(() => {
+  restoreConsole();
+  restoreStderr();
+});
 
 const TransitionMock = React.forwardRef(({ in: inProp, children }, ref) => {
   if (inProp === false) {
@@ -53,6 +66,38 @@ vi.mock("@/hooks/api/useUiPreference", async () => {
 vi.mock("@/hooks/auth/useOauthToken", () => ({
   default: () => ({
     getToken: async () => "token",
+  }),
+}));
+
+vi.mock("@/hooks/api/useWhoAmI", () => ({
+  default: () => ({
+    tag: "success",
+    value: {
+      id: 1,
+      username: "test",
+      firstName: "Test",
+      lastName: "User",
+      hasPiRole: false,
+      hasSysAdminRole: false,
+      email: "test@example.com",
+      bench: null,
+      workbenchId: null,
+      getBench: () =>
+        Promise.reject(
+          new Error("Not implemented by this Person implementation"),
+        ),
+      isCurrentUser: true,
+      fullName: "Test User",
+      label: "Test User (test)",
+    },
+  }),
+}));
+
+vi.mock("@/hooks/websockets/useWebSocketNotifications", () => ({
+  default: () => ({
+    notificationCount: 0,
+    messageCount: 0,
+    specialMessageCount: 0,
   }),
 }));
 
