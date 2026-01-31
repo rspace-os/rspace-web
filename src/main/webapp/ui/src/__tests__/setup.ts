@@ -1,5 +1,5 @@
 
-import { vi, expect, afterAll } from "vitest";
+import { vi, expect, afterEach, afterAll } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import createFetchMock from "vitest-fetch-mock";
 import {
@@ -17,6 +17,10 @@ const fetchMocker = createFetchMock(vi);
 fetchMocker.enableMocks();
 // @ts-expect-error Mocking
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
+afterEach(() => {
+  cleanup();
+})
 
 const restoreConsole = silenceConsole(
   ["error"],
@@ -119,6 +123,7 @@ if (typeof HTMLCanvasElement !== "undefined") {
  * This ensures tests that rely on these APIs do not fail with "ReferenceError: TextEncoder is not defined".
  */
 import { TextEncoder, TextDecoder } from "util";
+import { cleanup } from "@testing-library/react";
 if (typeof globalThis.TextEncoder !== "function") {
   globalThis.TextEncoder = TextEncoder;
 }

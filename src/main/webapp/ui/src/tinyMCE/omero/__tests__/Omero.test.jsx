@@ -81,12 +81,7 @@ vi.mock("../../omero/OmeroClient", async () => {
 import Omero, { getOrderBy, getOrder } from "../../omero/Omero";
 import React from "react";
 import axios from "@/common/axios";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-} from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import ProjectsList from "./json/projectsList.json";
@@ -205,9 +200,7 @@ const findFirstByText = async (text, options, waitOptions) => {
 const waitForLoadingToFinish = async () => {
   await waitFor(
     () => {
-      expect(
-        screen.queryByText("Data is loading..."),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText("Data is loading...")).not.toBeInTheDocument();
     },
     { timeout: 5500 },
   );
