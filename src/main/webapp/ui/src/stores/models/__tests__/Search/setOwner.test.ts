@@ -22,7 +22,7 @@ vi.mock("../../../stores/RootStore", () => ({
   },
 })
 })); // break import cycle
-vi.mock("../../../stores/SearchStore", () => {}); // break import cycle
+vi.mock("../../../stores/SearchStore", () => ({ default: class {} })); // break import cycle
 
 describe("action: setOwner", () => {
   describe("When called with any value it should", () => {

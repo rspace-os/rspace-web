@@ -29,12 +29,12 @@ import Alerts from "../../components/Alerts/Alerts";
 import userEvent from "@testing-library/user-event";
 
 vi.mock("react-transition-group", () => ({
-  Transition: ({ children, in: inProp }) =>
+  Transition: ({ children, in: inProp }: { children: any; in: boolean }) =>
     typeof children === "function"
       ? children(inProp ? "entered" : "exited", {})
       : children ?? null,
-  CSSTransition: ({ children }) => children ?? null,
-  TransitionGroup: ({ children }) => children ?? null,
+  CSSTransition: ({ children }: { children: any }) => children ?? null,
+  TransitionGroup: ({ children }: { children: any }) => children ?? null,
 }));
 
 window.fetch = vi.fn(() =>

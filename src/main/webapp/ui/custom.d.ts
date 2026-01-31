@@ -1,3 +1,5 @@
+/// <reference types="@sa11y/vitest" />
+
 import "vitest-fetch-mock";
 
 /*

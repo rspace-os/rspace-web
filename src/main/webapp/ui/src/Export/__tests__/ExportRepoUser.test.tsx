@@ -51,7 +51,7 @@ describe("ExportRepoUser", () => {
       },
     });
 
-    const updatePeople = vi.fn<[Array<Person>], unknown[]>();
+    const updatePeople = vi.fn<(people: Array<Person>) => void>();
     await act(() => renderExportRepoUser({ people: [], updatePeople }));
     expect(updatePeople).toHaveBeenCalled();
   });
@@ -60,7 +60,7 @@ describe("ExportRepoUser", () => {
     // `/directory/ajax/subject` is not mocked so that if ExportRepoUser
     // attempts to the make a call the test fails
 
-    const updatePeople = vi.fn<[Array<Person>], unknown[]>();
+    const updatePeople = vi.fn<(people: Array<Person>) => void>();
     await act(() =>
       renderExportRepoUser({
         people: [

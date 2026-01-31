@@ -14,7 +14,6 @@ import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import {
-  type Mock,
  describe,
  expect,
  beforeEach,
@@ -34,7 +33,7 @@ describe("AllBarcodeScanner", () => {
       Promise.resolve()
     );
 
-    const onScan = vi.fn() as Mock<void, [BarcodeInput]>;
+    const onScan = vi.fn<(input: BarcodeInput) => void>();
 
     render(
       <ThemeProvider theme={materialTheme}>

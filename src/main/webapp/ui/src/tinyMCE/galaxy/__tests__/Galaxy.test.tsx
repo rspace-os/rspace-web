@@ -13,13 +13,13 @@ import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import {act} from "react-dom/test-utils";
 import {
-  type SpyInstance,
  describe,
  expect,
  beforeEach,
  it,
  vi,
 } from "vitest";
+import type { MockInstance } from "@vitest/spy";
 
 const mockAxios = new MockAdapter(axios);
 // simulating the actual events fired in plugin.min.js code for galaxy upload button
@@ -47,7 +47,7 @@ const createdGalaxyHistory = {
   "id": "f8e722da311b8793",
   "name": "RSPACE_Untitled document_SD375v4_Data_FD229379_1",
 }
-let windowParentPostMessageSpy: SpyInstance;
+let windowParentPostMessageSpy: MockInstance;
 describe("Galaxy Upload Data tests ", () => {
   beforeEach(() => {
     vi.clearAllMocks();

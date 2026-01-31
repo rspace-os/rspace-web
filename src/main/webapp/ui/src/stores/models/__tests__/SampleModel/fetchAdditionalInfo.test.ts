@@ -40,13 +40,16 @@ describe("fetchAdditionalInfo", () => {
     const sample = makeMockSample({
       templateId: 1,
     });
-    // @ts-expect-error Mock implementation return type incompatibility
     vi.spyOn(InvApiService, "query").mockImplementation(() =>
       Promise.resolve({
         data: {
           ...sampleAttrs(),
           templateId: 1,
         },
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {} as any,
       })
     );
 
@@ -69,10 +72,13 @@ describe("fetchAdditionalInfo", () => {
   });
   it("Calls made on a sample without a template should resolve.", async () => {
     const sample = makeMockSample();
-    // @ts-expect-error Mock implementation return type incompatibility
     vi.spyOn(InvApiService, "query").mockImplementation(() =>
       Promise.resolve({
         data: sampleAttrs(),
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {} as any,
       })
     );
     await expect(sample.fetchAdditionalInfo()).resolves.toBeUndefined();

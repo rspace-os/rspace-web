@@ -18,13 +18,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
-import { axe } from "vitest-axe";
-import { toHaveNoViolations } from "vitest-axe/matchers";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import { LandmarksProvider } from "../../../../components/LandmarksContext";
-
-expect.extend({ toHaveNoViolations });
 
 vi.mock("../../../../hooks/api/integrationHelpers", () => ({
   useIntegrationIsAllowedAndEnabled: () => ({
@@ -66,7 +62,6 @@ describe("Sidebar", () => {
       </ThemeProvider>
     );
 
-    expect(await axe(container)).toHaveNoViolations();
+    await expect(container).toBeAccessible();
   });
 });
-

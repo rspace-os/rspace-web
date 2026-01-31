@@ -1,7 +1,9 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
+  plugins: [react()],
   resolve: {
     alias: [
       { find: /^@\//, replacement: `${path.resolve(__dirname, "src")}/` },
@@ -35,15 +37,11 @@ export default defineConfig({
     ],
   },
   test: {
-    globals: false,
     environment: "jsdom",
-    setupFiles: ["./__tests__/setup.js"],
+    setupFiles: ["./src/__tests__/setup.ts"],
     include: ["**/?*.test.(js|cjs|mjs|jsx|ts|tsx)"],
     testTimeout: 20000,
-    reporters: [
-      "default",
-      "junit"
-    ],
+    reporters: ["default", "junit"],
     outputFile: {
       junit: "./junit.xml",
     },

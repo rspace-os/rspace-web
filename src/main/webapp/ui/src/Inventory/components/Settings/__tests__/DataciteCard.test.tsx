@@ -13,12 +13,8 @@ import {
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import DataciteCard from "../DataciteCard";
-import { axe } from "vitest-axe";
-import { toHaveNoViolations } from "vitest-axe/matchers";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-
-expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -41,8 +37,6 @@ describe("DataciteCard", () => {
       </ThemeProvider>
     );
 
-    expect(await axe(container)).toHaveNoViolations();
+    await expect(container).toBeAccessible();
   });
 });
-
-

@@ -16,8 +16,6 @@ import {
   render,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { axe } from "vitest-axe";
-import { toHaveNoViolations } from "vitest-axe/matchers";
 import materialTheme from "@/theme";
 import { ThemeProvider } from "@mui/material/styles";
 import "../../../../../../__mocks__/matchMedia";
@@ -28,7 +26,6 @@ import RaIDIntegrationCard, {
 import { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 
-expect.extend({ toHaveNoViolations });
 
 const mockSaveAppOptions = vi.fn();
 const mockDeleteAppOptions = vi.fn();
@@ -92,9 +89,9 @@ describe("RaIDIntegrationCard", () => {
       await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       expect(await screen.findByRole("dialog")).toBeVisible();
 
-      expect(await axe(baseElement)).toHaveNoViolations();
+      await expect(baseElement).toBeAccessible();
     });
-  });
+});
 
   describe("Rendering", () => {
     it("Shows placeholder text when there are no authenticated servers.", async () => {

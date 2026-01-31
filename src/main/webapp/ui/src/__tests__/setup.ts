@@ -1,22 +1,27 @@
-import { vi, expect, afterEach, afterAll } from "vitest";
+
+import { vi, expect, afterAll } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import createFetchMock from "vitest-fetch-mock";
-import * as matchers from "@testing-library/jest-dom/matchers";
 import {
   silenceConsole,
   silenceProcessOutput,
 } from "@/__tests__/helpers/silenceConsole";
+import { setup, toBeAccessible } from "@sa11y/vitest";
+
+setup();
+
+expect.extend({ toBeAccessible });
+
 const fetchMocker = createFetchMock(vi);
 
-// sets globalThis.fetch and globalThis.fetchMock to our mocked version
 fetchMocker.enableMocks();
-expect.extend(matchers);
-globalThis.expect = expect;
+// @ts-expect-error Mocking
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
-globalThis.afterEach = afterEach;
 
-const restoreConsole = silenceConsole(["error"], [
-  "Could not fetch set of users in the same group as current user",
-]);
+const restoreConsole = silenceConsole(
+  ["error"],
+  ["Could not fetch set of users in the same group as current user"],
+);
 const restoreStderr = silenceProcessOutput(["stderr"], ["AggregateError"]);
 afterAll(() => {
   restoreConsole();
@@ -118,5 +123,6 @@ if (typeof globalThis.TextEncoder !== "function") {
   globalThis.TextEncoder = TextEncoder;
 }
 if (typeof globalThis.TextDecoder !== "function") {
+  // @ts-expect-error
   globalThis.TextDecoder = TextDecoder;
 }

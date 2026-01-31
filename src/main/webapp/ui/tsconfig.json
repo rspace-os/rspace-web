@@ -15,7 +15,9 @@
       "@/*": ["src/*"],
       "Styles": ["src/util/styles"]
     },
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+
+    "types": ["@testing-library/jest-dom", "@sa11y/vitest"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "custom.d.ts"]
 }

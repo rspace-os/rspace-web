@@ -31,7 +31,7 @@ beforeEach(() => {
 
 describe("Searchbar", () => {
   it("If lots of text is entered then the expanded field dialog it available.", () => {
-    const handleSearch = vi.fn<void, [string]>();
+    const handleSearch = vi.fn<(query: string) => void>();
     const search = new Search({
       factory: mockFactory(),
     });

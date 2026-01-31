@@ -21,11 +21,7 @@ import axios from "@/common/axios";
 import { observable } from "mobx";
 import { render, within } from "../../../../__tests__/customQueries";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
-import { axe } from "vitest-axe";
-import { toHaveNoViolations } from "vitest-axe/matchers";
 import "../../../../../__mocks__/matchMedia";
-
-expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -49,7 +45,7 @@ describe("GitHub", () => {
 
       expect(await screen.findByRole("dialog")).toBeVisible();
 
-      expect(await axe(baseElement)).toHaveNoViolations();
+      await expect(baseElement).toBeAccessible();
     });
   });
   describe("Correct rendering", () => {
@@ -495,5 +491,4 @@ describe("GitHub", () => {
     });
   });
 });
-
 

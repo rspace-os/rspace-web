@@ -46,7 +46,7 @@ describe("fetchMembersOfSameGroup", () => {
     });
     try {
       await peopleStore.fetchMembersOfSameGroup();
-      fail("Shouldn't have resolved.");
+      expect.fail("Shouldn't have resolved.");
     } catch (e) {
       expect((e as Error).message).toEqual("some error message");
     } finally {

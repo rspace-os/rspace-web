@@ -7,12 +7,12 @@ import {
 import { sampleAttrs } from "../SampleModel/mocking";
 import InvApiService from "../../../../common/InvApiService";
 import {
-  type SpyInstance,
  describe,
  expect,
  it,
  vi,
 } from "vitest";
+import type { MockInstance } from "@vitest/spy";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
@@ -38,7 +38,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 describe("fetchAdditionalInfo", () => {
   it("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const subsample = makeMockSubSample();
-    (vi.spyOn(InvApiService, "query") as SpyInstance).mockImplementation(
+    (vi.spyOn(InvApiService, "query") as MockInstance).mockImplementation(
       () =>
         Promise.resolve({
           data: {

@@ -22,11 +22,8 @@ import axios from "@/common/axios";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { observable } from "mobx";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
-import { axe } from "vitest-axe";
-import { toHaveNoViolations } from "vitest-axe/matchers";
 import "../../../../../__mocks__/matchMedia";
 
-expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -50,7 +47,7 @@ describe("Dataverse", () => {
 
       expect(await screen.findByRole("dialog")).toBeVisible();
 
-      expect(await axe(baseElement)).toHaveNoViolations();
+      await expect(baseElement).toBeAccessible();
     });
   });
   describe("Adding", () => {
@@ -637,5 +634,4 @@ describe("Dataverse", () => {
     });
   });
 });
-
 

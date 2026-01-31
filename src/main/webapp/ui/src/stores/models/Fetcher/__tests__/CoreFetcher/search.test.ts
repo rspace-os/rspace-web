@@ -64,7 +64,7 @@ describe("search", () => {
           })
         );
 
-      const mockNewFactory = vi.fn<any, any>().mockReturnValue({} as Factory);
+      const mockNewFactory = vi.fn<() => Factory>().mockReturnValue({} as Factory);
       const factory = mockFactory({
         newFactory: mockNewFactory,
       });

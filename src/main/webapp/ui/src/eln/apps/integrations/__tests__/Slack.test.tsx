@@ -22,11 +22,8 @@ import { observable } from "mobx";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 import { Optional } from "../../../../util/optional";
-import { axe } from "vitest-axe";
-import { toHaveNoViolations } from "vitest-axe/matchers";
 import "../../../../../__mocks__/matchMedia";
 
-expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -50,7 +47,7 @@ describe("Slack", () => {
 
       expect(await screen.findByRole("dialog")).toBeVisible();
 
-      expect(await axe(baseElement)).toHaveNoViolations();
+      await expect(baseElement).toBeAccessible();
     });
   });
   beforeEach(() => {

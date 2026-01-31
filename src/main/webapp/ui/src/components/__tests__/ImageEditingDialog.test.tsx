@@ -18,11 +18,8 @@ import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import ImageEditingDialog from "../ImageEditingDialog";
 import fc from "fast-check";
-import { axe } from "vitest-axe";
-import { toHaveNoViolations } from "vitest-axe/matchers";
 import { sleep } from "../../util/Util";
 
-expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -52,6 +49,8 @@ describe("ImageEditingDialog", () => {
     ctx.fillStyle = "green";
     ctx.fillRect(10, 10, 150, 100);
 
+    const user = userEvent.setup();
+
     const blob: Blob = await new Promise((resolve) => {
       canvas.toBlob((b: Blob | null) => {
         if (b === null) throw new Error("toBlob failed");
@@ -69,12 +68,12 @@ describe("ImageEditingDialog", () => {
       />
     );
 
-    await screen.findByRole("img");
+    await user.click(screen.getByRole("button", { name: "rotate clockwise" }));
 
-    // wait for image to load
+    // wait for rotated image to load
     await sleep(1000);
 
-    expect(await axe(baseElement)).toHaveNoViolations();
+    await expect(baseElement).toBeAccessible();
   });
   it("Rotating four times in either direction is a no-op.", async () => {
     const user = userEvent.setup();
@@ -95,6 +94,8 @@ describe("ImageEditingDialog", () => {
           ctx.canvas.height = 400;
           ctx.fillStyle = "green";
           ctx.fillRect(10, 10, 150, 100);
+
+          const user = userEvent.setup();
 
           const blob: Blob = await new Promise((resolve) => {
             canvas.toBlob((b: Blob | null) => {

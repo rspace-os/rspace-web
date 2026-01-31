@@ -14,12 +14,8 @@ import React from "react";
 import {
   render,
   screen,
-  waitFor,
-  within,
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
-import { axe } from "vitest-axe";
-import { toHaveNoViolations } from "vitest-axe/matchers";
 import App from "../App";
 import "../../../__tests__/assertSemanticHeadings";
 import MockAdapter from "axios-mock-adapter";
@@ -51,8 +47,6 @@ const uiNavigationData = {
   nextMaintenance: null,
 };
 
-expect.extend({ toHaveNoViolations });
-
 beforeEach(() => {
   vi.clearAllMocks();
   mockAxios.reset();
@@ -82,7 +76,7 @@ describe("Apps page", () => {
       await screen.findAllByText(/Something went wrong!/i);
       await screen.findByAltText("branding");
 
-      expect(await axe(container)).toHaveNoViolations();
+      await expect(container).toBeAccessible();
     });
   });
 

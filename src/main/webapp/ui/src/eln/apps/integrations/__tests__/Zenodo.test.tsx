@@ -23,7 +23,7 @@ import { Optional } from "../../../../util/optional";
 import "../../../../../__mocks__/matchMedia";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
-const update = vi.fn<IntegrationStates["ZENODO"], [IntegrationStates["ZENODO"]]>();
+const update = vi.fn<(state: IntegrationStates["ZENODO"]) => IntegrationStates["ZENODO"]>();
 
 const ZenodoWrapper = ({
   state = {

@@ -29,7 +29,7 @@ describe("ScopeField", () => {
     "getDMPs is called correctly when the scope is %s",
     (scope: string) => {
       cleanup();
-      const getDMPs = vi.fn<[Scope], unknown[]>();
+      const getDMPs = vi.fn<(scope: Scope) => void>();
 
       render(
         <ThemeProvider theme={materialTheme}>

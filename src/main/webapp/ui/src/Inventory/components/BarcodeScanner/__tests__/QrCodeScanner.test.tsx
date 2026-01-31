@@ -30,7 +30,7 @@ beforeEach(() => {
 describe("QrCodeScanner", () => {
   it("Should scan correctly.", async () => {
     const user = userEvent.setup();
-    const onScan = vi.fn() as Mock<void, [BarcodeInput]>;
+    const onScan = vi.fn<(input: BarcodeInput) => void>();
 
     render(
       <ThemeProvider theme={materialTheme}>

@@ -16,11 +16,7 @@ import {
 import "@testing-library/jest-dom/vitest";
 import ProtocolsIO from "../ProtocolsIO";
 import { Optional } from "../../../../util/optional";
-import { axe } from "vitest-axe";
-import { toHaveNoViolations } from "vitest-axe/matchers";
 import "../../../../../__mocks__/matchMedia";
-
-expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -46,7 +42,7 @@ describe("ProtocolsIO", () => {
 
       expect(await screen.findByRole("dialog")).toBeVisible();
 
-      expect(await axe(baseElement)).toHaveNoViolations();
+      await expect(baseElement).toBeAccessible();
     });
   });
   it("Should have a connect button when the user is not authenticated.", () => {
@@ -84,5 +80,3 @@ describe("ProtocolsIO", () => {
     expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
   });
 });
-
-

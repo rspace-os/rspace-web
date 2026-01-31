@@ -15,11 +15,7 @@ import {
 } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import Omero from "../Omero";
-import { axe } from "vitest-axe";
-import { toHaveNoViolations } from "vitest-axe/matchers";
 import "../../../../../__mocks__/matchMedia";
-
-expect.extend({ toHaveNoViolations });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -42,7 +38,7 @@ describe("Omero", () => {
 
     expect(await screen.findByRole("dialog")).toBeVisible();
 
-    expect(await axe(baseElement)).toHaveNoViolations();
+    await expect(baseElement).toBeAccessible();
   });
   it("Should render username and password fields.", () => {
     render(
@@ -66,5 +62,3 @@ describe("Omero", () => {
     expect(screen.getByLabelText("Password")).toBeVisible();
   });
 });
-
-
