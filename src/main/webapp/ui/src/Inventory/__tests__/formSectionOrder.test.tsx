@@ -187,6 +187,7 @@ describe("Form Section Order", () => {
   it("Across all of the forms, all of the sections should be in a consistent order.", () => {
     window.ResizeObserver =
       ResizeObserver as unknown as typeof global.ResizeObserver;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     window.scrollTo = vi.fn() as any;
 
     assertConsistentOrderOfLists(

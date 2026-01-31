@@ -1,6 +1,10 @@
 
-import { expect, vi } from "vitest";
-import type { CustomMatcherResult, MatcherUtils } from "vitest";
+import { expect } from "vitest";
+
+type CustomMatcherResult = {
+  pass: boolean;
+  message: () => string;
+};
 
 type ListName = string;
 
@@ -66,7 +70,12 @@ const formatErrorMessage = (
  * topological sorting.
  */
 export function toHaveConsistentOrdering(
-  this: MatcherUtils & { state: Record<string, any> },
+  this: {
+    utils: {
+      printExpected: (val: string) => string;
+      printReceived: (val: string) => string;
+    };
+  },
   mapOfListsOfNumbers: Map<ListName, Array<string>>
 ): CustomMatcherResult {
   /*
@@ -109,7 +118,7 @@ export function toHaveConsistentOrdering(
          * have seen [a,b] and [b,c] then seeing [c,a] should now be an error.
          */
         for (const [json, lists] of seenPairs) {
-          const [x, y] = JSON.parse(json);
+          const [x, y] = JSON.parse(json) as [string, string];
           if (y === first)
             seenPairs.set(JSON.stringify([x, second]), [
               ...lists,
@@ -133,8 +142,8 @@ export function toHaveConsistentOrdering(
 }
 
 declare module "vitest" {
-  interface Assertion<T = any> {
-    toHaveConsistentOrdering(): T;
+  interface Assertion {
+    toHaveConsistentOrdering(): unknown;
   }
 }
 

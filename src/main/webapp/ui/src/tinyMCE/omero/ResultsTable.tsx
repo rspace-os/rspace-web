@@ -238,12 +238,15 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
     ) => {
       const items = Array.isArray(wells) ? wells : [wells];
       return items.map((well, wellIndex) => {
-        const key =
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const key: string =
           React.isValidElement(well) && well.key !== null
             ? well.key
-            : React.isValidElement(well) && (well.props as Record<string, unknown>)["data-testid"]
-            ? (well.props as Record<string, unknown>)["data-testid"]
-            : `${rowIndex}-${columnIndex}-${wellIndex}`;
+            : // @ts-expect-error Fix this later
+              React.isValidElement(well) && well.props["data-testid"]
+              ? // @ts-expect-error Fix this later
+                well.props["data-testid"]
+              : `${rowIndex}-${columnIndex}-${wellIndex}`;
         return <React.Fragment key={key}>{well}</React.Fragment>;
       });
     };

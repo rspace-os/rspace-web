@@ -42,6 +42,7 @@ describe("ProtocolsIO", () => {
 
       expect(await screen.findByRole("dialog")).toBeVisible();
 
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
       await expect(baseElement).toBeAccessible();
     });
   });

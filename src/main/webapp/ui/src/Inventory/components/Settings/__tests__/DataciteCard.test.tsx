@@ -37,6 +37,7 @@ describe("DataciteCard", () => {
       </ThemeProvider>
     );
 
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
     await expect(container).toBeAccessible();
   });
 });

@@ -28,6 +28,7 @@ import userEvent from "@testing-library/user-event";
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-member-access
 window.Blob = require("node:buffer").Blob;
 
+// @ts-expect-error RS is legacy
 window.RS = { newFileStoresExportEnabled: false };
 
 const mockAxios = new MockAdapter(axios);

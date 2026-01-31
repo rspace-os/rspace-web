@@ -32,88 +32,88 @@ afterAll(() => {
   restoreStderr();
 });
 
-if (typeof HTMLImageElement !== "undefined") {
-  Object.defineProperty(HTMLImageElement.prototype, "width", {
-    configurable: true,
-    get() {
-      return this.__mockWidth ?? 1;
-    },
-    set(value) {
-      this.__mockWidth = value;
-    },
-  });
-  Object.defineProperty(HTMLImageElement.prototype, "height", {
-    configurable: true,
-    get() {
-      return this.__mockHeight ?? 1;
-    },
-    set(value) {
-      this.__mockHeight = value;
-    },
-  });
-  Object.defineProperty(HTMLImageElement.prototype, "complete", {
-    configurable: true,
-    get() {
-      return true;
-    },
-  });
-  Object.defineProperty(HTMLImageElement.prototype, "naturalWidth", {
-    configurable: true,
-    get() {
-      return this.width || 1;
-    },
-  });
-  Object.defineProperty(HTMLImageElement.prototype, "naturalHeight", {
-    configurable: true,
-    get() {
-      return this.height || 1;
-    },
-  });
-  const originalDescriptor = Object.getOwnPropertyDescriptor(
-    HTMLImageElement.prototype,
-    "src",
-  );
-  Object.defineProperty(HTMLImageElement.prototype, "src", {
-    configurable: true,
-    get() {
-      return originalDescriptor?.get ? originalDescriptor.get.call(this) : "";
-    },
-    set(_value) {
-      queueMicrotask(() => {
-        this.dispatchEvent(new Event("load"));
-      });
-    },
-  });
-}
-
-if (typeof HTMLCanvasElement !== "undefined") {
-  HTMLCanvasElement.prototype.getContext = function () {
-    return {
-      canvas: this,
-      save: () => {},
-      restore: () => {},
-      drawImage: () => {},
-      clearRect: () => {},
-      translate: () => {},
-      rotate: () => {},
-      scale: () => {},
-      setTransform: () => {},
-      measureText: (text) => ({ width: String(text).length }),
-      beginPath: () => {},
-      rect: () => {},
-      clip: () => {},
-      fillRect: () => {},
-      getImageData: () => ({ data: [] }),
-      putImageData: () => {},
-    } as unknown as CanvasRenderingContext2D;
-  };
-  HTMLCanvasElement.prototype.toDataURL = function () {
-    return "data:image/png;base64,";
-  };
-  HTMLCanvasElement.prototype.toBlob = function (callback) {
-    callback(new Blob([], { type: "image/png" }));
-  };
-}
+// if (typeof HTMLImageElement !== "undefined") {
+//   Object.defineProperty(HTMLImageElement.prototype, "width", {
+//     configurable: true,
+//     get() {
+//       return this.__mockWidth ?? 1;
+//     },
+//     set(value) {
+//       this.__mockWidth = value;
+//     },
+//   });
+//   Object.defineProperty(HTMLImageElement.prototype, "height", {
+//     configurable: true,
+//     get() {
+//       return this.__mockHeight ?? 1;
+//     },
+//     set(value) {
+//       this.__mockHeight = value;
+//     },
+//   });
+//   Object.defineProperty(HTMLImageElement.prototype, "complete", {
+//     configurable: true,
+//     get() {
+//       return true;
+//     },
+//   });
+//   Object.defineProperty(HTMLImageElement.prototype, "naturalWidth", {
+//     configurable: true,
+//     get() {
+//       return this.width || 1;
+//     },
+//   });
+//   Object.defineProperty(HTMLImageElement.prototype, "naturalHeight", {
+//     configurable: true,
+//     get() {
+//       return this.height || 1;
+//     },
+//   });
+//   const originalDescriptor = Object.getOwnPropertyDescriptor(
+//     HTMLImageElement.prototype,
+//     "src",
+//   );
+//   Object.defineProperty(HTMLImageElement.prototype, "src", {
+//     configurable: true,
+//     get() {
+//       return originalDescriptor?.get ? originalDescriptor.get.call(this) : "";
+//     },
+//     set(_value) {
+//       queueMicrotask(() => {
+//         this.dispatchEvent(new Event("load"));
+//       });
+//     },
+//   });
+// }
+//
+// if (typeof HTMLCanvasElement !== "undefined") {
+//   HTMLCanvasElement.prototype.getContext = function () {
+//     return {
+//       canvas: this,
+//       save: () => {},
+//       restore: () => {},
+//       drawImage: () => {},
+//       clearRect: () => {},
+//       translate: () => {},
+//       rotate: () => {},
+//       scale: () => {},
+//       setTransform: () => {},
+//       measureText: (text) => ({ width: String(text).length }),
+//       beginPath: () => {},
+//       rect: () => {},
+//       clip: () => {},
+//       fillRect: () => {},
+//       getImageData: () => ({ data: [] }),
+//       putImageData: () => {},
+//     } as unknown as CanvasRenderingContext2D;
+//   };
+//   HTMLCanvasElement.prototype.toDataURL = function () {
+//     return "data:image/png;base64,";
+//   };
+//   HTMLCanvasElement.prototype.toBlob = function (callback) {
+//     callback(new Blob([], { type: "image/png" }));
+//   };
+// }
 /*
  * Polyfill for TextEncoder and TextDecoder in Jest tests.
  *

@@ -76,6 +76,8 @@ describe("Apps page", () => {
       await screen.findAllByText(/Something went wrong!/i);
       await screen.findByAltText("branding");
 
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await expect(container).toBeAccessible();
     });
   });

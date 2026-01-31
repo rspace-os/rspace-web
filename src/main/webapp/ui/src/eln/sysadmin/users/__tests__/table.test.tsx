@@ -24,6 +24,7 @@ import USER_LISTING from "./userListing.json";
 import PDF_CONFIG from "./pdfConfig.json";
 import { render, within } from "../../../../__tests__/customQueries";
 
+// @ts-expect-error RS is legacy
 window.RS = { newFileStoresExportEnabled: false };
 
 const mockAxios = new MockAdapter(axios);

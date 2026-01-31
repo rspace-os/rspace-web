@@ -27,6 +27,7 @@ import userEvent from "@testing-library/user-event";
 
 const mockAxios = new MockAdapter(axios);
 
+// @ts-expect-error RS is legacy
 window.RS = { newFileStoresExportEnabled: false };
 
 beforeEach(() => {

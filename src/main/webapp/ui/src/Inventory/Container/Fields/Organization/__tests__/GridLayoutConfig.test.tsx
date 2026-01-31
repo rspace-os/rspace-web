@@ -1,5 +1,3 @@
-/*
- */
 import {
   describe,
   expect,
@@ -11,16 +9,17 @@ import React from "react";
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import GridLayoutConfig from "../GridLayoutConfig";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
+import { toBeAccessible } from "@sa11y/vitest";
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
+expect.extend({ toBeAccessible });
 
 describe("GridLayoutConfig", () => {
   it("Should have no axe violations.", async () => {
@@ -40,6 +39,7 @@ describe("GridLayoutConfig", () => {
       </ThemeProvider>
     );
 
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
     await expect(container).toBeAccessible();
   });
 });

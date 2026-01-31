@@ -89,6 +89,7 @@ describe("RaIDIntegrationCard", () => {
       await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
       expect(await screen.findByRole("dialog")).toBeVisible();
 
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
       await expect(baseElement).toBeAccessible();
     });
 });

@@ -42,7 +42,7 @@ vi.mock("../../../../../common/InvApiService", () => ({
 describe("search", () => {
   describe("When a new search is performed,", () => {
     it("a new factory should be created.", async () => {
-      const mockNewFactory = vi.fn<[], Factory>().mockReturnValue({} as Factory);
+      const mockNewFactory = vi.fn().mockReturnValue({} as Factory);
       const factory = mockFactory({
         newFactory: mockNewFactory,
       });

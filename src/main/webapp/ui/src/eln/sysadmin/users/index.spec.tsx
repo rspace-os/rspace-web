@@ -199,6 +199,7 @@ const feature = test.extend<{
 
 test.beforeEach(async ({ page, router }) => {
   await page.evaluate(() => {
+    // @ts-expect-error RS is legacy
     window.RS = {
       newFileStoresExportEnabled: true,
     };

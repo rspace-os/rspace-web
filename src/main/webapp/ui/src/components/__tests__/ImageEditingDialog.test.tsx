@@ -73,6 +73,7 @@ describe("ImageEditingDialog", () => {
     // wait for rotated image to load
     await sleep(1000);
 
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
     await expect(baseElement).toBeAccessible();
   });
   it("Rotating four times in either direction is a no-op.", async () => {
