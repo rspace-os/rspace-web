@@ -241,8 +241,8 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
         const key =
           React.isValidElement(well) && well.key !== null
             ? well.key
-            : React.isValidElement(well) && well.props["data-testid"]
-            ? well.props["data-testid"]
+            : React.isValidElement(well) && (well.props as Record<string, unknown>)["data-testid"]
+            ? (well.props as Record<string, unknown>)["data-testid"]
             : `${rowIndex}-${columnIndex}-${wellIndex}`;
         return <React.Fragment key={key}>{well}</React.Fragment>;
       });

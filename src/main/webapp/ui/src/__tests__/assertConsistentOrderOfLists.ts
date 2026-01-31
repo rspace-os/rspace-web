@@ -1,9 +1,6 @@
 
 import { expect, vi } from "vitest";
-type Assertion = {
-  pass: boolean;
-  message: (() => string) | undefined;
-};
+import type { CustomMatcherResult, MatcherUtils } from "vitest";
 
 type ListName = string;
 
@@ -69,9 +66,9 @@ const formatErrorMessage = (
  * topological sorting.
  */
 export function toHaveConsistentOrdering(
-  this: vi.MatcherUtils & Readonly<vi.MatcherState>,
+  this: MatcherUtils & { state: Record<string, any> },
   mapOfListsOfNumbers: Map<ListName, Array<string>>
-): vi.CustomMatcherResult {
+): CustomMatcherResult {
   /*
    * This Map map pairs of strings (x,y) to the list in which they are found
    * in a given order.
@@ -136,7 +133,7 @@ export function toHaveConsistentOrdering(
 }
 
 declare module "vitest" {
-  interface Assertion<T = unknown> {
+  interface Assertion<T = any> {
     toHaveConsistentOrdering(): T;
   }
 }

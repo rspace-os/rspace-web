@@ -105,7 +105,7 @@ if (typeof HTMLCanvasElement !== "undefined") {
       fillRect: () => {},
       getImageData: () => ({ data: [] }),
       putImageData: () => {},
-    };
+    } as unknown as CanvasRenderingContext2D;
   };
   HTMLCanvasElement.prototype.toDataURL = function () {
     return "data:image/png;base64,";

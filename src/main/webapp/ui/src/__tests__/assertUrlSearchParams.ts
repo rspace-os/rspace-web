@@ -11,7 +11,7 @@
 import { expect } from "vitest";
 
 declare module "vitest" {
-  interface Assertion<T = unknown> {
+  interface Assertion<T = any> {
     urlSearchParamContaining(expected: Record<string, string>): T;
     urlSearchParamHasKey(expectedKey: string): T;
   }

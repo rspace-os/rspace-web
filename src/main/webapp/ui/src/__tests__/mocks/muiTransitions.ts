@@ -19,6 +19,9 @@ const TransitionMock = React.forwardRef<unknown, TransitionProps>(
     if (inProp === false) {
       return null;
     }
+    if (typeof children === "function") {
+      return children("entered", {}) as React.ReactElement | null;
+    }
     if (React.isValidElement(children)) {
       return React.cloneElement(children, { ref });
     }
