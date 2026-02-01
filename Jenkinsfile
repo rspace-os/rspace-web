@@ -178,7 +178,8 @@ pipeline {
                 echo 'Running Vitest tests'
                 sh 'git fetch origin main:main || true'
                 dir('src/main/webapp/ui') {
-                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2 --changedSince=main'
+                    // In Jenkins we limit this to 2 to not overwhelm the CI machine
+                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers 2 --changed main'
                 }
             }
             post {
