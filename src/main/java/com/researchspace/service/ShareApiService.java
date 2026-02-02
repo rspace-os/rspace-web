@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import com.researchspace.api.v1.controller.ApiGenericSearchConfig;
+import com.researchspace.api.v1.controller.ApiShareSearchConfig;
 import com.researchspace.api.v1.controller.DocumentApiPaginationCriteria;
 import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
@@ -21,7 +21,7 @@ public interface ShareApiService {
   void updateShare(SharePermissionUpdate permissionUpdate, User user) throws BindException;
 
   ApiShareSearchResult getShares(
-      DocumentApiPaginationCriteria pgCrit, ApiGenericSearchConfig apiSrchConfig, User user)
+      DocumentApiPaginationCriteria pgCrit, ApiShareSearchConfig apiShareSrchConfig, User user)
       throws BindException;
 
   @Transactional(readOnly = true)
