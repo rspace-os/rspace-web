@@ -13,7 +13,7 @@ describe("ErrorBoundary", () => {
     /*
      * This is needed because the `render` function will report any errors
      * using console.error, even though the ErrorBoundary catches them, which
-     * just pollutes the output of the vi CLI runner
+     * just pollutes the output of the vitest CLI runner
      */
     const restoreConsole = silenceConsole(["error"], [/./]);
     const errorHandler = (event: ErrorEvent) => {
