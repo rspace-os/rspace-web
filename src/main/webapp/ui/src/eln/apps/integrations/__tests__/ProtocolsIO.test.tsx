@@ -59,4 +59,3 @@ describe("ProtocolsIO", () => {
     expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
   });
 });
-});

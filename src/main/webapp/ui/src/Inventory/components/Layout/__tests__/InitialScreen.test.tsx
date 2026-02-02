@@ -32,4 +32,3 @@ describe("InitialScreen", () => {
     expect(screen.getByText("Samples")).toBeInTheDocument();
   });
 });
-});

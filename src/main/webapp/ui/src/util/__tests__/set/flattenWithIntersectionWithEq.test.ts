@@ -32,4 +32,3 @@ describe("flattenWithIntersectionWithEq", () => {
     expect(actual.map(({ id }) => id).isSame(new RsSet([1, 2]))).toBe(true);
   });
 });
-});

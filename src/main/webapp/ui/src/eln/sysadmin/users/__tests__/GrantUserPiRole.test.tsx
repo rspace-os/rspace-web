@@ -123,4 +123,3 @@ describe("Grant User PI Role", () => {
     40 * 1000,
   );
 });
-});

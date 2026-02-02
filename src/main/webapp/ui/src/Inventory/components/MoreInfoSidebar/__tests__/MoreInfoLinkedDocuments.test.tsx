@@ -140,4 +140,3 @@ describe("LinkedDocuments", () => {
     expect(spy).toHaveBeenCalledTimes(2);
   });
 });
-});

@@ -48,4 +48,3 @@ describe("Sidebar", () => {
     await expect(container).toBeAccessible();
   });
 });
-});

@@ -1277,4 +1277,3 @@ test.describe("Stoichiometry Table", () => {
     );
   });
 });
-});

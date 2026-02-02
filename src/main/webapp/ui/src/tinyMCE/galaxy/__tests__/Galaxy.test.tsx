@@ -186,4 +186,3 @@ describe("Galaxy Upload Data tests ", () => {
     });
   });
 });
-});

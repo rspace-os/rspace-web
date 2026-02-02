@@ -109,4 +109,3 @@ describe("Handles errors", () => {
     ).toBeInTheDocument();
   })
 });
-});

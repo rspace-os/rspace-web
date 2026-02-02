@@ -76,4 +76,3 @@ describe("MoveAction", () => {
     expect(closeMenu).toHaveBeenCalled();
   });
 });
-});

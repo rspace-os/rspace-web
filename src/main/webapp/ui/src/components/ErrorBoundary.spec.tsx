@@ -18,4 +18,3 @@ test("When there is an error rendering one of its descendent components, ErrorBo
   );
   await expect(component).toContainText("Something went wrong.");
 });
-});

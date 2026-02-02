@@ -713,4 +713,3 @@ test.describe("MainPanel", () => {
     });
   });
 });
-});

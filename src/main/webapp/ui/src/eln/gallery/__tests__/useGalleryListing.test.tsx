@@ -102,4 +102,3 @@ describe("useGalleryListing", () => {
     expect(getUploadedFilesCalls[1].params.get("pageNumber")).toBe("1");
   });
 });
-});

@@ -59,4 +59,3 @@ describe("Figshare", () => {
     expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
   });
 });
-});

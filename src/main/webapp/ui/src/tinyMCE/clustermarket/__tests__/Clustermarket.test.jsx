@@ -141,4 +141,3 @@ describe("Renders page with booking data ", () => {
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
   });
 });
-});

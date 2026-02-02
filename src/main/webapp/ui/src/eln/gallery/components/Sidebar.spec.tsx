@@ -267,4 +267,3 @@ test.describe("Sidebar", () => {
     );
   });
 });
-});

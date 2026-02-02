@@ -886,4 +886,3 @@ describe("Renders page with results data ", () => {
     );
   }, 9999);
 });
-});

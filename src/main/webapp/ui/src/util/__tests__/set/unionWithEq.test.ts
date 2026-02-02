@@ -10,4 +10,3 @@ describe("unionWithEq", () => {
     ).toBe(true);
   });
 });
-});

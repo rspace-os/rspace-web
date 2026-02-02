@@ -295,4 +295,3 @@ test.describe("CallableImagePreview", () => {
     });
   });
 });
-});

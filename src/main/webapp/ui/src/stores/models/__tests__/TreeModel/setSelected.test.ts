@@ -57,4 +57,3 @@ describe("method: setSelected", () => {
     });
   });
 });
-});

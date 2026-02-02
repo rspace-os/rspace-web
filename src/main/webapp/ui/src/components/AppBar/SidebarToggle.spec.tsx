@@ -52,4 +52,3 @@ test.describe("Accessibility", () => {
     expect(ariaControls).toBe("test");
   });
 });
-});

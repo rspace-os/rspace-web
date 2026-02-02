@@ -108,4 +108,3 @@ test.describe("MoveDialog", () => {
     Then["the API should be called with foldersOnly=true"]();
   });
 });
-});

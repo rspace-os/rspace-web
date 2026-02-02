@@ -499,4 +499,3 @@ test.describe("Gallery", () => {
     );
   });
 });
-});

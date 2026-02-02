@@ -116,4 +116,3 @@ describe("DynamicHeadingLevel", () => {
     ).toMatch(/MuiTypography-h3/);
   });
 });
-});

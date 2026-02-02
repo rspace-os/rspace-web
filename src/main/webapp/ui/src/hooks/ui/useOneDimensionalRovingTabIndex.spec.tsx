@@ -221,4 +221,3 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
     },
   );
 });
-});

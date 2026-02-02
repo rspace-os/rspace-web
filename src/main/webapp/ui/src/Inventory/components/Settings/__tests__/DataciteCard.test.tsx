@@ -25,4 +25,3 @@ describe("DataciteCard", () => {
     await expect(container).toBeAccessible();
   });
 });
-});

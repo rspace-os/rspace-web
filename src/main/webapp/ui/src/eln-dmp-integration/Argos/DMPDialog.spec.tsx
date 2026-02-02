@@ -108,4 +108,3 @@ test("Importing a selected DMP should call the import endpoint.", async ({
     new RegExp("/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e")
   );
 });
-});

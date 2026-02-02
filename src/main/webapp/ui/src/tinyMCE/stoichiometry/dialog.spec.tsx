@@ -571,4 +571,3 @@ test.describe("Stoichiometry Dialog", () => {
     },
   );
 });
-});

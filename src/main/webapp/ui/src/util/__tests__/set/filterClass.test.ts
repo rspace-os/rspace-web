@@ -8,4 +8,3 @@ describe("filterClass", () => {
     expect(set.filterClass(Foo).size).toBe(2);
   });
 });
-});

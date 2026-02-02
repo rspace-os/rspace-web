@@ -509,4 +509,3 @@ test.describe("FolderTree", () => {
     },
   );
 });
-});

@@ -478,4 +478,3 @@ test.describe("DataGridWithRadioSelection", () => {
     );
   });
 });
-});

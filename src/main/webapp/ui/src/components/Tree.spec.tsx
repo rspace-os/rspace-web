@@ -380,4 +380,3 @@ test.describe("Tree Component", () => {
     });
   });
 });
-});

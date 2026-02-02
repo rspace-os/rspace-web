@@ -134,4 +134,3 @@ describe("Renders page with ROR data ", () => {
     );
   });
 });
-});

@@ -120,4 +120,3 @@ describe("Node", () => {
     expect(screen.getByRole("treeitem", { name: /Container/ })).toBeVisible();
   });
 });
-});

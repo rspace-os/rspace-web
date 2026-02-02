@@ -43,4 +43,3 @@ describe("Omero", () => {
     expect(screen.getByLabelText("Password")).toBeVisible();
   });
 });
-});

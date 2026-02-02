@@ -28,4 +28,3 @@ describe("GridLayoutConfig", () => {
     await expect(container).toBeAccessible();
   });
 });
-});

@@ -620,4 +620,3 @@ test.describe("App Bar", () => {
     },
   );
 });
-});

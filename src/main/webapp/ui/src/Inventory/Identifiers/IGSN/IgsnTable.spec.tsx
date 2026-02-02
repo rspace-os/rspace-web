@@ -637,4 +637,3 @@ test.describe("IGSN Table", () => {
     }
   );
 });
-});

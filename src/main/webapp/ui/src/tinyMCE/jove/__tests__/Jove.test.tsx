@@ -99,4 +99,3 @@ describe("Renders page with jove data ", () => {
     restoreConsole();
   });
 });
-});
