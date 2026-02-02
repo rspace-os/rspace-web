@@ -10,6 +10,7 @@ import testingLibrary from "eslint-plugin-testing-library";
 import jestDom from "eslint-plugin-jest-dom";
 import typescript from "@typescript-eslint/eslint-plugin";
 import typescriptParser from "@typescript-eslint/parser";
+import vitest from "@vitest/eslint-plugin";
 
 export default defineConfig([
   // Global ignores
@@ -137,7 +138,6 @@ export default defineConfig([
       globals: {
         ...globals.browser,
         ...globals.node,
-        ...globals.vitest,
       },
     },
     plugins: {
@@ -148,10 +148,12 @@ export default defineConfig([
       jsdoc,
       "testing-library": testingLibrary,
       "jest-dom": jestDom,
+      vitest,
     },
     rules: {
       ...testingLibrary.configs.react.rules,
       ...jestDom.configs.recommended.rules,
+      ...vitest.configs.recommended.rules,
       "testing-library/no-manual-cleanup": "off",
     },
   },

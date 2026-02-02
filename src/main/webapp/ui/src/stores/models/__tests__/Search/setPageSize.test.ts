@@ -16,7 +16,7 @@ vi.mock("../../../stores/RootStore", () => ({
 vi.mock("../../../stores/SearchStore", () => ({ default: class {} })); // break import cycle
 describe("action: setPageSize", () => {
   describe("When called with any value it should", () => {
-    test(" set the page number to 0.", () => {
+    test("set the page number to 0.", () => {
       const search = new Search({
         factory: mockFactory(),
       });
