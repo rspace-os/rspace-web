@@ -5,11 +5,6 @@
  * https://testing-library.com/docs/react-testing-library/setup#add-custom-queries
  */
 import {
-  it,
-  test,
-  expect,
-} from "vitest";
-import {
   within,
   render,
   queries,

@@ -21,7 +21,6 @@ import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import "../../../../__mocks__/matchMedia";
-import allIntegrationsAreDisabled from "./allIntegrationsAreDisabled.json";
 
 const mockAxios = new MockAdapter(axios);
 const uiNavigationData = {

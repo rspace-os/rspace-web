@@ -1,5 +1,5 @@
 
-import { test, expect } from "vitest";
+import { expect } from "vitest";
 import { match } from "../util/Util";
 import { Optional } from "../util/optional";
 import * as ArrayUtils from "../util/ArrayUtils";
