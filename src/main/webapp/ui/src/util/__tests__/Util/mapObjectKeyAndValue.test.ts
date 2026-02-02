@@ -1,18 +1,9 @@
-/*
- */
 
 import { describe, expect, it } from "vitest";
 import { mapObjectKeyAndValue } from "../../Util";
 import fc from "fast-check";
 import { incrementForever } from "../../iterators";
 
-/*
- * fast-check intentionally generates strings that are likely to lead to
- * weird JavaScript behaviour, such as "__proto__". However, this string
- * breaks the implementation of mapObjectKeyAndValue and it is not worth
- * adding complexity to the function for the sake of a key that wont happen
- * in reality.
- */
 const arbObjectKey = fc.string().filter((str) => str !== "__proto__");
 
 describe("mapObjectKeyAndValue", () => {

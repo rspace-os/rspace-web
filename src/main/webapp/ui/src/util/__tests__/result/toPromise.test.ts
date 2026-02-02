@@ -1,5 +1,3 @@
-/*
- */
 import { describe, expect, it } from "vitest";
 import Result from "../../result";
 import "@testing-library/jest-dom/vitest";

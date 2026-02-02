@@ -1,5 +1,3 @@
-/*
- */
 import { describe, expect, it, vi } from "vitest";
 import fc from "fast-check";
 import { makeMockTemplate } from "./mocking";

@@ -1,5 +1,3 @@
-/*
- */
 import { describe, expect, it } from "vitest";
 import * as ArrayUtils from "../../ArrayUtils";
 import { Optional } from "../../optional";

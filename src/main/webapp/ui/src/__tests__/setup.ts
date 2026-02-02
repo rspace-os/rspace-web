@@ -34,7 +34,7 @@ afterAll(() => {
 });
 
 /*
- * Polyfill for TextEncoder and TextDecoder in Jest tests.
+ * Polyfill for TextEncoder and TextDecoder in Vitest tests.
  *
  * These classes are available in browsers but not in Node.js by default.
  * Some dependencies (such as MUI, emotion, or others) may require TextEncoder/TextDecoder

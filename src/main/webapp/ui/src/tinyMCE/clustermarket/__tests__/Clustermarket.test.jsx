@@ -1,5 +1,3 @@
-/*
- */
 import { describe, expect, beforeEach, it, vi } from "vitest";
 import Clustermarket, { getOrder, getOrderBy } from "../Clustermarket";
 import React from "react";

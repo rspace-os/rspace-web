@@ -1,5 +1,3 @@
-/*
- */
 import { describe, expect, it } from "vitest";
 import { isRecord } from "../../parsers";
 import "@testing-library/jest-dom/vitest";

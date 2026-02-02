@@ -1,5 +1,3 @@
-/*
- */
 import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { Material, type Quantity } from "../../MaterialsModel";

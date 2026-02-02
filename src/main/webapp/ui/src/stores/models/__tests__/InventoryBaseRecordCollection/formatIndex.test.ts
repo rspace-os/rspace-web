@@ -29,19 +29,6 @@ const everyOutputForArbitraryNumOfRecords = arbitraryInput
     )
   );
 
-/*
- * This test suite provides a complete specification for the helper function,
- * formatIndex. The function's job is to convert a given number to a string,
- * padding sufficient zeros to the front to ensure that all indexes within a
- * given range end up with the same length string.
- *
- * These four property tests are sufficient constraints on the implementation
- * of the function to ensure that it must be correct. The only way for a
- * string, containing only digits, to have the required length is for it to be
- * padded with zeros. The parsing test then ensures that the particular value
- * encoded in the string is correct. Finally, the leading zero test asserts
- * that the number of leading zeros is the minimal number necessary.
- */
 describe("formatIndex", () => {
   it("Output should only contain digits.", () => {
     fc.assert(

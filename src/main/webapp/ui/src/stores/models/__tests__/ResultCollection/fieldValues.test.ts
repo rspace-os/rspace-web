@@ -1,5 +1,3 @@
-/*
- */
 import { describe, expect, it, vi } from "vitest";
 import InventoryBaseRecordCollection from "../../InventoryBaseRecordCollection";
 import { PersistedBarcode } from "../../Barcode";

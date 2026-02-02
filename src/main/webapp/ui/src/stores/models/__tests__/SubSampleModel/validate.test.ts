@@ -1,5 +1,3 @@
-/*
- */
 import { describe, expect, it, vi } from "vitest";
 import { makeMockSubSample } from "./mocking";
 import "@testing-library/jest-dom/vitest";

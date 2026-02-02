@@ -1,5 +1,3 @@
-/*
- */
 import { describe, expect, it } from "vitest";
 import { objectPath } from "../../parsers";
 import Result from "../../result";

@@ -1,5 +1,3 @@
-/*
- */
 import { describe, expect, beforeEach, it, vi } from "vitest";
 vi.mock("@/common/axios", async () => {
   const actual = await vi.importActual("axios");

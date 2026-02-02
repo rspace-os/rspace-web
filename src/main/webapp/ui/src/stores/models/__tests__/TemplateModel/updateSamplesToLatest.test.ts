@@ -1,5 +1,3 @@
-/*
- */
 
 import {
   describe,
@@ -18,11 +16,6 @@ import {
   type InternalAxiosRequestConfig,
 } from "@/common/axios";
 
-/*
- * We define the root store here so that every call to getRootStore gets a
- * reference to the same object. It is stored using var to make sure that the
- * mocks below aren't hoiseted above.
- */
 const mockRootStore = {
   uiStore: {
     confirm: vi.fn(() => Promise.resolve(true)),

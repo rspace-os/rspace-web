@@ -1,5 +1,3 @@
-/*
- */
 import Galaxy, {AttachedRecords} from "../Galaxy";
 import React from "react";
 import axios from "@/common/axios";

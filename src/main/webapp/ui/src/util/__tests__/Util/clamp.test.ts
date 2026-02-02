@@ -1,5 +1,3 @@
-/*
- */
 import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
