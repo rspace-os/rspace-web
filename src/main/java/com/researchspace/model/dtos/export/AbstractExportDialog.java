@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos.export;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.repository.RepoDepositConfig;
@@ -13,5 +14,7 @@ public abstract class AbstractExportDialog {
 
   @Valid protected ExportSelection exportSelection;
   @Valid protected RepoDepositConfig repositoryConfig;
-  @Valid protected RaidGroupAssociationDTO raidAssociated;
+  @Valid protected Long projectGroupId;
+
+  @JsonIgnore protected RaidGroupAssociationDTO raidAssociated;
 }
