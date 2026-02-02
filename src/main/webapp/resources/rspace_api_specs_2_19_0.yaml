@@ -2578,6 +2578,15 @@ paths:
           in: query
           type: string
           description: 'Whole or part of the SharedItem''s name, or ID or global ID.'
+        - name: sharedItemIds
+          description: A comma-separated list of IDs of records for which to find the share status
+          in: query
+          type: array
+          required: false
+          items:
+            type: integer
+            format: int64
+          collectionFormat: csv
       responses:
         '200':
           description: A listing of shared items.
@@ -4406,14 +4415,18 @@ definitions:
       id:
         type: integer
         format: int64
-        description: The Id of the newly created shared resource
+        description: The id of the newly created shared resource
       sharedItemId:
         type: integer
         format: int64
-        description: The Id of the shared item (document or notebook)
+        description: The id of the shared item (document or notebook)
       shareItemName:
         type: string
         description: The display name of the shared item
+      sharedTargetId:
+        type: integer
+        format: int64
+        description: The id of the target user or group
       sharedTargetType:
         type: string
         description: One of 'GROUP' or 'USER'
