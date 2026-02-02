@@ -596,7 +596,12 @@ public class MediaManagerImpl implements MediaManager {
 
   @Override
   public RSChemElement importChemElement(
-      InputStream dataImageIS, String chem, ChemElementsFormat format, long fieldId, Record record)
+      InputStream dataImageIS,
+      String chem,
+      ChemElementsFormat format,
+      long fieldId,
+      Record record,
+      Long ecatChemFieldId)
       throws IOException {
     byte[] data = IOUtils.toByteArray(dataImageIS);
     RSChemElement rsChemElement =
@@ -606,6 +611,7 @@ public class MediaManagerImpl implements MediaManager {
             .chemElementsFormat(format)
             .parentId(fieldId)
             .record(record)
+            .ecatChemFileId(ecatChemFieldId)
             .build();
     return rsChemElementManager.save(rsChemElement, null);
   }

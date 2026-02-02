@@ -1,6 +1,7 @@
 package com.researchspace.archive;
 
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +18,9 @@ public interface ImmutableExportRecordList {
 
   @XmlTransient
   List<ExternalWorkFlowData> getExternalWorkFlows();
+
+  @XmlTransient
+  List<StoichiometryDTO> getStoichiometries();
 
   Set<GlobalIdentifier> getAssociatedFieldAttachments();
 
@@ -40,6 +44,8 @@ public interface ImmutableExportRecordList {
   boolean containsRecord(GlobalIdentifier rcdId);
 
   boolean containsExternalWorkFlowData(Long rcdId);
+
+  boolean containsStoichiometries(Long rcdId);
 
   boolean containsFolder(Long id);
 
