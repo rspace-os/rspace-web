@@ -11,9 +11,7 @@ import axios from "@/common/axios";
 
 const mockAxios = new MockAdapter(axios, { onNoMatch: "throwException" });
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 function renderExportRepoUser({

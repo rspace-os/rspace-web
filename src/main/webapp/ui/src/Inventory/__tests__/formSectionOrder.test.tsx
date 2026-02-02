@@ -112,9 +112,7 @@ window.fetch = vi.fn(() =>
   } as Response)
 ) as any;
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 type MakeRootStoreArgs = {

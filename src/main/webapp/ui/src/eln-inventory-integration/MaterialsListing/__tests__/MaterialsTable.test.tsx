@@ -27,9 +27,7 @@ vi.mock("../../../stores/stores/RootStore", () => ({
 })
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 const sample1 = sampleAttrs({

@@ -8,9 +8,7 @@ import {
 import Omero from "../Omero";
 import "../../../../../__mocks__/matchMedia";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Omero", () => {

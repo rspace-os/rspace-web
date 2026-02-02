@@ -1,4 +1,4 @@
-import { test, describe, expect, beforeEach, vi } from 'vitest';
+import { test, describe, expect, afterEach, vi } from 'vitest';
 import React from "react";
 import {
   screen,
@@ -15,16 +15,15 @@ import { render, within } from "../../../../__tests__/customQueries";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
-  get: () => ({}),
-
-  }}));
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
+    get: () => ({}),
+  }
+}));
 
 describe("LinkedDocuments", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   test("Assert that correct API endpoint is called with Global ID", async () => {
     const spy = vi
       .spyOn(InvApiService, "get")

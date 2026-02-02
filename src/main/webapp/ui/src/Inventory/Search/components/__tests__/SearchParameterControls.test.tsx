@@ -47,9 +47,7 @@ window.fetch = vi.fn(() =>
   } as Response)
 ) as Mock;
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("SearchParameterControls", () => {

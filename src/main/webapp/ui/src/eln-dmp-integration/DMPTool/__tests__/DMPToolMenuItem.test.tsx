@@ -14,9 +14,7 @@ import { ThemeProvider } from "@mui/material/styles";
 
 const mockAxios = new MockAdapter(axios);
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("DMPToolMenuItem", () => {

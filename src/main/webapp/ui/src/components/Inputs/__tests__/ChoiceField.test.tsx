@@ -1,8 +1,7 @@
- 
 import {
   describe,
   expect,
-  beforeEach,
+  afterEach,
   test,
   vi,
 } from "vitest";
@@ -18,11 +17,6 @@ import materialTheme from "../../../theme";
 vi.mock("@mui/material/Checkbox", () => ({
   default: vi.fn(() => <div></div>),
 }));
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
 
 const renderChoiceField = (props: {
   disabled?: boolean;
@@ -74,6 +68,10 @@ const expectJustFoo = () => {
 };
 
 describe("ChoiceField", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("Renders correctly", () => {
     test.each`
       disabled     | hideWhenDisabled | value      | expectFn

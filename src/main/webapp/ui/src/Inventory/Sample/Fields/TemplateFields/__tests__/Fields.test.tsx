@@ -15,9 +15,7 @@ vi.mock("../../../../../components/Ketcher/KetcherDialog", () => ({
   default: vi.fn(() => <div></div>),
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Fields", () => {

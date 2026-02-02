@@ -11,9 +11,7 @@ import "../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("ValidatingSubmitButton", () => {

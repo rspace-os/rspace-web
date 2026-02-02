@@ -10,9 +10,7 @@ import SynchroniseFormSections from "../SynchroniseFormSections";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import { type RecordType } from "../../../../stores/definitions/InventoryRecord";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 function MockFormSectionInOuterContext() {

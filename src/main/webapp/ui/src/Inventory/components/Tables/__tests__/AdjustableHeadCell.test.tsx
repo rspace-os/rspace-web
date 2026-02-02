@@ -10,9 +10,7 @@ import RsSet from "../../../../util/set";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("AdjustableHeadCell", () => {

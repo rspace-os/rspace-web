@@ -43,9 +43,7 @@ function makeRootStoreWithGridContainer(): {
   return { rootStore, gridContainer: activeResult };
 }
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 describe("GridDimensions", () => {
   test("Each of the standard dimension menu options sets the rows and columns to a valid number.", async () => {

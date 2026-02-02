@@ -9,9 +9,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import Organization from "../Organization";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Organization", () => {

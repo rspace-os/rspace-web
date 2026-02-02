@@ -8,9 +8,7 @@ import TypeFilter from "../TypeFilter";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("TypeFilter", () => {

@@ -13,9 +13,7 @@ import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 vi.mock("@tinymce/tinymce-react", () => ({

@@ -10,9 +10,7 @@ import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHe
 import * as FetchingData from "../../util/fetchingData";
 import fc from "fast-check";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("integrationHelpers", () => {

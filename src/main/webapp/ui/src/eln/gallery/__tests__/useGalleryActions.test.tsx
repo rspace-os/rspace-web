@@ -13,9 +13,7 @@ import Alerts from "../../../components/Alerts/Alerts";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 describe("useGalleryActions", () => {
   describe("duplicateFiles", () => {

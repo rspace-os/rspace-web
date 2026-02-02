@@ -32,9 +32,7 @@ window.fetch = vi.fn(() =>
   } as Response),
 );
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 const props = {

@@ -19,9 +19,7 @@ vi.mock("@mui/material/Dialog", () => ({
 }));
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("TransferAction", () => {

@@ -1,8 +1,7 @@
- 
 import {
   describe,
   expect,
-  beforeEach,
+  afterEach,
   test,
   vi,
 } from "vitest";
@@ -18,11 +17,6 @@ import materialTheme from "../../../../theme";
 vi.mock("@mui/material/FormControlLabel", () => ({
   default: vi.fn(() => <div></div>),
 }));
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
 
 const renderRadioField = (props: {
   disabled?: boolean;
@@ -74,6 +68,10 @@ const expectJustFoo = () => {
 };
 
 describe("RadioField", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  })
+
   describe("Renders correctly", () => {
     test.each`
       disabled     | hideWhenDisabled | value      | expectFn

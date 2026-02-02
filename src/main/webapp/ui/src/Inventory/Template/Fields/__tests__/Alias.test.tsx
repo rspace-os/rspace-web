@@ -13,9 +13,7 @@ import materialTheme from "../../../../theme";
 import { type Alias as AliasType } from "../../../../stores/definitions/Sample";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Alias", () => {

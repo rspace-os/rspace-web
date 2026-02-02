@@ -10,9 +10,7 @@ import axios from "@/common/axios";
 import { Optional } from "../../../util/optional";
 import "../../../../__mocks__/matchMedia";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("useIntegrationsEndpoint", () => {

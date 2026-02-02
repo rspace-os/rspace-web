@@ -14,9 +14,7 @@ import materialTheme from "../../../../theme";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("SelectAction", () => {

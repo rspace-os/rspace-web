@@ -16,9 +16,7 @@ vi.mock("@mui/material/Alert", () => ({
   }),
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("FileField", () => {

@@ -1,4 +1,4 @@
-import { test, describe, expect, beforeEach, beforeAll, vi } from 'vitest';
+import { test, describe, expect, afterEach, beforeAll, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -41,12 +41,11 @@ beforeAll(async () => {
   ({ default: useNavigateHelpers } = await import("../useNavigateHelpers"));
 });
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
-
 describe("useNavigateHelpers", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("navigateToRecord should", () => {
     test("call setActiveResult", async () => {
       const user = userEvent.setup();

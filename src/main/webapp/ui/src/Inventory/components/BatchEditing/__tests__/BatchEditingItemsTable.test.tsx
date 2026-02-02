@@ -14,9 +14,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import userEvent from "@testing-library/user-event";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("BatchEditingItemsTable", () => {

@@ -20,9 +20,7 @@ import ApiServiceBase from "../../../common/ApiServiceBase";
 import MemoisedFactory from "../../../stores/models/Factory/MemoisedFactory";
 import { personAttrs } from "../../../stores/models/__tests__/PersonModel/mocking";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Results Table", () => {

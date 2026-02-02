@@ -13,9 +13,7 @@ import { type Validator, mkValidator } from "../Validator";
 import { runInAction, observable } from "mobx";
 import { doNotAwait } from "../Util";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 function Child1({ validator }: { validator: Validator }) {

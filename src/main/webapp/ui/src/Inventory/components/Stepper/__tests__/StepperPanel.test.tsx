@@ -18,9 +18,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({})
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("StepperPanel", () => {

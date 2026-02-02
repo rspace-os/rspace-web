@@ -22,9 +22,7 @@ vi.mock("../../../../hooks/api/integrationHelpers", () => ({
 
 const mockAxios = new MockAdapter(axios);
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Sidebar", () => {

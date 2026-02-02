@@ -24,9 +24,7 @@ window.RS = { newFileStoresExportEnabled: false };
 
 const mockAxios = new MockAdapter(axios);
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("CSV Export", () => {

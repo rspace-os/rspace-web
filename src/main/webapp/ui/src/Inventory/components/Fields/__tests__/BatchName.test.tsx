@@ -21,9 +21,7 @@ function lengthOfSuffix(suffix: string): number {
   throw new Error("Invalid suffix string");
 }
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 function renderWithJustFieldValue(

@@ -46,9 +46,7 @@ vi.mock("../../../Search/Search", () => ({
   default: vi.fn(() => <></>),
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("MoveDialog", () => {

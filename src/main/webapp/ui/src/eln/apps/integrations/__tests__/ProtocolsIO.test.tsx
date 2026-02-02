@@ -9,9 +9,7 @@ import ProtocolsIO from "../ProtocolsIO";
 import { Optional } from "../../../../util/optional";
 import "../../../../../__mocks__/matchMedia";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("ProtocolsIO", () => {

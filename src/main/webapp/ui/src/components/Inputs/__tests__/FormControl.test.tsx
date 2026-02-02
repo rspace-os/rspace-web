@@ -1,4 +1,4 @@
-import { test, describe, expect, beforeEach, vi } from 'vitest';
+import { test, describe, expect, afterEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -12,12 +12,11 @@ vi.mock("@mui/material/FormLabel", () => ({
   default: vi.fn(() => <div></div>),
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
-
 describe("FormControl", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("Label correctly", () => {
     test("FormLabel is rendered when label is passed.", () => {
       render(

@@ -10,9 +10,7 @@ import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import "../../../../__mocks__/matchMedia";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("IntegrationCard", () => {

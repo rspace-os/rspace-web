@@ -26,9 +26,7 @@ vi.mock("react-router", () => ({
   useNavigate: () => ({}),
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Card", () => {

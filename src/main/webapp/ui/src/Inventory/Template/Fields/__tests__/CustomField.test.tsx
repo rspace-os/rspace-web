@@ -11,9 +11,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import userEvent from "@testing-library/user-event";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/RootStore", () => ({

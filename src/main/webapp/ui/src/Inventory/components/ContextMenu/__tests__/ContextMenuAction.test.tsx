@@ -9,9 +9,7 @@ import {
 import ContextMenuAction from "../ContextMenuAction";
 import fc from "fast-check";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 function OuterComponent({

@@ -1,5 +1,5 @@
  
-import { test, describe, expect, beforeEach, vi } from 'vitest';
+import { test, describe, expect, afterEach, vi } from "vitest";
 import React from "react";
 import {
   render,
@@ -25,10 +25,6 @@ vi.mock("../../../../../components/Inputs/FileField", () => ({
 vi.mock("../../../../../components/Ketcher/KetcherDialog", () => ({
   default: vi.fn(() => <div></div>),
 }));
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
 
 const renderWithDeploymentProperties = (ui: React.ReactElement) =>
   render(
@@ -69,6 +65,10 @@ const makeAttachment = (attrs?: { name: string }) =>
   );
 
 describe("AttachmentField", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("Description field", () => {
     test.each`
       disabled     | value    | noValueLabel | expectFn

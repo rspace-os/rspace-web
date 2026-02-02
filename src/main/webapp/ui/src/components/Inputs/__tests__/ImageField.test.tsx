@@ -65,9 +65,7 @@ vi.mock("../DynamicallyLoadedImageEditor", () => ({
   }),
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 describe("ImageField", () => {
   /*

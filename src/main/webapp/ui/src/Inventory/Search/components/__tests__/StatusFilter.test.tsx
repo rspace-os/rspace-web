@@ -8,9 +8,7 @@ import materialTheme from "../../../../theme";
 import StatusFilter from "../StatusFilter";
 import { ThemeProvider } from "@mui/material/styles";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("StatusFilter", () => {

@@ -9,9 +9,7 @@ import {
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Alerts from "../Alerts";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 function DisplaysAlert() {

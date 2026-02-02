@@ -11,9 +11,7 @@ import * as PersonMocking from "../../../../stores/models/__tests__/PersonModel/
 import PersonModel from "../../../../stores/models/PersonModel";
 import { runInAction } from "mobx";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 vi.mock("../../../../common/ElnApiService", () => ({

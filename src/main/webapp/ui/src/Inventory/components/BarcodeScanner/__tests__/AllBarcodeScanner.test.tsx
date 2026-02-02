@@ -12,9 +12,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { test, describe, expect, beforeEach, vi } from 'vitest';
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("AllBarcodeScanner", () => {

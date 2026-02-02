@@ -19,9 +19,7 @@ vi.mock("../../../Inventory/components/Fields/Identifiers/MapViewer", () => {
 
 const mockAxios = new MockAdapter(axios);
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("IdentifierPublicPage", () => {

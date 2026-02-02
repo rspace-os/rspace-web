@@ -11,9 +11,7 @@ import { test, describe, expect, beforeEach, vi } from 'vitest';
 
 vi.mock("qr-scanner");
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 describe("QrCodeScanner", () => {
   test("Should scan correctly.", async () => {

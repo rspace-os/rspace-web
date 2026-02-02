@@ -10,9 +10,7 @@ import { TYPE_LABEL } from "../../../../stores/definitions/Search";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("ToggleView", () => {

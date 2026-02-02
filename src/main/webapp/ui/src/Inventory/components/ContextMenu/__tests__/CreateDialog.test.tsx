@@ -39,9 +39,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 // Mock AlertContext
 const mockAddAlert = vi.fn();
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("CreateDialog", () => {

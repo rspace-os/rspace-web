@@ -16,9 +16,7 @@ import userEvent from "@testing-library/user-event";
 
 const mockAxios = new MockAdapter(axios);
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("ExportFileStore", () => {

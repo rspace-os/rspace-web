@@ -9,9 +9,7 @@ import Figshare from "../Figshare";
 import { Optional } from "../../../../util/optional";
 import "../../../../../__mocks__/matchMedia";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Figshare", () => {

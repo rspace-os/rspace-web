@@ -18,9 +18,7 @@ import { storesContext } from "../../../stores/stores-context";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
 import userEvent from "@testing-library/user-event";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 type NavigateToProps = {

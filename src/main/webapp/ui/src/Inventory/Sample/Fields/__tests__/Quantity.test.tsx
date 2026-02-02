@@ -34,9 +34,7 @@ const unitOptions = [
   },
 ];
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Quantity", () => {

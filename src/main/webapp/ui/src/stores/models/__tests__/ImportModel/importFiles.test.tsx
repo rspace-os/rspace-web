@@ -16,9 +16,7 @@ vi.mock("../../../../common/InvApiService", () => ({
 
   }}));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 const mockErrorMsg =
   "Unexpected number of values in CSV line, expected: 2, was: 3";

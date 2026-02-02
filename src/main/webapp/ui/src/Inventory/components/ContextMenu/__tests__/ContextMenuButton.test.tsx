@@ -10,9 +10,7 @@ import ContextMenuButton from "../ContextMenuButton";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("ContextMenuButton", () => {

@@ -6,9 +6,7 @@ import {
 import ErrorBoundary from "../ErrorBoundary";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 function AlwaysError(): React.ReactNode {

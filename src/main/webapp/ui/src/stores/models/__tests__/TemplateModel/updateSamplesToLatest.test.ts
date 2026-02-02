@@ -29,9 +29,7 @@ vi.mock("../../../../common/InvApiService", () => ({
   },
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 describe("action: updateSampleToLatest", () => {
   describe("When there are two samples, of which only one can be updated, there should", () => {

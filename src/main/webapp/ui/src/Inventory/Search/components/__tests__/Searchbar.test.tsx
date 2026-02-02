@@ -15,9 +15,7 @@ import Search from "../../../../stores/models/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import "__mocks__/resizeObserver";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Searchbar", () => {

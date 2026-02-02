@@ -18,9 +18,7 @@ vi.mock("../Sidebar", () => ({
   default: vi.fn(() => <></>),
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("InitialScreen", () => {

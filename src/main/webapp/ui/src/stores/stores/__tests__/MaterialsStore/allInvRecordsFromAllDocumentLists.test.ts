@@ -6,9 +6,7 @@ import { subsampleAttrs } from "../../../models/__tests__/SubSampleModel/mocking
 import { sampleAttrs } from "../../../models/__tests__/SampleModel/mocking";
 import { ListOfMaterials } from "../../../models/MaterialsModel";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("allInvRecordsFromAllDocumentLists", () => {

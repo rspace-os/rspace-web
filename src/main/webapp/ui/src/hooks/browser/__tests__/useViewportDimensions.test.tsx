@@ -6,9 +6,7 @@ import {
 } from "@testing-library/react";
 import useViewportDimensions from "../useViewportDimensions";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 function Wrapper(): React.ReactNode {

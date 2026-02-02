@@ -10,9 +10,7 @@ import { calculateProgress } from "../../util/progress";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("SubmitSpinnerButton", () => {

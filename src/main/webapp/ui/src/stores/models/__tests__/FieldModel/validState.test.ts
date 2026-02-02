@@ -5,9 +5,7 @@ import { makeMockSample } from "../SampleModel/mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("method: validate", () => {

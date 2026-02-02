@@ -14,9 +14,7 @@ import InputWrapper from "../InputWrapper";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 const expectText = (text: string) => (container: Element) => {

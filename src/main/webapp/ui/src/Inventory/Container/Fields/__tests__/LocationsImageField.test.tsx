@@ -56,9 +56,7 @@ class ResizeObserver {
 }
 window.ResizeObserver = ResizeObserver as any;
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 const mockRootStore = (

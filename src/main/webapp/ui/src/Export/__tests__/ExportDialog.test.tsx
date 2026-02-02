@@ -38,9 +38,7 @@ window.fetch = vi.fn(() =>
 
 const mockAxios = new MockAdapter(axios);
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 const arbUserSelection = fc.record<{

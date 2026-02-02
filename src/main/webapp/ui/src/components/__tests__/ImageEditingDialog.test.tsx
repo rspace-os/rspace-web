@@ -16,9 +16,7 @@ import { toBeAccessible } from "@sa11y/vitest";
 
 expect.extend({ toBeAccessible });
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 describe("ImageEditingDialog", () => {
   test("Should have no axe violations.", async () => {

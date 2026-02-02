@@ -5,9 +5,7 @@ import PersonModel from "../../../models/PersonModel";
 import { runInAction } from "mobx";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 vi.mock("../../../../common/ElnApiService", () => ({
   default: {

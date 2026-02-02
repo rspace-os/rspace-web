@@ -23,9 +23,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 })
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Quantity", () => {

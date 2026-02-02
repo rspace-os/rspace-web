@@ -13,9 +13,7 @@ import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mo
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("SortControls", () => {

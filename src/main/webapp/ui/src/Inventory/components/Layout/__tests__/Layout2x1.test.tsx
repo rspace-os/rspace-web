@@ -12,9 +12,7 @@ import Layout2x1 from "../Layout2x1";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 const fooBarTest = ({

@@ -14,9 +14,7 @@ import axios from "@/common/axios";
 import page1 from "./getUploadedFiles_1.json";
 import page2 from "./getUploadedFiles_2.json";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 const mockAxios = new MockAdapter(axios);

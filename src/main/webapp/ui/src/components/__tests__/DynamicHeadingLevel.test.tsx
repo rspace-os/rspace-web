@@ -7,9 +7,7 @@ import {
 import { Heading, HeadingContext } from "../DynamicHeadingLevel";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("DynamicHeadingLevel", () => {

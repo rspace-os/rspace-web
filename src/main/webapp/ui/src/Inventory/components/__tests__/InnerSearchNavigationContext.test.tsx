@@ -15,9 +15,7 @@ import ApiServiceBase from "../../../common/ApiServiceBase";
 import { AxiosResponse } from "axios";
 import "../../../__tests__/assertUrlSearchParams";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 type TriggersSearchNavigateArgs = {

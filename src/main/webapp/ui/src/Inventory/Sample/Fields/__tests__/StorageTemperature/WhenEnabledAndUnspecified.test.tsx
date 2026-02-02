@@ -44,9 +44,7 @@ const mockFieldOwner = (
   noValueLabel: mockedParts.noValueLabel,
 });
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("StorageTemperature", () => {

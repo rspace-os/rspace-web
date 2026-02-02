@@ -38,9 +38,7 @@ const mockFieldOwner = (mockedParts: {
   return { ...defaults, ...mockedParts };
 };
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("StorageTemperature", () => {

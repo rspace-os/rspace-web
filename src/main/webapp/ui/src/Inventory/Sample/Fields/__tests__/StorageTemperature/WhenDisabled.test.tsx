@@ -14,9 +14,7 @@ import materialTheme from "../../../../../theme";
 
 import StorageTemperature from "../../StorageTemperature";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 const mockFieldOwner = (mockedParts: {

@@ -7,9 +7,7 @@ import {
 } from "@testing-library/react";
 import PdfExport from "../PdfExport";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("PdfExport", () => {

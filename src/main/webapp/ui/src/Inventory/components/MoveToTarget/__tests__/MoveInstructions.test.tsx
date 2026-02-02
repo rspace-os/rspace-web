@@ -9,9 +9,7 @@ import SearchContext from "../../../../stores/contexts/Search";
 import MoveInstructions from "../MoveInstructions";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 vi.mock("../../../../common/InvApiService", () => ({

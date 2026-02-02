@@ -15,9 +15,7 @@ import { observable } from "mobx";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 import "../../../../../__mocks__/matchMedia";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("MSTeams", () => {

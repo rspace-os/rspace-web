@@ -9,9 +9,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import { toBeAccessible } from "@sa11y/vitest";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 expect.extend({ toBeAccessible });
 

@@ -19,9 +19,7 @@ vi.mock("@mui/material/TextField", () => ({
   default: vi.fn(() => <div></div>),
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 const expectLabel = (text: string) => (container: Element) =>

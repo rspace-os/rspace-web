@@ -26,9 +26,7 @@ vi.mock("../../../components/ContextMenu/ContextMenuButton", () => ({
   default: vi.fn(() => <div></div>),
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("ContentContextMenu", () => {

@@ -15,9 +15,7 @@ vi.mock("../../RecordLocation", () => ({
   default: vi.fn(() => <span></span>),
 }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("AdjustableCell", () => {

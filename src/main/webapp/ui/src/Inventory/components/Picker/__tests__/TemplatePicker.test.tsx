@@ -64,9 +64,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   } as Response)
 );
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("TemplatePicker", () => {

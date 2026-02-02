@@ -16,9 +16,7 @@ import ScopeField, { type Scope } from "../ScopeField";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("ScopeField", () => {

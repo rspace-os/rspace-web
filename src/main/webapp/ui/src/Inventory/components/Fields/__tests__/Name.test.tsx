@@ -13,9 +13,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 function renderNameField(

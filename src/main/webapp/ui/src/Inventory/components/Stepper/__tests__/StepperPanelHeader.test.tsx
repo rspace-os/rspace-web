@@ -24,9 +24,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import userEvent from "@testing-library/user-event";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 class DummyResult {

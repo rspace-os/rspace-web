@@ -7,9 +7,7 @@ import {
 import FormField from "../FormField";
 import StringField from "../StringField";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("FormField", () => {

@@ -68,9 +68,7 @@ window.fetch = vi.fn().mockImplementation(() =>
   })
 );
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Template", () => {

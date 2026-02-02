@@ -53,9 +53,7 @@ vi.mock("../NavigateToNode", () => ({
 //   }),
 // }));
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("Node", () => {

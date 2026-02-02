@@ -6,9 +6,7 @@ import {
 } from "@testing-library/react";
 import OwnersGroupsTable from "../OwnersGroupsTable";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("OwnersGroupsTable", () => {

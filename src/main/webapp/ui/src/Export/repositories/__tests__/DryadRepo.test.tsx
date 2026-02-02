@@ -12,9 +12,7 @@ import axios from "@/common/axios";
 
 const mockAxios = new MockAdapter(axios);
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+
 
 
 describe("DryadRepo", () => {
