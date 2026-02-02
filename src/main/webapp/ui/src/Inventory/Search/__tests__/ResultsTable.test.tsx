@@ -1,4 +1,4 @@
-import { test, describe, beforeEach, vi } from 'vitest';
+import { test, describe, vi } from 'vitest';
 import "../../../../__mocks__/matchMedia";
 import * as React from "react";
 import {

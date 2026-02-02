@@ -10,7 +10,7 @@ import { type BarcodeInput } from "../BarcodeScannerSkeleton";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-import { test, describe, expect, beforeEach, vi } from 'vitest';
+import { test, describe, expect, vi } from 'vitest';
 
 
 

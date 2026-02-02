@@ -12,7 +12,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
-import { test, type Mock, describe, expect, beforeEach, vi } from 'vitest';
+import { test, type Mock, describe, expect, vi } from 'vitest';
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {

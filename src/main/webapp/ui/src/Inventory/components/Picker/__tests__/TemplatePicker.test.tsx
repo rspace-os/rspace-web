@@ -14,7 +14,7 @@ import "__mocks__/resizeObserver";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
-import { test, type Mock, describe, expect, beforeEach, vi } from 'vitest';
+import { test, type Mock, describe, expect, vi } from 'vitest';
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {

@@ -1,4 +1,4 @@
-import { test, describe, expect, beforeEach, vi } from 'vitest';
+import { test, describe, expect, vi } from 'vitest';
 import getRootStore from "../../RootStore";
 import * as PersonMocking from "../../../models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../models/PersonModel";
