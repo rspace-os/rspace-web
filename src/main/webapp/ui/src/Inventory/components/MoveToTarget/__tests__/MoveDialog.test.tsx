@@ -25,7 +25,6 @@ import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import userEvent from "@testing-library/user-event";
 import { render, within } from "../../../../__tests__/customQueries";
-
 vi.mock("../../../Search/SearchView", () => ({
   default: vi.fn(() => <></>),
 }));
@@ -40,15 +39,10 @@ vi.mock("../../../../components/Inputs/DateField", () => ({
 vi.mock("../../../../components/Inputs/TimeField", () => ({
   default: () => <></>,
 }));
-
 // this is because the Search component renders hidden "Cancel" buttons
 vi.mock("../../../Search/Search", () => ({
   default: vi.fn(() => <></>),
 }));
-
-
-
-
 describe("MoveDialog", () => {
   test("When cancel is pressed, the dialog should close.", async () => {
     const user = userEvent.setup();
@@ -76,7 +70,6 @@ describe("MoveDialog", () => {
         },
       })
     );
-
     render(
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={rootStore}>
@@ -84,14 +77,11 @@ describe("MoveDialog", () => {
         </storesContext.Provider>
       </ThemeProvider>
     );
-
     expect(Dialog).toHaveBeenCalledWith(
       expect.objectContaining({ open: true }),
       expect.anything()
     );
-
     await user.click(screen.getByRole("button", { name: "Cancel" }));
-
     await waitFor(() => {
       expect(rootStore.moveStore.isMoving).toBe(false);
     });
@@ -100,7 +90,6 @@ describe("MoveDialog", () => {
       expect.anything()
     );
   });
-
   test("Table hidden in header should list all selectedResults", () => {
     fc.assert(
       fc
@@ -113,7 +102,6 @@ describe("MoveDialog", () => {
             fc.pre(
               ArrayUtils.allAreUnique(selectedResults.map((r) => r.globalId))
             );
-
             const rootStore: StoreContainer = makeMockRootStore(
               observable({
                 moveStore: {
@@ -138,7 +126,6 @@ describe("MoveDialog", () => {
                 },
               })
             );
-
             render(
               <ThemeProvider theme={materialTheme}>
                 <storesContext.Provider value={rootStore}>
@@ -146,26 +133,20 @@ describe("MoveDialog", () => {
                 </storesContext.Provider>
               </ThemeProvider>
             );
-
             fireEvent.click(
               screen.getByRole("button", { name: "Show items being moved" })
             );
-
             expect(
               within(screen.getByRole("table")).getAllByRole("row").length
             ).toBe(selectedResults.length + 1);
-
             const table = screen.getByRole("table");
             const [headerRow, ...bodyRows] = within(table).getAllByRole("row");
-
             const indexOfNameColumn =
               // @ts-expect-error TS does not recognise the vi.extend
               within(headerRow).getIndexOfTableCell("Name");
-
             const allNameCells = bodyRows.map(
               (row) => within(row).getAllByRole("cell")[indexOfNameColumn]
             );
-
             expect(
               selectedResults.every((r) =>
                 allNameCells.some((cell) => cell.textContent === r.name)
@@ -177,4 +158,5 @@ describe("MoveDialog", () => {
       { numRuns: 1 }
     );
   });
+});
 });

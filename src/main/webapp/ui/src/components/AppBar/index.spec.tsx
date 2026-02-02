@@ -5,7 +5,6 @@ import {
 } from "@playwright/experimental-ct-react";
 import React from "react";
 import { SimplePageWithAppBar } from "./index.story";
-
 const feature = test.extend<{
   Given: {
     "the app bar is being shown": (
@@ -124,7 +123,6 @@ const feature = test.extend<{
           await expect(accountMenuButton).toBeVisible();
           const accountMenuButtonHandle =
             await accountMenuButton.evaluateHandle((x) => Promise.resolve(x));
-
           const helpMenuButton = page.getByRole("button", {
             name: "Open Help",
           });
@@ -132,7 +130,6 @@ const feature = test.extend<{
           const helpMenuButtonHandle = await helpMenuButton.evaluateHandle(
             (x) => Promise.resolve(x),
           );
-
           const orderResults = await page.evaluate(
             ({ accountButton, helpButton }) => {
               if (!accountButton || !helpButton) {
@@ -151,11 +148,9 @@ const feature = test.extend<{
               helpButton: helpMenuButtonHandle,
             },
           );
-
           if ("error" in orderResults) {
             throw new Error(orderResults.error);
           }
-
           expect(
             orderResults.accountBeforeHelp,
             "Account button should be before Help button",
@@ -171,7 +166,6 @@ const feature = test.extend<{
             await accessibilityTipsButton.evaluateHandle((x) =>
               Promise.resolve(x),
             );
-
           const helpMenuButton = page.getByRole("button", {
             name: "Open Help",
           });
@@ -179,7 +173,6 @@ const feature = test.extend<{
           const helpMenuButtonHandle = await helpMenuButton.evaluateHandle(
             (x) => Promise.resolve(x),
           );
-
           const orderResults = await page.evaluate(
             ({ accessibilityTipsButtonDomNode, helpButtonDomNode }) => {
               if (!accessibilityTipsButtonDomNode || !helpButtonDomNode) {
@@ -199,11 +192,9 @@ const feature = test.extend<{
               helpButtonDomNode: helpMenuButtonHandle,
             },
           );
-
           if ("error" in orderResults) {
             throw new Error(orderResults.error);
           }
-
           expect(
             orderResults.accessibilityTipsBeforeHelp,
             "Accessibility Tips button should be before Help button",
@@ -218,7 +209,6 @@ const feature = test.extend<{
     await use([]);
   },
 });
-
 feature.beforeEach(async ({ router }) => {
   await router.route("/userform/ajax/inventoryOauthToken", async (route) => {
     await route.fulfill({
@@ -270,9 +260,7 @@ feature.beforeEach(async ({ router }) => {
     });
   });
 });
-
 feature.afterEach(({}) => {});
-
 test.describe("App Bar", () => {
   test.describe("Hidden heading", () => {
     /*
@@ -366,7 +354,6 @@ test.describe("App Bar", () => {
       });
     },
   );
-
   feature(
     "When the user avatar is clicked, a menu should appear with profile and logout options",
     async ({ Given, When, Then }) => {
@@ -378,7 +365,6 @@ test.describe("App Bar", () => {
       await Then["the profile and logout options should be visible"]();
     },
   );
-
   /*
    * The /uiNavigationData endpoint provides the visibleTabs object, which
    * determines which navigation opions are available in the app bar and the
@@ -599,7 +585,6 @@ test.describe("App Bar", () => {
       },
     );
   });
-
   feature(
     "On page variant, the icons on the right should be in the correct order",
     async ({ Given, Then }) => {
@@ -617,7 +602,6 @@ test.describe("App Bar", () => {
        */
     },
   );
-
   feature(
     "On dialog variant, the icons on the right should be in the correct order",
     async ({ Given, Then }) => {
@@ -635,4 +619,5 @@ test.describe("App Bar", () => {
        */
     },
   );
+});
 });

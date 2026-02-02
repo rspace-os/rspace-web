@@ -15,14 +15,11 @@ import {
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-
 import LocationsImageField from "../LocationsImageField";
 import ImageField from "../../../../components/Inputs/ImageField";
 import LocationsImageMarkersDialog from "../LocationsImageMarkersDialog";
 import userEvent from "@testing-library/user-event";
-
 let storeImageFunction: (arg: { dataUrl: string; file: Blob }) => void;
-
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: vi.fn(() => ({
     uiStore: {
@@ -49,16 +46,11 @@ vi.mock("../LocationsImageMarkersDialog", () => ({
     );
   }),
 }));
-
 class ResizeObserver {
   observe(): void {}
   unobserve(): void {}
 }
 window.ResizeObserver = ResizeObserver as any;
-
-
-
-
 const mockRootStore = (
   mockedStores?: MockStores
 ): [StoreContainer, ContainerModel] => {
@@ -85,7 +77,6 @@ const mockRootStore = (
     activeResult,
   ];
 };
-
 describe("LocationImageField", () => {
   /*
    * After a visual container has been created, but before a locations image
@@ -100,7 +91,6 @@ describe("LocationImageField", () => {
           </storesContext.Provider>
         </ThemeProvider>
       );
-
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -110,10 +100,8 @@ describe("LocationImageField", () => {
         expect.anything()
       );
     });
-
     test("be a button labelled 'Edit Locations' that can't be tapped.", () => {
       const rootStore = mockRootStore()[0];
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -121,7 +109,6 @@ describe("LocationImageField", () => {
           </storesContext.Provider>
         </ThemeProvider>
       );
-
       expect(
         screen.getByRole("button", {
           name: /Edit Locations/,
@@ -129,7 +116,6 @@ describe("LocationImageField", () => {
       ).toBeDisabled();
     });
   });
-
   /*
    * When a user has uploaded or edited a file the ImageField will call
    * storeImage, which should set the locationsImage and display a toast to
@@ -143,7 +129,6 @@ describe("LocationImageField", () => {
         rootStore.searchStore.activeResult! as any,
         "setImage"
       ).mockImplementation(() => async () => {});
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -151,7 +136,6 @@ describe("LocationImageField", () => {
           </storesContext.Provider>
         </ThemeProvider>
       );
-
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -159,17 +143,14 @@ describe("LocationImageField", () => {
         }),
         expect.anything()
       );
-
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
       });
-
       expect(setImageSpy).toHaveBeenCalledWith(
         "locationsImage",
         expect.any(String)
       );
     });
-
     test("be an alert to update the preview image, if the container doesn't have a preview image.", () => {
       const rootStore = mockRootStore()[0];
       const addScopedToastSpy = vi.spyOn(
@@ -180,14 +161,12 @@ describe("LocationImageField", () => {
         rootStore.searchStore.activeResult! as any,
         "setImage"
       ).mockImplementation(() => async () => {});
-
       let setPreviewImageFunction: () => void;
       const addAlertMock = vi
         .spyOn(rootStore.uiStore, "addAlert")
         .mockImplementation(({ onActionClick }) => {
           setPreviewImageFunction = onActionClick;
         });
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -198,7 +177,6 @@ describe("LocationImageField", () => {
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
       });
-
       expect(addScopedToastSpy).toHaveBeenCalled();
       expect(addAlertMock).toHaveBeenCalledWith(
         expect.objectContaining({ message: "Set preview image too?" })
@@ -208,7 +186,6 @@ describe("LocationImageField", () => {
       });
       expect(setImageSpy).toHaveBeenCalledWith("image", expect.any(String));
     });
-
     test("not be an alert, if the container already has a preview image.", () => {
       const [rootStore, container] = mockRootStore();
       vi.spyOn(
@@ -220,9 +197,7 @@ describe("LocationImageField", () => {
         "addScopedToast"
       );
       container.image = "theBlobUrlOfSomeImage";
-
       const addAlertMock = vi.spyOn(rootStore.uiStore, "addAlert");
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -233,17 +208,14 @@ describe("LocationImageField", () => {
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
       });
-
       expect(addScopedToastSpy).not.toHaveBeenCalled();
       expect(addAlertMock).not.toHaveBeenCalledWith();
     });
   });
-
   describe("When a visual container has a locationsImage there should", () => {
     test("be a button labelled 'Edit Locations' that can be tapped.", () => {
       const [rootStore, container] = mockRootStore();
       container.locationsImage = "someImage";
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -251,7 +223,6 @@ describe("LocationImageField", () => {
           </storesContext.Provider>
         </ThemeProvider>
       );
-
       expect(
         screen.getByRole("button", {
           name: /Edit Locations/,
@@ -259,13 +230,11 @@ describe("LocationImageField", () => {
       ).toBeEnabled();
     });
   });
-
   describe("When a visual container has a locationsImage but no markers there should", () => {
     test("be some help text.", () => {
       const [rootStore, container] = mockRootStore();
       container.locationsImage = "someImage";
       container.locationsCount = 0;
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -273,7 +242,6 @@ describe("LocationImageField", () => {
           </storesContext.Provider>
         </ThemeProvider>
       );
-
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -284,7 +252,6 @@ describe("LocationImageField", () => {
       );
     });
   });
-
   /*
    * Once a locationsImage has been set, the user can open the location marking
    * dialog to provide markers as to where items are located in the image.
@@ -294,7 +261,6 @@ describe("LocationImageField", () => {
       const user = userEvent.setup();
       const [rootStore, container] = mockRootStore();
       container.locationsImage = "someImage";
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -302,7 +268,6 @@ describe("LocationImageField", () => {
           </storesContext.Provider>
         </ThemeProvider>
       );
-
       const editLocationsButtons = screen.getByText("Edit Locations");
       await user.click(editLocationsButtons);
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(
@@ -311,7 +276,6 @@ describe("LocationImageField", () => {
       );
     });
   });
-
   describe('When the "Close" button inside the LocationsImageMarkersDialog is tapped', () => {
     test("The dialog should close.", async () => {
       const user = userEvent.setup();
@@ -321,7 +285,6 @@ describe("LocationImageField", () => {
         },
       });
       container.locationsImage = "someImage";
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -329,7 +292,6 @@ describe("LocationImageField", () => {
           </storesContext.Provider>
         </ThemeProvider>
       );
-
       const editLocationsButtons = screen.getByText("Edit Locations");
       await user.click(editLocationsButtons);
       await user.click(screen.getByText("Close"));
@@ -339,4 +301,5 @@ describe("LocationImageField", () => {
       );
     });
   });
+});
 });

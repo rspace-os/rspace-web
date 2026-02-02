@@ -3,14 +3,12 @@ import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import Search from "../../Search";
 import RsSet from "../../../../util/set";
 import { makeMockContainer } from "../ContainerModel/mocking";
-
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   }})); // break import cycle
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({})
 }));
-
 describe("batchEditableInstance", () => {
   describe("Submittable", () => {
     test("CurrentlyEditableFields is checked.", async () => {
@@ -25,12 +23,10 @@ describe("batchEditableInstance", () => {
         }),
       ];
       await search.enableBatchEditing(new RsSet(containers));
-
       containers.forEach((container) => {
         container.setFieldEditable("name", true);
       });
       expect(search.batchEditableInstance.submittable.isOk).toBe(true);
-
       containers.forEach((container) => {
         container.setFieldEditable("name", false);
       });
@@ -38,5 +34,4 @@ describe("batchEditableInstance", () => {
     });
   });
 });
-
 

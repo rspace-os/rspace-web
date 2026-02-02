@@ -1,6 +1,5 @@
 import { test, describe, expect, vi } from 'vitest';
 import { makeMockImportDataUsingExistingTemplate } from "./mocking";
-
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({
@@ -9,7 +8,6 @@ vi.mock("../../../stores/RootStore", () => ({
   },
 })
 }));
-
 describe("method: transformTemplateInfoForSubmission", () => {
   /*
    * When the user is importing with an existing template, the behaviour of
@@ -32,7 +30,6 @@ describe("method: transformTemplateInfoForSubmission", () => {
         JSON.stringify(uploadModel.transformTemplateInfoForSubmission())
       ).toEqual(expect.any(String));
     });
-
     /*
      * Attaching other data MAY be permitted but the id of the selected tempalte is REQUIRED.
      */
@@ -44,5 +41,4 @@ describe("method: transformTemplateInfoForSubmission", () => {
     });
   });
 });
-
 

@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import RsSet from "../../set";
-
 describe("unionWithEq", () => {
   test("Simple example", () => {
     expect(
@@ -10,4 +9,5 @@ describe("unionWithEq", () => {
         .isSame(new RsSet([1, 2, 3]))
     ).toBe(true);
   });
+});
 });

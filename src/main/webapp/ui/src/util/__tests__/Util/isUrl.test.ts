@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { isUrl } from "../../Util";
-
 describe("isUrl", () => {
   test("When passed any url, isUrl should return true.", () => {
     fc.assert(
@@ -10,11 +9,9 @@ describe("isUrl", () => {
       })
     );
   });
-
   /*
    * It's not so simple to assert the false case as an arbitrarily generated
    * string could quite easily be a valid URL.
    */
 });
-
 

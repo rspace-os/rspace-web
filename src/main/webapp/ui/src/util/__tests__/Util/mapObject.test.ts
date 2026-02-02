@@ -1,10 +1,7 @@
-
 import { describe, expect, test } from 'vitest';
 import { mapObject } from "../../Util";
 import fc from "fast-check";
-
 const arbObjectKey = fc.string().filter((str) => str !== "__proto__");
-
 describe("mapObject", () => {
   test("Is identity when valueFunc returns its respective input.", () => {
     fc.assert(
@@ -13,7 +10,6 @@ describe("mapObject", () => {
       })
     );
   });
-
   test("Output object always has the same number of key-value pairs.", () => {
     fc.assert(
       fc.property(
@@ -29,7 +25,6 @@ describe("mapObject", () => {
       )
     );
   });
-
   test("Composing calls to mapObject is the same as one call with the valueFunc composed.", () => {
     fc.assert(
       fc.property(
@@ -47,5 +42,4 @@ describe("mapObject", () => {
     );
   });
 });
-
 

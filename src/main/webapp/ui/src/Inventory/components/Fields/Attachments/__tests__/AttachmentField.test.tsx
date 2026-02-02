@@ -1,4 +1,3 @@
- 
 import { test, describe, expect, afterEach, vi } from "vitest";
 import React from "react";
 import {
@@ -15,7 +14,6 @@ import ContainerModel from "../../../../../stores/models/ContainerModel";
 import MemoisedFactory from "../../../../../stores/models/Factory/MemoisedFactory";
 import type { Attachment } from "../../../../../stores/definitions/Attachment";
 import { DeploymentPropertyContext } from "../../../../../hooks/api/useDeploymentProperty";
-
 vi.mock("@mui/material/TextField", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -25,7 +23,6 @@ vi.mock("../../../../../components/Inputs/FileField", () => ({
 vi.mock("../../../../../components/Ketcher/KetcherDialog", () => ({
   default: vi.fn(() => <div></div>),
 }));
-
 const renderWithDeploymentProperties = (ui: React.ReactElement) =>
   render(
     <DeploymentPropertyContext.Provider
@@ -34,21 +31,17 @@ const renderWithDeploymentProperties = (ui: React.ReactElement) =>
       {ui}
     </DeploymentPropertyContext.Provider>,
   );
-
 const expectLabel = (text: string) => (container: HTMLElement) =>
   expect(container).toHaveTextContent(text);
-
 const expectTextField = (value: string) => () =>
   expect(TextField).toHaveBeenCalledWith(
     expect.objectContaining({ value }),
     expect.anything(),
   );
-
 const activeResult = new ContainerModel(new MemoisedFactory(), {
   ...containerAttrs(),
   cType: "LIST",
 });
-
 const makeAttachment = (attrs?: { name: string }) =>
   new ExistingAttachment(
     {
@@ -63,12 +56,10 @@ const makeAttachment = (attrs?: { name: string }) =>
     "",
     () => {},
   );
-
 describe("AttachmentField", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
-
   describe("Description field", () => {
     test.each`
       disabled     | value    | noValueLabel | expectFn
@@ -231,4 +222,5 @@ describe("AttachmentField", () => {
       });
     });
   });
+});
 });

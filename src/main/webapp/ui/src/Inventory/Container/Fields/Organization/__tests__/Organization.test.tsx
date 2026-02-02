@@ -8,10 +8,6 @@ import { makeMockContainer } from "../../../../../stores/models/__tests__/Contai
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import Organization from "../Organization";
-
-
-
-
 describe("Organization", () => {
   test("The text 'well plate' should be shown to give the user a hint to use a grid container.", () => {
     render(
@@ -19,11 +15,9 @@ describe("Organization", () => {
         <Organization container={makeMockContainer({ id: null })} />
       </ThemeProvider>
     );
-
     expect(screen.getByRole("group", { name: "Type" })).toHaveTextContent(
       "well plate"
     );
   });
 });
-
 

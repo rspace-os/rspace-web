@@ -8,10 +8,6 @@ import {
 } from "@testing-library/react";
 import ContextMenuAction from "../ContextMenuAction";
 import fc from "fast-check";
-
-
-
-
 function OuterComponent({
   onKeyDown,
   children,
@@ -21,11 +17,9 @@ function OuterComponent({
 }) {
   return <div onKeyDown={onKeyDown}>{children}</div>;
 }
-
 function InnerComponent() {
   return <input />;
 }
-
 describe("ContextMenuAction", () => {
   test("When as a menuitem, keyDown events should not propagated through ContextMenuAction", async () => {
     const onKeyDown = vi.fn();
@@ -42,13 +36,10 @@ describe("ContextMenuAction", () => {
         </ContextMenuAction>
       </OuterComponent>
     );
-
     const input = await screen.findByRole("textbox");
     fireEvent.keyDown(input, {});
-
     expect(onKeyDown).not.toHaveBeenCalled();
   });
-
   describe("Disabled state", () => {
     test("When disabled, should render aria-disabled.", () => {
       fc.assert(
@@ -71,5 +62,4 @@ describe("ContextMenuAction", () => {
     });
   });
 });
-
 

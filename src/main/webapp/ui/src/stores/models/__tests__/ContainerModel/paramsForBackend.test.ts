@@ -2,12 +2,10 @@ import { describe, expect, test, vi } from 'vitest';
 import { makeMockContainer, containerAttrs } from "./mocking";
 import LocationModel from "../../LocationModel";
 import { type ContainerAttrs } from "../../ContainerModel";
-
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({})
 }));
-
 describe("computed: paramsForBackend", () => {
   /*
    * `paramsForBackend` is used for submitting the ContainerModel to the API and
@@ -23,7 +21,6 @@ describe("computed: paramsForBackend", () => {
         expect.any(String)
       );
     });
-
     test("the container is a visual container with a locations image.", () => {
       const container = makeMockContainer({
         name: "A visual container",
@@ -67,7 +64,6 @@ describe("computed: paramsForBackend", () => {
         expect.any(String)
       );
     });
-
     test("the container is a grid container.", () => {
       const container = makeMockContainer({
         cType: "GRID",
@@ -83,7 +79,6 @@ describe("computed: paramsForBackend", () => {
         expect.any(String)
       );
     });
-
     test("the container has a parent container.", () => {
       const parent = makeMockContainer({
         id: 2,
@@ -102,5 +97,4 @@ describe("computed: paramsForBackend", () => {
     });
   });
 });
-
 

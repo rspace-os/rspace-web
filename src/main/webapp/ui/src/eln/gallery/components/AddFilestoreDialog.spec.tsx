@@ -3,7 +3,6 @@ import React from "react";
 import { AddFilestoreDialogStory } from "./AddFilestoreDialog.story";
 import * as Jwt from "jsonwebtoken";
 import AxeBuilder from "@axe-core/playwright";
-
 const feature = test.extend<{
   Given: {
     "the add filestore dialog is mounted": () => Promise<void>;
@@ -77,7 +76,6 @@ const feature = test.extend<{
     await use([]);
   },
 });
-
 feature.beforeEach(async ({ router }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
@@ -197,9 +195,7 @@ feature.beforeEach(async ({ router }) => {
     }
   );
 });
-
 feature.afterEach(({}) => {});
-
 test.describe("AddFilestoreDialog", () => {
   feature("Should have no axe violations", async ({ Given, When, Then }) => {
     await Given["the add filestore dialog is mounted"]();
@@ -211,4 +207,5 @@ test.describe("AddFilestoreDialog", () => {
     });
     await Then["there shouldn't be any axe violations"]();
   });
+});
 });

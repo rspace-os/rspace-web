@@ -6,20 +6,16 @@ import InvApiService from "../../../../common/InvApiService";
 import ContainerModel from "../../../models/ContainerModel";
 import MemoisedFactory from "../../../models/Factory/MemoisedFactory";
 import { type AxiosResponse } from "axios";
-
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   bulk: vi.fn().mockResolvedValue({}),
   get: vi.fn().mockResolvedValue({}),
   query: vi.fn().mockResolvedValue({}),
-
   }}));
-
 describe("action: moveSelected", () => {
   describe("Moving the contents of a location into its current location should", () => {
     test("result in new records being allocated in memory.", async () => {
       const { searchStore, moveStore } = getRootStore();
-
       /*
        * 1. Setup SearchStore with an activeResult that is a grid container
        * with a selected location with content.
@@ -72,7 +68,6 @@ describe("action: moveSelected", () => {
       location.toggleSelected(true);
       expect(location.selected).toBe(true);
       expect(location.content?.selected).toBe(true);
-
       /*
        * 2. Setup move dialog to move selected location's content into its
        * current location
@@ -82,15 +77,12 @@ describe("action: moveSelected", () => {
         .mockImplementation(() => Promise.resolve());
       await moveStore.setIsMoving(true);
       moveStore.setSelectedResults([preMoveContent]);
-
       const destination = activeResult;
       vi
         .spyOn(destination.contentSearch.fetcher, "performInitialSearch")
         .mockImplementation(() => Promise.resolve());
       await moveStore.setTargetContainer(destination);
-
       activeResult.locations?.[0].toggleSelected(true);
-
       /*
        * 3. Complete and assert move operation
        */
@@ -118,9 +110,7 @@ describe("action: moveSelected", () => {
       vi
         .spyOn(searchStore.search.fetcher, "performInitialSearch")
         .mockImplementation(() => Promise.resolve());
-
       await moveStore.moveSelected();
-
       const newLocation = activeResult.locations?.[0];
       expect(newLocation?.content).not.toBe(null);
       expect(newLocation?.content?.id).toEqual(preMoveContent.id);
@@ -132,5 +122,4 @@ describe("action: moveSelected", () => {
     });
   });
 });
-
 

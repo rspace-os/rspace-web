@@ -1,11 +1,9 @@
 import { describe, expect, test, vi } from 'vitest';
 import { type Note } from "../../SubSampleModel";
-
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({})
 }));
-
 describe("type: Note", () => {
   /*
    * Objects of the type Note are passed to API calls when creating notes and
@@ -21,9 +19,7 @@ describe("type: Note", () => {
       created: new Date().toISOString(),
       content: "foo",
     };
-
     expect(JSON.stringify(aNote)).toEqual(expect.any(String));
   });
 });
-
 

@@ -7,11 +7,9 @@ import { __setIsMobile } from "react-device-detect";
 import ImageField from "../ImageField";
 import DynamicallyLoadedImageEditor from "../DynamicallyLoadedImageEditor";
 import userEvent from "@testing-library/user-event";
-
 declare module "react-device-detect" {
   export const __setIsMobile: (value: boolean) => void;
 }
-
 vi.mock("@mui/icons-material/CameraAlt", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -50,7 +48,6 @@ vi.mock("@mui/material/Button", () => ({
   ),
 }));
 let isMobileValue = false;
-
 vi.mock("react-device-detect", () => ({
   get isMobile() {
     return isMobileValue;
@@ -64,9 +61,6 @@ vi.mock("../DynamicallyLoadedImageEditor", () => ({
     return <div></div>;
   }),
 }));
-
-
-
 describe("ImageField", () => {
   /*
    * In the button for selecting a file, icons are shown based on what is most
@@ -77,7 +71,6 @@ describe("ImageField", () => {
       beforeEach(() => {
         __setIsMobile(true);
       });
-
       test("be a camera icon shown.", () => {
         render(
           <ImageField
@@ -90,12 +83,10 @@ describe("ImageField", () => {
         expect(CameraAltIcon).toHaveBeenCalled();
       });
     });
-
     describe("On desktop, there should", () => {
       beforeEach(() => {
         __setIsMobile(false);
       });
-
       test("be an image icon shown.", () => {
         render(
           <ImageField
@@ -109,7 +100,6 @@ describe("ImageField", () => {
       });
     });
   });
-
   /*
    * Tapping 'Edit Image' should open the image editor
    */
@@ -124,7 +114,6 @@ describe("ImageField", () => {
           alt="dummy alt text"
         />,
       );
-
       const editImageButton = screen.getByText("Edit Image");
       await user.click(editImageButton);
       expect(DynamicallyLoadedImageEditor).toHaveBeenCalledWith(
@@ -139,4 +128,5 @@ describe("ImageField", () => {
       );
     });
   });
+});
 });

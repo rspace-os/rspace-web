@@ -8,7 +8,6 @@ import Quantity from "../Quantity";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import fc from "fast-check";
-
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   }}));
@@ -24,7 +23,6 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   },
 })
 }));
-
 const unitOptions = [
   {
     id: 1,
@@ -33,10 +31,6 @@ const unitOptions = [
     description: "foo is mass",
   },
 ];
-
-
-
-
 describe("Quantity", () => {
   describe("Unit selector", () => {
     test('When there is only one subsample being created, "per subsample" should not be shown.', () => {
@@ -136,7 +130,6 @@ describe("Quantity", () => {
         )
       );
     });
-
     test("Fractional units of quantity should have zero or two decimal places.", () => {
       fc.assert(
         fc.property(

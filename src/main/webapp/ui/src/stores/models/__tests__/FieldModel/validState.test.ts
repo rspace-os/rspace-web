@@ -1,13 +1,7 @@
 import { test, describe, expect, vi } from 'vitest';
-
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
-
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-
-
-
-
 describe("method: validate", () => {
   test("Mandatory choice fields should be allowed once they have a value.", () => {
     const field = new FieldModel(
@@ -24,18 +18,15 @@ describe("method: validate", () => {
       },
       makeMockSample()
     );
-
     expect(field.validate().isError).toBe(true);
     field.validate().do((errorMsg) => {
       expect(errorMsg).toEqual(
         `The mandatory custom field "foo" must have a valid value.`
       );
     });
-
     field.setAttributesDirty({
       selectedOptions: ["option1"],
     });
-
     expect(field.validate().isError).toBe(false);
   });
   test("Mandatory radio fields should be allowed once they have a value.", () => {
@@ -53,20 +44,16 @@ describe("method: validate", () => {
       },
       makeMockSample()
     );
-
     expect(field.validate().isError).toBe(true);
     field.validate().do((errorMsg) => {
       expect(errorMsg).toEqual(
         `The mandatory custom field "foo" must have a valid value.`
       );
     });
-
     field.setAttributesDirty({
       selectedOptions: "option1",
     });
-
     expect(field.validate().isError).toBe(false);
   });
 });
-
 

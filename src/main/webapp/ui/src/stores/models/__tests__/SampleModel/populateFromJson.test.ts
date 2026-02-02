@@ -4,7 +4,6 @@ import SampleModel, { type SampleAttrs } from "../../SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "../../SubSampleModel";
 import { sampleAttrs } from "./mocking";
 import { subsampleAttrs } from "../SubSampleModel/mocking";
-
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
@@ -13,7 +12,6 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   },
 })
 }));
-
 describe("action: populateFromJson", () => {
   describe("When called, it should", () => {
     test("not use the factory with which it was instantiated.", () => {
@@ -25,15 +23,12 @@ describe("action: populateFromJson", () => {
             ? new SampleModel(factory, attrs as SampleAttrs)
             : new SubSampleModel(factory, attrs as SubSampleAttrs)
         );
-
       const attrs = () => ({
         ...sampleAttrs(),
         subSamples: [subsampleAttrs()],
       });
-
       const sample = factory.newRecord(attrs());
       expect(newRecordSpy).toHaveBeenCalled();
-
       newRecordSpy.mockClear();
       const factory2 = mockFactory();
       vi.spyOn(factory2, "newRecord").mockImplementation((a: any) => {
@@ -41,12 +36,9 @@ describe("action: populateFromJson", () => {
           ? new SampleModel(factory, a as SampleAttrs)
           : new SubSampleModel(factory, a as SubSampleAttrs);
       });
-
       sample.populateFromJson(factory2, attrs(), {});
-
       expect(newRecordSpy).not.toHaveBeenCalled();
     });
   });
 });
-
 

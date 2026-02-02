@@ -9,10 +9,6 @@ import axios from "@/common/axios";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
 import * as FetchingData from "../../util/fetchingData";
 import fc from "fast-check";
-
-
-
-
 describe("integrationHelpers", () => {
   describe("useIntegrationIsAllowedAndEnabled", () => {
     function Wrapper() {
@@ -23,7 +19,6 @@ describe("integrationHelpers", () => {
         success: (value) => (value ? "true" : "false"),
       });
     }
-
     test("If the sysadmin has not allowed the integration, then false should be returned.", async () => {
       await fc.assert(
         fc.asyncProperty(fc.boolean(), async (enabled) => {
@@ -42,16 +37,13 @@ describe("integrationHelpers", () => {
             errorMsg: null,
           });
           const { container } = render(<Wrapper />);
-
           await waitFor(() => {
             expect(container).not.toHaveTextContent("loading");
           });
-
           expect(container).toHaveTextContent("false");
         }),
       );
     });
-
     test("If the user has not enabled the integration, then false should be returned.", async () => {
       await fc.assert(
         fc.asyncProperty(fc.boolean(), async (available) => {
@@ -70,16 +62,13 @@ describe("integrationHelpers", () => {
             errorMsg: null,
           });
           const { container } = render(<Wrapper />);
-
           await waitFor(() => {
             expect(container).not.toHaveTextContent("loading");
           });
-
           expect(container).toHaveTextContent("false");
         }),
       );
     });
-
     test("When both available and enabled, should true be returned.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("/integration/integrationInfo").reply(200, {
@@ -96,26 +85,20 @@ describe("integrationHelpers", () => {
         errorMsg: null,
       });
       const { container } = render(<Wrapper />);
-
       await waitFor(() => {
         expect(container).not.toHaveTextContent("loading");
       });
-
       expect(container).toHaveTextContent("true");
     });
-
     test("When there is an error, an error state should be returned.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("/integration/integrationInfo").reply(404);
       const { container } = render(<Wrapper />);
-
       await waitFor(() => {
         expect(container).not.toHaveTextContent("loading");
       });
-
       expect(container).toHaveTextContent("error");
     });
   });
 });
-
 

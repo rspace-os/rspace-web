@@ -14,20 +14,14 @@ import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
 import ApiServiceBase from "../../../common/ApiServiceBase";
 import { AxiosResponse } from "axios";
 import "../../../__tests__/assertUrlSearchParams";
-
-
-
-
 type TriggersSearchNavigateArgs = {
   skipToParentContext?: boolean;
 };
-
 const TriggersSearchNavigate = ({
   skipToParentContext,
 }: TriggersSearchNavigateArgs) => {
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
-
   return (
     <button
       onClick={() =>
@@ -38,18 +32,15 @@ const TriggersSearchNavigate = ({
     </button>
   );
 };
-
 const TriggersPermalinkNavigate = () => {
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
-
   return (
     <button onClick={() => navigate("/inventory/container/1")}>
       Click me!
     </button>
   );
 };
-
 describe("InnerSearchNavigationContext", () => {
   test("navigate calls should update the search parameters.", () => {
     const querySpy = vi
@@ -63,11 +54,9 @@ describe("InnerSearchNavigationContext", () => {
           config: {},
         } as AxiosResponse)
       );
-
     const search = new Search({
       factory: new AlwaysNewFactory(),
     });
-
     render(
       <InnerSearchNavigationContext>
         <SearchContext.Provider
@@ -80,23 +69,18 @@ describe("InnerSearchNavigationContext", () => {
         </SearchContext.Provider>
       </InnerSearchNavigationContext>
     );
-
     fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
-
     expect(querySpy).toHaveBeenLastCalledWith(
       "search",
       expect.urlSearchParamContaining({ query: "foo" })
     );
   });
-
   describe("when the parent context is AlwaysNewWindowNavigationContext", () => {
     test("navigate calls with skipToParentContext set to true should open /inventory/search calls in a new window.", () => {
       const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
-
       const search = new Search({
         factory: new AlwaysNewFactory(),
       });
-
       render(
         <AlwaysNewWindowNavigationContext>
           <InnerSearchNavigationContext>
@@ -111,18 +95,14 @@ describe("InnerSearchNavigationContext", () => {
           </InnerSearchNavigationContext>
         </AlwaysNewWindowNavigationContext>
       );
-
       fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
-
       expect(openSpy).toHaveBeenCalled();
     });
     test("navigate calls to permalink pages should always open in a new window.", () => {
       const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
-
       const search = new Search({
         factory: new AlwaysNewFactory(),
       });
-
       render(
         <AlwaysNewWindowNavigationContext>
           <InnerSearchNavigationContext>
@@ -137,13 +117,10 @@ describe("InnerSearchNavigationContext", () => {
           </InnerSearchNavigationContext>
         </AlwaysNewWindowNavigationContext>
       );
-
       fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
-
       expect(openSpy).toHaveBeenCalled();
     });
   });
-
   test("Pre-existing search parameters are kept, enforcing the parentGlobalId restriction", () => {
     const querySpy = vi
       .spyOn(ApiServiceBase.prototype, "query")
@@ -156,14 +133,12 @@ describe("InnerSearchNavigationContext", () => {
           config: {},
         } as AxiosResponse)
       );
-
     const search = new Search({
       factory: new AlwaysNewFactory(),
       fetcherParams: {
         parentGlobalId: "SA1",
       },
     });
-
     render(
       <SearchContext.Provider
         value={{
@@ -176,14 +151,11 @@ describe("InnerSearchNavigationContext", () => {
         </InnerSearchNavigationContext>
       </SearchContext.Provider>
     );
-
     fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
-
     expect(querySpy).toHaveBeenLastCalledWith(
       "search",
       expect.urlSearchParamContaining({ query: "foo", parentGlobalId: "SA1" })
     );
   });
 });
-
 

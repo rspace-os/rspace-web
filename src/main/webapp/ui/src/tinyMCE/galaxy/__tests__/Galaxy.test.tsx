@@ -11,7 +11,6 @@ import MockAdapter from "axios-mock-adapter";
 import {act} from "react-dom/test-utils";
 import { describe, expect, beforeEach, vi, test } from 'vitest';
 import type { MockInstance } from "@vitest/spy";
-
 const mockAxios = new MockAdapter(axios);
 // simulating the actual events fired in plugin.min.js code for galaxy upload button
 const activeEditorMock = {
@@ -128,11 +127,8 @@ describe("Galaxy Upload Data tests ", () => {
       await screen.findAllByRole("radio", { name: /galaxy eu server/ });
       const checkBox = await screen.getAllByRole("checkbox")[0];
       fireEvent.click(checkBox);
-
     });
-
     test("posts no-data selected while uploading", async () => {
-
       windowParentPostMessageSpy.mockClear();
       expect(windowParentPostMessageSpy).not.toHaveBeenCalledWith({"mceAction": "no-data-selected"}, "*");
       await act(async () => {
@@ -141,7 +137,6 @@ describe("Galaxy Upload Data tests ", () => {
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "no-data-selected"}, "*");
     });
     test("once upload complete displays link to new Galaxy History", async () => {
-
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
@@ -160,14 +155,12 @@ describe("Galaxy Upload Data tests ", () => {
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "enableClose"}, "*");
     });
   });
-
   describe("Handles errors", () => {
     beforeEach(async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
       await screen.findAllByRole("radio", { name: /galaxy eu server/ });
       const checkBox = await screen.getAllByRole("checkbox")[0];
       fireEvent.click(checkBox);
-
     });
     test("displays error message if 403 returned", async () => {
       mockAxios
@@ -181,7 +174,6 @@ describe("Galaxy Upload Data tests ", () => {
           await screen.findByText(/Invalid Galaxy API Key Please re-enter your API Key on the Apps page/i)
       ).toBeInTheDocument();
     });
-
     test("displays error message if 500 returned", async () => {
       mockAxios
       .onPost("/apps/galaxy/setUpDataInGalaxyFor")
@@ -193,4 +185,5 @@ describe("Galaxy Upload Data tests ", () => {
       expect(await screen.findByRole("alert")).toBeInTheDocument();
     });
   });
+});
 });

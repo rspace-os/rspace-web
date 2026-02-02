@@ -3,19 +3,15 @@ import fc from "fast-check";
 import { formatIndex } from "../../InventoryBaseRecordCollection";
 import { take, incrementForever } from "../../../../util/iterators";
 import RsSet from "../../../../util/set";
-
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({})
 }));
-
 // even a max of 1000 is probably overkill
 const arbitraryInput = fc.nat(1000);
-
 const arbitraryInputs = fc
   .tuple(arbitraryInput, arbitraryInput)
   .map(([a, b]) => (a < b ? [a, b + 1] : [b, a + 1]))
   .filter(([a, b]) => a !== b);
-
 const everyOutputForArbitraryNumOfRecords = arbitraryInput
   .map((n) => n + 1)
   .map((numOfRecords) =>
@@ -23,7 +19,6 @@ const everyOutputForArbitraryNumOfRecords = arbitraryInput
       formatIndex(i, numOfRecords)
     )
   );
-
 describe("formatIndex", () => {
   test("Output should only contain digits.", () => {
     fc.assert(
@@ -56,5 +51,4 @@ describe("formatIndex", () => {
     );
   });
 });
-
 

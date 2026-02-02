@@ -9,10 +9,6 @@ import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
 import userEvent from "@testing-library/user-event";
-
-
-
-
 describe("IconButtonWithTooltip", () => {
   test("Renders title and aria-label attributes.", () => {
     render(
@@ -20,13 +16,11 @@ describe("IconButtonWithTooltip", () => {
         <IconButtonWithTooltip title="foo" icon={<CloseIcon />} />
       </ThemeProvider>
     );
-
     screen.getByLabelText("foo");
   });
   test("onClick functions correctly.", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
-
     render(
       <ThemeProvider theme={materialTheme}>
         <IconButtonWithTooltip
@@ -36,11 +30,8 @@ describe("IconButtonWithTooltip", () => {
         />
       </ThemeProvider>
     );
-
     await user.click(screen.getByRole("button"));
-
     expect(onClick).toHaveBeenCalled();
   });
 });
-
 

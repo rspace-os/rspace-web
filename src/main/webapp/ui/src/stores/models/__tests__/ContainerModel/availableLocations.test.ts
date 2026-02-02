@@ -1,11 +1,9 @@
 import { describe, expect, test, vi } from 'vitest';
 import { makeMockContainer } from "./mocking";
-
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({})
 }));
-
 describe("computed: availableLocations", () => {
   test("List containers have infinite capacity.", () => {
     const container = makeMockContainer({ cType: "LIST" });
@@ -14,7 +12,6 @@ describe("computed: availableLocations", () => {
       value: Infinity,
     });
   });
-
   /*
    * Empty grid and visual containers should report the locationsCount, as
    * provided by the API, as the basis for the number of available spaces.
@@ -36,7 +33,6 @@ describe("computed: availableLocations", () => {
         value: 7,
       });
     });
-
     test("Empty visual containers return locationsCount, ignoring existance of locationsImage.", () => {
       const container = makeMockContainer({
         cType: "IMAGE",
@@ -49,7 +45,6 @@ describe("computed: availableLocations", () => {
       });
     });
   });
-
   /*
    * Containers which have some contents should correctly subtract that from
    * the locationsCount.
@@ -73,5 +68,4 @@ describe("computed: availableLocations", () => {
     });
   });
 });
-
 

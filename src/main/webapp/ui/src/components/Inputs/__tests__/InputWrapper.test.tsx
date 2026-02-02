@@ -1,4 +1,3 @@
- 
 import {
   describe,
   expect,
@@ -13,19 +12,13 @@ import {
 import InputWrapper from "../InputWrapper";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
-
-
-
-
 const expectText = (text: string) => (container: Element) => {
   expect(container).toHaveTextContent("Nothing here" + text);
 };
-
 const expectNothing = expectText("");
 const expectHelpText = expectText("help");
 const expectCounter = expectText("3 / 2");
 const expectCountError = expectText("No more than 2 characters permitted.");
-
 describe("InputWrapper", () => {
   describe("Renders correctly", () => {
     test.each`
@@ -173,5 +166,4 @@ describe("InputWrapper", () => {
     );
   });
 });
-
 

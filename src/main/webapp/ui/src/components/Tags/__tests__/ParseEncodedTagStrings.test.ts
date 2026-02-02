@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { encodeTags } from "../ParseEncodedTagStrings";
 import { Optional } from "../../../util/optional";
-
 describe("ParseEncodedTagStrings", () => {
   describe("encodeTags", () => {
     test("Empty array should return empty string.", () => {
@@ -67,5 +66,4 @@ describe("ParseEncodedTagStrings", () => {
     });
   });
 });
-
 

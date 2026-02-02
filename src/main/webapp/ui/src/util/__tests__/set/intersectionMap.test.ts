@@ -2,7 +2,6 @@ import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import RsSet from "../../set";
 import { arbitraryMappableSets } from "./helpers";
-
 describe("intersectionMap", () => {
   test("Idempotence", () => {
     fc.assert(
@@ -89,4 +88,5 @@ describe("intersectionMap", () => {
       })
     );
   });
+});
 });

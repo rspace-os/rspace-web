@@ -1,7 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import getRootStore from "../../RootStore";
 import TemplateModel from "../../../models/TemplateModel";
-
 describe("method: createNewTemplate", () => {
   test("Should return a new template model", async () => {
     const { searchStore, peopleStore } = getRootStore();
@@ -11,7 +10,6 @@ describe("method: createNewTemplate", () => {
     const template = await searchStore.createNewTemplate();
     expect(template.id).toBe(null);
   });
-
   test("Should not call fetchAdditionalInfo on the new template", async () => {
     const { searchStore } = getRootStore();
     const spy = vi.spyOn(TemplateModel.prototype, "fetchAdditionalInfo");
@@ -19,5 +17,4 @@ describe("method: createNewTemplate", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 });
-
 

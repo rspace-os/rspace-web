@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { objectPath } from "../../parsers";
 import Result from "../../result";
-
 describe("objectPath", () => {
   test("Recursive example", () => {
     objectPath(["foo", "bar"], { foo: { bar: 3 } }).do((value) =>
@@ -39,5 +38,4 @@ describe("objectPath", () => {
       });
   });
 });
-
 

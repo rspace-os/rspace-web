@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
 import { makeMockSample, makeMockSampleWithASubsample } from "./mocking";
-
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
@@ -9,7 +8,6 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   },
 })
 }));
-
 describe("computed: paramsForBackend", () => {
   /*
    * `paramsForBackend` is used for submitting the SampleModel to the API and as
@@ -25,7 +23,6 @@ describe("computed: paramsForBackend", () => {
         expect.any(String)
       );
     });
-
     test("the Sample has a subsample.", () => {
       const Sample = makeMockSampleWithASubsample();
       expect(JSON.stringify(Sample.paramsForBackend)).toEqual(
@@ -34,5 +31,4 @@ describe("computed: paramsForBackend", () => {
     });
   });
 });
-
 

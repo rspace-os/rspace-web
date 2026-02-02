@@ -2,7 +2,6 @@ import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { arbRsSet, arbSetOfSetsWithHighOverlap } from "./helpers";
 import { flattenWithUnion } from "../../set";
-
 describe("flattenWithUnion", () => {
   test("Size of output is less than or equal to the sum of the sizes of input sets", () => {
     fc.assert(
@@ -32,4 +31,5 @@ describe("flattenWithUnion", () => {
       )
     );
   });
+});
 });

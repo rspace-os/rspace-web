@@ -1,9 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
-
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
-
 describe("hasContent", () => {
   describe('type = "Number"', () => {
     test.each`
@@ -36,5 +34,4 @@ describe("hasContent", () => {
     );
   });
 });
-
 

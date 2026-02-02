@@ -22,7 +22,6 @@ import { sleep } from "../../../../../util/Util";
 import "__mocks__/resizeObserver";
 import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
-
 vi.mock("../../../../../common/InvApiService", () => ({
   default: {
     query: vi.fn(() => {}),
@@ -58,7 +57,6 @@ vi.mock("../../../../../stores/stores/RootStore", () => ({
 vi.mock("../../../../Container/Content/ImageView/PreviewImage", () => ({
   default: vi.fn(() => <></>),
 }));
-
 // Mock fetch
 window.fetch = vi.fn().mockImplementation(() =>
   Promise.resolve({
@@ -67,10 +65,6 @@ window.fetch = vi.fn().mockImplementation(() =>
     json: () => Promise.resolve({}),
   })
 );
-
-
-
-
 describe("Template", () => {
   describe("When the sample is deleted, Template field should", () => {
     test("not allow the user to update to the latest version of the template.", () => {
@@ -84,7 +78,6 @@ describe("Template", () => {
         deleted: true,
       });
       sample.template = oldVersionOfTemplate;
-
       const rootStore = makeMockRootStore({
         searchStore: {
           activeResult: sample,
@@ -94,7 +87,6 @@ describe("Template", () => {
           setVisiblePanel: () => {},
         },
       });
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -102,7 +94,6 @@ describe("Template", () => {
           </storesContext.Provider>
         </ThemeProvider>
       );
-
       expect(
         screen.getByRole("button", {
           name: /Update/,
@@ -161,7 +152,6 @@ describe("Template", () => {
           config: {},
         } as AxiosResponse;
       });
-
       const sample = makeMockSample({
         id: null,
         globalId: null,
@@ -178,7 +168,6 @@ describe("Template", () => {
         });
       });
       vi.spyOn(sample, "handleLockExpiry").mockImplementation(() => {});
-
       const rootStore = makeMockRootStore({
         searchStore: {
           activeResult: sample,
@@ -190,7 +179,6 @@ describe("Template", () => {
           setVisiblePanel: () => {},
         },
       });
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -202,7 +190,6 @@ describe("Template", () => {
         expect(screen.getByText("A template")).toBeVisible();
       });
       await user.click(screen.getByText("A template"));
-
       await waitFor(() => {
         expect(sample.fields.length).toBe(1);
       });

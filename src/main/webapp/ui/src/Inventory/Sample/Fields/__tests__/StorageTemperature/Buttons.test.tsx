@@ -11,11 +11,9 @@ import StorageTemperature from "../../StorageTemperature";
 import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
-
 vi.mock("@mui/material/Button", () => ({
   default: vi.fn(() => <></>),
 }));
-
 const mockFieldOwner = (mockedParts: {
   fieldValues: {
     storageTempMin: Temperature | null;
@@ -34,13 +32,8 @@ const mockFieldOwner = (mockedParts: {
       storageTempMax: null,
     },
   };
-
   return { ...defaults, ...mockedParts };
 };
-
-
-
-
 describe("StorageTemperature", () => {
   describe("Buttons", () => {
     test("Five helper buttons should be shown when the temperature is editable.", () => {
@@ -51,7 +44,6 @@ describe("StorageTemperature", () => {
         },
         isFieldEditable: () => true,
       });
-
       render(
         <ThemeProvider theme={materialTheme}>
           <StorageTemperature
@@ -60,8 +52,8 @@ describe("StorageTemperature", () => {
           />
         </ThemeProvider>
       );
-
       expect(Button).toHaveBeenCalledTimes(5);
     });
   });
+});
 });

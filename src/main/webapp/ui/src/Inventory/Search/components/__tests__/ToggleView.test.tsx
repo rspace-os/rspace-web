@@ -9,10 +9,6 @@ import ToggleView from "../ToggleView";
 import { TYPE_LABEL } from "../../../../stores/definitions/Search";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
-
-
-
-
 describe("ToggleView", () => {
   test("Current view should have aria-current property", () => {
     render(
@@ -26,9 +22,7 @@ describe("ToggleView", () => {
         />
       </ThemeProvider>
     );
-
     fireEvent.click(screen.getByRole("button", { name: "Change view" }));
-
     expect(
       screen.getByRole("menuitem", {
         name: TYPE_LABEL[
@@ -38,5 +32,4 @@ describe("ToggleView", () => {
     ).toHaveAttribute("aria-current", "true");
   });
 });
-
 

@@ -23,14 +23,9 @@ import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import userEvent from "@testing-library/user-event";
-
-
-
-
 class DummyResult {
   editing: boolean = true;
   globalId: GlobalId | null = null;
-
   constructor() {
     makeObservable(this, {
       editing: observable,
@@ -38,20 +33,16 @@ class DummyResult {
       setEditing: action,
     });
   }
-
   setEditing(editing: boolean): void {
     this.editing = editing;
   }
 }
-
 function DummyFormSection({ result }: { result: DummyResult }) {
   const formSectionError = useFormSectionError({
     editing: result.editing,
     globalId: result.globalId,
   });
-
   const [open, setOpen] = useState(true);
-
   /*
    * inputs that trigger errors are wrapped in a Collapse as it is the
    * re-rendering of the Collapse triggers that causes the formSectionError to
@@ -96,7 +87,6 @@ function DummyFormSection({ result }: { result: DummyResult }) {
     </ThemeProvider>
   );
 }
-
 describe("StepperPanelHeader", () => {
   test("When useFormSectionError is passed a unique list of strings, the badge should show a number equal to the list's length.", async () => {
     await fc.assert(
@@ -108,23 +98,19 @@ describe("StepperPanelHeader", () => {
           const user = userEvent.setup();
           cleanup();
           render(<DummyFormSection result={new DummyResult()} />);
-
           for (const error of errors) {
             fireEvent.change(screen.getByLabelText("Set error"), {
               target: { value: error },
             });
           }
-
           await user.click(
             screen.getByRole("button", { name: "Collapse section" })
           );
-
           await waitFor(() => {
             expect(
               screen.getByRole("button", { name: "Expand section" })
             ).toBeVisible();
           });
-
           expect(
             parseInt(
               (await screen.findByLabelText("Expand section")).textContent ??
@@ -137,7 +123,6 @@ describe("StepperPanelHeader", () => {
       { numRuns: 10 }
     );
   });
-
   test("When useFormSectionError is passed a list of strings, the badge should show a number equal to or less than the list's length.", async () => {
     await fc.assert(
       fc.asyncProperty(
@@ -146,15 +131,12 @@ describe("StepperPanelHeader", () => {
           cleanup();
           const user = userEvent.setup();
           render(<DummyFormSection result={new DummyResult()} />);
-
           for (const error of errors) {
             fireEvent.change(screen.getByLabelText("Set error"), {
               target: { value: error },
             });
           }
-
           await user.click(screen.getByLabelText("Collapse section"));
-
           expect(
             parseInt(
               screen.getByLabelText("Expand section").textContent ?? "",
@@ -166,23 +148,18 @@ describe("StepperPanelHeader", () => {
       { numRuns: 10 }
     );
   });
-
   test("When opened, the header shows no badge.", async () => {
     const user = userEvent.setup();
     render(<DummyFormSection result={new DummyResult()} />);
-
     fireEvent.change(screen.getByLabelText("Set error"), {
       target: { value: "an error" },
     });
-
     expect(screen.getByLabelText("Collapse section")).not.toHaveTextContent(
       "1"
     );
-
     await user.click(screen.getByLabelText("Collapse section"));
     expect(screen.getByLabelText("Expand section")).toHaveTextContent("1");
   });
-
   const arbitraryErrorsAndErrorsToRemove = () =>
     fc
       .nat(50)
@@ -199,7 +176,6 @@ describe("StepperPanelHeader", () => {
         errors,
         ArrayUtils.takeWhere(errors, shouldRemove),
       ]);
-
   test("Errors can be unset, decrementing the badge.", async () => {
     await fc.assert(
       fc.asyncProperty(
@@ -208,17 +184,14 @@ describe("StepperPanelHeader", () => {
           cleanup();
           const user = userEvent.setup();
           render(<DummyFormSection result={new DummyResult()} />);
-
           for (const error of errors) {
             fireEvent.change(screen.getByLabelText("Set error"), {
               target: { value: error },
             });
           }
-
           await user.click(
             screen.getByRole("button", { name: "Collapse section" })
           );
-
           expect(
             parseInt(
               screen.getByLabelText("Expand section").textContent ?? "",
@@ -228,17 +201,14 @@ describe("StepperPanelHeader", () => {
           await user.click(
             screen.getByRole("button", { name: "Expand section" })
           );
-
           for (const errorToRemove of errorsToRemove) {
             fireEvent.change(screen.getByLabelText("Unset error"), {
               target: { value: errorToRemove },
             });
           }
-
           await user.click(
             screen.getByRole("button", { name: "Collapse section" })
           );
-
           if (errors.length - errorsToRemove.length > 0) {
             expect(
               parseInt(
@@ -260,16 +230,13 @@ describe("StepperPanelHeader", () => {
     );
     cleanup();
   });
-
   test("When `editing` is set to false, the errors are reset.", async () => {
     const user = userEvent.setup();
     const result = new DummyResult();
     render(<DummyFormSection result={result} />);
-
     fireEvent.change(screen.getByLabelText("Set error"), {
       target: { value: "an error" },
     });
-
     await user.click(screen.getByRole("button", { name: "Collapse section" }));
     await waitFor(() => {
       expect(
@@ -281,18 +248,14 @@ describe("StepperPanelHeader", () => {
         screen.getByRole("button", { name: "Expand section" })
       ).toHaveTextContent("1");
     });
-
     result.setEditing(false);
-
     // trigger a re-render
     await user.click(screen.getByLabelText("Expand section"));
     await waitFor(() => {
       expect(screen.getByLabelText("Collapse section")).toBeVisible();
     });
     await user.click(screen.getByLabelText("Collapse section"));
-
     expect(screen.getByLabelText("Expand section")).not.toHaveTextContent("1");
   });
 });
-
 

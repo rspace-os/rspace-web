@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
 import { makeMockField } from "./mocking";
-
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
@@ -9,7 +8,6 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   },
 })
 }));
-
 describe("computed: paramsForBackend", () => {
   /*
    * `paramsForBackend` is used for submitting the SampleModel to the API and as
@@ -42,5 +40,4 @@ describe("computed: paramsForBackend", () => {
     });
   });
 });
-
 

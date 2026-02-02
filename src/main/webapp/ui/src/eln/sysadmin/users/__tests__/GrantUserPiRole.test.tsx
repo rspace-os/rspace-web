@@ -15,12 +15,9 @@ import axios from "@/common/axios";
 import USER_LISTING from "./userListing.json";
 import PDF_CONFIG from "./pdfConfig.json";
 import userEvent from "@testing-library/user-event";
-
 const mockAxios = new MockAdapter(axios);
-
 // @ts-expect-error RS is legacy
 window.RS = { newFileStoresExportEnabled: false };
-
 beforeEach(() => {
   vi.clearAllMocks();
   mockAxios.reset();
@@ -28,8 +25,6 @@ beforeEach(() => {
     analyticsEnabled: false,
   });
 });
-
-
 describe("Grant User PI Role", () => {
   test(
     "When `checkVerificationPasswordNeeded` returns true, a message should be shown.",
@@ -38,50 +33,38 @@ describe("Grant User PI Role", () => {
       const createObjectURL = vi.fn().mockImplementation(() => "");
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = vi.fn();
-
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
-
       mockAxios
         .onGet("/export/ajax/defaultPDFConfig")
         .reply(200, { ...PDF_CONFIG });
-
       mockAxios
         .onGet("/vfpwd/ajax/checkVerificationPasswordNeeded")
         .reply(200, { data: true });
-
       render(
         <ThemeProvider theme={materialTheme}>
           <UsersPage />
         </ThemeProvider>,
       );
-
       await waitFor(() => {
         expect(screen.getByRole("grid")).toBeVisible();
       });
-
       await waitFor(() => {
         expect(
           within(screen.getByRole("grid")).getAllByRole("row").length,
         ).toBeGreaterThan(1);
       });
-
       await waitFor(() => {
         expect(screen.getByRole("row", { name: /user8h/ })).toBeVisible();
       });
-
       const checkbox = within(
         await screen.findByRole("row", { name: /user8h/ }),
       ).getByRole("checkbox");
-
       await user.click(checkbox);
-
       await user.click(screen.getByRole("button", { name: /Actions/ }));
       await user.click(
         await screen.findByRole("menuitem", { name: /Grant PI role/ }),
       );
-
       expect(await screen.findByRole("dialog")).toBeVisible();
-
       expect(
         within(screen.getByRole("dialog")).getByText(
           "Please set your verification password in My RSpace before performing this action.",
@@ -97,46 +80,35 @@ describe("Grant User PI Role", () => {
       const createObjectURL = vi.fn().mockImplementation(() => "");
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = vi.fn();
-
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
-
       mockAxios
         .onGet("/export/ajax/defaultPDFConfig")
         .reply(200, { ...PDF_CONFIG });
-
       mockAxios
         .onGet("/vfpwd/ajax/checkVerificationPasswordNeeded")
         .reply(200, { data: false });
-
       render(
         <ThemeProvider theme={materialTheme}>
           <UsersPage />
         </ThemeProvider>,
       );
-
       await waitFor(() => {
         expect(screen.getByRole("grid")).toBeVisible();
       });
-
       await waitFor(() => {
         expect(
           within(screen.getByRole("grid")).getAllByRole("row").length,
         ).toBeGreaterThan(1);
       });
-
       const checkbox = within(
         await screen.findByRole("row", { name: /user8h/ }),
       ).getByRole("checkbox");
-
       await user.click(checkbox);
-
       await user.click(screen.getByRole("button", { name: /Actions/ }));
       await user.click(
         await screen.findByRole("menuitem", { name: /Grant PI role/ }),
       );
-
       expect(await screen.findByRole("dialog")).toBeVisible();
-
       await waitFor(() => {
         expect(
           screen.getByText((content) => {
@@ -150,4 +122,5 @@ describe("Grant User PI Role", () => {
     },
     40 * 1000,
   );
+});
 });

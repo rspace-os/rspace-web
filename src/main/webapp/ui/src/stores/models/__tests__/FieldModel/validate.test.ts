@@ -1,9 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
-
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-
 describe("method: validState", () => {
   test("Error flag should be asserted.", () => {
     const field = new FieldModel(
@@ -22,9 +20,7 @@ describe("method: validState", () => {
       makeMockSample()
     );
     field.setError(true);
-
     expect(field.validate().isOk).toBe(false);
   });
 });
-
 

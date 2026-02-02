@@ -10,14 +10,9 @@ import {
 import AdjustableCell from "../AdjustableCell";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import RecordLocation from "../../../../Inventory/components/RecordLocation";
-
 vi.mock("../../RecordLocation", () => ({
   default: vi.fn(() => <span></span>),
 }));
-
-
-
-
 describe("AdjustableCell", () => {
   describe("Location", () => {
     test("render a TopLink component when passed a root level container.", () => {
@@ -34,7 +29,6 @@ describe("AdjustableCell", () => {
           ]);
         },
       };
-
       render(
         <table>
           <tbody>
@@ -47,7 +41,6 @@ describe("AdjustableCell", () => {
           </tbody>
         </table>
       );
-
       expect(RecordLocation).toHaveBeenCalled();
     });
   });

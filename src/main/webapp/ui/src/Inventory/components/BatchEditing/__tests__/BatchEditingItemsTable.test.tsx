@@ -13,10 +13,6 @@ import "../../../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import userEvent from "@testing-library/user-event";
-
-
-
-
 describe("BatchEditingItemsTable", () => {
   test("Table body should have as many rows as records that are passed.", async () => {
     await fc.assert(
@@ -31,7 +27,6 @@ describe("BatchEditingItemsTable", () => {
               <BatchEditingItemsTable records={records} label={label} />
             </ThemeProvider>
           );
-
           await user.click(screen.getByRole("button"));
           // + 1 for the table head
           expect(screen.queryAllByRole("row").length).toEqual(records.size + 1);

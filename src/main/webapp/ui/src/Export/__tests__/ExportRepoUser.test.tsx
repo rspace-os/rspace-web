@@ -8,12 +8,7 @@ import ExportRepoUser from "../ExportRepoUser";
 import { type Person } from "../repositories/common";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
-
 const mockAxios = new MockAdapter(axios, { onNoMatch: "throwException" });
-
-
-
-
 function renderExportRepoUser({
   people,
   updatePeople,
@@ -30,7 +25,6 @@ function renderExportRepoUser({
     />
   );
 }
-
 describe("ExportRepoUser", () => {
   test("If no people are passed as prop, then the current user should be fetched.", async () => {
     mockAxios.onGet("/directory/ajax/subject").reply(200, {
@@ -39,16 +33,13 @@ describe("ExportRepoUser", () => {
         fullName: "Joe Bloggs",
       },
     });
-
     const updatePeople = vi.fn<(people: Array<Person>) => void>();
     await act(() => renderExportRepoUser({ people: [], updatePeople }));
     expect(updatePeople).toHaveBeenCalled();
   });
-
   test("If people are passed as prop, current user is not fetched.", async () => {
     // `/directory/ajax/subject` is not mocked so that if ExportRepoUser
     // attempts to the make a call the test fails
-
     const updatePeople = vi.fn<(people: Array<Person>) => void>();
     await act(() =>
       renderExportRepoUser({
@@ -65,5 +56,4 @@ describe("ExportRepoUser", () => {
     expect(updatePeople).not.toHaveBeenCalled();
   });
 });
-
 

@@ -13,12 +13,7 @@ import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import page1 from "./getUploadedFiles_1.json";
 import page2 from "./getUploadedFiles_2.json";
-
-
-
-
 const mockAxios = new MockAdapter(axios);
-
 function WrapperComponent() {
   const listingOf = React.useMemo(
     () => ({
@@ -34,7 +29,6 @@ function WrapperComponent() {
     sortOrder: "DESC",
     orderBy: "modificationDate",
   });
-
   return FetchingData.match(galleryListing, {
     loading: () => "loading",
     error: () => "error",
@@ -64,11 +58,9 @@ function WrapperComponent() {
     },
   });
 }
-
 describe("useGalleryListing", () => {
   test("Load more button should disappear on last page", async () => {
     const user = userEvent.setup();
-
     /*
      * The asymmetricMatch thing here is to match the URLSearchParams.
      * Ideally, we would be able to use expect.objectContaining, but
@@ -92,21 +84,16 @@ describe("useGalleryListing", () => {
         },
       })
       .reply(200, page2);
-
     render(<WrapperComponent />);
-
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /load more/i })).toBeVisible();
     });
-
     await user.click(screen.getByRole("button", { name: /load more/i }));
-
     await waitFor(() => {
       expect(
         screen.queryByRole("button", { name: /load more/i })
       ).not.toBeInTheDocument();
     });
-
     const getUploadedFilesCalls = mockAxios.history.get.filter(({ url }) =>
       /getUploadedFiles/.test(url ?? "")
     );
@@ -114,4 +101,5 @@ describe("useGalleryListing", () => {
     expect(getUploadedFilesCalls[0].params.get("pageNumber")).toBe("0");
     expect(getUploadedFilesCalls[1].params.get("pageNumber")).toBe("1");
   });
+});
 });

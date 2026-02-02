@@ -9,7 +9,6 @@ import {
 import BookingDetails from "./bookingsDetails.json";
 import EquipmentDetails from "./equipmentDetails.json";
 import BookingsList from "./allbookings.json";
-
 const bookingResponses = [
   BookingDetails.COMPLETED_1,
   BookingDetails.CURRENT_2,
@@ -82,7 +81,6 @@ const row4: BookingAndEquipmentDetails = {
   equipmentID: 3,
   labID: 11111,
 };
-
 const equipmentRow1: EquipmentWithBookingDetails = {
   equipmentID: "1",
   equipmentName: "Mullis Lab Centrifuge",
@@ -95,7 +93,6 @@ const equipmentRow1: EquipmentWithBookingDetails = {
   requesterName: "DBD",
   labID: 11111,
 };
-
 const equipmentRow2: EquipmentWithBookingDetails = {
   equipmentID: "2",
   equipmentName: "Mullis Lab -70 Freezer",
@@ -108,7 +105,6 @@ const equipmentRow2: EquipmentWithBookingDetails = {
   requesterName: "",
   labID: 11111,
 };
-
 const equipmentRow3: EquipmentWithBookingDetails = {
   equipmentID: "3",
   equipmentName: "Biochemistry Department Mass Spectrometer",
@@ -133,7 +129,6 @@ const equipmentRow3_maintenance: EquipmentWithBookingDetails = {
   requesterName: "",
   labID: 11111,
 };
-
 describe("Bookings view: joins the data from an array of booking details responses and an array of equipment details responses into a booking details view", () => {
   test(" return an array of structured data", () => {
     const joinedData = makeBookingAndEquipmentData(
@@ -158,7 +153,6 @@ describe("Bookings view: joins the data from an array of booking details respons
     expect(joinedData.length).toBe(1);
   });
 });
-
 describe("Equipment view: joins the data from an array of booking details responses and an array of equipment details responses into an equipment details view", () => {
   test(" return an array of structured data", () => {
     const joinedData = makeEquipmentWithBookingData(
@@ -171,7 +165,6 @@ describe("Equipment view: joins the data from an array of booking details respon
     expect(joinedData[1]).toStrictEqual(equipmentRow2);
     expect(joinedData[2]).toStrictEqual(equipmentRow3);
   });
-
   test(" filters maintenance bookings", () => {
     const joinedData = makeEquipmentWithBookingData(
       BookingsList.data,
@@ -203,5 +196,4 @@ describe("Get most recent booking for equipment", () => {
     expect(booking).toBeNull();
   });
 });
-
 

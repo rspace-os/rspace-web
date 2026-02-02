@@ -12,15 +12,10 @@ import materialTheme from "../../../../theme";
 import SynchroniseFormSections from "../SynchroniseFormSections";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import userEvent from "@testing-library/user-event";
-
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({})
 }));
-
-
-
-
 describe("StepperPanel", () => {
   describe("Renders correctly", () => {
     test("When expanded", () => {
@@ -60,7 +55,6 @@ describe("StepperPanel", () => {
       expect(screen.getByTestId("content")).not.toBeVisible();
     });
   });
-
   describe("Expands and collapses properly", () => {
     test("Expand button works correctly", async () => {
       const user = userEvent.setup();
@@ -80,7 +74,6 @@ describe("StepperPanel", () => {
           </FormSectionsContext.Provider>
         </ThemeProvider>
       );
-
       await user.click(screen.getByLabelText("Expand section"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", true);
     });
@@ -102,12 +95,10 @@ describe("StepperPanel", () => {
           </FormSectionsContext.Provider>
         </ThemeProvider>
       );
-
       await user.click(screen.getByLabelText("Collapse section"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", false);
     });
   });
-
   describe("Expand/Collapse all appears after performing the operation once", () => {
     function TestComponent({
       setAllExpanded,
@@ -135,12 +126,10 @@ describe("StepperPanel", () => {
         </ThemeProvider>
       );
     }
-
     test("Collapse all", async () => {
       const user = userEvent.setup();
       const setAllExpanded = vi.fn();
       render(<TestComponent setAllExpanded={setAllExpanded} openInit={true} />);
-
       await user.click(screen.getByLabelText("Collapse section"));
       await user.click(screen.getByRole("button", { name: "Collapse All" }));
       expect(setAllExpanded).toHaveBeenCalledWith("container", false);
@@ -151,13 +140,11 @@ describe("StepperPanel", () => {
       render(
         <TestComponent setAllExpanded={setAllExpanded} openInit={false} />
       );
-
       await user.click(screen.getByLabelText("Expand section"));
       await user.click(screen.getByRole("button", { name: "Expand All" }));
       expect(setAllExpanded).toHaveBeenCalledWith("container", true);
     });
   });
-
   describe("Accessibility", () => {
     test("Has role region", () => {
       render(
@@ -173,5 +160,4 @@ describe("StepperPanel", () => {
     });
   });
 });
-
 

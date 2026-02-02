@@ -1,7 +1,5 @@
-
 import { describe, expect, test } from 'vitest';
 import { traverseObjectTree } from "../../unsafeUtils";
-
 describe("traverseObjectTree", () => {
   test("basic example", () => {
     expect(
@@ -19,5 +17,4 @@ describe("traverseObjectTree", () => {
     ).toBe("test");
   });
 });
-
 

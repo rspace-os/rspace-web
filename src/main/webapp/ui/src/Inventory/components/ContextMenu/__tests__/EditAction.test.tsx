@@ -12,10 +12,6 @@ import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore
 import { storesContext } from "../../../../stores/stores-context";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-
-
-
-
 describe("EditAction", () => {
   describe("When tapped the context action should", () => {
     /*
@@ -51,23 +47,18 @@ describe("EditAction", () => {
           </storesContext.Provider>
         </ThemeProvider>,
       );
-
       const setVisiblePanelSpy = vi.spyOn(
         rootStore.uiStore,
         "setVisiblePanel",
       );
-
       await waitFor(() => {
         expect(screen.getByRole("button", { name: "Edit" })).toBeEnabled();
       });
-
       fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-
       await waitFor(() => {
         expect(setVisiblePanelSpy).toHaveBeenCalledWith("right");
       });
     });
   });
 });
-
 

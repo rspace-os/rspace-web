@@ -21,14 +21,9 @@ import ContextMenuButton from "../../../components/ContextMenu/ContextMenuButton
 import * as ArrayUtils from "../../../../util/ArrayUtils";
 import { take, incrementForever } from "../../../../util/iterators";
 import fc from "fast-check";
-
 vi.mock("../../../components/ContextMenu/ContextMenuButton", () => ({
   default: vi.fn(() => <div></div>),
 }));
-
-
-
-
 describe("ContentContextMenu", () => {
   describe("Has an open button that should", () => {
     test("be disabled when the only location selected is empty.", () => {
@@ -69,7 +64,6 @@ describe("ContentContextMenu", () => {
           </SearchContext.Provider>
         </ThemeProvider>,
       );
-
       expect(ContextMenuButton).toHaveBeenCalledWith(
         expect.objectContaining({
           disabledHelp: "Nothing selected.",
@@ -133,7 +127,6 @@ describe("ContentContextMenu", () => {
               </SearchContext.Provider>
             </ThemeProvider>,
           );
-
           expect(screen.getByText(`${width * height}`)).toBeVisible();
         },
       ),

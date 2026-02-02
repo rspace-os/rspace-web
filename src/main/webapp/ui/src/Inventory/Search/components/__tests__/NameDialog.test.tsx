@@ -7,10 +7,6 @@ import {
 import NameDialog from "../NameDialog";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-
-
-
-
 describe("NameDialog", () => {
   test("Naming a new saved search the same name as an existing saved search should be an error.", () => {
     render(
@@ -25,11 +21,9 @@ describe("NameDialog", () => {
         />
       </ThemeProvider>
     );
-
     expect(
       screen.getByText("This name is already taken. Please modify it.")
     ).toBeVisible();
   });
 });
-
 

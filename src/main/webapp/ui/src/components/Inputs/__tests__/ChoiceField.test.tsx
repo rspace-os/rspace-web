@@ -13,11 +13,9 @@ import ChoiceField from "../ChoiceField";
 import Checkbox from "@mui/material/Checkbox";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
-
 vi.mock("@mui/material/Checkbox", () => ({
   default: vi.fn(() => <div></div>),
 }));
-
 const renderChoiceField = (props: {
   disabled?: boolean;
   hideWhenDisabled?: boolean;
@@ -36,7 +34,6 @@ const renderChoiceField = (props: {
       />
     </ThemeProvider>
   );
-
 const expectAllOptionsAreShown = () => {
   expect(Checkbox).toHaveBeenCalledTimes(2);
   expect(Checkbox).toHaveBeenCalledWith(
@@ -52,11 +49,9 @@ const expectAllOptionsAreShown = () => {
     expect.anything()
   );
 };
-
 const expectNoOptions = () => {
   expect(Checkbox).not.toHaveBeenCalled();
 };
-
 const expectJustFoo = () => {
   expect(Checkbox).toHaveBeenCalledTimes(1);
   expect(Checkbox).toHaveBeenCalledWith(
@@ -66,12 +61,10 @@ const expectJustFoo = () => {
     expect.anything()
   );
 };
-
 describe("ChoiceField", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
-
   describe("Renders correctly", () => {
     test.each`
       disabled     | hideWhenDisabled | value      | expectFn

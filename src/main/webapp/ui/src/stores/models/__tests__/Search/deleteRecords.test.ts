@@ -7,20 +7,16 @@ import InvApiService, {
 } from "../../../../common/InvApiService";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import { type AxiosResponse } from "axios";
-
 import { mkAlert } from "../../../contexts/Alert";
-
 vi.mock("../../../contexts/Alert", () => ({
   mkAlert: vi.fn(() => ({})),
 }));
-
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
     bulk: vi.fn(),
     query: vi.fn(),
   },
 }));
-
 describe("action: deleteRecords", () => {
   describe("When it is called,", () => {
     test("the search should be refreshed.", async () => {
@@ -47,7 +43,6 @@ describe("action: deleteRecords", () => {
               config: {},
             } as AxiosResponse)
         );
-
       const factory = mockFactory({
         newFactory: () =>
           mockFactory({
@@ -60,9 +55,7 @@ describe("action: deleteRecords", () => {
               ),
           }),
       });
-
       const search = new Search({ factory });
-
       const searchSpy = vi
         .spyOn(search.fetcher as any, "search")
         .mockImplementation((...args: any[]) => {
@@ -72,9 +65,7 @@ describe("action: deleteRecords", () => {
           }
           return Promise.resolve();
         });
-
       await search.deleteRecords([makeMockContainer()]);
-
       /*
        * Being called with null means that the last used search parameters will
        * be used again
@@ -118,7 +109,6 @@ describe("action: deleteRecords", () => {
               config: {},
             } as AxiosResponse)
         );
-
       const factory = mockFactory({
         newFactory: () =>
           mockFactory({
@@ -131,9 +121,7 @@ describe("action: deleteRecords", () => {
               ),
           }),
       });
-
       const search = new Search({ factory });
-
       vi
         .spyOn(search.fetcher as any, "search")
         .mockImplementation((...args: any[]) => {
@@ -143,9 +131,7 @@ describe("action: deleteRecords", () => {
           }
           return Promise.resolve();
         });
-
       await search.deleteRecords([makeMockContainer()]);
-
       expect(mkAlert).toHaveBeenCalledWith(
         expect.objectContaining({
           details: expect.arrayContaining([

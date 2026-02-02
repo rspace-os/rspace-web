@@ -7,10 +7,6 @@ import {
 import TypeFilter from "../TypeFilter";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
-
-
-
-
 describe("TypeFilter", () => {
   test("Current type should have aria-current property", () => {
     render(
@@ -22,7 +18,6 @@ describe("TypeFilter", () => {
         />
       </ThemeProvider>
     );
-
     expect(
       screen.getByRole("menuitem", {
         name: /All/,
@@ -30,5 +25,4 @@ describe("TypeFilter", () => {
     ).toHaveAttribute("aria-current", "true");
   });
 });
-
 

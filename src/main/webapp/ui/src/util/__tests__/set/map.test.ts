@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { arbRsSet } from "./helpers";
-
 describe("map", () => {
   test("Size after must be less than or equal size before", () => {
     fc.assert(
@@ -14,5 +13,4 @@ describe("map", () => {
     );
   });
 });
-
 

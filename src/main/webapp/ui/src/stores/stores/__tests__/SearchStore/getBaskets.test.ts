@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
 import getRootStore from "../../RootStore";
-
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   get: (endpoint: string) => {
@@ -19,9 +18,7 @@ vi.mock("../../../../common/InvApiService", () => ({
     }
     throw new Error(`Should not be calling endpoint: "${endpoint}".`);
   },
-
   }}));
-
 describe("getBaskets", () => {
   test("Initialises basket objects correctly.", async () => {
     const { searchStore } = getRootStore();
@@ -29,5 +26,4 @@ describe("getBaskets", () => {
     expect(searchStore.savedBaskets.length).toBe(1);
   });
 });
-
 

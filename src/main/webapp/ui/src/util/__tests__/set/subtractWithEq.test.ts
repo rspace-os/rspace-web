@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import RsSet from "../../set";
-
 describe("subtractWithEq", () => {
   test("Simple example", () => {
     expect(
@@ -10,4 +9,5 @@ describe("subtractWithEq", () => {
         .isSame(new RsSet([1]))
     ).toBe(true);
   });
+});
 });

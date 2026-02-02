@@ -1,7 +1,5 @@
-
 import { describe, expect, test } from 'vitest';
 import Result from "../../result";
-
 describe("orElseTry", () => {
   test("The types should be merged.", () => {
     const input: Result<string> = Result.Ok("foo");
@@ -10,5 +8,4 @@ describe("orElseTry", () => {
     next.do((value) => expect(value).toBe("foo"));
   });
 });
-
 

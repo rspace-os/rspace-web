@@ -3,7 +3,6 @@ import React from "react";
 import { ImportDialogStory } from "./ImportDialog.story";
 import AxeBuilder from "@axe-core/playwright";
 import * as Jwt from "jsonwebtoken";
-
 const feature = test.extend<{
   Given: {
     "that the ImportDialog is mounted": () => Promise<void>;
@@ -290,14 +289,12 @@ const feature = test.extend<{
           name: "Compound with Empty CAS",
         });
         await expect(compoundCard).toBeVisible();
-
         await expect(
           compoundCard.getByRole("term").filter({ hasText: /PubChem ID/i }),
         ).toBeVisible();
         await expect(
           compoundCard.getByRole("term").filter({ hasText: /Formula/i }),
         ).toBeVisible();
-
         const casTerms = compoundCard
           .getByRole("term")
           .filter({ hasText: "CAS" })
@@ -321,7 +318,6 @@ const feature = test.extend<{
     await use([]);
   },
 });
-
 feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
@@ -377,7 +373,6 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/api/v1/pubchem/search", async (route) => {
     const requestData = JSON.parse(route.request().postData() || "{}");
     const searchTerm = requestData.searchTerm;
-
     if (searchTerm === "error") {
       return route.fulfill({
         status: 500,
@@ -456,7 +451,6 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
     }
   });
-
   page.on("request", (request) => {
     networkRequests.push({
       url: new URL(request.url()),
@@ -464,48 +458,39 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     });
   });
 });
-
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
 });
-
 test.describe("ImportDialog", () => {
   feature("Renders correctly", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a dialog visible"]();
   });
-
   feature("Should have no axe violations.", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be no axe violations"]();
   });
-
   feature("Should be a dialog header banner", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a dialog header banner"]();
   });
-
   feature("Should have a title", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a title: 'Import from PubChem'"]();
   });
-
   feature("Should have a a close button", async ({ Given, When, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await When["the cancel button is clicked"]();
     await Then["the dialog is closed"]();
   });
-
   feature("Should have a search input", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a search input"]();
   });
-
   feature("Should have a search type selector", async ({ Given, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a search type selector"]();
   });
-
   feature(
     "The API endpoint is called when a search is performed",
     async ({ Given, When, Then }) => {
@@ -514,14 +499,12 @@ test.describe("ImportDialog", () => {
       await Then["the mocked results are shown"]();
     },
   );
-
   feature("searchType is passed in API call", async ({ Given, When, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await When["SMILES is chosen as the search type"]();
     await When["a search is performed"]();
     Then["SMILES is passed in the API call"]();
   });
-
   feature(
     "Should auto-select a compound when there is only one result",
     async ({ Given, When, Then }) => {
@@ -536,7 +519,6 @@ test.describe("ImportDialog", () => {
        */
     },
   );
-
   feature(
     "Should not auto-select compounds when there are multiple results",
     async ({ Given, When, Then }) => {
@@ -545,7 +527,6 @@ test.describe("ImportDialog", () => {
       await Then["multiple results should not be selected by default"]();
     },
   );
-
   feature(
     "Should toggle compound selection when clicked twice",
     async ({ Given, When, Then }) => {
@@ -556,7 +537,6 @@ test.describe("ImportDialog", () => {
       await Then["the compound should not be selected"]();
     },
   );
-
   feature(
     "Should allow keyboard selection of compounds by pressing enter on the card",
     async ({ Given, When, Then }) => {
@@ -567,7 +547,6 @@ test.describe("ImportDialog", () => {
       await Then["the compound should be selected"]();
     },
   );
-
   feature(
     "Should allow keyboard selection of compounds by pressing space on the checkbox",
     async ({ Given, When, Then }) => {
@@ -578,7 +557,6 @@ test.describe("ImportDialog", () => {
       await Then["the compound should be selected"]();
     },
   );
-
   feature(
     "Should not toggle selection when clicking on external links",
     async ({ Given, When, Then }) => {
@@ -597,7 +575,6 @@ test.describe("ImportDialog", () => {
        */
     },
   );
-
   feature(
     "Should validate compound selection",
     async ({ Given, When, Then }) => {
@@ -616,7 +593,6 @@ test.describe("ImportDialog", () => {
       ]();
     },
   );
-
   feature(
     "An error when searching should result in an alert toast",
     async ({ Given, When, Then }) => {
@@ -625,7 +601,6 @@ test.describe("ImportDialog", () => {
       await Then["an error alert should be shown"]();
     },
   );
-
   feature(
     "Should reset state when dialog is closed and reopened",
     async ({ Given, When, Then }) => {
@@ -638,7 +613,6 @@ test.describe("ImportDialog", () => {
       await Then["there should be no search results visible"]();
     },
   );
-
   feature(
     "Should not display CAS Number when it is empty",
     async ({ Given, When, Then }) => {
@@ -649,7 +623,6 @@ test.describe("ImportDialog", () => {
       await Then["the CAS number should not be displayed"]();
     },
   );
-
   feature(
     "Should hide error message when typing after a no-results search",
     async ({ Given, When, Then }) => {
@@ -662,4 +635,5 @@ test.describe("ImportDialog", () => {
       ]();
     },
   );
+});
 });

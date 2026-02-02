@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import Result from "../../result";
-
 describe("first", () => {
   test("A single OK, should be the value.", () => {
     const actual = Result.first(Result.Ok("foo"));
@@ -45,5 +44,4 @@ describe("first", () => {
     });
   });
 });
-
 

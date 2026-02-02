@@ -15,9 +15,7 @@ import NavigateToNode from "../NavigateToNode";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-
 import Node from "../Node";
-
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
     searchStore: {
@@ -39,12 +37,10 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
     },
   }),
 }));
-
 // mocking this to avoid testing dependency
 vi.mock("../NavigateToNode", () => ({
   default: vi.fn(() => <div></div>),
 }));
-
 // vi.mock("../../../../theme", () => ({
 //   __esModule: true,
 //   default: materialTheme,
@@ -52,10 +48,6 @@ vi.mock("../NavigateToNode", () => ({
 //     greyOut: "MOCK_GREY_OUT_CLASS_NAME",
 //   }),
 // }));
-
-
-
-
 describe("Node", () => {
   describe("When the node in question is a container with contents, there should", () => {
     test("Be a button that navigates to the container's contents", () => {
@@ -127,4 +119,5 @@ describe("Node", () => {
     );
     expect(screen.getByRole("treeitem", { name: /Container/ })).toBeVisible();
   });
+});
 });

@@ -1,8 +1,6 @@
-
 import { describe, expect, test } from 'vitest';
 import { mergeThemes } from "../../styles";
 import { ThemeOptions } from "@mui/material";
-
 describe("mergeThemes", () => {
   test("Simple checks", () => {
     const theme1 = {
@@ -28,7 +26,6 @@ describe("mergeThemes", () => {
         },
       },
     } as ThemeOptions;
-
     const theme2 = {
       components: {
         MuiLink: {
@@ -43,7 +40,6 @@ describe("mergeThemes", () => {
         },
       },
     } as ThemeOptions;
-
     expect(mergeThemes(theme1, theme2)).toEqual({
       components: {
         MuiButton: {
@@ -68,7 +64,6 @@ describe("mergeThemes", () => {
         },
       },
     });
-
     expect(mergeThemes(theme2, theme1)).toEqual({
       components: {
         MuiLink: {
@@ -95,5 +90,4 @@ describe("mergeThemes", () => {
     });
   });
 });
-
 

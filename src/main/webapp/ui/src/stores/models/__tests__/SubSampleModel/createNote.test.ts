@@ -1,7 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import { makeMockSubSample } from "./mocking";
 import ApiService from "../../../../common/InvApiService";
-
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({
@@ -26,9 +25,7 @@ vi.mock("../../../stores/RootStore", () => ({
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   post: vi.fn(() => ({ data: { notes: [] } })),
-
   }}));
-
 describe("action: createNote", () => {
   /*
    * When previewing a subsample, the user can create a note that is
@@ -45,7 +42,6 @@ describe("action: createNote", () => {
       });
     });
   });
-
   /*
    * When editing a subsample, the user can create a note, but it is only saved
    * when the whole form is.
@@ -65,5 +61,4 @@ describe("action: createNote", () => {
     });
   });
 });
-
 

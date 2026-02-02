@@ -8,10 +8,6 @@ import {
 import RadioField from "../../RadioField";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-
-
-
-
 describe("RadioField", () => {
   test("When a selection is made, the onChange handler is called", () => {
     const onChange = vi.fn();
@@ -48,5 +44,4 @@ describe("RadioField", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 });
-
 

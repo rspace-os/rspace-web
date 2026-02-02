@@ -6,10 +6,6 @@ import {
 } from "@testing-library/react";
 import FormField from "../FormField";
 import StringField from "../StringField";
-
-
-
-
 describe("FormField", () => {
   test("Should render HTMLLabelElement with `for` attribute that points to HTMLInputElement.", () => {
     render(
@@ -19,12 +15,10 @@ describe("FormField", () => {
         renderInput={(props) => <StringField {...props} />}
       />
     );
-
     expect(screen.getAllByLabelText("Test")).toContain(
       screen.getByRole("textbox")
     );
   });
-
   test("Should not render HTMLLabelElement with `for` attribute that points to HTMLInputElement, when doNotAttachIdToLabel is true.", () => {
     render(
       <FormField
@@ -34,7 +28,6 @@ describe("FormField", () => {
         doNotAttachIdToLabel
       />
     );
-
     expect(screen.getAllByLabelText("Test")).not.toContain(
       screen.getByRole("textbox")
     );
@@ -48,9 +41,7 @@ describe("FormField", () => {
         disabled
       />
     );
-
     expect(screen.getByRole("heading")).toBeInTheDocument();
   });
 });
-
 

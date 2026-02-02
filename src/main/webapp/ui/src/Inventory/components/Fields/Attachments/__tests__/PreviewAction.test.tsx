@@ -11,15 +11,10 @@ import { storesContext } from "../../../../../stores/stores-context";
 import PreviewAction from "../PreviewAction";
 import { mockAttachment } from "../../../../../stores/definitions/__tests__/Attachment/mocking";
 import userEvent from "@testing-library/user-event";
-
 vi.mock("../../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../../stores/stores/RootStore", () => ({
   default: () => ({})
 }));
-
-
-
-
 describe("PreviewAction", () => {
   test("An error should be shown if the image cannot be fetched.", async () => {
     const user = userEvent.setup();
@@ -31,11 +26,9 @@ describe("PreviewAction", () => {
     const addAlertMock = vi
       .spyOn(rootStore.uiStore, "addAlert")
       .mockImplementation(() => {});
-
     const attachment = mockAttachment({
       setImageLink: () => Promise.reject({ message: "foo" }),
     });
-
     render(
       <storesContext.Provider value={rootStore}>
         <PreviewAction attachment={attachment} />
@@ -44,7 +37,6 @@ describe("PreviewAction", () => {
     await user.click(
       screen.getByRole("button", { name: "Preview file as image" })
     );
-
     await waitFor(() => {
       expect(addAlertMock).toHaveBeenCalledWith(
         expect.objectContaining({ message: "foo", variant: "error" })
@@ -52,5 +44,4 @@ describe("PreviewAction", () => {
     });
   });
 });
-
 

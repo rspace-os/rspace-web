@@ -10,7 +10,6 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { Optional } from "../../../../util/optional";
 import "../../../../../__mocks__/matchMedia";
-
 window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
@@ -18,10 +17,6 @@ window.fetch = vi.fn(() =>
     json: () => Promise.resolve({}),
   } as Response)
 );
-
-
-
-
 describe("Tags", () => {
   test("Should enter an error state when value is longer than 8000 characters.", () => {
     fc.assert(
@@ -53,7 +48,6 @@ describe("Tags", () => {
             />
           </ThemeProvider>
         );
-
         expect(container).toHaveTextContent(
           "Tags must be no longer than 8000 characters."
         );
@@ -62,5 +56,4 @@ describe("Tags", () => {
     );
   });
 });
-
 

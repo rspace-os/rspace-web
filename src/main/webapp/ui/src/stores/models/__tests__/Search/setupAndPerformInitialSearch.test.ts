@@ -1,7 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import Search from "../../Search";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
-
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   query: () =>
@@ -12,7 +11,6 @@ vi.mock("../../../../common/InvApiService", () => ({
         containers: [],
       },
     }),
-
   }}));
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
@@ -37,13 +35,11 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   },
 })
 }));
-
 describe("setupAndPerformInitialSearch", () => {
   test("A second call whilst the first is being processed should cancel the first.", async () => {
     const search = new Search({
       factory: mockFactory(),
     });
-
     const promise1 = search.setupAndPerformInitialSearch({
       parentGlobalId: "BE1",
     });
@@ -51,11 +47,9 @@ describe("setupAndPerformInitialSearch", () => {
       resultType: "CONTAINER",
     });
     await Promise.all([promise1, promise2]);
-
     // there should be nothing left of the first search's parameters
     expect(search.fetcher.resultType).toEqual("CONTAINER");
     expect(search.fetcher.parentGlobalId).toEqual(null);
   });
 });
-
 

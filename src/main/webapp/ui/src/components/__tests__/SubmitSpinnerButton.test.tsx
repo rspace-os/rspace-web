@@ -9,14 +9,9 @@ import SubmitSpinnerButton from "../SubmitSpinnerButton";
 import { calculateProgress } from "../../util/progress";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
-
-
-
-
 describe("SubmitSpinnerButton", () => {
   test("When the button is tapped, onClick should be called.", () => {
     const onClick = vi.fn();
-
     render(
       <ThemeProvider theme={materialTheme}>
         <SubmitSpinnerButton
@@ -27,15 +22,11 @@ describe("SubmitSpinnerButton", () => {
         />
       </ThemeProvider>
     );
-
     fireEvent.click(screen.getByRole("button", { name: "foo" }));
-
     expect(onClick).toHaveBeenCalled();
   });
-
   test("When the button is disabled and tapped, onClick should not be called.", () => {
     const onClick = vi.fn();
-
     render(
       <ThemeProvider theme={materialTheme}>
         <SubmitSpinnerButton
@@ -46,12 +37,9 @@ describe("SubmitSpinnerButton", () => {
         />
       </ThemeProvider>
     );
-
     fireEvent.click(screen.getByRole("button", { name: "foo" }));
-
     expect(onClick).not.toHaveBeenCalled();
   });
-
   test("When progress is set, the progress bar should have correct aria attributes.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
@@ -64,7 +52,6 @@ describe("SubmitSpinnerButton", () => {
         />
       </ThemeProvider>
     );
-
     expect(screen.getByRole("progressbar")).toHaveAttribute(
       "aria-valuenow",
       "50"
@@ -78,7 +65,6 @@ describe("SubmitSpinnerButton", () => {
       "100"
     );
   });
-
   test("When loading is not set, the label should be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
@@ -91,10 +77,8 @@ describe("SubmitSpinnerButton", () => {
         />
       </ThemeProvider>
     );
-
     expect(screen.getByText("foo")).toBeVisible();
   });
-
   test("When loading is set, the label should not be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
@@ -107,9 +91,7 @@ describe("SubmitSpinnerButton", () => {
         />
       </ThemeProvider>
     );
-
     expect(screen.getByText("foo")).not.toBeVisible();
   });
 });
-
 

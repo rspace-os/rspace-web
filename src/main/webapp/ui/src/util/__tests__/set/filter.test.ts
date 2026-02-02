@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { arbRsSet } from "./helpers";
-
 describe("filter", () => {
   test("Set before is superset of set after filter i.e. size is less than or equal after", () => {
     fc.assert(
@@ -29,5 +28,4 @@ describe("filter", () => {
     );
   });
 });
-
 

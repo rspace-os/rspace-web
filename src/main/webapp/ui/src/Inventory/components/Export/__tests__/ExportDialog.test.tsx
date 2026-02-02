@@ -1,4 +1,3 @@
-
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
 import {
@@ -13,7 +12,6 @@ import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
-
 // break import cycles
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/RootStore", () => ({
@@ -23,16 +21,13 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   },
 })
 }));
-
 describe("Export Tests", () => {
   let openDialog = true; // if false, then dialog is null
   const setOpenDialog = (bool: boolean) => {
     openDialog = bool;
   };
-
   const mockSample = makeMockSample();
   const mockContainer = makeMockContainer();
-
   const Dialog = ({
     selectedResults = [],
     exportType,
@@ -52,7 +47,6 @@ describe("Export Tests", () => {
       </ThemeProvider>
     );
   };
-
   describe("ExportDialog with no selected results (user data)", () => {
     test("renders, has radio options for exportMode and for containers (plus help text)", () => {
       render(
@@ -66,9 +60,7 @@ describe("Export Tests", () => {
           <Dialog exportType="userData" selectedResults={[]} />
         </storesContext.Provider>
       );
-
       expect(screen.getAllByRole("radio")).toHaveLength(6); // containers options rendered when no selected results
-
       const fullOption = screen.getByLabelText("Full");
       expect(fullOption).toBeInTheDocument();
       expect(fullOption).toBeChecked();
@@ -78,13 +70,11 @@ describe("Export Tests", () => {
       const includeContentOption = screen.getByLabelText("Include Content");
       expect(includeContentOption).toBeInTheDocument();
       expect(includeContentOption).not.toBeChecked();
-
       /* assert help text for default option */
       const defaultContainersHint = "Containers only, without their content.";
       expect(screen.getByText(defaultContainersHint)).toBeInTheDocument();
     });
   });
-
   describe("ExportDialog with selected results", () => {
     test("renders, has radio options (and help text) for samples", () => {
       render(
@@ -98,7 +88,6 @@ describe("Export Tests", () => {
           <Dialog exportType="contextMenu" selectedResults={[mockSample]} />
         </storesContext.Provider>
       );
-
       expect(screen.getAllByRole("radio")).toHaveLength(6);
       const includeOption = screen.getByLabelText("Include Subsamples");
       expect(includeOption).toBeInTheDocument();
@@ -106,13 +95,11 @@ describe("Export Tests", () => {
       const excludeOption = screen.getByLabelText("Exclude Subsamples");
       expect(excludeOption).toBeInTheDocument();
       expect(excludeOption).not.toBeChecked();
-
       /* assert help text for default option */
       const defaultSamplesHint =
         "All data, including custom and template fields.";
       expect(screen.getAllByText(defaultSamplesHint)[0]).toBeInTheDocument();
     });
-
     test("renders, has radio options for exportMode, samples and containers", () => {
       render(
         <storesContext.Provider

@@ -6,15 +6,10 @@ import {
   fireEvent,
 } from "@testing-library/react";
 import PdfExport from "../PdfExport";
-
-
-
-
 describe("PdfExport", () => {
   test("Toggling a switch should set a boolean value.", () => {
     const updateExportDetails: (key: string, exportDetail: unknown) => void =
       vi.fn();
-
     render(
       <PdfExport
         exportDetails={{
@@ -40,13 +35,10 @@ describe("PdfExport", () => {
         }}
       />
     );
-
     fireEvent.click(
       screen.getByRole("checkbox", { name: "Include provenance information" })
     );
-
     expect(updateExportDetails).toHaveBeenCalledWith("provenance", true);
   });
 });
-
 

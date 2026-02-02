@@ -32,13 +32,11 @@ import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { assertConsistentOrderOfLists } from "../../__tests__/assertConsistentOrderOfLists";
 import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
 import { IsValid } from "../../components/ValidatingSubmitButton";
-
 class ResizeObserver {
   observe(): void {}
   unobserve(): void {}
   disconnect(): void {}
 }
-
 vi.mock("../Sample/Content/SubsampleListing", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -90,7 +88,6 @@ vi.mock("../../stores/stores/RootStore", () => ({
 vi.mock("../../components/Ketcher/KetcherDialog", () => ({
   default: vi.fn(() => <div></div>),
 }));
-
 // Cast to any to avoid TypeScript errors with the mock implementation
 window.fetch = vi.fn(() =>
   Promise.resolve({
@@ -111,15 +108,10 @@ window.fetch = vi.fn(() =>
     bodyUsed: false,
   } as Response)
 ) as any;
-
-
-
-
 type MakeRootStoreArgs = {
   activeResult: InventoryRecord | null;
   batchEditingRecords?: Array<InventoryRecord>;
 };
-
 function makeRootStore({
   activeResult,
   batchEditingRecords,
@@ -151,7 +143,6 @@ function makeRootStore({
     },
   });
 }
-
 function getSectionNames(
   reactComponent: React.ReactNode,
   rootStore: MakeRootStoreArgs
@@ -171,14 +162,12 @@ function getSectionNames(
   cleanup();
   return sectionNames;
 }
-
 describe("Form Section Order", () => {
   test("Across all of the forms, all of the sections should be in a consistent order.", () => {
     window.ResizeObserver =
       ResizeObserver as unknown as typeof global.ResizeObserver;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     window.scrollTo = vi.fn() as any;
-
     assertConsistentOrderOfLists(
       new Map([
         [

@@ -1,11 +1,9 @@
 import { describe, expect, test, vi } from 'vitest';
 import { makeMockMaterial } from "./mocking";
-
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({})
 }));
-
 describe("computed: paramsForBackend", () => {
   /*
    * `paramsForBackend` is used for submitting the MaterialsModel to the API and
@@ -23,5 +21,4 @@ describe("computed: paramsForBackend", () => {
     });
   });
 });
-
 

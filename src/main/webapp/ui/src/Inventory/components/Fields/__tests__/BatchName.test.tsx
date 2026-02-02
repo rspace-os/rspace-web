@@ -12,7 +12,6 @@ import { type BatchName as BatchNameType } from "../../../../stores/models/Inven
 import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-
 function lengthOfSuffix(suffix: string): number {
   if (suffix === "NONE") return 0;
   if (suffix === "INDEX_NUMBER") return 2;
@@ -20,10 +19,6 @@ function lengthOfSuffix(suffix: string): number {
   if (suffix === "CREATED") return 19;
   throw new Error("Invalid suffix string");
 }
-
-
-
-
 function renderWithJustFieldValue(
   initialValue: BatchNameType,
   onErrorStateChange?: (errorState: boolean) => void
@@ -55,7 +50,6 @@ function renderWithJustFieldValue(
   };
   return render(<Wrapper />);
 }
-
 describe("BatchName", () => {
   test("Should initially not be in an error state even though the value is the empty string.", () => {
     const { container } = renderWithJustFieldValue({
@@ -66,7 +60,6 @@ describe("BatchName", () => {
       "Name must be at least 2 characters."
     );
   });
-
   test("Should enter an error state when value is only a single character and the suffix is NONE.", () => {
     fc.assert(
       fc.property(
@@ -80,11 +73,9 @@ describe("BatchName", () => {
             { common: "", suffix: "NONE" },
             onErrorStateChange
           );
-
           fireEvent.input(screen.getByRole("textbox"), {
             target: { value: name },
           });
-
           expect(container).toHaveTextContent(
             "Name must be at least 2 characters."
           );
@@ -93,7 +84,6 @@ describe("BatchName", () => {
       )
     );
   });
-
   /*
    * This is because all of the suffixes have a length >= 2, and the minimum
    * length allows is also 2 chars
@@ -116,11 +106,9 @@ describe("BatchName", () => {
             { common: "", suffix },
             onErrorStateChange
           );
-
           fireEvent.input(screen.getByRole("textbox"), {
             target: { value: common },
           });
-
           expect(container).not.toHaveTextContent(
             "Name must be at least 2 characters."
           );
@@ -129,7 +117,6 @@ describe("BatchName", () => {
       )
     );
   });
-
   describe("Should enter an error state when the value is too long.", () => {
     test('When the suffix is "NONE".', () => {
       fc.assert(
@@ -142,11 +129,9 @@ describe("BatchName", () => {
               { common: "", suffix: "NONE" },
               onErrorStateChange
             );
-
             fireEvent.input(screen.getByRole("textbox"), {
               target: { value: common },
             });
-
             expect(container).toHaveTextContent(
               "Name must be no longer than 255 characters."
             );
@@ -155,7 +140,6 @@ describe("BatchName", () => {
         )
       );
     });
-
     test('When the suffix is "INDEX_NUMBER".', () => {
       fc.assert(
         fc.property(
@@ -167,11 +151,9 @@ describe("BatchName", () => {
               { common: "", suffix: "INDEX_NUMBER" },
               onErrorStateChange
             );
-
             fireEvent.input(screen.getByRole("textbox"), {
               target: { value: common },
             });
-
             expect(container).toHaveTextContent(
               "Name must be no longer than 253 characters."
             );
@@ -180,7 +162,6 @@ describe("BatchName", () => {
         )
       );
     });
-
     test('When the suffix is "INDEX_LETTER".', () => {
       fc.assert(
         fc.property(
@@ -192,11 +173,9 @@ describe("BatchName", () => {
               { common: "", suffix: "INDEX_LETTER" },
               onErrorStateChange
             );
-
             fireEvent.input(screen.getByRole("textbox"), {
               target: { value: common },
             });
-
             expect(container).toHaveTextContent(
               "Name must be no longer than 253 characters."
             );
@@ -205,7 +184,6 @@ describe("BatchName", () => {
         )
       );
     });
-
     test('When the suffix is "CREATED".', () => {
       fc.assert(
         fc.property(
@@ -217,11 +195,9 @@ describe("BatchName", () => {
               { common: "", suffix: "CREATED" },
               onErrorStateChange
             );
-
             fireEvent.input(screen.getByRole("textbox"), {
               target: { value: common },
             });
-
             expect(container).toHaveTextContent(
               "Name must be no longer than 236 characters."
             );
@@ -231,7 +207,6 @@ describe("BatchName", () => {
       );
     });
   });
-
   /*
    * Only applies when suffix is NONE because there is no minimum common for
    * the other suffixes
@@ -254,20 +229,16 @@ describe("BatchName", () => {
             { common: "", suffix: "NONE" },
             onErrorStateChange
           );
-
           fireEvent.change(screen.getByRole("textbox"), {
             target: { value: firstValidValue },
           });
-
           expect(container).not.toHaveTextContent(
             "Name must be at least 2 characters."
           );
           expect(onErrorStateChange).toHaveBeenCalledWith(false);
-
           fireEvent.change(screen.getByRole("textbox"), {
             target: { value: secondInvalidValue },
           });
-
           expect(container).toHaveTextContent(
             "Name must be at least 2 characters."
           );
@@ -276,7 +247,6 @@ describe("BatchName", () => {
       )
     );
   });
-
   test("Should enter an error state when value is just whitespace.", () => {
     fc.assert(
       fc.property(
@@ -290,11 +260,9 @@ describe("BatchName", () => {
             { common: "", suffix: "NONE" },
             onErrorStateChange
           );
-
           fireEvent.change(screen.getByRole("textbox"), {
             target: { value: name },
           });
-
           expect(container).toHaveTextContent(
             "Name must include at least one non-whitespace character."
           );
@@ -322,11 +290,9 @@ describe("BatchName", () => {
             { common: "", suffix },
             onErrorStateChange
           );
-
           fireEvent.change(screen.getByRole("textbox"), {
             target: { value: generatedName },
           });
-
           expect(container).toHaveTextContent(
             `${generatedName.length} / ${255 - lengthOfSuffix(suffix)}`
           );
@@ -335,5 +301,4 @@ describe("BatchName", () => {
     );
   });
 });
-
 

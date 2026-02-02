@@ -13,12 +13,10 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import userEvent from "@testing-library/user-event";
 import { type HasEditableFields } from "../../../../../stores/definitions/Editable";
-
 type MockFields = {
   storageTempMin: Temperature | null;
   storageTempMax: Temperature | null;
 };
-
 type MockFieldOwnerProps = {
   fieldValues: {
     storageTempMin: Temperature | null;
@@ -30,7 +28,6 @@ type MockFieldOwnerProps = {
     storageTempMax: string | null;
   };
 };
-
 const mockFieldOwner = (
   mockedParts: MockFieldOwnerProps
 ): HasEditableFields<MockFields> => ({
@@ -43,10 +40,6 @@ const mockFieldOwner = (
   setFieldEditable: vi.fn(),
   noValueLabel: mockedParts.noValueLabel,
 });
-
-
-
-
 describe("StorageTemperature", () => {
   describe("When enabled and unspecified, the component should", () => {
     test("show a button that when tapped defaults to ambient temperature.", async () => {
@@ -63,7 +56,6 @@ describe("StorageTemperature", () => {
         isFieldEditable: () => true,
       });
       const spy = vi.spyOn(fieldOwner, "setFieldsDirty");
-
       render(
         <ThemeProvider theme={materialTheme}>
           <StorageTemperature
@@ -80,5 +72,4 @@ describe("StorageTemperature", () => {
     });
   });
 });
-
 

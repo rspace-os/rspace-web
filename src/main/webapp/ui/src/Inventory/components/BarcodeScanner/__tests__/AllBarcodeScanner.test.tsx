@@ -11,19 +11,13 @@ import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { test, describe, expect, vi } from 'vitest';
-
-
-
-
 describe("AllBarcodeScanner", () => {
   test("Should scan correctly.", async () => {
     const user = userEvent.setup();
     vi.spyOn(HTMLVideoElement.prototype, "play").mockImplementation(() =>
       Promise.resolve()
     );
-
     const onScan = vi.fn<(input: BarcodeInput) => void>();
-
     render(
       <ThemeProvider theme={materialTheme}>
         <AllBarcodeScanner
@@ -33,7 +27,6 @@ describe("AllBarcodeScanner", () => {
         />
       </ThemeProvider>,
     );
-
     /*
      * Wait a second because the barcode scanner checks for a barcode once per
      * second. The extra 100ms is just to ensure that this code doesn't execute
@@ -42,9 +35,7 @@ describe("AllBarcodeScanner", () => {
     await act(async () => {
       await sleep(1100);
     });
-
     await user.click(screen.getByText("Scan"));
-
     /*
      * This mocked value comes from src/main/webapp/ui/__mocks__/barcode-detection-api.js
      */
@@ -54,5 +45,4 @@ describe("AllBarcodeScanner", () => {
     });
   });
 });
-
 

@@ -2,12 +2,10 @@ import { describe, expect, test } from 'vitest';
 import * as ArrayUtils from "../../ArrayUtils";
 import { Optional } from "../../optional";
 import fc from "fast-check";
-
 const presentIfTrue =
   <T>(f: (t: T) => boolean): ((t: T) => Optional<T>) =>
   (x) =>
     f(x) ? Optional.present(x) : Optional.empty();
-
 describe("mapOptional", () => {
   test("Example", () => {
     const data: Array<
@@ -17,7 +15,6 @@ describe("mapOptional", () => {
       { tag: "hasString", value: "hello" },
       { tag: "hasNumber", value: 3 },
     ];
-
     // note how the type has changed, which it would not have done using filter
     const justNumbers: Array<{ tag: "hasNumber"; value: number }> =
       ArrayUtils.mapOptional(
@@ -25,13 +22,11 @@ describe("mapOptional", () => {
           obj.tag === "hasNumber" ? Optional.present(obj) : Optional.empty(),
         data
       );
-
     expect(justNumbers).toEqual([
       { tag: "hasNumber", value: 4 },
       { tag: "hasNumber", value: 3 },
     ]);
   });
-
   test("Idempotence", () => {
     fc.assert(
       fc.property(
@@ -47,7 +42,6 @@ describe("mapOptional", () => {
       )
     );
   });
-
   test("A function that always returns Optional.empty will always result in an empty array.", () => {
     fc.assert(
       fc.property(fc.array(fc.anything()), (array) => {
@@ -57,7 +51,6 @@ describe("mapOptional", () => {
       })
     );
   });
-
   test("A function that always returns Optional.present will always result in an unchanged array.", () => {
     fc.assert(
       fc.property(fc.array(fc.anything()), (array) => {
@@ -67,7 +60,6 @@ describe("mapOptional", () => {
       })
     );
   });
-
   test("Empty list in, empty list out", () => {
     fc.assert(
       fc.property(
@@ -81,7 +73,6 @@ describe("mapOptional", () => {
       )
     );
   });
-
   test("Length of output will always be less than or equal to length of input.", () => {
     fc.assert(
       fc.property(
@@ -95,5 +86,4 @@ describe("mapOptional", () => {
     );
   });
 });
-
 

@@ -10,17 +10,12 @@ import Sidebar from "../Sidebar";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-
 vi.mock("../Header", () => ({
   default: vi.fn(() => <></>),
 }));
 vi.mock("../Sidebar", () => ({
   default: vi.fn(() => <></>),
 }));
-
-
-
-
 describe("InitialScreen", () => {
   test("Renders correctly", () => {
     render(
@@ -30,11 +25,11 @@ describe("InitialScreen", () => {
         </BrowserRouter>
       </ThemeProvider>
     );
-
     expect(Header).toHaveBeenCalled();
     expect(Sidebar).toHaveBeenCalled();
     expect(screen.getByText("My Bench")).toBeInTheDocument();
     expect(screen.getByText("Containers")).toBeInTheDocument();
     expect(screen.getByText("Samples")).toBeInTheDocument();
   });
+});
 });

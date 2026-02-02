@@ -4,16 +4,10 @@ import {
   render,
 } from "@testing-library/react";
 import NoValue from "../../../components/NoValue";
-
 import DateField from "../DateField";
-
 vi.mock("../../../components/NoValue", () => ({
   default: vi.fn(() => <></>),
 }));
-
-
-
-
 describe("DateField", () => {
   describe("When `null` is passed as the `value` and field is disabled,", () => {
     test("'None' is rendered", () => {
@@ -26,7 +20,6 @@ describe("DateField", () => {
       );
     });
   });
-
   describe("When passed an invalid date string,", () => {
     test("there is an error message shown.", () => {
       const { container } = render(

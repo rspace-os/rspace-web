@@ -6,13 +6,10 @@ import {
 import MoveStore from "../../MoveStore";
 import Search from "../../../models/Search";
 import type { RootStore } from "../../RootStore";
-
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   query: vi.fn(),
-
   }})); // break import cycle
-
 describe("action: setTargetContainer", () => {
   describe("When called, setTargetContainer should", () => {
     /*
@@ -47,8 +44,8 @@ describe("action: setTargetContainer", () => {
         },
       } as unknown as Search;
       await moveStore.setTargetContainer(container);
-
       expect(clearLocationsSpy).toHaveBeenCalledWith(container);
     });
   });
+});
 });

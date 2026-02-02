@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import LocationModel from "../../LocationModel";
 import { makeMockContainer } from "../ContainerModel/mocking";
-
 describe("method: isGreyedOut", () => {
   /*
    * This test asserts every permutation of state that could affect what the
@@ -69,12 +68,10 @@ describe("method: isGreyedOut", () => {
         content,
         parentContainer,
       });
-
       expect(location.isGreyedOut(parentContainer.contentSearch)).toBe(
         isGreyedOut
       );
     }
   );
 });
-
 

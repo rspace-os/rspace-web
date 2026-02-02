@@ -5,10 +5,6 @@ import {
   screen,
 } from "@testing-library/react";
 import OwnersGroupsTable from "../OwnersGroupsTable";
-
-
-
-
 describe("OwnersGroupsTable", () => {
   test("Each name should be a link to the groups page.", () => {
     render(
@@ -24,12 +20,10 @@ describe("OwnersGroupsTable", () => {
         ]}
       />
     );
-
     expect(screen.getByText("A group")).toHaveAttribute(
       "href",
       "/groups/view/1"
     );
   });
 });
-
 

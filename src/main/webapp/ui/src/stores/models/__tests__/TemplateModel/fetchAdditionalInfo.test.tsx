@@ -2,11 +2,9 @@ import { describe, expect, test, vi } from 'vitest';
 import { makeMockTemplate, templateAttrs } from "./mocking";
 import InvApiService from "../../../../common/InvApiService";
 import { AxiosResponse } from "@/common/axios";
-
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   get: () => ({}),
-
   }}));
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
@@ -17,7 +15,6 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   },
 })
 }));
-
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const template = makeMockTemplate();
@@ -30,12 +27,10 @@ describe("fetchAdditionalInfo", () => {
         config: {},
       } as AxiosResponse)
     );
-
     let firstCallDone = false;
     await template.fetchAdditionalInfo().then(() => {
       firstCallDone = true;
     });
-
     await template.fetchAdditionalInfo();
     /*
      * The second call should not have resolved until the first resolved and
@@ -44,5 +39,4 @@ describe("fetchAdditionalInfo", () => {
     expect(firstCallDone).toBe(true);
   });
 });
-
 

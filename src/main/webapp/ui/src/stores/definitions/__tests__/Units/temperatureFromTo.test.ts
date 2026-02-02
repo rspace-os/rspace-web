@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import { temperatureFromTo, CELSIUS, KELVIN, FAHRENHEIT } from "../../Units";
-
 describe("conversions", () => {
   describe("Simple examples", () => {
     test("0°C = 32°F", () => {
@@ -23,5 +22,4 @@ describe("conversions", () => {
     });
   });
 });
-
 

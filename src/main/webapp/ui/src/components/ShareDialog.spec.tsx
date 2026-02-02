@@ -10,7 +10,6 @@ import {
 import { type emptyObject } from "../util/types";
 import * as Jwt from "jsonwebtoken";
 import AxeBuilder from "@axe-core/playwright";
-
 const feature = test.extend<{
   Given: {
     "the dialog is displayed with a document without previous shares": () => Promise<void>;
@@ -106,7 +105,6 @@ const feature = test.extend<{
         const shareDialog = page.getByRole("dialog", { name: /Share/ });
         const saveButton = shareDialog.getByRole("button", { name: /Save/i });
         const doneButton = shareDialog.getByRole("button", { name: /Done/i });
-
         if (await saveButton.isVisible()) {
           await saveButton.click();
         } else if (await doneButton.isVisible()) {
@@ -179,20 +177,16 @@ const feature = test.extend<{
             name: /Select Shared Folder Location/i,
           });
           await expect(folderDialog).toBeVisible();
-
           // Wait for the folder tree to load
           await page.waitForTimeout(1000);
-
           // Click on the existing tree item (alice-bob)
           const treeItem = folderDialog.getByText("alice-bob").first();
           await expect(treeItem).toBeVisible();
           await treeItem.click();
-
           const selectButton = folderDialog.getByRole("button", {
             name: /Select/i,
           });
           await selectButton.click();
-
           // Wait for the folder dialog to close
           await expect(folderDialog).not.toBeVisible();
         },
@@ -283,7 +277,6 @@ const feature = test.extend<{
           await expect(directShareRow.getByRole("cell").nth(3)).toHaveText(
             /A notebook/,
           );
-
           const notebookShareRow = notebookShareTable.getByRole("row").nth(1);
           await expect(notebookShareRow).toBeVisible();
           await expect(
@@ -426,7 +419,6 @@ const feature = test.extend<{
     await use([]);
   },
 });
-
 feature.beforeEach(async ({ router, page, networkRequests }) => {
   page.on("request", (request) => {
     networkRequests.push({
@@ -731,7 +723,6 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       const body: any = (await request.postDataJSON());
       const itemId = body.itemsToShare[0] as number;
       const permission = body.users[0]?.permission as string;
-
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -781,11 +772,9 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     }
   });
 });
-
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
 });
-
 test.describe("ShareDialog", () => {
   test.describe("Renders correctly", () => {
     feature("Renders a dialog", async ({ Given, Then }) => {
@@ -795,7 +784,6 @@ test.describe("ShareDialog", () => {
       await Then["a dialog should be visible"]();
       await Then["there shouldn't be any axe violations"]();
     });
-
     feature(
       "When a document has been shared with another user, there's a table",
       async ({ Given, Then }) => {
@@ -808,7 +796,6 @@ test.describe("ShareDialog", () => {
         await Then["there shouldn't be any axe violations"]();
       },
     );
-
     feature(
       "When a document has been shared with another group, there's a table",
       async ({ Given, Then }) => {
@@ -821,7 +808,6 @@ test.describe("ShareDialog", () => {
         await Then["there shouldn't be any axe violations"]();
       },
     );
-
     /*
      * This is because the UI became too complex to show a table for each document
      */
@@ -833,7 +819,6 @@ test.describe("ShareDialog", () => {
         await Then["there shouldn't be any axe violations"]();
       },
     );
-
     feature(
       "When a document has been shared into a notebook, the implicit shares are shown",
       async ({ Given, Then }) => {
@@ -847,7 +832,6 @@ test.describe("ShareDialog", () => {
       },
     );
   });
-
   test.describe("Creating new shares", () => {
     feature(
       "An unshared document should be sharable with a member of the same group",
@@ -861,7 +845,6 @@ test.describe("ShareDialog", () => {
         Then["a POST request should have been made to create the share"]();
       },
     );
-
     feature(
       "Multiple documents should be sharable with a group",
       async ({ Given, When, Then }) => {
@@ -874,7 +857,6 @@ test.describe("ShareDialog", () => {
         Then["a POST request should have been made to create the share"]();
       },
     );
-
     feature(
       "The same document shouldn't be shareable twice with the same user",
       async ({ Given, Then }) => {
@@ -884,7 +866,6 @@ test.describe("ShareDialog", () => {
         await Then["Bob is disabled in the recipient dropdown"]();
       },
     );
-
     feature(
       "When sharing multiple documents, choosing a recipient who already has access to one of them will share both with default read permission",
       async ({ Given, When, Then }) => {
@@ -901,7 +882,6 @@ test.describe("ShareDialog", () => {
       },
     );
   });
-
   test.describe("Removing shares", () => {
     feature(
       "When the user chooses unshare from the permission menu, it should make a DELETE request",
@@ -917,7 +897,6 @@ test.describe("ShareDialog", () => {
       },
     );
   });
-
   test.describe("Updating shares", () => {
     feature(
       "When the user changes a user's permission from READ to EDIT, it should make a PUT request",
@@ -932,7 +911,6 @@ test.describe("ShareDialog", () => {
         ]();
       },
     );
-
     feature(
       "When the user changes a group's permission from EDIT to read, it should make a PUT request",
       async ({ Given, When, Then }) => {
@@ -948,7 +926,6 @@ test.describe("ShareDialog", () => {
         ]({ newPermission: "READ" });
       },
     );
-
     feature(
       "When the user changes the folder location for a group share, it should make a POST request to move the document",
       async ({ Given, When, Then }) => {
@@ -968,4 +945,5 @@ test.describe("ShareDialog", () => {
       },
     );
   });
+});
 });

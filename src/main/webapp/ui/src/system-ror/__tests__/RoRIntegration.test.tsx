@@ -14,7 +14,6 @@ import invalidRoR from "./json/invalidRor.json";
 import rorNotFound from "./json/rorNotFound.json";
 import rorUpdateSucess from "./json/rorUpdateSuccess.json";
 import "__mocks__/resizeObserver";
-
 const mockAxios = new MockAdapter(axios);
 const getWrapper = () => {
   return render(<RoRIntegration />);
@@ -45,18 +44,15 @@ const setupRoRMocks = (existingGlobalRoRID = "") => {
     .onGet("/system/ror/existingGlobalRoRID")
     .reply(200, existingGlobalRoRID);
 };
-
 beforeEach(() => {
   mockAxios.resetHandlers();
   setupRoRMocks();
 });
-
 const setUpComponent = () => {
   act(() => {
     getWrapper();
   });
 };
-
 async function searchForRoRDetails(term = "https://ror.org/02mhbdp94") {
   const [rorInput] = screen.getAllByRole("textbox", {
     name: "Search Registry",
@@ -70,7 +66,6 @@ async function searchForRoRDetails(term = "https://ror.org/02mhbdp94") {
   });
   fireEvent.click(searchButton);
 }
-
 async function assertRoRDetailsText() {
   await screen.findAllByText(/Universidad de Los Andes/);
   await screen.findAllByText(/Bogotá, Colombia/);
@@ -82,11 +77,9 @@ async function assertRoRDetailsText() {
     screen.getAllByRole("link", { name: "http://www.uniandes.edu.co/" })[0]
   ).toHaveAttribute("href", "http://www.uniandes.edu.co/");
 }
-
 describe("Renders page with ROR data ", () => {
   test("displays page with searchbar when RoR not linked", async () => {
     setUpComponent();
-
     await screen.findAllByText(
       "Research Organization Registry (ROR) Integration"
     );
@@ -110,7 +103,6 @@ describe("Renders page with ROR data ", () => {
     ).toBeInTheDocument();
     await assertRoRDetailsText();
   });
-
   test("displays ROR v2 details on search", async () => {
     setUpComponent();
     await screen.findAllByText(
@@ -121,7 +113,6 @@ describe("Renders page with ROR data ", () => {
     await screen.findByText(/ROR ID found. Click./);
     await assertRoRDetailsText();
   });
-
   test("displays error when invalid ROR entered", async () => {
     setUpComponent();
     await screen.findAllByText(
@@ -131,7 +122,6 @@ describe("Renders page with ROR data ", () => {
     await searchForRoRDetails("https://ror.org/02mhbdp941");
     await screen.findByText(/https:\/\/ror.org\/02mhbdp941 is not a valid ROR/);
   });
-
   test("displays error when ROR details not found", async () => {
     setUpComponent();
     await screen.findAllByText(
@@ -143,4 +133,5 @@ describe("Renders page with ROR data ", () => {
       /ROR ID 'https:\/\/ror.org\/02mhbdp92' does not exist/
     );
   });
+});
 });

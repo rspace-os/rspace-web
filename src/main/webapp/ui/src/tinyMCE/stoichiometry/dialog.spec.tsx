@@ -6,35 +6,27 @@ import {
 } from "./dialog.story";
 import * as Jwt from "jsonwebtoken";
 import AxeBuilder from "@axe-core/playwright";
-
 const createOnTableCreatedSpy = () => {
   let called = false;
-
   const handler = () => {
     called = true;
   };
-
   const hasBeenCalled = () => called;
-
   return {
     handler,
     hasBeenCalled,
   };
 };
-
 const createOnChangesUpdateSpy = () => {
   let currentValue = false;
   let callCount = 0;
-
   const handler = (hasChanges: boolean) => {
     currentValue = hasChanges;
     callCount++;
   };
-
   const getCurrentValue = () => currentValue;
   const getCallCount = () => callCount;
   const hasBeenCalled = () => callCount > 0;
-
   return {
     handler,
     getCurrentValue,
@@ -42,37 +34,28 @@ const createOnChangesUpdateSpy = () => {
     hasBeenCalled,
   };
 };
-
 const createOnSaveSpy = () => {
   let called = false;
-
   const handler = () => {
     called = true;
   };
-
   const hasBeenCalled = () => called;
-
   return {
     handler,
     hasBeenCalled,
   };
 };
-
 const createOnDeleteSpy = () => {
   let called = false;
-
   const handler = () => {
     called = true;
   };
-
   const hasBeenCalled = () => called;
-
   return {
     handler,
     hasBeenCalled,
   };
 };
-
 const feature = test.extend<{
   Given: {
     "the dialog is open without a stoichiometry table": ({
@@ -148,7 +131,6 @@ const feature = test.extend<{
       },
       "the user edits a cell in the table": async () => {
         const table = page.getByRole("grid");
-
         const indexOfNotesColumn = await Promise.all(
           (await table.getByRole("columnheader").all()).map((cell) =>
             cell.textContent(),
@@ -156,14 +138,12 @@ const feature = test.extend<{
         ).then((textOfCells) =>
           textOfCells.findIndex((text) => /notes/i.test(text ?? "")),
         );
-
         await table
           .getByRole("row")
           .nth(1)
           .getByRole("gridcell")
           .nth(indexOfNotesColumn)
           .dblclick();
-
         // Wait for input to appear and be focused
         const input = page.locator('input[type="text"]');
         await input.waitFor({ state: "visible" });
@@ -284,7 +264,6 @@ const feature = test.extend<{
     await use([]);
   },
 });
-
 feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
@@ -302,7 +281,6 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       }),
     });
   });
-
   const mockResponse = {
     id: 3,
     revision: 1,
@@ -417,10 +395,8 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       },
     ],
   };
-
   await router.route("/api/v1/stoichiometry*", (route) => {
     const method = route.request().method();
-
     if (method === "GET" || method === "POST" || method === "PUT") {
       return route.fulfill({
         status: 200,
@@ -428,7 +404,6 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         body: JSON.stringify(mockResponse),
       });
     }
-
     if (method === "DELETE") {
       return route.fulfill({
         status: 200,
@@ -436,10 +411,8 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         body: JSON.stringify({ success: true }),
       });
     }
-
     throw new Error("Other methods are not supported");
   });
-
   await router.route("/integration/integrationInfo?name=CHEMISTRY", (route) => {
     return route.fulfill({
       status: 200,
@@ -459,7 +432,6 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       }),
     });
   });
-
   page.on("request", (request) => {
     networkRequests.push({
       url: new URL(request.url()),
@@ -468,11 +440,9 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     });
   });
 });
-
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
 });
-
 test.describe("Stoichiometry Dialog", () => {
   feature(
     "shows calculate button when no table is present",
@@ -481,7 +451,6 @@ test.describe("Stoichiometry Dialog", () => {
       await Then["the calculate button is visible"]();
     },
   );
-
   feature(
     "displays stoichiometry table when data is available",
     async ({ Given, Then }) => {
@@ -489,18 +458,15 @@ test.describe("Stoichiometry Dialog", () => {
       await Then["the table is displayed"]();
     },
   );
-
   feature("Has no accessibility violations", async ({ Given, Then }) => {
     await Given["the dialog is open with a stoichiometry table"]();
     await Then["there shouldn't be any axe violations"]();
   });
-
   feature("supports high-contrast mode", async ({ Given, Then, page }) => {
     page.emulateMedia({ contrast: "more" });
     await Given["the dialog is open with a stoichiometry table"]();
     await Then["there shouldn't be any axe violations"]();
   });
-
   feature(
     "invokes callback when table is successfully created",
     async ({ Given, When, Then }) => {
@@ -515,7 +481,6 @@ test.describe("Stoichiometry Dialog", () => {
       });
     },
   );
-
   feature(
     "makes a POST API call when creating a new table",
     async ({ Given, When, Then }) => {
@@ -527,7 +492,6 @@ test.describe("Stoichiometry Dialog", () => {
       ]();
     },
   );
-
   feature(
     "does not show save button when table has not been modified",
     async ({ Given, Then }) => {
@@ -536,7 +500,6 @@ test.describe("Stoichiometry Dialog", () => {
       await Then["the save button should not be visible"]();
     },
   );
-
   feature(
     "shows save button when table data is modified by editing a cell",
     async ({ Given, When, Then }) => {
@@ -546,7 +509,6 @@ test.describe("Stoichiometry Dialog", () => {
       await Then["the save button should be visible"]();
     },
   );
-
   feature(
     "shows save button when limiting reagent is changed",
     async ({ Given, When, Then }) => {
@@ -556,7 +518,6 @@ test.describe("Stoichiometry Dialog", () => {
       await Then["the save button should be visible"]();
     },
   );
-
   feature(
     "hides save button after saving changes",
     async ({ Given, When, Then }) => {
@@ -567,7 +528,6 @@ test.describe("Stoichiometry Dialog", () => {
       await Then["the save button should not be visible"]();
     },
   );
-
   feature(
     "makes a PUT API call when saving changes to the table",
     async ({ Given, When, Then }) => {
@@ -580,7 +540,6 @@ test.describe("Stoichiometry Dialog", () => {
       ]();
     },
   );
-
   feature(
     "shows delete button when table is present",
     async ({ Given, Then }) => {
@@ -589,7 +548,6 @@ test.describe("Stoichiometry Dialog", () => {
       await Then["the delete button should be visible"]();
     },
   );
-
   feature(
     "shows confirmation dialog when delete button is clicked",
     async ({ Given, When, Then }) => {
@@ -599,7 +557,6 @@ test.describe("Stoichiometry Dialog", () => {
       await Then["the confirmation dialog should be displayed"]();
     },
   );
-
   feature(
     "makes a DELETE API call and hides table when deletion is confirmed",
     async ({ Given, When, Then }) => {
@@ -613,4 +570,5 @@ test.describe("Stoichiometry Dialog", () => {
       await Then["the table should be hidden"]();
     },
   );
+});
 });

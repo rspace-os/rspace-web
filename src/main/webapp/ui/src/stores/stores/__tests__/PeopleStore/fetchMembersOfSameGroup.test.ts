@@ -4,9 +4,6 @@ import * as PersonMocking from "../../../models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../models/PersonModel";
 import { runInAction } from "mobx";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
-
-
-
 vi.mock("../../../../common/ElnApiService", () => ({
   default: {
   get: () => {
@@ -23,9 +20,7 @@ vi.mock("../../../../common/ElnApiService", () => ({
       },
     });
   },
-
   }}));
-
 describe("fetchMembersOfSameGroup", () => {
   test("Error message should be returned as promise.reject", async () => {
     const restoreConsole = silenceConsole(["error"], [/./]);
@@ -42,4 +37,5 @@ describe("fetchMembersOfSameGroup", () => {
       restoreConsole();
     }
   });
+});
 });

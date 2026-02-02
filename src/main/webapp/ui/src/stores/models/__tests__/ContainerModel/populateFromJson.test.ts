@@ -2,12 +2,10 @@ import { test, describe, expect, vi } from 'vitest';
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
 import { containerAttrs } from "./mocking";
-
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({})
 }));
-
 describe("action: populateFromJson", () => {
   describe("When called, it should", () => {
     test("not use the factory with which it was instantiated.", () => {
@@ -17,7 +15,6 @@ describe("action: populateFromJson", () => {
         .mockImplementation(
           (attrs) => new ContainerModel(factory, attrs as ContainerAttrs)
         );
-
       const attrs = (): ContainerAttrs => ({
         ...containerAttrs(),
         locations: [
@@ -29,17 +26,12 @@ describe("action: populateFromJson", () => {
           },
         ],
       });
-
       const container = factory.newRecord(attrs());
       expect(newRecordSpy).toHaveBeenCalled();
-
       newRecordSpy.mockClear();
-
       container.populateFromJson(mockFactory(), attrs(), undefined);
-
       expect(newRecordSpy).not.toHaveBeenCalled();
     });
   });
 });
-
 

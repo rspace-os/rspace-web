@@ -1,19 +1,16 @@
 import { describe, expect, test, vi } from 'vitest';
-
 import CoreFetcher from "../../CoreFetcher";
 import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";
 import { type Factory } from "../../../../definitions/Factory";
 import InvApiService from "../../../../../common/InvApiService";
 import "../../../../../__tests__/assertUrlSearchParams";
 import { AxiosResponse } from "axios";
-
 vi.mock("../../../../stores/RootStore", () => ({
   default: () => ({
   default: {
   uiStore: {
     addAlert: () => {},
   },
-
   }})
 }));
 vi.mock("../../../../../common/InvApiService", () => ({
@@ -33,9 +30,7 @@ vi.mock("../../../../../common/InvApiService", () => ({
         })
       )
   ),
-
   }}));
-
 describe("search", () => {
   describe("When a new search is performed,", () => {
     test("a new factory should be created.", async () => {
@@ -45,7 +40,6 @@ describe("search", () => {
       });
       const fetcher = new CoreFetcher(factory, null);
       await fetcher.search(null, () => {});
-
       expect(mockNewFactory).toHaveBeenCalled();
     });
     test("and a page size is not specified, then 10 is passed in API call.", async () => {
@@ -60,13 +54,11 @@ describe("search", () => {
             config: {} as any,
           })
         );
-
       const mockNewFactory = vi.fn<() => Factory>().mockReturnValue({} as Factory);
       const factory = mockFactory({
         newFactory: mockNewFactory,
       });
       const fetcher = new CoreFetcher(factory, null);
-
       await fetcher.search({}, () => {});
       expect(querySpy).toHaveBeenCalledWith(
         "containers",
@@ -75,5 +67,4 @@ describe("search", () => {
     });
   });
 });
-
 

@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { MoveDialogStory } from "./MoveDialog.story";
 import * as Jwt from "jsonwebtoken";
-
 const feature = test.extend<{
   Given: {
     "the move dialog is mounted": () => Promise<void>;
@@ -35,7 +34,6 @@ const feature = test.extend<{
     await use([]);
   },
 });
-
 feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/session/ajax/analyticsProperties", (route) => {
     return route.fulfill({
@@ -97,19 +95,17 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       }),
     });
   });
-
   page.on("request", (request) => {
     networkRequests.push(new URL(request.url()));
   });
 });
-
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
 });
-
 test.describe("MoveDialog", () => {
   feature("Should request only folders", async ({ Given, Then, page }) => {
     await Given["the move dialog is mounted"]();
     Then["the API should be called with foldersOnly=true"]();
   });
+});
 });

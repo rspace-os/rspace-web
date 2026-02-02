@@ -2,7 +2,6 @@ import { describe, expect, test, vi } from 'vitest';
 import { makeMockSample, sampleAttrs } from "./mocking";
 import { makeMockTemplate } from "../TemplateModel/mocking";
 import InvApiService from "../../../../common/InvApiService";
-
 const mockRootStore = {
   unitStore: {
     assertValidUnitId: () => {},
@@ -17,7 +16,6 @@ const mockRootStore = {
     getTemplate: vi.fn().mockRejectedValue(new Error("Test error")),
   },
 };
-
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
     query: () => ({}),
@@ -26,14 +24,12 @@ vi.mock("../../../../common/InvApiService", () => ({
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => mockRootStore,
 }));
-
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const template = makeMockTemplate();
     mockRootStore.searchStore.getTemplate.mockImplementation(() =>
       Promise.resolve(template)
     );
-
     const sample = makeMockSample({
       templateId: 1,
     });
@@ -49,12 +45,10 @@ describe("fetchAdditionalInfo", () => {
         config: {} as any,
       })
     );
-
     let firstCallDone = false;
     void sample.fetchAdditionalInfo().then(() => {
       firstCallDone = true;
     });
-
     await sample.fetchAdditionalInfo();
     /*
      * The second call should not have resolved until the first resolved and

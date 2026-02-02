@@ -17,7 +17,6 @@ import { ThemeProvider } from "@mui/material/styles";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
-
 const mockAxios = new MockAdapter(axios);
 const uiNavigationData = {
   userDetails: {
@@ -39,9 +38,7 @@ const uiNavigationData = {
   operatedAs: false,
   nextMaintenance: null,
 };
-
 let restoreConsole = () => {};
-
 beforeEach(() => {
   vi.clearAllMocks();
   mockAxios.reset();
@@ -56,29 +53,23 @@ beforeEach(() => {
     ["The response from this request is being discarded"]
   );
 });
-
 afterEach(() => {
   restoreConsole();
 });
-
-
 describe("DMPDialog", () => {
   test("Label is shown when no DMPs are returned.", async () => {
     mockAxios
       .onGet("/apps/dmptool/plans?scope=MINE")
       .reply(200, { data: { items: [] }, success: true });
-
     render(
       <ThemeProvider theme={materialTheme}>
         <DMPDialog open setOpen={() => {}} />
       </ThemeProvider>
     );
-
     await waitFor(() => {
       expect(screen.getByText("No DMPs")).toBeVisible();
     });
   });
-
   test("The latest request is always the one that's shown.", async () => {
     mockAxios.onGet("/apps/dmptool/plans?scope=MINE").reply(200, {
       data: {
@@ -86,7 +77,6 @@ describe("DMPDialog", () => {
       },
       success: true,
     });
-
     let resolvePublic: (() => void) | null = null;
     const publicResponse = new Promise<void>((resolve) => {
       resolvePublic = resolve;
@@ -104,29 +94,24 @@ describe("DMPDialog", () => {
         },
       ]),
     );
-
     render(
       <ThemeProvider theme={materialTheme}>
         <DMPDialog open setOpen={() => {}} />
       </ThemeProvider>
     );
-
     // public will take a second to return a listing
     fireEvent.click(screen.getByRole("radio", { name: "Public" }));
-
     // but mine will return immediately
     fireEvent.click(screen.getByRole("radio", { name: "Mine" }));
-
     await waitFor(() => {
       expect(screen.getByText("mine")).toBeVisible();
     });
-
     await act(async () => {
       resolvePublic?.();
     });
-
     await waitFor(() => {
       expect(screen.queryByText("public")).not.toBeInTheDocument();
     });
   });
+});
 });

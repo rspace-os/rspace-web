@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import { invertObject } from "../../Util";
-
 describe("invertObject", () => {
   test("Simple example", () => {
     expect(
@@ -14,5 +13,4 @@ describe("invertObject", () => {
     });
   });
 });
-
 

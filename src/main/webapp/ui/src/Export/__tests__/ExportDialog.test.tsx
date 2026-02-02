@@ -18,7 +18,6 @@ import axios from "@/common/axios";
 import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
 import Alerts from "../../components/Alerts/Alerts";
 import userEvent from "@testing-library/user-event";
-
 vi.mock("react-transition-group", () => ({
   Transition: ({ children, in: inProp }: { children: any; in: boolean }) =>
     typeof children === "function"
@@ -27,7 +26,6 @@ vi.mock("react-transition-group", () => ({
   CSSTransition: ({ children }: { children: any }) => children ?? null,
   TransitionGroup: ({ children }: { children: any }) => children ?? null,
 }));
-
 window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
@@ -35,12 +33,7 @@ window.fetch = vi.fn(() =>
     json: () => Promise.resolve({}),
   } as Response)
 );
-
 const mockAxios = new MockAdapter(axios);
-
-
-
-
 const arbUserSelection = fc.record<{
   type: "user";
   username: string;
@@ -50,7 +43,6 @@ const arbUserSelection = fc.record<{
   username: fc.string({ minLength: 1 }),
   exportIds: fc.constant([]),
 });
-
 const arbGroupSelection = fc.record<{
   type: "group";
   groupId: string;
@@ -62,7 +54,6 @@ const arbGroupSelection = fc.record<{
   groupName: fc.string({ minLength: 1 }),
   exportIds: fc.constant([]),
 });
-
 const arbDocumentSelection = (args: { max?: number } = {}) =>
   fc.integer({ min: 1, max: args.max ?? 20 }).chain((n) =>
     fc.record<{
@@ -86,7 +77,6 @@ const arbDocumentSelection = (args: { max?: number } = {}) =>
       }),
     })
   );
-
 function renderExportDialog({
   allowFileStores,
 }: { allowFileStores?: boolean } = {}): {
@@ -125,7 +115,6 @@ function renderExportDialog({
   if (!setProps) throw new Error("setProps is not initialised");
   return { setProps };
 }
-
 describe("ExportDialog", () => {
   mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
   test("Should be renderable", () => {
@@ -141,10 +130,8 @@ describe("ExportDialog", () => {
         allowFileStores={true}
       />
     );
-
     expect(true).toBe(true);
   });
-
   describe("Validations should be enforced.", () => {
     describe("Exporting with filestores links", () => {
       test("but without being logged in should show a warning.", async () => {
@@ -152,7 +139,6 @@ describe("ExportDialog", () => {
         mockAxios
           .onPost("/nfsExport/ajax/createQuickExportPlan")
           .reply(200, { ...CREATE_QUICK_EXPORT_PLAN });
-
         const { setProps } = renderExportDialog({ allowFileStores: true });
         act(() => {
           setProps({
@@ -165,19 +151,15 @@ describe("ExportDialog", () => {
             },
           });
         });
-
         await user.click(
           screen.getByRole("radio", {
             name: /^.ZIP bundle containing .HTML files/,
           })
         );
-
         await user.click(
           screen.getByRole("checkbox", { name: "Include filestore links" })
         );
-
         await user.click(screen.getByRole("button", { name: "Next" }));
-
         await waitFor(() => {
           expect(
             screen.getByText(
@@ -185,9 +167,7 @@ describe("ExportDialog", () => {
             )
           ).toBeVisible();
         });
-
         await user.click(screen.getByRole("button", { name: "Next" }));
-
         await waitFor(() => {
           expect(
             screen.getByText(
@@ -195,9 +175,7 @@ describe("ExportDialog", () => {
             )
           ).toBeVisible();
         });
-
         await user.click(screen.getByRole("button", { name: "Export" }));
-
         await waitFor(() => {
           expect(
             within(screen.getByRole("dialog")).getByText(
@@ -206,7 +184,6 @@ describe("ExportDialog", () => {
           ).toBeVisible();
         });
       });
-
       test("but without scanning should show a warning.", async () => {
         const user = userEvent.setup();
         /*
@@ -223,7 +200,6 @@ describe("ExportDialog", () => {
             },
           ],
         });
-
         const { setProps } = renderExportDialog({ allowFileStores: true });
         act(() => {
           setProps({
@@ -236,19 +212,15 @@ describe("ExportDialog", () => {
             },
           });
         });
-
         await user.click(
           screen.getByRole("radio", {
             name: /^.ZIP bundle containing .HTML files/,
           })
         );
-
         await user.click(
           screen.getByRole("checkbox", { name: "Include filestore links" })
         );
-
         await user.click(screen.getByRole("button", { name: "Next" }));
-
         await waitFor(() => {
           expect(
             screen.getByText(
@@ -256,9 +228,7 @@ describe("ExportDialog", () => {
             )
           ).toBeVisible();
         });
-
         await user.click(screen.getByRole("button", { name: "Next" }));
-
         await waitFor(() => {
           expect(
             screen.getByText(
@@ -266,7 +236,6 @@ describe("ExportDialog", () => {
             )
           ).toBeVisible();
         });
-
         await waitFor(() => {
           expect(
             screen.getByText(
@@ -274,9 +243,7 @@ describe("ExportDialog", () => {
             )
           ).toBeVisible();
         });
-
         await user.click(screen.getByRole("button", { name: "Export" }));
-
         await waitFor(() => {
           expect(
             within(screen.getByRole("dialog")).getByText(
@@ -287,7 +254,6 @@ describe("ExportDialog", () => {
       });
     });
   });
-
   describe("Controlled vocabulary terms", () => {
     // passes on its own, fails when run together
     test("Tags should be pre-populated from the tags on the documents", async () => {
@@ -338,7 +304,6 @@ describe("ExportDialog", () => {
           },
         });
       });
-
       await user.click(await screen.findByRole("radio", { name: /PDF/ }));
       await user.click(
         screen.getByRole("checkbox", { name: /Export to a repository/ })
@@ -347,7 +312,6 @@ describe("ExportDialog", () => {
       await screen.findByRole("textbox", { name: /File name/ });
       await user.click(screen.getByRole("button", { name: /Next/ }));
       await screen.findByRole("radio", { name: /Zenodo/ });
-
       expect(
         await screen.findByRole("button", { name: /BT-20/ })
       ).toBeVisible();
@@ -382,13 +346,11 @@ describe("ExportDialog", () => {
                 },
               });
             });
-
             await user.click(
               screen.getByRole("radio", {
                 name: /^.ZIP bundle containing .XML files/,
               })
             );
-
             if (setAllVersionsSwitch) {
               await user.click(
                 await screen.findByRole("checkbox", {
@@ -396,21 +358,16 @@ describe("ExportDialog", () => {
                 })
               );
             }
-
             await user.click(screen.getByRole("button", { name: "Next" }));
-
             await waitFor(() => {
               expect(
                 screen.getByRole("button", { name: "Export" })
               ).toBeVisible();
             });
-
             fireEvent.click(screen.getByRole("button", { name: "Export" }));
-
             await waitFor(() => {
               expect(screen.getByText(/submitted to the server/)).toBeVisible();
             });
-
             expect(mockAxios.history.post.length).toBe(1);
             expect(
               JSON.parse(mockAxios.history.post[0].data).exportConfig
@@ -447,7 +404,6 @@ describe("ExportDialog", () => {
           },
         });
       });
-
       fireEvent.click(await screen.findByRole("radio", { name: /^.DOC/ }));
       fireEvent.click(screen.getByRole("button", { name: "Next" }));
       await waitFor(() => expect(screen.getByRole("combobox")).toBeVisible());
@@ -457,12 +413,10 @@ describe("ExportDialog", () => {
         screen.getByRole("checkbox", { name: "Set LETTER as default." })
       );
       mockAxios.resetHistory();
-
       fireEvent.click(screen.getByRole("button", { name: "Export" }));
       await waitFor(() => {
         expect(screen.getByText(/submitted to the server/)).toBeVisible();
       });
-
       expect(mockAxios.history.post.length).toBe(1);
       expect(
         JSON.parse(mockAxios.history.post[0].data).exportConfig
@@ -473,7 +427,6 @@ describe("ExportDialog", () => {
       ).toBe("LETTER");
     });
   });
-
   describe("When the dialog is rendered it is passed a selection.", () => {
     mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, []);
     describe("On the second page of the dialog the name field should be set accordingly.", () => {
@@ -498,11 +451,9 @@ describe("ExportDialog", () => {
                   await user.click(
                     screen.getByRole("button", { name: "Next" })
                   );
-
                   await waitFor(() => {
                     expect(screen.getByRole("textbox")).toBeVisible();
                   });
-
                   expect(screen.getByRole("textbox")).toHaveValue(
                     selection.exportNames[0].trimStart()
                   );
@@ -523,11 +474,9 @@ describe("ExportDialog", () => {
                 });
                 await user.click(screen.getByRole("radio", { name: /^PDF/ }));
                 await user.click(screen.getByRole("button", { name: "Next" }));
-
                 await waitFor(() => {
                   expect(screen.getByRole("textbox")).toBeVisible();
                 });
-
                 expect(screen.getByRole("textbox")).toHaveValue(
                   selection.groupName + " - all work"
                 );
@@ -547,11 +496,9 @@ describe("ExportDialog", () => {
                 });
                 fireEvent.click(screen.getByRole("radio", { name: /^PDF/ }));
                 await user.click(screen.getByRole("button", { name: "Next" }));
-
                 await waitFor(() => {
                   expect(screen.getByRole("textbox")).toBeVisible();
                 });
-
                 expect(screen.getByRole("textbox")).toHaveValue(
                   selection.username + " - all work"
                 );
@@ -578,19 +525,15 @@ describe("ExportDialog", () => {
                   act(() => {
                     setProps({ open: true, selection });
                   });
-
                   fireEvent.click(
                     await screen.findByRole("radio", { name: /^.DOC/ })
                   );
-
                   await user.click(
                     screen.getByRole("button", { name: "Next" })
                   );
-
                   await waitFor(() => {
                     expect(screen.getByRole("textbox")).toBeVisible();
                   });
-
                   expect(screen.getByRole("textbox")).toHaveValue(
                     selection.exportNames[0].trimStart()
                   );
@@ -617,7 +560,6 @@ describe("ExportDialog", () => {
                 mockAxios
                   .onGet("/export/ajax/defaultPDFConfig")
                   .reply(200, { data: { pageSize } });
-
                 const { setProps } = renderExportDialog();
                 act(() => {
                   setProps({ open: true, selection });
@@ -652,7 +594,6 @@ describe("ExportDialog", () => {
                 mockAxios
                   .onGet("/export/ajax/defaultPDFConfig")
                   .reply(200, { data: { pageSize } });
-
                 const { setProps } = renderExportDialog();
                 act(() => {
                   setProps({ open: true, selection });
@@ -675,4 +616,5 @@ describe("ExportDialog", () => {
       );
     });
   });
+});
 });

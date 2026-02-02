@@ -7,14 +7,9 @@ import {
 import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import fc from "fast-check";
-
 import Layout2x1 from "../Layout2x1";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-
-
-
-
 const fooBarTest = ({
   isSingleColumnLayout,
   visiblePanel,
@@ -44,7 +39,6 @@ const fooBarTest = ({
   expect(screen.getByText("bar")).toBeInTheDocument();
   if (showBar) expect(screen.getByText("bar")).toBeVisible();
 };
-
 describe("Layout2x1", () => {
   /*
    * When isSingleColumnLayout is false (when the viewport is wide enough) both
@@ -66,7 +60,6 @@ describe("Layout2x1", () => {
         showBar: true,
       }));
   });
-
   /*
    * When isSingleColumnLayout is true (when the viewport is not wide enough)
    * only one side of the 2x1 layout is shown, based on `visiblePanel`.
@@ -87,7 +80,6 @@ describe("Layout2x1", () => {
         showBar: true,
       }));
   });
-
   describe("When isSingleColumnLayout = true and the content is the same", () => {
     test("both sides show the same.", () => {
       fc.assert(
@@ -109,5 +101,4 @@ describe("Layout2x1", () => {
     });
   });
 });
-
 

@@ -7,26 +7,19 @@ import {
 import ZenodoRepo from "../ZenodoRepo";
 import "../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
-
 beforeEach(() => {
   vi.clearAllMocks();
-
-   
   global.fetch = () =>
     Promise.resolve({
       json: () => Promise.resolve([]),
     } as Response);
 });
-
-
 describe("ZenodoRepo", () => {
   test("Upon editing, title should be set to the entered value.", async () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
-
     const Wrapper = ({ onChange }: { onChange: typeof handleChange }) => {
       const [title, setTitle] = React.useState("");
-
       return (
         <ZenodoRepo
           handleChange={(e) => {
@@ -50,11 +43,8 @@ describe("ZenodoRepo", () => {
         />
       );
     };
-
     render(<Wrapper onChange={handleChange} />);
-
     await user.type(screen.getByRole("textbox", { name: /Title/ }), "foo");
-
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({
@@ -64,14 +54,11 @@ describe("ZenodoRepo", () => {
       })
     );
   });
-
   test("Upon editing, description should be set to the entered value.", async () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
-
     const Wrapper = ({ onChange }: { onChange: typeof handleChange }) => {
       const [description, setDescription] = React.useState("");
-
       return (
         <ZenodoRepo
           handleChange={(e) => {
@@ -95,14 +82,11 @@ describe("ZenodoRepo", () => {
         />
       );
     };
-
     render(<Wrapper onChange={handleChange} />);
-
     await user.type(
       screen.getByRole("textbox", { name: /Description/ }),
       "foo"
     );
-
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({
@@ -112,10 +96,8 @@ describe("ZenodoRepo", () => {
       })
     );
   });
-
   test("Author and Contact should be set automatically to dummy values.", () => {
     const updatePeople = vi.fn();
-
     render(
       <ZenodoRepo
         handleChange={() => {}}
@@ -135,7 +117,6 @@ describe("ZenodoRepo", () => {
         fetchingTags={false}
       />
     );
-
     expect(updatePeople).toHaveBeenLastCalledWith(
       expect.arrayContaining([
         {
@@ -151,10 +132,8 @@ describe("ZenodoRepo", () => {
       ])
     );
   });
-
   test("Subject should be set automatically to a dummy value.", () => {
     const handleChange = vi.fn();
-
     render(
       <ZenodoRepo
         handleChange={handleChange}
@@ -174,7 +153,6 @@ describe("ZenodoRepo", () => {
         fetchingTags={false}
       />
     );
-
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({
@@ -185,5 +163,4 @@ describe("ZenodoRepo", () => {
     );
   });
 });
-
 

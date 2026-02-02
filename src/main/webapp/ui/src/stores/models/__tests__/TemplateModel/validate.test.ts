@@ -1,9 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import { makeMockTemplate } from "./mocking";
 import fc from "fast-check";
-
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
-
 describe("method: validate", () => {
   describe("Asserts subSampleAlias", () => {
     test("Returns false when the alias is a single character.", () => {
@@ -12,64 +10,53 @@ describe("method: validate", () => {
           const template = makeMockTemplate({
             subSampleAlias: { alias, plural: "validPlural" },
           });
-
           expect(template.validate().isOk).toBe(false);
         })
       );
     });
-
     test("Returns false when the plural is a single character.", () => {
       fc.assert(
         fc.property(fc.string({ maxLength: 1 }), (plural) => {
           const template = makeMockTemplate({
             subSampleAlias: { alias: "validAlias", plural },
           });
-
           expect(template.validate().isOk).toBe(false);
         })
       );
     });
-
     test("Returns false when alias is more than 30 characters.", () => {
       fc.assert(
         fc.property(fc.string({ minLength: 31 }), (alias) => {
           const template = makeMockTemplate({
             subSampleAlias: { alias, plural: "validPlural" },
           });
-
           expect(template.validate().isOk).toBe(false);
         })
       );
     });
-
     test("Returns false when plural is more than 30 characters.", () => {
       fc.assert(
         fc.property(fc.string({ minLength: 31 }), (plural) => {
           const template = makeMockTemplate({
             subSampleAlias: { alias: "validAlias", plural },
           });
-
           expect(template.validate().isOk).toBe(false);
         })
       );
     });
   });
-
   describe("Does not assert a positive quantity", () => {
     test("Return true when quantity is explicitly null.", () => {
       const template = makeMockTemplate({
         quantity: null,
       });
-
       expect(template.validate().isOk).toBe(true);
     });
     test("Return true when quantity is implicitly null.", () => {
       const template = makeMockTemplate({});
-
       expect(template.validate().isOk).toBe(true);
     });
   });
-
   describe("All field names should be unique.", () => {
     test("Returns false when field names are duplicated.", () => {
       fc.assert(
@@ -94,7 +81,6 @@ describe("method: validate", () => {
               },
             ],
           });
-
           expect(template.validate().isOk).toBe(false);
         })
       );

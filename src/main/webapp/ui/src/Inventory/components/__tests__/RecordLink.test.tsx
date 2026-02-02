@@ -14,10 +14,6 @@ import { storesContext } from "../../../stores/stores-context";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 import userEvent from "@testing-library/user-event";
-
-
-
-
 describe("RecordLink", () => {
   test("Clicking a link to a bench should show the search results.", async () => {
     const user = userEvent.setup();
@@ -64,5 +60,4 @@ describe("RecordLink", () => {
     expect(spy).toHaveBeenCalledWith("right");
   });
 });
-
 

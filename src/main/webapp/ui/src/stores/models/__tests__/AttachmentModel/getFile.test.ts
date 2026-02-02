@@ -2,11 +2,9 @@ import { describe, expect, test, vi } from 'vitest';
 import { ExistingAttachment } from "../../AttachmentModel";
 import ApiService from "../../../../common/InvApiService";
 import { AxiosResponse } from "@/common/axios";
-
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({}),
 })); // break import cycle
-
 describe("getFile", () => {
   test("Should memoise the result, i.e. only fetch the file once.", async () => {
     const attachment = new ExistingAttachment(
@@ -30,7 +28,6 @@ describe("getFile", () => {
         config: {} as unknown,
       } as AxiosResponse)
     );
-
     await attachment.getFile();
     await attachment.getFile();
     expect(spy).toHaveBeenCalledTimes(1);

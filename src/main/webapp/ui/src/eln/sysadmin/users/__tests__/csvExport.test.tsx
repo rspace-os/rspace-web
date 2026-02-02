@@ -14,19 +14,12 @@ import axios from "@/common/axios";
 import USER_LISTING from "./userListing.json";
 import PDF_CONFIG from "./pdfConfig.json";
 import userEvent from "@testing-library/user-event";
-
 // Replace JSDOM's Blob with node's so that we have .text()
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-member-access
 window.Blob = require("node:buffer").Blob;
-
 // @ts-expect-error RS is legacy
 window.RS = { newFileStoresExportEnabled: false };
-
 const mockAxios = new MockAdapter(axios);
-
-
-
-
 describe("CSV Export", () => {
   describe("Selection", () => {
     test("When no rows are selected, every row of the current page should be included in the export.", async () => {
@@ -38,17 +31,13 @@ describe("CSV Export", () => {
       });
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = vi.fn();
-
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
-
       mockAxios
         .onGet("/export/ajax/defaultPDFConfig")
         .reply(200, { ...PDF_CONFIG });
-
       mockAxios.onGet("/analyticsProperties").reply(200, {
         analyticsEnabled: false,
       });
-
       render(
         <StyledEngineProvider injectFirst>
           <ThemeProvider theme={materialTheme}>
@@ -56,20 +45,17 @@ describe("CSV Export", () => {
           </ThemeProvider>
         </StyledEngineProvider>,
       );
-
       await user.click(await screen.findByRole("button", { name: /Export/ }));
       await user.click(
         await screen.findByRole("menuitem", {
           name: /Export this page of rows to CSV/,
         }),
       );
-
       expect(createObjectURL).toHaveBeenCalled();
       if (typeof blob === "undefined")
         throw new Error("Impossible, because createObjectURL has been called");
       expect((await blob.text()).split("\n").length).toBe(11);
     });
-
     test("When one rows is selected, just it should be included in the csv export.", async () => {
       const user = userEvent.setup();
       let blob: Blob | undefined;
@@ -79,17 +65,13 @@ describe("CSV Export", () => {
       });
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = vi.fn();
-
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
-
       mockAxios
         .onGet("/export/ajax/defaultPDFConfig")
         .reply(200, { ...PDF_CONFIG });
-
       mockAxios.onGet("/analyticsProperties").reply(200, {
         analyticsEnabled: false,
       });
-
       render(
         <StyledEngineProvider injectFirst>
           <ThemeProvider theme={materialTheme}>
@@ -97,20 +79,17 @@ describe("CSV Export", () => {
           </ThemeProvider>
         </StyledEngineProvider>,
       );
-
       const checkboxes = await screen.findAllByRole("checkbox", {
         name: /Select row/,
       });
       expect(checkboxes.length).toBe(10);
       await user.click(checkboxes[0]);
-
       await user.click(screen.getByRole("button", { name: /Export/ }));
       await user.click(
         await screen.findByRole("menuitem", {
           name: /Export selected rows to CSV/,
         }),
       );
-
       expect(createObjectURL).toHaveBeenCalled();
       if (typeof blob === "undefined")
         throw new Error("Impossible, because createObjectURL has been called");
@@ -127,13 +106,10 @@ describe("CSV Export", () => {
       });
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = vi.fn();
-
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
-
       mockAxios
         .onGet("/export/ajax/defaultPDFConfig")
         .reply(200, { ...PDF_CONFIG });
-
       render(
         <StyledEngineProvider injectFirst>
           <ThemeProvider theme={materialTheme}>
@@ -141,7 +117,6 @@ describe("CSV Export", () => {
           </ThemeProvider>
         </StyledEngineProvider>,
       );
-
       await user.click(
         await screen.findByRole("button", { name: /Select columns/ }),
       );
@@ -157,14 +132,12 @@ describe("CSV Export", () => {
           },
         })
       ).length;
-
       await user.click(screen.getByRole("button", { name: /Export/ }));
       await user.click(
         await screen.findByRole("menuitem", {
           name: /Export this page of rows to CSV/,
         }),
       );
-
       expect(createObjectURL).toHaveBeenCalled();
       if (typeof blob === "undefined")
         throw new Error("Impossible, because createObjectURL has been called");
@@ -181,9 +154,7 @@ describe("CSV Export", () => {
       });
       window.URL.createObjectURL = createObjectURL;
       window.URL.revokeObjectURL = vi.fn();
-
       mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
-
       mockAxios
         .onGet("/userform/ajax/preference?preference=UI_JSON_SETTINGS")
         .reply(200, {});
@@ -191,7 +162,6 @@ describe("CSV Export", () => {
       mockAxios
         .onGet("/export/ajax/defaultPDFConfig")
         .reply(200, { ...PDF_CONFIG });
-
       render(
         <StyledEngineProvider injectFirst>
           <ThemeProvider theme={materialTheme}>
@@ -199,14 +169,12 @@ describe("CSV Export", () => {
           </ThemeProvider>
         </StyledEngineProvider>,
       );
-
       await user.click(await screen.findByRole("button", { name: /Export/ }));
       await user.click(
         await screen.findByRole("menuitem", {
           name: /Export this page of rows to CSV/,
         }),
       );
-
       expect(createObjectURL).toHaveBeenCalled();
       if (typeof blob === "undefined")
         throw new Error("Impossible, because createObjectURL has been called");
@@ -215,4 +183,5 @@ describe("CSV Export", () => {
       expect(csvData).not.toContain("362.01 kB");
     });
   });
+});
 });

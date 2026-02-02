@@ -12,18 +12,15 @@ import { newDocument } from "../../../../stores/models/Document";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { render, within } from "../../../../__tests__/customQueries";
-
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
     get: () => ({}),
   }
 }));
-
 describe("LinkedDocuments", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
-
   test("Assert that correct API endpoint is called with Global ID", async () => {
     const spy = vi
       .spyOn(InvApiService, "get")
@@ -35,7 +32,6 @@ describe("LinkedDocuments", () => {
     expect(await screen.findByText("An error")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IC1");
   });
-
   test("When there is an error loading the data, an alert should be shown.", async () => {
     vi
       .spyOn(InvApiService, "get")
@@ -46,7 +42,6 @@ describe("LinkedDocuments", () => {
     );
     expect(await screen.findByRole("alert")).toHaveTextContent("An error");
   });
-
   test("Two different documents should render as two table rows", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.resolve({
@@ -76,7 +71,6 @@ describe("LinkedDocuments", () => {
     expect(
       within(await screen.findByRole("table")).getAllByRole("row")
     ).toHaveLength(3);
-
     expect(
       // @ts-ignore findTableCell exists in the customized within function
       await within(screen.getByRole("table")).findTableCell({
@@ -92,7 +86,6 @@ describe("LinkedDocuments", () => {
       })
     ).toHaveTextContent("Bar");
   });
-
   test("Two of the same document should render as one table row", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.resolve({
@@ -121,7 +114,6 @@ describe("LinkedDocuments", () => {
     );
     const rows = within(await screen.findByRole("table")).getAllByRole("row");
     expect(rows).toHaveLength(2);
-
     expect(
       // @ts-ignore findTableCell exists in the customized within function
       await within(screen.getByRole("table")).findTableCell({
@@ -130,7 +122,6 @@ describe("LinkedDocuments", () => {
       })
     ).toHaveTextContent("Foo");
   });
-
   test("Opening the dialog twice should trigger two network calls", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.reject(new Error("An error"));
@@ -148,4 +139,5 @@ describe("LinkedDocuments", () => {
     expect(await screen.findByText("An error")).toBeVisible();
     expect(spy).toHaveBeenCalledTimes(2);
   });
+});
 });

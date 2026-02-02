@@ -6,22 +6,17 @@ import {
   HighContrastExample,
 } from "./ValidatingSubmitButton.story";
 import AxeBuilder from "@axe-core/playwright";
-
 const createOnClickSpy = () => {
   let clicked = false;
-
   const handler = () => {
     clicked = true;
   };
-
   const hasBeenClicked = () => clicked;
-
   return {
     handler,
     hasBeenClicked,
   };
 };
-
 const feature = test.extend<{
   Given: {
     "the ValidatingSubmitButton is rendered": () => Promise<{
@@ -171,7 +166,6 @@ const feature = test.extend<{
             ripple.remove();
           }
         });
-
         const { violations } = await new AxeBuilder({
           page,
         })
@@ -197,18 +191,15 @@ const feature = test.extend<{
     });
   },
 });
-
 test.describe("ValidatingSubmitButton", () => {
   feature("The button shows its descendants", async ({ Given, Then }) => {
     await Given["the ValidatingSubmitButton is rendered"]();
     await Then["the button should have the label 'Submit'"]();
   });
-
   feature("The button should have type 'submit'", async ({ Given, Then }) => {
     await Given["the ValidatingSubmitButton with progress is rendered"]();
     await Then["the button should have type 'submit'"]();
   });
-
   feature(
     "When the button is loading, it should be disabled",
     async ({ Given, When, Then }) => {
@@ -217,7 +208,6 @@ test.describe("ValidatingSubmitButton", () => {
       await Then["the button should be disabled"]();
     },
   );
-
   feature(
     "When the button is not loading, it should be enabled",
     async ({ Given, Then }) => {
@@ -225,7 +215,6 @@ test.describe("ValidatingSubmitButton", () => {
       await Then["the button should be enabled"]();
     },
   );
-
   feature(
     "When validation fails, the validation error popover should be visible",
     async ({ Given, When, Then }) => {
@@ -235,7 +224,6 @@ test.describe("ValidatingSubmitButton", () => {
       await Then["the validation error popover should be visible"]();
     },
   );
-
   feature(
     "When validation passes, the validation error popover should not be visible",
     async ({ Given, When, Then }) => {
@@ -244,7 +232,6 @@ test.describe("ValidatingSubmitButton", () => {
       await Then["the validation error popover should not be visible"]();
     },
   );
-
   feature(
     "When validation passes, the onClick handler should be called",
     async ({ Given, When, Then }) => {
@@ -256,7 +243,6 @@ test.describe("ValidatingSubmitButton", () => {
       });
     },
   );
-
   test.describe("Progress prop", () => {
     feature(
       "When progress is undefined, the progress indicator should not be visible",
@@ -265,7 +251,6 @@ test.describe("ValidatingSubmitButton", () => {
         await Then["the progress indicator should not be visible"]();
       },
     );
-
     feature(
       "When progress is set, the progress indicator should be visible",
       async ({ Given, When, Then }) => {
@@ -274,7 +259,6 @@ test.describe("ValidatingSubmitButton", () => {
         await Then["the progress indicator should be visible"]();
       },
     );
-
     feature(
       "When progress reaches 100, the progress indicator should disappear",
       async ({ Given, When, Then }) => {
@@ -286,19 +270,16 @@ test.describe("ValidatingSubmitButton", () => {
       },
     );
   });
-
   test.describe("Accessibility", () => {
     feature("Should have no axe violations", async ({ Given, Then }) => {
       await Given["the ValidatingSubmitButton with progress is rendered"]();
       await Then["there shouldn't be any axe violations"]();
     });
-
     /*
      * Note that the accessible role of the popup is asserted by the
      * "When validation fails, the validation error popover should be visible"
      * feature assertion.
      */
-
     feature(
       "When validation fails, the validation error popover should contain a warning alert",
       async ({ Given, When, Then }) => {
@@ -311,12 +292,10 @@ test.describe("ValidatingSubmitButton", () => {
         ]();
       },
     );
-
     feature(
       "When user prefers more contrast, button should meet WCAG AAA contrast requirements",
       async ({ Given, Then, page }) => {
         await page.emulateMedia({ forcedColors: 'active' });
-
         // Stub prefers-contrast
         await page.addInitScript(() => {
           const originalMatchMedia = window.matchMedia;
@@ -336,7 +315,6 @@ test.describe("ValidatingSubmitButton", () => {
             return originalMatchMedia(query);
           };
         });
-
         await Given[
           "the ValidatingSubmitButton with high contrast is rendered"
         ]();
@@ -344,4 +322,5 @@ test.describe("ValidatingSubmitButton", () => {
       },
     );
   });
+});
 });

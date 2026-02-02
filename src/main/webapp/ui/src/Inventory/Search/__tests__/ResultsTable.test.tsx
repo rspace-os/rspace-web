@@ -19,17 +19,12 @@ import { containerAttrs } from "../../../stores/models/__tests__/ContainerModel/
 import ApiServiceBase from "../../../common/ApiServiceBase";
 import MemoisedFactory from "../../../stores/models/Factory/MemoisedFactory";
 import { personAttrs } from "../../../stores/models/__tests__/PersonModel/mocking";
-
-
-
-
 describe("Results Table", () => {
   describe("Pagination", () => {
     test('When there are fewer items than the page size, the page size menu should show the count as "ALL"', async () => {
       const search = new Search({
         factory: new MemoisedFactory(),
       });
-
       vi.spyOn(ApiServiceBase.prototype, "query").mockImplementation(
         () =>
           Promise.resolve({
@@ -72,9 +67,7 @@ describe("Results Table", () => {
       await waitFor(() => {
         void search.setupAndPerformInitialSearch({});
       });
-
       const rootStore = makeMockRootStore({});
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -90,10 +83,8 @@ describe("Results Table", () => {
           </storesContext.Provider>
         </ThemeProvider>,
       );
-
       within(screen.getByRole("navigation")).getByRole("combobox");
     });
   });
 });
-
 

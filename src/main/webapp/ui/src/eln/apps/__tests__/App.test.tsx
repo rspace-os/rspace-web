@@ -14,7 +14,6 @@ import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import "../../../../__mocks__/matchMedia";
-
 const mockAxios = new MockAdapter(axios);
 const uiNavigationData = {
   userDetails: {
@@ -36,7 +35,6 @@ const uiNavigationData = {
   operatedAs: false,
   nextMaintenance: null,
 };
-
 beforeEach(() => {
   vi.clearAllMocks();
   mockAxios.reset();
@@ -47,8 +45,6 @@ beforeEach(() => {
     livechatEnabled: false,
   });
 });
-
-
 describe("Apps page", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
@@ -62,31 +58,25 @@ describe("Apps page", () => {
           <App />
         </ThemeProvider>
       );
-
       await screen.findAllByText(/Something went wrong!/i);
       await screen.findByAltText("branding");
-
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await expect(container).toBeAccessible();
     });
   });
-
   test("Has all of the correct headings.", async () => {
     mockAxios.onPost("integration/allIntegrations").reply(200, {
       success: false,
       data: null,
       error: "",
     });
-
     const { container } = render(
       <ThemeProvider theme={materialTheme}>
         <App />
       </ThemeProvider>
     );
-
     await screen.findAllByText(/Something went wrong!/i);
-
     // @ts-expect-error assertHeadings comes from assertSemanticHeadings
     expect(container).assertHeadings([
       { level: 1, content: "Apps" },
@@ -96,4 +86,5 @@ describe("Apps page", () => {
       { level: 2, content: "Third-party RSpace Integrations" },
     ]);
   });
+});
 });

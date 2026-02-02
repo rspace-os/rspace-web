@@ -7,29 +7,24 @@ import {
   ControlledTreeExample,
 } from "./Tree.story";
 import AxeBuilder from "@axe-core/playwright";
-
 type TreeItem = {
   id: string;
   name: string;
   children?: TreeItem[];
 };
-
 const createSelectionSpy = () => {
   let selectedItems: TreeItem | TreeItem[] | null = null;
   let selectionEvents: (TreeItem | TreeItem[] | null)[] = [];
-
   const handler = (items: TreeItem | TreeItem[] | null) => {
     selectedItems = items;
     selectionEvents.push(items);
   };
-
   const getSelectedItems = () => selectedItems;
   const getSelectionEvents = () => selectionEvents;
   const reset = () => {
     selectedItems = null;
     selectionEvents = [];
   };
-
   return {
     handler,
     getSelectedItems,
@@ -37,23 +32,19 @@ const createSelectionSpy = () => {
     reset,
   };
 };
-
 const createExpansionSpy = () => {
   let expandedItems: TreeItem[] = [];
   let expansionEvents: TreeItem[][] = [];
-
   const handler = (items: TreeItem[]) => {
     expandedItems = items;
     expansionEvents.push([...items]);
   };
-
   const getExpandedItems = () => expandedItems;
   const getExpansionEvents = () => expansionEvents;
   const reset = () => {
     expandedItems = [];
     expansionEvents = [];
   };
-
   return {
     handler,
     getExpandedItems,
@@ -61,7 +52,6 @@ const createExpansionSpy = () => {
     reset,
   };
 };
-
 const feature = test.extend<{
   Given: {
     "a simple tree is rendered": () => Promise<{
@@ -277,7 +267,6 @@ const feature = test.extend<{
     });
   },
 });
-
 test.describe("Tree Component", () => {
   test.describe("Single Selection", () => {
     feature(
@@ -289,7 +278,6 @@ test.describe("Tree Component", () => {
         Then["selection events should have been triggered"]({ selectionSpy });
       },
     );
-
     feature(
       "Should replace selection when clicking different item",
       async ({ Given, When, Then }) => {
@@ -301,7 +289,6 @@ test.describe("Tree Component", () => {
       },
     );
   });
-
   test.describe("Multi Selection", () => {
     feature(
       "Should select multiple items with Ctrl+click",
@@ -313,7 +300,6 @@ test.describe("Tree Component", () => {
         await Then["tree item {string} should be selected"]("Item 2");
       },
     );
-
     feature("Should clear all selections", async ({ Given, When, Then }) => {
       await Given["a multi-select tree is rendered"]();
       await When["the user clicks on tree item {string}"]("Item 1");
@@ -322,7 +308,6 @@ test.describe("Tree Component", () => {
       await Then["no tree items should be selected"]();
     });
   });
-
   test.describe("Expansion and Collapse", () => {
     feature("Should expand a tree item", async ({ Given, When, Then }) => {
       await Given["an expandable tree is rendered"]();
@@ -331,13 +316,11 @@ test.describe("Tree Component", () => {
       await Then["tree item {string} should be visible"]("Child Item 1");
       await Then["tree item {string} should be visible"]("Child Item 2");
     });
-
     feature("Should expand all items", async ({ Given, When, Then }) => {
       await Given["an expandable tree is rendered"]();
       await When["the user clicks the Expand All button"]();
       await Then["all expandable items should be expanded"]();
     });
-
     feature("Should collapse all items", async ({ Given, When, Then }) => {
       await Given["an expandable tree is rendered"]();
       await When["the user clicks the Expand All button"]();
@@ -345,7 +328,6 @@ test.describe("Tree Component", () => {
       await Then["all expandable items should be collapsed"]();
     });
   });
-
   test.describe("Controlled Tree", () => {
     feature(
       "Should handle both selection and expansion in controlled mode",
@@ -358,13 +340,11 @@ test.describe("Tree Component", () => {
       },
     );
   });
-
   test.describe("Accessibility", () => {
     feature("Should have no axe violations", async ({ Given, Then }) => {
       await Given["a simple tree is rendered"]();
       await Then["there should be no axe violations"]();
     });
-
     feature(
       "Should have proper ARIA attributes for selected state",
       async ({ Given, When, Then }) => {
@@ -373,7 +353,6 @@ test.describe("Tree Component", () => {
         await Then["tree item {string} should be selected"]("Item 1");
       },
     );
-
     feature(
       "Should maintain focus management",
       async ({ Given, When, Then }) => {
@@ -383,7 +362,6 @@ test.describe("Tree Component", () => {
       },
     );
   });
-
   test.describe("Keyboard Navigation", () => {
     feature(
       "Should navigate with arrow keys",
@@ -394,7 +372,6 @@ test.describe("Tree Component", () => {
         await Then["tree item {string} should be focused"]("Item 2");
       },
     );
-
     feature("Should select with Space key", async ({ Given, When, Then }) => {
       await Given["a simple tree is rendered"]();
       await When["the user focuses on tree item {string}"]("Item 1");
@@ -402,4 +379,5 @@ test.describe("Tree Component", () => {
       await Then["tree item {string} should be selected"]("Item 1");
     });
   });
+});
 });

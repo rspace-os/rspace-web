@@ -1,4 +1,3 @@
- 
 import {
   describe,
   expect,
@@ -14,23 +13,16 @@ import StringField from "../StringField";
 import TextField from "@mui/material/TextField";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
-
 vi.mock("@mui/material/TextField", () => ({
   default: vi.fn(() => <div></div>),
 }));
-
-
-
-
 const expectLabel = (text: string) => (container: Node) =>
   expect(container).toHaveTextContent(text);
-
 const expectTextField = (value: string) => () =>
   expect(TextField).toHaveBeenCalledWith(
     expect.objectContaining({ value }),
     expect.anything()
   );
-
 describe("StringField", () => {
   describe("Renders correctly", () => {
     test.each`

@@ -8,11 +8,7 @@ import { makeMockContainer } from "../../../../../stores/models/__tests__/Contai
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import { toBeAccessible } from "@sa11y/vitest";
-
-
-
 expect.extend({ toBeAccessible });
-
 describe("GridLayoutConfig", () => {
   test("Should have no axe violations.", async () => {
     const gridContainer = makeMockContainer({
@@ -24,14 +20,13 @@ describe("GridLayoutConfig", () => {
         rowsLabelType: "ABC",
       },
     });
-
     const { container } = render(
       <ThemeProvider theme={materialTheme}>
         <GridLayoutConfig container={gridContainer} />
       </ThemeProvider>
     );
-
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     await expect(container).toBeAccessible();
   });
+});
 });

@@ -6,7 +6,6 @@ import {
 import ErrorBoundary from "./ErrorBoundary";
 import React from "react";
 import { ErrorComponent } from "./ErrorBoundary.story";
-
 test("When there is an error rendering one of its descendent components, ErrorBoundary should show an error message.", async ({
   mount,
 }: {
@@ -18,4 +17,5 @@ test("When there is an error rendering one of its descendent components, ErrorBo
     </ErrorBoundary>
   );
   await expect(component).toContainText("Something went wrong.");
+});
 });

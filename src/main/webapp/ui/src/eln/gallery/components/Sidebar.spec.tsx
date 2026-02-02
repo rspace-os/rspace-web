@@ -3,7 +3,6 @@ import React from "react";
 import { DefaultSidebar } from "./Sidebar.story";
 import * as Jwt from "jsonwebtoken";
 import AxeBuilder from "@axe-core/playwright";
-
 const feature = test.extend<{
   Given: {
     "the sidebar is visible": () => Promise<void>;
@@ -102,7 +101,6 @@ const feature = test.extend<{
     await use([]);
   },
 });
-
 feature.beforeEach(async ({ router }) => {
   await router.route("/session/ajax/analyticsProperties", (route) => {
     return route.fulfill({
@@ -237,15 +235,12 @@ feature.beforeEach(async ({ router }) => {
     });
   });
 });
-
 feature.afterEach(({}) => {});
-
 test.describe("Sidebar", () => {
   feature("Should have no axe violations", async ({ Given, Then }) => {
     await Given["the sidebar is visible"]();
     await Then["there shouldn't be any axe violations"]();
   });
-
   test.describe("New Folder", () => {
     feature(
       "Clicking the Submit button should work",
@@ -259,7 +254,6 @@ test.describe("Sidebar", () => {
         await Then["a folder creation request should be made"]();
       },
     );
-
     feature(
       "Pressing enter to Submit should work",
       async ({ Given, When, Then }) => {
@@ -272,4 +266,5 @@ test.describe("Sidebar", () => {
       },
     );
   });
+});
 });

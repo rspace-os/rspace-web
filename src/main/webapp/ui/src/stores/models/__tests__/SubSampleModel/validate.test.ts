@@ -1,10 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
 import { makeMockSubSample } from "./mocking";
-
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   }})); // break import cycle
-
 describe("method: validate", () => {
   describe("Asserts quantity.", () => {
     test("Returns false when the numericQuantity is the empty string.", () => {
@@ -20,10 +18,8 @@ describe("method: validate", () => {
           unitId: 3,
         },
       });
-
       expect(subsample.validate().isOk).toBe(false);
     });
   });
 });
-
 

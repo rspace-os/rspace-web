@@ -4,21 +4,15 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-
 import FileField from "../FileField";
 import Alert from "@mui/material/Alert";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
-
 vi.mock("@mui/material/Alert", () => ({
   default: vi.fn(() => {
     return <div data-testid="Alert"></div>;
   }),
 }));
-
-
-
-
 describe("FileField", () => {
   /*
    * The warningAlert allows for custom warning meesages to be associated with

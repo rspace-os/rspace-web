@@ -9,10 +9,6 @@ import fc from "fast-check";
 import ContextMenuButton from "../ContextMenuButton";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-
-
-
-
 describe("ContextMenuButton", () => {
   describe("Disabled state", () => {
     test("When disabled, should render aria-disabled.", () => {
@@ -33,5 +29,4 @@ describe("ContextMenuButton", () => {
     });
   });
 });
-
 

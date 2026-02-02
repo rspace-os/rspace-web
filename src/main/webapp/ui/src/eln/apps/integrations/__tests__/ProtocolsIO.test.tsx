@@ -8,10 +8,6 @@ import {
 import ProtocolsIO from "../ProtocolsIO";
 import { Optional } from "../../../../util/optional";
 import "../../../../../__mocks__/matchMedia";
-
-
-
-
 describe("ProtocolsIO", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
@@ -26,11 +22,8 @@ describe("ProtocolsIO", () => {
           update={() => {}}
         />
       );
-
       fireEvent.click(screen.getByRole("button"));
-
       expect(await screen.findByRole("dialog")).toBeVisible();
-
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       await expect(baseElement).toBeAccessible();
     });
@@ -47,9 +40,7 @@ describe("ProtocolsIO", () => {
         update={() => {}}
       />
     );
-
     fireEvent.click(screen.getByRole("button"));
-
     expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
   });
   test("Should have a disconnect button when the user is authenticated.", () => {
@@ -64,9 +55,8 @@ describe("ProtocolsIO", () => {
         update={() => {}}
       />
     );
-
     fireEvent.click(screen.getByRole("button"));
-
     expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
   });
+});
 });
