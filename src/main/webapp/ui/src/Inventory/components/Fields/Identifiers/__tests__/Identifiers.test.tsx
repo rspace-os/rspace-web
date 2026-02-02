@@ -15,7 +15,6 @@ import { IdentifiersList } from "../Identifiers";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
-import "../../../../../../__mocks__/createObjectURL";
 import "../../../../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";

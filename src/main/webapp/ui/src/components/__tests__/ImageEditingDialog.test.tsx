@@ -116,7 +116,7 @@ describe("ImageEditingDialog", () => {
 
           // Wait for image to fully load and set dimensions
           await waitFor(() => {
-            const image = screen.getByRole("img") as HTMLImageElement;
+            const image = screen.getByRole("img");
             expect(image.complete).toBe(true);
             expect(image.naturalWidth).toBeGreaterThan(0);
             expect(image.naturalHeight).toBeGreaterThan(0);
@@ -129,7 +129,7 @@ describe("ImageEditingDialog", () => {
             await user.click(rotateButton);
             // Wait a bit for rotation to complete
             await waitFor(() => {
-              const image = screen.getByRole("img") as HTMLImageElement;
+              const image = screen.getByRole("img");
               expect(image.complete).toBe(true);
             });
           }
@@ -180,7 +180,7 @@ describe("ImageEditingDialog", () => {
 
     // Wait for image to fully load and set dimensions
     await waitFor(() => {
-      const image = screen.getByRole("img") as HTMLImageElement;
+      const image = screen.getByRole("img");
       expect(image.complete).toBe(true);
       expect(image.naturalWidth).toBeGreaterThan(0);
       expect(image.naturalHeight).toBeGreaterThan(0);
@@ -194,7 +194,7 @@ describe("ImageEditingDialog", () => {
 
     // wait for rotated image to load
     await waitFor(() => {
-      const image = screen.getByRole("img") as HTMLImageElement;
+      const image = screen.getByRole("img");
       expect(image.complete).toBe(true);
     });
 
@@ -239,7 +239,7 @@ describe("ImageEditingDialog", () => {
 
     // Wait for image to fully load and set dimensions
     await waitFor(() => {
-      const image = screen.getByRole("img") as HTMLImageElement;
+      const image = screen.getByRole("img");
       expect(image.complete).toBe(true);
       expect(image.naturalWidth).toBeGreaterThan(0);
       expect(image.naturalHeight).toBeGreaterThan(0);
@@ -252,7 +252,7 @@ describe("ImageEditingDialog", () => {
 
     // wait for rotated image to load
     await waitFor(() => {
-      const image = screen.getByRole("img") as HTMLImageElement;
+      const image = screen.getByRole("img");
       expect(image.complete).toBe(true);
     });
 
@@ -343,7 +343,7 @@ describe("ImageEditingDialog", () => {
 
     // Wait for image to fully load and set dimensions
     await waitFor(() => {
-      const image = screen.getByRole("img") as HTMLImageElement;
+      const image = screen.getByRole("img");
       expect(image.complete).toBe(true);
       expect(image.naturalWidth).toBeGreaterThan(0);
       expect(image.naturalHeight).toBeGreaterThan(0);
@@ -357,7 +357,7 @@ describe("ImageEditingDialog", () => {
 
     // wait for rotated image to load
     await waitFor(() => {
-      const image = screen.getByRole("img") as HTMLImageElement;
+      const image = screen.getByRole("img");
       expect(image.complete).toBe(true);
     });
 

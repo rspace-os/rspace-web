@@ -4,7 +4,6 @@ import {
   it,
   vi,
 } from "vitest";
-import "../../../__mocks__/createObjectURL";
 import "../../../__mocks__/matchMedia";
 import React from "react";
 import {

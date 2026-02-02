@@ -1,15 +1,6 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { describe, expect, beforeEach, it, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import ImageIcon from "@mui/icons-material/Image";
@@ -29,21 +20,46 @@ vi.mock("@mui/icons-material/Image", () => ({
   default: vi.fn(() => <div></div>),
 }));
 vi.mock("../FileField", () => ({
-  default: vi.fn(({ icon, InputProps: { endAdornment } }) => {
-    return (
-      <>
-        <div id="icon">{icon}</div>
-        <div id="endAdornment">{endAdornment}</div>
-      </>
-    );
-  }),
+  default: vi.fn(
+    ({
+      icon,
+      InputProps,
+    }: {
+      icon: React.ReactNode;
+      InputProps?: { endAdornment?: React.ReactNode };
+    }) => {
+      return (
+        <>
+          <div id="icon">{icon}</div>
+          <div id="endAdornment">{InputProps?.endAdornment}</div>
+        </>
+      );
+    },
+  ),
 }));
 vi.mock("@mui/material/Button", () => ({
-  default: vi.fn(({ children, onClick }) => {
-    return <div onClick={onClick}>{children}</div>;
+  default: vi.fn(
+    ({
+      children,
+      onClick,
+    }: {
+      children: React.ReactNode;
+      onClick?: () => void;
+    }) => {
+      return <div onClick={onClick}>{children}</div>;
+    },
+  ),
+}));
+let isMobileValue = false;
+
+vi.mock("react-device-detect", () => ({
+  get isMobile() {
+    return isMobileValue;
+  },
+  __setIsMobile: vi.fn((value: boolean) => {
+    isMobileValue = value;
   }),
 }));
-vi.mock("react-device-detect");
 vi.mock("../DynamicallyLoadedImageEditor", () => ({
   default: vi.fn(() => {
     return <div></div>;
@@ -53,7 +69,6 @@ vi.mock("../DynamicallyLoadedImageEditor", () => ({
 beforeEach(() => {
   vi.clearAllMocks();
 });
-
 
 describe("ImageField", () => {
   /*
@@ -73,7 +88,7 @@ describe("ImageField", () => {
             imageAsObjectURL={null}
             id="foo"
             alt="dummy alt text"
-          />
+          />,
         );
         expect(CameraAltIcon).toHaveBeenCalled();
       });
@@ -91,7 +106,7 @@ describe("ImageField", () => {
             imageAsObjectURL={null}
             id="foo"
             alt="dummy alt text"
-          />
+          />,
         );
         expect(ImageIcon).toHaveBeenCalled();
       });
@@ -110,7 +125,7 @@ describe("ImageField", () => {
           imageAsObjectURL={null}
           id="foo"
           alt="dummy alt text"
-        />
+        />,
       );
 
       const editImageButton = screen.getByText("Edit Image");
@@ -118,12 +133,13 @@ describe("ImageField", () => {
       expect(DynamicallyLoadedImageEditor).toHaveBeenCalledWith(
         expect.objectContaining({
           editorOpen: true,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           close: expect.any(Function),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           submitHandler: expect.any(Function),
         }),
-        expect.anything()
+        {} as never,
       );
     });
   });
 });
-

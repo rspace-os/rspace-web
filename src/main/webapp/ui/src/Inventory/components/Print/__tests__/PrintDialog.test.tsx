@@ -26,8 +26,6 @@ import {
 } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
-import "../../../../../__mocks__/createObjectURL";
-import "../../../../../__mocks__/revokeObjectURL";
 
 vi.mock("mobx-react-lite", () => ({
   observer: (component: React.ComponentType<any>) => component,
