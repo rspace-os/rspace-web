@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { makeMockContainer } from "./mocking";
 import { personAttrs } from "../PersonModel/mocking";
-import { assertNotNull } from "../../../../util/__tests__/helpers";
 
 describe("adjustableTableOptions", () => {
   describe("Number of Empty Locations", () => {
@@ -12,9 +11,11 @@ describe("adjustableTableOptions", () => {
         owner: personAttrs(),
       });
 
-      const cellContent = assertNotNull(
-        container.adjustableTableOptions().get("Number of Empty Locations")
-      );
+      const optionValue = container
+        .adjustableTableOptions()
+        .get("Number of Empty Locations");
+      expect(optionValue).not.toBeNull();
+      const cellContent = optionValue!;
 
       expect(cellContent().data).toEqual("Unlimited");
     });
@@ -32,9 +33,11 @@ describe("adjustableTableOptions", () => {
         owner: personAttrs(),
       });
 
-      const cellContent = assertNotNull(
-        container.adjustableTableOptions().get("Number of Empty Locations")
-      );
+      const optionValue = container
+        .adjustableTableOptions()
+        .get("Number of Empty Locations");
+      expect(optionValue).not.toBeNull();
+      const cellContent = optionValue!;
 
       expect(cellContent().data).toEqual("6");
     });
@@ -53,13 +56,13 @@ describe("adjustableTableOptions", () => {
         contentSummary: null,
       });
 
-      const cellContent = assertNotNull(
-        container.adjustableTableOptions().get("Number of Empty Locations")
-      );
+      const optionValue = container
+        .adjustableTableOptions()
+        .get("Number of Empty Locations");
+      expect(optionValue).not.toBeNull();
+      const cellContent = optionValue!;
 
       expect(cellContent().data).toBe(null);
     });
   });
 });
-
-
