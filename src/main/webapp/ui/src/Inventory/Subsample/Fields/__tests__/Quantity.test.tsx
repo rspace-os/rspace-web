@@ -5,7 +5,6 @@ import {
   fireEvent,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import Quantity from "../Quantity";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";

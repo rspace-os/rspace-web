@@ -7,7 +7,6 @@ import {
   within,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { storesContext } from "../../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";

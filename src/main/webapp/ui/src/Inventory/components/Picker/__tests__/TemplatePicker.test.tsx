@@ -3,7 +3,6 @@ import {
  render,
  screen,
  waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import InvApiService from "../../../../common/InvApiService";
 import TemplatePicker from "../TemplatePicker";
 import materialTheme from "../../../../theme";

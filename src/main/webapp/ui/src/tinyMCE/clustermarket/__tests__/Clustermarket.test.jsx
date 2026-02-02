@@ -3,7 +3,6 @@ import Clustermarket, { getOrder, getOrderBy } from "../Clustermarket";
 import React from "react";
 import axios from "@/common/axios";
 import { render, screen } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import BookingDetails from "./bookingsDetails.json";
 import EquipmentDetails from "./equipmentDetails.json";

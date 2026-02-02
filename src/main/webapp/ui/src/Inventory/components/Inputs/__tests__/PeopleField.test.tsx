@@ -4,7 +4,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import PeopleField from "../PeopleField";
 import Alerts from "../../Alerts";
 import getRootStore from "../../../../stores/stores/RootStore";

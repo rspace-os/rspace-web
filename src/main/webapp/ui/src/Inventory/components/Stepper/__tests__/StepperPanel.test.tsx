@@ -5,7 +5,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import StepperPanel from "../StepperPanel";
 import "../../../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";

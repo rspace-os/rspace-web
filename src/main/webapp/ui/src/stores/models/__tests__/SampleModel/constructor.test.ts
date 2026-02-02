@@ -1,5 +1,4 @@
 import { test, describe, expect, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 
 import SampleModel from "../../SampleModel";
 import SubSampleModel from "../../SubSampleModel";

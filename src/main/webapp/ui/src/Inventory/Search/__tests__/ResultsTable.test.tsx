@@ -7,7 +7,6 @@ import {
   within,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { storesContext } from "../../../stores/stores-context";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
 import ResultsTable from "../ResultsTable";

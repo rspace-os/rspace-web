@@ -1,5 +1,4 @@
 import { describe, expect, test, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import { makeMockSubSample } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({

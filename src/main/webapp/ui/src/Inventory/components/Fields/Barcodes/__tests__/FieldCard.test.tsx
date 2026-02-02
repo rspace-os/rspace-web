@@ -5,7 +5,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { mockFactory } from "../../../../../stores/definitions/__tests__/Factory/mocking";
 import FieldCard from "../FieldCard";
 import userEvent from "@testing-library/user-event";

@@ -12,7 +12,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import ScopeField, { type Scope } from "../ScopeField";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";

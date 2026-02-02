@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import { blobToBase64 } from "../../files";
 
 describe("blobToBase64", () => {

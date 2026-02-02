@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import RsSet from "../../set";
 
 describe("unionWithEq", () => {

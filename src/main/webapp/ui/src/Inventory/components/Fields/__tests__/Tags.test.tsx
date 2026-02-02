@@ -4,7 +4,6 @@ import {
   render,
   cleanup,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import Tags from "../Tags";
 import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";

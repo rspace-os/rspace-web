@@ -6,7 +6,6 @@ import {
   fireEvent,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import Fields from "../Fields";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";

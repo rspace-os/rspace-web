@@ -1,5 +1,4 @@
 import { describe, expect, test, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import Search from "../../Search";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 

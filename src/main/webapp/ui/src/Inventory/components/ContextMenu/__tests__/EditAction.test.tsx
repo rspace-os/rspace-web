@@ -6,7 +6,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import EditAction from "../EditAction";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";

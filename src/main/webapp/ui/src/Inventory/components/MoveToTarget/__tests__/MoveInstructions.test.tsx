@@ -3,7 +3,6 @@ import React from "react";
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import Search from "../../../../stores/models/Search";
 import SearchContext from "../../../../stores/contexts/Search";

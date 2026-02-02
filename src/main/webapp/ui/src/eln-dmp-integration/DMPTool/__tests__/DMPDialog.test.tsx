@@ -11,7 +11,6 @@ import {
   waitFor,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import DMPDialog from "../DMPDialog";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";

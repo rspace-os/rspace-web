@@ -1,5 +1,4 @@
 import { describe, test, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import InventoryBaseRecord from "../../InventoryBaseRecord";
 import fc, { type Command } from "fast-check";
 import { mkAlert } from "../../../contexts/Alert";

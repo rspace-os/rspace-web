@@ -6,7 +6,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import ContextMenuAction from "../ContextMenuAction";
 import fc from "fast-check";
 

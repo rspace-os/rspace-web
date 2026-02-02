@@ -6,7 +6,6 @@ import {
   act,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../../stores/stores-context";
 import PreviewAction from "../PreviewAction";

@@ -4,7 +4,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import TypeFilter from "../TypeFilter";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";

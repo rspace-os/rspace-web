@@ -1,6 +1,5 @@
 
 import { test, describe, expect, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import React from "react";
 import {
   render,

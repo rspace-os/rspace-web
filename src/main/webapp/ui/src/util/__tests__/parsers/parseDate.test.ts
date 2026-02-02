@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import { parseDate } from "../../parsers";
 import fc from "fast-check";
 

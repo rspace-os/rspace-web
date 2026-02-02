@@ -2,7 +2,6 @@ import React from "react";
 import {
  render,
  screen } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import Search from "../../../../stores/models/Search";

@@ -3,7 +3,6 @@ import React from "react";
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import NoValue from "../../../components/NoValue";
 
 import DateField from "../DateField";

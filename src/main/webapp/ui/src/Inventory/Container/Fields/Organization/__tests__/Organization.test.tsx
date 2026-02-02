@@ -4,7 +4,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";

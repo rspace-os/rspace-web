@@ -1,5 +1,4 @@
 import { describe, expect, test, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import { makeMockTemplate, templateAttrs } from "./mocking";
 import InvApiService from "../../../../common/InvApiService";
 import { AxiosResponse } from "@/common/axios";

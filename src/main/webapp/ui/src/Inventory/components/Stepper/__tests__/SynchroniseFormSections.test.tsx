@@ -6,7 +6,6 @@ import React,
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import SynchroniseFormSections from "../SynchroniseFormSections";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import { type RecordType } from "../../../../stores/definitions/InventoryRecord";

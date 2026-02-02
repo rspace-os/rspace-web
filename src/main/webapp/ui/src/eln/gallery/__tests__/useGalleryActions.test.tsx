@@ -5,7 +5,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import RsSet from "../../../util/set";
 import { useGalleryActions, rootDestination } from "../useGalleryActions";

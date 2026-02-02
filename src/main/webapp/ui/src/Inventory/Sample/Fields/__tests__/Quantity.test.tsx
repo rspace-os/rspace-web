@@ -3,7 +3,6 @@ import React from "react";
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import Quantity from "../Quantity";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";

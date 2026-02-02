@@ -1,4 +1,3 @@
-import "@testing-library/jest-dom/vitest";
 import {
  makeMockSubSample,
  subsampleAttrs } from "./mocking";

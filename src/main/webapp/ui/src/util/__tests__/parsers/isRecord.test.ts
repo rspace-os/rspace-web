@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import { isRecord } from "../../parsers";
-import "@testing-library/jest-dom/vitest";
 
 describe("isRecord", () => {
   test("should pass for an object literal", () => {

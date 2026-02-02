@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import { selectColor } from "../../colors";
 
 describe("selectColor", () => {

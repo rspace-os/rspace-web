@@ -4,7 +4,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { makeMockSubSample } from "../../../stores/models/__tests__/SubSampleModel/mocking";
 import Breadcrumbs from "../Breadcrumbs";
 

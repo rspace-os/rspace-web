@@ -8,7 +8,6 @@ import {
   act,
   within,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import JoveSearchResult from "./joveSearchResult.json";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";

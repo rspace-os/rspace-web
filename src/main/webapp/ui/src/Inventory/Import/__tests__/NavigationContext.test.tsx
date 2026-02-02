@@ -12,7 +12,6 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import NavigationContext from "../NavigationContext";
 import { storesContext } from "../../../stores/stores-context";

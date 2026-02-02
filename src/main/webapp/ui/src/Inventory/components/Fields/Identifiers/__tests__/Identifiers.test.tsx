@@ -3,7 +3,6 @@ import React from "react";
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { mockIGSNIdentifier } from "./mocking";
 import { IdentifiersList } from "../Identifiers";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";

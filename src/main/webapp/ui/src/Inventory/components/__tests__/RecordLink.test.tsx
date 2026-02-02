@@ -4,7 +4,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { RecordLink } from "../RecordLink";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
 import {

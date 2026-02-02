@@ -2,7 +2,6 @@ import { test, describe, expect, beforeEach, vi } from 'vitest';
 import InvApiService from "../../../../common/InvApiService";
 import getRootStore from "../../../stores/RootStore";
 import ImportModel from "../../ImportModel";
-import "@testing-library/jest-dom/vitest";
 import { templateAttrs } from "../TemplateModel/mocking";
 import { runInAction } from "mobx";
 import {

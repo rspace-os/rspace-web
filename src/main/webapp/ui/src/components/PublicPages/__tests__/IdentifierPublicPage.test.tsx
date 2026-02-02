@@ -6,7 +6,6 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import IdentifierPublicPage from "../IdentifierPublicPage";
 import { mockIGSNAttrs } from "../../../Inventory/components/Fields/Identifiers/__tests__/mocking";
 import MockAdapter from "axios-mock-adapter";

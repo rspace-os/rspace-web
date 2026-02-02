@@ -4,7 +4,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import InitialScreen from "../InitialScreen";
 import Header from "../Header";
 import Sidebar from "../Sidebar";

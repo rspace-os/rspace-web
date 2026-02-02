@@ -6,7 +6,6 @@ import {
   fireEvent,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import DryadRepo from "../DryadRepo";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";

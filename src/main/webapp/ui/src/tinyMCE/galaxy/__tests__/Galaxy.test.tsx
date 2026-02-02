@@ -7,7 +7,6 @@ import {
  screen,
  waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import {act} from "react-dom/test-utils";
 import { describe, expect, beforeEach, vi, test } from 'vitest';

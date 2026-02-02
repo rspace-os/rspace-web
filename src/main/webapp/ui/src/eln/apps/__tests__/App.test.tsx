@@ -7,7 +7,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import App from "../App";
 import "../../../__tests__/assertSemanticHeadings";
 import MockAdapter from "axios-mock-adapter";

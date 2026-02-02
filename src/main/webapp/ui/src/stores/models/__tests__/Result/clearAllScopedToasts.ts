@@ -1,7 +1,6 @@
 /*
  */
 import { expect } from "vitest";
-import "@testing-library/jest-dom/vitest";
 import InventoryBaseRecord from "../../InventoryBaseRecord";
 import { type Command } from "fast-check";
 import { type Model } from "./common";

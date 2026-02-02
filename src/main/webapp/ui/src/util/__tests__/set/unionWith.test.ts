@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import RsSet, { unionWith } from "../../set";
 import { arbitraryMappableSets } from "./helpers";

@@ -7,7 +7,6 @@ import {
   fireEvent,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import ExternalWorkflowInvocations, {InvocationsAndDataCount} from "../ExternalWorkflowInvocations";
 

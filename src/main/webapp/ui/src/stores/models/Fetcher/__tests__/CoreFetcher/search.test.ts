@@ -1,5 +1,4 @@
 import { describe, expect, test, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 
 import CoreFetcher from "../../CoreFetcher";
 import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";

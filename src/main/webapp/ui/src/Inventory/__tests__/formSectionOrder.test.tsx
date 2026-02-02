@@ -7,7 +7,6 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import RsSet from "../../util/set";
 import ContainerForm from "../Container/Form";
 import ContainerNewRecordForm from "../Container/NewRecordForm";

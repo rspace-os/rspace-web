@@ -4,7 +4,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import { ThemeProvider } from "@mui/material/styles";

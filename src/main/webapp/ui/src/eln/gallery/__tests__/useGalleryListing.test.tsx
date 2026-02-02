@@ -6,7 +6,6 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import * as FetchingData from "../../../util/fetchingData";
 import { useGalleryListing, type GalleryFile } from "../useGalleryListing";

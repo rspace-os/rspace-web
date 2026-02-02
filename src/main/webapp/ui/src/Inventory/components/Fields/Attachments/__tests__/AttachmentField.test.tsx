@@ -4,7 +4,6 @@ import React from "react";
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import AttachmentField from "../AttachmentField";
 import TextField from "@mui/material/TextField";
 import FileField from "../../../../../components/Inputs/FileField";

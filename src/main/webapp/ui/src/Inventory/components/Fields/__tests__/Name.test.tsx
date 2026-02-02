@@ -7,7 +7,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import Name from "../Name";
 import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";

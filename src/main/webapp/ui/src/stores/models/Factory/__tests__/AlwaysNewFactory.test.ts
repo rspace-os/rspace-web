@@ -1,5 +1,4 @@
 import { describe, expect, test, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 
 import { containerAttrs } from "../../__tests__/ContainerModel/mocking";
 import { personAttrs } from "../../__tests__/PersonModel/mocking";

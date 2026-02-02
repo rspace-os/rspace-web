@@ -5,7 +5,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import SortControls from "../SortControls";
 import { sortProperties } from "../../../../stores/models/InventoryBaseRecord";
 import SearchContext from "../../../../stores/contexts/Search";

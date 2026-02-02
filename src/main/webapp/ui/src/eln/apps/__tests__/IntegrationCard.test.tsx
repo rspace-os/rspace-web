@@ -5,7 +5,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import IntegrationCard from "../IntegrationCard";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";

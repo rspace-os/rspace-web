@@ -4,7 +4,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { sampleAttrs } from "../../../stores/models/__tests__/SampleModel/mocking";
 import { subsampleAttrs } from "../../../stores/models/__tests__/SubSampleModel/mocking";
 import { ListOfMaterials } from "../../../stores/models/MaterialsModel";

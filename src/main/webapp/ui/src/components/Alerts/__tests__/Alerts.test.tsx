@@ -6,7 +6,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Alerts from "../Alerts";
 

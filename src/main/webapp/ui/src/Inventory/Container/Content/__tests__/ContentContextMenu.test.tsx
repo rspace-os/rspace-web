@@ -5,7 +5,6 @@ import {
   cleanup,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import SearchContext from "../../../../stores/contexts/Search";
 import Search from "../../../../stores/models/Search";
 import {

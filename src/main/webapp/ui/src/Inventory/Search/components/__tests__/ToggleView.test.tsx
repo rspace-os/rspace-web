@@ -5,7 +5,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import ToggleView from "../ToggleView";
 import { TYPE_LABEL } from "../../../../stores/definitions/Search";
 import materialTheme from "../../../../theme";

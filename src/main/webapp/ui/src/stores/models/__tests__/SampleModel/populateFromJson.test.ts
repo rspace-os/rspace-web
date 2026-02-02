@@ -1,5 +1,4 @@
 import { test, describe, expect, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import SampleModel, { type SampleAttrs } from "../../SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "../../SubSampleModel";

@@ -1,5 +1,4 @@
 import { describe, expect, test, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import { Material, type Quantity } from "../../MaterialsModel";
 import { makeMockContainer } from "../ContainerModel/mocking";
 import { makeMockSample } from "../SampleModel/mocking";

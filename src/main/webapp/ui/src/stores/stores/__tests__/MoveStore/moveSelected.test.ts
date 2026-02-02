@@ -1,5 +1,4 @@
 import { describe, expect, test, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
 import getRootStore from "../../RootStore";
 import Search from "../../../models/Search";

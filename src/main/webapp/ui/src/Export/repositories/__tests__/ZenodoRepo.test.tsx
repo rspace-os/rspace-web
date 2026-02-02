@@ -4,7 +4,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import ZenodoRepo from "../ZenodoRepo";
 import "../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";

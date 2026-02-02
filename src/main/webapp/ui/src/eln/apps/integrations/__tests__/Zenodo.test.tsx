@@ -8,7 +8,6 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import "@testing-library/jest-dom/vitest";
 import { when } from "vitest-when";
 import Zenodo from "../Zenodo";
 import { Optional } from "../../../../util/optional";

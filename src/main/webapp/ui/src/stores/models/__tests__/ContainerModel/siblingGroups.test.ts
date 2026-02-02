@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet } from "../../../../util/__tests__/set/helpers";
 import { unionWith } from "../../../../util/set";

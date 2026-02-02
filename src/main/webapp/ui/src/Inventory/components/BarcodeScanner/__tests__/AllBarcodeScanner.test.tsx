@@ -3,7 +3,6 @@ import {
  render,
  act,
  screen } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import "../../../../../__mocks__/barcode-detection-api";
 import AllBarcodeScanner from "../AllBarcodeScanner";
 import { sleep } from "../../../../util/Util";

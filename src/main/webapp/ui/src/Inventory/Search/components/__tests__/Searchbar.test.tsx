@@ -7,7 +7,6 @@ import {
   within,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import SearchContext from "../../../../stores/contexts/Search";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";

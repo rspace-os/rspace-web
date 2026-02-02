@@ -6,7 +6,6 @@ import {
   fireEvent,
 } from "@testing-library/react";
 import { action, observable } from "mobx";
-import "@testing-library/jest-dom/vitest";
 import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import MoveDialog from "../MoveDialog";

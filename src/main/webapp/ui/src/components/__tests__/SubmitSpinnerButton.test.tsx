@@ -5,7 +5,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import SubmitSpinnerButton from "../SubmitSpinnerButton";
 import { calculateProgress } from "../../util/progress";
 import { ThemeProvider } from "@mui/material/styles";

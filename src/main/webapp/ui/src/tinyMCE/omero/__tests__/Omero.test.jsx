@@ -80,7 +80,6 @@ import Omero, { getOrderBy, getOrder } from "../../omero/Omero";
 import React from "react";
 import axios from "@/common/axios";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import ProjectsList from "./json/projectsList.json";
 import ScreensList from "./json/screenList.json";

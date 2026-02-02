@@ -1,5 +1,4 @@
 import { test, describe, expect, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import Search from "../../Search";
 import ApiServiceBase from "../../../../common/ApiServiceBase";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";

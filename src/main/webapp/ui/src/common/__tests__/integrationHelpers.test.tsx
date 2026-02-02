@@ -4,7 +4,6 @@ import {
   render,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";

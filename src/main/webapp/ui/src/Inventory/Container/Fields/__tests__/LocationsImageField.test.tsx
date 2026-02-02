@@ -6,7 +6,6 @@ import {
 } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import { storesContext } from "../../../../stores/stores-context";
-import "@testing-library/jest-dom/vitest";
 import ContainerModel from "../../../../stores/models/ContainerModel";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import {

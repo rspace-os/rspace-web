@@ -7,7 +7,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { type Validator, mkValidator } from "../Validator";

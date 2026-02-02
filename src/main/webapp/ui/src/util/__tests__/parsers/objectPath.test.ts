@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { objectPath } from "../../parsers";
 import Result from "../../result";
-import "@testing-library/jest-dom/vitest";
 
 describe("objectPath", () => {
   test("Recursive example", () => {

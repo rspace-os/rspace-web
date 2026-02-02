@@ -5,7 +5,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import RadioField from "../../RadioField";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";

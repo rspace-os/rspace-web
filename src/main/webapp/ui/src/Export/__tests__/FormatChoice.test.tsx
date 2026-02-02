@@ -6,7 +6,6 @@ import {
   screen,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import FormatChoice from "../FormatChoice";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";

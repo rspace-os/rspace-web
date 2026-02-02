@@ -4,7 +4,6 @@ import {
   render,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import ExportRepoUser from "../ExportRepoUser";
 import { type Person } from "../repositories/common";
 import MockAdapter from "axios-mock-adapter";

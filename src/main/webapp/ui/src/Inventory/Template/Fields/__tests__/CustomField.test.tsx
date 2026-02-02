@@ -5,7 +5,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mocking";
 import CustomField from "../CustomField";
 import { ThemeProvider } from "@mui/material/styles";

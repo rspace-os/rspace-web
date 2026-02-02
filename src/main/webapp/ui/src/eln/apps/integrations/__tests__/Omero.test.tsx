@@ -5,7 +5,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import Omero from "../Omero";
 import "../../../../../__mocks__/matchMedia";
 

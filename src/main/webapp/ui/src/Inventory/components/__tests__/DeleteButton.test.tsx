@@ -4,7 +4,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import DeleteButton from "../DeleteButton";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";

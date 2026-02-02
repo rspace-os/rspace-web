@@ -4,7 +4,6 @@ import React from "react";
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import Sidebar from "../Sidebar";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";

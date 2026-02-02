@@ -4,7 +4,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import LinkedDocuments from "../LinkedDocuments";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import InvApiService from "../../../../common/InvApiService";

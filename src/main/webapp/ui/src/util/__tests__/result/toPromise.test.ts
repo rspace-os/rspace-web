@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import Result from "../../result";
-import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 
 describe("toPromise", () => {

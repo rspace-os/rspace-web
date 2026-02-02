@@ -5,7 +5,6 @@ import {
   fireEvent,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import GitHub from "../GitHub";
 import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";

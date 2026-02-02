@@ -5,7 +5,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import AdjustableHeadCell from "../AdjustableHeadCell";
 import RsSet from "../../../../util/set";
 import materialTheme from "../../../../theme";

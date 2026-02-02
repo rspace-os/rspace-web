@@ -1,6 +1,5 @@
 //@flow
 import { describe, expect, test } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import * as ArrayUtils from "../../ArrayUtils";
 

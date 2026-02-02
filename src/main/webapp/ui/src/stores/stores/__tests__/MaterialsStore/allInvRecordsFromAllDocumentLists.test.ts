@@ -1,6 +1,5 @@
 import { test, describe, expect, beforeEach, vi } from 'vitest';
 
-import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
 import { subsampleAttrs } from "../../../models/__tests__/SubSampleModel/mocking";

@@ -10,7 +10,6 @@ import {
   within,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import ExportDialog from "../ExportDialog";
 import { type ExportSelection } from "../common";
 import fc from "fast-check";

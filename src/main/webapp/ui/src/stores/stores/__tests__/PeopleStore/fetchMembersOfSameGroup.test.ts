@@ -1,5 +1,4 @@
 import { test, describe, expect, beforeEach, vi } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
 import * as PersonMocking from "../../../models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../models/PersonModel";

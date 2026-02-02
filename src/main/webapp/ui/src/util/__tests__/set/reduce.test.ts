@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest';
-import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { monoids } from "../helpers";
 import RsSet from "../../set";

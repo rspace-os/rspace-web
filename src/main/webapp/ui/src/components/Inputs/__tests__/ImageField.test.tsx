@@ -1,7 +1,6 @@
 import { describe, expect, beforeEach, test, vi } from 'vitest';
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import ImageIcon from "@mui/icons-material/Image";
 import { __setIsMobile } from "react-device-detect";

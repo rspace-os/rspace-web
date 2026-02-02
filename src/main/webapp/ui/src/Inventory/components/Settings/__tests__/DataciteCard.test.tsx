@@ -3,7 +3,6 @@ import React from "react";
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import DataciteCard from "../DataciteCard";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";

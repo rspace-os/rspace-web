@@ -4,7 +4,6 @@ import React,
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";

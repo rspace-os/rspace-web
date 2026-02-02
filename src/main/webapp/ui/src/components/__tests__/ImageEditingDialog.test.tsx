@@ -3,7 +3,6 @@
 import { describe, expect, beforeEach, test, vi } from 'vitest';
 import React from "react";
 import { render, cleanup, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import ImageEditingDialog from "../ImageEditingDialog";
 import fc from "fast-check";

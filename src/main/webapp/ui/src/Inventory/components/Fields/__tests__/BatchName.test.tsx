@@ -7,7 +7,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import BatchName from "../BatchName";
 import { type BatchName as BatchNameType } from "../../../../stores/models/InventoryBaseRecordCollection";
 import fc from "fast-check";

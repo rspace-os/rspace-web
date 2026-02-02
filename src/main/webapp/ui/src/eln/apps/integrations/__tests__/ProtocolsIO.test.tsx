@@ -5,7 +5,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import ProtocolsIO from "../ProtocolsIO";
 import { Optional } from "../../../../util/optional";
 import "../../../../../__mocks__/matchMedia";

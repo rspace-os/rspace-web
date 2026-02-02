@@ -5,7 +5,6 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import ValidatingSubmitButton from "../ValidatingSubmitButton";
 import Result from "../../util/result";
 import "../../../__mocks__/matchMedia";

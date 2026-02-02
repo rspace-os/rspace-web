@@ -10,7 +10,6 @@ import React from "react";
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import StringField from "../StringField";
 import TextField from "@mui/material/TextField";
 import { ThemeProvider } from "@mui/material/styles";

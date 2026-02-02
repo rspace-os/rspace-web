@@ -3,7 +3,6 @@ import React from "react";
 import {
   render,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import FormLabel from "@mui/material/FormLabel";
 import FormControl from "../FormControl";
 import { ThemeProvider } from "@mui/material/styles";

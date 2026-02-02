@@ -5,7 +5,6 @@ import {
   cleanup,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import ContextMenuButton from "../ContextMenuButton";
 import { ThemeProvider } from "@mui/material/styles";

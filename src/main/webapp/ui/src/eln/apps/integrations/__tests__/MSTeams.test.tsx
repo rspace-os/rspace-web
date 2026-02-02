@@ -5,7 +5,6 @@ import {
   fireEvent,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import MSTeams from "../MSTeams";
 import { Optional } from "../../../../util/optional";
 import { render, within } from "../../../../__tests__/customQueries";

@@ -4,7 +4,6 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { Heading, HeadingContext } from "../DynamicHeadingLevel";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 

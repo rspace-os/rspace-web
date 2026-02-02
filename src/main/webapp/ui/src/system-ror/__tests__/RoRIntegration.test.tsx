@@ -8,7 +8,6 @@ import {
   fireEvent,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import MockAdapter from "axios-mock-adapter";
 import v2ROR from "./json/v2Ror.json";
 import invalidRoR from "./json/invalidRor.json";

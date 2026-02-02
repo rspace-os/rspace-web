@@ -7,7 +7,6 @@ import {
   within,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { UsersPage } from "..";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
