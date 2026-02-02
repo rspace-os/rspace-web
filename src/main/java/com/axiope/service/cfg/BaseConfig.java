@@ -242,6 +242,7 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorImpl;
 import com.researchspace.webapp.integrations.dmptool.DMPToolDMPProvider;
 import com.researchspace.webapp.integrations.dmptool.DMPToolDMPProviderImpl;
+import com.researchspace.webapp.integrations.dsw.DSWClient;
 import com.researchspace.webapp.integrations.egnyte.EgnyteAuthConnector;
 import com.researchspace.webapp.integrations.egnyte.EgnyteAuthConnectorImpl;
 import com.researchspace.webapp.integrations.pyrat.PyratClient;
@@ -1350,6 +1351,11 @@ public abstract class BaseConfig {
   @Bean(name = "pyrat")
   public PyratClient pyratClient() {
     return new PyratClient();
+  }
+
+  @Bean(name = "dsw")
+  public DSWClient dswClient() {
+    return new DSWClient();
   }
 
   @Bean

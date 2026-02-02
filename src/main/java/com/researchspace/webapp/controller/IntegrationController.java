@@ -8,6 +8,7 @@ import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA
 import static com.researchspace.service.IntegrationsHandler.DMPONLINE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
 import static com.researchspace.service.IntegrationsHandler.EVERNOTE_APP_NAME;
@@ -150,6 +151,7 @@ public class IntegrationController extends BaseController {
         DIGITAL_COMMONS_DATA_APP_NAME,
         integrationsHandler.getIntegration(user, DIGITAL_COMMONS_DATA_APP_NAME));
     rc.put(ASCENSCIA_APP_NAME, integrationsHandler.getIntegration(user, ASCENSCIA_APP_NAME));
+    rc.put(DSW_APP_NAME, integrationsHandler.getIntegration(user, DSW_APP_NAME));
 
     return rc;
   }
