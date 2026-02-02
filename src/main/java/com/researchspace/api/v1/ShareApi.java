@@ -1,6 +1,6 @@
 package com.researchspace.api.v1;
 
-import com.researchspace.api.v1.controller.ApiGenericSearchConfig;
+import com.researchspace.api.v1.controller.ApiShareSearchConfig;
 import com.researchspace.api.v1.controller.DocumentApiPaginationCriteria;
 import com.researchspace.api.v1.model.ApiShareSearchResult;
 import com.researchspace.api.v1.model.ApiSharingResult;
@@ -42,7 +42,7 @@ public interface ShareApi {
   @GetMapping
   ApiShareSearchResult getShares(
       DocumentApiPaginationCriteria pgCrit,
-      ApiGenericSearchConfig apiSrchConfig,
+      ApiShareSearchConfig apiShareSrchConfig,
       BindingResult errors,
       User user)
       throws BindException;
