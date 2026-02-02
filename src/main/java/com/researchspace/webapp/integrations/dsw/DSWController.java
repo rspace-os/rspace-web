@@ -75,4 +75,28 @@ public class DSWController {
       return ResponseEntity.internalServerError().body(null);
     }
   }
+
+  @GetMapping("/getDocument")
+  @ResponseBody
+  public ResponseEntity<JsonNode> getDocument(
+      @RequestParam() String serverAlias, @RequestParam() String documentUuid)
+      throws URISyntaxException, MalformedURLException {
+    // User user = userManager.getAuthenticatedUserInSession();
+    User user = userManager.get(3l);
+    System.out.println("@@@ Using user: " + user.getUsername());
+    UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
+    // TODO: Fix this when we have multiple instances properly supported.  (Although we
+    //  might not need to change anything if there's always one result.)
+    Optional<AppConfigElementSet> cfg =
+        userAppConfigMgr.findByAppConfigElementSetId(
+            uacfg.getAppConfigElementSets().iterator().next().getId());
+    try {
+      return ResponseEntity.ok().body(client.getDocumentURL(serverAlias, cfg.get(), documentUuid));
+    } catch (HttpClientErrorException e) {
+      JsonNode err = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
+      return ResponseEntity.status(e.getStatusCode()).body(err);
+    } catch (Exception e) {
+      return ResponseEntity.internalServerError().body(null);
+    }
+  }
 }

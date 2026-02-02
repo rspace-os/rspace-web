@@ -7,10 +7,7 @@ import lombok.Getter;
 @Getter
 @JsonIgnoreProperties({"page"})
 public class DSWProjects {
-  // @JsonProperty private DSWProject[] projects;
   @JsonProperty private ProjectsArr _embedded;
-
-  // @JsonProperty private String page; // Not needed, so ignore?
 
   public DSWProject[] getProjects() {
     return this._embedded.projects;

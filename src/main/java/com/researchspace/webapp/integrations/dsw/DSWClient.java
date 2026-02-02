@@ -8,10 +8,14 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.integrations.dsw.model.DSWDocument;
+import com.researchspace.webapp.integrations.dsw.model.DSWDocumentDTO;
+import com.researchspace.webapp.integrations.dsw.model.DSWDocuments;
 import com.researchspace.webapp.integrations.dsw.model.DSWProjects;
 import com.researchspace.webapp.integrations.dsw.model.DSWUser;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -91,7 +95,8 @@ public class DSWClient {
         .getBody();
   }
 
-  public JsonNode getProjectsForCurrentUser(String serverAlias, AppConfigElementSet cfg)
+  // public JsonNode getProjectsForCurrentUser(String serverAlias, AppConfigElementSet cfg)
+  public DSWProjects getProjectsForCurrentUser(String serverAlias, AppConfigElementSet cfg)
       throws HttpClientErrorException, URISyntaxException, MalformedURLException {
     DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
 
@@ -104,7 +109,8 @@ public class DSWClient {
       System.out.println("@@@ Error! " + e.getMessage());
     }
 
-    JsonNode projects =
+    DSWProjects projects =
+        //    JsonNode projects =
         restTemplate
             .exchange(
                 UriComponentsBuilder.fromUriString(
@@ -115,44 +121,104 @@ public class DSWClient {
                     .toUri(),
                 HttpMethod.GET,
                 new HttpEntity<>(getHttpHeaders(serverAlias, connCfg)),
-                JsonNode.class)
+                DSWProjects.class)
+            //                JsonNode.class)
             .getBody();
 
     return projects;
+  }
+
+  public JsonNode getDocumentsForProject(
+      String serverAlias, AppConfigElementSet cfg, String projectUuid)
+      throws HttpClientErrorException, URISyntaxException, MalformedURLException {
+    DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
+
+    JsonNode projectDocuments =
+        restTemplate
+            .exchange(
+                UriComponentsBuilder.fromUriString(
+                        connCfg.getRepositoryURL().get()
+                            + "/projects/"
+                            + projectUuid
+                            + "/documents")
+                    .build()
+                    .toUri(),
+                HttpMethod.GET,
+                new HttpEntity<>(getHttpHeaders(serverAlias, connCfg)),
+                JsonNode.class)
+            .getBody();
+
+    return projectDocuments;
   }
 
   public JsonNode getDocsForCurrentUser(String serverAlias, AppConfigElementSet cfg)
       throws HttpClientErrorException, URISyntaxException, MalformedURLException {
     DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
 
-    JsonNode projects = getProjectsForCurrentUser(serverAlias, cfg);
+    //    JsonNode projects = getProjectsForCurrentUser(serverAlias, cfg);
+    //
+    //    DSWProjects dswProjects = null;
+    //    try {
+    //      dswProjects = mapper.readValue(projects.toString(), DSWProjects.class);
+    //      System.out.println("@@@ This many projects: " + dswProjects.getProjects().length);
+    //    } catch (Exception e) {
+    //      System.out.println("@@@ Error! " + e.getMessage());
+    //    }
+    DSWProjects dswProjects = getProjectsForCurrentUser(serverAlias, cfg);
 
-    DSWProjects dswProjects = null;
-    try {
-      dswProjects = mapper.readValue(projects.toString(), DSWProjects.class);
-      System.out.println("@@@ This many projects: " + dswProjects.getProjects().length);
-    } catch (Exception e) {
-      System.out.println("@@@ Error! " + e.getMessage());
+    List<String> projectUuids =
+        Arrays.stream(dswProjects.getProjects()).map(p -> p.getUuid()).collect(Collectors.toList());
+
+    List<DSWDocumentDTO> userDocuments = new ArrayList<>();
+
+    for (String projectUuid : projectUuids) {
+      JsonNode documents = getDocumentsForProject(serverAlias, cfg, projectUuid);
+      // System.out.println("@@@ Documents for project: " + documents);
+      try {
+        DSWDocuments dswDocuments = mapper.readValue(documents.toString(), DSWDocuments.class);
+        System.out.println("This many documents: " + dswDocuments.getDocuments().length);
+        for (DSWDocument dswDocument : dswDocuments.getDocuments()) {
+          DSWDocumentDTO dswDocumentDTO = new DSWDocumentDTO(dswDocument);
+          userDocuments.add(dswDocumentDTO);
+        }
+      } catch (Exception e) {
+        System.out.println("@@@ Documents error: " + e);
+      }
     }
 
-    List<String> projectUuids = Arrays.stream(dswProjects.getProjects())
-        .map(p -> p.getUuid())
-        .collect(Collectors.toList());
+    System.out.println("@@@ This many aggregated documents: " + userDocuments.size());
+    JsonNode userDocJson = null;
 
-    JsonNode documents = null;
-    //    documents =
-    //        restTemplate
-    //            .exchange(
-    //                UriComponentsBuilder.fromUriString(
-    //                        connCfg.getRepositoryURL().get()
-    //                            + "/projects?userUuids=")
-    //                    .build()
-    //                    .toUri(),
-    //                HttpMethod.GET,
-    //                new HttpEntity<>(getHttpHeaders(serverAlias, connCfg)),
-    //                JsonNode.class)
-    //            .getBody();
+    try {
+      String docsAsString = mapper.writeValueAsString(userDocuments);
+      System.out.println("@@@ Docs as string: " + docsAsString);
+      userDocJson = mapper.readTree(docsAsString);
+    } catch (Exception e) {
+      System.out.println("@@@ Error converting: " + e);
+    }
 
-    return documents;
+    return userDocJson;
+  }
+
+  public JsonNode getDocumentURL(String serverAlias, AppConfigElementSet cfg, String documentUuid)
+      throws HttpClientErrorException, URISyntaxException, MalformedURLException {
+    DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
+
+    JsonNode projectDocuments =
+        restTemplate
+            .exchange(
+                UriComponentsBuilder.fromUriString(
+                        connCfg.getRepositoryURL().get()
+                            + "/documents/"
+                            + documentUuid
+                            + "/download")
+                    .build()
+                    .toUri(),
+                HttpMethod.GET,
+                new HttpEntity<>(getHttpHeaders(serverAlias, connCfg)),
+                JsonNode.class)
+            .getBody();
+
+    return projectDocuments;
   }
 }
