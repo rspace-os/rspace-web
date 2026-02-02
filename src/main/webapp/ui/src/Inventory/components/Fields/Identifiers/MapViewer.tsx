@@ -39,7 +39,7 @@ type MapViewerArgs = {
  * not appear that open street maps has any usage limits nor restrictions on use for commercial
  * products unlike many of alternatives that were considered such as maptiler.
  *
- * An attempt was made to write a vi tests for this component, but it proved impossible
+ * An attempt was made to write a tests for this component, but it proved impossible
  * to do so because the react-leaflet library uses odd syntax that the vi runtime cannot
  * work with. There is some discussion online on how this can be resolved, but those steps
  * alone did not prove fruitful. For example, https://github.com/PaulLeCam/react-leaflet/issues/977
