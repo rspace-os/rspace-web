@@ -7,8 +7,7 @@ import GridLayoutConfig from "../GridLayoutConfig";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
-import { toBeAccessible } from "@sa11y/vitest";
-expect.extend({ toBeAccessible });
+
 describe("GridLayoutConfig", () => {
   test("Should have no axe violations.", async () => {
     const gridContainer = makeMockContainer({

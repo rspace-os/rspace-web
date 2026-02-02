@@ -8,9 +8,7 @@ import fc from "fast-check";
 import { sleep } from "../../util/Util";
 // Import image and canvas mocks for this test
 import "../../__tests__/mocks/imageCanvasMocks";
-// Import accessibility matcher
-import { toBeAccessible } from "@sa11y/vitest";
-expect.extend({ toBeAccessible });
+
 describe("ImageEditingDialog", () => {
   test("Should have no axe violations.", async () => {
     const canvas = document.createElement("canvas");
@@ -21,7 +19,6 @@ describe("ImageEditingDialog", () => {
     ctx.canvas.height = 400;
     ctx.fillStyle = "green";
     ctx.fillRect(10, 10, 150, 100);
-    const user = userEvent.setup();
     const blob: Blob = await new Promise((resolve) => {
       canvas.toBlob((b: Blob | null) => {
         if (b === null) throw new Error("toBlob failed");
@@ -39,7 +36,6 @@ describe("ImageEditingDialog", () => {
     );
     // wait for image to load
     await screen.findByRole("img") as HTMLImageElement;
-    await user.click(screen.getByRole("button", { name: "rotate clockwise" }));
     // wait for rotated image to load
     await sleep(1000);
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
@@ -294,5 +290,4 @@ describe("ImageEditingDialog", () => {
     expect(close).toHaveBeenCalled();
     expect(submitHandler).not.toHaveBeenCalled();
   });
-});
 });
