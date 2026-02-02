@@ -1,30 +1,23 @@
-/*
- */
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { describe, expect, beforeEach, it, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  cleanup,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { render, cleanup, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import ImageEditingDialog from "../ImageEditingDialog";
 import fc from "fast-check";
 import { sleep } from "../../util/Util";
 
+// Import image and canvas mocks for this test
+import "../../__tests__/mocks/imageCanvasMocks";
+
+// Import accessibility matcher
+import { toBeAccessible } from "@sa11y/vitest";
+
+expect.extend({ toBeAccessible });
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
-
 
 const readAsDataUrl = (file: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -65,8 +58,11 @@ describe("ImageEditingDialog", () => {
         close={() => {}}
         submitHandler={() => {}}
         alt="dummy alt text"
-      />
+      />,
     );
+
+    // wait for image to load
+    await screen.findByRole("img");
 
     await user.click(screen.getByRole("button", { name: "rotate clockwise" }));
 
@@ -113,16 +109,29 @@ describe("ImageEditingDialog", () => {
               close={() => {}}
               submitHandler={submitHandler}
               alt="dummy alt text"
-            />
+            />,
           );
 
           await screen.findByRole("img");
+
+          // Wait for image to fully load and set dimensions
+          await waitFor(() => {
+            const image = screen.getByRole("img") as HTMLImageElement;
+            expect(image.complete).toBe(true);
+            expect(image.naturalWidth).toBeGreaterThan(0);
+            expect(image.naturalHeight).toBeGreaterThan(0);
+          });
 
           const rotateButton = screen.getByRole("button", {
             name: "rotate " + direction,
           });
           for (let i = 0; i < number; i++) {
             await user.click(rotateButton);
+            // Wait a bit for rotation to complete
+            await waitFor(() => {
+              const image = screen.getByRole("img") as HTMLImageElement;
+              expect(image.complete).toBe(true);
+            });
           }
 
           await user.click(screen.getByRole("button", { name: /done/i }));
@@ -132,9 +141,9 @@ describe("ImageEditingDialog", () => {
           });
           const actualBlob = submitHandler.mock.calls[0][0] as Blob;
           expect(actualBlob).toBeInstanceOf(Blob);
-        }
+        },
       ),
-      { numRuns: 4 }
+      { numRuns: 4 },
     );
   });
 
@@ -164,13 +173,18 @@ describe("ImageEditingDialog", () => {
         close={() => {}}
         submitHandler={submitHandler}
         alt="dummy alt text"
-      />
+      />,
     );
 
     await screen.findByRole("img");
 
-    // wait for image to load
-    await Promise.resolve();
+    // Wait for image to fully load and set dimensions
+    await waitFor(() => {
+      const image = screen.getByRole("img") as HTMLImageElement;
+      expect(image.complete).toBe(true);
+      expect(image.naturalWidth).toBeGreaterThan(0);
+      expect(image.naturalHeight).toBeGreaterThan(0);
+    });
 
     const rotateButton = screen.getByRole("button", {
       name: "rotate clockwise",
@@ -179,7 +193,10 @@ describe("ImageEditingDialog", () => {
     await user.click(rotateButton);
 
     // wait for rotated image to load
-    await Promise.resolve();
+    await waitFor(() => {
+      const image = screen.getByRole("img") as HTMLImageElement;
+      expect(image.complete).toBe(true);
+    });
 
     await user.click(screen.getByRole("button", { name: /done/i }));
 
@@ -215,15 +232,29 @@ describe("ImageEditingDialog", () => {
         close={() => {}}
         submitHandler={submitHandler}
         alt="dummy alt text"
-      />
+      />,
     );
 
     await screen.findByRole("img");
+
+    // Wait for image to fully load and set dimensions
+    await waitFor(() => {
+      const image = screen.getByRole("img") as HTMLImageElement;
+      expect(image.complete).toBe(true);
+      expect(image.naturalWidth).toBeGreaterThan(0);
+      expect(image.naturalHeight).toBeGreaterThan(0);
+    });
 
     const rotateButton = screen.getByRole("button", {
       name: "rotate counter clockwise",
     });
     await user.click(rotateButton);
+
+    // wait for rotated image to load
+    await waitFor(() => {
+      const image = screen.getByRole("img") as HTMLImageElement;
+      expect(image.complete).toBe(true);
+    });
 
     await user.click(screen.getByRole("button", { name: /done/i }));
 
@@ -260,7 +291,7 @@ describe("ImageEditingDialog", () => {
         close={close}
         submitHandler={submitHandler}
         alt="dummy alt text"
-      />
+      />,
     );
 
     await screen.findByRole("img");
@@ -305,13 +336,18 @@ describe("ImageEditingDialog", () => {
         close={close}
         submitHandler={submitHandler}
         alt="dummy alt text"
-      />
+      />,
     );
 
     await screen.findByRole("img");
 
-    // wait for image to load
-    await Promise.resolve();
+    // Wait for image to fully load and set dimensions
+    await waitFor(() => {
+      const image = screen.getByRole("img") as HTMLImageElement;
+      expect(image.complete).toBe(true);
+      expect(image.naturalWidth).toBeGreaterThan(0);
+      expect(image.naturalHeight).toBeGreaterThan(0);
+    });
 
     const rotateButton = screen.getByRole("button", {
       name: "rotate clockwise",
@@ -320,7 +356,10 @@ describe("ImageEditingDialog", () => {
     await user.click(rotateButton);
 
     // wait for rotated image to load
-    await Promise.resolve();
+    await waitFor(() => {
+      const image = screen.getByRole("img") as HTMLImageElement;
+      expect(image.complete).toBe(true);
+    });
 
     await user.click(screen.getByRole("button", { name: /cancel/i }));
 

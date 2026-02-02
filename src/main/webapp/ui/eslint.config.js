@@ -152,6 +152,7 @@ export default defineConfig([
     rules: {
       ...testingLibrary.configs.react.rules,
       ...jestDom.configs.recommended.rules,
+      "testing-library/no-manual-cleanup": "off",
     },
   },
 
