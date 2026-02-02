@@ -1,9 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import SampleModel, { type SampleAttrs } from "../../SampleModel";
@@ -22,7 +17,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 
 describe("action: populateFromJson", () => {
   describe("When called, it should", () => {
-    it("not use the factory with which it was instantiated.", () => {
+    test("not use the factory with which it was instantiated.", () => {
       const factory = mockFactory();
       const newRecordSpy = vi
         .spyOn(factory, "newRecord")

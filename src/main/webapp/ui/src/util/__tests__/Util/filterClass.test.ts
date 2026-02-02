@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import * as ArrayUtils from "../../ArrayUtils";
 
 describe("filterClass", () => {
-  it("Simple example", () => {
+  test("Simple example", () => {
     class SuperClass {}
     class SubClassA extends SuperClass {}
     class SubClassB extends SuperClass {}

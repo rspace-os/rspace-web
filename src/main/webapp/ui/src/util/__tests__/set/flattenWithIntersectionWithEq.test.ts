@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import RsSet, { flattenWithIntersectionWithEq } from "../../set";
 
 describe("flattenWithIntersectionWithEq", () => {
-  it("Some overlap", () => {
+  test("Some overlap", () => {
     const actual = flattenWithIntersectionWithEq(
       new RsSet([
         new RsSet([{ id: 1 }, { id: 2 }]),
@@ -14,7 +14,7 @@ describe("flattenWithIntersectionWithEq", () => {
     expect(actual.map(({ id }) => id).isSame(new RsSet([1]))).toBe(true);
   });
 
-  it("No overlap", () => {
+  test("No overlap", () => {
     const actual = flattenWithIntersectionWithEq(
       new RsSet([
         new RsSet([{ id: 1 }, { id: 2 }]),
@@ -26,7 +26,7 @@ describe("flattenWithIntersectionWithEq", () => {
     expect(actual.map(({ id }) => id).isSame(new RsSet([]))).toBe(true);
   });
 
-  it("All overlap", () => {
+  test("All overlap", () => {
     const actual = flattenWithIntersectionWithEq(
       new RsSet([
         new RsSet([{ id: 1 }, { id: 2 }]),

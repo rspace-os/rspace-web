@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import Result from "../../result";
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 
 describe("toPromise", () => {
-  it("When the Result is OK, the promise should resolve", () => {
+  test("When the Result is OK, the promise should resolve", () => {
     return fc.assert(
       fc.asyncProperty(fc.anything(), async (expectedValue) => {
         const actualValue = await Result.Ok(expectedValue).toPromise();
@@ -13,7 +13,7 @@ describe("toPromise", () => {
     );
   });
 
-  it("When there are multiple errors, they should be wrapped in an AggregateError", async () => {
+  test("When there are multiple errors, they should be wrapped in an AggregateError", async () => {
     const errors = [new Error("foo"), new Error("bar")];
     try {
       await Result.Error<unknown>(errors).toPromise();
@@ -23,7 +23,7 @@ describe("toPromise", () => {
     }
   });
 
-  it("When there is one error, it should simply be the rejected value", async () => {
+  test("When there is one error, it should simply be the rejected value", async () => {
     const errors = [new Error("foo")];
     try {
       await Result.Error<unknown>(errors).toPromise();

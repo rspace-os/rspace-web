@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -26,7 +20,7 @@ beforeEach(() => {
 
 describe("FormControl", () => {
   describe("Label correctly", () => {
-    it("FormLabel is rendered when label is passed.", () => {
+    test("FormLabel is rendered when label is passed.", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <FormControl label="foo">
@@ -46,7 +40,7 @@ describe("FormControl", () => {
         expect.anything(),
       );
     });
-    it("FormLabel is not rendered when label is not passed.", () => {
+    test("FormLabel is not rendered when label is not passed.", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <FormControl>

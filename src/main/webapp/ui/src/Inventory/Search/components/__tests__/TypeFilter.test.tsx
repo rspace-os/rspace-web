@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -21,7 +15,7 @@ beforeEach(() => {
 
 
 describe("TypeFilter", () => {
-  it("Current type should have aria-current property", () => {
+  test("Current type should have aria-current property", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <TypeFilter

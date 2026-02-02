@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "@/__tests__/mocks/useUiPreference";
 import React from "react";
 import {
@@ -38,7 +32,7 @@ beforeEach(() => {
 
 
 describe("Grant User PI Role", () => {
-  it(
+  test(
     "When `checkVerificationPasswordNeeded` returns true, a message should be shown.",
     async () => {
       const user = userEvent.setup();
@@ -97,7 +91,7 @@ describe("Grant User PI Role", () => {
     },
     40 * 1000,
   );
-  it(
+  test(
     "When `checkVerificationPasswordNeeded` returns false, a message should not be shown.",
     async () => {
       const user = userEvent.setup();

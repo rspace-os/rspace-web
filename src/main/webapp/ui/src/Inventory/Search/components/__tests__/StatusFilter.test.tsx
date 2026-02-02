@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -21,7 +15,7 @@ beforeEach(() => {
 
 
 describe("StatusFilter", () => {
-  it("Current status should have aria-current property", () => {
+  test("Current status should have aria-current property", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <StatusFilter

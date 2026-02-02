@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -58,7 +52,7 @@ beforeEach(() => {
 
 describe("StorageTemperature", () => {
   describe("When enabled and unspecified, the component should", () => {
-    it("show a button that when tapped defaults to ambient temperature.", async () => {
+    test("show a button that when tapped defaults to ambient temperature.", async () => {
       const user = userEvent.setup();
       const fieldOwner = mockFieldOwner({
         fieldValues: {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import * as ArrayUtils from "../../ArrayUtils";
 import { Optional } from "../../optional";
 import fc from "fast-check";
@@ -9,7 +9,7 @@ const presentIfTrue =
     f(x) ? Optional.present(x) : Optional.empty();
 
 describe("mapOptional", () => {
-  it("Example", () => {
+  test("Example", () => {
     const data: Array<
       { tag: "hasNumber"; value: number } | { tag: "hasString"; value: string }
     > = [
@@ -32,7 +32,7 @@ describe("mapOptional", () => {
     ]);
   });
 
-  it("Idempotence", () => {
+  test("Idempotence", () => {
     fc.assert(
       fc.property(
         fc.tuple(fc.array(fc.anything()), fc.func(fc.boolean())),
@@ -48,7 +48,7 @@ describe("mapOptional", () => {
     );
   });
 
-  it("A function that always returns Optional.empty will always result in an empty array.", () => {
+  test("A function that always returns Optional.empty will always result in an empty array.", () => {
     fc.assert(
       fc.property(fc.array(fc.anything()), (array) => {
         expect(ArrayUtils.mapOptional(() => Optional.empty(), array)).toEqual(
@@ -58,7 +58,7 @@ describe("mapOptional", () => {
     );
   });
 
-  it("A function that always returns Optional.present will always result in an unchanged array.", () => {
+  test("A function that always returns Optional.present will always result in an unchanged array.", () => {
     fc.assert(
       fc.property(fc.array(fc.anything()), (array) => {
         expect(
@@ -68,7 +68,7 @@ describe("mapOptional", () => {
     );
   });
 
-  it("Empty list in, empty list out", () => {
+  test("Empty list in, empty list out", () => {
     fc.assert(
       fc.property(
         fc.constantFrom(
@@ -82,7 +82,7 @@ describe("mapOptional", () => {
     );
   });
 
-  it("Length of output will always be less than or equal to length of input.", () => {
+  test("Length of output will always be less than or equal to length of input.", () => {
     fc.assert(
       fc.property(
         fc.tuple(fc.array(fc.anything()), fc.func(fc.boolean())),

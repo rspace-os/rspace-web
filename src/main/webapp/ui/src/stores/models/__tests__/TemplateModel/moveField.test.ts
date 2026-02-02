@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import fc from "fast-check";
 import { makeMockTemplate } from "./mocking";
 import { arrayOfSameElements } from "../../../../util/__tests__/helpers";
@@ -130,7 +130,7 @@ const fieldData: Array<FieldModelAttrs> = [
 
 describe("action: moveField", () => {
   describe("Property Tests", () => {
-    it("Moving to top should be idempotent.", () => {
+    test("Moving to top should be idempotent.", () => {
       fc.assert(
         fc.property(fc.nat(fieldData.length - 1), (i) => {
           const template = makeMockTemplate({
@@ -145,7 +145,7 @@ describe("action: moveField", () => {
         })
       );
     });
-    it("Moving to bottom should be idempotent.", () => {
+    test("Moving to bottom should be idempotent.", () => {
       fc.assert(
         fc.property(fc.nat(fieldData.length - 1), (i) => {
           const template = makeMockTemplate({
@@ -160,7 +160,7 @@ describe("action: moveField", () => {
         })
       );
     });
-    it("Re-ordering never changes count.", () => {
+    test("Re-ordering never changes count.", () => {
       fc.assert(
         fc.property(
           fc

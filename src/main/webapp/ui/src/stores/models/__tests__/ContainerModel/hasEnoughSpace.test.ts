@@ -1,9 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, vi } from 'vitest';
 import { makeMockContainer, containerAttrs } from "./mocking";
 import LocationModel from "../../LocationModel";
 
@@ -25,7 +20,7 @@ describe("computed: hasEnoughSpace", () => {
    * If an item is just being moved from one location to another inside a given
    * container then there is always going to be enough space for it.
    */
-  it("There is enough space when moving an item around inside a container.", () => {
+  test("There is enough space when moving an item around inside a container.", () => {
     const container = makeMockContainer({
       name: "A visual container",
       locations: [],
@@ -66,7 +61,7 @@ describe("computed: hasEnoughSpace", () => {
     expect(container.hasEnoughSpace).toBe(true);
   });
 
-  it("There is enough space when adding an item to a container with a free slot.", () => {
+  test("There is enough space when adding an item to a container with a free slot.", () => {
     const container = makeMockContainer({
       name: "A visual container",
       cType: "IMAGE",
@@ -101,7 +96,7 @@ describe("computed: hasEnoughSpace", () => {
     expect(container.hasEnoughSpace).toBe(true);
   });
 
-  it("There is not enough space when adding an item to a full container.", () => {
+  test("There is not enough space when adding an item to a full container.", () => {
     const container = makeMockContainer({
       name: "A visual container",
       cType: "IMAGE",

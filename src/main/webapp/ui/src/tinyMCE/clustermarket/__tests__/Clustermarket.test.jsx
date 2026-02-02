@@ -1,4 +1,4 @@
-import { describe, expect, beforeEach, it, vi } from "vitest";
+import { test, describe, expect, beforeEach, vi } from "vitest";
 import Clustermarket, { getOrder, getOrderBy } from "../Clustermarket";
 import React from "react";
 import axios from "@/common/axios";
@@ -56,10 +56,10 @@ beforeEach(() => {
 });
 
 describe("Has defaultOrderBy ", () => {
-  it("when no value in localStorage then returns Order by start_time", () => {
+  test("when no value in localStorage then returns Order by start_time", () => {
     expect(getOrderBy()).toEqual("start_time");
   });
-  it("returns Order By value in localStorage", () => {
+  test("returns Order By value in localStorage", () => {
     localStorageMock.getItem = vi
       .fn()
       .mockImplementationOnce(() => '"duration"');
@@ -68,23 +68,23 @@ describe("Has defaultOrderBy ", () => {
 });
 
 describe("Has defaultOrder ", () => {
-  it("when no value in localStorage then returns  Order.asc", () => {
+  test("when no value in localStorage then returns  Order.asc", () => {
     expect(getOrder()).toEqual(Order.asc);
   });
-  it("returns Order value in localStorage", () => {
+  test("returns Order value in localStorage", () => {
     localStorageMock.getItem = vi.fn().mockImplementationOnce(() => Order.desc);
     expect(getOrder()).toEqual(Order.desc);
   });
 });
 
 describe("Renders page with booking data ", () => {
-  it("displays booking table headers", async () => {
+  test("displays booking table headers", async () => {
     getWrapper();
 
     await findFirstByText("Booking ID");
   });
 
-  it("displays booking type radio and maintenance checkbox", async () => {
+  test("displays booking type radio and maintenance checkbox", async () => {
     getWrapper();
 
     await findFirstByText("Booked");
@@ -93,7 +93,7 @@ describe("Renders page with booking data ", () => {
     await findFirstByText("maintenance only");
   });
 
-  it('displays bookings of type "booked"', async () => {
+  test('displays bookings of type "booked"', async () => {
     getWrapper();
 
     await findFirstByText("Booking ID");
@@ -107,7 +107,7 @@ describe("Renders page with booking data ", () => {
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
   });
 
-  it('displays bookings of type "booked and completed"', async () => {
+  test('displays bookings of type "booked and completed"', async () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
 
     await findFirstByText("Booking ID");
@@ -117,7 +117,7 @@ describe("Renders page with booking data ", () => {
     expect(screen.getAllByText("COMPLETED_1")[0]).toBeInTheDocument();
   });
 
-  it("bookings are ordered by start date, ascending", async () => {
+  test("bookings are ordered by start date, ascending", async () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
 
     await findFirstByText("Booking ID");
@@ -137,7 +137,7 @@ describe("Renders page with booking data ", () => {
     );
   });
 
-  it("displays headers with no results table if no data and ALL bookings ", async () => {
+  test("displays headers with no results table if no data and ALL bookings ", async () => {
     mockAxios.resetHandlers();
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper({ defaultBookingType: BookingType.ALL });
@@ -148,7 +148,7 @@ describe("Renders page with booking data ", () => {
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
   });
 
-  it("displays headers with no results table if no data and Booked bookings ", async () => {
+  test("displays headers with no results table if no data and Booked bookings ", async () => {
     mockAxios.resetHandlers();
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper();

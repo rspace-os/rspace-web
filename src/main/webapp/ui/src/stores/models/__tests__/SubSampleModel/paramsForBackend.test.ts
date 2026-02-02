@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import {
   makeMockSubSample,
   makeMockSubSampleWithParentContainer,
@@ -22,14 +22,14 @@ describe("computed: paramsForBackend", () => {
    * valid string.
    */
   describe("paramsForBackend should be JSON serialisable when", () => {
-    it("the subSample is on the bench.", () => {
+    test("the subSample is on the bench.", () => {
       const subSample = makeMockSubSample();
       expect(JSON.stringify(subSample.paramsForBackend)).toEqual(
         expect.any(String)
       );
     });
 
-    it("the subSample has a parent container.", () => {
+    test("the subSample has a parent container.", () => {
       const subSample = makeMockSubSampleWithParentContainer();
       expect(JSON.stringify(subSample.paramsForBackend)).toEqual(
         expect.any(String)

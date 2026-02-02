@@ -1,10 +1,5 @@
 
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import React from "react";
 import {
@@ -60,7 +55,7 @@ describe("Export Tests", () => {
   };
 
   describe("ExportDialog with no selected results (user data)", () => {
-    it("renders, has radio options for exportMode and for containers (plus help text)", () => {
+    test("renders, has radio options for exportMode and for containers (plus help text)", () => {
       render(
         <storesContext.Provider
           value={makeMockRootStore({
@@ -92,7 +87,7 @@ describe("Export Tests", () => {
   });
 
   describe("ExportDialog with selected results", () => {
-    it("renders, has radio options (and help text) for samples", () => {
+    test("renders, has radio options (and help text) for samples", () => {
       render(
         <storesContext.Provider
           value={makeMockRootStore({
@@ -119,7 +114,7 @@ describe("Export Tests", () => {
       expect(screen.getAllByText(defaultSamplesHint)[0]).toBeInTheDocument();
     });
 
-    it("renders, has radio options for exportMode, samples and containers", () => {
+    test("renders, has radio options for exportMode, samples and containers", () => {
       render(
         <storesContext.Provider
           value={makeMockRootStore({

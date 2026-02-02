@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -40,17 +34,17 @@ describe("DeleteButton", () => {
     );
   }
 
-  it("Shows disabled tooltip.", () => {
+  test("Shows disabled tooltip.", () => {
     renderDeleteButton({ disabled: true });
     expect(screen.getByLabelText("baz"));
   });
 
-  it("Shows before clicked tooltip.", () => {
+  test("Shows before clicked tooltip.", () => {
     renderDeleteButton();
     expect(screen.getByLabelText("bar"));
   });
 
-  it("Shows after clicked tooltip.", async () => {
+  test("Shows after clicked tooltip.", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn(() => {});
     renderDeleteButton({ onClick });
@@ -59,7 +53,7 @@ describe("DeleteButton", () => {
     expect(screen.getByLabelText("foo"));
   });
 
-  it("Becomes disabled once clicked.", async () => {
+  test("Becomes disabled once clicked.", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn(() => {});
     renderDeleteButton({ onClick });

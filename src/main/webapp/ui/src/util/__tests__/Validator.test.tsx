@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React,
   { useState,
   useEffect } from "react";
@@ -73,7 +67,7 @@ function ParentComponent() {
 }
 
 describe("Validator", () => {
-  it("Example", async () => {
+  test("Example", async () => {
     render(<ParentComponent />);
 
     // initially, this button will do nothing because the validator fails

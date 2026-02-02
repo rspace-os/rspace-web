@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
@@ -6,7 +6,7 @@ import { makeMockSample } from "../SampleModel/mocking";
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 
 describe("method: validState", () => {
-  it("Error flag should be asserted.", () => {
+  test("Error flag should be asserted.", () => {
     const field = new FieldModel(
       {
         attachment: null,

@@ -1,4 +1,4 @@
-import { describe, it, vi } from "vitest";
+import { describe, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import InventoryBaseRecord from "../../InventoryBaseRecord";
 import fc, { type Command } from "fast-check";
@@ -20,7 +20,7 @@ vi.mock("../../../stores/RootStore", () => ({
 }));
 
 describe("Scoped Toasts Model Tests", () => {
-  it("add and clear", async () => {
+  test("add and clear", async () => {
     const allCommands = [
       fc
         .string()

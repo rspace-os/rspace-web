@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   screen,
@@ -59,7 +53,7 @@ beforeEach(() => {
 
 
 describe("MoveDialog", () => {
-  it("When cancel is pressed, the dialog should close.", async () => {
+  test("When cancel is pressed, the dialog should close.", async () => {
     const user = userEvent.setup();
     const rootStore: StoreContainer = makeMockRootStore(
       observable({
@@ -110,7 +104,7 @@ describe("MoveDialog", () => {
     );
   });
 
-  it("Table hidden in header should list all selectedResults", () => {
+  test("Table hidden in header should list all selectedResults", () => {
     fc.assert(
       fc
         .property(

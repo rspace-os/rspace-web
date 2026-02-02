@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -28,7 +22,7 @@ beforeEach(() => {
 
 describe("SelectAction", () => {
   describe("Shows a badge that should", () => {
-    it("display the count of selected records.", () => {
+    test("display the count of selected records.", () => {
       fc.assert(
         fc.property(
           /*

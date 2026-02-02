@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   screen,
@@ -30,7 +24,7 @@ beforeEach(() => {
 
 describe("Slack", () => {
   describe("Accessibility", () => {
-    it("Should have no axe violations.", async () => {
+    test("Should have no axe violations.", async () => {
       const { baseElement } = render(
         <Slack
           integrationState={{
@@ -120,7 +114,7 @@ describe("Slack", () => {
       .spyOn(window, "setInterval")
       .mockImplementation((f) => f() as unknown as NodeJS.Timeout);
   });
-  it("When the add flow is triggered, the channel details should be shown.", async () => {
+  test("When the add flow is triggered, the channel details should be shown.", async () => {
     const integrationState = observable<IntegrationStates["SLACK"]>({
       mode: "DISABLED",
       credentials: [],
@@ -151,7 +145,7 @@ describe("Slack", () => {
 
     expect(integrationState.credentials.length).toBe(1);
   });
-  it("When the add flow is triggered, there should be a cancel button.", async () => {
+  test("When the add flow is triggered, there should be a cancel button.", async () => {
     render(
       <Alerts>
         <Slack
@@ -180,7 +174,7 @@ describe("Slack", () => {
 
     expect(screen.getByRole("button", { name: /add/i })).toBeVisible();
   });
-  it("Should render the existing channels.", () => {
+  test("Should render the existing channels.", () => {
     render(
       <Alerts>
         <Slack
@@ -217,7 +211,7 @@ describe("Slack", () => {
     );
     expect(screen.getByRole("textbox")).toHaveValue("custom label");
   });
-  it("Channel label should be changeable.", async () => {
+  test("Channel label should be changeable.", async () => {
     const mockAxios = new MockAdapter(axios);
     mockAxios.onPost("integration/saveAppOptions").reply(200, {
       success: true,
@@ -289,7 +283,7 @@ describe("Slack", () => {
       })
     );
   });
-  it("Saving changes to one channel should not overrwrite changes to other.", async () => {
+  test("Saving changes to one channel should not overrwrite changes to other.", async () => {
     const mockAxios = new MockAdapter(axios);
     mockAxios.onPost("integration/saveAppOptions").reply(200, {
       success: true,
@@ -383,7 +377,7 @@ describe("Slack", () => {
 
     expect(screen.getAllByRole("textbox")[1]).toHaveValue("also custom label");
   });
-  it("Deleting a channel should make the right API call.", async () => {
+  test("Deleting a channel should make the right API call.", async () => {
     const mockAxios = new MockAdapter(axios);
     mockAxios.onPost("integration/deleteAppOptions").reply(200, {
       success: true,

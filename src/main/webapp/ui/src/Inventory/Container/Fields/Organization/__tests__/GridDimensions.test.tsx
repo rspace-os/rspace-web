@@ -1,4 +1,4 @@
-import { describe, expect, beforeEach, it, vi } from "vitest";
+import { describe, expect, beforeEach, test, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -49,7 +49,7 @@ beforeEach(() => {
 });
 
 describe("GridDimensions", () => {
-  it("Each of the standard dimension menu options sets the rows and columns to a valid number.", async () => {
+  test("Each of the standard dimension menu options sets the rows and columns to a valid number.", async () => {
     const user = userEvent.setup();
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
@@ -98,7 +98,7 @@ describe("GridDimensions", () => {
     }
   });
 
-  it("Choosing custom should not change the dimensions.", async () => {
+  test("Choosing custom should not change the dimensions.", async () => {
     const user = userEvent.setup();
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
@@ -162,7 +162,7 @@ describe("GridDimensions", () => {
     expect(columnsBefore).toEqual(columnsAfter);
   });
 
-  it("Changing rows sets menu to Custom", async () => {
+  test("Changing rows sets menu to Custom", async () => {
     const user = userEvent.setup();
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
@@ -205,7 +205,7 @@ describe("GridDimensions", () => {
     expect(screen.getByRole("combobox")).toBeVisible();
   });
 
-  it("Changing columns sets menu to Custom", async () => {
+  test("Changing columns sets menu to Custom", async () => {
     const user = userEvent.setup();
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
@@ -248,7 +248,7 @@ describe("GridDimensions", () => {
     expect(screen.getByRole("combobox")).toBeVisible();
   });
 
-  it("The multiplication of the rows and columns should equal the size quoted in the menu item.", async () => {
+  test("The multiplication of the rows and columns should equal the size quoted in the menu item.", async () => {
     const user = userEvent.setup();
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
@@ -296,7 +296,7 @@ describe("GridDimensions", () => {
     }
   });
 
-  it("The first option, the most popular, should be 96-well plate.", () => {
+  test("The first option, the most popular, should be 96-well plate.", () => {
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -316,7 +316,7 @@ describe("GridDimensions", () => {
     expect(menuOption!).toMatch(/96 well plate/);
   });
 
-  it("Selecting 96-well should save cols: 12 and rows: 8.", async () => {
+  test("Selecting 96-well should save cols: 12 and rows: 8.", async () => {
     const user = userEvent.setup();
     const { rootStore, gridContainer } = makeRootStoreWithGridContainer();
     const spy = vi.spyOn(gridContainer, "setAttributesDirty");
@@ -341,7 +341,7 @@ describe("GridDimensions", () => {
     });
   });
 
-  it("When a menu option is chosen, the same values should be passed to setAttributesDirty as displayed in the numerical fields.", async () => {
+  test("When a menu option is chosen, the same values should be passed to setAttributesDirty as displayed in the numerical fields.", async () => {
     const user = userEvent.setup();
     await fc.assert(
       fc.asyncProperty(fc.nat(), async (unboundedIndex) => {

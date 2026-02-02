@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import RsSet from "../../set";
 import { arbitraryMappableSets } from "./helpers";
 
 describe("intersectionMap", () => {
-  it("Idempotence", () => {
+  test("Idempotence", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA, setB]) => {
         expect(
@@ -17,7 +17,7 @@ describe("intersectionMap", () => {
       })
     );
   });
-  it("Commutativity", () => {
+  test("Commutativity", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA, setB]) => {
         expect(
@@ -29,7 +29,7 @@ describe("intersectionMap", () => {
       })
     );
   });
-  it("Associativity", () => {
+  test("Associativity", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA, setB, setC]) => {
         expect(
@@ -49,7 +49,7 @@ describe("intersectionMap", () => {
       })
     );
   });
-  it("Distributes over union", () => {
+  test("Distributes over union", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA, setB, setC]) => {
         expect(
@@ -66,7 +66,7 @@ describe("intersectionMap", () => {
       })
     );
   });
-  it("The empty set is the absorbing element", () => {
+  test("The empty set is the absorbing element", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA]) => {
         expect(
@@ -75,7 +75,7 @@ describe("intersectionMap", () => {
       })
     );
   });
-  it("The result is a subset of both sets", () => {
+  test("The result is a subset of both sets", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA, setB]) => {
         expect(

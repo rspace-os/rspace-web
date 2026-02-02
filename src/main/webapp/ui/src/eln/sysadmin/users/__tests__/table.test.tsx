@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "@/__tests__/mocks/useUiPreference";
 import React from "react";
 import {
@@ -33,7 +27,7 @@ beforeEach(() => {
 
 
 describe("Table Listing", () => {
-  it("Usage should be shown in human-readable format", async () => {
+  test("Usage should be shown in human-readable format", async () => {
     mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
 
     mockAxios

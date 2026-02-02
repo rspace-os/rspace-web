@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
 import * as PersonMocking from "../../../models/__tests__/PersonModel/mocking";
@@ -36,7 +30,7 @@ vi.mock("../../../../common/ElnApiService", () => ({
   }}));
 
 describe("fetchMembersOfSameGroup", () => {
-  it("Error message should be returned as promise.reject", async () => {
+  test("Error message should be returned as promise.reject", async () => {
     const restoreConsole = silenceConsole(["error"], [/./]);
     const { peopleStore } = getRootStore();
     runInAction(() => {

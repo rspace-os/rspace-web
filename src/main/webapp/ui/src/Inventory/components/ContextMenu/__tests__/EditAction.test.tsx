@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -32,7 +26,7 @@ describe("EditAction", () => {
      * context menu which will set the active result and should then make the
      * form visible.
      */
-    it("call uiStore's setVisiblePanel", async () => {
+    test("call uiStore's setVisiblePanel", async () => {
       const rootStore = makeMockRootStore({
         uiStore: {
           setVisiblePanel: vi.fn(() => {}),

@@ -15,14 +15,7 @@ import "__mocks__/resizeObserver";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
-import {
-  type Mock,
- describe,
- expect,
- beforeEach,
- it,
- vi,
-} from "vitest";
+import { test, type Mock, describe, expect, beforeEach, vi } from 'vitest';
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
@@ -79,7 +72,7 @@ beforeEach(() => {
 
 describe("TemplatePicker", () => {
   describe("Should support saved searches", () => {
-    it("Tapping a saved search should change the templates listed", async () => {
+    test("Tapping a saved search should change the templates listed", async () => {
       const user = userEvent.setup();
       const rootStore = makeMockRootStore({
         searchStore: {

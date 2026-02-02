@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -23,7 +17,7 @@ beforeEach(() => {
 
 
 describe("ToggleView", () => {
-  it("Current view should have aria-current property", () => {
+  test("Current view should have aria-current property", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <ToggleView

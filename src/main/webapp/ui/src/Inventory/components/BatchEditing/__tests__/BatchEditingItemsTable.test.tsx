@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -27,7 +21,7 @@ beforeEach(() => {
 
 
 describe("BatchEditingItemsTable", () => {
-  it("Table body should have as many rows as records that are passed.", async () => {
+  test("Table body should have as many rows as records that are passed.", async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.tuple(arbRsSet(arbitraryRecord), fc.string()),

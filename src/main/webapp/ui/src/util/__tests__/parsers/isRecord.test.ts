@@ -1,21 +1,21 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import { isRecord } from "../../parsers";
 import "@testing-library/jest-dom/vitest";
 
 describe("isRecord", () => {
-  it("should pass for an object literal", () => {
+  test("should pass for an object literal", () => {
     expect(isRecord({}).isOk).toBe(true);
   });
 
-  it("should pass for an object constructor call", () => {
+  test("should pass for an object constructor call", () => {
     expect(isRecord(new Object()).isOk).toBe(true);
   });
 
-  it("should fail for an array", () => {
+  test("should fail for an array", () => {
     expect(isRecord([]).isOk).toBe(false);
   });
 
-  it("should fail for a set", () => {
+  test("should fail for a set", () => {
     expect(isRecord(new Set()).isOk).toBe(false);
   });
 });

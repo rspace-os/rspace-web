@@ -3,7 +3,7 @@ import {
   describe,
   expect,
   beforeEach,
-  it,
+  test,
   vi,
 } from "vitest";
 import React from "react";
@@ -36,7 +36,7 @@ const expectTextField = (value: string | number | null) => () =>
 
 describe("NumberField", () => {
   describe("Renders correctly", () => {
-    it.each`
+    test.each`
       disabled     | value   | noValueLabel | expectFn
       ${true}      | ${0}    | ${undefined} | ${expectTextField(0)}
       ${true}      | ${0}    | ${"foo"}     | ${expectTextField(0)}

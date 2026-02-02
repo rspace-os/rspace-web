@@ -1,9 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-} from "vitest";
+import { test, describe, expect, beforeEach,  } from 'vitest';
 import React from "react";
 import axios from "@/common/axios";
 import {
@@ -45,7 +40,7 @@ describe("Renders with table of  data ", () => {
     .reply(200, GalaxyInvocationsAndDataCount);
   });
 
-  it("displays WorkFlow Data table headers", async () => {
+  test("displays WorkFlow Data table headers", async () => {
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
     const toggleButton = await screen.findByRole("button", {
       name: /Show computational workflows associated with this field/i,
@@ -59,7 +54,7 @@ describe("Renders with table of  data ", () => {
     expect(await screen.findByText("Invocation Status")).toBeInTheDocument();
     expect(await screen.findByText("Invocation Created")).toBeInTheDocument();
   });
-  it("displays WorkFlow Data ", async () => {
+  test("displays WorkFlow Data ", async () => {
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
     const toggleButton = await screen.findByRole("button", {
       name: /Show computational workflows associated with this field/i,
@@ -83,7 +78,7 @@ describe("Handles errors", () => {
     .onGet("/apps/galaxy/galaxyDataExists/1")
     .reply(200, true);
   });
-  it("displays error message if 404 returned", async () => {
+  test("displays error message if 404 returned", async () => {
     mockAxios
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(404, []);
@@ -93,7 +88,7 @@ describe("Handles errors", () => {
         await screen.findByText(/Unable to retrieve any relevant results./i)
     ).toBeInTheDocument();
   });
-  it("displays error message if 403 returned", async () => {
+  test("displays error message if 403 returned", async () => {
     mockAxios
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(403, []);
@@ -104,7 +99,7 @@ describe("Handles errors", () => {
     ).toBeInTheDocument();
   });
 
-  it("displays error message if 500 returned", async () => {
+  test("displays error message if 500 returned", async () => {
     mockAxios
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(500, []);

@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
 import {
@@ -82,7 +76,7 @@ beforeEach(() => {
 
 describe("Template", () => {
   describe("When the sample is deleted, Template field should", () => {
-    it("not allow the user to update to the latest version of the template.", () => {
+    test("not allow the user to update to the latest version of the template.", () => {
       const oldVersionOfTemplate = makeMockTemplate({
         historicalVersion: true,
       });
@@ -120,7 +114,7 @@ describe("Template", () => {
     });
   });
   describe("When a template is chosen", () => {
-    it("all of the template's fields should be copied to the sample.", async () => {
+    test("all of the template's fields should be copied to the sample.", async () => {
       const user = userEvent.setup();
       vi.spyOn(ApiService, "query").mockImplementation((endpoint, params) => {
         if (params.get("resultType") === "TEMPLATE") {

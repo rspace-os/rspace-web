@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { incrementForever } from "../../iterators";
 import * as ArrayUtils from "../../ArrayUtils";
 
 describe("incrementForever", () => {
-  it("Generates a unique, sorted list of integers of arbitrary length, beginning at 0.", () => {
+  test("Generates a unique, sorted list of integers of arbitrary length, beginning at 0.", () => {
     fc.assert(
       fc.property(
         // indexAssertion must be less than count to prevent out of bounds error

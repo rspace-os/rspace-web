@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "../../../../../__mocks__/matchMedia";
 import React,
   { useState } from "react";
@@ -73,7 +67,7 @@ function renderDescriptionField(
 }
 
 describe("Description", () => {
-  it("Should not enter an error state when value is shorter than 251.", () => {
+  test("Should not enter an error state when value is shorter than 251.", () => {
     fc.assert(
       fc.property(fc.string({ maxLength: 250 }), (generatedDescription) => {
         cleanup();
@@ -92,7 +86,7 @@ describe("Description", () => {
     );
   });
 
-  it("Should enter an error state when value is longer than 250 characters.", () => {
+  test("Should enter an error state when value is longer than 250 characters.", () => {
     fc.assert(
       fc.property(fc.string({ minLength: 251 }), (generatedDescription) => {
         cleanup();
@@ -111,7 +105,7 @@ describe("Description", () => {
     );
   });
 
-  it("When the entered text is of a valid length, there should be character count shown.", () => {
+  test("When the entered text is of a valid length, there should be character count shown.", () => {
     fc.assert(
       fc.property(fc.string({ maxLength: 250 }), (generatedDescription) => {
         cleanup();

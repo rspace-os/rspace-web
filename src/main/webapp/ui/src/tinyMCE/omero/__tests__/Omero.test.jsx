@@ -1,4 +1,4 @@
-import { describe, expect, beforeEach, it, vi } from "vitest";
+import { test, describe, expect, beforeEach, vi } from "vitest";
 vi.mock("@/common/axios", async () => {
   const actual = await vi.importActual("axios");
   const instance = actual.default?.create
@@ -154,10 +154,10 @@ beforeEach(() => {
 });
 
 describe("Has defaultOrderBy ", () => {
-  it("when no value in localStorage then returns Order by path", () => {
+  test("when no value in localStorage then returns Order by path", () => {
     expect(getOrderBy()).toEqual("name");
   });
-  it("returns Order By value in localStorage", () => {
+  test("returns Order By value in localStorage", () => {
     localStorageMock.getItem = vi
       .fn()
       .mockImplementationOnce(() => '"description"');
@@ -166,10 +166,10 @@ describe("Has defaultOrderBy ", () => {
 });
 
 describe("Has defaultOrder ", () => {
-  it("when no value in localStorage then returns  Order.asc", () => {
+  test("when no value in localStorage then returns  Order.asc", () => {
     expect(getOrder()).toEqual(Order.asc);
   });
-  it("returns Order value in localStorage", () => {
+  test("returns Order value in localStorage", () => {
     setUpLocalStorageWithOrder(Order.desc);
     expect(getOrder()).toEqual(Order.desc);
   });
@@ -501,7 +501,7 @@ const setUpComponent = async () => {
   await waitForLoadingToFinish();
 };
 describe("Renders page with results data ", () => {
-  it("displays two results table headers", async () => {
+  test("displays two results table headers", async () => {
     await setUpComponent();
     await findFirstByText("Path", undefined, {
       timeout: 5500,
@@ -510,7 +510,7 @@ describe("Renders page with results data ", () => {
       timeout: 5500,
     });
   }, 9999);
-  it("displays data choice radio", async () => {
+  test("displays data choice radio", async () => {
     await setUpComponent();
     await findFirstByText("Projects And Screens", undefined, {
       timeout: 5500,
@@ -522,7 +522,7 @@ describe("Renders page with results data ", () => {
       timeout: 5500,
     });
   }, 9999);
-  it("displays Projects And Screens By Default ordered by name", async () => {
+  test("displays Projects And Screens By Default ordered by name", async () => {
     await setUpComponent();
     await findFirstByText(
       "idr0018-neff-histopathology/experimentA",
@@ -540,7 +540,7 @@ describe("Renders page with results data ", () => {
       "idr0018-neff-histopathology/experimentAproject fetch details see in omero show datasets [248]",
     );
   }, 9999);
-  it("displays Projects Only", async () => {
+  test("displays Projects Only", async () => {
     await setUpProjectsAsData();
     await findFirstByText(
       "idr0018-neff-histopathology/experimentA",
@@ -554,7 +554,7 @@ describe("Renders page with results data ", () => {
     ).toBeInTheDocument();
   }, 9999);
 
-  it("displays Screens Only", async () => {
+  test("displays Screens Only", async () => {
     await setUpScreensAsData();
     await findFirstByText("idr0094-ellinger-sarscov2/screenB", undefined, {
       timeout: 5500,
@@ -564,7 +564,7 @@ describe("Renders page with results data ", () => {
     ).toBeInTheDocument();
   }, 9999);
 
-  it("screens can be sorted by name ", async () => {
+  test("screens can be sorted by name ", async () => {
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0001-graml-sysgro/screenA",
@@ -577,7 +577,7 @@ describe("Renders page with results data ", () => {
     );
   }, 9999);
 
-  it("screens can be sorted by description ", async () => {
+  test("screens can be sorted by description ", async () => {
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0001-graml-sysgro/screenA",
@@ -589,7 +589,7 @@ describe("Renders page with results data ", () => {
       169,
     );
   }, 9999);
-  it("screens description is formatted", async () => {
+  test("screens description is formatted", async () => {
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0001-graml-sysgro/screenA",
@@ -597,7 +597,7 @@ describe("Renders page with results data ", () => {
     );
     expect(getFirstByTestId("description0")).not.toBeEmptyDOMElement();
   }, 9999);
-  it("projects can be sorted by name ", async () => {
+  test("projects can be sorted by name ", async () => {
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0018-neff-histopathology/experimentA",
@@ -609,7 +609,7 @@ describe("Renders page with results data ", () => {
       10,
     );
   }, 9999);
-  it("projects description is formatted ", async () => {
+  test("projects description is formatted ", async () => {
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0018-neff-histopathology/experimentA",
@@ -617,7 +617,7 @@ describe("Renders page with results data ", () => {
     );
     expect(getFirstByTestId("description1")).not.toBeEmptyDOMElement();
   }, 9999);
-  it("projects can be sorted by description ", async () => {
+  test("projects can be sorted by description ", async () => {
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0018-neff-histopathology/experimentA",
@@ -630,7 +630,7 @@ describe("Renders page with results data ", () => {
     );
   }, 9999);
 
-  it("items can have details added ", async () => {
+  test("items can have details added ", async () => {
     await setUpProjectAndScreensInDescendingOrder();
     await fetchDetailsFor("project", 101);
     expect(getFirstByTestId("path24")).toBeInTheDocument();
@@ -638,7 +638,7 @@ describe("Renders page with results data ", () => {
     expect(getFirstByTestId("project_annotation_101_1")).toBeInTheDocument();
   }, 9999);
 
-  it("projects can show datasets", async () => {
+  test("projects can show datasets", async () => {
     await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
@@ -649,7 +649,7 @@ describe("Renders page with results data ", () => {
       "CDK5RAP2-Cdataset fetch detailsshow image grid [33] see in omero -> parent_project",
     );
   }, 9999);
-  it("projects can hide datasets", async () => {
+  test("projects can hide datasets", async () => {
     const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
@@ -659,7 +659,7 @@ describe("Renders page with results data ", () => {
     const didHide = await hideChildren("project", 51, "dataset", 51, 10);
     if (!didHide) return;
   }, 9999);
-  it("datasets have links to projects ", async () => {
+  test("datasets have links to projects ", async () => {
     const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
@@ -677,7 +677,7 @@ describe("Renders page with results data ", () => {
     expect(parentProject).toBeInTheDocument();
   }, 9999);
 
-  it("when projects are reordered datasets are reordered AFTER their parent projects ", async () => {
+  test("when projects are reordered datasets are reordered AFTER their parent projects ", async () => {
     const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
@@ -714,7 +714,7 @@ describe("Renders page with results data ", () => {
     );
   }, 9999);
 
-  it("datasets can show grids of images ", async () => {
+  test("datasets can show grids of images ", async () => {
     const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
@@ -728,7 +728,7 @@ describe("Renders page with results data ", () => {
     if (!didShow) return;
   }, 9999);
 
-  it("datasets can hide grids of images ", async () => {
+  test("datasets can hide grids of images ", async () => {
     const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
@@ -744,7 +744,7 @@ describe("Renders page with results data ", () => {
     if (!didHide) return;
   }, 9999);
 
-  it("screens can show plates, plates can show plate acquisitions", async () => {
+  test("screens can show plates, plates can show plate acquisitions", async () => {
     const didNavigate = await navigateFromScreenToPlate(
       "idr0001-graml-sysgro/screenA",
       3,
@@ -763,7 +763,7 @@ describe("Renders page with results data ", () => {
     );
   }, 9999);
 
-  it("screens can hide plates", async () => {
+  test("screens can hide plates", async () => {
     const didNavigate = await navigateFromScreenToPlate(
       "idr0001-graml-sysgro/screenA",
       3,
@@ -774,7 +774,7 @@ describe("Renders page with results data ", () => {
     if (!didHide) return;
   }, 20000);
 
-  it("plates can hide plateacquisitions", async () => {
+  test("plates can hide plateacquisitions", async () => {
     const didNavigate = await navigateFromScreenToPlate(
       "idr0001-graml-sysgro/screenA",
       3,
@@ -793,7 +793,7 @@ describe("Renders page with results data ", () => {
     if (!didHide) return;
   }, 9999);
 
-  it("when screen hides plates it also hides plates children", async () => {
+  test("when screen hides plates it also hides plates children", async () => {
     const didNavigate = await navigateFromScreenToPlate(
       "idr0001-graml-sysgro/screenA",
       3,
@@ -808,7 +808,7 @@ describe("Renders page with results data ", () => {
     expect(screen.queryByTestId(plateAqcquisitionID)).not.toBeInTheDocument();
   }, 9999);
 
-  it("when screen shows plates it also shows plates children", async () => {
+  test("when screen shows plates it also shows plates children", async () => {
     const didNavigate = await navigateFromScreenToPlate(
       "idr0001-graml-sysgro/screenA",
       3,
@@ -831,7 +831,7 @@ describe("Renders page with results data ", () => {
     expect(plateAcquisition).toBeInTheDocument();
   }, 9999);
 
-  it("plate acquisitions can show grids of images ", async () => {
+  test("plate acquisitions can show grids of images ", async () => {
     const didNavigate = await navigateFromScreenToPlate(
       "idr0001-graml-sysgro/screenA",
       3,
@@ -847,7 +847,7 @@ describe("Renders page with results data ", () => {
     if (!didGrid) return;
   }, 9999);
 
-  it("plate acquisitions can hide grids of images ", async () => {
+  test("plate acquisitions can hide grids of images ", async () => {
     const didNavigate = await navigateFromScreenToPlate(
       "idr0001-graml-sysgro/screenA",
       3,
@@ -865,7 +865,7 @@ describe("Renders page with results data ", () => {
     if (!didHide) return;
   }, 9999);
 
-  it("plates with only one (or none) plate acquisition can directly show grids of images beside the plate acquisition", async () => {
+  test("plates with only one (or none) plate acquisition can directly show grids of images beside the plate acquisition", async () => {
     const didNavigate = await navigateFromScreenToPlate(
       "idr0002-heriche-condensation/screenA",
       102,
@@ -880,7 +880,7 @@ describe("Renders page with results data ", () => {
     if (!didShow) return;
   }, 9999);
 
-  it("On click of an image in the grid of images it is inserted into the document as a new child and has annotations with image data", async () => {
+  test("On click of an image in the grid of images it is inserted into the document as a new child and has annotations with image data", async () => {
     const didNavigate = await navigateFromScreenToPlate(
       "idr0002-heriche-condensation/screenA",
       102,

@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
 import {
@@ -35,7 +29,7 @@ beforeEach(() => {
 
 
 describe("Sidebar", () => {
-  it("Should have no axe violations.", async () => {
+  test("Should have no axe violations.", async () => {
     mockAxios.onGet("livechatProperties").reply(200, {
       livechatEnabled: false,
     });

@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -21,7 +15,7 @@ beforeEach(() => {
 
 
 describe("Omero", () => {
-  it("Should have no axe violations.", async () => {
+  test("Should have no axe violations.", async () => {
     const { baseElement } = render(
       <Omero
         integrationState={{
@@ -39,7 +33,7 @@ describe("Omero", () => {
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     await expect(baseElement).toBeAccessible();
   });
-  it("Should render username and password fields.", () => {
+  test("Should render username and password fields.", () => {
     render(
       <Omero
         integrationState={{

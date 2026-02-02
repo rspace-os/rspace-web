@@ -1,10 +1,10 @@
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import { mergeThemes } from "../../styles";
 import { ThemeOptions } from "@mui/material";
 
 describe("mergeThemes", () => {
-  it("Simple checks", () => {
+  test("Simple checks", () => {
     const theme1 = {
       components: {
         MuiButton: {

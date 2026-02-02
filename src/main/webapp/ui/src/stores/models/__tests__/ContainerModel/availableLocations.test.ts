@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import { makeMockContainer } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
@@ -7,7 +7,7 @@ vi.mock("../../../stores/RootStore", () => ({
 }));
 
 describe("computed: availableLocations", () => {
-  it("List containers have infinite capacity.", () => {
+  test("List containers have infinite capacity.", () => {
     const container = makeMockContainer({ cType: "LIST" });
     expect(container.availableLocations).toEqual({
       isAccessible: true,
@@ -20,7 +20,7 @@ describe("computed: availableLocations", () => {
    * provided by the API, as the basis for the number of available spaces.
    */
   describe("Empty containers", () => {
-    it("Empty grid containers return locationsCount, ignoring gridLayout.", () => {
+    test("Empty grid containers return locationsCount, ignoring gridLayout.", () => {
       const container = makeMockContainer({
         cType: "GRID",
         gridLayout: {
@@ -37,7 +37,7 @@ describe("computed: availableLocations", () => {
       });
     });
 
-    it("Empty visual containers return locationsCount, ignoring existance of locationsImage.", () => {
+    test("Empty visual containers return locationsCount, ignoring existance of locationsImage.", () => {
       const container = makeMockContainer({
         cType: "IMAGE",
         locationsCount: 7,
@@ -55,7 +55,7 @@ describe("computed: availableLocations", () => {
    * the locationsCount.
    */
   describe("Filled containers", () => {
-    it("locationsCount - contentSummary.totalCount", () => {
+    test("locationsCount - contentSummary.totalCount", () => {
       const container = makeMockContainer({
         cType: "GRID",
         locations: [],

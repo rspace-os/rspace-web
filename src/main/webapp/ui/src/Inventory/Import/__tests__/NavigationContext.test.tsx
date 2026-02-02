@@ -2,7 +2,7 @@ import {
   describe,
   expect,
   beforeEach,
-  it,
+  test,
   vi,
 } from "vitest";
 import React,
@@ -44,7 +44,7 @@ const NavigateTo = ({ url }: NavigateToProps) => {
 
 describe("NavigationContext", () => {
   describe("Performs correctly", () => {
-    it.each`
+    test.each`
       url                    | areChanges | userDiscards | expectToNavigate
       ${"/inventory/import"} | ${false}   | ${false}     | ${true}
       ${"/inventory/import"} | ${false}   | ${true}      | ${true}

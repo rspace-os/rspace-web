@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import {
   toCommonUnit,
@@ -13,13 +13,13 @@ import { values } from "../../../../util/Util";
 const PRECISION = 5;
 
 describe("toCommonUnit", () => {
-  it("1g = 1000mg", () => {
+  test("1g = 1000mg", () => {
     expect(toCommonUnit(1, massIds.grams)).toEqual(
       toCommonUnit(1000, massIds.milligrams)
     );
   });
 
-  it("Multiplication distributes over toCommonUnit", () => {
+  test("Multiplication distributes over toCommonUnit", () => {
     fc.assert(
       fc.property(
         fc.tuple(fc.integer(), fc.constantFrom(...values(quantityIds))),
@@ -32,13 +32,13 @@ describe("toCommonUnit", () => {
 });
 
 describe("fromCommonUnit", () => {
-  it("1 quadrillion picograms = 1g", () => {
+  test("1 quadrillion picograms = 1g", () => {
     expect(fromCommonUnit(10 ** 12, massIds.grams)).toEqual(1);
   });
 });
 
 describe("CommonUnit mutual test", () => {
-  it("forall x, unit . fromCommonUnit(toCommonUnit(x, unit), unit) = x", () => {
+  test("forall x, unit . fromCommonUnit(toCommonUnit(x, unit), unit) = x", () => {
     fc.assert(
       fc.property(
         fc.tuple(fc.integer(), fc.constantFrom(...values(quantityIds))),

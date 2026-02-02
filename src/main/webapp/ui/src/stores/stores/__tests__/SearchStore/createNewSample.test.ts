@@ -1,10 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
 import SampleModel from "../../../models/SampleModel";
 
 describe("method: createNewSample", () => {
-  it("Should return a new sample model", async () => {
+  test("Should return a new sample model", async () => {
     const { searchStore, peopleStore } = getRootStore();
     vi
       .spyOn(peopleStore, "fetchCurrentUsersGroups")
@@ -13,7 +13,7 @@ describe("method: createNewSample", () => {
     expect(sample.id).toBe(null);
   });
 
-  it("Should not call fetchAdditionalInfo on the new sample.", async () => {
+  test("Should not call fetchAdditionalInfo on the new sample.", async () => {
     const { searchStore } = getRootStore();
     const spy = vi.spyOn(SampleModel.prototype, "fetchAdditionalInfo");
     await searchStore.createNewSample();

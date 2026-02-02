@@ -3,7 +3,7 @@ import {
   describe,
   expect,
   beforeEach,
-  it,
+  test,
   vi,
 } from "vitest";
 import React from "react";
@@ -76,7 +76,7 @@ const expectJustFoo = () => {
 
 describe("RadioField", () => {
   describe("Renders correctly", () => {
-    it.each`
+    test.each`
       disabled     | hideWhenDisabled | value      | expectFn
       ${true}      | ${true}          | ${null}    | ${expectNoOptions}
       ${true}      | ${true}          | ${"foo"}   | ${expectJustFoo}

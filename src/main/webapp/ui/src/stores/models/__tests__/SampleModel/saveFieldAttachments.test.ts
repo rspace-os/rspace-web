@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { makeMockSample } from "./mocking";
 import InvApiService from "../../../../common/InvApiService";
@@ -21,7 +21,7 @@ describe("saveFieldAttachments", () => {
     /*
      * The endpoint only needs to be called when there is a new file/change of file.
      */
-    it("there should be no calls to the /files endpoint.", async () => {
+    test("there should be no calls to the /files endpoint.", async () => {
       const sample = makeMockSample({
         fields: [
           {

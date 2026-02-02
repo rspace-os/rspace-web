@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import * as ArrayUtils from "../../ArrayUtils";
 
 describe("partition", () => {
-  it("If the predicate always returns true, then the second array is empty.", () => {
+  test("If the predicate always returns true, then the second array is empty.", () => {
     fc.assert(
       fc.property(fc.array(fc.anything()), (list) => {
         const [, no] = ArrayUtils.partition(() => true, list);
@@ -12,7 +12,7 @@ describe("partition", () => {
     );
   });
 
-  it("If the predicate always returns false, then the first array is empty.", () => {
+  test("If the predicate always returns false, then the first array is empty.", () => {
     fc.assert(
       fc.property(fc.array(fc.anything()), (list) => {
         const [yes] = ArrayUtils.partition(() => false, list);
@@ -21,7 +21,7 @@ describe("partition", () => {
     );
   });
 
-  it("The size of the two resulting arrays will always sum to the size of the input array.", () => {
+  test("The size of the two resulting arrays will always sum to the size of the input array.", () => {
     fc.assert(
       fc.property(
         fc.func<unknown[], boolean>(fc.boolean()),
@@ -34,7 +34,7 @@ describe("partition", () => {
     );
   });
 
-  it("Partition distributes over concatenation.", () => {
+  test("Partition distributes over concatenation.", () => {
     fc.assert(
       fc.property(
         fc.func<unknown[], boolean>(fc.boolean()),
@@ -54,7 +54,7 @@ describe("partition", () => {
     );
   });
 
-  it("Order is maintained.", () => {
+  test("Order is maintained.", () => {
     fc.assert(
       fc.property(
         fc.func<unknown[], boolean>(fc.boolean()),

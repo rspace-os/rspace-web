@@ -1,11 +1,5 @@
  
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -77,7 +71,7 @@ const makeAttachment = (attrs?: { name: string }) =>
 
 describe("AttachmentField", () => {
   describe("Description field", () => {
-    it.each`
+    test.each`
       disabled     | value    | noValueLabel | expectFn
       ${true}      | ${""}    | ${undefined} | ${expectLabel("No description")}
       ${true}      | ${""}    | ${"foo"}     | ${expectLabel("foo")}
@@ -123,7 +117,7 @@ describe("AttachmentField", () => {
   });
   describe("Help text", () => {
     describe('value = ""', () => {
-      it("Help text is shown.", () => {
+      test("Help text is shown.", () => {
         const { container } = renderWithDeploymentProperties(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
@@ -141,7 +135,7 @@ describe("AttachmentField", () => {
       });
     });
     describe('value = "foo"', () => {
-      it("Help text is not shown.", () => {
+      test("Help text is not shown.", () => {
         const { container } = renderWithDeploymentProperties(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
@@ -197,7 +191,7 @@ describe("AttachmentField", () => {
           );
           textContent = container.textContent;
         }
-        it("Whether to show FileField.", () => {
+        test("Whether to show FileField.", () => {
           renderAttachmentField();
           if (showFileField) {
             expect(FileField).toHaveBeenCalled();
@@ -205,7 +199,7 @@ describe("AttachmentField", () => {
             expect(FileField).not.toHaveBeenCalled();
           }
         });
-        it('Whether to show "No File Attached" label.', () => {
+        test('Whether to show "No File Attached" label.', () => {
           renderAttachmentField();
           if (showNoAttachmentLabel) {
             expect(textContent).toEqual(
@@ -222,7 +216,7 @@ describe("AttachmentField", () => {
   });
   describe("File viewer", () => {
     describe("attachment = ExistingAttachment", () => {
-      it("Attachment's filename should be shown.", () => {
+      test("Attachment's filename should be shown.", () => {
         const { container } = renderWithDeploymentProperties(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField

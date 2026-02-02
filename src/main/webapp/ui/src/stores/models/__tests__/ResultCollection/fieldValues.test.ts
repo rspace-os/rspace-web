@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import InventoryBaseRecordCollection from "../../InventoryBaseRecordCollection";
 import { PersistedBarcode } from "../../Barcode";
 import { makeMockContainer } from "../ContainerModel/mocking";
@@ -11,7 +11,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 
 describe("Computed: fieldValues", () => {
   describe("Should support batch editing of barcodes.", () => {
-    it("Should return any shared new barcodes.", () => {
+    test("Should return any shared new barcodes.", () => {
       const containers = new RsSet([
         makeMockContainer({
           id: 1,
@@ -40,7 +40,7 @@ describe("Computed: fieldValues", () => {
       expect(collection.fieldValues.barcodes).toEqual([barcode]);
     });
 
-    it("Should not return any shared existing barcodes.", () => {
+    test("Should not return any shared existing barcodes.", () => {
       const containers = new RsSet([
         makeMockContainer({
           id: 1,

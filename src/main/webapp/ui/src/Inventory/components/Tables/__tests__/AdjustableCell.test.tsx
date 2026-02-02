@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -29,7 +23,7 @@ beforeEach(() => {
 
 describe("AdjustableCell", () => {
   describe("Location", () => {
-    it("render a TopLink component when passed a root level container.", () => {
+    test("render a TopLink component when passed a root level container.", () => {
       const adjustableTableRow: AdjustableTableRow<"foo"> = {
         adjustableTableOptions() {
           return new Map<"foo", () => CellContent>([

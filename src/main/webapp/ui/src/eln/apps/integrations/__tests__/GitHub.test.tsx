@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   screen,
@@ -28,7 +22,7 @@ beforeEach(() => {
 
 describe("GitHub", () => {
   describe("Accessibility", () => {
-    it("Should have no axe violations.", async () => {
+    test("Should have no axe violations.", async () => {
       const { baseElement } = render(
         <GitHub
           integrationState={{
@@ -48,7 +42,7 @@ describe("GitHub", () => {
     });
   });
   describe("Correct rendering", () => {
-    it("When there are no repositories, there is a label.", () => {
+    test("When there are no repositories, there is a label.", () => {
       render(
         <GitHub
           integrationState={{
@@ -65,7 +59,7 @@ describe("GitHub", () => {
         screen.getByText("There are no linked repositories.")
       ).toBeVisible();
     });
-    it("The names of repositories should be shown in a table.", () => {
+    test("The names of repositories should be shown in a table.", () => {
       render(
         <GitHub
           integrationState={{
@@ -89,7 +83,7 @@ describe("GitHub", () => {
       ).toBeVisible();
     });
 
-    it("If the server responds with a missing ACCESS_TOKEN then the repo should be shown in an invalid state", () => {
+    test("If the server responds with a missing ACCESS_TOKEN then the repo should be shown in an invalid state", () => {
       render(
         <GitHub
           integrationState={{
@@ -121,7 +115,7 @@ describe("GitHub", () => {
   });
 
   describe("Adding repositories", () => {
-    it("When requested, all repositories should be listed in a table.", async () => {
+    test("When requested, all repositories should be listed in a table.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -176,7 +170,7 @@ describe("GitHub", () => {
         })
       ).toHaveTextContent("a repo");
     });
-    it("When tapped, the add button in the repositories table should make the right API call.", async () => {
+    test("When tapped, the add button in the repositories table should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -240,7 +234,7 @@ describe("GitHub", () => {
       });
     });
 
-    it("When the add button next to a repo is tapped, it should be added to the conncted repos table and removed from the all repos table.", async () => {
+    test("When the add button next to a repo is tapped, it should be added to the conncted repos table and removed from the all repos table.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -332,7 +326,7 @@ describe("GitHub", () => {
         })
       ).toHaveTextContent("There are no available repositories.");
     });
-    it("Adding a repository should mutate the integration state being passed as a prop.", async () => {
+    test("Adding a repository should mutate the integration state being passed as a prop.", async () => {
       const integrationState = observable<IntegrationStates["GITHUB"]>({
         mode: "DISABLED",
         credentials: [],
@@ -409,7 +403,7 @@ describe("GitHub", () => {
   });
 
   describe("Removing repositories", () => {
-    it("Removing a repository should make the correct API call.", async () => {
+    test("Removing a repository should make the correct API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success: true,
@@ -453,7 +447,7 @@ describe("GitHub", () => {
         ).not.toBeInTheDocument();
       });
     });
-    it("Removing a repository should mutate the integration state being passed as a prop.", async () => {
+    test("Removing a repository should mutate the integration state being passed as a prop.", async () => {
       const integrationState = observable({
         mode: "DISABLED" as const,
         credentials: [

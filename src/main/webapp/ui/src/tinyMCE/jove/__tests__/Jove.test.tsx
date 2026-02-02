@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import Jove from "../Jove";
 import React from "react";
 import axios from "@/common/axios";
@@ -41,24 +35,24 @@ beforeEach(() => {
 });
 
 describe("Renders page with jove data ", () => {
-  it("displays jove table headers", async () => {
+  test("displays jove table headers", async () => {
     render(<Jove />);
     await screen.findAllByText("Title");
   });
 
-  it("displays jove search bar ", async () => {
+  test("displays jove search bar ", async () => {
     render(<Jove />);
     await screen.findByLabelText("Search");
   });
 
-  it('displays table headers for jove search results"', async () => {
+  test('displays table headers for jove search results"', async () => {
     render(<Jove />);
     await screen.findAllByText("Thumbnail");
     await screen.findAllByText("Title");
     await screen.findAllByText("Section");
   });
 
-  it("displays jove search results", async () => {
+  test("displays jove search results", async () => {
     render(<Jove />);
     await screen.findAllByText("Title");
     await screen.findAllByText(
@@ -78,7 +72,7 @@ describe("Renders page with jove data ", () => {
     );
   });
 
-  it("displays error message if 404 returned", async () => {
+  test("displays error message if 404 returned", async () => {
     const restoreConsole = silenceConsole(["log"], [/./]);
     mockAxios
       .onPost("/apps/jove/search", {
@@ -95,7 +89,7 @@ describe("Renders page with jove data ", () => {
     restoreConsole();
   });
 
-  it("displays error message if 500 returned", async () => {
+  test("displays error message if 500 returned", async () => {
     const restoreConsole = silenceConsole(["log"], [/./]);
     mockAxios
       .onPost("/apps/jove/search", {

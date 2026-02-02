@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -81,7 +75,7 @@ describe("DryadRepo", () => {
     },
   });
 
-  it("Upon editing, title should be set to the entered value.", async () => {
+  test("Upon editing, title should be set to the entered value.", async () => {
     const handleChange = vi.fn();
     await act(() => void renderDryadRepo({ handleChange }));
 
@@ -99,7 +93,7 @@ describe("DryadRepo", () => {
     );
   });
 
-  it("Upon editing, description should be set to the entered value.", async () => {
+  test("Upon editing, description should be set to the entered value.", async () => {
     const handleChange = vi.fn();
     await act(() => void renderDryadRepo({ handleChange }));
 

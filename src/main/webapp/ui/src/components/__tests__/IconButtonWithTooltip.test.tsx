@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -23,7 +17,7 @@ beforeEach(() => {
 
 
 describe("IconButtonWithTooltip", () => {
-  it("Renders title and aria-label attributes.", () => {
+  test("Renders title and aria-label attributes.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IconButtonWithTooltip title="foo" icon={<CloseIcon />} />
@@ -32,7 +26,7 @@ describe("IconButtonWithTooltip", () => {
 
     screen.getByLabelText("foo");
   });
-  it("onClick functions correctly.", async () => {
+  test("onClick functions correctly.", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
 

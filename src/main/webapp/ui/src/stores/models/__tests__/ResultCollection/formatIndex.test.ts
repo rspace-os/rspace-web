@@ -1,9 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, vi } from 'vitest';
 import fc from "fast-check";
 import { formatIndex } from "../../InventoryBaseRecordCollection";
 import { take, incrementForever } from "../../../../util/iterators";
@@ -30,21 +25,21 @@ const everyOutputForArbitraryNumOfRecords = arbitraryInput
   );
 
 describe("formatIndex", () => {
-  it("Output should only contain digits.", () => {
+  test("Output should only contain digits.", () => {
     fc.assert(
       fc.property(arbitraryInputs, ([index, numOfRecords]) => {
         expect(/^\d+$/.test(formatIndex(index, numOfRecords))).toBe(true);
       })
     );
   });
-  it("For a given numOfRecord, all outputs should have the same length.", () => {
+  test("For a given numOfRecord, all outputs should have the same length.", () => {
     fc.assert(
       fc.property(everyOutputForArbitraryNumOfRecords, (outputs) => {
         expect(outputs.map((s) => s.length).size).toBe(1);
       })
     );
   });
-  it("Parsed output should give index input plus one.", () => {
+  test("Parsed output should give index input plus one.", () => {
     fc.assert(
       fc.property(arbitraryInputs, ([index, numOfRecords]) => {
         expect(parseInt(formatIndex(index, numOfRecords), 10)).toEqual(
@@ -53,7 +48,7 @@ describe("formatIndex", () => {
       })
     );
   });
-  it("The number of leading zeros should be minimal.", () => {
+  test("The number of leading zeros should be minimal.", () => {
     fc.assert(
       fc.property(everyOutputForArbitraryNumOfRecords, (outputs) => {
         expect(outputs.some((x) => x[0] !== "0")).toBe(true);

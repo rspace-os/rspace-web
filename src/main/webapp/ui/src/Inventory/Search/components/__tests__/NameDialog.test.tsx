@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -21,7 +15,7 @@ beforeEach(() => {
 
 
 describe("NameDialog", () => {
-  it("Naming a new saved search the same name as an existing saved search should be an error.", () => {
+  test("Naming a new saved search the same name as an existing saved search should be an error.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <NameDialog

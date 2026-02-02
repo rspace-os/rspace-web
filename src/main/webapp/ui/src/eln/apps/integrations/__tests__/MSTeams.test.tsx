@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   screen,
@@ -29,7 +23,7 @@ beforeEach(() => {
 
 describe("MSTeams", () => {
   describe("Should render correctly.", () => {
-    it("Channel names should be shown in a table.", async () => {
+    test("Channel names should be shown in a table.", async () => {
       render(
         <MSTeams
           integrationState={{
@@ -57,7 +51,7 @@ describe("MSTeams", () => {
         })
       ).toHaveTextContent("foo");
     });
-    it("Remove button should make the right API call.", async () => {
+    test("Remove button should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success: true,
@@ -109,7 +103,7 @@ describe("MSTeams", () => {
 
       expect(integrationState.credentials.length).toBe(0);
     });
-    it("Add button should make the right API call.", async () => {
+    test("Add button should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/saveAppOptions").reply(200, {
         success: true,

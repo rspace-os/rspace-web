@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "../../../../__mocks__/matchMedia";
 import React from "react";
 import {
@@ -57,7 +51,7 @@ describe.skip("DMPDialog", () => {
       }
     );
   })
-  it("Should render mock data correctly.", async () => {
+  test("Should render mock data correctly.", async () => {
     vi.clearAllMocks();
     mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
       data: {
@@ -112,7 +106,7 @@ describe.skip("DMPDialog", () => {
   });
 
   describe.skip("Pagination should work.", () => {
-    it(
+    test(
       "Next and previous page buttons should make the right API calls.",
       async () => {
         const user = userEvent.setup();
@@ -170,7 +164,7 @@ describe.skip("DMPDialog", () => {
       20 * 1000
     );
 
-    it(
+    test(
       "Changing the page size should make the right API call.",
       async () => {
         const user = userEvent.setup();
@@ -250,7 +244,7 @@ describe.skip("DMPDialog", () => {
   });
 
   describe.skip("Search filters should work.", () => {
-    it(
+    test(
       "Label filter should make the right API call.",
       async () => {
         const user = userEvent.setup();

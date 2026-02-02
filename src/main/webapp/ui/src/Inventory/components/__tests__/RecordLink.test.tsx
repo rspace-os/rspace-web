@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -28,7 +22,7 @@ beforeEach(() => {
 
 
 describe("RecordLink", () => {
-  it("Clicking a link to a bench should show the search results.", async () => {
+  test("Clicking a link to a bench should show the search results.", async () => {
     const user = userEvent.setup();
     const rootStore = makeMockRootStore({
       uiStore: {
@@ -50,7 +44,7 @@ describe("RecordLink", () => {
     await user.click(screen.getByRole("link", { name: /User User's Bench/ }));
     expect(spy).toHaveBeenCalledWith("left");
   });
-  it("Clicking a link to a container should show the container's details.", async () => {
+  test("Clicking a link to a container should show the container's details.", async () => {
     const user = userEvent.setup();
     const rootStore = makeMockRootStore({
       uiStore: {

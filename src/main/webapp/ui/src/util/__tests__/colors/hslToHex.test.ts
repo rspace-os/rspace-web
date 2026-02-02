@@ -1,23 +1,23 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { hslToHex } from "../../colors";
 import fc from "fast-check";
 
 describe("hslToHex", () => {
   // leading whitespace in test names is to align test output
-  it("(130, 100,  50) = #00ff2a", () => {
+  test("(130, 100,  50) = #00ff2a", () => {
     expect(hslToHex(130, 100, 50)).toBe("#00ff2aff");
   });
 
-  it("(231, 100,  54) = #1438ff", () => {
+  test("(231, 100,  54) = #1438ff", () => {
     expect(hslToHex(231, 100, 54)).toBe("#1438ffff");
   });
 
-  it("(  0, 100,  50) = #ff0000", () => {
+  test("(  0, 100,  50) = #ff0000", () => {
     expect(hslToHex(0, 100, 50)).toBe("#ff0000ff");
   });
 
-  it("Output should be valid hex string", () => {
+  test("Output should be valid hex string", () => {
     fc.assert(
       fc.property(
         fc.tuple(fc.nat(359), fc.nat(100), fc.nat(100)),
@@ -30,7 +30,7 @@ describe("hslToHex", () => {
     );
   });
 
-  it("When saturation is 0, the output will always be grey.", () => {
+  test("When saturation is 0, the output will always be grey.", () => {
     fc.assert(
       fc.property(fc.tuple(fc.nat(359), fc.nat(100)), ([hue, lightness]) => {
         const matches = hslToHex(hue, 0, lightness).match(

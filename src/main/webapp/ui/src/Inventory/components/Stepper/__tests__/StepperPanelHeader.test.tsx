@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React,
   { useState } from "react";
 import {
@@ -107,7 +101,7 @@ function DummyFormSection({ result }: { result: DummyResult }) {
 }
 
 describe("StepperPanelHeader", () => {
-  it("When useFormSectionError is passed a unique list of strings, the badge should show a number equal to the list's length.", async () => {
+  test("When useFormSectionError is passed a unique list of strings, the badge should show a number equal to the list's length.", async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.uniqueArray(fc.string({ minLength: 1, maxLength: 1 }), {
@@ -147,7 +141,7 @@ describe("StepperPanelHeader", () => {
     );
   });
 
-  it("When useFormSectionError is passed a list of strings, the badge should show a number equal to or less than the list's length.", async () => {
+  test("When useFormSectionError is passed a list of strings, the badge should show a number equal to or less than the list's length.", async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(fc.string({ minLength: 1 })),
@@ -176,7 +170,7 @@ describe("StepperPanelHeader", () => {
     );
   });
 
-  it("When opened, the header shows no badge.", async () => {
+  test("When opened, the header shows no badge.", async () => {
     const user = userEvent.setup();
     render(<DummyFormSection result={new DummyResult()} />);
 
@@ -209,7 +203,7 @@ describe("StepperPanelHeader", () => {
         ArrayUtils.takeWhere(errors, shouldRemove),
       ]);
 
-  it("Errors can be unset, decrementing the badge.", async () => {
+  test("Errors can be unset, decrementing the badge.", async () => {
     await fc.assert(
       fc.asyncProperty(
         arbitraryErrorsAndErrorsToRemove(),
@@ -270,7 +264,7 @@ describe("StepperPanelHeader", () => {
     cleanup();
   });
 
-  it("When `editing` is set to false, the errors are reset.", async () => {
+  test("When `editing` is set to false, the errors are reset.", async () => {
     const user = userEvent.setup();
     const result = new DummyResult();
     render(<DummyFormSection result={result} />);

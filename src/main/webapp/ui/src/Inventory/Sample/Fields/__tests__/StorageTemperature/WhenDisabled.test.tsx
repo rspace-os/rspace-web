@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -61,7 +55,7 @@ const mockFieldOwner = (mockedParts: {
 describe("StorageTemperature", () => {
   describe("When disabled, the component should,", () => {
     describe('Show "Unspecified" when,', () => {
-      it("`storageTempMin` is null.", () => {
+      test("`storageTempMin` is null.", () => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
             <StorageTemperature
@@ -83,7 +77,7 @@ describe("StorageTemperature", () => {
 
         expect(container).toHaveTextContent("unspecified");
       });
-      it("`storageTempMax` is null.", () => {
+      test("`storageTempMax` is null.", () => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
             <StorageTemperature
@@ -105,7 +99,7 @@ describe("StorageTemperature", () => {
 
         expect(container).toHaveTextContent("unspecified");
       });
-      it("Both values are null.", () => {
+      test("Both values are null.", () => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
             <StorageTemperature
@@ -130,7 +124,7 @@ describe("StorageTemperature", () => {
     });
 
     describe("Display a string when both values are valid temperatures,", () => {
-      it("That includer both min and max values.", () => {
+      test("That includer both min and max values.", () => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
             <StorageTemperature
@@ -154,7 +148,7 @@ describe("StorageTemperature", () => {
         expect(container).toHaveTextContent("2");
       });
       describe("That renders the units correctly.", () => {
-        it("Celsius", () => {
+        test("Celsius", () => {
           const { container } = render(
             <ThemeProvider theme={materialTheme}>
               <StorageTemperature
@@ -176,7 +170,7 @@ describe("StorageTemperature", () => {
 
           expect(container).toHaveTextContent("0°C");
         });
-        it("Kelvin", () => {
+        test("Kelvin", () => {
           const { container } = render(
             <ThemeProvider theme={materialTheme}>
               <StorageTemperature
@@ -198,7 +192,7 @@ describe("StorageTemperature", () => {
 
           expect(container).toHaveTextContent("0K");
         });
-        it("Fahrenheit", () => {
+        test("Fahrenheit", () => {
           const { container } = render(
             <ThemeProvider theme={materialTheme}>
               <StorageTemperature

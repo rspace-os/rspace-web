@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import LocationModel from "../../LocationModel";
 import { makeMockContainer } from "../ContainerModel/mocking";
@@ -22,7 +22,7 @@ describe("method: isGreyedOut", () => {
    *    such, this only has a value when both performingSearch and hasContent
    *    are true.
    */
-  it.each`
+  test.each`
     alwaysFilterOut | performingSearch | hasContent | inSearchResults | isGreyedOut
     ${false}        | ${false}         | ${false}   | ${null}         | ${false}
     ${false}        | ${false}         | ${true}    | ${null}         | ${false}

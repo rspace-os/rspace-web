@@ -1,11 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  afterEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, afterEach, vi } from 'vitest';
 import "@/__tests__/mocks/useOauthToken";
 import "@/__tests__/mocks/useWhoAmI";
 import "@/__tests__/mocks/useWebSocketNotifications";
@@ -71,7 +64,7 @@ afterEach(() => {
 
 
 describe("DMPDialog", () => {
-  it("Label is shown when no DMPs are returned.", async () => {
+  test("Label is shown when no DMPs are returned.", async () => {
     mockAxios
       .onGet("/apps/dmptool/plans?scope=MINE")
       .reply(200, { data: { items: [] }, success: true });
@@ -87,7 +80,7 @@ describe("DMPDialog", () => {
     });
   });
 
-  it("The latest request is always the one that's shown.", async () => {
+  test("The latest request is always the one that's shown.", async () => {
     mockAxios.onGet("/apps/dmptool/plans?scope=MINE").reply(200, {
       data: {
         items: [{ dmp: { id: 1, title: "mine", description: "very mine" } }],

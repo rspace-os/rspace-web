@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { makeMockSample, sampleAttrs } from "./mocking";
 import { makeMockTemplate } from "../TemplateModel/mocking";
@@ -29,7 +29,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 }));
 
 describe("fetchAdditionalInfo", () => {
-  it("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
+  test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const template = makeMockTemplate();
     mockRootStore.searchStore.getTemplate.mockImplementation(() =>
       Promise.resolve(template)
@@ -68,7 +68,7 @@ describe("fetchAdditionalInfo", () => {
      */
     expect(sample.template).toEqual(template);
   });
-  it("Calls made on a sample without a template should resolve.", async () => {
+  test("Calls made on a sample without a template should resolve.", async () => {
     const sample = makeMockSample();
     vi.spyOn(InvApiService, "query").mockImplementation(() =>
       Promise.resolve({

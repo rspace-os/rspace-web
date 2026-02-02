@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -31,7 +25,7 @@ beforeEach(() => {
 
 
 describe("InitialScreen", () => {
-  it("Renders correctly", () => {
+  test("Renders correctly", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <BrowserRouter>

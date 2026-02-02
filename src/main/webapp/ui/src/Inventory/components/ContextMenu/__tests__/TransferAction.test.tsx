@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -32,7 +26,7 @@ beforeEach(() => {
 
 
 describe("TransferAction", () => {
-  it("Dialog should close when cancel is tapped.", async () => {
+  test("Dialog should close when cancel is tapped.", async () => {
     const user = userEvent.setup();
     render(
       <ThemeProvider theme={materialTheme}>

@@ -1,9 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 
 import SampleModel from "../../SampleModel";
@@ -47,7 +42,7 @@ describe("constructor", () => {
    * passes around the Factory it is given correctly.
    */
   describe("Factory argument", () => {
-    it("should be used in the instantiation of all child records.", () => {
+    test("should be used in the instantiation of all child records.", () => {
       // Create a recursive factory reference
       // We need to declare factory before we use it in mockNewRecord
       // but initialize it after we create the mockFactory

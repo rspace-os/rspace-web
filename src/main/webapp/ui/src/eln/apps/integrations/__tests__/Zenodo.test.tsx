@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { describe, expect, beforeEach, vi, test } from 'vitest';
 import React,
   { useState } from "react";
 import {
@@ -50,7 +44,7 @@ describe("Zenodo", () => {
     update.mockImplementation((state) => state);
   });
 
-  it("should open dialog when Zenodo button is clicked", async () => {
+  test("should open dialog when Zenodo button is clicked", async () => {
     const user = userEvent.setup();
     render(<ZenodoWrapper />);
 
@@ -62,7 +56,7 @@ describe("Zenodo", () => {
     expect(screen.getByRole("dialog")).toBeVisible();
   });
 
-  it("should close dialog when close button is clicked", async () => {
+  test("should close dialog when close button is clicked", async () => {
     const user = userEvent.setup();
     render(<ZenodoWrapper />);
 
@@ -83,7 +77,7 @@ describe("Zenodo", () => {
     });
   });
 
-  it("should enable integration when dialog is open and integration is disabled", async () => {
+  test("should enable integration when dialog is open and integration is disabled", async () => {
     const user = userEvent.setup();
 
     const expectedState = {
@@ -119,7 +113,7 @@ describe("Zenodo", () => {
     expect(update).toHaveBeenCalledWith(expectedState);
   });
 
-  it("should disable integration when dialog is open and integration is enabled", async () => {
+  test("should disable integration when dialog is open and integration is enabled", async () => {
     const user = userEvent.setup();
 
     const initialState = {
@@ -164,7 +158,7 @@ describe("Zenodo", () => {
     expect(update).toHaveBeenCalledWith(expectedState);
   });
 
-  it("should set API key when dialog is open", async () => {
+  test("should set API key when dialog is open", async () => {
     const user = userEvent.setup();
     const apiKey = "test-api-key-123";
 
@@ -200,7 +194,7 @@ describe("Zenodo", () => {
     expect(update).toHaveBeenCalledWith(expectedState);
   });
 
-  it("should open, set API key, enable, and close dialog in sequence", async () => {
+  test("should open, set API key, enable, and close dialog in sequence", async () => {
     const user = userEvent.setup();
     const apiKey = "my-zenodo-api-key";
 

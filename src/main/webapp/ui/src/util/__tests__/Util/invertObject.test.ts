@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { invertObject } from "../../Util";
 
 describe("invertObject", () => {
-  it("Simple example", () => {
+  test("Simple example", () => {
     expect(
       invertObject({
         one: "foo",

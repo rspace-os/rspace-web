@@ -1,9 +1,4 @@
-import {
-  describe,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, beforeEach, vi } from 'vitest';
 import "../../../__mocks__/matchMedia";
 import React from "react";
 import {
@@ -181,7 +176,7 @@ function getSectionNames(
 }
 
 describe("Form Section Order", () => {
-  it("Across all of the forms, all of the sections should be in a consistent order.", () => {
+  test("Across all of the forms, all of the sections should be in a consistent order.", () => {
     window.ResizeObserver =
       ResizeObserver as unknown as typeof global.ResizeObserver;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -28,7 +22,7 @@ beforeEach(() => {
 
 
 describe("Searchbar", () => {
-  it("If lots of text is entered then the expanded field dialog it available.", () => {
+  test("If lots of text is entered then the expanded field dialog it available.", () => {
     const handleSearch = vi.fn<(query: string) => void>();
     const search = new Search({
       factory: mockFactory(),
@@ -59,7 +53,7 @@ describe("Searchbar", () => {
     expect(handleSearch).toHaveBeenCalled();
   });
 
-  it("When the query search parameter changes, the new value should be shown.", () => {
+  test("When the query search parameter changes, the new value should be shown.", () => {
     const search = new Search({
       factory: mockFactory(),
     });

@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -30,7 +24,7 @@ beforeEach(() => {
 
 describe("Breadcrumbs", () => {
   describe("When the passed record is deleted", () => {
-    it("In Trash should be shown.", () => {
+    test("In Trash should be shown.", () => {
       const subsample = makeMockSubSample({
         deleted: true,
       });

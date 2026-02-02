@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -23,7 +17,7 @@ beforeEach(() => {
 
 describe("ProtocolsIO", () => {
   describe("Accessibility", () => {
-    it("Should have no axe violations.", async () => {
+    test("Should have no axe violations.", async () => {
       const { baseElement } = render(
         <ProtocolsIO
           integrationState={{
@@ -44,7 +38,7 @@ describe("ProtocolsIO", () => {
       await expect(baseElement).toBeAccessible();
     });
   });
-  it("Should have a connect button when the user is not authenticated.", () => {
+  test("Should have a connect button when the user is not authenticated.", () => {
     render(
       <ProtocolsIO
         integrationState={{
@@ -61,7 +55,7 @@ describe("ProtocolsIO", () => {
 
     expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
   });
-  it("Should have a disconnect button when the user is authenticated.", () => {
+  test("Should have a disconnect button when the user is authenticated.", () => {
     render(
       <ProtocolsIO
         integrationState={{

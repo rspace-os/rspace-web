@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
 import {
@@ -37,7 +31,7 @@ vi.mock("../../../../components/Ketcher/KetcherDialog", () => ({
 
 describe("CustomField", () => {
   describe("Should be able to delete the field", () => {
-    it("Keep field in existing samples", async () => {
+    test("Keep field in existing samples", async () => {
       const user = userEvent.setup();
       const field = makeMockField({
         type: "choice",
@@ -68,7 +62,7 @@ describe("CustomField", () => {
       );
       expect(onRemove).toHaveBeenCalledWith(false);
     });
-    it("Remove field in existing samples", async () => {
+    test("Remove field in existing samples", async () => {
       const user = userEvent.setup();
       const field = makeMockField({
         type: "choice",

@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -45,7 +39,7 @@ beforeEach(() => {
 
 
 describe("MoveAction", () => {
-  it("After the dialog is closed, the overflow context menu should have been closed.", async () => {
+  test("After the dialog is closed, the overflow context menu should have been closed.", async () => {
     const user = userEvent.setup();
     const rootStore: StoreContainer = makeMockRootStore(
       observable({

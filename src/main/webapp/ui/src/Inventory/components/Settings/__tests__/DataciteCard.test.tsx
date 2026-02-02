@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -20,7 +14,7 @@ beforeEach(() => {
 
 
 describe("DataciteCard", () => {
-  it("Should have no axe violations.", async () => {
+  test("Should have no axe violations.", async () => {
     const { container } = render(
       <ThemeProvider theme={materialTheme}>
         <DataciteCard

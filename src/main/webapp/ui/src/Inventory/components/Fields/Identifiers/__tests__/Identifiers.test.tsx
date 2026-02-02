@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -31,7 +25,7 @@ container1.identifiers = [mockIGSNIdentifier("container")];
 
 describe("Identifiers section", () => {
   describe("When an identifier exists", () => {
-    it("Identifier fields sections are rendered", () => {
+    test("Identifier fields sections are rendered", () => {
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
           <IdentifiersList activeResult={sample1} />
@@ -42,7 +36,7 @@ describe("Identifiers section", () => {
     });
   });
   describe("When an identifier exists for container", () => {
-    it("Required fields are rendered", () => {
+    test("Required fields are rendered", () => {
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
           <IdentifiersList activeResult={container1} />

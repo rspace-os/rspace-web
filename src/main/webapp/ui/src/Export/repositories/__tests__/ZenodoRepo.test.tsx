@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -27,7 +21,7 @@ beforeEach(() => {
 
 
 describe("ZenodoRepo", () => {
-  it("Upon editing, title should be set to the entered value.", async () => {
+  test("Upon editing, title should be set to the entered value.", async () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
 
@@ -72,7 +66,7 @@ describe("ZenodoRepo", () => {
     );
   });
 
-  it("Upon editing, description should be set to the entered value.", async () => {
+  test("Upon editing, description should be set to the entered value.", async () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
 
@@ -120,7 +114,7 @@ describe("ZenodoRepo", () => {
     );
   });
 
-  it("Author and Contact should be set automatically to dummy values.", () => {
+  test("Author and Contact should be set automatically to dummy values.", () => {
     const updatePeople = vi.fn();
 
     render(
@@ -159,7 +153,7 @@ describe("ZenodoRepo", () => {
     );
   });
 
-  it("Subject should be set automatically to a dummy value.", () => {
+  test("Subject should be set automatically to a dummy value.", () => {
     const handleChange = vi.fn();
 
     render(

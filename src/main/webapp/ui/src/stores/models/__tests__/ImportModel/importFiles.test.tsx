@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import InvApiService from "../../../../common/InvApiService";
 import getRootStore from "../../../stores/RootStore";
 import ImportModel from "../../ImportModel";
@@ -73,7 +67,7 @@ describe("method: importFile", () => {
         .mockImplementation(() => ({}));
     });
 
-    it("they should have the correct index.", async () => {
+    test("they should have the correct index.", async () => {
       const uploadModel = new ImportModel("SAMPLES");
 
       const addAlertSpy = vi.fn();

@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -33,7 +27,7 @@ describe("integrationHelpers", () => {
       });
     }
 
-    it("If the sysadmin has not allowed the integration, then false should be returned.", async () => {
+    test("If the sysadmin has not allowed the integration, then false should be returned.", async () => {
       await fc.assert(
         fc.asyncProperty(fc.boolean(), async (enabled) => {
           const mockAxios = new MockAdapter(axios);
@@ -61,7 +55,7 @@ describe("integrationHelpers", () => {
       );
     });
 
-    it("If the user has not enabled the integration, then false should be returned.", async () => {
+    test("If the user has not enabled the integration, then false should be returned.", async () => {
       await fc.assert(
         fc.asyncProperty(fc.boolean(), async (available) => {
           const mockAxios = new MockAdapter(axios);
@@ -89,7 +83,7 @@ describe("integrationHelpers", () => {
       );
     });
 
-    it("When both available and enabled, should true be returned.", async () => {
+    test("When both available and enabled, should true be returned.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("/integration/integrationInfo").reply(200, {
         data: {
@@ -113,7 +107,7 @@ describe("integrationHelpers", () => {
       expect(container).toHaveTextContent("true");
     });
 
-    it("When there is an error, an error state should be returned.", async () => {
+    test("When there is an error, an error state should be returned.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("/integration/integrationInfo").reply(404);
       const { container } = render(<Wrapper />);

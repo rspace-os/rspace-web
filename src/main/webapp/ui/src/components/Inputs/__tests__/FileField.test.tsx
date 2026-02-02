@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -35,7 +29,7 @@ describe("FileField", () => {
    * general help.
    */
   describe("When passed a warningAlert there should", () => {
-    it("be an Alert on the page.", () => {
+    test("be an Alert on the page.", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <FileField

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import { makeMockContainer, containerAttrs } from "./mocking";
 import LocationModel from "../../LocationModel";
 import { type ContainerAttrs } from "../../ContainerModel";
@@ -17,14 +17,14 @@ describe("computed: paramsForBackend", () => {
    * valid string.
    */
   describe("paramsForBackend should be JSON serialisable when", () => {
-    it("the container is a list container.", () => {
+    test("the container is a list container.", () => {
       const container = makeMockContainer();
       expect(JSON.stringify(container.paramsForBackend)).toEqual(
         expect.any(String)
       );
     });
 
-    it("the container is a visual container with a locations image.", () => {
+    test("the container is a visual container with a locations image.", () => {
       const container = makeMockContainer({
         name: "A visual container",
         locations: [],
@@ -68,7 +68,7 @@ describe("computed: paramsForBackend", () => {
       );
     });
 
-    it("the container is a grid container.", () => {
+    test("the container is a grid container.", () => {
       const container = makeMockContainer({
         cType: "GRID",
         gridLayout: {
@@ -84,7 +84,7 @@ describe("computed: paramsForBackend", () => {
       );
     });
 
-    it("the container has a parent container.", () => {
+    test("the container has a parent container.", () => {
       const parent = makeMockContainer({
         id: 2,
         globalId: "IC2",

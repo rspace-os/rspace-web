@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -29,7 +23,7 @@ beforeEach(() => {
 
 
 describe("ExportFileStore", () => {
-  it("Exporting document without any filestore links should show a warning.", async () => {
+  test("Exporting document without any filestore links should show a warning.", async () => {
     mockAxios.onPost("/nfsExport/ajax/createQuickExportPlan").reply(200, {
       ...CREATE_QUICK_EXPORT_PLAN,
       foundFileSystems: [],
@@ -67,7 +61,7 @@ describe("ExportFileStore", () => {
       screen.getByText("No filestore links found in exported content.")
     ).toBeVisible();
   });
-  it("Found filestore links dialog should show linked file.", async () => {
+  test("Found filestore links dialog should show linked file.", async () => {
     const user = userEvent.setup();
     mockAxios
       .onPost("/nfsExport/ajax/createQuickExportPlan")
@@ -124,7 +118,7 @@ describe("ExportFileStore", () => {
       within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i })
     );
   });
-  it("Filesystem login details dialog should show such info.", async () => {
+  test("Filesystem login details dialog should show such info.", async () => {
     const user = userEvent.setup();
     mockAxios.onPost("/nfsExport/ajax/createQuickExportPlan").reply(200, {
       ...CREATE_QUICK_EXPORT_PLAN,

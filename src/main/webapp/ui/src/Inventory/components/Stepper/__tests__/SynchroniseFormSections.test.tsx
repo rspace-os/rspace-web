@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "@/__tests__/mocks/useUiPreference";
 import React,
   { useEffect,
@@ -57,7 +51,7 @@ function MockFormSectionInInnerContext({
 }
 
 describe("SynchroniseFormSections", () => {
-  it("Nesting SynchroniseFormSections should result in the inner one taking effect.", () => {
+  test("Nesting SynchroniseFormSections should result in the inner one taking effect.", () => {
     const onMountExpectFn = (
       isExpanded: (recordType: RecordType, section: string) => boolean
     ) => {

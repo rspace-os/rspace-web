@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "@/__tests__/mocks/useOauthToken";
 import React from "react";
 import {
@@ -75,7 +69,7 @@ function WrapperComponent() {
 }
 
 describe("useGalleryListing", () => {
-  it("Load more button should disappear on last page", async () => {
+  test("Load more button should disappear on last page", async () => {
     const user = userEvent.setup();
 
     /*

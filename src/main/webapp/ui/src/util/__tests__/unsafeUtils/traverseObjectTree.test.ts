@@ -1,9 +1,9 @@
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import { traverseObjectTree } from "../../unsafeUtils";
 
 describe("traverseObjectTree", () => {
-  it("basic example", () => {
+  test("basic example", () => {
     expect(
       traverseObjectTree(
         {

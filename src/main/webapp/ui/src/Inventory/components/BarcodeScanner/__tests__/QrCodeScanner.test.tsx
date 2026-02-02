@@ -8,13 +8,7 @@ import { type BarcodeInput } from "../BarcodeScannerSkeleton";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-import {
- describe,
- expect,
- beforeEach,
- it,
- vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 
 vi.mock("qr-scanner");
 
@@ -23,7 +17,7 @@ beforeEach(() => {
 });
 
 describe("QrCodeScanner", () => {
-  it("Should scan correctly.", async () => {
+  test("Should scan correctly.", async () => {
     const user = userEvent.setup();
     const onScan = vi.fn<(input: BarcodeInput) => void>();
 

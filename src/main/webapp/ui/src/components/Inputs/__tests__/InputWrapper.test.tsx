@@ -3,7 +3,7 @@ import {
   describe,
   expect,
   beforeEach,
-  it,
+  test,
   vi,
 } from "vitest";
 import React from "react";
@@ -31,7 +31,7 @@ const expectCountError = expectText("No more than 2 characters permitted.");
 
 describe("InputWrapper", () => {
   describe("Renders correctly", () => {
-    it.each`
+    test.each`
       disabled     | maxLength    | error        | value        | helperText   | expectFn
       ${undefined} | ${undefined} | ${undefined} | ${undefined} | ${undefined} | ${expectNothing}
       ${undefined} | ${undefined} | ${undefined} | ${undefined} | ${null}      | ${expectNothing}

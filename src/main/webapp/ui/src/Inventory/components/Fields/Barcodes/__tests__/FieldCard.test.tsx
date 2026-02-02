@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
 import {
@@ -28,7 +22,7 @@ beforeEach(() => {
 
 describe("FieldCard", () => {
   describe("Has a delete button", () => {
-    it("That behaves correctly when tapped when deletedCopy returns an object.", async () => {
+    test("That behaves correctly when tapped when deletedCopy returns an object.", async () => {
       const user = userEvent.setup();
       const setFieldsDirty = vi.fn();
       render(
@@ -90,7 +84,7 @@ describe("FieldCard", () => {
         barcodes: [expect.objectContaining({ deleted: true })],
       });
     });
-    it("That behaves correctly when tapped when deletedCopy returns null.", async () => {
+    test("That behaves correctly when tapped when deletedCopy returns null.", async () => {
       const user = userEvent.setup();
       const setFieldsDirty = vi.fn();
       render(
@@ -135,7 +129,7 @@ describe("FieldCard", () => {
     });
   });
   describe("AddButton", () => {
-    it("When connectedItem is not specified, there should be an add button.", () => {
+    test("When connectedItem is not specified, there should be an add button.", () => {
       render(
         <FieldCard
           fieldOwner={{

@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -48,7 +42,7 @@ beforeEach(() => {
 
 describe("Quantity", () => {
   describe("Unit selector", () => {
-    it('When there is only one subsample being created, "per subsample" should not be shown.', () => {
+    test('When there is only one subsample being created, "per subsample" should not be shown.', () => {
       fc.assert(
         fc.property(fc.nat(1000), (quantity) => {
           const sample = makeMockSample({
@@ -77,7 +71,7 @@ describe("Quantity", () => {
         })
       );
     });
-    it('When there are multiple subsamples being created, "per subsample" should be shown.', () => {
+    test('When there are multiple subsamples being created, "per subsample" should be shown.', () => {
       fc.assert(
         fc.property(
           fc.tuple(fc.nat(1000), fc.nat(100)),
@@ -112,7 +106,7 @@ describe("Quantity", () => {
     });
   });
   describe("Helper text should render correctly.", () => {
-    it("Whole units of quantity should have zero decimal places.", () => {
+    test("Whole units of quantity should have zero decimal places.", () => {
       fc.assert(
         fc.property(
           fc.tuple(fc.nat(1000), fc.nat(100)),
@@ -146,7 +140,7 @@ describe("Quantity", () => {
       );
     });
 
-    it("Fractional units of quantity should have zero or two decimal places.", () => {
+    test("Fractional units of quantity should have zero or two decimal places.", () => {
       fc.assert(
         fc.property(
           fc.tuple(fc.float({ min: 0, max: 1000 }), fc.nat(100)),

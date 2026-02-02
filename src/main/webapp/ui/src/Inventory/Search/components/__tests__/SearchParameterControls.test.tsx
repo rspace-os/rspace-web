@@ -13,14 +13,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
-import {
-  type Mock,
- describe,
- expect,
- beforeEach,
- it,
- vi,
-} from "vitest";
+import { test, type Mock, describe, expect, beforeEach, vi } from 'vitest';
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
@@ -62,7 +55,7 @@ beforeEach(() => {
 
 describe("SearchParameterControls", () => {
   describe("Saved searches controls", () => {
-    it("If the search disallows a particular record type, saved searches with that type filter should be disabled.", async () => {
+    test("If the search disallows a particular record type, saved searches with that type filter should be disabled.", async () => {
       const user = userEvent.setup();
       const rootStore = makeMockRootStore({
         searchStore: {

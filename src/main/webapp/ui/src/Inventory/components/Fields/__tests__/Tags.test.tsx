@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -32,7 +26,7 @@ beforeEach(() => {
 
 
 describe("Tags", () => {
-  it("Should enter an error state when value is longer than 8000 characters.", () => {
+  test("Should enter an error state when value is longer than 8000 characters.", () => {
     fc.assert(
       fc.property(fc.string({ minLength: 8001 }), (tag) => {
         cleanup();

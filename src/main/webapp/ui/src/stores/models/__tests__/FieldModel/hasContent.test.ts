@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
@@ -7,7 +7,7 @@ vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break i
 
 describe("hasContent", () => {
   describe('type = "Number"', () => {
-    it.each`
+    test.each`
     value | boolValue
     ${0}  | ${true}
     ${4}  | ${true}

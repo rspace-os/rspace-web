@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import Search from "../../Search";
 import { makeMockContainer } from "../ContainerModel/mocking";
@@ -9,7 +9,7 @@ vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break i
 
 describe("setActiveResult", () => {
   describe("callback", () => {
-    it("should only be called after fetchAdditionalInfo has completed.", async () => {
+    test("should only be called after fetchAdditionalInfo has completed.", async () => {
       const callback = vi.fn().mockImplementation((c) => {
         expect(c.locations.length).toBe(1);
       });

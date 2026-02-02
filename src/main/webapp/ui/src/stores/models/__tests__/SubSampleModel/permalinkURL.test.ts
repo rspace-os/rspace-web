@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { makeMockSubSample } from "./mocking";
 
@@ -14,7 +14,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 }));
 
 describe("permalinkURL", () => {
-  it("When the subsample has not yet been saved, the permalinkURL should be null.", () => {
+  test("When the subsample has not yet been saved, the permalinkURL should be null.", () => {
     const subsample = makeMockSubSample({ id: null, globalId: null });
     expect(subsample.permalinkURL).toBe(null);
   });

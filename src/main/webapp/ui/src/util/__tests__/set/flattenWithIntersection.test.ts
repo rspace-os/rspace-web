@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet, arbSetOfSetsWithHighOverlap } from "./helpers";
 import { flattenWithIntersection } from "../../set";
 
 describe("flattenWithIntersection", () => {
-  it("Size of output is less than or equal to the maximum of the sizes of input sets", () => {
+  test("Size of output is less than or equal to the maximum of the sizes of input sets", () => {
     fc.assert(
       fc.property(arbSetOfSetsWithHighOverlap, (setOfSets) => {
         const sizeOfLargestInnerSet = setOfSets
@@ -17,7 +17,7 @@ describe("flattenWithIntersection", () => {
       })
     );
   });
-  it("Distributes over union", () => {
+  test("Distributes over union", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbSetOfSetsWithHighOverlap, arbRsSet(fc.anything())),

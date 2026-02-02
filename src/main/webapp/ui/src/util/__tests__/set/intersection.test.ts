@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet } from "./helpers";
 import RsSet from "../../set";
 
 describe("intersection", () => {
-  it("Idempotence", () => {
+  test("Idempotence", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), arbRsSet(fc.anything())),
@@ -19,7 +19,7 @@ describe("intersection", () => {
       )
     );
   });
-  it("Commutativity", () => {
+  test("Commutativity", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), arbRsSet(fc.anything())),
@@ -31,7 +31,7 @@ describe("intersection", () => {
       )
     );
   });
-  it("Associativity", () => {
+  test("Associativity", () => {
     fc.assert(
       fc.property(
         fc.tuple(
@@ -50,7 +50,7 @@ describe("intersection", () => {
       )
     );
   });
-  it("Distributes over union", () => {
+  test("Distributes over union", () => {
     fc.assert(
       fc.property(
         fc.tuple(
@@ -68,14 +68,14 @@ describe("intersection", () => {
       )
     );
   });
-  it("The empty set is the absorbing element", () => {
+  test("The empty set is the absorbing element", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
         expect(set.intersection(new RsSet()).isSame(new RsSet())).toBe(true);
       })
     );
   });
-  it("isSubset of either input", () => {
+  test("isSubset of either input", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), arbRsSet(fc.anything())),

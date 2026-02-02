@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import * as ArrayUtils from "../../ArrayUtils";
@@ -7,7 +7,7 @@ import { monoids } from "../helpers";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 describe("outerProduct", () => {
-  it("When composed with .flat(), it has property of associativity over monoids.", () => {
+  test("When composed with .flat(), it has property of associativity over monoids.", () => {
     fc.assert(
       fc.property(
         fc

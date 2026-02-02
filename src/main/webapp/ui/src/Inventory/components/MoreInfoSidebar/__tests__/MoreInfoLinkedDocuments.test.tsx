@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   screen,
@@ -32,7 +26,7 @@ beforeEach(() => {
 
 
 describe("LinkedDocuments", () => {
-  it("Assert that correct API endpoint is called with Global ID", async () => {
+  test("Assert that correct API endpoint is called with Global ID", async () => {
     const spy = vi
       .spyOn(InvApiService, "get")
       .mockImplementation(() => Promise.reject(new Error("An error")));
@@ -44,7 +38,7 @@ describe("LinkedDocuments", () => {
     expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IC1");
   });
 
-  it("When there is an error loading the data, an alert should be shown.", async () => {
+  test("When there is an error loading the data, an alert should be shown.", async () => {
     vi
       .spyOn(InvApiService, "get")
       .mockImplementation(() => Promise.reject(new Error("An error")));
@@ -55,7 +49,7 @@ describe("LinkedDocuments", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("An error");
   });
 
-  it("Two different documents should render as two table rows", async () => {
+  test("Two different documents should render as two table rows", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.resolve({
         data: [
@@ -101,7 +95,7 @@ describe("LinkedDocuments", () => {
     ).toHaveTextContent("Bar");
   });
 
-  it("Two of the same document should render as one table row", async () => {
+  test("Two of the same document should render as one table row", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.resolve({
         data: [
@@ -139,7 +133,7 @@ describe("LinkedDocuments", () => {
     ).toHaveTextContent("Foo");
   });
 
-  it("Opening the dialog twice should trigger two network calls", async () => {
+  test("Opening the dialog twice should trigger two network calls", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.reject(new Error("An error"));
     });

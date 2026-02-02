@@ -1,9 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import Search from "../../Search";
 import ApiServiceBase from "../../../../common/ApiServiceBase";
@@ -24,7 +19,7 @@ vi.mock("../../../stores/SearchStore", () => ({ default: class {} })); // break 
 
 describe("action: setPageSize", () => {
   describe("When called with any value it should", () => {
-    it(" set the page number to 0.", () => {
+    test(" set the page number to 0.", () => {
       const search = new Search({
         factory: mockFactory(),
       });

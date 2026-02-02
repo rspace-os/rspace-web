@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -23,7 +17,7 @@ beforeEach(() => {
 
 
 describe("IntegrationCard", () => {
-  it("Name should be shown.", () => {
+  test("Name should be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IntegrationCard
@@ -45,7 +39,7 @@ describe("IntegrationCard", () => {
     expect(screen.getByText("SomeIntegration")).toBeVisible();
   });
 
-  it("Explanatory text should be shown.", () => {
+  test("Explanatory text should be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IntegrationCard
@@ -69,7 +63,7 @@ describe("IntegrationCard", () => {
     ).toBeVisible();
   });
 
-  it("Logo image should be shown.", () => {
+  test("Logo image should be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IntegrationCard
@@ -94,7 +88,7 @@ describe("IntegrationCard", () => {
     );
   });
 
-  it("When card is tapped, a dialog should be shown.", () => {
+  test("When card is tapped, a dialog should be shown.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IntegrationCard
@@ -120,7 +114,7 @@ describe("IntegrationCard", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("DialogContent should be shown once card has been tapped.", () => {
+  test("DialogContent should be shown once card has been tapped.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IntegrationCard
@@ -146,7 +140,7 @@ describe("IntegrationCard", () => {
     expect(screen.getByText("Some dialog content")).toBeInTheDocument();
   });
 
-  it("When tapped, the enable button should invoke update.", () => {
+  test("When tapped, the enable button should invoke update.", () => {
     const update = vi.fn();
 
     render(
@@ -174,7 +168,7 @@ describe("IntegrationCard", () => {
     expect(update).toHaveBeenCalledWith("ENABLED");
   });
 
-  it("When tapped, the disable button should invoke update.", () => {
+  test("When tapped, the disable button should invoke update.", () => {
     const update = vi.fn();
 
     render(

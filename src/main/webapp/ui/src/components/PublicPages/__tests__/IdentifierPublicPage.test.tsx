@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "../../../../__mocks__/matchMedia";
 import React from "react";
 import {
@@ -33,7 +27,7 @@ beforeEach(() => {
 
 describe("IdentifierPublicPage", () => {
   describe("Optional Fields", () => {
-    it("Should render dates correctly", async () => {
+    test("Should render dates correctly", async () => {
       const identifier = mockIGSNAttrs();
       identifier.dates = [
         {

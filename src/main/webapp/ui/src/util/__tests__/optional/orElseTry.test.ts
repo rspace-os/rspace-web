@@ -1,9 +1,9 @@
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import { Optional } from "../../optional";
 
 describe("orElseTry", () => {
-  it("The types should be merged.", () => {
+  test("The types should be merged.", () => {
     const input: Optional<string> = Optional.present("foo");
     // the key bit of this test is that this type annotation doesn't error
     const next: Optional<string | number> = input.orElseTry(() =>

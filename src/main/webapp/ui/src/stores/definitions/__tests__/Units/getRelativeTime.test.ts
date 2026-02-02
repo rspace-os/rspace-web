@@ -1,9 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import { getRelativeTime } from "../../Units";
 import fc from "fast-check";
 
 describe("getRelativeTime", () => {
-  it("Simple example", () => {
+  test("Simple example", () => {
     const now = new Date();
     const futureDate = new Date();
     futureDate.setHours(now.getHours() + 2);
@@ -14,7 +14,7 @@ describe("getRelativeTime", () => {
   });
 
   // this is important so that callers get the grammar right
-  it("Always starts with 'in'", () => {
+  test("Always starts with 'in'", () => {
     const now = new Date();
     vi.useFakeTimers();
     vi.setSystemTime(now);

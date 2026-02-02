@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -24,7 +18,7 @@ beforeEach(() => {
 
 
 describe("ValidatingSubmitButton", () => {
-  it("When validationResult is OK and the button is tapped, onClick should be called.", () => {
+  test("When validationResult is OK and the button is tapped, onClick should be called.", () => {
     const onClick = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -40,7 +34,7 @@ describe("ValidatingSubmitButton", () => {
     fireEvent.click(screen.getByRole("button"));
     expect(onClick).toHaveBeenCalled();
   });
-  it("When validationResult is Error and the button is tapped, onClick should not be called.", () => {
+  test("When validationResult is Error and the button is tapped, onClick should not be called.", () => {
     const onClick = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -56,7 +50,7 @@ describe("ValidatingSubmitButton", () => {
     fireEvent.click(screen.getByRole("button"));
     expect(onClick).not.toHaveBeenCalled();
   });
-  it("When validationResult is Error and the button is shown, the errors should be displayed.", () => {
+  test("When validationResult is Error and the button is shown, the errors should be displayed.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <ValidatingSubmitButton
@@ -73,7 +67,7 @@ describe("ValidatingSubmitButton", () => {
     expect(alert).toBeVisible();
     expect(alert).toHaveTextContent("test");
   });
-  it.each([Result.Ok(null), Result.Error<null>([new Error("test")])])(
+  test.each([Result.Ok(null), Result.Error<null>([new Error("test")])])(
     "When loading is true and validationResult is %s, the button should be disabled.",
     (validationResult: Result<null>) => {
       render(

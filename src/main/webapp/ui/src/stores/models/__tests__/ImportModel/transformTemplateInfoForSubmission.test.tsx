@@ -1,9 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, vi } from 'vitest';
 import { makeMockImportDataUsingExistingTemplate } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
@@ -31,7 +26,7 @@ describe("method: transformTemplateInfoForSubmission", () => {
      * is verified by demonstrating that a call to JSON.stringify does not throw
      * any errors and returns a valid string.
      */
-    it("transformTemplateInfoForSubmission should be JSON serialisable", () => {
+    test("transformTemplateInfoForSubmission should be JSON serialisable", () => {
       const uploadModel = makeMockImportDataUsingExistingTemplate();
       expect(
         JSON.stringify(uploadModel.transformTemplateInfoForSubmission())
@@ -41,7 +36,7 @@ describe("method: transformTemplateInfoForSubmission", () => {
     /*
      * Attaching other data MAY be permitted but the id of the selected tempalte is REQUIRED.
      */
-    it("transformTemplateInfoForSubmission should return the id of the selected template.", () => {
+    test("transformTemplateInfoForSubmission should return the id of the selected template.", () => {
       const uploadModel = makeMockImportDataUsingExistingTemplate();
       expect(uploadModel.transformTemplateInfoForSubmission()).toEqual(
         expect.objectContaining({ id: 1 })

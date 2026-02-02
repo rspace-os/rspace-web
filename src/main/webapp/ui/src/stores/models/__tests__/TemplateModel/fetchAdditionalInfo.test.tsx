@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { makeMockTemplate, templateAttrs } from "./mocking";
 import InvApiService from "../../../../common/InvApiService";
@@ -20,7 +20,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 }));
 
 describe("fetchAdditionalInfo", () => {
-  it("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
+  test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const template = makeMockTemplate();
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.resolve({

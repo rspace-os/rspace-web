@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 
 import "@testing-library/jest-dom/vitest";
 import getRootStore from "../../RootStore";
@@ -19,7 +13,7 @@ beforeEach(() => {
 
 
 describe("allInvRecordsFromAllDocumentLists", () => {
-  it("The same record across multiple lists of materials of one field should list the record once.", () => {
+  test("The same record across multiple lists of materials of one field should list the record once.", () => {
     const { materialsStore } = getRootStore();
     const container = containerAttrs();
     materialsStore.documentLists.set(1, [
@@ -41,7 +35,7 @@ describe("allInvRecordsFromAllDocumentLists", () => {
 
     expect(materialsStore.allInvRecordsFromAllDocumentLists.size).toBe(1);
   });
-  it("The same record across multiple lists of materials of multiple fields should list the record once.", () => {
+  test("The same record across multiple lists of materials of multiple fields should list the record once.", () => {
     const { materialsStore } = getRootStore();
     const container = containerAttrs();
     materialsStore.documentLists.set(1, [
@@ -65,7 +59,7 @@ describe("allInvRecordsFromAllDocumentLists", () => {
 
     expect(materialsStore.allInvRecordsFromAllDocumentLists.size).toBe(1);
   });
-  it("Different records with the same id in a single list of materials of a single field should list both records.", () => {
+  test("Different records with the same id in a single list of materials of a single field should list both records.", () => {
     const { materialsStore } = getRootStore();
 
     // having to set this back to empty set because the state of the tests are bleeding into eachother

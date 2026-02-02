@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { makeMockTemplate } from "./mocking";
 
@@ -8,7 +8,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 }));
 
 describe("permalinkURL", () => {
-  it("When the template has not yet been saved, the permalinkURL should be null.", () => {
+  test("When the template has not yet been saved, the permalinkURL should be null.", () => {
     const template = makeMockTemplate({ id: null, globalId: null });
     expect(template.permalinkURL).toBe(null);
   });

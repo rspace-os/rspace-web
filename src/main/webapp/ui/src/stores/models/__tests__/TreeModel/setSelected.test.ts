@@ -1,10 +1,5 @@
 
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, vi } from 'vitest';
 import Search from "../../Search";
 import { makeMockSubSample } from "../SubSampleModel/mocking";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
@@ -29,7 +24,7 @@ describe("method: setSelected", () => {
    * Branch nodes are those that have child nodes, like Containers and Samples.
    */
   describe("When a branch node is selected it should", () => {
-    it("become the active result.", () => {
+    test("become the active result.", () => {
       const search = new Search({
         factory: mockFactory(),
       });
@@ -53,7 +48,7 @@ describe("method: setSelected", () => {
    * Leaf nodes are those that don't have child nodes, like SubSamples.
    */
   describe("When a leaf node is selected it should", () => {
-    it("become the active result.", () => {
+    test("become the active result.", () => {
       const search = new Search({
         factory: mockFactory(),
       });

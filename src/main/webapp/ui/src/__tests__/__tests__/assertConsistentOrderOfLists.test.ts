@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { toHaveConsistentOrdering } from "../assertConsistentOrderOfLists";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -9,7 +9,7 @@ expect.extend({
 });
 
 describe("assertConsistentOrderOfLists", () => {
-  it("Singleton list should always return true.", () => {
+  test("Singleton list should always return true.", () => {
     fc.assert(
       fc.property(fc.string(), (string) => {
         const map = new Map<string, string[]>([["foo", [string]]]);
@@ -18,7 +18,7 @@ describe("assertConsistentOrderOfLists", () => {
     );
   });
 
-  it("Mutually exclusive lists should always be true.", () => {
+  test("Mutually exclusive lists should always be true.", () => {
     fc.assert(
       fc.property(
         fc.nat(50).chain((length) =>
@@ -49,7 +49,7 @@ describe("assertConsistentOrderOfLists", () => {
     );
   });
 
-  it("{[a,b], [b,c], [a,c]}, for any given number of pairs, should be true.", () => {
+  test("{[a,b], [b,c], [a,c]}, for any given number of pairs, should be true.", () => {
     fc.assert(
       fc.property(
         fc.uniqueArray(fc.string(), { minLength: 2, maxLength: 100 }),
@@ -67,7 +67,7 @@ describe("assertConsistentOrderOfLists", () => {
     );
   });
 
-  it("A cycle of pairs (i.e. {[a,b], [b,c], [c,a]} for any given number of pairs) should be false.", () => {
+  test("A cycle of pairs (i.e. {[a,b], [b,c], [c,a]} for any given number of pairs) should be false.", () => {
     fc.assert(
       fc.property(
         fc

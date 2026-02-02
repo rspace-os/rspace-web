@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { truncateIsoTimestamp } from "../../Units";
 
 describe("truncateIsoTimestamp", () => {
-  it("Simple examples with string", () => {
+  test("Simple examples with string", () => {
     const date = "1970-01-01T00:00:00.000";
 
     expect(
@@ -43,7 +43,7 @@ describe("truncateIsoTimestamp", () => {
     ).toEqual("1970-01-01T00:00:00.000");
   });
 
-  it("Simple examples with date", () => {
+  test("Simple examples with date", () => {
     const date = new Date("1970-01-01T00:00:00.000");
 
     expect(
@@ -83,7 +83,7 @@ describe("truncateIsoTimestamp", () => {
     ).toEqual("1970-01-01T00:00:00.000");
   });
 
-  it("Invalid date", () => {
+  test("Invalid date", () => {
     expect(
       truncateIsoTimestamp(new Date("2001-22-29T00:00:00.000"), "date").isError
     ).toEqual(true);

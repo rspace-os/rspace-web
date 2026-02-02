@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 
 import { containerAttrs } from "../../__tests__/ContainerModel/mocking";
@@ -14,7 +14,7 @@ vi.mock("../../../stores/RootStore", () => ({
 
 describe("AlwaysNewFactory", () => {
   describe("When called with the same Global ID, newRecord should", () => {
-    it("return different objects.", () => {
+    test("return different objects.", () => {
       const factory = new AlwaysNewFactory();
       const attrs1 = containerAttrs({ globalId: "IC1" });
       const attrs2 = containerAttrs({ globalId: "IC1" });
@@ -31,7 +31,7 @@ describe("AlwaysNewFactory", () => {
   });
 
   describe("When called with the same Person ID, newPerson should", () => {
-    it("return different objects.", () => {
+    test("return different objects.", () => {
       const factory = new AlwaysNewFactory();
       const person1 = factory.newPerson(personAttrs());
       const person2 = factory.newPerson(personAttrs());

@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "../../../../__mocks__/matchMedia";
 import React from "react";
 import {
@@ -27,7 +21,7 @@ beforeEach(() => {
 
 
 describe("DMPToolMenuItem", () => {
-  it("If the DMPTool is enabled but the user is not authenticated then the menu item should be disabled.", async () => {
+  test("If the DMPTool is enabled but the user is not authenticated then the menu item should be disabled.", async () => {
     mockAxios.onGet("/apps/dmptool/baseUrlHost").reply(200, "example.com");
     mockAxios.onGet("/integration/integrationInfo").reply(200, {
       data: {

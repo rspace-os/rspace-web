@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "@/__tests__/mocks/useOauthToken";
 import "@/__tests__/mocks/useWhoAmI";
 import "@/__tests__/mocks/useWebSocketNotifications";
@@ -58,7 +52,7 @@ beforeEach(() => {
 
 describe("Apps page", () => {
   describe("Accessibility", () => {
-    it("Should have no axe violations.", async () => {
+    test("Should have no axe violations.", async () => {
       mockAxios.onPost("integration/allIntegrations").reply(200, {
         success: false,
         data: null,
@@ -79,7 +73,7 @@ describe("Apps page", () => {
     });
   });
 
-  it("Has all of the correct headings.", async () => {
+  test("Has all of the correct headings.", async () => {
     mockAxios.onPost("integration/allIntegrations").reply(200, {
       success: false,
       data: null,

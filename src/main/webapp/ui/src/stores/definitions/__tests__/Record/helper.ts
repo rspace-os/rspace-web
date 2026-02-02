@@ -1,4 +1,3 @@
-import { it } from "vitest";
 import fc, { type Arbitrary } from "fast-check";
 import { type Id, type GlobalId, type GlobalIdPrefix } from "../../BaseRecord";
 import { type Record as Foo } from "../../Record";
@@ -9,7 +8,7 @@ export const arbitraryId: Arbitrary<Id> = fc
   .map((n) => n as number | null);
 
 export const arbitraryGlobalId = (
-  prefix: GlobalIdPrefix
+  prefix: GlobalIdPrefix,
 ): Arbitrary<GlobalId> =>
   arbitraryId.map((id) => {
     if (!id) throw new Error("id must not be null");
@@ -37,5 +36,3 @@ export const arbitraryRecord: Arbitrary<Foo> = fc
     recordDetails: fc.constant({}),
   })
   .map((arbs) => arbs as Foo);
-
-

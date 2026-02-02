@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 
-import { describe, expect, beforeEach, it, vi } from "vitest";
+import { describe, expect, beforeEach, test, vi } from 'vitest';
 import React from "react";
 import { render, cleanup, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
@@ -22,7 +22,7 @@ beforeEach(() => {
 });
 
 describe("ImageEditingDialog", () => {
-  it("Should have no axe violations.", async () => {
+  test("Should have no axe violations.", async () => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (ctx === null) throw new Error("could not get canvas");
@@ -63,7 +63,7 @@ describe("ImageEditingDialog", () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await expect(baseElement).toBeAccessible();
   });
-  it("Rotating four times in either direction is a no-op.", async () => {
+  test("Rotating four times in either direction is a no-op.", async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.tuple(fc.constantFrom("clockwise", "counter clockwise"), fc.nat(20)),
@@ -137,7 +137,7 @@ describe("ImageEditingDialog", () => {
     );
   });
 
-  it("Rotating by 90º clockwise should result in the correct image", async () => {
+  test("Rotating by 90º clockwise should result in the correct image", async () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -196,7 +196,7 @@ describe("ImageEditingDialog", () => {
     expect(submitHandler.mock.calls[0][0]).toBeInstanceOf(Blob);
   });
 
-  it("Rotating by 90º counter clockwise should result in the correct image", async () => {
+  test("Rotating by 90º counter clockwise should result in the correct image", async () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -254,7 +254,7 @@ describe("ImageEditingDialog", () => {
     expect(submitHandler.mock.calls[0][0]).toBeInstanceOf(Blob);
   });
 
-  it("If no change has been made, then submitHandler is not called", async () => {
+  test("If no change has been made, then submitHandler is not called", async () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -298,7 +298,7 @@ describe("ImageEditingDialog", () => {
    * ReactCrop, so perhaps that is the issue.
    */
 
-  it("Cancel button should not invoke submitHandler", async () => {
+  test("Cancel button should not invoke submitHandler", async () => {
     const user = userEvent.setup();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");

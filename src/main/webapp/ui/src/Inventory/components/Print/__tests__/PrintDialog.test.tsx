@@ -1,12 +1,6 @@
  
 
-import {
-  describe,
-  expect,
-  beforeAll,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeAll, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import React from "react";
 import {
@@ -84,7 +78,7 @@ describe("Print Tests", () => {
   };
 
   describe("PrintDialog with items to print (barcodes)", () => {
-    it("renders, has radio options for printerType, printMode, printSize (plus help text)", async () => {
+    test("renders, has radio options for printerType, printMode, printSize (plus help text)", async () => {
       await renderDialog();
 
       expect(screen.getAllByRole("radio")).toHaveLength(10);
@@ -103,7 +97,7 @@ describe("Print Tests", () => {
   });
 
   describe("PrintDialog with items to print (barcodes)", () => {
-    it("renders, content responds to clicked options", async () => {
+    test("renders, content responds to clicked options", async () => {
       await renderDialog();
 
       const globalId = mockContainer.globalId;

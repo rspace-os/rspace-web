@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { makeMockSubSample } from "./mocking";
 
@@ -8,7 +8,7 @@ vi.mock("../../../../common/InvApiService", () => ({
 
 describe("isFieldEditable", () => {
   describe("When the Subsample is deleted, isFieldEditable should", () => {
-    it("return false for notes.", () => {
+    test("return false for notes.", () => {
       const subsample = makeMockSubSample({
         deleted: true,
       });

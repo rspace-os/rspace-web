@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React,
   { useContext,
   useEffect } from "react";
@@ -32,7 +26,7 @@ function DisplaysAlert() {
 }
 
 describe("Alerts", () => {
-  it("Example of usage", () => {
+  test("Example of usage", () => {
     render(
       <Alerts>
         <DisplaysAlert />

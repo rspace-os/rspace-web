@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
 import getRootStore from "../../RootStore";
@@ -18,7 +18,7 @@ vi.mock("../../../../common/InvApiService", () => ({
 
 describe("action: moveSelected", () => {
   describe("Moving the contents of a location into its current location should", () => {
-    it("result in new records being allocated in memory.", async () => {
+    test("result in new records being allocated in memory.", async () => {
       const { searchStore, moveStore } = getRootStore();
 
       /*

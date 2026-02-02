@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -20,7 +14,7 @@ beforeEach(() => {
 
 
 describe("PdfExport", () => {
-  it("Toggling a switch should set a boolean value.", () => {
+  test("Toggling a switch should set a boolean value.", () => {
     const updateExportDetails: (key: string, exportDetail: unknown) => void =
       vi.fn();
 

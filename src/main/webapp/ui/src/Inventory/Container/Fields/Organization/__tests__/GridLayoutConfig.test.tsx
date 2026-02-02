@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { describe, expect, beforeEach, vi, test } from 'vitest';
 import React from "react";
 import {
   render,
@@ -22,7 +16,7 @@ beforeEach(() => {
 expect.extend({ toBeAccessible });
 
 describe("GridLayoutConfig", () => {
-  it("Should have no axe violations.", async () => {
+  test("Should have no axe violations.", async () => {
     const gridContainer = makeMockContainer({
       cType: "GRID",
       gridLayout: {

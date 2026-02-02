@@ -1,11 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  afterEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from "react";
 import {
   screen,
@@ -75,7 +68,7 @@ describe("RaIDIntegrationCard", () => {
   });
 
   describe("Accessibility", () => {
-    it("Should have no axe violations once dialog opened.", async () => {
+    test("Should have no axe violations once dialog opened.", async () => {
       const { baseElement } = renderWithProviders({
         mode: "DISABLED",
         credentials: {
@@ -93,7 +86,7 @@ describe("RaIDIntegrationCard", () => {
 });
 
   describe("Rendering", () => {
-    it("Shows placeholder text when there are no authenticated servers.", async () => {
+    test("Shows placeholder text when there are no authenticated servers.", async () => {
       renderWithProviders({
         mode: "DISABLED",
         credentials: {
@@ -106,7 +99,7 @@ describe("RaIDIntegrationCard", () => {
       expect(screen.getAllByText(/No authenticated servers./i)[0]).toBeVisible();
     });
 
-    it("Renders server alias and URL link.", async () => {
+    test("Renders server alias and URL link.", async () => {
       renderWithProviders({
         mode: "DISABLED",
         credentials: {
@@ -128,7 +121,7 @@ describe("RaIDIntegrationCard", () => {
   });
 
   describe("Broadcast connect flow", () => {
-    it("Marks server authenticated and shows alert when RAID_CONNECTED message received.", async () => {
+    test("Marks server authenticated and shows alert when RAID_CONNECTED message received.", async () => {
       const { addAlert } = renderWithProviders({
         mode: "DISABLED",
         credentials: {
@@ -152,7 +145,7 @@ describe("RaIDIntegrationCard", () => {
       expect(alertArg.message).toContain("Successfully connected to srvA RaID server.");
     });
 
-    it("Ignores broadcast messages for unknown serverAlias", async () => {
+    test("Ignores broadcast messages for unknown serverAlias", async () => {
       const { addAlert } = renderWithProviders({
         mode: "DISABLED",
         credentials: {
@@ -174,7 +167,7 @@ describe("RaIDIntegrationCard", () => {
       expect(addAlert).not.toHaveBeenCalled();
     });
 
-    it("Ignores malformed broadcast messages", async () => {
+    test("Ignores malformed broadcast messages", async () => {
       const { addAlert } = renderWithProviders({
         mode: "DISABLED",
         credentials: {
@@ -198,7 +191,7 @@ describe("RaIDIntegrationCard", () => {
   });
 
   describe("Add server", () => {
-    it("Clicking Add menu item calls saveAppOptions and adds server.", async () => {
+    test("Clicking Add menu item calls saveAppOptions and adds server.", async () => {
       mockSaveAppOptions.mockResolvedValue({
         credentials: {
           authenticatedServers: [
@@ -235,7 +228,7 @@ describe("RaIDIntegrationCard", () => {
   });
 
   describe("Disconnect", () => {
-    it("Disconnect button triggers fetch and shows success alert.", async () => {
+    test("Disconnect button triggers fetch and shows success alert.", async () => {
       fetchMock.mockResponseOnce(JSON.stringify({ ok: true }));
       const { addAlert } = renderWithProviders({
         mode: "DISABLED",
@@ -263,7 +256,7 @@ describe("RaIDIntegrationCard", () => {
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
     });
 
-    it("Disconnect button shows error alert on fetch failure.", async () => {
+    test("Disconnect button shows error alert on fetch failure.", async () => {
       fetchMock.mockResponseOnce("", { status: 500, statusText: "Internal Server Error" });
       const { addAlert } = renderWithProviders({
         mode: "DISABLED",
@@ -291,7 +284,7 @@ describe("RaIDIntegrationCard", () => {
       expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
     });
 
-    it("Disconnect button shows error alert on fetch network error.", async () => {
+    test("Disconnect button shows error alert on fetch network error.", async () => {
       fetchMock.mockRejectOnce(new Error("Network error"));
 
       const { addAlert } = renderWithProviders({
@@ -322,7 +315,7 @@ describe("RaIDIntegrationCard", () => {
   });
 
   describe("Delete", () => {
-    it("Delete button calls deleteAppOptions and removes server from list.", async () => {
+    test("Delete button calls deleteAppOptions and removes server from list.", async () => {
       mockDeleteAppOptions.mockResolvedValue({});
 
       renderWithProviders({

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import { makeMockSample } from "../SampleModel/mocking";
 import Search from "../../Search";
@@ -19,7 +19,7 @@ vi.mock("../../../stores/RootStore", () => ({
 }));
 
 describe("isActiveResultTemplateOfAny", () => {
-  it("Example where the return value is true.", () => {
+  test("Example where the return value is true.", () => {
     const samples = new RsSet([
       makeMockSample({
         id: 1,
@@ -40,7 +40,7 @@ describe("isActiveResultTemplateOfAny", () => {
     expect(search.isActiveResultTemplateOfAny(samples)).toBe(true);
   });
 
-  it("Example where the return value is false.", () => {
+  test("Example where the return value is false.", () => {
     const samples = new RsSet([
       makeMockSample({
         id: 1,

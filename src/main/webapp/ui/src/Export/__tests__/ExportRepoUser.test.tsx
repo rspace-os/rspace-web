@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -41,7 +35,7 @@ function renderExportRepoUser({
 }
 
 describe("ExportRepoUser", () => {
-  it("If no people are passed as prop, then the current user should be fetched.", async () => {
+  test("If no people are passed as prop, then the current user should be fetched.", async () => {
     mockAxios.onGet("/directory/ajax/subject").reply(200, {
       data: {
         email: "joe.bloggs@example.com",
@@ -54,7 +48,7 @@ describe("ExportRepoUser", () => {
     expect(updatePeople).toHaveBeenCalled();
   });
 
-  it("If people are passed as prop, current user is not fetched.", async () => {
+  test("If people are passed as prop, current user is not fetched.", async () => {
     // `/directory/ajax/subject` is not mocked so that if ExportRepoUser
     // attempts to the make a call the test fails
 

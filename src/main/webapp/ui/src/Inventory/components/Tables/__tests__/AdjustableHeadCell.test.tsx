@@ -1,10 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-  vi,
-} from "vitest";
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import {
   render,
@@ -24,7 +18,7 @@ beforeEach(() => {
 
 describe("AdjustableHeadCell", () => {
   describe("The menu of available options should", () => {
-    it("include an item with aria-current, as set by the `current` prop.", () => {
+    test("include an item with aria-current, as set by the `current` prop.", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <AdjustableHeadCell

@@ -2,7 +2,7 @@ import {
   describe,
   expect,
   beforeEach,
-  it,
+  test,
   vi,
 } from "vitest";
 import React from "react";
@@ -23,7 +23,7 @@ beforeEach(() => {
 
 
 describe("ScopeField", () => {
-  it.each(["Mine", "Public", "Both"])(
+  test.each(["Mine", "Public", "Both"])(
     "getDMPs is called correctly when the scope is %s",
     (scope: string) => {
       cleanup();

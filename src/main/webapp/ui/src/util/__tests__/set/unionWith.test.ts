@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import RsSet, { unionWith } from "../../set";
 import { arbitraryMappableSets } from "./helpers";
 
 describe("unionWith", () => {
-  it("Idempotence", () => {
+  test("Idempotence", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA, setB]) => {
         expect(
@@ -16,7 +16,7 @@ describe("unionWith", () => {
       })
     );
   });
-  it("Associativity", () => {
+  test("Associativity", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA, setB, setC]) => {
         const twoThenOne = unionWith(mapFn, [
@@ -33,7 +33,7 @@ describe("unionWith", () => {
       })
     );
   });
-  it("Identity element", () => {
+  test("Identity element", () => {
     fc.assert(
       fc.property(arbitraryMappableSets, ([mapFn, setA]) => {
         expect(

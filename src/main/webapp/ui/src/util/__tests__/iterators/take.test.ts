@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import { take, incrementForever } from "../../iterators";
 import fc from "fast-check";
 
 describe("take", () => {
-  it("Returns an iterator, of desired length, from the head of another iterator.", () => {
+  test("Returns an iterator, of desired length, from the head of another iterator.", () => {
     // Because take works over any iterator it will take from an array
     expect([...take([1, 2, 3], 2)]).toEqual([1, 2]);
 
@@ -32,7 +32,7 @@ describe("take", () => {
     ]);
   });
 
-  it("Length should be the minimum of the input iterator and the passed number", () => {
+  test("Length should be the minimum of the input iterator and the passed number", () => {
     fc.assert(
       fc.property(
         /// 1000 limit is for performance reasons

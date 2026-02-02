@@ -1,9 +1,4 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  it,
-} from "vitest";
+import { test, describe, expect, beforeEach,  } from 'vitest';
 import RoRIntegration from "../../system-ror/RoRIntegration";
 import React from "react";
 import axios from "@/common/axios";
@@ -90,7 +85,7 @@ async function assertRoRDetailsText() {
 }
 
 describe("Renders page with ROR data ", () => {
-  it("displays page with searchbar when RoR not linked", async () => {
+  test("displays page with searchbar when RoR not linked", async () => {
     setUpComponent();
 
     await screen.findAllByText(
@@ -101,7 +96,7 @@ describe("Renders page with ROR data ", () => {
       screen.queryByText(/A ROR ID is linked to this RSpace Instance./)
     ).not.toBeInTheDocument();
   });
-  it("displays page with no searchbar  and with Unlink button when RoR is linked", async () => {
+  test("displays page with no searchbar  and with Unlink button when RoR is linked", async () => {
     mockAxios.resetHandlers();
     setupRoRMocks("https://ror.org/02mhbdp94");
     setUpComponent();
@@ -117,7 +112,7 @@ describe("Renders page with ROR data ", () => {
     await assertRoRDetailsText();
   });
 
-  it("displays ROR v2 details on search", async () => {
+  test("displays ROR v2 details on search", async () => {
     setUpComponent();
     await screen.findAllByText(
       "Research Organization Registry (ROR) Integration"
@@ -128,7 +123,7 @@ describe("Renders page with ROR data ", () => {
     await assertRoRDetailsText();
   });
 
-  it("displays error when invalid ROR entered", async () => {
+  test("displays error when invalid ROR entered", async () => {
     setUpComponent();
     await screen.findAllByText(
       "Research Organization Registry (ROR) Integration"
@@ -138,7 +133,7 @@ describe("Renders page with ROR data ", () => {
     await screen.findByText(/https:\/\/ror.org\/02mhbdp941 is not a valid ROR/);
   });
 
-  it("displays error when ROR details not found", async () => {
+  test("displays error when ROR details not found", async () => {
     setUpComponent();
     await screen.findAllByText(
       "Research Organization Registry (ROR) Integration"

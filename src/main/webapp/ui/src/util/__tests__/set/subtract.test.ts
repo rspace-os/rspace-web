@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from 'vitest';
 import "@testing-library/jest-dom/vitest";
 import fc from "fast-check";
 import { arbRsSet } from "./helpers";
 import RsSet from "../../set";
 
 describe("subtract", () => {
-  it("Idempotence", () => {
+  test("Idempotence", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), arbRsSet(fc.anything())),
@@ -17,21 +17,21 @@ describe("subtract", () => {
       )
     );
   });
-  it("The empty set is the identity element", () => {
+  test("The empty set is the identity element", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
         expect(set.subtract(new RsSet()).isSame(set)).toBe(true);
       })
     );
   });
-  it("Subtracting anything from the empty set gives the empty set", () => {
+  test("Subtracting anything from the empty set gives the empty set", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
         expect(new RsSet<unknown>().subtract(set).isSame(new RsSet())).toBe(true);
       })
     );
   });
-  it("The result is a subset of the minuend (first argument)", () => {
+  test("The result is a subset of the minuend (first argument)", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), arbRsSet(fc.anything())),
@@ -41,7 +41,7 @@ describe("subtract", () => {
       )
     );
   });
-  it("The intersection of result and subtrahend (section argument) is the empty set", () => {
+  test("The intersection of result and subtrahend (section argument) is the empty set", () => {
     fc.assert(
       fc.property(
         fc.tuple(arbRsSet(fc.anything()), arbRsSet(fc.anything())),
