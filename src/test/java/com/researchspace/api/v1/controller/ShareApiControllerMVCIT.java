@@ -31,6 +31,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.TreeViewItem;
 import com.researchspace.testutils.TestGroup;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -82,9 +83,17 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(1, getShareCount(sharer, apiKey));
     Record shared = recordMgr.get(toShare.getId());
     assertTrue(shared.isShared());
+
     // test ?query param
+    ApiShareSearchResult queryResults = listSharesWithSearch(sharer, apiKey, toShare.getName());
+    assertEquals(1, queryResults.getTotalHits().intValue());
+    // test ?sharedItemIds param
     assertEquals(
-        1, listSharesWithSearch(sharer, apiKey, toShare.getName()).getTotalHits().intValue());
+        1,
+        listSharesWithSharedItemIds(sharer, apiKey, List.of(toShare.getId()))
+            .getTotalHits()
+            .intValue());
+
     // now unshare it:
     unshare(sharer, apiKey, shareResponse, status().isNoContent());
     shared = recordMgr.get(toShare.getId());
@@ -130,6 +139,17 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
       throws Exception {
     MvcResult getResult =
         mockMvc.perform(createShareGetBuilder(sharer, apiKey).param("query", term)).andReturn();
+    return getFromJsonResponseBody(getResult, ApiShareSearchResult.class);
+  }
+
+  private ApiShareSearchResult listSharesWithSharedItemIds(
+      User sharer, String apiKey, List<Long> sharedItemIds) throws Exception {
+    MvcResult getResult =
+        mockMvc
+            .perform(
+                createShareGetBuilder(sharer, apiKey)
+                    .param("sharedItemIds", StringUtils.join(sharedItemIds, ",")))
+            .andReturn();
     return getFromJsonResponseBody(getResult, ApiShareSearchResult.class);
   }
 
