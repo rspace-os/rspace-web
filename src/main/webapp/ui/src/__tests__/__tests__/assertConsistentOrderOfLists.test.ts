@@ -3,7 +3,7 @@ import fc from "fast-check";
 import { toHaveConsistentOrdering } from "../assertConsistentOrderOfLists";
 
 import * as ArrayUtils from "../../util/ArrayUtils";
-// Extend Jest with the custom matcher
+// Extend Vitest with the custom matcher
 expect.extend({
   toHaveConsistentOrdering,
 
