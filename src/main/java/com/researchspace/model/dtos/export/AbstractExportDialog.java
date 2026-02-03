@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class AbstractExportDialog {
+public abstract class AbstractExportDialog {
 
   @Valid protected ExportSelection exportSelection;
   @Valid protected RepoDepositConfig repositoryConfig;
