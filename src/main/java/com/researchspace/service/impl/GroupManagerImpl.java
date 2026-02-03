@@ -5,6 +5,7 @@ import static com.researchspace.service.UserFolderCreator.SHARED_SNIPPETS_FOLDER
 
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiGroupInfo;
+import com.researchspace.api.v1.model.IdentifiableNameableApiObject;
 import com.researchspace.core.util.FilterCriteria;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.ObjectToStringPropertyTransformer;
@@ -78,6 +79,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -365,6 +367,23 @@ public class GroupManagerImpl implements GroupManager {
         .filter(g -> g.getId().equals(groupId))
         .findFirst()
         .map(ApiGroupInfo::new);
+  }
+
+  @Override
+  public List<ApiGroupInfo> getGroupInfoListByUser(User subject) {
+    Set<Group> groups = this.listGroupsForUser();
+    return groups.stream()
+        .map(ApiGroupInfo::new)
+        .sorted(Comparator.comparing(IdentifiableNameableApiObject::getName))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<ApiGroupInfo> getGroupInfoListByQuery(User user, PaginationCriteria<Group> pgCrit) {
+    ISearchResults<Group> groupSearchResult = this.list(user, pgCrit);
+    return groupSearchResult.getResults().stream()
+        .map(ApiGroupInfo::new)
+        .collect(Collectors.toList());
   }
 
   @Override
