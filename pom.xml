@@ -1693,7 +1693,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>RSDEV-947-model-SNAPSHOT</version>
+      <version>2.19.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
