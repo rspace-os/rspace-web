@@ -1,9 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { makeMockSubSample } from "../../../stores/models/__tests__/SubSampleModel/mocking";
 import Breadcrumbs from "../Breadcrumbs";
 vi.mock("../../../common/InvApiService", () => ({ default: {} }));

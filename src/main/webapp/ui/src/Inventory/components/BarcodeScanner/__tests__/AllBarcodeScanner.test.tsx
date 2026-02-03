@@ -1,8 +1,5 @@
 import React from "react";
-import {
- render,
- act,
- screen } from "@testing-library/react";
+import { render, act, screen } from "@testing-library/react";
 import "../../../../../__mocks__/barcode-detection-api";
 import AllBarcodeScanner from "../AllBarcodeScanner";
 import { sleep } from "../../../../util/Util";

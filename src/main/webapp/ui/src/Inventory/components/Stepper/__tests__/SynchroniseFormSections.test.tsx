@@ -3,9 +3,7 @@ import "@/__tests__/mocks/useUiPreference";
 import React,
   { useEffect,
   useContext } from "react";
-import {
-  render,
-} from "@testing-library/react";
+import { render } from "@testing-library/react";
 import SynchroniseFormSections from "../SynchroniseFormSections";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import { type RecordType } from "../../../../stores/definitions/InventoryRecord";

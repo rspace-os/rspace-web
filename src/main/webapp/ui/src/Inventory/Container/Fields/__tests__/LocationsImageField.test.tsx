@@ -1,9 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import { storesContext } from "../../../../stores/stores-context";
 import ContainerModel from "../../../../stores/models/ContainerModel";

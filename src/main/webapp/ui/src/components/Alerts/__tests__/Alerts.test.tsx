@@ -1,11 +1,6 @@
-import { test, describe, expect, vi } from 'vitest';
-import React,
-  { useContext,
-  useEffect } from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { test, describe, expect } from 'vitest';
+import React, { useContext, useEffect } from "react";
+import { render, screen } from "@testing-library/react";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Alerts from "../Alerts";
 function DisplaysAlert() {

@@ -3,10 +3,7 @@ import "@/__tests__/mocks/useOauthToken";
 import "@/__tests__/mocks/useWhoAmI";
 import "@/__tests__/mocks/useWebSocketNotifications";
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import App from "../App";
 import "../../../__tests__/assertSemanticHeadings";
 import MockAdapter from "axios-mock-adapter";

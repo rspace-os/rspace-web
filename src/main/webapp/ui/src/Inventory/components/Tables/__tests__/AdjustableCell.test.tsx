@@ -1,8 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  render,
-} from "@testing-library/react";
+import { render } from "@testing-library/react";
 import {
   type AdjustableTableRow,
   type CellContent,

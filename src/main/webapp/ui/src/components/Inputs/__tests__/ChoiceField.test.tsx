@@ -6,9 +6,7 @@ import {
   vi,
 } from "vitest";
 import React from "react";
-import {
-  render,
-} from "@testing-library/react";
+import { render } from "@testing-library/react";
 import ChoiceField from "../ChoiceField";
 import Checkbox from "@mui/material/Checkbox";
 import { ThemeProvider } from "@mui/material/styles";

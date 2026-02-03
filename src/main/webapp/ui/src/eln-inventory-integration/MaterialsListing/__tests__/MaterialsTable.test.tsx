@@ -1,9 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { sampleAttrs } from "../../../stores/models/__tests__/SampleModel/mocking";
 import { subsampleAttrs } from "../../../stores/models/__tests__/SubSampleModel/mocking";
 import { ListOfMaterials } from "../../../stores/models/MaterialsModel";

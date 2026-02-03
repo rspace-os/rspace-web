@@ -67,7 +67,7 @@ describe("RaIDIntegrationCard", () => {
           authenticatedServers: [],
         },
       });
-      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       expect(await screen.findByRole("dialog")).toBeVisible();
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       await expect(baseElement).toBeAccessible();
@@ -82,7 +82,7 @@ describe("RaIDIntegrationCard", () => {
           authenticatedServers: [],
         },
       });
-      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       expect(screen.getAllByText(/No authenticated servers./i)[0]).toBeVisible();
     });
     test("Renders server alias and URL link.", async () => {
@@ -98,7 +98,7 @@ describe("RaIDIntegrationCard", () => {
           ],
         },
       });
-      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       expect(screen.getByText("srvA")).toBeVisible();
       expect(screen.getByRole("link", { name: /https:\/\/a.example/i })).toBeVisible();
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
@@ -115,7 +115,7 @@ describe("RaIDIntegrationCard", () => {
           ],
         },
       });
-      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
       act(() => {
         broadcastHandlers.forEach((h) => h({ data: { type: "RAID_CONNECTED", alias: "srvA" } } as MessageEvent<RaIDConnectedMessage>));
@@ -135,7 +135,7 @@ describe("RaIDIntegrationCard", () => {
           ],
         },
       });
-      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
       act(() => {
         broadcastHandlers.forEach((h) => h({ data: { type: "RAID_CONNECTED", alias: "srvB" } } as MessageEvent<RaIDConnectedMessage>));
@@ -153,7 +153,7 @@ describe("RaIDIntegrationCard", () => {
           ],
         },
       });
-      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
       act(() => {
         broadcastHandlers.forEach((h) => h('aaaaaaa' as unknown as MessageEvent<RaIDConnectedMessage>));
@@ -184,7 +184,7 @@ describe("RaIDIntegrationCard", () => {
           ],
         },
       });
-      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       await userEvent.click(screen.getByRole("button", { name: /add/i }));
       const menuItem = await screen.findByRole("menuitem", { name: /srvB/i });
       await userEvent.click(menuItem);
@@ -206,7 +206,7 @@ describe("RaIDIntegrationCard", () => {
           ],
         },
       });
-      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       const disconnectBtn = screen.getByRole("button", { name: /disconnect/i });
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
@@ -230,7 +230,7 @@ describe("RaIDIntegrationCard", () => {
           ],
         },
       });
-      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       const disconnectBtn = screen.getByRole("button", { name: /disconnect/i });
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
@@ -254,7 +254,7 @@ describe("RaIDIntegrationCard", () => {
           ],
         },
       });
-      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       const disconnectBtn = screen.getByRole("button", { name: /disconnect/i });
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
@@ -280,7 +280,7 @@ describe("RaIDIntegrationCard", () => {
           ],
         },
       });
-      await userEvent.click(screen.getAllByRole("button", { name: /raid/i })[0]);
+      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       const deleteBtn = screen.getByRole("button", { name: /delete/i });
       await userEvent.click(deleteBtn);
       await waitFor(() => {

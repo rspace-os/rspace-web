@@ -1,10 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  screen,
-  fireEvent,
-  waitFor,
-} from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import GitHub from "../GitHub";
 import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";
@@ -112,7 +108,7 @@ describe("GitHub", () => {
         () =>
           ({
             document: {
-              URL: "https://it.researchspace.com/github/redirect_uri",
+              URL: "https://test.researchspace.com/github/redirect_uri",
               getElementById: () => ({ value: "oauth token" }),
             },
             addEventListener: (_: unknown, f: () => void) => {
@@ -162,7 +158,7 @@ describe("GitHub", () => {
         () =>
           ({
             document: {
-              URL: "https://it.researchspace.com/github/redirect_uri",
+              URL: "https://test.researchspace.com/github/redirect_uri",
               getElementById: () => ({ value: "oauth token" }),
             },
             addEventListener: (_: unknown, f: () => void) => {
@@ -231,7 +227,7 @@ describe("GitHub", () => {
         () =>
           ({
             document: {
-              URL: "https://it.researchspace.com/github/redirect_uri",
+              URL: "https://test.researchspace.com/github/redirect_uri",
               getElementById: () => ({ value: "oauth token" }),
             },
             addEventListener: (_: unknown, f: () => void) => {
@@ -318,7 +314,7 @@ describe("GitHub", () => {
         () =>
           ({
             document: {
-              URL: "https://it.researchspace.com/github/redirect_uri",
+              URL: "https://test.researchspace.com/github/redirect_uri",
               getElementById: () => ({ value: "oauth token" }),
             },
             addEventListener: (_: unknown, f: () => void) => {

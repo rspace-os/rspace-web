@@ -1,10 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  screen,
-  fireEvent,
-  waitFor,
-} from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import MSTeams from "../MSTeams";
 import { Optional } from "../../../../util/optional";
 import { render, within } from "../../../../__tests__/customQueries";

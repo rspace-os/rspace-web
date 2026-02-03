@@ -1,9 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import useViewportDimensions from "../useViewportDimensions";
 function Wrapper(): React.ReactNode {
   const { width } = useViewportDimensions();

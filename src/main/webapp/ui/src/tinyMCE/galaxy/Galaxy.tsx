@@ -270,6 +270,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                         row
                         aria-label="Choose Galaxy Server"
                         name="Choose Galaxy Server"
+                        defaultValue={targetAlias}
                         value={targetAlias}
                         onChange={handleDataTypeChange}
                       >
@@ -279,6 +280,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                             value={server.GALAXY_ALIAS}
                             control={<Radio color="primary" />}
                             label={server.GALAXY_ALIAS}
+                            checked={server.GALAXY_ALIAS === targetAlias}
                           />
                         ))}
                       </RadioGroup>

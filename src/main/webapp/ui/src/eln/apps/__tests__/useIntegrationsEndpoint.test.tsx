@@ -1,9 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
-import React,
-  { useEffect } from "react";
-import {
-  render,
-} from "@testing-library/react";
+import React, { useEffect } from "react";
+import { render } from "@testing-library/react";
 import { useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";

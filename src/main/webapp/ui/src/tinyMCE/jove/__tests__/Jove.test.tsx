@@ -32,37 +32,37 @@ beforeEach(() => {
       .reply(200, JoveSearchResult);
   });
 });
-describe("Renders page with jove data ", () => {
+describe("Renders page with jove data", () => {
   test("displays jove table headers", async () => {
     render(<Jove />);
-    await screen.findAllByText("Title");
+    await screen.findByText("Title");
   });
-  test("displays jove search bar ", async () => {
+  test("displays jove search bar", async () => {
     render(<Jove />);
     await screen.findByLabelText("Search");
   });
   test('displays table headers for jove search results"', async () => {
     render(<Jove />);
-    await screen.findAllByText("Thumbnail");
-    await screen.findAllByText("Title");
-    await screen.findAllByText("Section");
+    await screen.findByText("Thumbnail");
+    await screen.findByText("Title");
+    await screen.findByText("Section");
   });
   test("displays jove search results", async () => {
     render(<Jove />);
-    await screen.findAllByText("Title");
-    await screen.findAllByText(
+    await screen.findByText("Title");
+    await screen.findByText(
       "Induction and Validation of Cellular Senescence in Primary Human Cells"
     );
-    expect(screen.getAllByTestId("title0")[0]).toHaveTextContent(
+    expect(screen.getByTestId("title0")).toHaveTextContent(
       "Induction and Validation of Cellular Senescence in Primary Human Cells"
     );
     expect(
-      within(screen.getAllByTestId("thumbnail0")[0]).getByRole("img")
+      within(screen.getByTestId("thumbnail0")).getByRole("img")
     ).toHaveAttribute(
       "src",
       "https://cloudfront.jove.com/files/thumbs/57782_t.png"
     );
-    expect(screen.getAllByTestId("section0")[0]).toHaveTextContent(
+    expect(screen.getByTestId("section0")).toHaveTextContent(
       "Developmental Biology"
     );
   });

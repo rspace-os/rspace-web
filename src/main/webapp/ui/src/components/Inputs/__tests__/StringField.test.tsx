@@ -1,14 +1,6 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  test,
-  vi,
-} from "vitest";
+import { describe, expect, beforeEach, test, vi } from "vitest";
 import React from "react";
-import {
-  render,
-} from "@testing-library/react";
+import { render } from "@testing-library/react";
 import StringField from "../StringField";
 import TextField from "@mui/material/TextField";
 import { ThemeProvider } from "@mui/material/styles";

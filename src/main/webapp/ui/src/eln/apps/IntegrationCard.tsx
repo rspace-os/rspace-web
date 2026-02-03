@@ -497,7 +497,7 @@ function IntegrationCard<Credentials>({
             </Grid>
           </Grid>
         </DialogTitle>
-        <DialogContent tabIndex={-1}>
+        <DialogContent>
           <section>
             <Typography variant="body2">{usageText}</Typography>
             {typeof website === "string" ? (

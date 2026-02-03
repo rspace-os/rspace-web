@@ -1,14 +1,6 @@
-import {
-  describe,
-  expect,
-  beforeEach,
-  test,
-  vi,
-} from "vitest";
+import { describe, expect, beforeEach, test, vi } from "vitest";
 import React from "react";
-import {
-  render,
-} from "@testing-library/react";
+import { render } from "@testing-library/react";
 import InputWrapper from "../InputWrapper";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";

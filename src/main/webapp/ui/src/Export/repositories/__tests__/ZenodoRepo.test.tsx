@@ -1,9 +1,6 @@
 import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import ZenodoRepo from "../ZenodoRepo";
 import "../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";

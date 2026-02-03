@@ -53,7 +53,7 @@ beforeEach(() => {
     .onPut("/apps/clustermarket/equipment/details", { equipmentIDs: "2,3" })
     .reply(200, [EquipmentDetails["2"], EquipmentDetails["3"]]);
 });
-describe("Has defaultOrderBy ", () => {
+describe("Has defaultOrderBy", () => {
   test("when no value in localStorage then returns Order by start_time", () => {
     expect(getOrderBy()).toEqual("start_time");
   });
@@ -64,7 +64,7 @@ describe("Has defaultOrderBy ", () => {
     expect(getOrderBy()).toEqual("duration");
   });
 });
-describe("Has defaultOrder ", () => {
+describe("Has defaultOrder", () => {
   test("when no value in localStorage then returns  Order.asc", () => {
     expect(getOrder()).toEqual(Order.asc);
   });
@@ -73,7 +73,7 @@ describe("Has defaultOrder ", () => {
     expect(getOrder()).toEqual(Order.desc);
   });
 });
-describe("Renders page with booking data ", () => {
+describe("Renders page with booking data", () => {
   test("displays booking table headers", async () => {
     getWrapper();
     await findFirstByText("Booking ID");
@@ -89,10 +89,10 @@ describe("Renders page with booking data ", () => {
     getWrapper();
     await findFirstByText("Booking ID");
     await findFirstByText("CURRENT_2");
-    expect(screen.getAllByText("CURRENT_2")[0]).toBeInTheDocument();
-    expect(screen.getAllByTestId("status0")[0]).toHaveTextContent("Booked");
-    expect(screen.getAllByTestId("status1")[0]).toHaveTextContent("Booked");
-    expect(screen.getAllByText("CURRENT_5")[0]).toBeInTheDocument();
+    expect(screen.getByText("CURRENT_2")).toBeInTheDocument();
+    expect(screen.getByTestId("status0")).toHaveTextContent("Booked");
+    expect(screen.getByTestId("status1")).toHaveTextContent("Booked");
+    expect(screen.getByText("CURRENT_5")).toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_4")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
@@ -100,10 +100,10 @@ describe("Renders page with booking data ", () => {
   test('displays bookings of type "booked and completed"', async () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
     await findFirstByText("Booking ID");
-    screen.getAllByText("CURRENT_2")[0];
-    expect(screen.getAllByText("CURRENT_2")[0]).toBeInTheDocument();
-    expect(screen.getAllByText("COMPLETED_3")[0]).toBeInTheDocument();
-    expect(screen.getAllByText("COMPLETED_1")[0]).toBeInTheDocument();
+    screen.getByText("CURRENT_2");
+    expect(screen.getByText("CURRENT_2")).toBeInTheDocument();
+    expect(screen.getByText("COMPLETED_3")).toBeInTheDocument();
+    expect(screen.getByText("COMPLETED_1")).toBeInTheDocument();
   });
   test("bookings are ordered by start date, ascending", async () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
@@ -122,7 +122,7 @@ describe("Renders page with booking data ", () => {
       ]),
     );
   });
-  test("displays headers with no results table if no data and ALL bookings ", async () => {
+  test("displays headers with no results table if no data and ALL bookings", async () => {
     mockAxios.resetHandlers();
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper({ defaultBookingType: BookingType.ALL });
@@ -131,7 +131,7 @@ describe("Renders page with booking data ", () => {
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
   });
-  test("displays headers with no results table if no data and Booked bookings ", async () => {
+  test("displays headers with no results table if no data and Booked bookings", async () => {
     mockAxios.resetHandlers();
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper();

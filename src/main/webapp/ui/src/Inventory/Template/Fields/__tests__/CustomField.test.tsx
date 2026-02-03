@@ -1,10 +1,7 @@
 import { test, describe, expect, vi } from 'vitest';
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mocking";
 import CustomField from "../CustomField";
 import { ThemeProvider } from "@mui/material/styles";

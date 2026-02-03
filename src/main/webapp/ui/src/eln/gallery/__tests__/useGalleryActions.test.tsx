@@ -1,10 +1,7 @@
 import { test, describe, expect, vi } from 'vitest';
 import "@/__tests__/mocks/useOauthToken";
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RsSet from "../../../util/set";
 import { useGalleryActions, rootDestination } from "../useGalleryActions";

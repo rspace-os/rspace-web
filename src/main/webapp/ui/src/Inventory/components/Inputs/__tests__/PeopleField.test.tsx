@@ -1,9 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import PeopleField from "../PeopleField";
 import Alerts from "../../Alerts";
 import getRootStore from "../../../../stores/stores/RootStore";

@@ -36,102 +36,134 @@ function makeGalleryLinks(row: GalaxyDataSummary) {
 
 function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWorkflowDialogArgs) {
   return (
-
-      <>
-        <Dialog open={open} fullWidth maxWidth="xl">
-          <DialogTitle>Galaxy WorkFlow Data</DialogTitle>
-          <DialogContent>
-            <Stack spacing={3}>
-              <Typography>
-                Data uploaded and Workflow Invocations using that data
-              </Typography>
-              <DataGrid
-                  getRowHeight={() => "auto"} //for text wrapping
-                  rows={galaxySummaryReport}
-                  disableColumnSelector={true}
-                  initialState={{
-                    sorting: {
-                      sortModel: [{ field: "Created", sort: "desc" }],
-                    },
-                  }}
-                  columns={[
-                    DataGridColumn.newColumnWithValueGetter("Data File Names",
-                        (wf: GalaxyDataSummary) => wf.galaxyDataNames,
-                        {
-                          headerName: "Data Uploaded",
-                          flex: 1,
-                          sortable: false,
-                          resizable: true,
-                          renderCell: ({row}) => makeGalleryLinks(row)
-                        }),
-                    DataGridColumn.newColumnWithValueGetter("Container",
-                        (wf: GalaxyDataSummary) => wf.galaxyHistoryName,
-                        {
-                          headerName: "Container/Galaxy History",
-                          flex: 1,
-                          resizable: true,
-                          renderCell: ({row}) =>
-                              <Link
-                                  href={row.galaxyBaseUrl + "/histories/view?id=" + row.galaxyHistoryId}
-                                  target="_blank"
-                                  rel="noreferrer">{row.galaxyBaseUrl + ": " + row.galaxyHistoryName}</Link>,
-                        }),
-                    DataGridColumn.newColumnWithValueGetter("Invocation",
-                        (wf: GalaxyDataSummary) => wf.galaxyInvocationName,
-                        {
-                          headerName: "Invocation",
-                          flex: 1,
-                          resizable: true,
-                          renderCell: ({row}) => <Link
-                              href={row.galaxyBaseUrl + "/workflows/invocations/" + row.galaxyInvocationId}
-                              target="_blank" rel="noreferrer">{row.galaxyInvocationName}</Link>,
-
-                        }),
-                    DataGridColumn.newColumnWithValueGetter("Status",
-                        (wf: GalaxyDataSummary) => wf.galaxyInvocationStatus,
-                        {
-                          headerName: "Invocation Status",
-                          flex: 1,
-                          resizable: true,
-                          renderCell: ({row}) => row.galaxyInvocationStatus
-                        }),
-                    DataGridColumn.newColumnWithValueGetter("Created",
-                        (wf: GalaxyDataSummary) => new Date(wf.createdOn),
-                        {
-                          headerName: "Invocation Created",
-                          flex: 1,
-                          resizable: true,
-                          renderCell: ({row}) => row.createdOn !== null
-                              ? new Date(row.createdOn).toLocaleString() : ""
-                        }),
-                  ]}
-                  loading={false}
-                  getRowId={(row: GalaxyDataSummary) => row.galaxyHistoryName + row.createdOn}
-                  density="compact"
-                  disableColumnFilter
-                  hideFooter
-                  autoHeight
-                  localeText={{
-                    noRowsLabel: "No Data is attached to this document",
-                  }}
-              />
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button
-                color="primary"
-                variant="contained"
-                disableElevation
-                onClick={() => {
-                  setOpen(false)
-                }}
-            >
-              Close
-            </Button>
-
-          </DialogActions>
-        </Dialog>
-      </>
+    <>
+      <Dialog open={open} fullWidth maxWidth="xl">
+        <DialogTitle>Galaxy WorkFlow Data</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3}>
+            <Typography>
+              Data uploaded and Workflow Invocations using that data
+            </Typography>
+            <DataGrid
+              getRowHeight={() => "auto"} //for text wrapping
+              rows={galaxySummaryReport}
+              disableColumnSelector={true}
+              initialState={{
+                sorting: {
+                  sortModel: [
+                    { field: "Created", sort: "desc" },
+                    { field: "History", sort: "asc" },
+                  ],
+                },
+              }}
+              columns={[
+                DataGridColumn.newColumnWithValueGetter(
+                  "Data File Names",
+                  (wf: GalaxyDataSummary) => wf.galaxyDataNames,
+                  {
+                    headerName: "Data Uploaded",
+                    flex: 1,
+                    sortable: false,
+                    resizable: true,
+                    renderCell: ({ row }) => makeGalleryLinks(row),
+                  },
+                ),
+                DataGridColumn.newColumnWithValueGetter(
+                  "Container",
+                  (wf: GalaxyDataSummary) => wf.galaxyHistoryName,
+                  {
+                    headerName: "Container/Galaxy History",
+                    flex: 1,
+                    resizable: true,
+                    renderCell: ({ row }) => (
+                      <Link
+                        href={
+                          row.galaxyBaseUrl +
+                          "/histories/view?id=" +
+                          row.galaxyHistoryId
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {row.galaxyBaseUrl + ": " + row.galaxyHistoryName}
+                      </Link>
+                    ),
+                  },
+                ),
+                DataGridColumn.newColumnWithValueGetter(
+                  "Invocation",
+                  (wf: GalaxyDataSummary) => wf.galaxyInvocationName,
+                  {
+                    headerName: "Invocation",
+                    flex: 1,
+                    resizable: true,
+                    renderCell: ({ row }) => (
+                      <Link
+                        href={
+                          row.galaxyBaseUrl +
+                          "/workflows/invocations/" +
+                          row.galaxyInvocationId
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {row.galaxyInvocationName}
+                      </Link>
+                    ),
+                  },
+                ),
+                DataGridColumn.newColumnWithValueGetter(
+                  "Status",
+                  (wf: GalaxyDataSummary) => wf.galaxyInvocationStatus,
+                  {
+                    headerName: "Invocation Status",
+                    flex: 1,
+                    resizable: true,
+                    renderCell: ({ row }) => row.galaxyInvocationStatus,
+                  },
+                ),
+                DataGridColumn.newColumnWithValueGetter(
+                  "Created",
+                  (wf: GalaxyDataSummary) => new Date(wf.createdOn),
+                  {
+                    headerName: "Invocation Created",
+                    flex: 1,
+                    resizable: true,
+                    renderCell: ({ row }) =>
+                      row.createdOn !== null
+                        ? new Date(row.createdOn).toLocaleString()
+                        : "",
+                  },
+                ),
+              ]}
+              loading={false}
+              getRowId={(row: GalaxyDataSummary) =>
+                row.galaxyHistoryName + row.createdOn
+              }
+              density="compact"
+              disableColumnFilter
+              hideFooter
+              autoHeight
+              localeText={{
+                noRowsLabel: "No Data is attached to this document",
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            color="primary"
+            variant="contained"
+            disableElevation
+            onClick={() => {
+              setOpen(false);
+            }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }
 

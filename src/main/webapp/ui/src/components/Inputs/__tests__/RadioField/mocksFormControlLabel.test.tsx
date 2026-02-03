@@ -6,9 +6,7 @@ import {
   vi,
 } from "vitest";
 import React from "react";
-import {
-  render,
-} from "@testing-library/react";
+import { render } from "@testing-library/react";
 import RadioField from "../../RadioField";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import { ThemeProvider } from "@mui/material/styles";

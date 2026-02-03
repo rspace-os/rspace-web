@@ -1,9 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import * as React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";

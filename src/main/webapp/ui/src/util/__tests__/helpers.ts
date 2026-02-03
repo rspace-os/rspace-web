@@ -1,10 +1,8 @@
-import { test, expect } from "vitest";
 import fc, { type Arbitrary } from "fast-check";
 import * as ArrayUtils from "../ArrayUtils";
 
 /*
- * This file contains a bunch of generic helper code for writing Inventory vi
- * tests.
+ * This file contains a bunch of generic helper code for writing Inventory tests.
  */
 
 /**

@@ -54,22 +54,20 @@ const setUpComponent = () => {
   });
 };
 async function searchForRoRDetails(term = "https://ror.org/02mhbdp94") {
-  const [rorInput] = screen.getAllByRole("textbox", {
+  const rorInput = screen.getByRole("textbox", {
     name: "Search Registry",
   });
   fireEvent.change(rorInput, {
     target: { value: term },
   });
   expect(rorInput).toHaveValue(term);
-  const [searchButton] = await screen.findAllByRole("button", {
-    name: /^search$/i,
-  });
+  const searchButton = await screen.findByLabelText("Search");
   fireEvent.click(searchButton);
 }
 async function assertRoRDetailsText() {
-  await screen.findAllByText(/Universidad de Los Andes/);
-  await screen.findAllByText(/Bogotá, Colombia/);
-  await screen.findAllByText(/Status: active/);
+  await screen.findByText(/Universidad de Los Andes/);
+  await screen.findByText(/Bogotá, Colombia/);
+  await screen.findByText(/Status: active/);
   expect(
     screen.getAllByRole("link", { name: "https://ror.org/02mhbdp94" })[0]
   ).toHaveAttribute("href", "https://ror.org/02mhbdp94");
@@ -77,22 +75,22 @@ async function assertRoRDetailsText() {
     screen.getAllByRole("link", { name: "http://www.uniandes.edu.co/" })[0]
   ).toHaveAttribute("href", "http://www.uniandes.edu.co/");
 }
-describe("Renders page with ROR data ", () => {
+describe("Renders page with ROR data", () => {
   test("displays page with searchbar when RoR not linked", async () => {
     setUpComponent();
-    await screen.findAllByText(
+    await screen.findByText(
       "Research Organization Registry (ROR) Integration"
     );
-  await screen.findAllByRole("textbox");
+  await screen.findByRole("textbox");
     expect(
       screen.queryByText(/A ROR ID is linked to this RSpace Instance./)
     ).not.toBeInTheDocument();
   });
-  test("displays page with no searchbar  and with Unlink button when RoR is linked", async () => {
+  test("displays page with no searchbar, and with Unlink button when RoR is linked", async () => {
     mockAxios.resetHandlers();
     setupRoRMocks("https://ror.org/02mhbdp94");
     setUpComponent();
-    await screen.findAllByText(
+    await screen.findByText(
       "Research Organization Registry (ROR) Integration"
     );
     await screen.findByText(/A ROR ID is linked to this RSpace Instance./);
@@ -105,29 +103,29 @@ describe("Renders page with ROR data ", () => {
   });
   test("displays ROR v2 details on search", async () => {
     setUpComponent();
-    await screen.findAllByText(
+    await screen.findByText(
       "Research Organization Registry (ROR) Integration"
     );
-    await screen.findAllByRole("textbox");
+    await screen.findByRole("textbox");
     await searchForRoRDetails();
     await screen.findByText(/ROR ID found. Click./);
     await assertRoRDetailsText();
   });
   test("displays error when invalid ROR entered", async () => {
     setUpComponent();
-    await screen.findAllByText(
+    await screen.findByText(
       "Research Organization Registry (ROR) Integration"
     );
-    await screen.findAllByRole("textbox");
+    await screen.findByRole("textbox");
     await searchForRoRDetails("https://ror.org/02mhbdp941");
     await screen.findByText(/https:\/\/ror.org\/02mhbdp941 is not a valid ROR/);
   });
   test("displays error when ROR details not found", async () => {
     setUpComponent();
-    await screen.findAllByText(
+    await screen.findByText(
       "Research Organization Registry (ROR) Integration"
     );
-    await screen.findAllByRole("textbox");
+    await screen.findByRole("textbox");
     await searchForRoRDetails("https://ror.org/02mhbdp92");
     await screen.findByText(
       /ROR ID 'https:\/\/ror.org\/02mhbdp92' does not exist/

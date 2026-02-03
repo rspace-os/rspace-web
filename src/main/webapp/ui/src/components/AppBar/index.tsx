@@ -443,6 +443,7 @@ function GalleryAppBar({
                   <img
                     key="branding small"
                     src={href}
+                    role="presentation"
                     alt="branding"
                     style={{ height: "100%" }}
                   />
@@ -940,6 +941,7 @@ function GalleryAppBar({
                     >
                       <img
                         src={bannerImgSrc}
+                        role="presentation"
                         alt="branding"
                         style={{ width: "min(100%, 120px)" }}
                       />

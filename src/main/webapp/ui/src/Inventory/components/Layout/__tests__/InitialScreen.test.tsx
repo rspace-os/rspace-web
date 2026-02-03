@@ -1,9 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import InitialScreen from "../InitialScreen";
 import Header from "../Header";
 import Sidebar from "../Sidebar";

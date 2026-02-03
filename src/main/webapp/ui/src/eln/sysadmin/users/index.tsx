@@ -337,9 +337,9 @@ const TagDialog = ({
                       onSelection={(newTag) => {
                         if (!addedTags.includes(newTag))
                           setAddedTags([...addedTags, newTag]);
-                        setDeletedTags(
-                          deletedTags.filter((dTag) => dTag !== newTag),
-                        );
+                          setDeletedTags(
+                            deletedTags.filter((dTag) => dTag !== newTag),
+                          );
                       }}
                       onClose={() => {
                         setAnchorEl(null);

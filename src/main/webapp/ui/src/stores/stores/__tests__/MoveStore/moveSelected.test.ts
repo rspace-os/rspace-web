@@ -11,7 +11,7 @@ vi.mock("../../../../common/InvApiService", () => ({
   bulk: vi.fn().mockResolvedValue({}),
   get: vi.fn().mockResolvedValue({}),
   query: vi.fn().mockResolvedValue({}),
-  }}));
+}}));
 describe("action: moveSelected", () => {
   describe("Moving the contents of a location into its current location should", () => {
     test("result in new records being allocated in memory.", async () => {

@@ -1,9 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import TypeFilter from "../TypeFilter";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";

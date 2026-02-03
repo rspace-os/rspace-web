@@ -1,12 +1,7 @@
 import { test, describe, expect, beforeEach,  } from 'vitest';
 import React from "react";
 import axios from "@/common/axios";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-} from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import ExternalWorkflowInvocations, {InvocationsAndDataCount} from "../ExternalWorkflowInvocations";
 const mockAxios = new MockAdapter(axios);
@@ -25,7 +20,7 @@ const GalaxyInvocationsAndDataCount: InvocationsAndDataCount = {
   dataCount: 2,
   invocationCount: 1
 }
-describe("Renders with table of  data ", () => {
+describe("Renders with table of  data", () => {
   beforeEach(() => {
     mockAxios
     .onGet("/apps/galaxy/galaxyDataExists/1")
@@ -51,7 +46,7 @@ describe("Renders with table of  data ", () => {
     expect(await screen.findByText("Invocation Status")).toBeInTheDocument();
     expect(await screen.findByText("Invocation Created")).toBeInTheDocument();
   });
-  test("displays WorkFlow Data ", async () => {
+  test("displays WorkFlow Data", async () => {
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
     const toggleButton = await screen.findByRole("button", {
       name: /Show computational workflows associated with this field/i,
@@ -79,7 +74,7 @@ describe("Handles errors", () => {
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(404, []);
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
-    expect((await screen.findAllByText("Error"))[0]).toBeInTheDocument();
+    expect((await screen.findByText("Error"))).toBeInTheDocument();
     expect(
         await screen.findByText(/Unable to retrieve any relevant results./i)
     ).toBeInTheDocument();
@@ -89,7 +84,7 @@ describe("Handles errors", () => {
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(403, []);
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
-    expect((await screen.findAllByText("Error"))[0]).toBeInTheDocument();
+    expect((await screen.findByText("Error"))).toBeInTheDocument();
     expect(
         await screen.findByText(/Invalid Galaxy API Key Please re-enter your API Key on the Apps page/i)
     ).toBeInTheDocument();
@@ -99,7 +94,7 @@ describe("Handles errors", () => {
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(500, []);
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
-    expect((await screen.findAllByText("Error"))[0]).toBeInTheDocument();
+    expect((await screen.findByText("Error"))).toBeInTheDocument();
     expect(
         await screen.findByText((content) =>
           content.includes(

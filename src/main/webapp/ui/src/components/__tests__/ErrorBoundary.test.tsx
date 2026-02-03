@@ -1,8 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  render,
-} from "@testing-library/react";
+import { render } from "@testing-library/react";
 import ErrorBoundary from "../ErrorBoundary";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 function AlwaysError(): React.ReactNode {

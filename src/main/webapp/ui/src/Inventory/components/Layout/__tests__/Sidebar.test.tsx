@@ -1,9 +1,7 @@
 import { test, describe, expect, vi } from 'vitest';
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
-import {
-  render,
-} from "@testing-library/react";
+import { render } from "@testing-library/react";
 import Sidebar from "../Sidebar";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";

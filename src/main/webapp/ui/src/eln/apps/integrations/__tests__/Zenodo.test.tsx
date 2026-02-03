@@ -43,19 +43,19 @@ describe("Zenodo", () => {
     const user = userEvent.setup();
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getAllByText("Zenodo")[0];
+      screen.getByText("Zenodo");
     });
-    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
+    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
     expect(screen.getByRole("dialog")).toBeVisible();
   });
   test("should close dialog when close button is clicked", async () => {
     const user = userEvent.setup();
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getAllByText("Zenodo")[0];
+      screen.getByText("Zenodo");
     });
     // Open dialog
-    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
+    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
     expect(screen.getByRole("dialog")).toBeVisible();
     // Close dialog
     await user.click(
@@ -76,10 +76,10 @@ describe("Zenodo", () => {
       .thenReturn(expectedState);
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getAllByText("Zenodo")[0];
+      screen.getByText("Zenodo");
     });
     // Open dialog
-    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
+    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
     expect(screen.getByRole("dialog")).toBeVisible();
     // Enable integration
     await user.click(
@@ -112,10 +112,10 @@ describe("Zenodo", () => {
       />
     );
     await waitFor(() => {
-      screen.getAllByText("Zenodo")[0];
+      screen.getByText("Zenodo");
     });
     // Open dialog
-    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
+    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
     expect(screen.getByRole("dialog")).toBeVisible();
     // Disable integration
     await user.click(
@@ -141,10 +141,10 @@ describe("Zenodo", () => {
       .thenReturn(expectedState);
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getAllByText("Zenodo")[0];
+      screen.getByText("Zenodo");
     });
     // Open dialog
-    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
+    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
     expect(screen.getByRole("dialog")).toBeVisible();
     // Set API key
     /*
@@ -176,10 +176,10 @@ describe("Zenodo", () => {
       .thenReturn(enabledState);
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getAllByText("Zenodo")[0];
+      screen.getByText("Zenodo");
     });
     // Open dialog
-    await user.click(screen.getAllByRole("button", { name: /^zenodo/i })[0]);
+    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
     expect(screen.getByRole("dialog")).toBeVisible();
     // Set API key
     await user.type(screen.getAllByLabelText("API Key")[0], apiKey);

@@ -1,9 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import ExportDialog, { type ExportType } from "../ExportDialog";
@@ -98,7 +95,7 @@ describe("Export Tests", () => {
       /* assert help text for default option */
       const defaultSamplesHint =
         "All data, including custom and template fields.";
-      expect(screen.getAllByText(defaultSamplesHint)[0]).toBeInTheDocument();
+      expect(screen.getByText(defaultSamplesHint)).toBeInTheDocument();
     });
     test("renders, has radio options for exportMode, samples and containers", () => {
       render(

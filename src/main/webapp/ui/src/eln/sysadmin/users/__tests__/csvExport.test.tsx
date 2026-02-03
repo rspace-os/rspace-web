@@ -1,10 +1,7 @@
 import { test, describe, expect, vi } from 'vitest';
 import "@/__tests__/mocks/useUiPreference";
 import React from "react";
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { UsersPage } from "..";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";

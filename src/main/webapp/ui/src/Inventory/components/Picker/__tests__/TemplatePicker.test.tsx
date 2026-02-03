@@ -1,8 +1,5 @@
 import React from "react";
-import {
- render,
- screen,
- waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import InvApiService from "../../../../common/InvApiService";
 import TemplatePicker from "../TemplatePicker";
 import materialTheme from "../../../../theme";

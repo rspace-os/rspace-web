@@ -1,7 +1,5 @@
 import * as React from "react";
-import {
- render,
- screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import QrCodeScanner from "../QrCodeScanner";
 import { type BarcodeInput } from "../BarcodeScannerSkeleton";
 import userEvent from "@testing-library/user-event";

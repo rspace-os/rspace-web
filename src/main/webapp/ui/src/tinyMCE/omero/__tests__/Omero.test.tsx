@@ -151,7 +151,7 @@ beforeEach(() => {
     .onGet("/apps/omero/image/422/179693/?fetchLarge=false")
     .reply(200, ThumbnailForPlate422_179693);
 });
-describe("Has defaultOrderBy ", () => {
+describe("Has defaultOrderBy", () => {
   test("when no value in localStorage then returns Order by path", () => {
     expect(getOrderBy()).toEqual("name");
   });
@@ -162,7 +162,7 @@ describe("Has defaultOrderBy ", () => {
     expect(getOrderBy()).toEqual("description");
   });
 });
-describe("Has defaultOrder ", () => {
+describe("Has defaultOrder", () => {
   test("when no value in localStorage then returns  Order.asc", () => {
     expect(getOrder()).toEqual(Order.asc);
   });
@@ -491,7 +491,7 @@ const setUpComponent = async () => {
   getWrapper({ omero_web_url: "http://localhost:8080" });
   await waitForLoadingToFinish();
 };
-describe("Renders page with results data ", () => {
+describe("Renders page with results data", () => {
   test("displays two results table headers", async () => {
     await setUpComponent();
     await findFirstByText("Path", undefined, {
@@ -541,7 +541,7 @@ describe("Renders page with results data ", () => {
       },
     );
     expect(
-      screen.getAllByRole("radio", { name: "Projects" })[0],
+      screen.getByRole("radio", { name: "Projects" }),
     ).toBeInTheDocument();
   }, 9999);
   test("displays Screens Only", async () => {
@@ -550,28 +550,28 @@ describe("Renders page with results data ", () => {
       timeout: 5500,
     });
     expect(
-      screen.getAllByRole("radio", { name: "Screens" })[0],
+      screen.getByRole("radio", { name: "Screens" }),
     ).toBeInTheDocument();
   }, 9999);
-  test("screens can be sorted by name ", async () => {
+  test("screens can be sorted by name", async () => {
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0001-graml-sysgro/screenA",
       192,
     );
-    fireEvent.click(screen.getAllByText("Path")[0]);
+    fireEvent.click(screen.getByText("Path"));
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0145-ho-replicationstress/screenB",
       7,
     );
   }, 9999);
-  test("screens can be sorted by description ", async () => {
+  test("screens can be sorted by description", async () => {
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0001-graml-sysgro/screenA",
       192,
     );
-    fireEvent.click(screen.getAllByText("Description")[0]);
+    fireEvent.click(screen.getByText("Description"));
     await assertThatFirstRowOfDataIsScreenCalled(
       "idr0006-fong-nuclearbodies/screenA",
       169,
@@ -585,19 +585,19 @@ describe("Renders page with results data ", () => {
     );
     expect(getFirstByTestId("description0")).not.toBeEmptyDOMElement();
   }, 9999);
-  test("projects can be sorted by name ", async () => {
+  test("projects can be sorted by name", async () => {
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0018-neff-histopathology/experimentA",
       248,
     );
-    fireEvent.click(screen.getAllByText("Path")[0]);
+    fireEvent.click(screen.getByText("Path"));
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0148-schumacher-kidneytem/experimentA",
       10,
     );
   }, 9999);
-  test("projects description is formatted ", async () => {
+  test("projects description is formatted", async () => {
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0018-neff-histopathology/experimentA",
@@ -605,19 +605,19 @@ describe("Renders page with results data ", () => {
     );
     expect(getFirstByTestId("description1")).not.toBeEmptyDOMElement();
   }, 9999);
-  test("projects can be sorted by description ", async () => {
+  test("projects can be sorted by description", async () => {
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0018-neff-histopathology/experimentA",
       248,
     );
-    fireEvent.click(screen.getAllByText("Description")[0]);
+    fireEvent.click(screen.getByText("Description"));
     await assertThatFirstRowOfDataIsProjectCalled(
       "idr0117-croce-marimba/experimentA",
       9,
     );
   }, 9999);
-  test("items can have details added ", async () => {
+  test("items can have details added", async () => {
     await setUpProjectAndScreensInDescendingOrder();
     await fetchDetailsFor("project", 101);
     expect(getFirstByTestId("path24")).toBeInTheDocument();
@@ -645,7 +645,7 @@ describe("Renders page with results data ", () => {
     const didHide = await hideChildren("project", 51, "dataset", 51, 10);
     if (!didHide) return;
   }, 9999);
-  test("datasets have links to projects ", async () => {
+  test("datasets have links to projects", async () => {
     const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
@@ -662,7 +662,7 @@ describe("Renders page with results data ", () => {
     if (!parentProject) return;
     expect(parentProject).toBeInTheDocument();
   }, 9999);
-  test("when projects are reordered datasets are reordered AFTER their parent projects ", async () => {
+  test("when projects are reordered datasets are reordered AFTER their parent projects", async () => {
     const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
@@ -698,7 +698,7 @@ describe("Renders page with results data ", () => {
       "CDK5RAP2-Cdataset fetch detailsshow image grid [33] see in omero -> parent_project",
     );
   }, 9999);
-  test("datasets can show grids of images ", async () => {
+  test("datasets can show grids of images", async () => {
     const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
@@ -711,7 +711,7 @@ describe("Renders page with results data ", () => {
     );
     if (!didShow) return;
   }, 9999);
-  test("datasets can hide grids of images ", async () => {
+  test("datasets can hide grids of images", async () => {
     const didNavigate = await navigateFromProjectToDataset(
       "idr0021-lawo-pericentriolarmaterial/experimentA",
       51,
@@ -808,7 +808,7 @@ describe("Renders page with results data ", () => {
     if (!plateAcquisition) return;
     expect(plateAcquisition).toBeInTheDocument();
   }, 9999);
-  test("plate acquisitions can show grids of images ", async () => {
+  test("plate acquisitions can show grids of images", async () => {
     const didNavigate = await navigateFromScreenToPlate(
       "idr0001-graml-sysgro/screenA",
       3,
@@ -823,7 +823,7 @@ describe("Renders page with results data ", () => {
     );
     if (!didGrid) return;
   }, 9999);
-  test("plate acquisitions can hide grids of images ", async () => {
+  test("plate acquisitions can hide grids of images", async () => {
     const didNavigate = await navigateFromScreenToPlate(
       "idr0001-graml-sysgro/screenA",
       3,
