@@ -164,7 +164,10 @@ public class GroupControllerMVCIT extends MVCTestBase {
             g1.getId(),
             g1.getDisplayName(),
             new RaIDReferenceDTO(
-                "raidServerAlias", "Raid Title1", "https://raid.org/10.12345/FKJ897")));
+                "raidServerAlias",
+                "Raid Title1",
+                "https://raid.org/10.12345/FKJ897",
+                "https://demo.static.raid.org.au/raid/10.12345/FKJ897")));
 
     // make sure group can be deleted.
     grpMgr.removeGroup(g1.getId(), pi1);

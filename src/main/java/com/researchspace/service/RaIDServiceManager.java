@@ -10,12 +10,10 @@ public interface RaIDServiceManager {
 
   UserRaid getUserRaid(Long userRaidId);
 
-  Set<RaidGroupAssociationDTO> getAssociatedRaidsByUserAndAlias(User user, String raidServerAlias);
-
   Set<RaidGroupAssociationDTO> getAssociatedRaidsByAlias(String raidServerAlias);
 
-  Optional<RaidGroupAssociationDTO> getAssociatedRaidByUserAliasAndProjectId(
-      User user, String raidServerAlias, Long projectGroupId);
+  Optional<RaidGroupAssociationDTO> getAssociatedRaidByAliasAndProjectId(
+      String raidServerAlias, Long projectGroupId);
 
   Optional<RaidGroupAssociationDTO> getAssociatedRaidByFolderId(User user, Long folderId);
 

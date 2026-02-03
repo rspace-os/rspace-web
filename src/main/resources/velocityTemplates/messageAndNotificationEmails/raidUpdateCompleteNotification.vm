@@ -1,0 +1,11 @@
+#if($succeed)
+Your research output recently deposited on &quot;$repo&quot; with the DOI <a
+    href="$doi">$doi</a> has been added to your RaID record <a
+    href="$url">$identifier</a>.
+#else
+Your research output recently deposited on &quot;$repo&quot; with the DOI <a
+    href="$doi">$doi</a> could not be added to your RaID record <a
+    href="$url">$identifier</a>.
+#end
+<br/>
+#dontReply

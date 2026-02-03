@@ -19,10 +19,7 @@ public class RaidGroupAssociationDTO implements Serializable {
 
   public RaidGroupAssociationDTO(UserRaid userRaid) {
     this.projectGroupId = userRaid.getGroupAssociated().getId();
-    this.raid =
-        new RaIDReferenceDTO(
-            userRaid.getId(), userRaid.getRaidServerAlias(),
-            userRaid.getRaidTitle(), userRaid.getRaidIdentifier());
+    this.raid = new RaIDReferenceDTO(userRaid);
     this.rspaceProjectName = userRaid.getGroupAssociated().getDisplayName();
     initRoCrateId();
   }

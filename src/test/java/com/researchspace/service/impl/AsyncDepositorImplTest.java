@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.model.apps.App.APP_DATAVERSE;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -10,6 +11,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
+import com.researchspace.model.dtos.RaidUpdateResult;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.service.CommunicationManager;
@@ -21,6 +23,8 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.Before;
 import org.junit.Rule;
@@ -29,6 +33,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.scheduling.annotation.AsyncResult;
 
 public class AsyncDepositorImplTest {
 
@@ -99,19 +104,27 @@ public class AsyncDepositorImplTest {
             (Mockito.contains("http://www.bbc.co.uk")),
             Mockito.eq(anyUser.getUsername()),
             Mockito.eq(true));
+    Mockito.verifyNoMoreInteractions(comm);
     assertTrue(underTest.updateDMPsCalled);
     Mockito.verifyNoInteractions(mockRaidServiceClientAdapter);
   }
 
   @Test
   public void testMessageDoiLinkWithRaid()
-      throws MalformedURLException, URISyntaxException, JsonProcessingException {
+      throws MalformedURLException,
+          URISyntaxException,
+          JsonProcessingException,
+          ExecutionException,
+          InterruptedException {
     // GIVEN
+    String repoName = "Dataverse";
     String expectedResultUrl =
         "https://dataverse.org/dataset.xhtml?persistentId=doi:10.70122/FK2/FNGEGH";
     String expectedDoiLink = "https://doi.org/10.70122/FK2/FNGEGH";
+    String expectedRaidIdentifier = "https://raid.org/10.12345/ERTY88";
+    String expectedRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
     RaIDReferenceDTO expectedRaidReference =
-        new RaIDReferenceDTO("serverAlias1", "RaidTitle", "https://raid.org/10.12345/ERTY88");
+        new RaIDReferenceDTO("serverAlias1", "RaidTitle", expectedRaidIdentifier, expectedRaidUrl);
     when(mockRaidServiceClientAdapter.updateRaIDRelatedObject(
             anyUser.getUsername(), expectedRaidReference, expectedDoiLink))
         .thenReturn(true);
@@ -120,23 +133,32 @@ public class AsyncDepositorImplTest {
     raidDepositConfig.setExportToRaid(true);
     raidDepositConfig.setAppName(APP_DATAVERSE);
     raidDepositConfig.setRaidAssociated(
-        new RaidGroupAssociationDTO(1L, "RsapceProjectName", expectedRaidReference));
-    RepositoryOperationResult result =
-        new RepositoryOperationResult(true, "hello", new URL(expectedResultUrl));
+        new RaidGroupAssociationDTO(1L, "RSpaceProjectName", expectedRaidReference));
+
+    RaidUpdateResult expectedRaidUpdateResult =
+        new RaidUpdateResult(
+            true, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
+    Future<RepositoryOperationResult> futureRepoOperationResult =
+        new AsyncResult<>(new RepositoryOperationResult(true, "", new URL(expectedResultUrl)));
 
     // WHEN
-    underTest.postDeposit(
-        result, new App(APP_DATAVERSE, APP_DATAVERSE, true), anyUser, testFile, raidDepositConfig);
+    Future<RaidUpdateResult> futureRaidUpdateResult =
+        underTest.reportDoiToRaid(
+            new App(repoName, repoName, true),
+            futureRepoOperationResult,
+            anyUser,
+            raidDepositConfig);
 
     // THEN
+    Mockito.verify(mockRaidServiceClientAdapter)
+        .updateRaIDRelatedObject(anyUser.getUsername(), expectedRaidReference, expectedDoiLink);
     Mockito.verify(comm)
         .systemNotify(
             Mockito.any(NotificationType.class),
-            (Mockito.contains(expectedResultUrl)),
+            (Mockito.contains(expectedDoiLink)),
             Mockito.eq(anyUser.getUsername()),
             Mockito.eq(true));
-    assertTrue(underTest.updateDMPsCalled);
-    Mockito.verify(mockRaidServiceClientAdapter)
-        .updateRaIDRelatedObject(anyUser.getUsername(), expectedRaidReference, expectedDoiLink);
+    RaidUpdateResult actualRaidUpdateResult = futureRaidUpdateResult.get();
+    assertEquals(expectedRaidUpdateResult, actualRaidUpdateResult);
   }
 }

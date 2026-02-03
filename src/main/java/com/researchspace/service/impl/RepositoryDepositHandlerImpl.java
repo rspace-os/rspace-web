@@ -90,8 +90,10 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     repository.configure(repoConnectionInfo);
     repository.testConnection();
 
-    asyncDepositor.depositDocument(
-        app, subject, repository, archiveConfig, repoConnectionInfo, document);
+    Future<RepositoryOperationResult> futureDepositResult =
+        asyncDepositor.depositDocument(
+            app, subject, repository, archiveConfig, repoConnectionInfo, document);
+    asyncDepositor.reportDoiToRaid(app, futureDepositResult, subject, archiveConfig);
     return null;
   }
 
@@ -110,8 +112,11 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     repository.configure(repoConnectionInfo);
     repository.testConnection();
 
-    asyncDepositor.depositArchive(
-        app, subject, repository, archiveConfig, repoConnectionInfo, archive);
+    Future<RepositoryOperationResult> futureDepositResult =
+        asyncDepositor.depositArchive(
+            app, subject, repository, archiveConfig, repoConnectionInfo, archive);
+    asyncDepositor.reportDoiToRaid(app, futureDepositResult, subject, archiveConfig);
+
     return null;
   }
 
