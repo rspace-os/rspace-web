@@ -1,4 +1,4 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect } from 'vitest';
 import "@/__tests__/mocks/useUiPreference";
 import React from "react";
 import {

@@ -1,4 +1,4 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect } from 'vitest';
 import React from "react";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import MSTeams from "../MSTeams";

@@ -75,6 +75,7 @@ describe("Apps page", () => {
     );
     await screen.findAllByText(/Something went wrong!/i);
     // @ts-expect-error assertHeadings comes from assertSemanticHeadings
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     expect(container).assertHeadings([
       { level: 1, content: "Apps" },
       { level: 2, content: "Enabled" },
