@@ -45,7 +45,6 @@ const RorErrorHelpText = styled.span`
   background-color: #d9d9d9;
 `;
 
- 
 function RoRIntegration(): React.ReactNode {
   const [ror, setRor] = useState<string>("");
   const [candidateRor, setCandidateRor] = useState<string>("");

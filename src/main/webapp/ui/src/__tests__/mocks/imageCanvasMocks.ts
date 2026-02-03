@@ -66,7 +66,7 @@ if (typeof HTMLImageElement !== "undefined") {
   Object.defineProperty(HTMLImageElement.prototype, "src", {
     configurable: true,
     get() {
-       
+
       return originalDescriptor?.get
         ? (originalDescriptor.get as (this: HTMLImageElement) => string).call(
             this as HTMLImageElement,
@@ -96,8 +96,6 @@ if (typeof HTMLImageElement !== "undefined") {
         getMockProperty(this, "__mockNaturalHeight", 600),
       );
 
-       
-       
       queueMicrotask(() => {
         (this as { dispatchEvent?: (event: Event) => void }).dispatchEvent?.(
           new Event("load"),

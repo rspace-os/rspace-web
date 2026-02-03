@@ -776,7 +776,6 @@ function decodeRaid(data: FetchedState): IntegrationStates["RAID"] {
   };
 }
 
-
 function decodeSlack(data: FetchedState): IntegrationStates["SLACK"] {
   return {
     mode: parseState(data),
@@ -1402,7 +1401,7 @@ export function useIntegrationsEndpoint(): {
   };
 
   const update = React.useCallback(
-       
+
       async <I extends Integration>(
           integration: I,
           newState: IntegrationStates[I]
@@ -1535,7 +1534,6 @@ export function useIntegrationsEndpoint(): {
       []
   );
 
-   
   const saveAppOptions = async <I extends Integration>(
       appName: I,
       optionsId: Optional<OptionsId>,

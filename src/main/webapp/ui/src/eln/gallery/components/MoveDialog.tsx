@@ -73,7 +73,7 @@ const MoveDialog = observer(
 
     React.useEffect(() => {
       if (open) void refreshListingInsideDialog();
-       
+
     }, [open]);
 
     const [topLevelLoading, setTopLevelLoading] = React.useState(false);
@@ -209,7 +209,7 @@ const MoveDialog = observer(
  * rendered, and will make network requests to fetch the folder structure
  * immediately.
  */
- 
+
 export default (
   props: Omit<MoveDialogArgs, "selectedFiles">,
 ): React.ReactNode => {

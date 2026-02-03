@@ -56,7 +56,7 @@ export type FileLink = {
  */
 export type FolderLink = {
   type: "folder";
-   
+
   content: Array<MixedLink>;
   fileSystemFullPath: Path;
   size: null;

@@ -39,4 +39,3 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
  */
 loadUIOnPageLoad();
 
-

@@ -20,4 +20,3 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
-

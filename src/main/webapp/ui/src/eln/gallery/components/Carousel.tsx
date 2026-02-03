@@ -220,7 +220,6 @@ const PreviewWrapper = ({
   );
 };
 
- 
 const Preview = ({
   file,
   zoom,
@@ -326,7 +325,7 @@ const Preview = ({
           }
         }),
       );
-     
+
   }, []);
 
   function onDocumentLoadSuccess({
@@ -439,7 +438,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
       setVisibleIndex(0);
       selection.append(listing.list[0]);
     }
-     
+
   }, [listing]);
 
   function incrementVisibleIndex() {
@@ -479,7 +478,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
     };
     window.addEventListener("keydown", f);
     return () => window.removeEventListener("keydown", f);
-     
+
   }, [visibleIndex, listing]);
 
   if (listing.tag === "empty")
