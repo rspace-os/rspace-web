@@ -485,7 +485,7 @@
 
 <div id="groupActivity" data-groupid="${group.id}"></div>
 
-<br><br>
+<div id="raid-connections" data-group-id="${group.id}"></div>
 
 <div id="setNewPiDialog" style="display:none;">
     Select new PI:
@@ -561,4 +561,5 @@ See  <a href="https://researchspace.helpdocs.io/article/8qekgz9y5b-the-lab-admin
 <script src="<c:url value='/ui/dist/groupUserActivity.js'/>"></script>
 <script src="<c:url value='/ui/dist/groupEditBar.js'/>"></script>
 <script src="<c:url value='/ui/dist/memberAutoshareStatusWrapper.js'/>"></script>
+<script src="<c:url value='/ui/dist/raidConnections.js'/>"></script>
 <!--End React Scripts -->

@@ -28,6 +28,7 @@ import com.researchspace.model.EcatVideo;
 import com.researchspace.model.IFieldLinkableElement;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RSMath;
+import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.record.RecordInformation;
@@ -234,13 +235,15 @@ public class ExportObjectGenerator {
       Number revision,
       NfsExportContext nfsContext,
       ImmutableExportRecordList exportList) {
-
     FieldContents fieldContents =
         fieldParser.findFieldElementsInContent(archiveField.getFieldData());
     FieldExportContext context =
         new FieldExportContext(
             aconfig, archiveField, recordFolder, exportFolder, revision, nfsContext, exportList);
     try {
+      // New export classes may be added in the sections below
+      // which call export explicitly eg 'addImageAnnotationsToExport', 'addSketchesToExport' etc.
+      // It is not necessary to make more calls to 'addElementsToExport'
       addElementsToExport(
           context, fieldContents, RsChemElementFieldExporter.class, RSChemElement.class);
       addElementsToExport(context, fieldContents, MathFieldExporter.class, RSMath.class);
@@ -250,14 +253,26 @@ public class ExportObjectGenerator {
     } catch (InstantiationException | IllegalAccessException e) {
       log.warn("exception parsing content of archive field " + archiveField.getFieldId(), e);
     }
-    // these don't fit into the generic mechanism easily
+    // ********* may add new export code here *********
+    // These explicit method calls reduce the number of layers of indirection
     addImageAnnotationsToExport(context, fieldContents);
     addSketchesToExport(context, fieldContents);
     addAttachmentFilesToExport(context, fieldContents);
     updateInteralLinksInExport(context, fieldContents, exportList);
     addExternalWorkFlowData(context, fieldContents);
+    addStoichiometryData(context, fieldContents, aconfig.getExporter());
     addResourcesFiles(archiveField);
     updateIframeLinks(archiveField);
+  }
+
+  private void addStoichiometryData(
+      FieldExportContext context, FieldContents fieldContents, User exporter) {
+    String htmlContent = context.getArchiveField().getFieldData();
+    if (htmlContent.contains("data-stoichiometry-table")) {
+      StoichiometryExporter stoichiometryExporter =
+          new StoichiometryExporter(support, new StoichiometryReader(), exporter);
+      stoichiometryExporter.addStoichiometriesAndExport(context, htmlContent);
+    }
   }
 
   private void addExternalWorkFlowData(FieldExportContext context, FieldContents fieldContents) {

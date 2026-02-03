@@ -184,10 +184,10 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
       throws MalformedURLException {
     App app = appSet.getApp();
     checkConnectionState(app, userManager.getAuthenticatedUserInSession());
-    RSDataverseConnectionConfig cfg = new RSDataverseConnectionConfig(appSet);
-    RepositoryConfig repoConnectionInfo =
-        repoCfgFactory.createRepositoryConfigFromAppCfg(cfg, subject);
-    return getRepositoryConfiguration(app, repoConnectionInfo);
+    RSDataverseConnectionConfig rsDataverseConnectionCfg = new RSDataverseConnectionConfig(appSet);
+    RepositoryConfig repoConfig =
+        repoCfgFactory.createRepositoryConfigFromAppCfg(rsDataverseConnectionCfg, subject);
+    return getRepositoryConfiguration(app, repoConfig);
   }
 
   @Override

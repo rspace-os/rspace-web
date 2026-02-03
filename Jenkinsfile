@@ -480,7 +480,7 @@ pipeline {
                 // this is to create a valid datbase name from the branch name
 
                 echo "sanitised DB Name is $SANITIZED_DBNAME"
-                sh "./mvnw  clean verify -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                sh "./mvnw clean verify -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Djavax.xml.accessExternalDTD=all\
                   -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\

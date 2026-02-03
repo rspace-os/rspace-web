@@ -63,7 +63,7 @@ export type Repo = {
    * associate with the export.
    */
   linkedDMPs: Array<Plan> | null;
-
+  metadataLanguages?: { title: string; locale: string; }[];
   label?: string;
   repoCfg: unknown;
 };

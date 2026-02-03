@@ -44,12 +44,14 @@ import com.researchspace.model.RSMath;
 import com.researchspace.model.User;
 import com.researchspace.model.Version;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.ExternalWorkFlowDataManager;
@@ -59,6 +61,9 @@ import com.researchspace.service.MediaManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.StoichiometryService;
+import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
+import com.researchspace.service.archive.export.StoichiometryReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -79,6 +84,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 
 /*
  * Helper class for importer implementations
@@ -92,6 +98,7 @@ abstract class AbstractImporterStrategyImpl {
   @Autowired FieldManager fieldManager;
   @Autowired MediaManager mediaManager;
   @Autowired RSChemElementManager rsChemElementManager;
+  @Autowired @Lazy StoichiometryService stoichiometryService;
   @Autowired InternalLinkDao internalLinkDao;
   @Autowired private ExternalWorkFlowDataManager externalWorkFlowDataManager;
   @Autowired RichTextUpdater rtu;
@@ -484,7 +491,10 @@ abstract class AbstractImporterStrategyImpl {
     importVideo(fld, archiveFld, user, recordFolder, oldIdToNewGalleryItem);
     fld = importAttachments(fld, archiveFld, user, recordFolder, oldIdToNewGalleryItem);
     fld = importChemistryFiles(fld, archiveFld, user, recordFolder, oldIdToNewGalleryItem);
-    fld = importChemElements(fld, archiveFld, user, recordFolder);
+    fld =
+        importChemElementsAndStoichiometries(
+            fld, archiveFld, user, recordFolder, oldIdToNewGalleryItem);
+    fld = importEmptyStoichiometries(archiveFld, fld, user);
     fld = importMath(fld, archiveFld, recordFolder);
     fld = importImageAnnotation(fld, archiveFld, recordFolder, oldIdToNewGalleryItem);
     importLinkedRecords(fld, archiveFld, recordFolder, linkRecord);
@@ -844,9 +854,37 @@ abstract class AbstractImporterStrategyImpl {
       "xsi:schemaLocation=\"http://www.chemaxon.com"
           + " http://www.chemaxon.com/marvin/schema/mrvSchema";
 
-  private Field importChemElements(
-      Field fld, ArchivalField archiveFld, User user, File recordFolder) throws IOException {
+  private Field importEmptyStoichiometries(ArchivalField archiveFld, Field newField, User user) {
+    List<StoichiometryDTO> stoichiometries = archiveFld.getStoichiometries();
+    for (StoichiometryDTO aStoichiometry : stoichiometries) {
+      if (aStoichiometry.getParentReactionId() == null) {
+        Stoichiometry created =
+            stoichiometryService.createEmpty(newField.getStructuredDocument().getId(), user);
+        IdAndRevision newDTO = new IdAndRevision();
+        newDTO.id = created.getId();
+        String updatedStoichiometriesFieldContent =
+            new StoichiometryReader()
+                .createReplacementHtmlContentForTargetStoichiometryInFieldData(
+                    newField.getFieldData(), aStoichiometry, newDTO);
+        newField.setFieldData(updatedStoichiometriesFieldContent);
+        fieldManager.save(newField, user);
+      }
+    }
+    return newField;
+  }
+
+  private Field importChemElementsAndStoichiometries(
+      Field fld,
+      ArchivalField archiveFld,
+      User user,
+      File recordFolder,
+      Map<String, EcatMediaFile> oldIdToNewGalleryItem)
+      throws IOException {
     List<ArchivalGalleryMetadata> chemMeta = archiveFld.getChemElementMeta();
+    StoichiometryImporter stoichiometryImporter = null;
+    stoichiometryImporter =
+        new StoichiometryImporter(
+            stoichiometryService, new StoichiometryReader(), archiveFld, fld, fieldManager, user);
     if (chemMeta != null && !chemMeta.isEmpty()) {
       int cnt = 0;
       for (ArchivalGalleryMetadata agm : chemMeta) {
@@ -874,9 +912,20 @@ abstract class AbstractImporterStrategyImpl {
                     : ChemElementsFormat.MOL;
           }
           try (FileInputStream fis = new FileInputStream(dataImageFile)) {
+            Long ecatChemFieldId = null;
+            if (oldIdToNewGalleryItem.get(agm.getEcatChemFieldId() + "-null") != null) {
+              ecatChemFieldId =
+                  oldIdToNewGalleryItem.get(agm.getEcatChemFieldId() + "-null").getId();
+            }
             currentChem =
                 mediaManager.importChemElement(
-                    fis, chemAnnotation, format, fld.getId(), fld.getStructuredDocument());
+                    fis,
+                    chemAnnotation,
+                    format,
+                    fld.getId(),
+                    fld.getStructuredDocument(),
+                    ecatChemFieldId);
+            stoichiometryImporter.importStoichiometries(agm, currentChem);
             Map<String, String> mp =
                 rtu.makeChemImageAttributes(Long.toString(currentChem.getId()));
             fld =

@@ -7,6 +7,7 @@ import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
 
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
@@ -28,8 +29,13 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -59,16 +65,16 @@ public class RepositoryConfigurationController extends BaseController {
 
     Map<String, IntegrationInfo> rc = getRepositoryIntegrationInfos(user);
 
-    List<IntegrationInfo> activeInfos =
+    List<IntegrationInfo> activeRepoInfos =
         rc.entrySet().stream()
             .filter(activeRepositories())
             .map(Entry::getValue)
             .collect(Collectors.toList());
     List<RepoUIConfigInfo> uiConfigs = new ArrayList<>();
-    for (IntegrationInfo inf : activeInfos) {
+    for (IntegrationInfo inf : activeRepoInfos) {
       RepoUIConfigInfo info = getRepoUIConfigInfo(user, inf.getName());
-      info.setOptions(inf.getOptions());
       info.setDisplayName(inf.getDisplayName());
+      info.setOptions(getOptionsForRepoUIConfigInfo(inf.getName(), inf.getOptions()));
       uiConfigs.add(info);
     }
     if (isDMPEnabled(user)) {
@@ -84,6 +90,28 @@ public class RepositoryConfigurationController extends BaseController {
       }
     }
     return uiConfigs;
+  }
+
+  @Value("${dataverse.metadataLanguages:}")
+  @Setter(AccessLevel.PROTECTED)
+  protected String metadataLanguagesMap;
+
+  private Map<String, Object> getOptionsForRepoUIConfigInfo(
+      String integrationName, Map<String, Object> integrationOptions) {
+
+    if (DATAVERSE_APP_NAME.equals(integrationName)) {
+      if (integrationOptions != null && StringUtils.isNotEmpty(metadataLanguagesMap)) {
+        List<Map<String, String>> languagesMapList =
+            JacksonUtil.fromJson(metadataLanguagesMap, List.class);
+        if (CollectionUtils.isNotEmpty(languagesMapList)) {
+          for (var collectionObject : integrationOptions.entrySet()) {
+            var collection = (Map<String, Object>) collectionObject.getValue();
+            collection.put("metadataLanguages", languagesMapList);
+          }
+        }
+      }
+    }
+    return integrationOptions;
   }
 
   // this only works for Dataverse just now
@@ -115,7 +143,7 @@ public class RepositoryConfigurationController extends BaseController {
       throws MalformedURLException {
     RepoUIConfigInfo info = null;
     if (DATAVERSE_APP_NAME.equals(integrationInfoName)) {
-      // todo need to get this by each dataverse
+      // apply common dataverse settings taken from 1st found dataverse user config
       UserAppConfig appCfg =
           userAppConfigMgr.getByAppName(getAppNameFromIntegrationName(integrationInfoName), user);
       var appConfigElementSet =

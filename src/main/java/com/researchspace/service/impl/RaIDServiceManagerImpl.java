@@ -36,6 +36,12 @@ public class RaIDServiceManagerImpl implements RaIDServiceManager {
   }
 
   @Override
+  public Set<RaidGroupAssociationDTO> getAssociatedRaidsByAlias(String raidServerAlias) {
+    List<UserRaid> userRaidList = raidDao.getAssociatedRaidByAlias(raidServerAlias);
+    return userRaidList.stream().map(RaidGroupAssociationDTO::new).collect(Collectors.toSet());
+  }
+
+  @Override
   public Optional<RaidGroupAssociationDTO> getAssociatedRaidByUserAliasAndProjectId(
       User user, String raidServerAlias, Long projectGroupId) {
     Optional<RaidGroupAssociationDTO> result = Optional.empty();

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.xhtmlrenderer.layout.SharedContext;
@@ -45,6 +46,10 @@ public class PdfProcessor extends AbstractExportProcessor implements ExportProce
     this.htmlUnicodeFontProcesser = fontProcessor;
     this.imageResolver = imageResolver;
     this.pdfHtmlGenerator = pdfHtmlGenerator;
+    // suppress verbose logging from the flying saucer PDF library where INFO level
+    // org.xhtmlrenderer log statements show in our logs as WARNING due to mismatch between
+    // java.util.logging and log4j
+    Logger.getLogger("org.xhtmlrenderer").setLevel(java.util.logging.Level.WARNING);
   }
 
   /*
