@@ -21,7 +21,7 @@ import AcquisitionsForPlate422 from "./json/acquisitionForPlate422.json";
 import { Order } from "../Enums";
 
 vi.mock("@/common/axios", async () => {
-  const actual = await vi.importActual("axios");
+  const actual = await vi.importActual<typeof import("axios")>("axios");
   const instance = actual.default?.create
     ? actual.default.create()
     : actual.default;
@@ -49,7 +49,7 @@ vi.mock("../../omero/OmeroClient", async () => {
     await import("./json/imageThumbnailsForPlate422.json"),
   );
   const ThumbnailForPlate422_179693 = unwrap(
-    await import("./json/imageThumbnailFor422_179693"),
+    await import("./json/imageThumbnailFor422_179693.json"),
   );
   const Annotations = unwrap(await import("./json/annotations.json"));
   const AnnotationsForImage179693 = unwrap(
@@ -289,7 +289,8 @@ const assertThatFirstRowOfDataIsScreenCalled = async (
   );
 };
 
-const setUpLocalStorageWithOrder = (order: Order) => {
+type OrderValue = (typeof Order)[keyof typeof Order];
+const setUpLocalStorageWithOrder = (order: OrderValue) => {
   localStorageMock.getItem = vi.fn().mockImplementation((key: string) => {
     if (key === "omeroSearchOrder") {
       return '"' + order + '"';

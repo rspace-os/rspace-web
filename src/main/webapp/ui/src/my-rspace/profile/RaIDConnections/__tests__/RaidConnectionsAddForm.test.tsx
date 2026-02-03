@@ -1,7 +1,3 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
 import React from "react";
 import {
   render,
@@ -9,20 +5,17 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { axe, toHaveNoViolations } from "jest-axe";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "@/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RaidConnectionsAddForm from "../RaidConnectionsAddForm";
-import "@testing-library/jest-dom";
 import "../../../../../__mocks__/matchMedia";
 import { GetAvailableRaIDListResponse } from "@/modules/raid/schema";
 
-expect.extend(toHaveNoViolations);
-
 // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
-const mockMutateAsync = jest.fn();
-const mockInvalidateQueries = jest.fn();
+const mockMutateAsync = vi.fn();
+const mockInvalidateQueries = vi.fn();
 const mockMutationState: {
   isError: boolean;
   error: Error | null;
@@ -36,19 +29,19 @@ let mockQueryData: GetAvailableRaIDListResponse = {
   data: [],
 };
 
-jest.mock("@/modules/raid/queries", () => ({
+vi.mock("@/modules/raid/queries", () => ({
   raidQueryKeys: {
-    availableRaidIdentifiers: jest.fn(() => ["rspace.apps.raid", "availableIds"]),
+    availableRaidIdentifiers: vi.fn(() => ["rspace.apps.raid", "availableIds"]),
   },
-  useGetAvailableRaIDIdentifiersAjaxQuery: jest.fn(() => ({
+  useGetAvailableRaIDIdentifiersAjaxQuery: vi.fn(() => ({
     get data() {
       return mockQueryData;
     },
   })),
 }));
 
-jest.mock("@/modules/raid/mutations", () => ({
-  useAddRaidIdentifierMutation: jest.fn(() => ({
+vi.mock("@/modules/raid/mutations", () => ({
+  useAddRaidIdentifierMutation: vi.fn(() => ({
     mutateAsync: mockMutateAsync,
     get isError() {
       return mockMutationState.isError;
@@ -109,14 +102,14 @@ const givenMockQueryError = (errorMsg: string = "Failed to load data") => {
 };
 
 describe("RaidConnectionsAddForm", () => {
-  const mockHandleCloseForm = jest.fn();
+  const mockHandleCloseForm = vi.fn();
   const defaultProps = {
     groupId: "12345",
     handleCloseForm: mockHandleCloseForm,
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockMutationState.isError = false;
     mockMutationState.error = null;
     mockQueryData = {
@@ -130,7 +123,8 @@ describe("RaidConnectionsAddForm", () => {
       const { container } = renderWithProviders(defaultProps);
 
       // Disable region rule as this is a form component that would be wrapped in a landmark in production
-      expect(await axe(container, { rules: { region: { enabled: false } } })).toHaveNoViolations();
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      await expect(container).toBeAccessible();
     });
 
     it("Should have no axe violations with available options", async () => {
@@ -138,7 +132,8 @@ describe("RaidConnectionsAddForm", () => {
       const { container } = renderWithProviders(defaultProps);
 
       // Disable region rule as this is a form component that would be wrapped in a landmark in production
-      expect(await axe(container, { rules: { region: { enabled: false } } })).toHaveNoViolations();
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      await expect(container).toBeAccessible();
     });
   });
 
@@ -602,7 +597,7 @@ describe("RaidConnectionsAddForm", () => {
           {
             raidServerAlias: "server2",
             raidIdentifier: "raid-123",
-            raidTitle: "Test RaID 1",
+            raidTitle: "Test RaID 1 (alt)",
           },
         ],
       };
@@ -614,8 +609,10 @@ describe("RaidConnectionsAddForm", () => {
       await user.click(autocomplete);
 
       // Both options should be available
-      const options = screen.getAllByText("Test RaID 1 (raid-123)");
-      expect(options.length).toBeGreaterThanOrEqual(2);
+      expect(screen.getByText("Test RaID 1 (raid-123)")).toBeInTheDocument();
+      expect(
+        screen.getByText("Test RaID 1 (alt) (raid-123)")
+      ).toBeInTheDocument();
     });
   });
 });

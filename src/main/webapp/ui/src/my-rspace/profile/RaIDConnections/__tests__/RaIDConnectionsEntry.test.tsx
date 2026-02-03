@@ -1,7 +1,3 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
 import React from "react";
 import {
   render,
@@ -9,45 +5,60 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { axe, toHaveNoViolations } from "jest-axe";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "@/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RaIDConnectionsEntry from "../RaIDConnectionsEntry";
-import "@testing-library/jest-dom";
 import "../../../../../__mocks__/matchMedia";
-
-expect.extend(toHaveNoViolations);
+import type { GroupInfo } from "@/modules/groups/schema";
+import type { UseSuspenseQueryResult } from "@tanstack/react-query";
 
 // Mock hooks
-const mockOauthTokenData = { token: "test-token-123" };
-const mockGroupData = {
+const mockOauthTokenData = "test-token-123";
+
+const createGroup = (
+  overrides: Partial<GroupInfo> & Pick<GroupInfo, "id" | "name" | "type">,
+): GroupInfo => ({
+  globalId: `GR${overrides.id}`,
+  sharedFolderId: 1,
+  sharedSnippetFolderId: 2,
+  members: [],
+  raid: null,
+  ...overrides,
+});
+
+const mockGroupData = createGroup({
   id: 12345,
   name: "Test Group",
+  type: "PROJECT_GROUP",
   raid: {
+    raidServerAlias: "server1",
     raidIdentifier: "https://raid.org/12345",
     raidTitle: "Test RaID Project",
   },
-};
+});
 
-const mockGroupDataNoRaid = {
+const mockGroupDataNoRaid = createGroup({
   id: 12345,
   name: "Test Group",
+  type: "PROJECT_GROUP",
   raid: null,
-};
+});
 
 // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
-jest.mock("@/modules/common/hooks/auth", () => ({
-  useOauthTokenQuery: jest.fn(),
+vi.mock("@/modules/common/hooks/auth", () => ({
+  useOauthTokenQuery: vi.fn(),
 }));
 
-jest.mock("@/modules/groups/queries", () => ({
-  useGetGroupByIdQuery: jest.fn(),
+vi.mock("@/modules/groups/queries", () => ({
+  useGetGroupByIdQuery: vi.fn(),
 }));
 
 // Mock child components
-jest.mock("../RaidConnectionsAddForm", () => {
-  return function MockRaidConnectionsAddForm({
+vi.mock("../RaidConnectionsAddForm", () => {
+  return {
+    default: function MockRaidConnectionsAddForm({
     groupId,
     handleCloseForm,
   }: {
@@ -60,11 +71,13 @@ jest.mock("../RaidConnectionsAddForm", () => {
         <button onClick={handleCloseForm}>Close Form</button>
       </div>
     );
+    },
   };
 });
 
-jest.mock("../RaidConnectionsDisassociateButton", () => {
-  return function MockRaidConnectionsDisassociateButton({
+vi.mock("../RaidConnectionsDisassociateButton", () => {
+  return {
+    default: function MockRaidConnectionsDisassociateButton({
     raidIdentifier,
     raidTitle,
   }: {
@@ -77,13 +90,31 @@ jest.mock("../RaidConnectionsDisassociateButton", () => {
         Disassociate {raidTitle} ({raidIdentifier})
       </button>
     );
+    },
   };
 });
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-const { useOauthTokenQuery } = jest.requireMock("@/modules/common/hooks/auth");
-const { useGetGroupByIdQuery } = jest.requireMock("@/modules/groups/queries");
-/* eslint-enable @typescript-eslint/no-unsafe-assignment */
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useGetGroupByIdQuery } from "@/modules/groups/queries";
+
+const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
+const mockedUseGetGroupByIdQuery = vi.mocked(useGetGroupByIdQuery);
+const asOauthTokenResult = (
+  token: string,
+): UseSuspenseQueryResult<string, Error> =>
+  ({ data: token } as UseSuspenseQueryResult<string, Error>);
+const asGroupResult = (
+  data: GroupInfo,
+): UseSuspenseQueryResult<GroupInfo, Error> =>
+  ({ data } as UseSuspenseQueryResult<GroupInfo, Error>);
+const asGroupQueryResult = (
+  data?: GroupInfo,
+  isLoading?: boolean,
+): ReturnType<typeof useGetGroupByIdQuery> =>
+  ({
+    data,
+    isLoading,
+  }) as unknown as ReturnType<typeof useGetGroupByIdQuery>;
 
 const renderWithProviders = (props: { groupId: string }) => {
   const queryClient = new QueryClient({
@@ -108,37 +139,39 @@ describe("RaIDConnectionsEntry", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-    useOauthTokenQuery.mockReturnValue({ data: mockOauthTokenData });
-    /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    vi.clearAllMocks();
+     
+    mockedUseOauthTokenQuery.mockReturnValue(asOauthTokenResult(mockOauthTokenData));
+     
   });
 
   describe("Accessibility", () => {
     it("Should have no axe violations when RaID is connected", async () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupData });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
+       
       const { baseElement } = renderWithProviders(defaultProps);
 
       // Disable region rule as this is a sub-component that would be within a landmark in the real app
-      expect(await axe(baseElement, { rules: { region: { enabled: false } } })).toHaveNoViolations();
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      await expect(baseElement).toBeAccessible();
     });
 
     it("Should have no axe violations when RaID is not connected", async () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataNoRaid });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
+       
       const { baseElement } = renderWithProviders(defaultProps);
 
       // Disable region rule as this is a sub-component that would be within a landmark in the real app
-      expect(await axe(baseElement, { rules: { region: { enabled: false } } })).toHaveNoViolations();
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      await expect(baseElement).toBeAccessible();
     });
 
     it("Should have no axe violations when in editing mode", async () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataNoRaid });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
+       
       const { baseElement } = renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
@@ -150,15 +183,16 @@ describe("RaIDConnectionsEntry", () => {
       });
 
       // Disable region rule as this is a sub-component that would be within a landmark in the real app
-      expect(await axe(baseElement, { rules: { region: { enabled: false } } })).toHaveNoViolations();
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      await expect(baseElement).toBeAccessible();
     });
   });
 
   describe("Rendering with RaID connected", () => {
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupData });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
+       
     });
 
     it("Should render RaID title and identifier when connected", () => {
@@ -204,9 +238,9 @@ describe("RaIDConnectionsEntry", () => {
 
   describe("Rendering without RaID connected", () => {
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataNoRaid });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
+       
     });
 
     it("Should render 'Not connected' message when no RaID", () => {
@@ -230,9 +264,9 @@ describe("RaIDConnectionsEntry", () => {
 
   describe("Editing mode", () => {
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataNoRaid });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
+       
     });
 
     it("Should show add form when add button is clicked", async () => {
@@ -311,11 +345,13 @@ describe("RaIDConnectionsEntry", () => {
 
   describe("Data handling", () => {
     it("Should handle undefined raid data gracefully", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({
-        data: { ...mockGroupDataNoRaid, raid: undefined },
-      });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(
+        asGroupQueryResult(
+          ({ ...mockGroupDataNoRaid, raid: undefined } as unknown) as GroupInfo,
+        ),
+      );
+       
 
       renderWithProviders(defaultProps);
 
@@ -323,14 +359,14 @@ describe("RaIDConnectionsEntry", () => {
     });
 
     it("Should handle empty raid identifier", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({
-        data: {
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(
+        asGroupQueryResult({
           ...mockGroupData,
-          raid: { raidIdentifier: "", raidTitle: "" },
-        },
-      });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+          raid: { raidServerAlias: "server1", raidIdentifier: "", raidTitle: "" },
+        }),
+      );
+       
 
       renderWithProviders(defaultProps);
 
@@ -339,14 +375,18 @@ describe("RaIDConnectionsEntry", () => {
     });
 
     it("Should handle partial raid data with identifier but no title", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({
-        data: {
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(
+        asGroupQueryResult({
           ...mockGroupData,
-          raid: { raidIdentifier: "https://raid.org/12345", raidTitle: "" },
-        },
-      });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+          raid: {
+            raidServerAlias: "server1",
+            raidIdentifier: "https://raid.org/12345",
+            raidTitle: "",
+          },
+        }),
+      );
+       
 
       renderWithProviders(defaultProps);
 
@@ -358,18 +398,18 @@ describe("RaIDConnectionsEntry", () => {
     });
 
     it("Should call useOauthTokenQuery hook", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupData });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
+       
       renderWithProviders(defaultProps);
 
       expect(useOauthTokenQuery).toHaveBeenCalled();
     });
 
     it("Should call useGetGroupByIdQuery with correct parameters", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupData });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
+       
       renderWithProviders(defaultProps);
 
       expect(useGetGroupByIdQuery).toHaveBeenCalledWith({
@@ -381,9 +421,9 @@ describe("RaIDConnectionsEntry", () => {
 
   describe("Component structure", () => {
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupData });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
+       
     });
 
     it("Should render the component successfully", () => {
@@ -396,12 +436,11 @@ describe("RaIDConnectionsEntry", () => {
 
   describe("Loading states", () => {
     it("Should handle loading state from useGetGroupByIdQuery", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({
-        data: undefined,
-        isLoading: true,
-      });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(
+        asGroupQueryResult(undefined, true),
+      );
+       
 
       renderWithProviders(defaultProps);
 
@@ -410,9 +449,9 @@ describe("RaIDConnectionsEntry", () => {
     });
 
     it("Should handle undefined group data", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: undefined });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupQueryResult());
+       
 
       renderWithProviders(defaultProps);
 
@@ -423,9 +462,9 @@ describe("RaIDConnectionsEntry", () => {
 
   describe("Integration with child components", () => {
     it("Should pass correct props to RaidConnectionsDisassociateButton", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupData });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
+       
       renderWithProviders(defaultProps);
 
       const disassociateButton = screen.getByTestId("disassociate-button");
@@ -434,9 +473,9 @@ describe("RaIDConnectionsEntry", () => {
     });
 
     it("Should maintain state when switching between modes", async () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataNoRaid });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
+       
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
