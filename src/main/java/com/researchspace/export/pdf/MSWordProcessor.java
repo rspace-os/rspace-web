@@ -6,6 +6,7 @@ import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.ConvertibleFile;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
+import com.researchspace.export.stoichiometry.StoichiometryHtmlGenerator;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.core.IRSpaceDoc;
@@ -35,6 +36,7 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
   private DocumentConversionService docConverter;
 
   private @Autowired ImageRetrieverHelper imageHelper;
+  @Autowired private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
 
   public void setDocConverter(DocumentConversionService docConverter) {
     this.docConverter = docConverter;
@@ -108,6 +110,9 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
     extractImageFileAndUpdateLinkFromImages(tempExportFile, exportConfig, images);
 
     html = jsoup.html();
+    if (html.contains("data-stoichiometry-table")) {
+      html = stoichiometryHtmlGenerator.addStoichiometryLinks(html, exportConfig.getExporter());
+    }
     File htmlInput =
         new File(tempExportFile.getParentFile(), getBaseName(tempExportFile.getName()) + ".html");
     FileUtils.write(htmlInput, html, "UTF-8");
