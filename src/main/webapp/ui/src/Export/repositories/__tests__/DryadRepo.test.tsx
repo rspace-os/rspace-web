@@ -8,7 +8,9 @@ import {
 } from "@testing-library/react";
 import DryadRepo from "../DryadRepo";
 import MockAdapter from "axios-mock-adapter";
+
 import axios from "@/common/axios";
+
 const mockAxios = new MockAdapter(axios);
 describe("DryadRepo", () => {
   /*
@@ -54,6 +56,7 @@ describe("DryadRepo", () => {
         authors={[]}
       />
     );
+
   };
   /*
    * We then want to mock that network call so that it is not attempted for
@@ -64,12 +67,15 @@ describe("DryadRepo", () => {
       email: "joe.bloggs@example.com",
       fullName: "Joe Bloggs",
     },
+
   });
   test("Upon editing, title should be set to the entered value.", async () => {
     const handleChange = vi.fn();
+
     await act(() => void renderDryadRepo({ handleChange }));
     fireEvent.change(screen.getByRole("textbox", { name: /Title/ }), {
       target: { value: "foo" },
+
     });
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -79,12 +85,15 @@ describe("DryadRepo", () => {
         }),
       })
     );
+
   });
   test("Upon editing, description should be set to the entered value.", async () => {
     const handleChange = vi.fn();
+
     await act(() => void renderDryadRepo({ handleChange }));
     fireEvent.change(screen.getByRole("textbox", { name: /Add an abstract/ }), {
       target: { value: "foo" },
+
     });
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({

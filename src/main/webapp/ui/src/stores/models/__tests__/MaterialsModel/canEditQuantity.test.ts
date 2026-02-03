@@ -4,6 +4,7 @@ import { makeMockContainer } from "../ContainerModel/mocking";
 import { makeMockSample } from "../SampleModel/mocking";
 import { makeMockSubSample } from "../SubSampleModel/mocking";
 import fc, { type Arbitrary } from "fast-check";
+
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
@@ -11,10 +12,12 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
     getUnit: () => ({ label: "ml" }),
   },
 })
+
 }));
 const arbitraryQuantity: Arbitrary<Quantity> = fc.record({
   unitId: fc.nat(),
   numericValue: fc.float(),
+
 });
 describe("canEditQuantity", () => {
   test("Should return false if invRec is a deleted SubSample", () => {
@@ -25,6 +28,7 @@ describe("canEditQuantity", () => {
           const material = new Material({
             invRec: makeMockSubSample({ deleted: true }),
             usedQuantity,
+
           });
           expect(material.canEditQuantity).toBe(false);
         }
@@ -35,6 +39,7 @@ describe("canEditQuantity", () => {
     const material = new Material({
       invRec: makeMockSample(),
       usedQuantity: null,
+
     });
     expect(material.canEditQuantity).toBe(false);
   });
@@ -42,6 +47,7 @@ describe("canEditQuantity", () => {
     const material = new Material({
       invRec: makeMockContainer(),
       usedQuantity: null,
+
     });
     expect(material.canEditQuantity).toBe(false);
   });

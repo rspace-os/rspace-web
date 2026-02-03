@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import ImageEditingDialog from "../ImageEditingDialog";
 import fc from "fast-check";
 import { sleep } from "../../util/Util";
+
 // Import image and canvas mocks for this test
 import "../../__tests__/mocks/imageCanvasMocks";
 
@@ -18,12 +19,14 @@ describe("ImageEditingDialog", () => {
     ctx.canvas.width = 600;
     ctx.canvas.height = 400;
     ctx.fillStyle = "green";
+
     ctx.fillRect(10, 10, 150, 100);
     const blob: Blob = await new Promise((resolve) => {
       canvas.toBlob((b: Blob | null) => {
         if (b === null) throw new Error("toBlob failed");
         resolve(b);
       });
+
     });
     const { baseElement } = render(
       <ImageEditingDialog
@@ -33,8 +36,10 @@ describe("ImageEditingDialog", () => {
         submitHandler={() => {}}
         alt="dummy alt text"
       />,
+
     );
     // wait for image to load
+
     await screen.findByRole("img") as HTMLImageElement;
     // wait for rotated image to load
     await sleep(1000);
@@ -47,8 +52,10 @@ describe("ImageEditingDialog", () => {
       fc.asyncProperty(
         fc.tuple(fc.constantFrom("clockwise", "counter clockwise"), fc.nat(20)),
         async ([direction, number]) => {
+
           cleanup();
           // submitHandler is not invoked if no edits have been made
+
           fc.pre(number > 0);
           const canvas = document.createElement("canvas");
           const ctx = canvas.getContext("2d");
@@ -58,6 +65,7 @@ describe("ImageEditingDialog", () => {
           ctx.canvas.height = 400;
           ctx.fillStyle = "green";
           ctx.fillRect(10, 10, 150, 100);
+
           const user = userEvent.setup();
           const blob: Blob = await new Promise((resolve) => {
             canvas.toBlob((b: Blob | null) => {
@@ -65,6 +73,7 @@ describe("ImageEditingDialog", () => {
               resolve(b);
             });
           });
+
           const submitHandler = vi.fn();
           render(
             <ImageEditingDialog
@@ -75,6 +84,7 @@ describe("ImageEditingDialog", () => {
               alt="dummy alt text"
             />,
           );
+
           await screen.findByRole("img") as HTMLImageElement;
           // Wait for image to fully load and set dimensions
           await waitFor(() => {
@@ -93,17 +103,20 @@ describe("ImageEditingDialog", () => {
               const image = screen.getByRole("img") as HTMLImageElement;
               expect(image.complete).toBe(true);
             });
+
           }
           await user.click(screen.getByRole("button", { name: /done/i }));
           await waitFor(() => {
             expect(submitHandler).toHaveBeenCalled();
           });
           const actualBlob = submitHandler.mock.calls[0][0] as Blob;
+
           expect(actualBlob).toBeInstanceOf(Blob);
         },
       ),
       { numRuns: 4 },
     );
+
   });
   test("Rotating by 90º clockwise should result in the correct image", async () => {
     const user = userEvent.setup();
@@ -114,6 +127,7 @@ describe("ImageEditingDialog", () => {
     ctx.canvas.width = 600;
     ctx.canvas.height = 600;
     ctx.fillStyle = "green";
+
     ctx.fillRect(0, 0, 300, 300);
     const blob: Blob = await new Promise((resolve) => {
       canvas.toBlob((b: Blob | null) => {
@@ -121,6 +135,7 @@ describe("ImageEditingDialog", () => {
         resolve(b);
       });
     });
+
     const submitHandler = vi.fn();
     render(
       <ImageEditingDialog
@@ -131,6 +146,7 @@ describe("ImageEditingDialog", () => {
         alt="dummy alt text"
       />,
     );
+
     await screen.findByRole("img") as HTMLImageElement;
     // Wait for image to fully load and set dimensions
     await waitFor(() => {
@@ -142,17 +158,21 @@ describe("ImageEditingDialog", () => {
     const rotateButton = screen.getByRole("button", {
       name: "rotate clockwise",
     });
+
     await user.click(rotateButton);
     // wait for rotated image to load
+
     await waitFor(() => {
       const image = screen.getByRole("img") as HTMLImageElement;
       expect(image.complete).toBe(true);
     });
+
     await user.click(screen.getByRole("button", { name: /done/i }));
     await waitFor(() => {
       expect(submitHandler).toHaveBeenCalled();
     });
     expect(submitHandler.mock.calls[0][0]).toBeInstanceOf(Blob);
+
   });
   test("Rotating by 90º counter clockwise should result in the correct image", async () => {
     const user = userEvent.setup();
@@ -163,6 +183,7 @@ describe("ImageEditingDialog", () => {
     ctx.canvas.width = 600;
     ctx.canvas.height = 600;
     ctx.fillStyle = "green";
+
     ctx.fillRect(0, 0, 300, 300);
     const blob: Blob = await new Promise((resolve) => {
       canvas.toBlob((b: Blob | null) => {
@@ -170,6 +191,7 @@ describe("ImageEditingDialog", () => {
         resolve(b);
       });
     });
+
     const submitHandler = vi.fn();
     render(
       <ImageEditingDialog
@@ -180,6 +202,7 @@ describe("ImageEditingDialog", () => {
         alt="dummy alt text"
       />,
     );
+
     await screen.findByRole("img") as HTMLImageElement;
     // Wait for image to fully load and set dimensions
     await waitFor(() => {
@@ -191,17 +214,20 @@ describe("ImageEditingDialog", () => {
     const rotateButton = screen.getByRole("button", {
       name: "rotate counter clockwise",
     });
+
     await user.click(rotateButton);
     // wait for rotated image to load
     await waitFor(() => {
       const image = screen.getByRole("img") as HTMLImageElement;
       expect(image.complete).toBe(true);
     });
+
     await user.click(screen.getByRole("button", { name: /done/i }));
     await waitFor(() => {
       expect(submitHandler).toHaveBeenCalled();
     });
     expect(submitHandler.mock.calls[0][0]).toBeInstanceOf(Blob);
+
   });
   test("If no change has been made, then submitHandler is not called", async () => {
     const user = userEvent.setup();
@@ -212,6 +238,7 @@ describe("ImageEditingDialog", () => {
     ctx.canvas.width = 600;
     ctx.canvas.height = 600;
     ctx.fillStyle = "green";
+
     ctx.fillRect(0, 0, 300, 300);
     const blob: Blob = await new Promise((resolve) => {
       canvas.toBlob((b: Blob | null) => {
@@ -219,6 +246,7 @@ describe("ImageEditingDialog", () => {
         resolve(b);
       });
     });
+
     const submitHandler = vi.fn();
     const close = vi.fn();
     render(
@@ -230,10 +258,12 @@ describe("ImageEditingDialog", () => {
         alt="dummy alt text"
       />,
     );
+
     await screen.findByRole("img") as HTMLImageElement;
     await user.click(screen.getByRole("button", { name: /done/i }));
     expect(close).toHaveBeenCalled();
     expect(submitHandler).not.toHaveBeenCalled();
+
   });
   /*
    * Testing the cropping functionality was attempted but it seems to be
@@ -241,6 +271,7 @@ describe("ImageEditingDialog", () => {
    * trigger react-image-crop's onChange event handler. There is a console
    * error reported that `scrollTo` could not be invoked on the root div of
    * ReactCrop, so perhaps that is the issue.
+
    */
   test("Cancel button should not invoke submitHandler", async () => {
     const user = userEvent.setup();
@@ -251,6 +282,7 @@ describe("ImageEditingDialog", () => {
     ctx.canvas.width = 600;
     ctx.canvas.height = 600;
     ctx.fillStyle = "green";
+
     ctx.fillRect(0, 0, 300, 300);
     const blob: Blob = await new Promise((resolve) => {
       canvas.toBlob((b: Blob | null) => {
@@ -258,6 +290,7 @@ describe("ImageEditingDialog", () => {
         resolve(b);
       });
     });
+
     const submitHandler = vi.fn();
     const close = vi.fn();
     render(
@@ -269,6 +302,7 @@ describe("ImageEditingDialog", () => {
         alt="dummy alt text"
       />,
     );
+
     await screen.findByRole("img") as HTMLImageElement;
     // Wait for image to fully load and set dimensions
     await waitFor(() => {
@@ -280,12 +314,15 @@ describe("ImageEditingDialog", () => {
     const rotateButton = screen.getByRole("button", {
       name: "rotate clockwise",
     });
+
     await user.click(rotateButton);
     // wait for rotated image to load
+
     await waitFor(() => {
       const image = screen.getByRole("img") as HTMLImageElement;
       expect(image.complete).toBe(true);
     });
+
     await user.click(screen.getByRole("button", { name: /cancel/i }));
     expect(close).toHaveBeenCalled();
     expect(submitHandler).not.toHaveBeenCalled();

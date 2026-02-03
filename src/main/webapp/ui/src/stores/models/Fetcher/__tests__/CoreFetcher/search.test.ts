@@ -1,3 +1,4 @@
+
 import { describe, expect, test, vi } from 'vitest';
 import CoreFetcher from "../../CoreFetcher";
 import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";
@@ -5,6 +6,7 @@ import { type Factory } from "../../../../definitions/Factory";
 import InvApiService from "../../../../../common/InvApiService";
 import "../../../../../__tests__/assertUrlSearchParams";
 import { AxiosResponse } from "axios";
+
 vi.mock("../../../../stores/RootStore", () => ({
   default: () => ({
   default: {
@@ -30,6 +32,7 @@ vi.mock("../../../../../common/InvApiService", () => ({
         })
       )
   ),
+
   }}));
 describe("search", () => {
   describe("When a new search is performed,", () => {
@@ -39,6 +42,7 @@ describe("search", () => {
         newFactory: mockNewFactory,
       });
       const fetcher = new CoreFetcher(factory, null);
+
       await fetcher.search(null, () => {});
       expect(mockNewFactory).toHaveBeenCalled();
     });
@@ -54,10 +58,12 @@ describe("search", () => {
             config: {} as any,
           })
         );
+
       const mockNewFactory = vi.fn<() => Factory>().mockReturnValue({} as Factory);
       const factory = mockFactory({
         newFactory: mockNewFactory,
       });
+
       const fetcher = new CoreFetcher(factory, null);
       await fetcher.search({}, () => {});
       expect(querySpy).toHaveBeenCalledWith(

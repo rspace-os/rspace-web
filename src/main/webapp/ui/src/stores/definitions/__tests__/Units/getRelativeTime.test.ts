@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { getRelativeTime } from "../../Units";
+
 import fc from "fast-check";
 describe("getRelativeTime", () => {
   test("Simple example", () => {
@@ -10,6 +11,7 @@ describe("getRelativeTime", () => {
     vi.setSystemTime(now);
     expect(getRelativeTime(futureDate)).toBe("in 2 hours");
     vi.useRealTimers();
+
   });
   // this is important so that callers get the grammar right
   test("Always starts with 'in'", () => {

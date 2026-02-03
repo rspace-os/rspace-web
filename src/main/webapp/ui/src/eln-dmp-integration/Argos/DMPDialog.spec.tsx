@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import DMPDialog from "./DMPDialog";
+
 import AxeBuilder from "@axe-core/playwright";
 test.beforeEach(async ({ router }) => {
   await router.route(/\/apps\/argos\/plans.*/, async (route) => {
@@ -68,12 +69,15 @@ test.beforeEach(async ({ router }) => {
       }),
     });
   });
+
 });
 test("Should have no axe violations.", async ({ mount, page }) => {
   await mount(<DMPDialog open={true} setOpen={() => {}} />);
   await expect(page.getByRole("dialog")).toBeVisible();
+
   await expect(page.getByText("foo")).toBeVisible();
   const rows = page.getByRole("row");
+
   expect(await rows.count()).toBeGreaterThan(1);
   const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
   expect(
@@ -90,6 +94,7 @@ test("Should have no axe violations.", async ({ mount, page }) => {
       );
     })
   ).toEqual([]);
+
 });
 test("Importing a selected DMP should call the import endpoint.", async ({
   mount,
@@ -97,12 +102,15 @@ test("Importing a selected DMP should call the import endpoint.", async ({
 }) => {
   await mount(<DMPDialog open={true} setOpen={() => {}} />);
   await expect(page.getByRole("dialog")).toBeVisible();
+
   await expect(page.getByText("foo")).toBeVisible();
   const cell = page.getByRole("gridcell", { name: "Select plan: Foo" }).first();
+
   await cell.getByRole("radio").click();
   const [request] = await Promise.all([
     page.waitForRequest(/\/apps\/argos\/importPlan/),
     page.getByRole("button", { name: "Import" }).click(),
+
   ]);
   expect(request.url()).toMatch(
     new RegExp("/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e")

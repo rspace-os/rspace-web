@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { objectPath } from "../../parsers";
+
 import Result from "../../result";
 describe("objectPath", () => {
   test("Recursive example", () => {

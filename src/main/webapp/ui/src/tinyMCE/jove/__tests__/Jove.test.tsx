@@ -32,21 +32,25 @@ beforeEach(() => {
       .reply(200, JoveSearchResult);
   });
 });
+
 describe("Renders page with jove data", () => {
   test("displays jove table headers", async () => {
     render(<Jove />);
     await screen.findByText("Title");
   });
+
   test("displays jove search bar", async () => {
     render(<Jove />);
     await screen.findByLabelText("Search");
   });
+
   test('displays table headers for jove search results"', async () => {
     render(<Jove />);
     await screen.findByText("Thumbnail");
     await screen.findByText("Title");
     await screen.findByText("Section");
   });
+
   test("displays jove search results", async () => {
     render(<Jove />);
     await screen.findByText("Title");
@@ -66,6 +70,7 @@ describe("Renders page with jove data", () => {
       "Developmental Biology"
     );
   });
+
   test("displays error message if 404 returned", async () => {
     const restoreConsole = silenceConsole(["log"], [/./]);
     mockAxios
@@ -82,6 +87,7 @@ describe("Renders page with jove data", () => {
     ).toBeInTheDocument();
     restoreConsole();
   });
+
   test("displays error message if 500 returned", async () => {
     const restoreConsole = silenceConsole(["log"], [/./]);
     mockAxios

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { MoveDialogStory } from "./MoveDialog.story";
+
 import * as Jwt from "jsonwebtoken";
 const feature = test.extend<{
   Given: {
@@ -33,6 +34,7 @@ const feature = test.extend<{
   networkRequests: async ({}, use) => {
     await use([]);
   },
+
 });
 feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/session/ajax/analyticsProperties", (route) => {
@@ -94,13 +96,16 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         },
       }),
     });
+
   });
   page.on("request", (request) => {
     networkRequests.push(new URL(request.url()));
   });
+
 });
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
+
 });
 test.describe("MoveDialog", () => {
   feature("Should request only folders", async ({ Given, Then, page }) => {

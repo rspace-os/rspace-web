@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { NestedFoldersWithImageFile, BunchOfImages } from "./MainPanel.story";
 import * as Jwt from "jsonwebtoken";
+
 import AxeBuilder from "@axe-core/playwright";
 const feature = test.extend<{
   Given: {
@@ -285,6 +286,7 @@ const feature = test.extend<{
   networkRequests: async ({}, use) => {
     await use([]);
   },
+
 });
 feature.beforeEach(async ({ router }) => {
   await router.route("/session/ajax/analyticsProperties", (route) => {
@@ -400,12 +402,15 @@ feature.beforeEach(async ({ router }) => {
       ),
     });
   });
+
 });
+
 feature.afterEach(({}) => {});
 test.describe("MainPanel", () => {
   feature("Should have no axe violations", async ({ Given, Then }) => {
     await Given["the main panel is showing a nested folder structure"]();
     await Then["there shouldn't be any axe violations"]();
+
   });
   test.describe("breadcrumbs", () => {
     feature("The root of the gallery section", async ({ Given, Then }) => {

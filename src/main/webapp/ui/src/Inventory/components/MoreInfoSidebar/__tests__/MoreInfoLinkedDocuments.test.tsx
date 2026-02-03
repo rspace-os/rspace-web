@@ -12,10 +12,12 @@ import { newDocument } from "../../../../stores/models/Document";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { render, within } from "../../../../__tests__/customQueries";
+
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
     get: () => ({}),
   }
+
 }));
 describe("LinkedDocuments", () => {
   afterEach(() => {
@@ -31,6 +33,7 @@ describe("LinkedDocuments", () => {
     );
     expect(await screen.findByText("An error")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IC1");
+
   });
   test("When there is an error loading the data, an alert should be shown.", async () => {
     vi
@@ -41,6 +44,7 @@ describe("LinkedDocuments", () => {
       screen.getByRole("button", { name: "Show Linked Documents" })
     );
     expect(await screen.findByRole("alert")).toHaveTextContent("An error");
+
   });
   test("Two different documents should render as two table rows", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
@@ -70,6 +74,7 @@ describe("LinkedDocuments", () => {
     );
     expect(
       within(await screen.findByRole("table")).getAllByRole("row")
+
     ).toHaveLength(3);
     expect(
       // @ts-ignore findTableCell exists in the customized within function
@@ -85,6 +90,7 @@ describe("LinkedDocuments", () => {
         rowIndex: 1,
       })
     ).toHaveTextContent("Bar");
+
   });
   test("Two of the same document should render as one table row", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
@@ -113,6 +119,7 @@ describe("LinkedDocuments", () => {
       screen.getByRole("button", { name: "Show Linked Documents" })
     );
     const rows = within(await screen.findByRole("table")).getAllByRole("row");
+
     expect(rows).toHaveLength(2);
     expect(
       // @ts-ignore findTableCell exists in the customized within function
@@ -121,6 +128,7 @@ describe("LinkedDocuments", () => {
         rowIndex: 0,
       })
     ).toHaveTextContent("Foo");
+
   });
   test("Opening the dialog twice should trigger two network calls", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {

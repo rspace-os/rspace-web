@@ -8,6 +8,7 @@ import {
 } from "../ClustermarketData";
 import BookingDetails from "./bookingsDetails.json";
 import EquipmentDetails from "./equipmentDetails.json";
+
 import BookingsList from "./allbookings.json";
 const bookingResponses = [
   BookingDetails.COMPLETED_1,
@@ -80,6 +81,7 @@ const row4: BookingAndEquipmentDetails = {
   model: "Mass Spec Model",
   equipmentID: 3,
   labID: 11111,
+
 };
 const equipmentRow1: EquipmentWithBookingDetails = {
   equipmentID: "1",
@@ -92,6 +94,7 @@ const equipmentRow1: EquipmentWithBookingDetails = {
   start_time: "2022-01-28 07:30:00",
   requesterName: "DBD",
   labID: 11111,
+
 };
 const equipmentRow2: EquipmentWithBookingDetails = {
   equipmentID: "2",
@@ -104,6 +107,7 @@ const equipmentRow2: EquipmentWithBookingDetails = {
   start_time: "",
   requesterName: "",
   labID: 11111,
+
 };
 const equipmentRow3: EquipmentWithBookingDetails = {
   equipmentID: "3",
@@ -128,6 +132,7 @@ const equipmentRow3_maintenance: EquipmentWithBookingDetails = {
   start_time: "",
   requesterName: "",
   labID: 11111,
+
 };
 describe("Bookings view: joins the data from an array of booking details responses and an array of equipment details responses into a booking details view", () => {
   test("return an array of structured data", () => {
@@ -152,6 +157,7 @@ describe("Bookings view: joins the data from an array of booking details respons
     expect(joinedData[0]).toStrictEqual(row1);
     expect(joinedData.length).toBe(1);
   });
+
 });
 describe("Equipment view: joins the data from an array of booking details responses and an array of equipment details responses into an equipment details view", () => {
   test("return an array of structured data", () => {
@@ -165,6 +171,7 @@ describe("Equipment view: joins the data from an array of booking details respon
     expect(joinedData[1]).toStrictEqual(equipmentRow2);
     expect(joinedData[2]).toStrictEqual(equipmentRow3);
   });
+
   test("filters maintenance bookings", () => {
     const joinedData = makeEquipmentWithBookingData(
       BookingsList.data,

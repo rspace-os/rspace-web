@@ -1,3 +1,4 @@
+
 import {
   describe,
   expect,
@@ -11,6 +12,7 @@ import ChoiceField from "../ChoiceField";
 import Checkbox from "@mui/material/Checkbox";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
+
 vi.mock("@mui/material/Checkbox", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -31,6 +33,7 @@ const renderChoiceField = (props: {
         {...props}
       />
     </ThemeProvider>
+
   );
 const expectAllOptionsAreShown = () => {
   expect(Checkbox).toHaveBeenCalledTimes(2);
@@ -46,9 +49,11 @@ const expectAllOptionsAreShown = () => {
     }),
     expect.anything()
   );
+
 };
 const expectNoOptions = () => {
   expect(Checkbox).not.toHaveBeenCalled();
+
 };
 const expectJustFoo = () => {
   expect(Checkbox).toHaveBeenCalledTimes(1);
@@ -58,6 +63,7 @@ const expectJustFoo = () => {
     }),
     expect.anything()
   );
+
 };
 describe("ChoiceField", () => {
   afterEach(() => {

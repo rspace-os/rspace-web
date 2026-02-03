@@ -1,7 +1,9 @@
+
 import { test, describe, expect, vi } from 'vitest';
 import Search from "../../Search";
 import { makeMockSubSample } from "../SubSampleModel/mocking";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
+
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({
@@ -15,6 +17,7 @@ vi.mock("../../../stores/RootStore", () => ({
       currentUser: { username: "user" },
     },
   }),
+
 }));
 describe("method: setSelected", () => {
   /*
@@ -27,6 +30,7 @@ describe("method: setSelected", () => {
       });
       const setActiveResultSpy = vi
         .spyOn(search, "setActiveResult")
+
         .mockImplementation(() => Promise.resolve());
       const subsample = makeMockSubSample();
       const sample = subsample.sample;
@@ -38,6 +42,7 @@ describe("method: setSelected", () => {
       search.tree.setSelected(sample.globalId);
       expect(setActiveResultSpy).toHaveBeenCalledWith(sample);
     });
+
   });
   /*
    * Leaf nodes are those that don't have child nodes, like SubSamples.
@@ -49,6 +54,7 @@ describe("method: setSelected", () => {
       });
       const setActiveResultSpy = vi
         .spyOn(search, "setActiveResult")
+
         .mockImplementation(() => Promise.resolve());
       const subsample = makeMockSubSample();
       search.fetcher.setResults([subsample]);

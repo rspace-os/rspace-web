@@ -3,6 +3,7 @@ import React from "react";
 import axios from "@/common/axios";
 import { render, screen, fireEvent } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
+
 import ExternalWorkflowInvocations, {InvocationsAndDataCount} from "../ExternalWorkflowInvocations";
 const mockAxios = new MockAdapter(axios);
 const GalaxyDataSummary = {
@@ -32,6 +33,7 @@ describe("Renders with table of  data", () => {
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(200, GalaxyInvocationsAndDataCount);
   });
+
   test("displays WorkFlow Data table headers", async () => {
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
     const toggleButton = await screen.findByRole("button", {
@@ -61,6 +63,7 @@ describe("Renders with table of  data", () => {
     expect(gridCells[2]).toHaveTextContent('Invocation Name');
     expect(gridCells[3]).toHaveTextContent('FAILED');
     expect(gridCells[4]).toHaveTextContent(new Date(GalaxyDataSummary.createdOn).toLocaleString());
+
   });
 });
 describe("Handles errors", () => {
@@ -89,6 +92,7 @@ describe("Handles errors", () => {
         await screen.findByText(/Invalid Galaxy API Key Please re-enter your API Key on the Apps page/i)
     ).toBeInTheDocument();
   });
+
   test("displays error message if 500 returned", async () => {
     mockAxios
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")

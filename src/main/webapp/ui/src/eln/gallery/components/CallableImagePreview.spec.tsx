@@ -1,11 +1,13 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
+
 import AxeBuilder from "@axe-core/playwright";
 import {
   CallableImagePreviewStory,
   CallableImagePreviewWithLargeImage,
   CallableImagePreviewWithError,
   CallableImagePreviewWithEmptyCaption,
+
 } from "./CallableImagePreview.story";
 const feature = test.extend<{
   Given: {
@@ -85,6 +87,7 @@ const feature = test.extend<{
       "the buttons should be visible and functional": async () => {
         const buttons = page.getByRole("button");
         const buttonCount = await buttons.count();
+
         expect(buttonCount).toBeGreaterThan(0);
         for (let i = 0; i < buttonCount; i++) {
           const button = buttons.nth(i);
@@ -151,6 +154,7 @@ const feature = test.extend<{
       },
     });
   },
+
 });
 feature.beforeEach(async ({ router }) => {
   await router.route("/session/ajax/analyticsProperties", (route) => {
@@ -161,6 +165,7 @@ feature.beforeEach(async ({ router }) => {
         analyticsEnabled: false,
       }),
     });
+
   });
   await router.route("/userform/ajax/preference*", (route) => {
     return route.fulfill({
@@ -168,6 +173,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify({}),
     });
+
   });
   await router.route("/deploymentproperties/ajax/property*", (route) => {
     return route.fulfill({
@@ -175,6 +181,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify(false),
     });
+
   });
   // Mock successful image requests with proper CORS headers
   await router.route("https://via.placeholder.com/**", (route) => {
@@ -192,6 +199,7 @@ feature.beforeEach(async ({ router }) => {
       },
       body: pngBuffer,
     });
+
   });
   // Mock failed image requests
   await router.route(
@@ -204,6 +212,7 @@ feature.beforeEach(async ({ router }) => {
       });
     },
   );
+
 });
 test.describe("CallableImagePreview", () => {
   test.describe("Component mounting and rendering", () => {
@@ -213,6 +222,7 @@ test.describe("CallableImagePreview", () => {
         await Given["the image preview component is mounted"]();
         await Then["the component should render without errors"]();
       },
+
     );
     feature(
       "Should render all interactive buttons",
@@ -221,6 +231,7 @@ test.describe("CallableImagePreview", () => {
         await Then["the buttons should be visible and functional"]();
       },
     );
+
   });
   test.describe("PhotoSwipe modal functionality", () => {
     feature(
@@ -230,6 +241,7 @@ test.describe("CallableImagePreview", () => {
         await When["the user clicks the open image button"]();
         await Then["the photoswipe modal should open"]();
       },
+
     );
     feature(
       "Should display image in the modal",
@@ -238,6 +250,7 @@ test.describe("CallableImagePreview", () => {
         await When["the user clicks the open image button"]();
         await Then["the image should be displayed in the modal"]();
       },
+
     );
     feature(
       "Should close modal when escape is pressed",
@@ -248,6 +261,7 @@ test.describe("CallableImagePreview", () => {
         await Then["the modal should be closable"]();
       },
     );
+
   });
   test.describe("Caption functionality", () => {
     feature(
@@ -257,36 +271,42 @@ test.describe("CallableImagePreview", () => {
         await When["the user clicks the open image with caption button"]();
         await Then["the caption should be visible in the modal"]();
       },
+
     );
     feature("Should handle empty captions", async ({ Given, When, Then }) => {
       await Given["the image preview with empty caption is mounted"]();
       await When["the user clicks the open image with empty caption button"]();
       await Then["the photoswipe modal should open"]();
     });
+
   });
   test.describe("Different image sizes", () => {
     feature("Should handle small images", async ({ Given, When, Then }) => {
       await Given["the image preview component is mounted"]();
       await When["the user clicks the open small image button"]();
       await Then["the photoswipe modal should open"]();
+
     });
     feature("Should handle large images", async ({ Given, When, Then }) => {
       await Given["the image preview with large image is mounted"]();
       await When["the user clicks the open large image button"]();
       await Then["the photoswipe modal should open"]();
     });
+
   });
   test.describe("Error handling", () => {
     feature(
       "Should handle invalid image URLs gracefully",
       async ({ Given, When, page }) => {
         await Given["the image preview with error is mounted"]();
+
         await When["the user clicks the open invalid image button"]();
         await expect(
           page.getByRole("button", { name: /open invalid image/i }),
         ).toBeVisible();
       },
     );
+
   });
   test.describe("Accessibility", () => {
     feature("Should have no axe violations", async ({ Given, Then }) => {

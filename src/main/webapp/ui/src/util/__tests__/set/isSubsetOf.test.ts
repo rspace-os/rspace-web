@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { arbRsSet, arbSubsetOf } from "./helpers";
+
 import RsSet from "../../set";
 describe("isSubsetOf", () => {
   test("Works with fc.subarray", () => {

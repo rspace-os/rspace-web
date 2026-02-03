@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+
 import RsSet, { flattenWithIntersectionWithEq } from "../../set";
 describe("flattenWithIntersectionWithEq", () => {
   test("Some overlap", () => {
@@ -8,8 +9,10 @@ describe("flattenWithIntersectionWithEq", () => {
         new RsSet([{ id: 1 }, { id: 3 }]),
       ]),
       (elemA, elemB) => elemA.id === elemB.id
+
     );
     expect(actual.map(({ id }) => id).isSame(new RsSet([1]))).toBe(true);
+
   });
   test("No overlap", () => {
     const actual = flattenWithIntersectionWithEq(
@@ -18,8 +21,10 @@ describe("flattenWithIntersectionWithEq", () => {
         new RsSet([{ id: 3 }, { id: 4 }]),
       ]),
       (elemA, elemB) => elemA.id === elemB.id
+
     );
     expect(actual.map(({ id }) => id).isSame(new RsSet([]))).toBe(true);
+
   });
   test("All overlap", () => {
     const actual = flattenWithIntersectionWithEq(
@@ -28,6 +33,7 @@ describe("flattenWithIntersectionWithEq", () => {
         new RsSet([{ id: 1 }, { id: 2 }]),
       ]),
       (elemA, elemB) => elemA.id === elemB.id
+
     );
     expect(actual.map(({ id }) => id).isSame(new RsSet([1, 2]))).toBe(true);
   });

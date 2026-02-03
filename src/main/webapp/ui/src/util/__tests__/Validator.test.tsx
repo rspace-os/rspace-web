@@ -11,13 +11,16 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { type Validator, mkValidator } from "../Validator";
 import { runInAction, observable } from "mobx";
+
 import { doNotAwait } from "../Util";
 function Child1({ validator }: { validator: Validator }) {
+
   const [state] = useState(observable({ text: "" }));
   useEffect(() => {
     validator.setValidFunc(() => {
       return Promise.resolve(state.text.length > 2);
     });
+
   }, [state.text.length, validator]);
   return (
     <>
@@ -32,12 +35,15 @@ function Child1({ validator }: { validator: Validator }) {
       />
     </>
   );
+
 }
 function Child2() {
   return <h1>Child 2</h1>;
+
 }
 function ParentComponent() {
   const [activePane, setActivePane] = useState(0);
+
   const [panel1Validator] = useState(mkValidator());
   return (
     <>
@@ -52,15 +58,19 @@ function ParentComponent() {
       </Button>
     </>
   );
+
 }
 describe("Validator", () => {
   test("Example", async () => {
+
     render(<ParentComponent />);
     // initially, this button will do nothing because the validator fails
     fireEvent.click(screen.getByRole("button"));
+
     expect(screen.getByText("Child 1")).toBeVisible();
     fireEvent.change(screen.getByRole("textbox"), {
       target: { value: "moreThanTwoChars" },
+
     });
     // now that the validation passes the button will work
     fireEvent.click(screen.getByRole("button"));

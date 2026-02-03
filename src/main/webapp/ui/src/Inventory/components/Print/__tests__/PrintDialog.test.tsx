@@ -1,3 +1,4 @@
+
 import { test, describe, expect, beforeAll, vi } from 'vitest';
 import React from "react";
 import {
@@ -17,6 +18,7 @@ import {
 } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
+
 vi.mock("mobx-react-lite", () => ({
   observer: (component: React.ComponentType<any>) => component,
   useObserver: (fn: () => React.ReactNode) => fn(),
@@ -34,6 +36,7 @@ const mockRootStore = (mockedStores?: MockStores): StoreContainer => {
     },
   });
 };
+
 const mockContainer = {
   type: "CONTAINER",
   name: "Mock container",
@@ -42,8 +45,10 @@ const mockContainer = {
   barcodes: [persistedBarcode1],
 } as unknown as InventoryRecord;
 describe("Print Tests", () => {
+
   const openDialog = true; // if false, then dialog is null
   const modalRoot = document.createElement("div");
+
   modalRoot.setAttribute("id", "modal-root");
   const Dialog = () => {
     return (
@@ -58,6 +63,7 @@ describe("Print Tests", () => {
       </ThemeProvider>
     );
   };
+
   const renderDialog = async () => {
     render(<Dialog />);
     await waitFor(() => {
@@ -65,24 +71,31 @@ describe("Print Tests", () => {
     });
   };
   describe("PrintDialog with items to print (barcodes)", () => {
+
     test("renders, has radio options for printerType, printMode, printSize (plus help text)", async () => {
       await renderDialog();
+
       expect(screen.getAllByRole("radio")).toHaveLength(10);
       const standardOption = screen.getByLabelText("Standard Printer");
       expect(standardOption).toBeInTheDocument();
+
       expect(standardOption).toBeChecked();
       const labelOption = screen.getByLabelText("Label Printer");
       expect(labelOption).toBeInTheDocument();
+
       expect(labelOption).not.toBeChecked();
       const previewHeader = "Preview Barcode Label Layout";
       expect(screen.getByText(previewHeader)).toBeInTheDocument();
     });
+
   });
   describe("PrintDialog with items to print (barcodes)", () => {
+
     test("renders, content responds to clicked options", async () => {
       await renderDialog();
       const globalId = mockContainer.globalId;
       const location = "Location:";
+
       if (!globalId) throw new Error("Missing globalId");
       // on default "full" option elements are rendered, on "basic" they are not
       expect(screen.getAllByText(globalId)[0]).toBeInTheDocument();
@@ -91,6 +104,7 @@ describe("Print Tests", () => {
         fireEvent.click(basicOption);
         await Promise.resolve();
       });
+
       expect(basicOption).toBeChecked();
     });
   });

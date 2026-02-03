@@ -8,14 +8,17 @@ import materialTheme from "../../../theme";
 import PDF_CONFIG from "./__tests__/pdfConfig.json";
 import USER_LISTING from "./__tests__/userListing.json";
 import fs from "fs/promises";
+
 import AxeBuilder from "@axe-core/playwright";
 declare global {
   interface RSGlobal {
     newFileStoresExportEnabled?: boolean;
+
   }
   interface Window {
     RS: RSGlobal;
   }
+
 }
 const feature = test.extend<{
   Given: {
@@ -176,10 +179,12 @@ const feature = test.extend<{
       },
       "the usage should be shown in human-readable format": async () => {
         const grid = page.getByRole("grid");
+
         await expect(grid).toBeVisible();
         const columnHeadings = grid.getByRole("columnheader");
         const headings = await columnHeadings.allTextContents();
         const usageIndex = headings.findIndex((heading) => heading === "Usage");
+
         expect(usageIndex).toBeGreaterThan(-1);
         await expect(
           grid.getByRole("row").nth(2).getByRole("gridcell").nth(usageIndex),
@@ -190,6 +195,7 @@ const feature = test.extend<{
       },
     });
   },
+
 });
 test.beforeEach(async ({ page, router }) => {
   await page.evaluate(() => {
@@ -197,6 +203,7 @@ test.beforeEach(async ({ page, router }) => {
     window.RS = {
       newFileStoresExportEnabled: true,
     };
+
   });
   await router.route("/export/ajax/defaultPDFConfig", async (route) => {
     await route.fulfill({
@@ -204,6 +211,7 @@ test.beforeEach(async ({ page, router }) => {
       contentType: "application/json",
       body: JSON.stringify(PDF_CONFIG),
     });
+
   });
   await router.route(/system\/ajax\/jsonList.*/, async (route) => {
     await route.fulfill({
@@ -212,6 +220,7 @@ test.beforeEach(async ({ page, router }) => {
       body: JSON.stringify(USER_LISTING),
     });
   });
+
 });
 test.describe("Table Listing", () => {
   feature(
@@ -221,6 +230,7 @@ test.describe("Table Listing", () => {
       await Then["the usage should be shown in human-readable format"]();
     },
   );
+
 });
 test.describe("Grant User PI role", () => {
   feature(
@@ -251,6 +261,7 @@ test.describe("Grant User PI role", () => {
       await Then["A request to set a verification password is not shown"]();
     },
   );
+
 });
 test.describe("Accessibility", () => {
   test("Should have no axe violations.", async ({ mount, page }) => {
@@ -260,10 +271,13 @@ test.describe("Accessibility", () => {
           <UsersPage />
         </ThemeProvider>
       </StyledEngineProvider>,
+
     );
     // Wait for the table to be loaded
+
     await expect(page.getByRole("table")).toBeVisible();
     // Run the accessibility scan
+
     const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
     // Filter out known issues that can't be fixed in component tests
     expect(
@@ -288,6 +302,7 @@ test.describe("Accessibility", () => {
       }),
     ).toEqual([]);
   });
+
 });
 test.describe("CSV Export", () => {
   test.describe("Selection", () => {

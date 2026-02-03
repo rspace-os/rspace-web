@@ -3,6 +3,7 @@ import React from "react";
 import { TestFolderTreeExample } from "./FolderTree.story";
 import { type emptyObject } from "../util/types";
 import { type RouterFixture } from "@playwright/experimental-ct-core";
+
 import * as Jwt from "jsonwebtoken";
 const feature = test.extend<{
   Given: {
@@ -92,6 +93,7 @@ const feature = test.extend<{
           });
           await router.route("**/api/v1/folders/tree**", async (route) => {
             const url = new URL(route.request().url());
+
             const typesToInclude = url.searchParams.get("typesToInclude");
             if (/folder/.test(typesToInclude ?? "")) {
               await route.fulfill({
@@ -161,11 +163,13 @@ const feature = test.extend<{
                 }),
               });
             }
+
           });
           await router.route("**/api/v1/folders/tree/100**", async (route) => {
             const url = new URL(route.request().url());
             const pageNumber = parseInt(
               url.searchParams.get("pageNumber") || "0",
+
             );
             if (pageNumber === 0) {
               await route.fulfill({
@@ -234,6 +238,7 @@ const feature = test.extend<{
                 }),
               });
             }
+
           });
           await router.route("**/api/v1/folders", async (route) => {
             if (route.request().method() === "POST") {
@@ -261,6 +266,7 @@ const feature = test.extend<{
                 }),
               });
             }
+
           });
           await mount(<TestFolderTreeExample />);
         },
@@ -402,6 +408,7 @@ const feature = test.extend<{
       },
     });
   },
+
 });
 test.describe("FolderTree", () => {
   feature("Initially displays root folder listing", async ({ Given, Then }) => {
@@ -409,6 +416,7 @@ test.describe("FolderTree", () => {
       "the FolderTree component is rendered with mocked API responses"
     ]();
     await Then["the folder tree should display the root folders"]();
+
   });
   feature("Allows selecting folders", async ({ Given, When, Then }) => {
     await Given[
@@ -424,6 +432,7 @@ test.describe("FolderTree", () => {
       folderName: "Research Projects",
       folderId: 100,
     });
+
   });
   feature(
     "Allows expanding folder nodes to show subfolders",
@@ -438,6 +447,7 @@ test.describe("FolderTree", () => {
         folderName: "Research Projects",
       });
     },
+
   );
   feature(
     "Shows Load More button for folders with more than 20 items",
@@ -450,6 +460,7 @@ test.describe("FolderTree", () => {
       });
       await Then["a Load More button should be visible"]();
     },
+
   );
   feature(
     "Loads additional folders when Load More is clicked",
@@ -463,6 +474,7 @@ test.describe("FolderTree", () => {
       await When["the user clicks the Load More button"]();
       await Then["additional folders should be loaded"]();
     },
+
   );
   feature("Shows add folder button on hover", async ({ Given, When, Then }) => {
     await Given[
@@ -474,6 +486,7 @@ test.describe("FolderTree", () => {
     await Then["the add folder button should be visible"]({
       folderName: "Research Projects",
     });
+
   });
   feature("Allows creating new folders", async ({ Given, When, Then }) => {
     await Given[
@@ -493,6 +506,7 @@ test.describe("FolderTree", () => {
     await Then["the new folder should be selected"]({
       folderName: "New Test Folder",
     });
+
   });
   feature(
     "Prevents creating folders with empty names",

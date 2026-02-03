@@ -1,5 +1,6 @@
 import { test, describe, expect, vi } from 'vitest';
 import { makeMockImportDataUsingExistingTemplate } from "./mocking";
+
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({
@@ -7,6 +8,7 @@ vi.mock("../../../stores/RootStore", () => ({
     isSynchronizing: true,
   },
 })
+
 }));
 describe("method: transformTemplateInfoForSubmission", () => {
   /*
@@ -29,6 +31,7 @@ describe("method: transformTemplateInfoForSubmission", () => {
       expect(
         JSON.stringify(uploadModel.transformTemplateInfoForSubmission())
       ).toEqual(expect.any(String));
+
     });
     /*
      * Attaching other data MAY be permitted but the id of the selected tempalte is REQUIRED.

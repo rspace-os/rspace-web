@@ -6,6 +6,7 @@ import {
 import MoveStore from "../../MoveStore";
 import Search from "../../../models/Search";
 import type { RootStore } from "../../RootStore";
+
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   query: vi.fn(),
@@ -43,6 +44,7 @@ describe("action: setTargetContainer", () => {
           if (record) moveStore.clearLocationsWithContentBeingMovedOut(record);
         },
       } as unknown as Search;
+
       await moveStore.setTargetContainer(container);
       expect(clearLocationsSpy).toHaveBeenCalledWith(container);
     });

@@ -12,6 +12,7 @@ import BatchEditingItemsTable from "../BatchEditingItemsTable";
 import "../../../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
+
 import userEvent from "@testing-library/user-event";
 describe("BatchEditingItemsTable", () => {
   test("Table body should have as many rows as records that are passed.", async () => {
@@ -26,6 +27,7 @@ describe("BatchEditingItemsTable", () => {
             <ThemeProvider theme={materialTheme}>
               <BatchEditingItemsTable records={records} label={label} />
             </ThemeProvider>
+
           );
           await user.click(screen.getByRole("button"));
           // + 1 for the table head

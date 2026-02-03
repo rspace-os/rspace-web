@@ -7,6 +7,7 @@ import CustomField from "../CustomField";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import userEvent from "@testing-library/user-event";
+
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
@@ -17,6 +18,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 }));
 vi.mock("../../../../components/Ketcher/KetcherDialog", () => ({
   default: vi.fn(() => <div></div>),
+
 }));
 describe("CustomField", () => {
   describe("Should be able to delete the field", () => {
@@ -29,6 +31,7 @@ describe("CustomField", () => {
         },
         selectedOptions: ["foo"],
       });
+
       const onRemove = vi.fn();
       render(
         <ThemeProvider theme={materialTheme}>
@@ -42,6 +45,7 @@ describe("CustomField", () => {
             onMove={() => {}}
           />
         </ThemeProvider>
+
       );
       await user.click(screen.getByRole("button", { name: "Delete field" }));
       await user.click(
@@ -58,6 +62,7 @@ describe("CustomField", () => {
         },
         selectedOptions: ["foo"],
       });
+
       const onRemove = vi.fn();
       render(
         <ThemeProvider theme={materialTheme}>
@@ -71,6 +76,7 @@ describe("CustomField", () => {
             onMove={() => {}}
           />
         </ThemeProvider>
+
       );
       await user.click(screen.getByRole("button", { name: "Delete field" }));
       await user.click(

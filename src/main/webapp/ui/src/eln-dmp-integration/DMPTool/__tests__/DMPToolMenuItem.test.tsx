@@ -10,7 +10,9 @@ import DMPToolMenuItem from "../DMPToolMenuItem";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
+
 import { ThemeProvider } from "@mui/material/styles";
+
 const mockAxios = new MockAdapter(axios);
 describe("DMPToolMenuItem", () => {
   test("If the DMPTool is enabled but the user is not authenticated then the menu item should be disabled.", async () => {
@@ -24,14 +26,17 @@ describe("DMPToolMenuItem", () => {
         oauthConnected: false,
         options: {},
       },
+
     });
     render(
       <ThemeProvider theme={materialTheme}>
         <DMPToolMenuItem onClick={() => {}} />
       </ThemeProvider>
+
     );
     void (await waitFor(async () => {
       expect(await screen.findByRole("menuitem")).toBeVisible();
+
     }));
     expect(screen.getByRole("menuitem")).toHaveAttribute(
       "aria-disabled",

@@ -10,6 +10,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
+
 import { test, type Mock, describe, expect, vi } from 'vitest';
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
@@ -23,6 +24,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   },
 })
 }));
+
 window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
@@ -41,6 +43,7 @@ window.fetch = vi.fn(() =>
     formData: () => Promise.resolve(new FormData()),
     text: () => Promise.resolve(""),
   } as Response)
+
 ) as Mock;
 describe("SearchParameterControls", () => {
   describe("Saved searches controls", () => {
@@ -51,12 +54,14 @@ describe("SearchParameterControls", () => {
           savedSearches: [{ name: "Test search", resultType: "SAMPLE" }],
           savedBaskets: [],
         },
+
       });
       const search = new Search({
         factory: mockFactory(),
         uiConfig: {
           allowedTypeFilters: new Set(["CONTAINER"]),
         },
+
       });
       render(
         <ThemeProvider theme={materialTheme}>
@@ -71,6 +76,7 @@ describe("SearchParameterControls", () => {
             </SearchContext.Provider>
           </storesContext.Provider>
         </ThemeProvider>
+
       );
       await user.click(screen.getByRole("button", { name: "Saved Searches" }));
       expect(

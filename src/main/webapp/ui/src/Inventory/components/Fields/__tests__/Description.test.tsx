@@ -12,6 +12,7 @@ import Description from "../Description";
 import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
+
 vi.mock("@tinymce/tinymce-react", () => ({
   __esModule: true,
   Editor: vi.fn(({ onEditorChange, value }) => (
@@ -22,6 +23,7 @@ vi.mock("@tinymce/tinymce-react", () => ({
       }}
     />
   )),
+
 }));
 function renderDescriptionField(
   initialValue: string,
@@ -56,6 +58,7 @@ function renderDescriptionField(
     );
   };
   return render(<Wrapper />);
+
 }
 describe("Description", () => {
   test("Should not enter an error state when value is shorter than 251.", () => {
@@ -63,9 +66,11 @@ describe("Description", () => {
       fc.property(fc.string({ maxLength: 250 }), (generatedDescription) => {
         cleanup();
         const onErrorStateChange = vi.fn();
+
         const { container } = renderDescriptionField("foo", onErrorStateChange);
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
+
         });
         expect(container).not.toHaveTextContent(
           "Description must be no longer than 250 characters (including HTML tags)."
@@ -73,15 +78,18 @@ describe("Description", () => {
         expect(onErrorStateChange).toHaveBeenCalledWith(false);
       })
     );
+
   });
   test("Should enter an error state when value is longer than 250 characters.", () => {
     fc.assert(
       fc.property(fc.string({ minLength: 251 }), (generatedDescription) => {
         cleanup();
         const onErrorStateChange = vi.fn();
+
         const { container } = renderDescriptionField("", onErrorStateChange);
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
+
         });
         expect(container).toHaveTextContent(
           "Description must be no longer than 250 characters (including HTML tags)."
@@ -89,15 +97,18 @@ describe("Description", () => {
         expect(onErrorStateChange).toHaveBeenCalledWith(true);
       })
     );
+
   });
   test("When the entered text is of a valid length, there should be character count shown.", () => {
     fc.assert(
       fc.property(fc.string({ maxLength: 250 }), (generatedDescription) => {
         cleanup();
         const onErrorStateChange = vi.fn();
+
         const { container } = renderDescriptionField("", onErrorStateChange);
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
+
         });
         expect(container).toHaveTextContent(
           `${generatedDescription.length} / 250`

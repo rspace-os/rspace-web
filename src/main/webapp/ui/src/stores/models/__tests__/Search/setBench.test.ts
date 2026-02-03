@@ -3,6 +3,7 @@ import Search from "../../Search";
 import ApiServiceBase from "../../../../common/ApiServiceBase";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import "../../../../__tests__/assertUrlSearchParams";
+
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({
   authStore: {
@@ -13,6 +14,7 @@ vi.mock("../../../stores/RootStore", () => ({
   },
 })
 })); // break import cycle
+
 vi.mock("../../../stores/SearchStore", () => ({ default: class {} })); // break import cycle
 describe("action: setBench", () => {
   describe("When called with any value it should", () => {
@@ -30,12 +32,14 @@ describe("action: setBench", () => {
             headers: {},
             config: {} as any,
           })
+
         );
       void search.setPage(1);
       expect(querySpy).toHaveBeenCalledTimes(1);
       expect(querySpy).toHaveBeenCalledWith(
         "containers",
         expect.urlSearchParamContaining({ pageNumber: "1" })
+
       );
       search.setBench(null);
       expect(querySpy).toHaveBeenCalledTimes(2);

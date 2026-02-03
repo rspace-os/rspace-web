@@ -1,3 +1,4 @@
+
 import { test, describe, expect, afterEach, vi } from "vitest";
 import React from "react";
 import { render } from "@testing-library/react";
@@ -11,6 +12,7 @@ import { containerAttrs } from "../../../../../stores/models/__tests__/Container
 import ContainerModel from "../../../../../stores/models/ContainerModel";
 import MemoisedFactory from "../../../../../stores/models/Factory/MemoisedFactory";
 import type { Attachment } from "../../../../../stores/definitions/Attachment";
+
 import { DeploymentPropertyContext } from "../../../../../hooks/api/useDeploymentProperty";
 vi.mock("@mui/material/TextField", () => ({
   default: vi.fn(() => <div></div>),
@@ -30,15 +32,18 @@ const renderWithDeploymentProperties = (ui: React.ReactElement) =>
     </DeploymentPropertyContext.Provider>,
   );
 const expectLabel = (text: string) => (container: HTMLElement) =>
+
   expect(container).toHaveTextContent(text);
 const expectTextField = (value: string) => () =>
   expect(TextField).toHaveBeenCalledWith(
     expect.objectContaining({ value }),
     expect.anything(),
+
   );
 const activeResult = new ContainerModel(new MemoisedFactory(), {
   ...containerAttrs(),
   cType: "LIST",
+
 });
 const makeAttachment = (attrs?: { name: string }) =>
   new ExistingAttachment(
@@ -53,6 +58,7 @@ const makeAttachment = (attrs?: { name: string }) =>
     },
     "",
     () => {},
+
   );
 describe("AttachmentField", () => {
   afterEach(() => {

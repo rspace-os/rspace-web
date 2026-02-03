@@ -8,6 +8,7 @@ import {
 } from "../SubSampleModel/mocking";
 import getRootStore from "../../../stores/RootStore";
 import { personAttrs } from "../PersonModel/mocking";
+
 import PersonModel from "../../PersonModel";
 const mockRootStore = {
   peopleStore: {
@@ -17,6 +18,7 @@ const mockRootStore = {
     getUnit: () => ({ label: "ml" }),
   },
 };
+
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => mockRootStore,
@@ -37,6 +39,7 @@ describe("computed: recordLinkLabel", () => {
   test("Regular containers should always return their name.", () => {
     const container = makeMockContainer();
     expect(container.recordLinkLabel).toBe(container.name);
+
   });
   test("A bench, where the current user is unknown, should show the owner's name.", () => {
     const bench = makeMockBench({

@@ -1,5 +1,7 @@
+
 import { describe, expect, test } from 'vitest';
 import { mergeThemes } from "../../styles";
+
 import { ThemeOptions } from "@mui/material";
 describe("mergeThemes", () => {
   test("Simple checks", () => {
@@ -25,6 +27,7 @@ describe("mergeThemes", () => {
           },
         },
       },
+
     } as ThemeOptions;
     const theme2 = {
       components: {
@@ -39,6 +42,7 @@ describe("mergeThemes", () => {
           },
         },
       },
+
     } as ThemeOptions;
     expect(mergeThemes(theme1, theme2)).toEqual({
       components: {
@@ -63,6 +67,7 @@ describe("mergeThemes", () => {
           },
         },
       },
+
     });
     expect(mergeThemes(theme2, theme1)).toEqual({
       components: {

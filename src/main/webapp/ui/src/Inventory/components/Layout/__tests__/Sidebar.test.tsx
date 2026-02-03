@@ -10,12 +10,14 @@ import { storesContext } from "../../../../stores/stores-context";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import { LandmarksProvider } from "../../../../components/LandmarksContext";
+
 vi.mock("../../../../hooks/api/integrationHelpers", () => ({
   useIntegrationIsAllowedAndEnabled: () => ({
     tag: "success",
     value: false,
   }),
 }));
+
 const mockAxios = new MockAdapter(axios);
 describe("Sidebar", () => {
   test("Should have no axe violations.", async () => {
@@ -42,6 +44,7 @@ describe("Sidebar", () => {
         </LandmarksProvider>
       </ThemeProvider>
     );
+
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     await expect(container).toBeAccessible();
   });

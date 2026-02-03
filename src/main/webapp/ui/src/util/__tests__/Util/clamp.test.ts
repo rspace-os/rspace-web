@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
+
 import { clamp } from "../../Util";
 describe("clamp", () => {
   test("y <= clamp(x,y,z) <= z", () => {

@@ -1,6 +1,7 @@
 import { test, describe, expect, vi } from 'vitest';
 import { makeMockContainer, containerAttrs } from "./mocking";
 import LocationModel from "../../LocationModel";
+
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({
@@ -12,6 +13,7 @@ vi.mock("../../../stores/RootStore", () => ({
     ],
   },
 })
+
 }));
 describe("computed: hasEnoughSpace", () => {
   /*
@@ -57,6 +59,7 @@ describe("computed: hasEnoughSpace", () => {
       }),
     ];
     expect(container.hasEnoughSpace).toBe(true);
+
   });
   test("There is enough space when adding an item to a container with a free slot.", () => {
     const container = makeMockContainer({
@@ -91,6 +94,7 @@ describe("computed: hasEnoughSpace", () => {
       }),
     ];
     expect(container.hasEnoughSpace).toBe(true);
+
   });
   test("There is not enough space when adding an item to a full container.", () => {
     const container = makeMockContainer({

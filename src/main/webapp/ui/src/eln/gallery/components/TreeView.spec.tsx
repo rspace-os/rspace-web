@@ -6,6 +6,7 @@ import {
   TreeViewFoldersOnly,
 } from "./TreeView.story";
 import AxeBuilder from "@axe-core/playwright";
+
 import * as Jwt from "jsonwebtoken";
 const feature = test.extend<{
   Given: {
@@ -159,6 +160,7 @@ const feature = test.extend<{
   networkRequests: async ({}, use) => {
     await use([]);
   },
+
 });
 function getFileNameByType(fileType: string): string {
   switch (fileType.toLowerCase()) {
@@ -179,6 +181,7 @@ function getFileNameByType(fileType: string): string {
     default:
       throw new Error(`Unknown file type: ${fileType}`);
   }
+
 }
 feature.beforeEach(async ({ router }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
@@ -196,6 +199,7 @@ feature.beforeEach(async ({ router }) => {
         data: Jwt.sign(payload, "dummySecretKey"),
       }),
     });
+
   });
   await router.route("/session/ajax/analyticsProperties", (route) => {
     return route.fulfill({
@@ -205,6 +209,7 @@ feature.beforeEach(async ({ router }) => {
         analyticsEnabled: false,
       }),
     });
+
   });
   await router.route("/userform/ajax/preference*", (route) => {
     return route.fulfill({
@@ -212,6 +217,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify({}),
     });
+
   });
   await router.route("/deploymentproperties/ajax/property*", (route) => {
     return route.fulfill({
@@ -219,6 +225,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify(false),
     });
+
   });
   await router.route("**/*.svg", (route) => {
     return route.fulfill({
@@ -227,12 +234,15 @@ feature.beforeEach(async ({ router }) => {
       body: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="none"/></svg>`,
     });
   });
+
 });
+
 feature.afterEach(({}) => {});
 test.describe("TreeView", () => {
   feature("Should have no axe violations", async ({ Given, Then }) => {
     await Given["the tree view with files is mounted"]();
     await Then["there shouldn't be any axe violations"]();
+
   });
   test.describe("Double-click behavior", () => {
     feature(
@@ -244,6 +254,7 @@ test.describe("TreeView", () => {
         });
         // Just verify it doesn't crash - folder opening behavior may vary
       },
+
     );
     feature(
       "Should handle double-click on image without crashing",
@@ -254,6 +265,7 @@ test.describe("TreeView", () => {
         });
         // Just verify it doesn't crash - preview behavior may vary
       },
+
     );
     feature(
       "Should handle double-click on PDF without crashing",
@@ -265,6 +277,7 @@ test.describe("TreeView", () => {
         // Just verify it doesn't crash - preview behavior may vary
       },
     );
+
   });
   test.describe("Selection behavior", () => {
     feature(
@@ -279,24 +292,29 @@ test.describe("TreeView", () => {
         });
       },
     );
+
   });
   test.describe("Keyboard Navigation", () => {
     feature(
       "Should navigate with arrow keys",
       async ({ Given, When, Then }) => {
+
         await Given["the tree view with files is mounted"]();
         await When["the user single-clicks on a {fileType}"]({
           fileType: "folder",
+
         });
         await When["the user presses {key} key"]({ key: "ArrowDown" });
         await Then["the {fileType} should have focus"]({
           fileType: "image"
+
         });
         await When["the user presses {key} key"]({ key: "ArrowUp" });
         await Then["the {fileType} should have focus"]({
           fileType: "folder"
         });
       },
+
     );
     feature("Should handle Enter key on folder", async ({ Given, When }) => {
       await Given["the tree view with files is mounted"]();
@@ -304,6 +322,7 @@ test.describe("TreeView", () => {
         fileType: "folder",
       });
       await When["the user presses {key} key"]({ key: "Enter" });
+
     });
     feature("Should select with Space key", async ({ Given, When, Then }) => {
       await Given["the tree view with files is mounted"]();
@@ -315,6 +334,7 @@ test.describe("TreeView", () => {
         fileType: "image",
       });
     });
+
   });
   test.describe("Multi-Selection", () => {
     feature(
@@ -329,6 +349,7 @@ test.describe("TreeView", () => {
         });
         await Then["multiple files should be selected"]();
       },
+
     );
     feature(
       "Should handle Shift+click without crashing",
@@ -343,17 +364,20 @@ test.describe("TreeView", () => {
         await Then["there is an error alert"]();
       },
     );
+
   });
   test.describe("Loading States", () => {
     feature("Should handle loading state", async ({ Given, Then }) => {
       await Given["the tree view with loading state is mounted"]();
       await Then["the tree should show loading state"]();
+
     });
     feature("Should show load more functionality", async ({ Given }) => {
       await Given["the tree view with loading state is mounted"]();
       // Just verify the component mounts with loadMore present
       // The actual loadMore button testing would need additional setup
     });
+
   });
   test.describe("Filtering", () => {
     feature(

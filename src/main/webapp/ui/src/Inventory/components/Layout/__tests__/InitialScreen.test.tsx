@@ -7,6 +7,7 @@ import Sidebar from "../Sidebar";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
+
 vi.mock("../Header", () => ({
   default: vi.fn(() => <></>),
 }));
@@ -21,6 +22,7 @@ describe("InitialScreen", () => {
           <InitialScreen />
         </BrowserRouter>
       </ThemeProvider>
+
     );
     expect(Header).toHaveBeenCalled();
     expect(Sidebar).toHaveBeenCalled();

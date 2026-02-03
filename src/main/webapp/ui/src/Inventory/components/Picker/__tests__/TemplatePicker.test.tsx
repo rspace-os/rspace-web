@@ -11,6 +11,7 @@ import "__mocks__/resizeObserver";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
+
 import { test, type Mock, describe, expect, vi } from 'vitest';
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
@@ -38,6 +39,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   },
 })
 }));
+
 (window.fetch as Mock) = vi.fn(() =>
   Promise.resolve({
     status: 200,
@@ -56,6 +58,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
     formData: () => Promise.resolve(new FormData()),
     text: () => Promise.resolve(""),
   } as Response)
+
 );
 describe("TemplatePicker", () => {
   describe("Should support saved searches", () => {
@@ -68,6 +71,7 @@ describe("TemplatePicker", () => {
           getBaskets: () => {},
         },
       });
+
       vi.spyOn(InvApiService, "query").mockImplementation((endpoint) => {
         if (endpoint === "sampleTemplates")
           return Promise.resolve({
@@ -95,6 +99,7 @@ describe("TemplatePicker", () => {
             config: {},
           } as AxiosResponse);
         throw new Error(`Endpoint not supported: ${endpoint}`);
+
       });
       render(
         <ThemeProvider theme={materialTheme}>
@@ -102,14 +107,17 @@ describe("TemplatePicker", () => {
             <TemplatePicker setTemplate={() => {}} disabled={false} />
           </storesContext.Provider>
         </ThemeProvider>
+
       );
       await waitFor(() => {
         expect(screen.getByRole("table")).toHaveTextContent("foo");
       });
+
       expect(screen.getByRole("table")).toHaveTextContent("bar");
       await user.click(screen.getByRole("button", { name: "Saved Searches" }));
       await user.click(
         screen.getByRole("menuitem", { name: /^Dummy saved search/ })
+
       );
       await waitFor(() => {
         expect(screen.getByRole("table")).toHaveTextContent("foo");

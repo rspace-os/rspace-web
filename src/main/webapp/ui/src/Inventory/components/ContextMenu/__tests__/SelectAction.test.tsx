@@ -9,6 +9,7 @@ import {
 } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
+
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 describe("SelectAction", () => {
   describe("Shows a badge that should", () => {

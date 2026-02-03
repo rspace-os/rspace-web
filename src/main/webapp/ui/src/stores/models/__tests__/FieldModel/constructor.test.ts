@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
+
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 describe("constructor", () => {
   test("The content of number fields is parsed correctly.", () => {
@@ -18,6 +19,7 @@ describe("constructor", () => {
         type: "number",
       },
       makeMockSample()
+
     );
     expect(field.content).toBe(2.03);
   });

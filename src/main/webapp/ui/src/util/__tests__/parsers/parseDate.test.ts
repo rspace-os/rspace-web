@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { parseDate } from "../../parsers";
+
 import fc from "fast-check";
 describe("parseDate", () => {
   test("Pareses ISO timestamp", () => {
@@ -12,6 +13,7 @@ describe("parseDate", () => {
         ).toEqual(d);
       })
     );
+
   });
   test("Parses YYYY-MM-DD", () => {
     const input = "2021-02-02";
@@ -21,6 +23,7 @@ describe("parseDate", () => {
     expect(d.getFullYear()).toEqual(2021);
     expect(d.getMonth()).toEqual(1);
     expect(d.getDay()).toEqual(2);
+
   });
   test("Parsers UNIX timestamp", () => {
     const input = new Date();
@@ -28,6 +31,7 @@ describe("parseDate", () => {
     expect(d.getFullYear()).toEqual(input.getFullYear());
     expect(d.getMonth()).toEqual(input.getMonth());
     expect(d.getDay()).toEqual(input.getDay());
+
   });
   test("Fails on invalid dates", () => {
     const input = "2021-13-02T00:00:00.000Z";

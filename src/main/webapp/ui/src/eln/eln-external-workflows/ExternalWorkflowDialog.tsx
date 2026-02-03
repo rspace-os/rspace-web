@@ -36,6 +36,7 @@ function makeGalleryLinks(row: GalaxyDataSummary) {
 
 function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWorkflowDialogArgs) {
   return (
+
     <>
       <Dialog open={open} fullWidth maxWidth="xl">
         <DialogTitle>Galaxy WorkFlow Data</DialogTitle>

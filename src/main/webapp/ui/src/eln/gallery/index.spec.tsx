@@ -5,6 +5,7 @@ import * as Jwt from "jsonwebtoken";
 import fc from "fast-check";
 import { type RouterFixture } from "@playwright/experimental-ct-core";
 import { GallerySection } from "./common";
+
 import { sleep } from "@/util/Util";
 type GivenSteps = {
   "the Gallery is mounted": ({
@@ -12,13 +13,16 @@ type GivenSteps = {
   }?: {
     url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
   }) => Promise<MountResult>;
+
 };
 type WhenSteps = {
   "the user taps on the 'Chemistry' section": () => Promise<void>;
+
 };
 type ThenSteps = {
   "the page title should be": (title: string) => Promise<void>;
   "there should be just one request to the server": () => Promise<void>;
+
 };
 const feature = test.extend<{
   Given: GivenSteps;
@@ -67,6 +71,7 @@ const feature = test.extend<{
   networkRequests: async ({}, use) => {
     await use([]);
   },
+
 });
 function property(name: string) {
   return {
@@ -128,6 +133,7 @@ function property(name: string) {
                 }
               },
               IsOneOf: (...options) => fc.constantFrom(...options),
+
             });
             await fc.assert(
               fc.asyncProperty(
@@ -154,6 +160,7 @@ function property(name: string) {
       };
     },
   };
+
 }
 feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
@@ -290,13 +297,16 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         ],
       }),
     }),
+
   );
   page.on("request", (request) => {
     networkRequests.push(new URL(request.url()));
   });
+
 });
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
+
 });
 test.describe("Gallery", () => {
   test.describe("Should have a title that describes the current page", () => {
@@ -313,6 +323,7 @@ test.describe("Gallery", () => {
          * The images is the default gallery section.
          */
       },
+
     );
     property(
       "On '?mediaType={section}', the title should be '{section} | RSpace Gallery'",
@@ -344,6 +355,7 @@ test.describe("Gallery", () => {
         } else {
           await Then["the page title should be"](`${section} | RSpace Gallery`);
         }
+
       });
     property("On '/{id}', the title should be '{folder name} | RSpace Gallery'")
       .let(({ IsAny }) => ({
@@ -392,6 +404,7 @@ test.describe("Gallery", () => {
               ],
             }),
           }),
+
         );
         await Given["the Gallery is mounted"]({
           url: `/${id}`,
@@ -399,6 +412,7 @@ test.describe("Gallery", () => {
         await Then["the page title should be"](
           `${folderName} | RSpace Gallery`,
         );
+
       });
     property(
       "On '/item/{id}', the title should be '{filename} | RSpace Gallery'",
@@ -424,6 +438,7 @@ test.describe("Gallery", () => {
               parentFolderId: 123,
             }),
           }),
+
         );
         await Given["the Gallery is mounted"]({
           url: `/item/${id}`,
@@ -432,6 +447,7 @@ test.describe("Gallery", () => {
           `${filename}.jpg | RSpace Gallery`,
         );
       });
+
   });
   feature.describe("Network calls on state change", () => {
     feature(

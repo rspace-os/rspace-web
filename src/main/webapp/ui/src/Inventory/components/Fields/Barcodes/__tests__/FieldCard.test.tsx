@@ -5,6 +5,7 @@ import { render, screen } from "@testing-library/react";
 import { mockFactory } from "../../../../../stores/definitions/__tests__/Factory/mocking";
 import FieldCard from "../FieldCard";
 import userEvent from "@testing-library/user-event";
+
 vi.mock("../../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../../stores/stores/RootStore", () => ({
   default: () => ({})
@@ -65,7 +66,9 @@ describe("FieldCard", () => {
           }}
           factory={mockFactory()}
         />
+
       );
+
       await user.click(screen.getByRole("button", { name: "Remove" }));
       expect(setFieldsDirty).toHaveBeenCalledWith({
         barcodes: [expect.objectContaining({ deleted: true })],
@@ -106,7 +109,9 @@ describe("FieldCard", () => {
           }}
           factory={mockFactory()}
         />
+
       );
+
       await user.click(screen.getByRole("button", { name: "Remove" }));
       expect(setFieldsDirty).toHaveBeenCalledWith({
         barcodes: [],
@@ -147,6 +152,7 @@ describe("FieldCard", () => {
           }}
           factory={mockFactory()}
         />
+
       );
       expect(
         screen.getByLabelText("Scan a barcode to associate.")

@@ -7,6 +7,7 @@ import { ClearAllScopedToastsCommand } from "./clearAllScopedToasts";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import { type Factory } from "../../../definitions/Factory";
 import { type Model } from "./common";
+
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({
@@ -15,6 +16,7 @@ vi.mock("../../../stores/RootStore", () => ({
     removeAlert: vi.fn(() => {}),
   },
 })
+
 }));
 describe("Scoped Toasts Model Tests", () => {
   test("add and clear", async () => {

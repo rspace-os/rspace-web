@@ -6,17 +6,21 @@ import React,
 import { render } from "@testing-library/react";
 import SynchroniseFormSections from "../SynchroniseFormSections";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
+
 import { type RecordType } from "../../../../stores/definitions/InventoryRecord";
 function MockFormSectionInOuterContext() {
   const formSectionContext = useContext(FormSectionsContext);
   if (!formSectionContext)
     throw new Error("FormSectionContext is required by StepperPanel");
+
   const { setExpanded } = formSectionContext;
   useEffect(() => {
     // this closes the form section as managed by the outer context...
     setExpanded("container", "overview", false);
+
   }, []);
   return <></>;
+
 }
 function MockFormSectionInInnerContext({
   onMountExpectFn,
@@ -27,13 +31,16 @@ function MockFormSectionInInnerContext({
 }) {
   const formSectionContext = useContext(FormSectionsContext);
   if (!formSectionContext)
+
     throw new Error("FormSectionContext is required by StepperPanel");
   useEffect(() => {
     onMountExpectFn((recordType, section) =>
       formSectionContext.isExpanded(recordType, section)
     );
+
   }, []);
   return <></>;
+
 }
 describe("SynchroniseFormSections", () => {
   test("Nesting SynchroniseFormSections should result in the inner one taking effect.", () => {
@@ -45,6 +52,7 @@ describe("SynchroniseFormSections", () => {
        * section is open
        */
       expect(isExpanded("container", "overview")).toBe(true);
+
     };
     render(
       <SynchroniseFormSections>

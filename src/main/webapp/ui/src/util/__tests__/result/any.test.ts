@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+
 import Result from "../../result";
 describe("any", () => {
   test("A single OK, should be wrapped in an array.", () => {

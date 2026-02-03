@@ -8,6 +8,7 @@ import {
 import IntegrationCard from "../IntegrationCard";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
+
 import "../../../../__mocks__/matchMedia";
 describe("IntegrationCard", () => {
   test("Name should be shown.", () => {
@@ -27,8 +28,10 @@ describe("IntegrationCard", () => {
           setupSection={<></>}
         />
       </ThemeProvider>
+
     );
     expect(screen.getByText("SomeIntegration")).toBeVisible();
+
   });
   test("Explanatory text should be shown.", () => {
     render(
@@ -47,10 +50,12 @@ describe("IntegrationCard", () => {
           setupSection={<></>}
         />
       </ThemeProvider>
+
     );
     expect(
       screen.getByText("Something, something, something...")
     ).toBeVisible();
+
   });
   test("Logo image should be shown.", () => {
     render(
@@ -69,11 +74,13 @@ describe("IntegrationCard", () => {
           setupSection={<></>}
         />
       </ThemeProvider>
+
     );
     expect(screen.getByRole("presentation")).toHaveAttribute(
       "src",
       "image url"
     );
+
   });
   test("When card is tapped, a dialog should be shown.", () => {
     render(
@@ -92,10 +99,14 @@ describe("IntegrationCard", () => {
           setupSection={<></>}
         />
       </ThemeProvider>
+
     );
+
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button"));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+
   });
   test("DialogContent should be shown once card has been tapped.", () => {
     render(
@@ -114,12 +125,17 @@ describe("IntegrationCard", () => {
           setupSection="Some dialog content"
         />
       </ThemeProvider>
+
     );
+
     expect(screen.queryByText("Some dialog content")).not.toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button"));
     expect(screen.getByText("Some dialog content")).toBeInTheDocument();
+
   });
   test("When tapped, the enable button should invoke update.", () => {
+
     const update = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -137,12 +153,17 @@ describe("IntegrationCard", () => {
           setupSection={<></>}
         />
       </ThemeProvider>
+
     );
+
     fireEvent.click(screen.getByRole("button"));
+
     fireEvent.click(screen.getByRole("button", { name: "ENABLE" }));
     expect(update).toHaveBeenCalledWith("ENABLED");
+
   });
   test("When tapped, the disable button should invoke update.", () => {
+
     const update = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -160,8 +181,11 @@ describe("IntegrationCard", () => {
           setupSection={<></>}
         />
       </ThemeProvider>
+
     );
+
     fireEvent.click(screen.getByRole("button"));
+
     fireEvent.click(screen.getByRole("button", { name: "DISABLE" }));
     expect(update).toHaveBeenCalledWith("DISABLED");
   });

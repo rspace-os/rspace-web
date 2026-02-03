@@ -10,12 +10,14 @@ import Fields from "../Fields";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
+
 vi.mock("../../../../../components/Ketcher/KetcherDialog", () => ({
   default: vi.fn(() => <div></div>),
 }));
 describe("Fields", () => {
   describe("Sample with number field behaves correctly.", () => {
     test("Checks validity of input", () => {
+
       const INITIAL_VALUE = "2";
       const activeResult = makeMockSample({
         fields: [
@@ -35,11 +37,13 @@ describe("Fields", () => {
       });
       vi
         .spyOn(activeResult, "setAttributesDirty")
+
         .mockImplementation(() => {});
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
           <Fields onErrorStateChange={() => {}} sample={activeResult} />
         </ThemeProvider>
+
       );
       const input = screen.getByDisplayValue(INITIAL_VALUE);
       fireEvent.input(input, {
@@ -50,8 +54,10 @@ describe("Fields", () => {
       expect(container).toHaveTextContent(
         "Invalid value. Please enter a valid value."
       );
+
     });
     test("Passed step='any' to input", () => {
+
       const INITIAL_VALUE = "2";
       const activeResult = makeMockSample({
         fields: [
@@ -71,11 +77,13 @@ describe("Fields", () => {
       });
       vi
         .spyOn(activeResult, "setAttributesDirty")
+
         .mockImplementation(() => {});
       render(
         <ThemeProvider theme={materialTheme}>
           <Fields onErrorStateChange={() => {}} sample={activeResult} />
         </ThemeProvider>
+
       );
       const input = screen.getByDisplayValue(INITIAL_VALUE);
       expect(input).toHaveAttribute("step", "any");

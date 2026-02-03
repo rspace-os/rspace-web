@@ -4,6 +4,7 @@ import {
   type MountResult,
 } from "@playwright/experimental-ct-react";
 import React from "react";
+
 import { SimplePageWithAppBar } from "./index.story";
 const feature = test.extend<{
   Given: {
@@ -122,6 +123,7 @@ const feature = test.extend<{
           });
           await expect(accountMenuButton).toBeVisible();
           const accountMenuButtonHandle =
+
             await accountMenuButton.evaluateHandle((x) => Promise.resolve(x));
           const helpMenuButton = page.getByRole("button", {
             name: "Open Help",
@@ -129,6 +131,7 @@ const feature = test.extend<{
           await expect(helpMenuButton).toBeVisible();
           const helpMenuButtonHandle = await helpMenuButton.evaluateHandle(
             (x) => Promise.resolve(x),
+
           );
           const orderResults = await page.evaluate(
             ({ accountButton, helpButton }) => {
@@ -147,9 +150,11 @@ const feature = test.extend<{
               accountButton: accountMenuButtonHandle,
               helpButton: helpMenuButtonHandle,
             },
+
           );
           if ("error" in orderResults) {
             throw new Error(orderResults.error);
+
           }
           expect(
             orderResults.accountBeforeHelp,
@@ -165,6 +170,7 @@ const feature = test.extend<{
           const accessibilityTipsButtonHandle =
             await accessibilityTipsButton.evaluateHandle((x) =>
               Promise.resolve(x),
+
             );
           const helpMenuButton = page.getByRole("button", {
             name: "Open Help",
@@ -172,6 +178,7 @@ const feature = test.extend<{
           await expect(helpMenuButton).toBeVisible();
           const helpMenuButtonHandle = await helpMenuButton.evaluateHandle(
             (x) => Promise.resolve(x),
+
           );
           const orderResults = await page.evaluate(
             ({ accessibilityTipsButtonDomNode, helpButtonDomNode }) => {
@@ -191,9 +198,11 @@ const feature = test.extend<{
               accessibilityTipsButtonDomNode: accessibilityTipsButtonHandle,
               helpButtonDomNode: helpMenuButtonHandle,
             },
+
           );
           if ("error" in orderResults) {
             throw new Error(orderResults.error);
+
           }
           expect(
             orderResults.accessibilityTipsBeforeHelp,
@@ -208,6 +217,7 @@ const feature = test.extend<{
   networkRequests: async ({}, use) => {
     await use([]);
   },
+
 });
 feature.beforeEach(async ({ router }) => {
   await router.route("/userform/ajax/inventoryOauthToken", async (route) => {
@@ -259,7 +269,9 @@ feature.beforeEach(async ({ router }) => {
       body: Buffer.from("fake image data"),
     });
   });
+
 });
+
 feature.afterEach(({}) => {});
 test.describe("App Bar", () => {
   test.describe("Hidden heading", () => {
@@ -353,6 +365,7 @@ test.describe("App Bar", () => {
         title: "Test Page",
       });
     },
+
   );
   feature(
     "When the user avatar is clicked, a menu should appear with profile and logout options",
@@ -364,6 +377,7 @@ test.describe("App Bar", () => {
       await When["the user clicks the avatar"]();
       await Then["the profile and logout options should be visible"]();
     },
+
   );
   /*
    * The /uiNavigationData endpoint provides the visibleTabs object, which
@@ -584,6 +598,7 @@ test.describe("App Bar", () => {
          */
       },
     );
+
   });
   feature(
     "On page variant, the icons on the right should be in the correct order",
@@ -601,6 +616,7 @@ test.describe("App Bar", () => {
        * a consistent location across the entire product is an a11y requirement.
        */
     },
+
   );
   feature(
     "On dialog variant, the icons on the right should be in the correct order",

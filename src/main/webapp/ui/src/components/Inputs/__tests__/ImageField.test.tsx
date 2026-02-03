@@ -6,10 +6,12 @@ import ImageIcon from "@mui/icons-material/Image";
 import { __setIsMobile } from "react-device-detect";
 import ImageField from "../ImageField";
 import DynamicallyLoadedImageEditor from "../DynamicallyLoadedImageEditor";
+
 import userEvent from "@testing-library/user-event";
 declare module "react-device-detect" {
   export const __setIsMobile: (value: boolean) => void;
 }
+
 vi.mock("@mui/icons-material/CameraAlt", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -59,6 +61,7 @@ vi.mock("react-device-detect", () => ({
 vi.mock("../DynamicallyLoadedImageEditor", () => ({
   default: vi.fn(() => {
     return <div></div>;
+
   }),
 }));
 describe("ImageField", () => {
@@ -70,6 +73,7 @@ describe("ImageField", () => {
     describe("On mobile, there should", () => {
       beforeEach(() => {
         __setIsMobile(true);
+
       });
       test("be a camera icon shown.", () => {
         render(
@@ -82,10 +86,12 @@ describe("ImageField", () => {
         );
         expect(CameraAltIcon).toHaveBeenCalled();
       });
+
     });
     describe("On desktop, there should", () => {
       beforeEach(() => {
         __setIsMobile(false);
+
       });
       test("be an image icon shown.", () => {
         render(
@@ -99,6 +105,7 @@ describe("ImageField", () => {
         expect(ImageIcon).toHaveBeenCalled();
       });
     });
+
   });
   /*
    * Tapping 'Edit Image' should open the image editor
@@ -113,6 +120,7 @@ describe("ImageField", () => {
           id="foo"
           alt="dummy alt text"
         />,
+
       );
       const editImageButton = screen.getByText("Edit Image");
       await user.click(editImageButton);

@@ -11,8 +11,10 @@ import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mo
 import NavigateToNode from "../NavigateToNode";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
+
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import Node from "../Node";
+
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
     searchStore: {
@@ -33,8 +35,10 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
       currentUser: { username: "user" },
     },
   }),
+
 }));
 // mocking this to avoid testing dependency
+
 vi.mock("../NavigateToNode", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -44,6 +48,7 @@ vi.mock("../NavigateToNode", () => ({
 //   globalStyles: () => ({
 //     greyOut: "MOCK_GREY_OUT_CLASS_NAME",
 //   }),
+
 // }));
 describe("Node", () => {
   describe("When the node in question is a container with contents, there should", () => {

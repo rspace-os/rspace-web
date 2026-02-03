@@ -22,6 +22,7 @@ import { sleep } from "../../../../../util/Util";
 import "__mocks__/resizeObserver";
 import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
+
 vi.mock("../../../../../common/InvApiService", () => ({
   default: {
     query: vi.fn(() => {}),
@@ -56,6 +57,7 @@ vi.mock("../../../../../stores/stores/RootStore", () => ({
 }));
 vi.mock("../../../../Container/Content/ImageView/PreviewImage", () => ({
   default: vi.fn(() => <></>),
+
 }));
 // Mock fetch
 window.fetch = vi.fn().mockImplementation(() =>
@@ -64,6 +66,7 @@ window.fetch = vi.fn().mockImplementation(() =>
     ok: true,
     json: () => Promise.resolve({}),
   })
+
 );
 describe("Template", () => {
   describe("When the sample is deleted, Template field should", () => {
@@ -77,6 +80,7 @@ describe("Template", () => {
       const sample = makeMockSample({
         deleted: true,
       });
+
       sample.template = oldVersionOfTemplate;
       const rootStore = makeMockRootStore({
         searchStore: {
@@ -86,6 +90,7 @@ describe("Template", () => {
         uiStore: {
           setVisiblePanel: () => {},
         },
+
       });
       render(
         <ThemeProvider theme={materialTheme}>
@@ -93,6 +98,7 @@ describe("Template", () => {
             <Template />
           </storesContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         screen.getByRole("button", {
@@ -151,6 +157,7 @@ describe("Template", () => {
           headers: {},
           config: {},
         } as AxiosResponse;
+
       });
       const sample = makeMockSample({
         id: null,
@@ -167,6 +174,7 @@ describe("Template", () => {
           },
         });
       });
+
       vi.spyOn(sample, "handleLockExpiry").mockImplementation(() => {});
       const rootStore = makeMockRootStore({
         searchStore: {
@@ -178,6 +186,7 @@ describe("Template", () => {
         uiStore: {
           setVisiblePanel: () => {},
         },
+
       });
       render(
         <ThemeProvider theme={materialTheme}>
@@ -189,6 +198,7 @@ describe("Template", () => {
       await waitFor(() => {
         expect(screen.getByText("A template")).toBeVisible();
       });
+
       await user.click(screen.getByText("A template"));
       await waitFor(() => {
         expect(sample.fields.length).toBe(1);

@@ -7,6 +7,7 @@ import { ListOfMaterials } from "../../../stores/models/MaterialsModel";
 import MaterialsTable from "../MaterialsTable";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
+
 vi.mock("../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../stores/stores/RootStore", () => ({
   default: () => ({
@@ -21,6 +22,7 @@ vi.mock("../../../stores/stores/RootStore", () => ({
   },
   materialsStore: { canEdit: true },
 })
+
 }));
 const sample1 = sampleAttrs({
   id: 1,
@@ -38,6 +40,7 @@ const material1 = {
     unitId: 3,
     numericValue: 0,
   },
+
 };
 describe("MaterialsTable", () => {
   describe("Location column", () => {
@@ -58,6 +61,7 @@ describe("MaterialsTable", () => {
             canEdit={false}
           />
         </ThemeProvider>
+
       );
       // second cell because the MaterialTable row has only 2 cells in a row, despite what would be visually intuitive
       expect(screen.getAllByRole("cell")[1]).toHaveTextContent("In Trash");

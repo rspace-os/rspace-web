@@ -11,6 +11,7 @@ import {
 } from "../../stores/models/__tests__/ContainerModel/mocking";
 import NavigateContext from "../../stores/contexts/Navigate";
 import userEvent from "@testing-library/user-event";
+
 const setActiveResult = vi.fn(() => Promise.resolve());
 const generateNewQuery = vi.fn(() => new URLSearchParams("query=foo"));
 const toggleSidebar = vi.fn();
@@ -35,6 +36,7 @@ vi.mock("../../stores/use-stores", () => ({
 let useNavigateHelpers: typeof import("../useNavigateHelpers").default;
 beforeAll(async () => {
   ({ default: useNavigateHelpers } = await import("../useNavigateHelpers"));
+
 });
 describe("useNavigateHelpers", () => {
   afterEach(() => {
@@ -57,6 +59,7 @@ describe("useNavigateHelpers", () => {
             Click me.
           </button>
         );
+
       };
       render(
         <NavigateContext.Provider
@@ -69,10 +72,12 @@ describe("useNavigateHelpers", () => {
         </NavigateContext.Provider>
       );
       await user.click(screen.getByText("Click me."));
+
       await waitFor(() =>
         expect(setActiveResult).toHaveBeenCalledWith(mockContainer)
       );
     });
+
   });
   describe("navigateToSearch should", () => {
     test("not call setActiveResult", async () => {
@@ -89,6 +94,7 @@ describe("useNavigateHelpers", () => {
             Click me.
           </button>
         );
+
       };
       render(
         <NavigateContext.Provider
@@ -101,6 +107,7 @@ describe("useNavigateHelpers", () => {
         </NavigateContext.Provider>
       );
       await user.click(screen.getByText("Click me."));
+
       expect(setActiveResult).not.toHaveBeenCalled();
     });
   });

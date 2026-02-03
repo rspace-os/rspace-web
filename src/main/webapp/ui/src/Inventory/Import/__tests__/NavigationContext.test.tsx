@@ -10,9 +10,11 @@ import NavigateContext from "../../../stores/contexts/Navigate";
 import NavigationContext from "../NavigationContext";
 import { storesContext } from "../../../stores/stores-context";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
+
 import userEvent from "@testing-library/user-event";
 type NavigateToProps = {
   url: string;
+
 };
 const NavigateTo = ({ url }: NavigateToProps) => {
   const { useNavigate } = useContext(NavigateContext);
@@ -26,6 +28,7 @@ const NavigateTo = ({ url }: NavigateToProps) => {
       Click me
     </button>
   );
+
 };
 describe("NavigationContext", () => {
   describe("Performs correctly", () => {

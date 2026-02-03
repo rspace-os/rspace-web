@@ -3,6 +3,7 @@ import {
   makeMockSubSample,
   makeMockSubSampleWithParentContainer,
 } from "./mocking";
+
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
@@ -10,6 +11,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
     getUnit: () => ({ label: "ml" }),
   },
 })
+
 }));
 describe("computed: paramsForBackend", () => {
   /*
@@ -25,6 +27,7 @@ describe("computed: paramsForBackend", () => {
       expect(JSON.stringify(subSample.paramsForBackend)).toEqual(
         expect.any(String)
       );
+
     });
     test("the subSample has a parent container.", () => {
       const subSample = makeMockSubSampleWithParentContainer();

@@ -14,11 +14,15 @@ import axios from "@/common/axios";
 import USER_LISTING from "./userListing.json";
 import PDF_CONFIG from "./pdfConfig.json";
 import { render, within } from "../../../../__tests__/customQueries";
+
 // @ts-expect-error RS is legacy
+
 window.RS = { newFileStoresExportEnabled: false };
+
 const mockAxios = new MockAdapter(axios);
 describe("Table Listing", () => {
   test("Usage should be shown in human-readable format", async () => {
+
     mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
     mockAxios
       .onGet("/userform/ajax/preference?preference=UI_JSON_SETTINGS")
@@ -29,6 +33,7 @@ describe("Table Listing", () => {
       .reply(200, { ...PDF_CONFIG });
     mockAxios.onGet("/analyticsProperties").reply(200, {
       analyticsEnabled: false,
+
     });
     render(
       <StyledEngineProvider injectFirst>
@@ -36,10 +41,12 @@ describe("Table Listing", () => {
           <UsersPage />
         </ThemeProvider>
       </StyledEngineProvider>,
+
     );
     const grid = await screen.findByRole("grid");
     await waitFor(() =>
       expect(within(grid).getAllByRole("row").length).toBeGreaterThan(1),
+
     );
     expect(
       // @ts-expect-error findTableCell exists on the custom within function

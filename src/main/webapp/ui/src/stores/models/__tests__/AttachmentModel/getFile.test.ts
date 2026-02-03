@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { ExistingAttachment } from "../../AttachmentModel";
 import ApiService from "../../../../common/InvApiService";
 import { AxiosResponse } from "@/common/axios";
+
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({}),
 })); // break import cycle
@@ -27,6 +28,7 @@ describe("getFile", () => {
         headers: {},
         config: {} as unknown,
       } as AxiosResponse)
+
     );
     await attachment.getFile();
     await attachment.getFile();

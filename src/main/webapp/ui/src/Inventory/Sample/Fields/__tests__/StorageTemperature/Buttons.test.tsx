@@ -9,6 +9,7 @@ import StorageTemperature from "../../StorageTemperature";
 import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
+
 vi.mock("@mui/material/Button", () => ({
   default: vi.fn(() => <></>),
 }));
@@ -29,8 +30,10 @@ const mockFieldOwner = (mockedParts: {
       storageTempMin: null,
       storageTempMax: null,
     },
+
   };
   return { ...defaults, ...mockedParts };
+
 };
 describe("StorageTemperature", () => {
   describe("Buttons", () => {
@@ -41,6 +44,7 @@ describe("StorageTemperature", () => {
           storageTempMax: { numericValue: 0, unitId: CELSIUS },
         },
         isFieldEditable: () => true,
+
       });
       render(
         <ThemeProvider theme={materialTheme}>
@@ -49,6 +53,7 @@ describe("StorageTemperature", () => {
             onErrorStateChange={() => {}}
           />
         </ThemeProvider>
+
       );
       expect(Button).toHaveBeenCalledTimes(5);
     });

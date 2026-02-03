@@ -8,10 +8,12 @@ import { makeMockSample } from "../../../../../stores/models/__tests__/SampleMod
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import "../../../../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../../../theme";
 const sample1: InventoryRecord = makeMockSample();
 sample1.identifiers = [mockIGSNIdentifier("sample")];
 const container1: InventoryRecord = makeMockContainer();
+
 container1.identifiers = [mockIGSNIdentifier("container")];
 describe("Identifiers section", () => {
   describe("When an identifier exists", () => {

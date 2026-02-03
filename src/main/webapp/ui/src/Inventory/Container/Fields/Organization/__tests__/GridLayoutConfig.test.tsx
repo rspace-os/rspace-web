@@ -4,6 +4,7 @@ import { render } from "@testing-library/react";
 import GridLayoutConfig from "../GridLayoutConfig";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../../../theme";
 
 describe("GridLayoutConfig", () => {
@@ -16,12 +17,14 @@ describe("GridLayoutConfig", () => {
         columnsLabelType: "ABC",
         rowsLabelType: "ABC",
       },
+
     });
     const { container } = render(
       <ThemeProvider theme={materialTheme}>
         <GridLayoutConfig container={gridContainer} />
       </ThemeProvider>
     );
+
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     await expect(container).toBeAccessible();
   });

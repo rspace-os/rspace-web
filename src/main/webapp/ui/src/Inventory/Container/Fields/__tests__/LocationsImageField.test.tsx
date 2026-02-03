@@ -11,12 +11,15 @@ import {
 } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../../theme";
 import LocationsImageField from "../LocationsImageField";
 import ImageField from "../../../../components/Inputs/ImageField";
 import LocationsImageMarkersDialog from "../LocationsImageMarkersDialog";
+
 import userEvent from "@testing-library/user-event";
 let storeImageFunction: (arg: { dataUrl: string; file: Blob }) => void;
+
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: vi.fn(() => ({
     uiStore: {
@@ -41,12 +44,14 @@ vi.mock("../LocationsImageMarkersDialog", () => ({
         <button onClick={close}>Close</button>
       </div>
     );
+
   }),
 }));
 class ResizeObserver {
   observe(): void {}
   unobserve(): void {}
 }
+
 window.ResizeObserver = ResizeObserver as any;
 const mockRootStore = (
   mockedStores?: MockStores
@@ -73,6 +78,7 @@ const mockRootStore = (
     }),
     activeResult,
   ];
+
 };
 describe("LocationImageField", () => {
   /*
@@ -87,6 +93,7 @@ describe("LocationImageField", () => {
             <LocationsImageField />
           </storesContext.Provider>
         </ThemeProvider>
+
       );
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
@@ -96,8 +103,10 @@ describe("LocationImageField", () => {
         }),
         expect.anything()
       );
+
     });
     test("be a button labelled 'Edit Locations' that can't be tapped.", () => {
+
       const rootStore = mockRootStore()[0];
       render(
         <ThemeProvider theme={materialTheme}>
@@ -105,6 +114,7 @@ describe("LocationImageField", () => {
             <LocationsImageField />
           </storesContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         screen.getByRole("button", {
@@ -112,6 +122,7 @@ describe("LocationImageField", () => {
         })
       ).toBeDisabled();
     });
+
   });
   /*
    * When a user has uploaded or edited a file the ImageField will call
@@ -125,6 +136,7 @@ describe("LocationImageField", () => {
       const setImageSpy = vi.spyOn(
         rootStore.searchStore.activeResult! as any,
         "setImage"
+
       ).mockImplementation(() => async () => {});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -132,6 +144,7 @@ describe("LocationImageField", () => {
             <LocationsImageField />
           </storesContext.Provider>
         </ThemeProvider>
+
       );
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
@@ -139,14 +152,17 @@ describe("LocationImageField", () => {
           storeImage: expect.any(Function),
         }),
         expect.anything()
+
       );
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
+
       });
       expect(setImageSpy).toHaveBeenCalledWith(
         "locationsImage",
         expect.any(String)
       );
+
     });
     test("be an alert to update the preview image, if the container doesn't have a preview image.", () => {
       const rootStore = mockRootStore()[0];
@@ -157,12 +173,14 @@ describe("LocationImageField", () => {
       const setImageSpy = vi.spyOn(
         rootStore.searchStore.activeResult! as any,
         "setImage"
+
       ).mockImplementation(() => async () => {});
       let setPreviewImageFunction: () => void;
       const addAlertMock = vi
         .spyOn(rootStore.uiStore, "addAlert")
         .mockImplementation(({ onActionClick }) => {
           setPreviewImageFunction = onActionClick;
+
         });
       render(
         <ThemeProvider theme={materialTheme}>
@@ -173,6 +191,7 @@ describe("LocationImageField", () => {
       );
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
+
       });
       expect(addScopedToastSpy).toHaveBeenCalled();
       expect(addAlertMock).toHaveBeenCalledWith(
@@ -182,6 +201,7 @@ describe("LocationImageField", () => {
         setPreviewImageFunction();
       });
       expect(setImageSpy).toHaveBeenCalledWith("image", expect.any(String));
+
     });
     test("not be an alert, if the container already has a preview image.", () => {
       const [rootStore, container] = mockRootStore();
@@ -194,6 +214,7 @@ describe("LocationImageField", () => {
         "addScopedToast"
       );
       container.image = "theBlobUrlOfSomeImage";
+
       const addAlertMock = vi.spyOn(rootStore.uiStore, "addAlert");
       render(
         <ThemeProvider theme={materialTheme}>
@@ -204,14 +225,17 @@ describe("LocationImageField", () => {
       );
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
+
       });
       expect(addScopedToastSpy).not.toHaveBeenCalled();
       expect(addAlertMock).not.toHaveBeenCalledWith();
     });
+
   });
   describe("When a visual container has a locationsImage there should", () => {
     test("be a button labelled 'Edit Locations' that can be tapped.", () => {
       const [rootStore, container] = mockRootStore();
+
       container.locationsImage = "someImage";
       render(
         <ThemeProvider theme={materialTheme}>
@@ -219,6 +243,7 @@ describe("LocationImageField", () => {
             <LocationsImageField />
           </storesContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         screen.getByRole("button", {
@@ -226,11 +251,13 @@ describe("LocationImageField", () => {
         })
       ).toBeEnabled();
     });
+
   });
   describe("When a visual container has a locationsImage but no markers there should", () => {
     test("be some help text.", () => {
       const [rootStore, container] = mockRootStore();
       container.locationsImage = "someImage";
+
       container.locationsCount = 0;
       render(
         <ThemeProvider theme={materialTheme}>
@@ -238,6 +265,7 @@ describe("LocationImageField", () => {
             <LocationsImageField />
           </storesContext.Provider>
         </ThemeProvider>
+
       );
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
@@ -248,6 +276,7 @@ describe("LocationImageField", () => {
         expect.anything()
       );
     });
+
   });
   /*
    * Once a locationsImage has been set, the user can open the location marking
@@ -257,6 +286,7 @@ describe("LocationImageField", () => {
     test("be a LocationsImageMarkersDialog that opens.", async () => {
       const user = userEvent.setup();
       const [rootStore, container] = mockRootStore();
+
       container.locationsImage = "someImage";
       render(
         <ThemeProvider theme={materialTheme}>
@@ -264,6 +294,7 @@ describe("LocationImageField", () => {
             <LocationsImageField />
           </storesContext.Provider>
         </ThemeProvider>
+
       );
       const editLocationsButtons = screen.getByText("Edit Locations");
       await user.click(editLocationsButtons);
@@ -272,6 +303,7 @@ describe("LocationImageField", () => {
         expect.anything()
       );
     });
+
   });
   describe('When the "Close" button inside the LocationsImageMarkersDialog is tapped', () => {
     test("The dialog should close.", async () => {
@@ -281,6 +313,7 @@ describe("LocationImageField", () => {
           trackEvent: () => {},
         },
       });
+
       container.locationsImage = "someImage";
       render(
         <ThemeProvider theme={materialTheme}>
@@ -288,6 +321,7 @@ describe("LocationImageField", () => {
             <LocationsImageField />
           </storesContext.Provider>
         </ThemeProvider>
+
       );
       const editLocationsButtons = screen.getByText("Edit Locations");
       await user.click(editLocationsButtons);

@@ -9,6 +9,7 @@ import ValidatingSubmitButton from "../ValidatingSubmitButton";
 import Result from "../../util/result";
 import "../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../theme";
 describe("ValidatingSubmitButton", () => {
   test("When validationResult is OK and the button is tapped, onClick should be called.", () => {

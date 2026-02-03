@@ -8,7 +8,9 @@ import {
   type Temperature,
 } from "../../../../../stores/definitions/Units";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../../../theme";
+
 import StorageTemperature from "../../StorageTemperature";
 const mockFieldOwner = (mockedParts: {
   fieldValues: {
@@ -34,11 +36,13 @@ const mockFieldOwner = (mockedParts: {
       storageTempMin: null,
       storageTempMax: null,
     },
+
   };
   return {
     ...defaults,
     ...mockedParts,
   };
+
 };
 describe("StorageTemperature", () => {
   describe("When disabled, the component should,", () => {
@@ -61,6 +65,7 @@ describe("StorageTemperature", () => {
               })}
             />
           </ThemeProvider>
+
         );
         expect(container).toHaveTextContent("unspecified");
       });
@@ -82,6 +87,7 @@ describe("StorageTemperature", () => {
               })}
             />
           </ThemeProvider>
+
         );
         expect(container).toHaveTextContent("unspecified");
       });
@@ -103,9 +109,11 @@ describe("StorageTemperature", () => {
               })}
             />
           </ThemeProvider>
+
         );
         expect(container).toHaveTextContent("unspecified");
       });
+
     });
     describe("Display a string when both values are valid temperatures,", () => {
       test("That includer both min and max values.", () => {
@@ -126,6 +134,7 @@ describe("StorageTemperature", () => {
               })}
             />
           </ThemeProvider>
+
         );
         expect(container).toHaveTextContent("1");
         expect(container).toHaveTextContent("2");
@@ -149,6 +158,7 @@ describe("StorageTemperature", () => {
                 })}
               />
             </ThemeProvider>
+
           );
           expect(container).toHaveTextContent("0°C");
         });
@@ -170,6 +180,7 @@ describe("StorageTemperature", () => {
                 })}
               />
             </ThemeProvider>
+
           );
           expect(container).toHaveTextContent("0K");
         });
@@ -191,6 +202,7 @@ describe("StorageTemperature", () => {
                 })}
               />
             </ThemeProvider>
+
           );
           expect(container).toHaveTextContent("0°F");
         });

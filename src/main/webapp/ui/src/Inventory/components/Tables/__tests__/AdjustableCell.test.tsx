@@ -8,6 +8,7 @@ import {
 import AdjustableCell from "../AdjustableCell";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import RecordLocation from "../../../../Inventory/components/RecordLocation";
+
 vi.mock("../../RecordLocation", () => ({
   default: vi.fn(() => <span></span>),
 }));
@@ -26,6 +27,7 @@ describe("AdjustableCell", () => {
             ],
           ]);
         },
+
       };
       render(
         <table>
@@ -38,6 +40,7 @@ describe("AdjustableCell", () => {
             </tr>
           </tbody>
         </table>
+
       );
       expect(RecordLocation).toHaveBeenCalled();
     });

@@ -1,7 +1,10 @@
+
 import { describe, expect, test } from 'vitest';
 import { mapObjectKeyAndValue } from "../../Util";
 import fc from "fast-check";
+
 import { incrementForever } from "../../iterators";
+
 const arbObjectKey = fc.string().filter((str) => str !== "__proto__");
 describe("mapObjectKeyAndValue", () => {
   test("Is identity when keyFunc and valueFunc return their respective inputs.", () => {
@@ -16,6 +19,7 @@ describe("mapObjectKeyAndValue", () => {
         ).toEqual(obj);
       })
     );
+
   });
   test("When keyFunc returns a constant value, the returned object contains at most one key-value pair.", () => {
     fc.assert(
@@ -32,8 +36,10 @@ describe("mapObjectKeyAndValue", () => {
         }
       )
     );
+
   });
   test("If keyFunc returns unique values on every call, then the size of the output object will be the same as the input", () => {
+
     const keyGenerator = incrementForever();
     fc.assert(
       fc.property(

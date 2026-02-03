@@ -13,6 +13,7 @@ import { makeMockContainer } from "../../../../stores/models/__tests__/Container
 import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
 import userEvent from "@testing-library/user-event";
 import AlertContext, { type Alert } from "../../../../stores/contexts/Alert";
+
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
   unitStore: {
@@ -30,8 +31,10 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
     isSynchronizing: false,
   },
 })
+
 }));
 // Mock AlertContext
+
 const mockAddAlert = vi.fn();
 describe("CreateDialog", () => {
   describe("Splitting", () => {
@@ -49,9 +52,11 @@ describe("CreateDialog", () => {
             onClose={() => {}}
           />
         </ThemeProvider>
+
       );
       await user.click(
         await screen.findByRole("radio", { name: /Subsample, by splitting/ })
+
       );
       expect(
         screen.getByRole("spinbutton", { name: /Number of new subsamples/i })
@@ -76,13 +81,16 @@ describe("CreateDialog", () => {
             />
           </AlertContext.Provider>
         </ThemeProvider>
+
       );
       await user.click(
         await screen.findByRole("radio", { name: /Subsample, by splitting/ })
+
       );
       await user.type(
         screen.getByRole("spinbutton", { name: /Number of new subsamples/i }),
         "200"
+
       );
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
     });
@@ -100,16 +108,19 @@ describe("CreateDialog", () => {
             onClose={() => {}}
           />
         </ThemeProvider>
+
       );
       expect(
         await screen.findByRole("radio", {
           name: /Subsamples, by splitting the existing subsample/,
         })
+
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Subsamples, by splitting the existing subsample/,
         })
+
       );
       expect(
         screen.getByRole("spinbutton", { name: /Number of new subsamples/i })
@@ -134,15 +145,18 @@ describe("CreateDialog", () => {
             />
           </AlertContext.Provider>
         </ThemeProvider>
+
       );
       await user.click(
         await screen.findByRole("radio", {
           name: /Subsamples, by splitting the existing subsample/,
         })
+
       );
       await user.type(
         screen.getByRole("spinbutton", { name: /Number of new subsamples/i }),
         "200"
+
       );
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
     });
@@ -165,6 +179,7 @@ describe("CreateDialog", () => {
             />
           </AlertContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         await screen.findByRole("radio", {
@@ -195,20 +210,24 @@ describe("CreateDialog", () => {
             />
           </AlertContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         await screen.findByRole("radio", {
           name: /Container/,
         })
+
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Container/,
         })
+
       );
       expect(
         screen.getByText("No location selection required for list containers.")
       ).toBeVisible();
+
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
       await user.click(screen.getByRole("button", { name: /create/i }));
     });
@@ -237,6 +256,7 @@ describe("CreateDialog", () => {
             />
           </AlertContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         await screen.findByRole("radio", {
@@ -267,16 +287,19 @@ describe("CreateDialog", () => {
             />
           </AlertContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         await screen.findByRole("radio", {
           name: /Sample/,
         })
+
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Sample/,
         })
+
       );
       expect(
         screen.getByText("No location selection required for list containers.")
@@ -309,6 +332,7 @@ describe("CreateDialog", () => {
             />
           </AlertContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         await screen.findByRole("radio", {
@@ -336,11 +360,13 @@ describe("CreateDialog", () => {
             />
           </AlertContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         await screen.findByRole("radio", {
           name: /Sample/,
         })
+
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
@@ -368,21 +394,25 @@ describe("CreateDialog", () => {
             />
           </AlertContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         await screen.findByRole("radio", {
           name: /Template/,
         })
+
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Template/,
         })
+
       );
       await user.type(
         screen.getByRole("textbox", { name: /name/i }),
         "New template"
       );
+
       await user.click(screen.getByRole("button", { name: /next/i }));
       expect(screen.getByText("No fields.")).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
@@ -405,17 +435,21 @@ describe("CreateDialog", () => {
             />
           </AlertContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         await screen.findByRole("radio", {
           name: /Template/,
         })
+
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Template/,
         })
+
       );
+
       await user.type(screen.getByRole("textbox", { name: /name/i }), "x");
       expect(screen.getByRole("button", { name: /next/i })).toBeDisabled();
     });
@@ -439,16 +473,19 @@ describe("CreateDialog", () => {
             />
           </AlertContext.Provider>
         </ThemeProvider>
+
       );
       expect(
         await screen.findByRole("radio", {
           name: /Subsamples, by creating new ones/,
         })
+
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Subsamples, by creating new ones/,
         })
+
       );
       expect(
         screen.getByRole("spinbutton", { name: /Number of new subsamples/i })
@@ -456,13 +493,17 @@ describe("CreateDialog", () => {
       await user.type(
         screen.getByRole("spinbutton", { name: /Number of new subsamples/i }),
         "4"
+
       );
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
+
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
       expect(screen.getByRole("button", { name: /next/i })).toBeVisible();
+
       await user.click(screen.getByRole("button", { name: /next/i }));
       expect(
         screen.getByRole("spinbutton", { name: /Quantity per subsample/i })
+
       ).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
       await user.type(
@@ -484,17 +525,21 @@ describe("CreateDialog", () => {
             onClose={() => {}}
           />
         </ThemeProvider>
+
       );
       expect(
         await screen.findByRole("radio", {
           name: /Subsamples, by creating new ones/,
         })
+
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Subsamples, by creating new ones/,
         })
+
       );
+
       await user.click(screen.getByRole("button", { name: /next/i }));
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
       await user.clear(

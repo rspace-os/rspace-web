@@ -6,6 +6,7 @@ import Quantity from "../Quantity";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import fc from "fast-check";
+
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   }}));
@@ -21,6 +22,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
   },
 })
 }));
+
 const unitOptions = [
   {
     id: 1,
@@ -127,6 +129,7 @@ describe("Quantity", () => {
           }
         )
       );
+
     });
     test("Fractional units of quantity should have zero or two decimal places.", () => {
       fc.assert(

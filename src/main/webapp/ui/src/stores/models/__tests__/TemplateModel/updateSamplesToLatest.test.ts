@@ -1,11 +1,14 @@
+
 import { test, describe, expect, beforeEach, vi } from 'vitest';
 import { makeMockTemplate } from "./mocking";
+
 import { sampleAttrs } from "../SampleModel/mocking";
 import getRootStore from "../../../stores/RootStore";
 import InvApiService from "../../../../common/InvApiService";
 import {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
+
 } from "@/common/axios";
 const mockRootStore = {
   uiStore: {
@@ -16,6 +19,7 @@ const mockRootStore = {
     getUnit: () => ({ label: "ml" }),
   },
 };
+
 vi.mock("../../../stores/RootStore", () => ({
   default: () => mockRootStore,
 }));
@@ -23,6 +27,7 @@ vi.mock("../../../../common/InvApiService", () => ({
   default: {
     post: vi.fn(),
   },
+
 }));
 describe("action: updateSampleToLatest", () => {
   describe("When there are two samples, of which only one can be updated, there should", () => {
@@ -58,6 +63,7 @@ describe("action: updateSampleToLatest", () => {
     test("Be two toasts, detailing the error and the success.", async () => {
       const addAlertSpy = vi.spyOn(getRootStore().uiStore, "addAlert");
       const template = makeMockTemplate();
+
       await template.updateSamplesToLatest();
       expect(addAlertSpy).toHaveBeenCalledWith(
         expect.objectContaining({ variant: "success" })

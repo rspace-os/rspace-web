@@ -18,6 +18,7 @@ import { parseInteger } from "../../../../../util/parsers";
 import { type StoreContainer } from "../../../../../stores/stores/RootStore";
 import ContainerModel from "../../../../../stores/models/ContainerModel";
 import * as ArrayUtils from "../../../../../util/ArrayUtils";
+
 import userEvent from "@testing-library/user-event";
 function makeRootStoreWithGridContainer(): {
   rootStore: StoreContainer;
@@ -39,6 +40,7 @@ function makeRootStoreWithGridContainer(): {
     },
   });
   return { rootStore, gridContainer: activeResult };
+
 }
 describe("GridDimensions", () => {
   test("Each of the standard dimension menu options sets the rows and columns to a valid number.", async () => {
@@ -50,6 +52,7 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
+
     );
     // get list of all menu options by opening and closing menu
     fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -60,6 +63,7 @@ describe("GridDimensions", () => {
       within(screen.getByRole("listbox")).getByRole("option", {
         name: "Custom",
       }),
+
     );
     // for each menu option, assert it sets the rows and cols to valid values
     for (const option of menuOptions) {
@@ -69,6 +73,7 @@ describe("GridDimensions", () => {
           name: option,
         }),
       );
+
       const rowsEl: HTMLInputElement = screen.getByRole("spinbutton", {
         name: "rows",
       });
@@ -76,6 +81,7 @@ describe("GridDimensions", () => {
       expect(rows).not.toBeNull();
       expect(rows).toBeGreaterThanOrEqual(2);
       expect(rows).toBeLessThanOrEqual(24);
+
       const columnsEl: HTMLInputElement = screen.getByRole("spinbutton", {
         name: "rows",
       });
@@ -84,6 +90,7 @@ describe("GridDimensions", () => {
       expect(columns).toBeGreaterThanOrEqual(2);
       expect(columns).toBeLessThanOrEqual(24);
     }
+
   });
   test("Choosing custom should not change the dimensions.", async () => {
     const user = userEvent.setup();
@@ -94,9 +101,11 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
+
     );
     // get the first menu option that is not "Custom"
     fireEvent.mouseDown(screen.getByRole("combobox"));
+
     const menuOptionValue = ArrayUtils.head(
       within(screen.getByRole("listbox"))
         .getAllByRole("option")
@@ -116,10 +125,12 @@ describe("GridDimensions", () => {
     });
     const rowsBefore = parseInteger(rowsBeforeEl.value).orElse(null);
     expect(rowsBefore).not.toBeNull();
+
     const columnsBeforeEl: HTMLInputElement = screen.getByRole("spinbutton", {
       name: "columns",
     });
     const columnsBefore = parseInteger(columnsBeforeEl.value).orElse(null);
+
     expect(columnsBefore).not.toBeNull();
     // choose "custom"
     fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -127,6 +138,7 @@ describe("GridDimensions", () => {
       within(screen.getByRole("listbox")).getByRole("option", {
         name: "Custom",
       }),
+
     );
     // assert that the values have not changed
     const rowsAfterEl: HTMLInputElement = screen.getByRole("spinbutton", {
@@ -134,6 +146,7 @@ describe("GridDimensions", () => {
     });
     const rowsAfter = parseInteger(rowsAfterEl.value).orElse(null);
     expect(rowsAfter).not.toBeNull();
+
     const columnsAfterEl: HTMLInputElement = screen.getByRole("spinbutton", {
       name: "columns",
     });
@@ -141,6 +154,7 @@ describe("GridDimensions", () => {
     expect(columnsAfter).not.toBeNull();
     expect(rowsAfter).toEqual(rowsBefore);
     expect(columnsBefore).toEqual(columnsAfter);
+
   });
   test("Changing rows sets menu to Custom", async () => {
     const user = userEvent.setup();
@@ -151,6 +165,7 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
+
     );
     // set the first menu option that is not "Custom"
     fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -168,6 +183,7 @@ describe("GridDimensions", () => {
         name: menuOption,
       }),
     );
+
     const rowsBeforeEl: HTMLInputElement = screen.getByRole("spinbutton", {
       name: "rows",
     });
@@ -177,9 +193,11 @@ describe("GridDimensions", () => {
     const newRows = (rowsBefore! + 1) % 24;
     fireEvent.input(screen.getByRole("spinbutton", { name: "rows" }), {
       target: { value: newRows },
+
     });
     // assert that the menu is custom
     expect(screen.getByRole("combobox")).toBeVisible();
+
   });
   test("Changing columns sets menu to Custom", async () => {
     const user = userEvent.setup();
@@ -190,6 +208,7 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
+
     );
     // set the first menu option that is not "Custom"
     fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -206,6 +225,7 @@ describe("GridDimensions", () => {
       within(screen.getByRole("listbox")).getByRole("option", {
         name: menuOption,
       }),
+
     );
     // change the columns
     const columnsBeforeEl: HTMLInputElement = screen.getByRole("spinbutton", {
@@ -216,9 +236,11 @@ describe("GridDimensions", () => {
     const newColumns = (columnsBefore! + 1) % 24;
     fireEvent.input(screen.getByRole("spinbutton", { name: "columns" }), {
       target: { value: newColumns },
+
     });
     // assert that the menu is custom
     expect(screen.getByRole("combobox")).toBeVisible();
+
   });
   test("The multiplication of the rows and columns should equal the size quoted in the menu item.", async () => {
     const user = userEvent.setup();
@@ -229,6 +251,7 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
+
     );
     // get list of all menu options by opening and closing menu
     fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -240,6 +263,7 @@ describe("GridDimensions", () => {
       within(screen.getByRole("listbox")).getByRole("option", {
         name: "Custom",
       }),
+
     );
     // for each menu option, assert that the rows and colunmns, when multiplied, are the number quoted by the option
     for (const option of menuOptions) {
@@ -249,18 +273,22 @@ describe("GridDimensions", () => {
           name: option,
         }),
       );
+
       const rowsEl: HTMLInputElement = screen.getByRole("spinbutton", {
         name: "rows",
       });
       const rows = parseInteger(rowsEl.value).orElse(null);
+
       const columnsEl: HTMLInputElement = screen.getByRole("spinbutton", {
         name: "columns",
       });
       const columns = parseInteger(columnsEl.value).orElse(null);
+
       expect(rows).not.toBeNull();
       expect(columns).not.toBeNull();
       expect(option).toMatch(new RegExp(`${rows! * columns!}`));
     }
+
   });
   test("The first option, the most popular, should be 96-well plate.", () => {
     const { rootStore } = makeRootStoreWithGridContainer();
@@ -270,6 +298,7 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
+
     );
     fireEvent.mouseDown(screen.getByRole("combobox"));
     const menuOption = ArrayUtils.head(
@@ -279,6 +308,7 @@ describe("GridDimensions", () => {
     ).orElse(null);
     expect(menuOption).not.toBeNull();
     expect(menuOption!).toMatch(/96 well plate/);
+
   });
   test("Selecting 96-well should save cols: 12 and rows: 8.", async () => {
     const user = userEvent.setup();
@@ -290,16 +320,20 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
+
     );
+
     fireEvent.mouseDown(screen.getByRole("combobox"));
     await user.click(
       within(screen.getByRole("listbox")).getByRole("option", {
         name: "96 well plate",
       }),
+
     );
     expect(spy).toHaveBeenCalledWith({
       gridLayout: expect.objectContaining({ columnsNumber: 12, rowsNumber: 8 }),
     });
+
   });
   test("When a menu option is chosen, the same values should be passed to setAttributesDirty as displayed in the numerical fields.", async () => {
     const user = userEvent.setup();
@@ -313,18 +347,22 @@ describe("GridDimensions", () => {
               <GridDimensions />
             </storesContext.Provider>
           </ThemeProvider>,
+
         );
         // get list of all menu options by opening and closing menu
         fireEvent.mouseDown(screen.getByRole("combobox"));
         const menuOptions = within(screen.getByRole("listbox"))
           .getAllByRole("option")
           .map((o) => o.textContent || "")
+
           .filter((o) => o !== "Custom");
+
         const option = menuOptions[unboundedIndex % menuOptions.length];
         let gridLayout: any;
         vi.spyOn(gridContainer, "setAttributesDirty").mockImplementation(
           (args: any) => {
             gridLayout = args.gridLayout;
+
           },
         );
         await user.click(
@@ -332,15 +370,18 @@ describe("GridDimensions", () => {
             name: option,
           }),
         );
+
         const rowsEl: HTMLInputElement = screen.getByRole("spinbutton", {
           name: "rows",
         });
         const rows = parseInteger(rowsEl.value).orElse(null);
         expect(rows).not.toBeNull();
+
         const columnsEl: HTMLInputElement = screen.getByRole("spinbutton", {
           name: "columns",
         });
         const columns = parseInteger(columnsEl.value).orElse(null);
+
         expect(columns).not.toBeNull();
         expect(rows).toEqual(gridLayout?.rowsNumber);
         expect(columns).toEqual(gridLayout?.columnsNumber);

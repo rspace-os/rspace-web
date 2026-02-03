@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import LocationModel from "../../LocationModel";
+
 import { makeMockContainer } from "../ContainerModel/mocking";
 describe("method: isGreyedOut", () => {
   /*
@@ -67,6 +68,7 @@ describe("method: isGreyedOut", () => {
         coordY: 1,
         content,
         parentContainer,
+
       });
       expect(location.isGreyedOut(parentContainer.contentSearch)).toBe(
         isGreyedOut

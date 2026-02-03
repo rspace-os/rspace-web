@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import { makeMockSample } from "./mocking";
 import InvApiService from "../../../../common/InvApiService";
+
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
     unitStore: {
@@ -12,6 +13,7 @@ vi.mock("../../../../common/InvApiService", () => ({
   default: {
     post: vi.fn(),
   },
+
 }));
 describe("saveFieldAttachments", () => {
   describe("When the sample has an attachment field with an existing file", () => {
@@ -48,7 +50,9 @@ describe("saveFieldAttachments", () => {
           },
         ],
       });
+
       const spy = vi.spyOn(InvApiService, "post");
+
       await sample.saveFieldAttachments();
       expect(spy).not.toHaveBeenCalled();
     });

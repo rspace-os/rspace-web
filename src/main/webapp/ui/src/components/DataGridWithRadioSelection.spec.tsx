@@ -8,17 +8,22 @@ import {
   DataGridWithExportToCsv,
 } from "./DataGridWithRadioSelection.story";
 import { GridRowId } from "@mui/x-data-grid";
+
 import fs from "fs/promises";
 const createSelectionChangeSpy = () => {
+
   let lastSelectedId: GridRowId | null = null;
   const handler = (id: GridRowId) => {
     lastSelectedId = id;
+
   };
+
   const getLastSelectedId = () => lastSelectedId;
   return {
     handler,
     getLastSelectedId,
   };
+
 };
 const feature = test.extend<{
   Given: {
@@ -150,13 +155,16 @@ const feature = test.extend<{
         // Repeatedly press Tab until the radio button for the specified row is focused
         let found = false;
         const maxTabs = 20; // Safety limit to prevent infinite loops
+
         let tabCount = 0;
         while (!found && tabCount < maxTabs) {
+
           await page.keyboard.press("Tab");
           found = await page
             .getByRole("row")
             .nth(i + 1)
             .getByRole("radio")
+
             .evaluate((radio) => document.activeElement === radio);
           tabCount++;
         }
@@ -284,6 +292,7 @@ const feature = test.extend<{
       },
     });
   },
+
 });
 test.describe("DataGridWithRadioSelection", () => {
   test.describe("Basic Rendering and Initial State", () => {
@@ -293,11 +302,13 @@ test.describe("DataGridWithRadioSelection", () => {
         await Given["the data grid with radio selection is rendered"]();
         await Then["the radio column should be the first column"]();
       }
+
     );
     feature("No row is selected by default", async ({ Given, Then }) => {
       await Given["the data grid with radio selection is rendered"]();
       await Then["no rows should be selected"]();
       await Then["the selection indicator should show {id}"]({ id: null });
+
     });
     feature(
       "Radio buttons have the correct ARIA labels",
@@ -308,6 +319,7 @@ test.describe("DataGridWithRadioSelection", () => {
         ]({ i: 0, ariaLabel: "Select John Doe" });
       }
     );
+
   });
   test.describe("Radio Selection Behavior", () => {
     feature(
@@ -320,6 +332,7 @@ test.describe("DataGridWithRadioSelection", () => {
         await Then["the row {i} should be selected"]({ i: 0 });
         await Then["the selection indicator should show {id}"]({ id: 1 });
       }
+
     );
     feature(
       "Selecting a new row deselects the previously selected row",
@@ -328,6 +341,7 @@ test.describe("DataGridWithRadioSelection", () => {
         await When["the user clicks on the radio button for row {i}"]({
           i: 0,
         });
+
         await Then["the row {i} should be selected"]({ i: 0 });
         await When["the user clicks on the radio button for row {i}"]({
           i: 1,
@@ -336,6 +350,7 @@ test.describe("DataGridWithRadioSelection", () => {
         await Then["the row {i} should not be selected"]({ i: 0 });
         await Then["the selection indicator should show {id}"]({ id: 2 });
       }
+
     );
     feature(
       "Clicking on a row cell maintains the selection state",
@@ -344,12 +359,14 @@ test.describe("DataGridWithRadioSelection", () => {
         await When["the user clicks on the radio button for row {i}"]({
           i: 0,
         });
+
         await When["the user clicks on row {i}"]({ i: 1 });
         // Selection should remain on row 1
         await Then["the row {i} should be selected"]({ i: 0 });
         await Then["the selection indicator should show {id}"]({ id: 1 });
       }
     );
+
   });
   test.describe("Controlled vs Uncontrolled Mode", () => {
     feature(
@@ -359,12 +376,14 @@ test.describe("DataGridWithRadioSelection", () => {
         await When["the user clicks on the radio button for row {i}"]({
           i: 0,
         });
+
         await Then["the row {i} should be selected"]({ i: 0 });
         await When["the user clicks on the radio button for row {i}"]({
           i: 1,
         });
         await Then["the row {i} should be selected"]({ i: 1 });
       }
+
     );
     feature(
       "Controlled mode reflects external selection state",
@@ -372,13 +391,16 @@ test.describe("DataGridWithRadioSelection", () => {
         await Given["the data grid with controlled selection is rendered"]({
           selectedRowId: 1,
         });
+
         await Then["the row {i} should be selected"]({ i: 0 });
         // External state change
         await When["the user clicks the reset selection button"]();
+
         await Then["no rows should be selected"]();
         await When["the user clicks the 'Select Row 2' button"]();
         await Then["the row {i} should be selected"]({ i: 1 });
       }
+
     );
     feature(
       "onSelectionChange callback is called with correct row ID",
@@ -396,12 +418,14 @@ test.describe("DataGridWithRadioSelection", () => {
         await Then["the row {i} should be selected"]({ i: 2 });
       }
     );
+
   });
   test.describe("Keyboard Navigation and Accessibility", () => {
     feature("Users can tab to radio buttons", async ({ Given, When, Then }) => {
       await Given["the data grid with radio selection is rendered"]();
       await When["the user tabs to the radio button for row {i}"]({ i: 0 });
       await Then["the radio button for row {i} should have focus"]({ i: 0 });
+
     });
     feature(
       "Users can select rows using keyboard",
@@ -412,6 +436,7 @@ test.describe("DataGridWithRadioSelection", () => {
         await Then["the row {i} should be selected"]({ i: 0 });
       }
     );
+
   });
   test.describe("Integration with MUI DataGrid Features", () => {
     feature(
@@ -424,10 +449,12 @@ test.describe("DataGridWithRadioSelection", () => {
         await Then["the row {i} should be selected"]({ i: 0 });
         await When["the user clicks the sort button for column {field}"]({
           field: "age",
+
         });
         // Selection should now move to the third row, as John is the oldest
         await Then["the row {i} should be selected"]({ i: 2 });
       }
+
     );
     feature(
       "Pagination works correctly with radio selection",
@@ -437,13 +464,16 @@ test.describe("DataGridWithRadioSelection", () => {
           i: 0,
         });
         await Then["the row {i} should be selected"]({ i: 0 });
+
         await When["the user navigates to the next page"]();
         // Selection should be maintained in the data model, even if row is not visible
+
         await Then["the selection indicator should show {id}"]({ id: 1 });
         // When returning to first page, the selection should still be there
         await When["the user navigates to the previous page"]();
         await Then["the row {i} should be selected"]({ i: 0 });
       }
+
     );
     feature(
       "Changing page size works correctly with radio selection",
@@ -456,6 +486,7 @@ test.describe("DataGridWithRadioSelection", () => {
         await When["the user changes the page size to {size}"]({ size: 5 });
         await Then["the row {i} should be selected"]({ i: 2 });
       }
+
     );
     feature(
       "When no rows are selected, all are exported",
@@ -464,6 +495,7 @@ test.describe("DataGridWithRadioSelection", () => {
         const csv = await When["the user triggers an export"]();
         await Then["{CSV} should have {count} rows"]({ csv, count: 5 });
       }
+
     );
     feature(
       "When a row is selected, only it is exported",

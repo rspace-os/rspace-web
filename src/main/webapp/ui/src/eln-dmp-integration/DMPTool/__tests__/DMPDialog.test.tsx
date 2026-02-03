@@ -16,8 +16,10 @@ import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
+
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 const mockAxios = new MockAdapter(axios);
+
 const uiNavigationData = {
   userDetails: {
     email: "test@example.com",
@@ -55,20 +57,24 @@ beforeEach(() => {
 });
 afterEach(() => {
   restoreConsole();
+
 });
 describe("DMPDialog", () => {
   test("Label is shown when no DMPs are returned.", async () => {
     mockAxios
       .onGet("/apps/dmptool/plans?scope=MINE")
+
       .reply(200, { data: { items: [] }, success: true });
     render(
       <ThemeProvider theme={materialTheme}>
         <DMPDialog open setOpen={() => {}} />
       </ThemeProvider>
+
     );
     await waitFor(() => {
       expect(screen.getByText("No DMPs")).toBeVisible();
     });
+
   });
   test("The latest request is always the one that's shown.", async () => {
     mockAxios.onGet("/apps/dmptool/plans?scope=MINE").reply(200, {
@@ -77,6 +83,7 @@ describe("DMPDialog", () => {
       },
       success: true,
     });
+
     let resolvePublic: (() => void) | null = null;
     const publicResponse = new Promise<void>((resolve) => {
       resolvePublic = resolve;
@@ -92,16 +99,20 @@ describe("DMPDialog", () => {
           },
           success: true,
         },
+
       ]),
     );
     render(
       <ThemeProvider theme={materialTheme}>
         <DMPDialog open setOpen={() => {}} />
       </ThemeProvider>
+
     );
     // public will take a second to return a listing
+
     fireEvent.click(screen.getByRole("radio", { name: "Public" }));
     // but mine will return immediately
+
     fireEvent.click(screen.getByRole("radio", { name: "Mine" }));
     await waitFor(() => {
       expect(screen.getByText("mine")).toBeVisible();

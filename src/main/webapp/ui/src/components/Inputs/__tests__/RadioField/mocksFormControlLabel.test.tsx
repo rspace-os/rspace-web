@@ -1,3 +1,4 @@
+
 import {
   describe,
   expect,
@@ -11,6 +12,7 @@ import RadioField from "../../RadioField";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
+
 vi.mock("@mui/material/FormControlLabel", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -31,6 +33,7 @@ const renderRadioField = (props: {
         {...props}
       />
     </ThemeProvider>
+
   );
 const expectAllOptionsAreShown = () => {
   expect(FormControlLabel).toHaveBeenCalledTimes(2);
@@ -46,9 +49,11 @@ const expectAllOptionsAreShown = () => {
     }),
     expect.anything()
   );
+
 };
 const expectNoOptions = () => {
   expect(FormControlLabel).not.toHaveBeenCalled();
+
 };
 const expectJustFoo = () => {
   expect(FormControlLabel).toHaveBeenCalledTimes(1);
@@ -58,6 +63,7 @@ const expectJustFoo = () => {
     }),
     expect.anything()
   );
+
 };
 describe("RadioField", () => {
   afterEach(() => {

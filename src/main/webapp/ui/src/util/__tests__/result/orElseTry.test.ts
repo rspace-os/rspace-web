@@ -1,4 +1,6 @@
+
 import { describe, expect, test } from 'vitest';
+
 import Result from "../../result";
 describe("orElseTry", () => {
   test("The types should be merged.", () => {

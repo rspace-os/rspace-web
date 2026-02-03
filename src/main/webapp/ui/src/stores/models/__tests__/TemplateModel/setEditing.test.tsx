@@ -1,7 +1,9 @@
+
 import { describe, expect, test, vi } from 'vitest';
 import InvApiService from "../../../../common/InvApiService";
 import { makeMockTemplate, templateAttrs } from "./mocking";
 import { AxiosResponse } from "axios";
+
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   query: vi.fn(),
@@ -20,6 +22,7 @@ describe("method: setEditing", () => {
       statusText: "OK",
       headers: {},
       config: { headers: {} },
+
     } as AxiosResponse;
     const postMockResponse = {
       data: {
@@ -35,6 +38,7 @@ describe("method: setEditing", () => {
       statusText: "OK",
       headers: {},
       config: { headers: {} },
+
     } as AxiosResponse;
     const deleteMockResponse = {
       data: {
@@ -50,8 +54,10 @@ describe("method: setEditing", () => {
       statusText: "OK",
       headers: {},
       config: { headers: {} },
+
     } as AxiosResponse;
     // Setup the mock implementations
+
     vi.spyOn(InvApiService, "get").mockResolvedValue(getMockResponse);
     vi.spyOn(InvApiService, "post").mockResolvedValue(postMockResponse);
     vi.spyOn(InvApiService, "delete").mockResolvedValue(deleteMockResponse);

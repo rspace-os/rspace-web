@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import * as Jwt from "jsonwebtoken";
+
 import AxeBuilder from "@axe-core/playwright";
 // Import the story components
 import {
@@ -8,6 +9,7 @@ import {
   ActionsMenuWithFolder,
   ActionsMenuWithMultipleFiles,
   ActionsMenuWithSnippet,
+
 } from "./ActionsMenu.story";
 const feature = test.extend<{
   Given: {
@@ -104,6 +106,7 @@ const feature = test.extend<{
       },
     });
   },
+
 });
 feature.beforeEach(async ({ router }) => {
   await router.route("/session/ajax/analyticsProperties", (route) => {
@@ -114,6 +117,7 @@ feature.beforeEach(async ({ router }) => {
         analyticsEnabled: false,
       }),
     });
+
   });
   await router.route("/userform/ajax/preference*", (route) => {
     return route.fulfill({
@@ -121,6 +125,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify({}),
     });
+
   });
   await router.route("/deploymentproperties/ajax/property*", (route) => {
     return route.fulfill({
@@ -128,6 +133,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify(false),
     });
+
   });
   await router.route("/collaboraOnline/supportedExts", (route) => {
     return route.fulfill({
@@ -135,6 +141,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify({}),
     });
+
   });
   await router.route("/officeOnline/supportedExts", (route) => {
     return route.fulfill({
@@ -142,6 +149,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify({}),
     });
+
   });
   await router.route("/export/ajax/defaultPDFConfig", (route) => {
     return route.fulfill({
@@ -151,6 +159,7 @@ feature.beforeEach(async ({ router }) => {
         data: { pageSize: "A4" },
       }),
     });
+
   });
   await router.route("/gallery/getUploadedFiles", (route) => {
     return route.fulfill({
@@ -165,6 +174,7 @@ feature.beforeEach(async ({ router }) => {
         },
       }),
     });
+
   });
   await router.route("**/*.svg", (route) => {
     return route.fulfill({
@@ -172,6 +182,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "image/svg+xml",
       body: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="none"/></svg>`,
     });
+
   });
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
@@ -189,6 +200,7 @@ feature.beforeEach(async ({ router }) => {
       }),
     });
   });
+
 });
 test.describe("ActionsMenu", () => {
   test.describe("Should have no axe violations", () => {
@@ -196,6 +208,7 @@ test.describe("ActionsMenu", () => {
       await Given["the actions menu with a non-folder is mounted"]();
       await Then["there shouldn't be any axe violations"]();
     });
+
   });
   test.describe("File menu options", () => {
     feature(
@@ -205,6 +218,7 @@ test.describe("ActionsMenu", () => {
         await When["the user clicks the actions menu button"]();
         await Then["the Open option should not be visible"]();
       },
+
     );
     feature(
       "When the selected file is a folder, open should be visible",
@@ -213,6 +227,7 @@ test.describe("ActionsMenu", () => {
         await When["the user clicks the actions menu button"]();
         await Then["the Open option should be visible"]();
       },
+
     );
     feature(
       "When the selected file is a snippet, download should be disabled",

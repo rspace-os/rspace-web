@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { makeMockSubSample } from "./mocking";
+
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   }})); // break import cycle
@@ -17,6 +18,7 @@ describe("method: validate", () => {
           numericValue: "",
           unitId: 3,
         },
+
       });
       expect(subsample.validate().isOk).toBe(false);
     });

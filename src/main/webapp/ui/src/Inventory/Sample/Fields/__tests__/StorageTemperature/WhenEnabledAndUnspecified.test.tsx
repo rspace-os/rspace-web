@@ -9,10 +9,12 @@ import {
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import userEvent from "@testing-library/user-event";
+
 import { type HasEditableFields } from "../../../../../stores/definitions/Editable";
 type MockFields = {
   storageTempMin: Temperature | null;
   storageTempMax: Temperature | null;
+
 };
 type MockFieldOwnerProps = {
   fieldValues: {
@@ -24,6 +26,7 @@ type MockFieldOwnerProps = {
     storageTempMin: string | null;
     storageTempMax: string | null;
   };
+
 };
 const mockFieldOwner = (
   mockedParts: MockFieldOwnerProps
@@ -36,6 +39,7 @@ const mockFieldOwner = (
   canChooseWhichToEdit: false,
   setFieldEditable: vi.fn(),
   noValueLabel: mockedParts.noValueLabel,
+
 });
 describe("StorageTemperature", () => {
   describe("When enabled and unspecified, the component should", () => {
@@ -52,6 +56,7 @@ describe("StorageTemperature", () => {
         },
         isFieldEditable: () => true,
       });
+
       const spy = vi.spyOn(fieldOwner, "setFieldsDirty");
       render(
         <ThemeProvider theme={materialTheme}>

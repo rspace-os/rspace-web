@@ -1,6 +1,7 @@
 //@flow
 import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
+
 import * as ArrayUtils from "../../ArrayUtils";
 describe("ArrayUtils.reverse", () => {
   test("Is an involutary function.", () => {

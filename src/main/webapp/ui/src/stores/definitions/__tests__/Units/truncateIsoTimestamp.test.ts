@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
+
 import { truncateIsoTimestamp } from "../../Units";
 describe("truncateIsoTimestamp", () => {
   test("Simple examples with string", () => {
+
     const date = "1970-01-01T00:00:00.000";
     expect(
       truncateIsoTimestamp(date, "year").orElseGet(([e]) => {
@@ -38,8 +40,10 @@ describe("truncateIsoTimestamp", () => {
         throw e;
       })
     ).toEqual("1970-01-01T00:00:00.000");
+
   });
   test("Simple examples with date", () => {
+
     const date = new Date("1970-01-01T00:00:00.000");
     expect(
       truncateIsoTimestamp(date, "year").orElseGet(([e]) => {
@@ -76,6 +80,7 @@ describe("truncateIsoTimestamp", () => {
         throw e;
       })
     ).toEqual("1970-01-01T00:00:00.000");
+
   });
   test("Invalid date", () => {
     expect(

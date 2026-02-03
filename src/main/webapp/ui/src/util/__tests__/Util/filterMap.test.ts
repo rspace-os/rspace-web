@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
+
 import { filterMap } from "../../Util";
 describe("filterMap", () => {
   test("Output should always be smaller than or equal to input.", () => {

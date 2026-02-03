@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+
 import * as ArrayUtils from "../../ArrayUtils";
 describe("intersperse", () => {
   test("Simple example", () => {

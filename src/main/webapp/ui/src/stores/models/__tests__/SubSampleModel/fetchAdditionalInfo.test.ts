@@ -3,6 +3,7 @@ import {
  subsampleAttrs } from "./mocking";
 import { sampleAttrs } from "../SampleModel/mocking";
 import InvApiService from "../../../../common/InvApiService";
+
 import { describe, expect, vi, test } from 'vitest';
 import type { MockInstance } from "@vitest/spy";
 vi.mock("../../../../common/InvApiService", () => ({
@@ -23,6 +24,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
     getUnit: () => ({ label: "ml" }),
   },
 })
+
 }));
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
@@ -35,10 +37,12 @@ describe("fetchAdditionalInfo", () => {
             ...subsampleAttrs(),
           },
         } as any)
+
     );
     let firstCallDone = false;
     await subsample.fetchAdditionalInfo().then(() => {
       firstCallDone = true;
+
     });
     await subsample.fetchAdditionalInfo();
     /*

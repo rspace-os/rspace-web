@@ -1,15 +1,18 @@
 import { describe, expect, test } from 'vitest';
+
 import { selectColor } from "../../colors";
 describe("selectColor", () => {
   test("One colour", () => {
     const pink = selectColor(1, 1);
     expect(pink).toBe("#ff0080ff");
+
   });
   test("Two colours", () => {
     const cyan = selectColor(1, 2);
     expect(cyan).toBe("#00ffffff");
     const pink = selectColor(2, 2);
     expect(pink).toBe("#ff0080ff");
+
   });
   test("Three colours", () => {
     const green = selectColor(1, 3);

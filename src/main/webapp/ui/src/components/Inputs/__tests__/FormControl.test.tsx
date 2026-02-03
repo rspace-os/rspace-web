@@ -5,6 +5,7 @@ import FormLabel from "@mui/material/FormLabel";
 import FormControl from "../FormControl";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
+
 vi.mock("@mui/material/FormLabel", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -20,6 +21,7 @@ describe("FormControl", () => {
             <div></div>
           </FormControl>
         </ThemeProvider>,
+
       );
       expect(FormLabel).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -39,6 +41,7 @@ describe("FormControl", () => {
             <div></div>
           </FormControl>
         </ThemeProvider>,
+
       );
       expect(FormLabel).not.toHaveBeenCalled();
     });

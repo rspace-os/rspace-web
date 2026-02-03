@@ -3,6 +3,7 @@ import fc from "fast-check";
 import { makeMockTemplate } from "./mocking";
 import { arrayOfSameElements } from "../../../../util/__tests__/helpers";
 import { type FieldModelAttrs } from "../../FieldModel";
+
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
@@ -10,6 +11,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
     assertValidUnitId: () => {},
   },
 })
+
 }));
 const fieldData: Array<FieldModelAttrs> = [
   {
@@ -124,6 +126,7 @@ const fieldData: Array<FieldModelAttrs> = [
     attachment: null,
     mandatory: false,
   },
+
 ];
 describe("action: moveField", () => {
   describe("Property Tests", () => {

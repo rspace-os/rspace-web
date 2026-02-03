@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { DefaultSidebar } from "./Sidebar.story";
 import * as Jwt from "jsonwebtoken";
+
 import AxeBuilder from "@axe-core/playwright";
 const feature = test.extend<{
   Given: {
@@ -100,6 +101,7 @@ const feature = test.extend<{
   networkRequests: async ({}, use) => {
     await use([]);
   },
+
 });
 feature.beforeEach(async ({ router }) => {
   await router.route("/session/ajax/analyticsProperties", (route) => {
@@ -234,12 +236,15 @@ feature.beforeEach(async ({ router }) => {
       body: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="none"/></svg>`,
     });
   });
+
 });
+
 feature.afterEach(({}) => {});
 test.describe("Sidebar", () => {
   feature("Should have no axe violations", async ({ Given, Then }) => {
     await Given["the sidebar is visible"]();
     await Then["there shouldn't be any axe violations"]();
+
   });
   test.describe("New Folder", () => {
     feature(
@@ -253,6 +258,7 @@ test.describe("Sidebar", () => {
         await When["the user clicks the Create button in the dialog"]();
         await Then["a folder creation request should be made"]();
       },
+
     );
     feature(
       "Pressing enter to Submit should work",

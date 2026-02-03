@@ -14,6 +14,7 @@ import MoveDialog from "../../MoveToTarget/MoveDialog";
 import "__mocks__/matchMedia";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import userEvent from "@testing-library/user-event";
+
 vi.mock("../../../Search/SearchView", () => ({
   default: vi.fn(() => <></>),
 }));
@@ -23,6 +24,7 @@ vi.mock("@mui/material/Dialog", () => ({
   )),
 }));
 // this is because the Search component renders hidden "Cancel" buttons
+
 vi.mock("../../../Search/Search", () => ({
   default: vi.fn(() => <></>),
 }));
@@ -54,6 +56,7 @@ describe("MoveAction", () => {
         },
       })
     );
+
     const closeMenu = vi.fn(() => {});
     render(
       <ThemeProvider theme={materialTheme}>
@@ -67,8 +70,10 @@ describe("MoveAction", () => {
           <MoveDialog />
         </storesContext.Provider>
       </ThemeProvider>
+
     );
     await user.click(screen.getAllByRole("button", { name: "Move" })[0]);
+
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(closeMenu).toHaveBeenCalled();
   });

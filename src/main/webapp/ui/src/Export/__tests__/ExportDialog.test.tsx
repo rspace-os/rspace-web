@@ -18,6 +18,7 @@ import axios from "@/common/axios";
 import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
 import Alerts from "../../components/Alerts/Alerts";
 import userEvent from "@testing-library/user-event";
+
 vi.mock("react-transition-group", () => ({
   Transition: ({ children, in: inProp }: { children: any; in: boolean }) =>
     typeof children === "function"
@@ -32,7 +33,9 @@ window.fetch = vi.fn(() =>
     ok: true,
     json: () => Promise.resolve({}),
   } as Response)
+
 );
+
 const mockAxios = new MockAdapter(axios);
 const arbUserSelection = fc.record<{
   type: "user";
@@ -42,6 +45,7 @@ const arbUserSelection = fc.record<{
   type: fc.constant("user"),
   username: fc.string({ minLength: 1 }),
   exportIds: fc.constant([]),
+
 });
 const arbGroupSelection = fc.record<{
   type: "group";
@@ -53,6 +57,7 @@ const arbGroupSelection = fc.record<{
   groupId: fc.string({ minLength: 1 }),
   groupName: fc.string({ minLength: 1 }),
   exportIds: fc.constant([]),
+
 });
 const arbDocumentSelection = (args: { max?: number } = {}) =>
   fc.integer({ min: 1, max: args.max ?? 20 }).chain((n) =>
@@ -76,6 +81,7 @@ const arbDocumentSelection = (args: { max?: number } = {}) =>
         maxLength: n,
       }),
     })
+
   );
 function renderExportDialog({
   allowFileStores,
@@ -114,6 +120,7 @@ function renderExportDialog({
   render(<Wrapper />);
   if (!setProps) throw new Error("setProps is not initialised");
   return { setProps };
+
 }
 describe("ExportDialog", () => {
   mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
@@ -129,8 +136,10 @@ describe("ExportDialog", () => {
         open={false}
         allowFileStores={true}
       />
+
     );
     expect(true).toBe(true);
+
   });
   describe("Validations should be enforced.", () => {
     describe("Exporting with filestores links", () => {
@@ -138,6 +147,7 @@ describe("ExportDialog", () => {
         const user = userEvent.setup();
         mockAxios
           .onPost("/nfsExport/ajax/createQuickExportPlan")
+
           .reply(200, { ...CREATE_QUICK_EXPORT_PLAN });
         const { setProps } = renderExportDialog({ allowFileStores: true });
         act(() => {
@@ -150,15 +160,19 @@ describe("ExportDialog", () => {
               exportIds: ["1"],
             },
           });
+
         });
         await user.click(
           screen.getByRole("radio", {
             name: /^.ZIP bundle containing .HTML files/,
           })
+
         );
         await user.click(
           screen.getByRole("checkbox", { name: "Include filestore links" })
+
         );
+
         await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
           expect(
@@ -166,7 +180,9 @@ describe("ExportDialog", () => {
               "Should linked RSpace documents be included in export?"
             )
           ).toBeVisible();
+
         });
+
         await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
           expect(
@@ -174,7 +190,9 @@ describe("ExportDialog", () => {
               "Exported content contains 1 filestore link from 1 File System."
             )
           ).toBeVisible();
+
         });
+
         await user.click(screen.getByRole("button", { name: "Export" }));
         await waitFor(() => {
           expect(
@@ -183,6 +201,7 @@ describe("ExportDialog", () => {
             )
           ).toBeVisible();
         });
+
       });
       test("but without scanning should show a warning.", async () => {
         const user = userEvent.setup();
@@ -199,6 +218,7 @@ describe("ExportDialog", () => {
               loggedAs: "sambatest",
             },
           ],
+
         });
         const { setProps } = renderExportDialog({ allowFileStores: true });
         act(() => {
@@ -211,15 +231,19 @@ describe("ExportDialog", () => {
               exportIds: ["1"],
             },
           });
+
         });
         await user.click(
           screen.getByRole("radio", {
             name: /^.ZIP bundle containing .HTML files/,
           })
+
         );
         await user.click(
           screen.getByRole("checkbox", { name: "Include filestore links" })
+
         );
+
         await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
           expect(
@@ -227,7 +251,9 @@ describe("ExportDialog", () => {
               "Should linked RSpace documents be included in export?"
             )
           ).toBeVisible();
+
         });
+
         await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
           expect(
@@ -235,6 +261,7 @@ describe("ExportDialog", () => {
               "Exported content contains 1 filestore link from 1 File System."
             )
           ).toBeVisible();
+
         });
         await waitFor(() => {
           expect(
@@ -242,7 +269,9 @@ describe("ExportDialog", () => {
               "You are logged into all File Systems referenced by filestore links."
             )
           ).toBeVisible();
+
         });
+
         await user.click(screen.getByRole("button", { name: "Export" }));
         await waitFor(() => {
           expect(
@@ -253,6 +282,7 @@ describe("ExportDialog", () => {
         });
       });
     });
+
   });
   describe("Controlled vocabulary terms", () => {
     // passes on its own, fails when run together
@@ -304,10 +334,12 @@ describe("ExportDialog", () => {
           },
         });
       });
+
       await user.click(await screen.findByRole("radio", { name: /PDF/ }));
       await user.click(
         screen.getByRole("checkbox", { name: /Export to a repository/ })
       );
+
       await user.click(screen.getByRole("button", { name: /Next/ }));
       await screen.findByRole("textbox", { name: /File name/ });
       await user.click(screen.getByRole("button", { name: /Next/ }));
@@ -345,11 +377,13 @@ describe("ExportDialog", () => {
                   exportIds: ["1"],
                 },
               });
+
             });
             await user.click(
               screen.getByRole("radio", {
                 name: /^.ZIP bundle containing .XML files/,
               })
+
             );
             if (setAllVersionsSwitch) {
               await user.click(
@@ -357,16 +391,21 @@ describe("ExportDialog", () => {
                   name: /^Check to include all previous versions of your documents/,
                 })
               );
+
             }
+
             await user.click(screen.getByRole("button", { name: "Next" }));
             await waitFor(() => {
               expect(
                 screen.getByRole("button", { name: "Export" })
               ).toBeVisible();
+
             });
+
             fireEvent.click(screen.getByRole("button", { name: "Export" }));
             await waitFor(() => {
               expect(screen.getByText(/submitted to the server/)).toBeVisible();
+
             });
             expect(mockAxios.history.post.length).toBe(1);
             expect(
@@ -403,6 +442,7 @@ describe("ExportDialog", () => {
             exportIds: ["1"],
           },
         });
+
       });
       fireEvent.click(await screen.findByRole("radio", { name: /^.DOC/ }));
       fireEvent.click(screen.getByRole("button", { name: "Next" }));
@@ -412,10 +452,12 @@ describe("ExportDialog", () => {
       fireEvent.click(
         screen.getByRole("checkbox", { name: "Set LETTER as default." })
       );
+
       mockAxios.resetHistory();
       fireEvent.click(screen.getByRole("button", { name: "Export" }));
       await waitFor(() => {
         expect(screen.getByText(/submitted to the server/)).toBeVisible();
+
       });
       expect(mockAxios.history.post.length).toBe(1);
       expect(
@@ -426,6 +468,7 @@ describe("ExportDialog", () => {
         JSON.parse(mockAxios.history.post[0].data).exportConfig.pageSize
       ).toBe("LETTER");
     });
+
   });
   describe("When the dialog is rendered it is passed a selection.", () => {
     mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, []);
@@ -450,9 +493,11 @@ describe("ExportDialog", () => {
                   fireEvent.click(screen.getByRole("radio", { name: /^PDF/ }));
                   await user.click(
                     screen.getByRole("button", { name: "Next" })
+
                   );
                   await waitFor(() => {
                     expect(screen.getByRole("textbox")).toBeVisible();
+
                   });
                   expect(screen.getByRole("textbox")).toHaveValue(
                     selection.exportNames[0].trimStart()
@@ -473,9 +518,11 @@ describe("ExportDialog", () => {
                   setProps({ open: true, selection });
                 });
                 await user.click(screen.getByRole("radio", { name: /^PDF/ }));
+
                 await user.click(screen.getByRole("button", { name: "Next" }));
                 await waitFor(() => {
                   expect(screen.getByRole("textbox")).toBeVisible();
+
                 });
                 expect(screen.getByRole("textbox")).toHaveValue(
                   selection.groupName + " - all work"
@@ -495,9 +542,11 @@ describe("ExportDialog", () => {
                   setProps({ open: true, selection });
                 });
                 fireEvent.click(screen.getByRole("radio", { name: /^PDF/ }));
+
                 await user.click(screen.getByRole("button", { name: "Next" }));
                 await waitFor(() => {
                   expect(screen.getByRole("textbox")).toBeVisible();
+
                 });
                 expect(screen.getByRole("textbox")).toHaveValue(
                   selection.username + " - all work"
@@ -524,15 +573,19 @@ describe("ExportDialog", () => {
                   const { setProps } = renderExportDialog();
                   act(() => {
                     setProps({ open: true, selection });
+
                   });
                   fireEvent.click(
                     await screen.findByRole("radio", { name: /^.DOC/ })
+
                   );
                   await user.click(
                     screen.getByRole("button", { name: "Next" })
+
                   );
                   await waitFor(() => {
                     expect(screen.getByRole("textbox")).toBeVisible();
+
                   });
                   expect(screen.getByRole("textbox")).toHaveValue(
                     selection.exportNames[0].trimStart()
@@ -559,6 +612,7 @@ describe("ExportDialog", () => {
               async (selection) => {
                 mockAxios
                   .onGet("/export/ajax/defaultPDFConfig")
+
                   .reply(200, { data: { pageSize } });
                 const { setProps } = renderExportDialog();
                 act(() => {
@@ -593,6 +647,7 @@ describe("ExportDialog", () => {
               async (selection) => {
                 mockAxios
                   .onGet("/export/ajax/defaultPDFConfig")
+
                   .reply(200, { data: { pageSize } });
                 const { setProps } = renderExportDialog();
                 act(() => {

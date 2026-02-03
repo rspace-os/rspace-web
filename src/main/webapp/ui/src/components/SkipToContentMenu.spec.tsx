@@ -4,6 +4,7 @@ import {
   SimpleTestExample,
   DynamicLandmarksExample,
 } from "./SkipToContentMenu.story";
+
 import { type emptyObject } from "../util/types";
 const feature = test.extend<{
   Given: {
@@ -125,6 +126,7 @@ const feature = test.extend<{
       },
     });
   },
+
 });
 test.describe("SkipToContentButton", () => {
   feature(
@@ -135,6 +137,7 @@ test.describe("SkipToContentButton", () => {
       await Then["the skip button should be visible"]();
       await Then["the landmark options should be displayed"]();
     },
+
   );
   feature(
     "Skip button allows navigation to landmarks",
@@ -148,6 +151,7 @@ test.describe("SkipToContentButton", () => {
         landmarkName: "Header",
       });
     },
+
   );
   feature(
     "Arrow keys navigate through landmarks",
@@ -164,6 +168,7 @@ test.describe("SkipToContentButton", () => {
         landmarkName: "Header",
       });
     },
+
   );
   feature(
     "Dynamic landmark registration updates the list",
@@ -173,6 +178,7 @@ test.describe("SkipToContentButton", () => {
       await When["the user focuses the skip button"]();
       await Then["the landmark list should include the new landmarks"]();
     },
+
   );
   feature(
     "Escape key closes the skip-to-content menu",

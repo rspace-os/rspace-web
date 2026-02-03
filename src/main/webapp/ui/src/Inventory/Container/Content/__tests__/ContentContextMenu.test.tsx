@@ -21,6 +21,7 @@ import ContextMenuButton from "../../../components/ContextMenu/ContextMenuButton
 import * as ArrayUtils from "../../../../util/ArrayUtils";
 import { take, incrementForever } from "../../../../util/iterators";
 import fc from "fast-check";
+
 vi.mock("../../../components/ContextMenu/ContextMenuButton", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -63,6 +64,7 @@ describe("ContentContextMenu", () => {
             <ContentContextMenu />
           </SearchContext.Provider>
         </ThemeProvider>,
+
       );
       expect(ContextMenuButton).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -126,6 +128,7 @@ describe("ContentContextMenu", () => {
                 <ContentContextMenu />
               </SearchContext.Provider>
             </ThemeProvider>,
+
           );
           expect(screen.getByText(`${width * height}`)).toBeVisible();
         },

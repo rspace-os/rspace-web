@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { encodeTags } from "../ParseEncodedTagStrings";
+
 import { Optional } from "../../../util/optional";
 describe("ParseEncodedTagStrings", () => {
   describe("encodeTags", () => {

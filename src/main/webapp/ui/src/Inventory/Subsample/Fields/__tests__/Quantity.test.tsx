@@ -9,6 +9,7 @@ import Quantity from "../Quantity";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { type Quantity as QuantityType } from "../../../../stores/definitions/HasQuantity";
+
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
   unitStore: {
@@ -20,10 +21,12 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
     getUnit: vi.fn(),
   },
 })
+
 }));
 describe("Quantity", () => {
   test("Should support scientific notation.", () => {
     const INITIAL_VALUE = 0;
+
     const setFieldsDirty = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -47,8 +50,10 @@ describe("Quantity", () => {
           quantityCategory="mass"
         />
       </ThemeProvider>
+
     );
     const input = screen.getByDisplayValue(INITIAL_VALUE);
+
     fireEvent.input(input, { target: { value: "4e-2" } });
     expect(setFieldsDirty).toHaveBeenCalledWith({
       quantity: {

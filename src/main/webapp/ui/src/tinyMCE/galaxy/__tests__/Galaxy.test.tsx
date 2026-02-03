@@ -10,6 +10,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+
 import { describe, expect, beforeEach, vi, test } from 'vitest';
 import type { MockInstance } from "@vitest/spy";
 const mockAxios = new MockAdapter(axios);
@@ -140,6 +141,7 @@ describe("Galaxy Upload Data tests", () => {
       });
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "no-data-selected"}, "*");
     });
+
     test("once upload complete displays link to new Galaxy History", async () => {
       await renderGalaxy();
       await act(async () => {
@@ -160,6 +162,7 @@ describe("Galaxy Upload Data tests", () => {
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "uploading-complete"}, "*");
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "enableClose"}, "*");
     });
+
   });
   describe("Handles errors", () => {
     const renderGalaxy = async () => {
@@ -182,6 +185,7 @@ describe("Galaxy Upload Data tests", () => {
           await screen.findByText(/Invalid Galaxy API Key Please re-enter your API Key on the Apps page/i)
       ).toBeInTheDocument();
     });
+
     test("displays error message if 500 returned", async () => {
       await renderGalaxy();
       mockAxios

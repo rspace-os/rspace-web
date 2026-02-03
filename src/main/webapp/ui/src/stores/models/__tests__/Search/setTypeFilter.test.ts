@@ -3,6 +3,7 @@ import Search from "../../Search";
 import ApiServiceBase from "../../../../common/ApiServiceBase";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import "../../../../__tests__/assertUrlSearchParams";
+
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({
   authStore: {
@@ -13,6 +14,7 @@ vi.mock("../../../stores/RootStore", () => ({
   },
 })
 })); // break import cycle
+
 vi.mock("../../../stores/SearchStore", () => ({ default: class {} })); // break import cycle
 describe("action: setTypeFilter", () => {
   describe("When called with any value it should", () => {
@@ -31,12 +33,14 @@ describe("action: setTypeFilter", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
             config: {} as any,
           })
+
         );
       void search.setPage(1);
       expect(querySpy).toHaveBeenCalledTimes(1);
       expect(querySpy).toHaveBeenCalledWith(
         "containers",
         expect.urlSearchParamContaining({ pageNumber: "1" })
+
       );
       search.setTypeFilter("ALL");
       expect(querySpy).toHaveBeenCalledTimes(2);

@@ -18,6 +18,7 @@ import materialTheme from "../../../theme";
 import { containerAttrs } from "../../../stores/models/__tests__/ContainerModel/mocking";
 import ApiServiceBase from "../../../common/ApiServiceBase";
 import MemoisedFactory from "../../../stores/models/Factory/MemoisedFactory";
+
 import { personAttrs } from "../../../stores/models/__tests__/PersonModel/mocking";
 describe("Results Table", () => {
   describe("Pagination", () => {
@@ -25,6 +26,7 @@ describe("Results Table", () => {
       const search = new Search({
         factory: new MemoisedFactory(),
       });
+
       vi.spyOn(ApiServiceBase.prototype, "query").mockImplementation(
         () =>
           Promise.resolve({
@@ -66,7 +68,9 @@ describe("Results Table", () => {
       );
       await waitFor(() => {
         void search.setupAndPerformInitialSearch({});
+
       });
+
       const rootStore = makeMockRootStore({});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -82,6 +86,7 @@ describe("Results Table", () => {
             </SearchContext.Provider>
           </storesContext.Provider>
         </ThemeProvider>,
+
       );
       within(screen.getByRole("navigation")).getByRole("combobox");
     });

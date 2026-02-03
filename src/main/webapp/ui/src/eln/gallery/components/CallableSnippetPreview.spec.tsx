@@ -6,6 +6,7 @@ import {
   CallableSnippetPreviewStory,
   CallableSnippetPreviewWithTableContent,
   CallableSnippetPreviewWithError,
+
 } from "./CallableSnippetPreview.story";
 const feature = test.extend<{
   Given: {
@@ -93,8 +94,10 @@ const feature = test.extend<{
       },
       "the dialog should be accessible": async () => {
         const dialog = page.getByRole("dialog");
+
         await expect(dialog).toBeVisible();
         const dialogTitle = page.getByText(/snippet preview:/i);
+
         await expect(dialogTitle).toBeVisible();
         const closeButton = page.getByRole("button", { name: /close/i });
         await expect(closeButton).toBeVisible();
@@ -117,6 +120,7 @@ const feature = test.extend<{
       },
     });
   },
+
 });
 feature.beforeEach(async ({ router }) => {
   await router.route("/session/ajax/analyticsProperties", (route) => {
@@ -127,6 +131,7 @@ feature.beforeEach(async ({ router }) => {
         analyticsEnabled: false,
       }),
     });
+
   });
   await router.route("/userform/ajax/preference*", (route) => {
     return route.fulfill({
@@ -134,6 +139,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify({}),
     });
+
   });
   await router.route("/deploymentproperties/ajax/property*", (route) => {
     return route.fulfill({
@@ -141,6 +147,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify(false),
     });
+
   });
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
@@ -157,6 +164,7 @@ feature.beforeEach(async ({ router }) => {
         data: Jwt.sign(payload, "dummySecretKey"),
       }),
     });
+
   });
   await router.route("/api/v1/snippets/123/content", (route) => {
     return route.fulfill({
@@ -164,6 +172,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "text/html",
       body: "<p>Test snippet content</p>",
     });
+
   });
   await router.route("/api/v1/snippets/124/content", (route) => {
     return route.fulfill({
@@ -193,6 +202,7 @@ feature.beforeEach(async ({ router }) => {
         </table>
       `,
     });
+
   });
   await router.route("/api/v1/snippets/999/content", (route) => {
     return route.fulfill({
@@ -204,6 +214,7 @@ feature.beforeEach(async ({ router }) => {
       }),
     });
   });
+
 });
 test.describe("CallableSnippetPreview", () => {
   test.describe("Dialog opening and closing", () => {
@@ -214,6 +225,7 @@ test.describe("CallableSnippetPreview", () => {
         await When["the user clicks the open snippet button"]();
         await Then["the preview dialog should be visible"]();
       },
+
     );
     feature(
       "Should close the dialog when close button is clicked",
@@ -224,6 +236,7 @@ test.describe("CallableSnippetPreview", () => {
         await When["the user clicks the close button"]();
         await Then["the preview dialog should not be visible"]();
       },
+
     );
     feature(
       "Should close the dialog when Escape key is pressed",
@@ -235,11 +248,13 @@ test.describe("CallableSnippetPreview", () => {
         await Then["the preview dialog should not be visible"]();
       },
     );
+
   });
   test.describe("Content rendering", () => {
     feature(
       "Should show loading state initially",
       async ({ Given, When, Then, page }) => {
+
         await Given["the snippet preview component is mounted"]();
         // Intercept the request to delay it
         await page.route("/api/v1/snippets/123/content", async (route) => {
@@ -249,10 +264,12 @@ test.describe("CallableSnippetPreview", () => {
             contentType: "text/html",
             body: "<p>Test snippet content</p>",
           });
+
         });
         await When["the user clicks the open snippet button"]();
         await Then["the dialog should show loading state"]();
       },
+
     );
     feature(
       "Should display snippet content after loading",
@@ -261,6 +278,7 @@ test.describe("CallableSnippetPreview", () => {
         await When["the user clicks the open snippet button"]();
         await Then["the dialog should show snippet content"]();
       },
+
     );
     feature(
       "Should render HTML tables correctly",
@@ -269,6 +287,7 @@ test.describe("CallableSnippetPreview", () => {
         await When["the user clicks the open snippet button"]();
         await Then["the dialog should show table content correctly"]();
       },
+
     );
     feature(
       "Should display error message when loading fails",
@@ -278,6 +297,7 @@ test.describe("CallableSnippetPreview", () => {
         await Then["the dialog should show error message"]();
       },
     );
+
   });
   test.describe("Accessibility", () => {
     feature(
@@ -287,6 +307,7 @@ test.describe("CallableSnippetPreview", () => {
         await When["the user clicks the open snippet button"]();
         await Then["the dialog should be accessible"]();
       },
+
     );
     feature("Should have no axe violations", async ({ Given, When, Then }) => {
       await Given["the snippet preview component is mounted"]();

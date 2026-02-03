@@ -1,6 +1,7 @@
 //@flow
 import { describe, expect, test } from 'vitest';
 import fc, { type Arbitrary } from "fast-check";
+
 import { Optional } from "../optional";
 /**
  * Generates an arbitrary Optional<T> from an arbitrary T.
@@ -8,6 +9,7 @@ import { Optional } from "../optional";
  * non-empty Optional with the passed value.
  */
 const arbOptional = <T>(arb: Arbitrary<T>): Arbitrary<Optional<T>> =>
+
   fc.option(arb).map((x) => Optional.fromNullable(x));
 describe("optional", () => {
   /*
@@ -37,6 +39,7 @@ describe("optional", () => {
         )
       );
     });
+
   });
   /*
    * The Optional type also adheres to the definitions of a Monad, which is to
