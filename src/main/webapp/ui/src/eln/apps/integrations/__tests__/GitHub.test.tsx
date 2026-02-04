@@ -3,9 +3,15 @@
  */
 /* eslint-env jest */
 import React from "react";
-import { cleanup, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import "@testing-library/jest-dom";
-import GitHub from "../GitHub";
+import GitHub, { type GitHubConnectedMessage } from "../GitHub";
 import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
@@ -17,8 +23,21 @@ import "../../../../../__mocks__/matchMedia";
 
 expect.extend(toHaveNoViolations);
 
+const broadcastHandlers: Array<
+  (e: MessageEvent<GitHubConnectedMessage>) => void
+> = [];
+jest.mock("use-broadcast-channel", () => ({
+  useBroadcastChannel: (
+    _channel: string,
+    handler: (e: MessageEvent<GitHubConnectedMessage>) => void
+  ) => {
+    broadcastHandlers.push(handler);
+  },
+}));
+
 beforeEach(() => {
   jest.clearAllMocks();
+  broadcastHandlers.length = 0;
 });
 
 afterEach(cleanup);
@@ -133,14 +152,6 @@ describe("GitHub", () => {
       jest.spyOn(window, "open").mockImplementation(
         () =>
           ({
-            document: {
-              URL: "https://test.researchspace.com/github/redirect_uri",
-              getElementById: () => ({ value: "oauth token" }),
-            },
-            addEventListener: (_: unknown, f: () => void) => {
-              f();
-            },
-            removeEventListener: () => {},
             close: () => {},
           } as unknown as Window)
       );
@@ -158,6 +169,14 @@ describe("GitHub", () => {
       fireEvent.click(screen.getByRole("button"));
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
+
+      act(() => {
+        broadcastHandlers.forEach((handler) =>
+          handler({
+            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+          } as MessageEvent<GitHubConnectedMessage>)
+        );
+      });
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
@@ -189,14 +208,6 @@ describe("GitHub", () => {
       jest.spyOn(window, "open").mockImplementation(
         () =>
           ({
-            document: {
-              URL: "https://test.researchspace.com/github/redirect_uri",
-              getElementById: () => ({ value: "oauth token" }),
-            },
-            addEventListener: (_: unknown, f: () => void) => {
-              f();
-            },
-            removeEventListener: () => {},
             close: () => {},
           } as unknown as Window)
       );
@@ -214,6 +225,14 @@ describe("GitHub", () => {
       fireEvent.click(screen.getByRole("button"));
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
+
+      act(() => {
+        broadcastHandlers.forEach((handler) =>
+          handler({
+            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+          } as MessageEvent<GitHubConnectedMessage>)
+        );
+      });
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
@@ -266,14 +285,6 @@ describe("GitHub", () => {
       jest.spyOn(window, "open").mockImplementation(
         () =>
           ({
-            document: {
-              URL: "https://test.researchspace.com/github/redirect_uri",
-              getElementById: () => ({ value: "oauth token" }),
-            },
-            addEventListener: (_: unknown, f: () => void) => {
-              f();
-            },
-            removeEventListener: () => {},
             close: () => {},
           } as unknown as Window)
       );
@@ -291,6 +302,14 @@ describe("GitHub", () => {
       fireEvent.click(screen.getByRole("button"));
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
+
+      act(() => {
+        broadcastHandlers.forEach((handler) =>
+          handler({
+            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+          } as MessageEvent<GitHubConnectedMessage>)
+        );
+      });
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
@@ -363,14 +382,6 @@ describe("GitHub", () => {
       jest.spyOn(window, "open").mockImplementation(
         () =>
           ({
-            document: {
-              URL: "https://test.researchspace.com/github/redirect_uri",
-              getElementById: () => ({ value: "oauth token" }),
-            },
-            addEventListener: (_: unknown, f: () => void) => {
-              f();
-            },
-            removeEventListener: () => {},
             close: () => {},
           } as unknown as Window)
       );
@@ -380,6 +391,14 @@ describe("GitHub", () => {
       fireEvent.click(screen.getByRole("button"));
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
+
+      act(() => {
+        broadcastHandlers.forEach((handler) =>
+          handler({
+            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+          } as MessageEvent<GitHubConnectedMessage>)
+        );
+      });
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
