@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <%@ include file="/common/taglibs.jsp" %>
 
+<jsp:include page="/scripts/templates/blockUI.html"/>
+
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 	<head>
