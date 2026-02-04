@@ -2,7 +2,7 @@
   <br>
   <h4>Stoichiometry Information for $header</h4>
   <div class="stoichiometry-table-container">
-    <table id='stoichiometry-table' class='stoichiometry-table'>
+    <table id='stoichiometry-table' class='stoichiometry-table' border='1'>
       <thead>
       <tr>
         <th class='stoichiometry-table-name'>Name</th>
