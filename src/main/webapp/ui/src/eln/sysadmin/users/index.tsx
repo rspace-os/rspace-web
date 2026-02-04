@@ -1440,26 +1440,24 @@ const Toolbar = ({
                         }}
                         disabled={!tagsChecked}
                       />
-                      {tagsComboboxAnchorEl ? (
-                        <TagsCombobox
-                          value={new RsSet(tags)}
-                          anchorEl={tagsComboboxAnchorEl}
-                          onSelection={(newTag) => {
-                            if (!tags.includes(newTag)) {
-                              const newTags = [...tags, newTag];
-                              setTags(newTags);
-                              FetchingData.getSuccessValue(userListing).do(
-                                (listing) => {
-                                  void listing.applyTagsFilter(newTags);
-                                },
-                              );
-                            }
-                          }}
-                          onClose={() => {
-                            setTagsComboboxAnchorEl(null);
-                          }}
-                        />
-                      ) : null}
+                      <TagsCombobox
+                        value={new RsSet(tags)}
+                        anchorEl={tagsComboboxAnchorEl}
+                        onSelection={(newTag) => {
+                          if (!tags.includes(newTag)) {
+                            const newTags = [...tags, newTag];
+                            setTags(newTags);
+                            FetchingData.getSuccessValue(userListing).do(
+                              (listing) => {
+                                void listing.applyTagsFilter(newTags);
+                              },
+                            );
+                          }
+                        }}
+                        onClose={() => {
+                          setTagsComboboxAnchorEl(null);
+                        }}
+                      />
                     </Grid>
                   </Grid>
                 </Grid>
