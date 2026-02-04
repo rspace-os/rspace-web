@@ -109,6 +109,7 @@ const DialogContent = observer(
             })
           );
         }
+      } finally {
         setLoadingAllRepositories(false);
       }
     };
