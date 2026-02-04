@@ -1,10 +1,5 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen, waitFor } from "@testing-library/react";
 import InvApiService from "../../../../common/InvApiService";
 import TemplatePicker from "../TemplatePicker";
 import materialTheme from "../../../../theme";
@@ -17,11 +12,14 @@ import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
 
-jest.mock("../../../../common/InvApiService", () => ({
+import { test, type Mock, describe, expect, vi } from 'vitest';
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
   get: () => ({}),
   query: () => ({}),
-}));
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+  }}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   searchStore: {
     savedSearches: [{ name: "Dummy saved search", query: "foo" }],
   },
@@ -39,9 +37,10 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
       _links: [],
     },
   },
+})
 }));
 
-(window.fetch as jest.Mock) = jest.fn(() =>
+(window.fetch as Mock) = vi.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
@@ -59,14 +58,8 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
     formData: () => Promise.resolve(new FormData()),
     text: () => Promise.resolve(""),
   } as Response)
+
 );
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("TemplatePicker", () => {
   describe("Should support saved searches", () => {
     test("Tapping a saved search should change the templates listed", async () => {
@@ -79,7 +72,7 @@ describe("TemplatePicker", () => {
         },
       });
 
-      jest.spyOn(InvApiService, "query").mockImplementation((endpoint) => {
+      vi.spyOn(InvApiService, "query").mockImplementation((endpoint) => {
         if (endpoint === "sampleTemplates")
           return Promise.resolve({
             data: {
@@ -106,26 +99,26 @@ describe("TemplatePicker", () => {
             config: {},
           } as AxiosResponse);
         throw new Error(`Endpoint not supported: ${endpoint}`);
-      });
 
+      });
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
             <TemplatePicker setTemplate={() => {}} disabled={false} />
           </storesContext.Provider>
         </ThemeProvider>
-      );
 
+      );
       await waitFor(() => {
         expect(screen.getByRole("table")).toHaveTextContent("foo");
       });
-      expect(screen.getByRole("table")).toHaveTextContent("bar");
 
+      expect(screen.getByRole("table")).toHaveTextContent("bar");
       await user.click(screen.getByRole("button", { name: "Saved Searches" }));
       await user.click(
         screen.getByRole("menuitem", { name: /^Dummy saved search/ })
-      );
 
+      );
       await waitFor(() => {
         expect(screen.getByRole("table")).toHaveTextContent("foo");
       });
@@ -133,3 +126,4 @@ describe("TemplatePicker", () => {
     });
   });
 });
+

@@ -53,7 +53,7 @@ type AccentMenuItemArgs = {
  * accent colour of the current page.
  */
 export default styled(
-   
+
   React.forwardRef<
     typeof MenuItem,
     AccentMenuItemArgs & { className?: string }
@@ -69,7 +69,7 @@ export default styled(
         disabled,
         autoFocus,
         tabIndex,
-         
+
         "aria-haspopup": ariaHasPopup,
         title,
         subheader,
@@ -87,7 +87,7 @@ export default styled(
         onKeyDown={onKeyDown}
         onClick={onClick}
         disabled={disabled}
-         
+
         autoFocus={autoFocus}
         tabIndex={tabIndex}
         aria-haspopup={ariaHasPopup}

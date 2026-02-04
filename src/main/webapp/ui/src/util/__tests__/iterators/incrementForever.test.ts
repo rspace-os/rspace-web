@@ -1,8 +1,8 @@
-/* eslint-env jest */
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { incrementForever } from "../../iterators";
-import * as ArrayUtils from "../../ArrayUtils";
 
+import * as ArrayUtils from "../../ArrayUtils";
 describe("incrementForever", () => {
   test("Generates a unique, sorted list of integers of arbitrary length, beginning at 0.", () => {
     fc.assert(
@@ -21,18 +21,18 @@ describe("incrementForever", () => {
             if (i > count) break;
             i++;
             list.push(x);
+
           }
-
           // any arbitrary index will contain that value
-          expect(list[indexAssertion]).toBe(indexAssertion);
 
+          expect(list[indexAssertion]).toBe(indexAssertion);
           // the list will be sorted
           const sorted = list;
           sorted.sort();
           expect(
             ArrayUtils.zipWith(list, sorted, (a, b) => a === b).every((x) => x)
-          ).toBe(true);
 
+          ).toBe(true);
           // every element in the list will be unique
           const set = new Set(list);
           expect(set.size).toEqual(list.length);
@@ -41,3 +41,4 @@ describe("incrementForever", () => {
     );
   });
 });
+

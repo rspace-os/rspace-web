@@ -122,7 +122,6 @@ export default function DnaPreview(props) {
             {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
               <ImageWrapper>
                 <ButtonGroup
-                  className="tools"
                   className={classes.tools}
                   size="small"
                   aria-label="small outlined button group"

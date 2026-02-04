@@ -67,7 +67,7 @@ function DateField({
           inputProps={{
             placeholder: placeholder ?? "",
           }}
-          inputFormat="y-M-d"
+          inputFormat="yyyy-MM-dd"
           renderInput={(params) => (
             <TextField
               {...params}

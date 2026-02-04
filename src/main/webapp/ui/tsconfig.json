@@ -15,7 +15,8 @@
       "@/*": ["src/*"],
       "Styles": ["src/util/styles"]
     },
-    "resolveJsonModule": true
-  },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "custom.d.ts"]
+    "resolveJsonModule": true,
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "types": ["@testing-library/jest-dom", "@sa11y/vitest"]
+  }
 }

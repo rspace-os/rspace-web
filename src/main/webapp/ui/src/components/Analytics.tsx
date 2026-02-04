@@ -114,7 +114,7 @@ function loadIntercom({
         // Define a method to load Analytics.js from our CDN,
         // and that will be sure to only ever load it once.
         analytics.load = function (key, options) {
-           
+
           // Create an async script element based on your key.
           const script = document.createElement("script");
           script.type = "text/javascript";

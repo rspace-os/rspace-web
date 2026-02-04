@@ -1,17 +1,17 @@
-/*
- * @jest-environment jsdom
- */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import Quantity from "../Quantity";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import fc from "fast-check";
 
-jest.mock("../../../../common/InvApiService", () => ({}));
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  }}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({
       id: 1,
@@ -20,14 +20,17 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
       description: "foo is mass",
     }),
   },
+})
 }));
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+const unitOptions = [
+  {
+    id: 1,
+    label: "foo",
+    category: "mass",
+    description: "foo is mass",
+  },
+];
 describe("Quantity", () => {
   describe("Unit selector", () => {
     test('When there is only one subsample being created, "per subsample" should not be shown.', () => {
@@ -46,15 +49,8 @@ describe("Quantity", () => {
           const rootStore = makeMockRootStore({
             uiStore: {},
             unitStore: {
-              units: [
-                {
-                  id: 1,
-                  label: "foo",
-                  category: "mass",
-                  description: "foo is mass",
-                },
-              ],
-              unitsOfCategory: () => [],
+              units: unitOptions,
+              unitsOfCategory: () => unitOptions,
             },
           });
           const { container } = render(
@@ -85,15 +81,8 @@ describe("Quantity", () => {
             const rootStore = makeMockRootStore({
               uiStore: {},
               unitStore: {
-                units: [
-                  {
-                    id: 1,
-                    label: "foo",
-                    category: "mass",
-                    description: "foo is mass",
-                  },
-                ],
-                unitsOfCategory: () => [],
+                units: unitOptions,
+                unitsOfCategory: () => unitOptions,
               },
             });
             const { container } = render(
@@ -127,15 +116,8 @@ describe("Quantity", () => {
             const rootStore = makeMockRootStore({
               uiStore: {},
               unitStore: {
-                units: [
-                  {
-                    id: 1,
-                    label: "foo",
-                    category: "mass",
-                    description: "foo is mass",
-                  },
-                ],
-                unitsOfCategory: () => [],
+                units: unitOptions,
+                unitsOfCategory: () => unitOptions,
               },
             });
             const { container } = render(
@@ -147,8 +129,8 @@ describe("Quantity", () => {
           }
         )
       );
-    });
 
+    });
     test("Fractional units of quantity should have zero or two decimal places.", () => {
       fc.assert(
         fc.property(
@@ -168,15 +150,8 @@ describe("Quantity", () => {
             const rootStore = makeMockRootStore({
               uiStore: {},
               unitStore: {
-                units: [
-                  {
-                    id: 1,
-                    label: "foo",
-                    category: "mass",
-                    description: "foo is mass",
-                  },
-                ],
-                unitsOfCategory: () => [],
+                units: unitOptions,
+                unitsOfCategory: () => unitOptions,
               },
             });
             const { container } = render(
@@ -191,3 +166,4 @@ describe("Quantity", () => {
     });
   });
 });
+

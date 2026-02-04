@@ -1,10 +1,6 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
-import { blobToBase64 } from "../../files";
+import { describe, expect, test } from 'vitest';
 
+import { blobToBase64 } from "../../files";
 describe("blobToBase64", () => {
   test("Simple example", async () => {
     expect(await blobToBase64(new Blob(["foo\n"]))).toBe(
@@ -12,3 +8,4 @@ describe("blobToBase64", () => {
     );
   });
 });
+

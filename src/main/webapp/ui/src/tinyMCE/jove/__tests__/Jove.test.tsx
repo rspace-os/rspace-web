@@ -1,21 +1,23 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import Jove from "../Jove";
 import React from "react";
 import axios from "@/common/axios";
-import { render, screen, act, within } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  screen,
+  act,
+  within,
+} from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import JoveSearchResult from "./joveSearchResult.json";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 const mockAxios = new MockAdapter(axios);
 const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
+  getItem: vi.fn(),
+  setItem: vi.fn(),
 };
 const rsMock = {
-  trackEvent: jest.fn(),
+  trackEvent: vi.fn(),
 };
 Object.defineProperty(window, "localStorage", { value: localStorageMock });
 Object.defineProperty(window, "RS", { value: rsMock });
@@ -31,25 +33,25 @@ beforeEach(() => {
   });
 });
 
-describe("Renders page with jove data ", () => {
-  it("displays jove table headers", async () => {
+describe("Renders page with jove data", () => {
+  test("displays jove table headers", async () => {
     render(<Jove />);
     await screen.findByText("Title");
   });
 
-  it("displays jove search bar ", async () => {
+  test("displays jove search bar", async () => {
     render(<Jove />);
     await screen.findByLabelText("Search");
   });
 
-  it('displays table headers for jove search results"', async () => {
+  test('displays table headers for jove search results"', async () => {
     render(<Jove />);
     await screen.findByText("Thumbnail");
     await screen.findByText("Title");
     await screen.findByText("Section");
   });
 
-  it("displays jove search results", async () => {
+  test("displays jove search results", async () => {
     render(<Jove />);
     await screen.findByText("Title");
     await screen.findByText(
@@ -69,7 +71,8 @@ describe("Renders page with jove data ", () => {
     );
   });
 
-  it("displays error message if 404 returned", async () => {
+  test("displays error message if 404 returned", async () => {
+    const restoreConsole = silenceConsole(["log"], [/./]);
     mockAxios
       .onPost("/apps/jove/search", {
         queryString: "",
@@ -82,9 +85,11 @@ describe("Renders page with jove data ", () => {
     expect(
       screen.getByText("Unable to retrieve any relevant results.")
     ).toBeInTheDocument();
+    restoreConsole();
   });
 
-  it("displays error message if 500 returned", async () => {
+  test("displays error message if 500 returned", async () => {
+    const restoreConsole = silenceConsole(["log"], [/./]);
     mockAxios
       .onPost("/apps/jove/search", {
         queryString: "",
@@ -97,5 +102,6 @@ describe("Renders page with jove data ", () => {
     expect(
       screen.getByText("Unknown issue, please attempt to relogin to RSpace.")
     ).toBeInTheDocument();
+    restoreConsole();
   });
 });

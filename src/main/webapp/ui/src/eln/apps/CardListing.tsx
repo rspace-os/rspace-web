@@ -55,7 +55,6 @@ type CardListingArgs = {
   integrationStates: IntegrationStates;
 };
 
- 
 function CardListing({
   mode,
   integrationStates,
@@ -82,7 +81,7 @@ function CardListing({
         integrationStates.ASCENSCIA = await update("ASCENSCIA", newState);
       });
     },
-     
+
     [update]
   );
 
@@ -199,7 +198,7 @@ function CardListing({
     },
     [update, integrationStates.FIGSHARE],
   );
-  
+
   const galaxyUpdate = React.useCallback(
     (newState: IntegrationStates["GALAXY"]) => {
       void runInAction(async () => {

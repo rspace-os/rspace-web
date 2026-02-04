@@ -1,39 +1,28 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect } from 'vitest';
 import React from "react";
 import {
   render,
-  cleanup,
   screen,
   act,
   waitFor,
   within,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import ExportFileStore from "../ExportFileStore";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
 import { mkValidator } from "../../util/Validator";
+
 import userEvent from "@testing-library/user-event";
 
 const mockAxios = new MockAdapter(axios);
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("ExportFileStore", () => {
   test("Exporting document without any filestore links should show a warning.", async () => {
     mockAxios.onPost("/nfsExport/ajax/createQuickExportPlan").reply(200, {
       ...CREATE_QUICK_EXPORT_PLAN,
       foundFileSystems: [],
-    });
 
+    });
     await act(
       () =>
         void render(
@@ -60,8 +49,8 @@ describe("ExportFileStore", () => {
             validator={mkValidator()}
           />
         )
-    );
 
+    );
     expect(
       screen.getByText("No filestore links found in exported content.")
     ).toBeVisible();
@@ -70,8 +59,8 @@ describe("ExportFileStore", () => {
     const user = userEvent.setup();
     mockAxios
       .onPost("/nfsExport/ajax/createQuickExportPlan")
-      .reply(200, CREATE_QUICK_EXPORT_PLAN);
 
+      .reply(200, CREATE_QUICK_EXPORT_PLAN);
     await act(
       () =>
         void render(
@@ -98,27 +87,27 @@ describe("ExportFileStore", () => {
             validator={mkValidator()}
           />
         )
-    );
 
+    );
     void (await waitFor(async () => {
       expect(
         await screen.findByRole("button", {
           name: "Show found filestore links",
         })
       ).toBeVisible();
-    }));
 
+    }));
     await user.click(
       screen.getByRole("button", { name: "Show found filestore links" })
-    );
 
+    );
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole(
         "rowheader",
         { name: "/test.txt" }
       )
-    ).toBeVisible();
 
+    ).toBeVisible();
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i })
     );
@@ -133,8 +122,8 @@ describe("ExportFileStore", () => {
           loggedAs: "sambatest",
         },
       ],
-    });
 
+    });
     await act(
       () =>
         void render(
@@ -161,20 +150,20 @@ describe("ExportFileStore", () => {
             validator={mkValidator()}
           />
         )
-    );
 
+    );
     void (await waitFor(async () => {
       expect(
         await screen.findByRole("button", {
           name: /Check file systems login details/i,
         })
       ).toBeVisible();
-    }));
 
+    }));
     await user.click(
       screen.getByRole("button", { name: /Check file systems login details/i })
-    );
 
+    );
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole(
         "rowheader",
@@ -186,10 +175,11 @@ describe("ExportFileStore", () => {
         "cell",
         { name: "sambatest" }
       )
-    ).toBeVisible();
 
+    ).toBeVisible();
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i })
     );
   });
 });
+

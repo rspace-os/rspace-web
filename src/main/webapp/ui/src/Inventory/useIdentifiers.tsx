@@ -350,12 +350,12 @@ export function useIdentifiersListing({
     } finally {
       setLoading(false);
     }
-     
+
   }, [state, isAssociated, searchTerm]);
 
   React.useEffect(() => {
     void fetchIdentifiers();
-     
+
   }, [state, isAssociated, searchTerm]);
 
   return { identifiers, loading, error, refreshListing: fetchIdentifiers };

@@ -115,7 +115,7 @@ const CustomStringField = ({
   <StringField
     value={value}
     onChange={({ target: { value: newValue } }) => onChange(newValue)}
-     
+
     autoFocus={autoFocus}
     fullWidth={fullWidth}
   />
@@ -147,7 +147,7 @@ const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
           <CustomStringField
             value={value ?? ""}
             onChange={(newValue) => onChange(newValue)}
-             
+
             autoFocus={true}
             fullWidth={true}
           />

@@ -100,7 +100,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
   }: TreeItemContentArgs): React.ReactNode => {
     const listingOf = React.useMemo(
       () => ({ tag: "section" as const, section, path: [...path, file] }),
-       
+
       [section],
     );
 
@@ -121,7 +121,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
        * folder is done refreshing.
        */
       if (refeshing) void refreshingThisListing();
-       
+
     }, [refeshing]);
 
     React.useEffect(() => {
@@ -132,7 +132,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
             treeViewItemIdMap.set(f.treeViewItemId, f);
         });
       });
-       
+
     }, [galleryListing]);
 
     return FetchingData.match(galleryListing, {
@@ -147,7 +147,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
           <>
             {listing.list.map((f, i) =>
               filter(f) !== "hide" ? (
-                 
+
                 <CustomTreeItem
                   file={f}
                   index={i}
@@ -484,7 +484,7 @@ const TreeView = ({
     runInAction(() => {
       for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
     });
-     
+
   }, [listing]);
 
   /*

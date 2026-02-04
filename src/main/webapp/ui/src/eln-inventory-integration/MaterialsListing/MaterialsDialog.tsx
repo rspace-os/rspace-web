@@ -67,7 +67,7 @@ const CardWrapperInternals = forwardRef<
   React.ElementRef<typeof Grid>,
   CardWrapperInternalsArgs
 >(
-   
+
   ({ children, classes }: CardWrapperInternalsArgs, ref) => {
     const isSingleColumnLayout = useIsSingleColumnLayout();
     return (

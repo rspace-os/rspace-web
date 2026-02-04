@@ -1,23 +1,17 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
+
 import PdfExport from "../PdfExport";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("PdfExport", () => {
   test("Toggling a switch should set a boolean value.", () => {
     const updateExportDetails: (key: string, exportDetail: unknown) => void =
-      jest.fn();
 
+      vi.fn();
     render(
       <PdfExport
         exportDetails={{
@@ -42,12 +36,13 @@ describe("PdfExport", () => {
           },
         }}
       />
-    );
 
+    );
     fireEvent.click(
       screen.getByRole("checkbox", { name: "Include provenance information" })
-    );
 
+    );
     expect(updateExportDetails).toHaveBeenCalledWith("provenance", true);
   });
 });
+

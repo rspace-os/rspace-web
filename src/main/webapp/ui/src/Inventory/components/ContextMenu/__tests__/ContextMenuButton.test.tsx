@@ -1,21 +1,15 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect } from 'vitest';
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  cleanup,
+  screen,
+} from "@testing-library/react";
 import fc from "fast-check";
 import ContextMenuButton from "../ContextMenuButton";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../../theme";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("ContextMenuButton", () => {
   describe("Disabled state", () => {
     test("When disabled, should render aria-disabled.", () => {
@@ -36,3 +30,4 @@ describe("ContextMenuButton", () => {
     });
   });
 });
+

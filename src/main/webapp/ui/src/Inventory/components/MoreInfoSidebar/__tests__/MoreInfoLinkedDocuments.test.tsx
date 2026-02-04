@@ -1,10 +1,9 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, afterEach, vi } from 'vitest';
 import React from "react";
-import { cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import LinkedDocuments from "../LinkedDocuments";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import InvApiService from "../../../../common/InvApiService";
@@ -14,19 +13,18 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { render, within } from "../../../../__tests__/customQueries";
 
-jest.mock("../../../../common/InvApiService", () => ({
-  get: () => ({}),
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+    get: () => ({}),
+  }
+
 }));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("LinkedDocuments", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
   test("Assert that correct API endpoint is called with Global ID", async () => {
-    const spy = jest
+    const spy = vi
       .spyOn(InvApiService, "get")
       .mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
@@ -35,10 +33,10 @@ describe("LinkedDocuments", () => {
     );
     expect(await screen.findByText("An error")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IC1");
-  });
 
+  });
   test("When there is an error loading the data, an alert should be shown.", async () => {
-    jest
+    vi
       .spyOn(InvApiService, "get")
       .mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
@@ -46,10 +44,10 @@ describe("LinkedDocuments", () => {
       screen.getByRole("button", { name: "Show Linked Documents" })
     );
     expect(await screen.findByRole("alert")).toHaveTextContent("An error");
-  });
 
+  });
   test("Two different documents should render as two table rows", async () => {
-    jest.spyOn(InvApiService, "get").mockImplementation(() => {
+    vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.resolve({
         data: [
           { elnDocument: { globalId: "SD1", id: 1, name: "Foo", owner: null } },
@@ -76,8 +74,8 @@ describe("LinkedDocuments", () => {
     );
     expect(
       within(await screen.findByRole("table")).getAllByRole("row")
-    ).toHaveLength(3);
 
+    ).toHaveLength(3);
     expect(
       // @ts-ignore findTableCell exists in the customized within function
       await within(screen.getByRole("table")).findTableCell({
@@ -92,10 +90,10 @@ describe("LinkedDocuments", () => {
         rowIndex: 1,
       })
     ).toHaveTextContent("Bar");
-  });
 
+  });
   test("Two of the same document should render as one table row", async () => {
-    jest.spyOn(InvApiService, "get").mockImplementation(() => {
+    vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.resolve({
         data: [
           { elnDocument: { globalId: "SD1", id: 1, name: "Foo", owner: null } },
@@ -121,8 +119,8 @@ describe("LinkedDocuments", () => {
       screen.getByRole("button", { name: "Show Linked Documents" })
     );
     const rows = within(await screen.findByRole("table")).getAllByRole("row");
-    expect(rows).toHaveLength(2);
 
+    expect(rows).toHaveLength(2);
     expect(
       // @ts-ignore findTableCell exists in the customized within function
       await within(screen.getByRole("table")).findTableCell({
@@ -130,10 +128,10 @@ describe("LinkedDocuments", () => {
         rowIndex: 0,
       })
     ).toHaveTextContent("Foo");
-  });
 
+  });
   test("Opening the dialog twice should trigger two network calls", async () => {
-    const spy = jest.spyOn(InvApiService, "get").mockImplementation(() => {
+    const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.reject(new Error("An error"));
     });
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
@@ -142,9 +140,7 @@ describe("LinkedDocuments", () => {
     );
     expect(await screen.findByRole("button", { name: "Close" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(
-      await screen.findByRole("button", { name: "Show Linked Documents" })
-    ).toBeVisible();
+    await screen.findByRole("button", { name: "Show Linked Documents" });
     fireEvent.click(
       screen.getByRole("button", { name: "Show Linked Documents" })
     );

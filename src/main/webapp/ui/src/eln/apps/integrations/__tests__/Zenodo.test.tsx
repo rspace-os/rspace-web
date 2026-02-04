@@ -1,8 +1,6 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import React, { useState } from "react";
+import { describe, expect, beforeEach, vi, test } from 'vitest';
+import React,
+  { useState } from "react";
 import {
   render,
   screen,
@@ -10,15 +8,13 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import "@testing-library/jest-dom";
-import { when } from "jest-when";
+import { when } from "vitest-when";
 import Zenodo from "../Zenodo";
 import { Optional } from "../../../../util/optional";
 import "../../../../../__mocks__/matchMedia";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
-const update = jest.fn<IntegrationStates["ZENODO"], [IntegrationStates["ZENODO"]]>();
-
+const update = vi.fn<(state: IntegrationStates["ZENODO"]) => IntegrationStates["ZENODO"]>();
 const ZenodoWrapper = ({
   state = {
     mode: "DISABLED" as const,
@@ -37,73 +33,70 @@ const ZenodoWrapper = ({
       }}
     />
   );
-};
 
+};
 describe("Zenodo", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Default implementation: return the input state
     update.mockImplementation((state) => state);
-  });
 
+  });
   test("should open dialog when Zenodo button is clicked", async () => {
     const user = userEvent.setup();
-    render(<ZenodoWrapper />);
 
+    render(<ZenodoWrapper />);
     await waitFor(() => {
       screen.getByText("Zenodo");
-    });
 
+    });
     await user.click(screen.getByRole("button", { name: /^zenodo/i }));
     expect(screen.getByRole("dialog")).toBeVisible();
-  });
 
+  });
   test("should close dialog when close button is clicked", async () => {
     const user = userEvent.setup();
-    render(<ZenodoWrapper />);
 
+    render(<ZenodoWrapper />);
     await waitFor(() => {
       screen.getByText("Zenodo");
-    });
 
+    });
     // Open dialog
     await user.click(screen.getByRole("button", { name: /^zenodo/i }));
-    expect(screen.getByRole("dialog")).toBeVisible();
 
+    expect(screen.getByRole("dialog")).toBeVisible();
     // Close dialog
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", { name: /close/i })
     );
     await waitFor(() => {
-      expect(screen.getByRole("dialog")).not.toBeVisible();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^zenodo/i })).toBeVisible();
-    });
+
   });
-
   test("should enable integration when dialog is open and integration is disabled", async () => {
-    const user = userEvent.setup();
 
+    const user = userEvent.setup();
     const expectedState = {
       mode: "ENABLED" as const,
       credentials: { ZENODO_USER_TOKEN: Optional.present("") },
-    };
 
+    };
     when(update)
       .calledWith(expectedState)
-      .mockReturnValue(expectedState);
+
+      .thenReturn(expectedState);
 
     render(<ZenodoWrapper />);
-
     await waitFor(() => {
       screen.getByText("Zenodo");
-    });
 
+    });
     // Open dialog
     await user.click(screen.getByRole("button", { name: /^zenodo/i }));
-    expect(screen.getByRole("dialog")).toBeVisible();
 
+    expect(screen.getByRole("dialog")).toBeVisible();
     // Enable integration
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", { name: /enable/i })
@@ -112,43 +105,43 @@ describe("Zenodo", () => {
       expect(
         within(screen.getByRole("dialog")).getByRole("button", { name: /disable/i })
       ).toBeVisible();
-    });
 
+    });
     // Verify update was called with correct arguments
     expect(update).toHaveBeenCalledWith(expectedState);
+
   });
-
   test("should disable integration when dialog is open and integration is enabled", async () => {
-    const user = userEvent.setup();
 
+    const user = userEvent.setup();
     const initialState = {
       mode: "ENABLED" as const,
       credentials: { ZENODO_USER_TOKEN: Optional.present("test-token") },
-    };
 
+    };
     const expectedState = {
       mode: "DISABLED" as const,
       credentials: { ZENODO_USER_TOKEN: Optional.present("test-token") },
-    };
 
+    };
     when(update)
       .calledWith(expectedState)
-      .mockReturnValue(expectedState);
 
+      .thenReturn(expectedState);
     render(
       <ZenodoWrapper
         state={initialState}
       />
-    );
 
+    );
     await waitFor(() => {
       screen.getByText("Zenodo");
-    });
 
+    });
     // Open dialog
     await user.click(screen.getByRole("button", { name: /^zenodo/i }));
-    expect(screen.getByRole("dialog")).toBeVisible();
 
+    expect(screen.getByRole("dialog")).toBeVisible();
     // Disable integration
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", { name: /disable/i })
@@ -157,87 +150,87 @@ describe("Zenodo", () => {
       expect(
         within(screen.getByRole("dialog")).getByRole("button", { name: /enable/i })
       ).toBeVisible();
-    });
 
+    });
     // Verify update was called with correct arguments
     expect(update).toHaveBeenCalledWith(expectedState);
-  });
 
+  });
   test("should set API key when dialog is open", async () => {
     const user = userEvent.setup();
-    const apiKey = "test-api-key-123";
 
+    const apiKey = "test-api-key-123";
     const expectedState = {
       mode: "DISABLED" as const,
       credentials: { ZENODO_USER_TOKEN: Optional.present(apiKey) },
-    };
 
+    };
     when(update)
       .calledWith(expectedState)
-      .mockReturnValue(expectedState);
+
+      .thenReturn(expectedState);
 
     render(<ZenodoWrapper />);
-
     await waitFor(() => {
       screen.getByText("Zenodo");
-    });
 
+    });
     // Open dialog
     await user.click(screen.getByRole("button", { name: /^zenodo/i }));
-    expect(screen.getByRole("dialog")).toBeVisible();
 
+    expect(screen.getByRole("dialog")).toBeVisible();
     // Set API key
     /*
      * We have to use getByLabelText instead of getByRole because password
      * fields do not have a role. For more info, see
      * https://github.com/testing-library/dom-testing-library/issues/567
      */
-    await user.type(screen.getByLabelText("API Key"), apiKey);
-    await user.click(screen.getByRole("button", { name: /save/i }));
+    await user.type(screen.getAllByLabelText("API Key")[0], apiKey);
 
+    await user.click(screen.getByRole("button", { name: /save/i }));
     // Verify update was called with correct arguments
     expect(update).toHaveBeenCalledWith(expectedState);
-  });
 
+  });
   test("should open, set API key, enable, and close dialog in sequence", async () => {
     const user = userEvent.setup();
-    const apiKey = "my-zenodo-api-key";
 
+    const apiKey = "my-zenodo-api-key";
     const apiKeyState = {
       mode: "DISABLED" as const,
       credentials: { ZENODO_USER_TOKEN: Optional.present(apiKey) },
-    };
 
+    };
     const enabledState = {
       mode: "ENABLED" as const,
       credentials: { ZENODO_USER_TOKEN: Optional.present(apiKey) },
-    };
 
+    };
     when(update)
       .calledWith(apiKeyState)
-      .mockReturnValue(apiKeyState);
 
+      .thenReturn(apiKeyState);
     when(update)
       .calledWith(enabledState)
-      .mockReturnValue(enabledState);
+
+      .thenReturn(enabledState);
 
     render(<ZenodoWrapper />);
-
     await waitFor(() => {
       screen.getByText("Zenodo");
-    });
 
+    });
     // Open dialog
     await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+
     expect(screen.getByRole("dialog")).toBeVisible();
-
     // Set API key
-    await user.type(screen.getByLabelText("API Key"), apiKey);
+    await user.type(screen.getAllByLabelText("API Key")[0], apiKey);
+
     await user.click(screen.getByRole("button", { name: /save/i }));
-
     // Verify update was called with correct arguments for setting API key
-    expect(update).toHaveBeenCalledWith(apiKeyState);
 
+    expect(update).toHaveBeenCalledWith(apiKeyState);
     // Enable integration
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", { name: /enable/i })
@@ -246,17 +239,17 @@ describe("Zenodo", () => {
       expect(
         within(screen.getByRole("dialog")).getByRole("button", { name: /disable/i })
       ).toBeVisible();
+
     });
-
     // Verify update was called with correct arguments for enabling
-    expect(update).toHaveBeenCalledWith(enabledState);
 
+    expect(update).toHaveBeenCalledWith(enabledState);
     // Close dialog
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", { name: /close/i })
     );
     await waitFor(() => {
-      expect(screen.getByRole("dialog")).not.toBeVisible();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 });

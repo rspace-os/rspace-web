@@ -201,8 +201,6 @@ export default function ExportFileStore({
         planId: ExportPlanId;
       }>(url, { exportConfig, exportSelection, nfsConfig });
 
-      console.log(response);
-
       const fileSystems = response.data.foundFileSystems;
       setFileSystems(fileSystems);
 

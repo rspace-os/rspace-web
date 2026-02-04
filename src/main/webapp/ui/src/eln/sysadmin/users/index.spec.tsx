@@ -8,18 +8,18 @@ import materialTheme from "../../../theme";
 import PDF_CONFIG from "./__tests__/pdfConfig.json";
 import USER_LISTING from "./__tests__/userListing.json";
 import fs from "fs/promises";
-import AxeBuilder from "@axe-core/playwright";
 
+import AxeBuilder from "@axe-core/playwright";
 declare global {
   interface RSGlobal {
     newFileStoresExportEnabled?: boolean;
-  }
 
+  }
   interface Window {
     RS: RSGlobal;
   }
-}
 
+}
 const feature = test.extend<{
   Given: {
     "the sysadmin is on the users page": () => Promise<void>;
@@ -179,13 +179,13 @@ const feature = test.extend<{
       },
       "the usage should be shown in human-readable format": async () => {
         const grid = page.getByRole("grid");
-        await expect(grid).toBeVisible();
 
+        await expect(grid).toBeVisible();
         const columnHeadings = grid.getByRole("columnheader");
         const headings = await columnHeadings.allTextContents();
         const usageIndex = headings.findIndex((heading) => heading === "Usage");
-        expect(usageIndex).toBeGreaterThan(-1);
 
+        expect(usageIndex).toBeGreaterThan(-1);
         await expect(
           grid.getByRole("row").nth(2).getByRole("gridcell").nth(usageIndex),
         ).toHaveText("362.01 kB");
@@ -195,23 +195,24 @@ const feature = test.extend<{
       },
     });
   },
-});
 
+});
 test.beforeEach(async ({ page, router }) => {
   await page.evaluate(() => {
+    // @ts-expect-error RS is legacy
     window.RS = {
       newFileStoresExportEnabled: true,
     };
-  });
 
+  });
   await router.route("/export/ajax/defaultPDFConfig", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify(PDF_CONFIG),
     });
-  });
 
+  });
   await router.route(/system\/ajax\/jsonList.*/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -219,8 +220,8 @@ test.beforeEach(async ({ page, router }) => {
       body: JSON.stringify(USER_LISTING),
     });
   });
-});
 
+});
 test.describe("Table Listing", () => {
   feature(
     "Usage should be in a human-readable format",
@@ -229,8 +230,8 @@ test.describe("Table Listing", () => {
       await Then["the usage should be shown in human-readable format"]();
     },
   );
-});
 
+});
 test.describe("Grant User PI role", () => {
   feature(
     "When `checkVerificationPasswordNeeded` returns true, the message should not be shown.",
@@ -260,8 +261,8 @@ test.describe("Grant User PI role", () => {
       await Then["A request to set a verification password is not shown"]();
     },
   );
-});
 
+});
 test.describe("Accessibility", () => {
   test("Should have no axe violations.", async ({ mount, page }) => {
     await mount(
@@ -270,14 +271,14 @@ test.describe("Accessibility", () => {
           <UsersPage />
         </ThemeProvider>
       </StyledEngineProvider>,
+
     );
-
     // Wait for the table to be loaded
+
     await expect(page.getByRole("table")).toBeVisible();
-
     // Run the accessibility scan
-    const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
 
+    const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
     // Filter out known issues that can't be fixed in component tests
     expect(
       accessibilityScanResults.violations.filter((v) => {
@@ -301,8 +302,8 @@ test.describe("Accessibility", () => {
       }),
     ).toEqual([]);
   });
-});
 
+});
 test.describe("CSV Export", () => {
   test.describe("Selection", () => {
     feature(

@@ -1,4 +1,4 @@
-/* eslint-env jest */
+import { describe, expect, test } from 'vitest';
 import {
   makeBookingAndEquipmentData,
   makeEquipmentWithBookingData,
@@ -8,8 +8,8 @@ import {
 } from "../ClustermarketData";
 import BookingDetails from "./bookingsDetails.json";
 import EquipmentDetails from "./equipmentDetails.json";
-import BookingsList from "./allbookings.json";
 
+import BookingsList from "./allbookings.json";
 const bookingResponses = [
   BookingDetails.COMPLETED_1,
   BookingDetails.CURRENT_2,
@@ -81,8 +81,8 @@ const row4: BookingAndEquipmentDetails = {
   model: "Mass Spec Model",
   equipmentID: 3,
   labID: 11111,
-};
 
+};
 const equipmentRow1: EquipmentWithBookingDetails = {
   equipmentID: "1",
   equipmentName: "Mullis Lab Centrifuge",
@@ -94,8 +94,8 @@ const equipmentRow1: EquipmentWithBookingDetails = {
   start_time: "2022-01-28 07:30:00",
   requesterName: "DBD",
   labID: 11111,
-};
 
+};
 const equipmentRow2: EquipmentWithBookingDetails = {
   equipmentID: "2",
   equipmentName: "Mullis Lab -70 Freezer",
@@ -107,8 +107,8 @@ const equipmentRow2: EquipmentWithBookingDetails = {
   start_time: "",
   requesterName: "",
   labID: 11111,
-};
 
+};
 const equipmentRow3: EquipmentWithBookingDetails = {
   equipmentID: "3",
   equipmentName: "Biochemistry Department Mass Spectrometer",
@@ -132,10 +132,10 @@ const equipmentRow3_maintenance: EquipmentWithBookingDetails = {
   start_time: "",
   requesterName: "",
   labID: 11111,
-};
 
+};
 describe("Bookings view: joins the data from an array of booking details responses and an array of equipment details responses into a booking details view", () => {
-  it(" return an array of structured data", () => {
+  test("return an array of structured data", () => {
     const joinedData = makeBookingAndEquipmentData(
       BookingsList.data,
       bookingResponses,
@@ -147,7 +147,7 @@ describe("Bookings view: joins the data from an array of booking details respons
     expect(joinedData[2]).toStrictEqual(row3);
     expect(joinedData[3]).toStrictEqual(row4);
   });
-  it(" filters maintenance bookings", () => {
+  test("filters maintenance bookings", () => {
     const joinedData = makeBookingAndEquipmentData(
       BookingsList.data,
       bookingResponses,
@@ -157,10 +157,10 @@ describe("Bookings view: joins the data from an array of booking details respons
     expect(joinedData[0]).toStrictEqual(row1);
     expect(joinedData.length).toBe(1);
   });
-});
 
+});
 describe("Equipment view: joins the data from an array of booking details responses and an array of equipment details responses into an equipment details view", () => {
-  it(" return an array of structured data", () => {
+  test("return an array of structured data", () => {
     const joinedData = makeEquipmentWithBookingData(
       BookingsList.data,
       bookingResponses,
@@ -172,7 +172,7 @@ describe("Equipment view: joins the data from an array of booking details respon
     expect(joinedData[2]).toStrictEqual(equipmentRow3);
   });
 
-  it(" filters maintenance bookings", () => {
+  test("filters maintenance bookings", () => {
     const joinedData = makeEquipmentWithBookingData(
       BookingsList.data,
       bookingResponses,
@@ -186,7 +186,7 @@ describe("Equipment view: joins the data from an array of booking details respon
   });
 });
 describe("Get most recent booking for equipment", () => {
-  it(" returns most recent booking when there is one", () => {
+  test("returns most recent booking when there is one", () => {
     const booking = getMostRecentCompletedBooking(
       bookingResponses,
       BookingsList.data,
@@ -194,7 +194,7 @@ describe("Get most recent booking for equipment", () => {
     );
     expect(booking).toStrictEqual(bookingResponses[3]);
   });
-  it(" returns null when no booking matches", () => {
+  test("returns null when no booking matches", () => {
     const booking = getMostRecentCompletedBooking(
       bookingResponses,
       BookingsList.data,
@@ -203,3 +203,4 @@ describe("Get most recent booking for equipment", () => {
     expect(booking).toBeNull();
   });
 });
+

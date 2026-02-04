@@ -10,7 +10,6 @@ import ImportStore from "../../ImportStore";
 import ImageStore from "../../ImageStore";
 import MaterialsStore from "../../MaterialsStore";
 
- 
 export type MockStores = Partial<{ [key in keyof StoreContainer]: object }>;
 
 export const makeMockRootStore = (

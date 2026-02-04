@@ -1,7 +1,7 @@
-/* eslint-env jest */
+import { describe, expect, test } from 'vitest';
 import { calculateProgress, asPercentageString } from "../progress";
-import fc from "fast-check";
 
+import fc from "fast-check";
 describe("progress", () => {
   test("When progress made is 0, the percentage string should be 0%.", () => {
     fc.assert(
@@ -11,8 +11,8 @@ describe("progress", () => {
         expect(asPercentageString(progress)).toEqual("0%");
       })
     );
-  });
 
+  });
   test("When progress made is the same as the total, the percentage string should be 100%.", () => {
     fc.assert(
       fc.property(fc.nat(), (total) => {
@@ -24,8 +24,8 @@ describe("progress", () => {
         expect(asPercentageString(progress)).toEqual("100%");
       })
     );
-  });
 
+  });
   test("When progress made is half the total, the percentage string should be 50%.", () => {
     fc.assert(
       fc.property(fc.nat(), (progressMade) => {
@@ -39,3 +39,4 @@ describe("progress", () => {
     );
   });
 });
+

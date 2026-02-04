@@ -1,10 +1,6 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
 import InitialScreen from "../InitialScreen";
 import Header from "../Header";
 import Sidebar from "../Sidebar";
@@ -12,15 +8,12 @@ import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
-jest.mock("../Header", () => jest.fn(() => <></>));
-jest.mock("../Sidebar", () => jest.fn(() => <></>));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("../Header", () => ({
+  default: vi.fn(() => <></>),
+}));
+vi.mock("../Sidebar", () => ({
+  default: vi.fn(() => <></>),
+}));
 describe("InitialScreen", () => {
   test("Renders correctly", () => {
     render(
@@ -29,8 +22,8 @@ describe("InitialScreen", () => {
           <InitialScreen />
         </BrowserRouter>
       </ThemeProvider>
-    );
 
+    );
     expect(Header).toHaveBeenCalled();
     expect(Sidebar).toHaveBeenCalled();
     expect(screen.getByText("My Bench")).toBeInTheDocument();

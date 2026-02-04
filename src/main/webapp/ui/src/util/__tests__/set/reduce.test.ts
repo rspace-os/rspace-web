@@ -1,10 +1,9 @@
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { monoids } from "../helpers";
 import RsSet from "../../set";
-import { arbRsSet } from "./helpers";
 
+import { arbRsSet } from "./helpers";
 describe("reduce", () => {
   test("Reducing an empty set, by a monoial operation, should give the monoid's identity element.", () => {
     fc.assert(

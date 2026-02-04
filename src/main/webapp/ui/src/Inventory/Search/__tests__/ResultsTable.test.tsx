@@ -1,17 +1,12 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, vi } from 'vitest';
 import "../../../../__mocks__/matchMedia";
 import * as React from "react";
 import {
   render,
-  cleanup,
   screen,
   within,
   waitFor,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import { storesContext } from "../../../stores/stores-context";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
 import ResultsTable from "../ResultsTable";
@@ -23,14 +18,8 @@ import materialTheme from "../../../theme";
 import { containerAttrs } from "../../../stores/models/__tests__/ContainerModel/mocking";
 import ApiServiceBase from "../../../common/ApiServiceBase";
 import MemoisedFactory from "../../../stores/models/Factory/MemoisedFactory";
+
 import { personAttrs } from "../../../stores/models/__tests__/PersonModel/mocking";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("Results Table", () => {
   describe("Pagination", () => {
     test('When there are fewer items than the page size, the page size menu should show the count as "ALL"', async () => {
@@ -38,7 +27,7 @@ describe("Results Table", () => {
         factory: new MemoisedFactory(),
       });
 
-      jest.spyOn(ApiServiceBase.prototype, "query").mockImplementation(
+      vi.spyOn(ApiServiceBase.prototype, "query").mockImplementation(
         () =>
           Promise.resolve({
             data: {
@@ -79,10 +68,10 @@ describe("Results Table", () => {
       );
       await waitFor(() => {
         void search.setupAndPerformInitialSearch({});
+
       });
 
       const rootStore = makeMockRootStore({});
-
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -97,9 +86,10 @@ describe("Results Table", () => {
             </SearchContext.Provider>
           </storesContext.Provider>
         </ThemeProvider>,
-      );
 
+      );
       within(screen.getByRole("navigation")).getByRole("combobox");
     });
   });
 });
+

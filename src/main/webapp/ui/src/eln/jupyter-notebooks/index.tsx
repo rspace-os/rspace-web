@@ -164,5 +164,3 @@ const themes: SyntaxThemeType [] = [
   'xonokai',
 ];
 
-
-

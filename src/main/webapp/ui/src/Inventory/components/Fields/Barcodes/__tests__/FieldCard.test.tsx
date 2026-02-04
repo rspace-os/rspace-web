@@ -1,29 +1,20 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
 import { mockFactory } from "../../../../../stores/definitions/__tests__/Factory/mocking";
 import FieldCard from "../FieldCard";
 import userEvent from "@testing-library/user-event";
 
-jest.mock("../../../../../common/InvApiService", () => {});
-jest.mock("../../../../../stores/stores/RootStore", () => () => ({}));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("../../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../../stores/stores/RootStore", () => ({
+  default: () => ({})
+}));
 describe("FieldCard", () => {
   describe("Has a delete button", () => {
     test("That behaves correctly when tapped when deletedCopy returns an object.", async () => {
       const user = userEvent.setup();
-      const setFieldsDirty = jest.fn();
+      const setFieldsDirty = vi.fn();
       render(
         <FieldCard
           fieldOwner={{
@@ -75,17 +66,17 @@ describe("FieldCard", () => {
           }}
           factory={mockFactory()}
         />
+
       );
 
       await user.click(screen.getByRole("button", { name: "Remove" }));
-
       expect(setFieldsDirty).toHaveBeenCalledWith({
         barcodes: [expect.objectContaining({ deleted: true })],
       });
     });
     test("That behaves correctly when tapped when deletedCopy returns null.", async () => {
       const user = userEvent.setup();
-      const setFieldsDirty = jest.fn();
+      const setFieldsDirty = vi.fn();
       render(
         <FieldCard
           fieldOwner={{
@@ -118,10 +109,10 @@ describe("FieldCard", () => {
           }}
           factory={mockFactory()}
         />
+
       );
 
       await user.click(screen.getByRole("button", { name: "Remove" }));
-
       expect(setFieldsDirty).toHaveBeenCalledWith({
         barcodes: [],
       });
@@ -161,11 +152,12 @@ describe("FieldCard", () => {
           }}
           factory={mockFactory()}
         />
-      );
 
+      );
       expect(
         screen.getByLabelText("Scan a barcode to associate.")
       ).toBeVisible();
     });
   });
 });
+

@@ -45,7 +45,6 @@ const RorErrorHelpText = styled.span`
   background-color: #d9d9d9;
 `;
 
- 
 function RoRIntegration(): React.ReactNode {
   const [ror, setRor] = useState<string>("");
   const [candidateRor, setCandidateRor] = useState<string>("");
@@ -165,13 +164,15 @@ function RoRIntegration(): React.ReactNode {
 
   const getCityCountryAddressesFromRoRDetails = () => {
     if (rorDetails) {
-      return rorDetails.locations.map((location) => {
+      return rorDetails.locations.map((location, index) => {
         const cityCountry =
           location.geonames_details.name +
           ", " +
           location.geonames_details.country_name;
         return (
-          <RorDetails>
+          <RorDetails
+            key={`${location.geonames_details.name}-${location.geonames_details.country_name}-${index}`}
+          >
             <h5>{cityCountry}</h5>
           </RorDetails>
         );
@@ -181,10 +182,10 @@ function RoRIntegration(): React.ReactNode {
 
   const getLinksFromRoRDetails = () => {
     if (rorDetails && "locations" in rorDetails) {
-      return rorDetails.links.map((link) => {
+      return rorDetails.links.map((link, index) => {
         //v2 api
         return (
-          <RorDetails>
+          <RorDetails key={`${link.value}-${index}`}>
             <h5>
               <a target="_blank" rel="noreferrer" href={link.value}>
                 {link.value}

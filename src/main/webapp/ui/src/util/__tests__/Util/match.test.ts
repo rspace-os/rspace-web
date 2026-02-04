@@ -1,19 +1,15 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
+
 import fc from "fast-check";
 
 import { match } from "../../Util";
-
 const stringMatcher: (str?: string | null) => number | null = match([
   [(s) => s === "one", 1],
   [(s) => s === "two", 2],
   [(s) => s === "", 0],
   [() => true, null],
-]);
 
+]);
 describe("match util", () => {
   describe("When passed an array of options (pairs)", () => {
     test("if input matches, then the paired output should be returned.", () => {
@@ -23,8 +19,8 @@ describe("match util", () => {
       expect(stringMatcher("x")).toBeNull();
       expect(stringMatcher()).toBeNull();
     });
-  });
 
+  });
   test("Has the same short-circuit behaviour as logical OR.", () => {
     fc.assert(
       fc.property(fc.array<unknown>(fc.anything()), (list) => {
@@ -42,3 +38,4 @@ describe("match util", () => {
     );
   });
 });
+

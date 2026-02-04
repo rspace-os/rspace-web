@@ -1,10 +1,7 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
-import * as ArrayUtils from "../../ArrayUtils";
 
+import * as ArrayUtils from "../../ArrayUtils";
 describe("partition", () => {
   test("If the predicate always returns true, then the second array is empty.", () => {
     fc.assert(
@@ -13,8 +10,8 @@ describe("partition", () => {
         expect(no.length).toBe(0);
       })
     );
-  });
 
+  });
   test("If the predicate always returns false, then the first array is empty.", () => {
     fc.assert(
       fc.property(fc.array(fc.anything()), (list) => {
@@ -22,8 +19,8 @@ describe("partition", () => {
         expect(yes.length).toBe(0);
       })
     );
-  });
 
+  });
   test("The size of the two resulting arrays will always sum to the size of the input array.", () => {
     fc.assert(
       fc.property(
@@ -35,8 +32,8 @@ describe("partition", () => {
         }
       )
     );
-  });
 
+  });
   test("Partition distributes over concatenation.", () => {
     fc.assert(
       fc.property(
@@ -55,8 +52,8 @@ describe("partition", () => {
         }
       )
     );
-  });
 
+  });
   test("Order is maintained.", () => {
     fc.assert(
       fc.property(
@@ -74,3 +71,4 @@ describe("partition", () => {
     );
   });
 });
+

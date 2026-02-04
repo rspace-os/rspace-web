@@ -1,9 +1,8 @@
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { arbRsSet } from "./helpers";
-import RsSet from "../../set";
 
+import RsSet from "../../set";
 describe("union", () => {
   test("Idempotence", () => {
     fc.assert(

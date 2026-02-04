@@ -39,7 +39,7 @@ export default function GoogleLoginProvider(): React.ReactNode {
 
           loadScript()
             .then(() => {
-               
+
               console.log(
                 "Script loaded successfully, logout will now log the user out of google provided login",
               );

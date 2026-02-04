@@ -1,11 +1,11 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { cleanup, screen, waitFor, fireEvent } from "@testing-library/react";
+import {
+  screen,
+  waitFor,
+  fireEvent,
+} from "@testing-library/react";
 import { action, observable } from "mobx";
-import "@testing-library/jest-dom";
 import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import MoveDialog from "../MoveDialog";
@@ -13,8 +13,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import Search from "../../../../stores/models/Search";
-import Dialog from "@mui/material/Dialog";
 import "__mocks__/matchMedia";
+import Dialog from "@mui/material/Dialog";
 import {
   makeMockSubSample,
   subSampleAttrsArbitrary,
@@ -26,22 +26,25 @@ import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import userEvent from "@testing-library/user-event";
 import { render, within } from "../../../../__tests__/customQueries";
 
-jest.mock("../../../Search/SearchView", () => jest.fn(() => <></>));
-jest.mock("@mui/material/Dialog", () =>
-  jest.fn(({ children }) => <>{children}</>)
-);
-jest.mock("../../../../components/Inputs/DateField", () => <></>);
-jest.mock("../../../../components/Inputs/TimeField", () => <></>);
-
+vi.mock("../../../Search/SearchView", () => ({
+  default: vi.fn(() => <></>),
+}));
+vi.mock("@mui/material/Dialog", () => ({
+  default: vi.fn(({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  )),
+}));
+vi.mock("../../../../components/Inputs/DateField", () => ({
+  default: () => <></>,
+}));
+vi.mock("../../../../components/Inputs/TimeField", () => ({
+  default: () => <></>,
+}));
 // this is because the Search component renders hidden "Cancel" buttons
-jest.mock("../../../Search/Search", () => jest.fn(() => <></>));
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("../../../Search/Search", () => ({
+  default: vi.fn(() => <></>),
+}));
 describe("MoveDialog", () => {
   test("When cancel is pressed, the dialog should close.", async () => {
     const user = userEvent.setup();
@@ -68,23 +71,23 @@ describe("MoveDialog", () => {
           getBaskets: () => {},
         },
       })
-    );
 
+    );
     render(
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={rootStore}>
           <MoveDialog />
         </storesContext.Provider>
       </ThemeProvider>
-    );
 
+    );
     expect(Dialog).toHaveBeenCalledWith(
       expect.objectContaining({ open: true }),
       expect.anything()
+
     );
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
-
     await waitFor(() => {
       expect(rootStore.moveStore.isMoving).toBe(false);
     });
@@ -92,8 +95,8 @@ describe("MoveDialog", () => {
       expect.objectContaining({ open: false }),
       expect.anything()
     );
-  });
 
+  });
   test("Table hidden in header should list all selectedResults", () => {
     fc.assert(
       fc
@@ -105,8 +108,8 @@ describe("MoveDialog", () => {
             // this check prevents the non-unique react key warning
             fc.pre(
               ArrayUtils.allAreUnique(selectedResults.map((r) => r.globalId))
-            );
 
+            );
             const rootStore: StoreContainer = makeMockRootStore(
               observable({
                 moveStore: {
@@ -130,35 +133,35 @@ describe("MoveDialog", () => {
                   getBaskets: () => {},
                 },
               })
-            );
 
+            );
             render(
               <ThemeProvider theme={materialTheme}>
                 <storesContext.Provider value={rootStore}>
                   <MoveDialog />
                 </storesContext.Provider>
               </ThemeProvider>
-            );
 
+            );
             fireEvent.click(
               screen.getByRole("button", { name: "Show items being moved" })
-            );
 
+            );
             expect(
               within(screen.getByRole("table")).getAllByRole("row").length
+
             ).toBe(selectedResults.length + 1);
-
             const table = screen.getByRole("table");
+
             const [headerRow, ...bodyRows] = within(table).getAllByRole("row");
-
             const indexOfNameColumn =
-              // @ts-expect-error TS does not recognise the jest.extend
-              within(headerRow).getIndexOfTableCell("Name");
+              // @ts-expect-error TS does not recognise the vi.extend
 
+              within(headerRow).getIndexOfTableCell("Name");
             const allNameCells = bodyRows.map(
               (row) => within(row).getAllByRole("cell")[indexOfNameColumn]
-            );
 
+            );
             expect(
               selectedResults.every((r) =>
                 allNameCells.some((cell) => cell.textContent === r.name)
@@ -166,7 +169,7 @@ describe("MoveDialog", () => {
             ).toBe(true);
           }
         )
-        .afterEach(cleanup),
+,
       { numRuns: 1 }
     );
   });

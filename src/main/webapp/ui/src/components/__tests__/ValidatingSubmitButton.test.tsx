@@ -1,26 +1,19 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import ValidatingSubmitButton from "../ValidatingSubmitButton";
 import Result from "../../util/result";
 import "../../../__mocks__/matchMedia";
-import each from "jest-each";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../theme";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("ValidatingSubmitButton", () => {
   test("When validationResult is OK and the button is tapped, onClick should be called.", () => {
-    const onClick = jest.fn();
+    const onClick = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
         <ValidatingSubmitButton
@@ -36,7 +29,7 @@ describe("ValidatingSubmitButton", () => {
     expect(onClick).toHaveBeenCalled();
   });
   test("When validationResult is Error and the button is tapped, onClick should not be called.", () => {
-    const onClick = jest.fn();
+    const onClick = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
         <ValidatingSubmitButton
@@ -68,7 +61,7 @@ describe("ValidatingSubmitButton", () => {
     expect(alert).toBeVisible();
     expect(alert).toHaveTextContent("test");
   });
-  each([Result.Ok(null), Result.Error<null>([new Error("test")])]).test(
+  test.each([Result.Ok(null), Result.Error<null>([new Error("test")])])(
     "When loading is true and validationResult is %s, the button should be disabled.",
     (validationResult: Result<null>) => {
       render(
@@ -85,3 +78,4 @@ describe("ValidatingSubmitButton", () => {
     }
   );
 });
+

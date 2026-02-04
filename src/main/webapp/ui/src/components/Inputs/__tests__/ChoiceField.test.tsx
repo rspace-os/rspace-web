@@ -1,25 +1,21 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
- 
+
+import {
+  describe,
+  expect,
+  afterEach,
+  test,
+  vi,
+} from "vitest";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import ChoiceField from "../ChoiceField";
 import Checkbox from "@mui/material/Checkbox";
-import each from "jest-each";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 
-jest.mock("@mui/material/Checkbox", () => jest.fn(() => <div></div>));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("@mui/material/Checkbox", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 const renderChoiceField = (props: {
   disabled?: boolean;
   hideWhenDisabled?: boolean;
@@ -37,8 +33,8 @@ const renderChoiceField = (props: {
         {...props}
       />
     </ThemeProvider>
-  );
 
+  );
 const expectAllOptionsAreShown = () => {
   expect(Checkbox).toHaveBeenCalledTimes(2);
   expect(Checkbox).toHaveBeenCalledWith(
@@ -53,12 +49,12 @@ const expectAllOptionsAreShown = () => {
     }),
     expect.anything()
   );
-};
 
+};
 const expectNoOptions = () => {
   expect(Checkbox).not.toHaveBeenCalled();
-};
 
+};
 const expectJustFoo = () => {
   expect(Checkbox).toHaveBeenCalledTimes(1);
   expect(Checkbox).toHaveBeenCalledWith(
@@ -67,11 +63,14 @@ const expectJustFoo = () => {
     }),
     expect.anything()
   );
-};
 
+};
 describe("ChoiceField", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
   describe("Renders correctly", () => {
-    each`
+    test.each`
       disabled     | hideWhenDisabled | value      | expectFn
       ${true}      | ${true}          | ${[]}      | ${expectNoOptions}
       ${true}      | ${true}          | ${["foo"]} | ${expectJustFoo}
@@ -91,7 +90,7 @@ describe("ChoiceField", () => {
       ${undefined} | ${false}         | ${["foo"]} | ${expectAllOptionsAreShown}
       ${undefined} | ${undefined}     | ${[]}      | ${expectAllOptionsAreShown}
       ${undefined} | ${undefined}     | ${["foo"]} | ${expectAllOptionsAreShown}
-    `.test(
+    `(
       "{disabled = $disabled, hideWhenDisabled = $hideWhenDisabled, value = $value}",
       ({
         disabled,
@@ -110,3 +109,4 @@ describe("ChoiceField", () => {
     );
   });
 });
+

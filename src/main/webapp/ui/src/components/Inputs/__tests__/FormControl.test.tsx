@@ -1,24 +1,18 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, afterEach, vi } from 'vitest';
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import FormLabel from "@mui/material/FormLabel";
 import FormControl from "../FormControl";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 
-jest.mock("@mui/material/FormLabel", () => jest.fn(() => <div></div>));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("@mui/material/FormLabel", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 describe("FormControl", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
   describe("Label correctly", () => {
     test("FormLabel is rendered when label is passed.", () => {
       render(
@@ -27,8 +21,8 @@ describe("FormControl", () => {
             <div></div>
           </FormControl>
         </ThemeProvider>,
-      );
 
+      );
       expect(FormLabel).toHaveBeenCalledWith(
         expect.objectContaining({
           children: expect.objectContaining({
@@ -47,9 +41,10 @@ describe("FormControl", () => {
             <div></div>
           </FormControl>
         </ThemeProvider>,
-      );
 
+      );
       expect(FormLabel).not.toHaveBeenCalled();
     });
   });
 });
+

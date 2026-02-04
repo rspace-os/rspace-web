@@ -94,7 +94,7 @@ function UsedQuantityField({
       datatestid={`material-additional-quantity-${globalId}`}
       disabled={!material.selected || mixedSelectedCategories}
       value={getNumericValue()}
-       
+
       autoFocus
       onChange={({ target }) => {
         onChangeValue(parseFloat(target.value));

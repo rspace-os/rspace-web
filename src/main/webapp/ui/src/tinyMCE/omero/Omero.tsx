@@ -596,6 +596,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     item: OmeroItem,
   ): Array<React.ReactElement> => {
     return annotations.map((annotation, index) => {
+      const annotationId = `${item.type}_annotation_${item.id}_${index}`;
       annotation = annotation.replaceAll(
         "Screen Description",
         "Screen Description - ",
@@ -625,29 +626,24 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       publicationTitle = 'Publication Title: "' + publicationTitle + '"';
       const restOfText = annotation.substring(originalText.length);
       return annotation.indexOf("Publication Title") !== -1 ? (
-        <>
-          {" "}
-          <dl>
-            <dt
-              id={`${item.type}_first_description_${item.id}`}
-              className={classes.firstDescription}
-            >
-              {" "}
-              {publicationTitle}
-            </dt>
-            <dt
-              id={`${item.type}_rest_description_${item.id}`}
-              className={classes.restOfDescription}
-            >
-              {" "}
-              {restOfText}
-            </dt>
-          </dl>
-        </>
+        <div key={annotationId}>
+          <div
+            id={`${item.type}_first_description_${item.id}`}
+            className={classes.firstDescription}
+          >
+            {publicationTitle}
+          </div>
+          <div
+            id={`${item.type}_rest_description_${item.id}`}
+            className={classes.restOfDescription}
+          >
+            {restOfText}
+          </div>
+        </div>
       ) : (
-        <li data-testid={`${item.type}_annotation_${item.id}_${index}`}>
+        <div key={annotationId} data-testid={annotationId}>
           {annotation}
-        </li>
+        </div>
       );
     });
   };

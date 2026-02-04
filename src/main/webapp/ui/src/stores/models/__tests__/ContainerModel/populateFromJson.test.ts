@@ -1,25 +1,22 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { test, describe, expect, vi } from 'vitest';
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
 import { containerAttrs } from "./mocking";
 
-jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
-
+vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({})
+}));
 describe("action: populateFromJson", () => {
   describe("When called, it should", () => {
     test("not use the factory with which it was instantiated.", () => {
       const factory = mockFactory();
-      const newRecordSpy = jest
+      const newRecordSpy = vi
         .spyOn(factory, "newRecord")
         .mockImplementation(
           (attrs) => new ContainerModel(factory, attrs as ContainerAttrs)
-        );
 
+        );
       const attrs = (): ContainerAttrs => ({
         ...containerAttrs(),
         locations: [
@@ -30,16 +27,17 @@ describe("action: populateFromJson", () => {
             content: containerAttrs({ id: 1, globalId: "IC1" }),
           },
         ],
-      });
 
+      });
       const container = factory.newRecord(attrs());
+
       expect(newRecordSpy).toHaveBeenCalled();
 
       newRecordSpy.mockClear();
 
       container.populateFromJson(mockFactory(), attrs(), undefined);
-
       expect(newRecordSpy).not.toHaveBeenCalled();
     });
   });
 });
+

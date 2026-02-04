@@ -1,33 +1,25 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
 import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mocking";
 import CustomField from "../CustomField";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import userEvent from "@testing-library/user-event";
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
+})
 }));
-jest.mock("../../../../components/Ketcher/KetcherDialog", () =>
-  jest.fn(() => <div></div>)
-);
+vi.mock("../../../../components/Ketcher/KetcherDialog", () => ({
+  default: vi.fn(() => <div></div>),
 
-afterEach(cleanup);
-
+}));
 describe("CustomField", () => {
   describe("Should be able to delete the field", () => {
     test("Keep field in existing samples", async () => {
@@ -39,8 +31,8 @@ describe("CustomField", () => {
         },
         selectedOptions: ["foo"],
       });
-      const onRemove = jest.fn();
 
+      const onRemove = vi.fn();
       render(
         <ThemeProvider theme={materialTheme}>
           <CustomField
@@ -53,8 +45,8 @@ describe("CustomField", () => {
             onMove={() => {}}
           />
         </ThemeProvider>
-      );
 
+      );
       await user.click(screen.getByRole("button", { name: "Delete field" }));
       await user.click(
         screen.getByRole("menuitem", { name: "Keep field in existing samples" })
@@ -70,8 +62,8 @@ describe("CustomField", () => {
         },
         selectedOptions: ["foo"],
       });
-      const onRemove = jest.fn();
 
+      const onRemove = vi.fn();
       render(
         <ThemeProvider theme={materialTheme}>
           <CustomField
@@ -84,8 +76,8 @@ describe("CustomField", () => {
             onMove={() => {}}
           />
         </ThemeProvider>
-      );
 
+      );
       await user.click(screen.getByRole("button", { name: "Delete field" }));
       await user.click(
         screen.getByRole("menuitem", {
@@ -96,3 +88,4 @@ describe("CustomField", () => {
     });
   });
 });
+

@@ -1,29 +1,28 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import React from "react";
 import { DeploymentPropertyContext } from "../../hooks/api/useDeploymentProperty";
-import { render, cleanup, screen, act } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  screen,
+  act,
+} from "@testing-library/react";
 import FormatChoice from "../FormatChoice";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
+
 import { mkValidator } from "../../util/Validator";
 
 const mockAxios = new MockAdapter(axios);
-
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
+  mockAxios.reset();
+
 });
-
-afterEach(cleanup);
-
 describe("FormatChoice", () => {
   describe("Repository switch", () => {
     test("When the repo/uiConfig endpoint returns an empty list, the switch should be disabled.", async () => {
-      mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, []);
 
+      mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, []);
       render(
         <FormatChoice
           exportSelection={{
@@ -41,15 +40,15 @@ describe("FormatChoice", () => {
           updateFileStores={() => {}}
           validator={mkValidator()}
         />,
-      );
 
+      );
       expect(
         await screen.findByRole("checkbox", {
           name: "You have not setup a repository, to do so please activate them within Apps",
         }),
       ).toBeDisabled();
-    });
 
+    });
     test("When the repo/uiConfig endpoint returns a repository, the switch should be enabled.", async () => {
       mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, [
         {
@@ -81,8 +80,8 @@ describe("FormatChoice", () => {
           },
           displayName: "Zenodo",
         },
-      ]);
 
+      ]);
       render(
         <FormatChoice
           exportSelection={{
@@ -100,14 +99,14 @@ describe("FormatChoice", () => {
           updateFileStores={() => {}}
           validator={mkValidator()}
         />,
-      );
 
+      );
       expect(
         await screen.findByRole("checkbox", { name: "Export to a repository" }),
       ).toBeEnabled();
     });
-  });
 
+  });
   describe("Export as Word .doc is dependent on the document conversion lib aspose.", () => {
     test("When aspose is enabled, .doc export option is available", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
@@ -132,12 +131,12 @@ describe("FormatChoice", () => {
             />
           </DeploymentPropertyContext.Provider>,
         ),
-      );
 
+      );
       const wordElement = screen.getByText(".DOC file");
       expect(wordElement).toBeInTheDocument();
-    });
 
+    });
     test("When aspose is disabled, .doc export option isn't present", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, false);
       await act(() =>
@@ -161,13 +160,13 @@ describe("FormatChoice", () => {
             />
           </DeploymentPropertyContext.Provider>,
         ),
-      );
 
+      );
       const wordElement = screen.queryAllByText(".DOC file");
       expect(wordElement.length).toBe(0);
     });
-  });
 
+  });
   /*
    * There are various conditions that must be met for the export to a Word
    * file to be allowed, with each condition displaying a justification when it
@@ -197,15 +196,15 @@ describe("FormatChoice", () => {
             />
           </DeploymentPropertyContext.Provider>,
         ),
-      );
 
+      );
       expect(
         screen.getByRole("radio", {
           name: ".DOC file Word export is only available for a single document, and you have selected more than one.",
         }),
       ).toBeDisabled();
-    });
 
+    });
     test("When the selected document is a folder, .doc export should be denied.", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
@@ -229,15 +228,15 @@ describe("FormatChoice", () => {
             />
           </DeploymentPropertyContext.Provider>,
         ),
-      );
 
+      );
       expect(
         screen.getByRole("radio", {
           name: ".DOC file Word export is only available for a single document, and you've selected a folder.",
         }),
       ).toBeDisabled();
-    });
 
+    });
     test("When the selected document is a notebook, .doc export should be denied.", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
@@ -261,15 +260,15 @@ describe("FormatChoice", () => {
             />
           </DeploymentPropertyContext.Provider>,
         ),
-      );
 
+      );
       expect(
         screen.getByRole("radio", {
           name: ".DOC file Word export is only available for a single document or notebook entry, and you've selected a Notebook.",
         }),
       ).toBeDisabled();
-    });
 
+    });
     test("When the selected document is a media file, .doc export should be denied.", async () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
@@ -293,8 +292,8 @@ describe("FormatChoice", () => {
             />
           </DeploymentPropertyContext.Provider>,
         ),
-      );
 
+      );
       expect(
         screen.getAllByRole("radio", {
           name: ".DOC file All selected items are attachments — there are no RSpace documents to export.",
@@ -323,8 +322,8 @@ describe("FormatChoice", () => {
             validator={mkValidator()}
           />,
         ),
-      );
 
+      );
       expect(
         screen.getAllByRole("radio", {
           name: "PDF file All selected items are attachments — there are no RSpace documents to export.",
@@ -334,3 +333,4 @@ describe("FormatChoice", () => {
     });
   });
 });
+

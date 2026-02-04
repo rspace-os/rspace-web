@@ -1,6 +1,6 @@
-/* eslint-env jest */
-import Result from "../../result";
+import { describe, expect, test } from 'vitest';
 
+import Result from "../../result";
 describe("all", () => {
   test("A single OK, should be wrapped in an array.", () => {
     const actual = Result.all(Result.Ok("foo"));
@@ -84,3 +84,4 @@ describe("all", () => {
     });
   });
 });
+

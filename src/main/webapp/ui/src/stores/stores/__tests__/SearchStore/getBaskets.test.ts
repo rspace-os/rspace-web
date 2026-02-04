@@ -1,11 +1,8 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test, vi } from 'vitest';
 import getRootStore from "../../RootStore";
 
-jest.mock("../../../../common/InvApiService", () => ({
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
   get: (endpoint: string) => {
     if (endpoint === "baskets") {
       return Promise.resolve({
@@ -22,8 +19,8 @@ jest.mock("../../../../common/InvApiService", () => ({
     }
     throw new Error(`Should not be calling endpoint: "${endpoint}".`);
   },
-}));
 
+  }}));
 describe("getBaskets", () => {
   test("Initialises basket objects correctly.", async () => {
     const { searchStore } = getRootStore();
@@ -31,3 +28,4 @@ describe("getBaskets", () => {
     expect(searchStore.savedBaskets.length).toBe(1);
   });
 });
+

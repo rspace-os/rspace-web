@@ -1,16 +1,15 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test, vi } from 'vitest';
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import Search from "../../Search";
 import RsSet from "../../../../util/set";
 import { makeMockContainer } from "../ContainerModel/mocking";
 
-jest.mock("../../../../common/InvApiService", () => ({})); // break import cycle
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
-
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  }})); // break import cycle
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({})
+}));
 describe("batchEditableInstance", () => {
   describe("Submittable", () => {
     test("CurrentlyEditableFields is checked.", async () => {
@@ -24,13 +23,13 @@ describe("batchEditableInstance", () => {
           globalId: "IC2",
         }),
       ];
-      await search.enableBatchEditing(new RsSet(containers));
 
+      await search.enableBatchEditing(new RsSet(containers));
       containers.forEach((container) => {
         container.setFieldEditable("name", true);
       });
-      expect(search.batchEditableInstance.submittable.isOk).toBe(true);
 
+      expect(search.batchEditableInstance.submittable.isOk).toBe(true);
       containers.forEach((container) => {
         container.setFieldEditable("name", false);
       });
@@ -38,3 +37,4 @@ describe("batchEditableInstance", () => {
     });
   });
 });
+

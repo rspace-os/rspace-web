@@ -1,12 +1,10 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { describe, expect, test, vi } from 'vitest';
 import { makeMockContainer } from "./mocking";
 
-jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../stores/RootStore", () => () => ({}));
-
+vi.mock("../../../use-stores", () => () => {});
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({})
+}));
 describe("computed: availableLocations", () => {
   test("List containers have infinite capacity.", () => {
     const container = makeMockContainer({ cType: "LIST" });
@@ -14,8 +12,8 @@ describe("computed: availableLocations", () => {
       isAccessible: true,
       value: Infinity,
     });
-  });
 
+  });
   /*
    * Empty grid and visual containers should report the locationsCount, as
    * provided by the API, as the basis for the number of available spaces.
@@ -36,8 +34,8 @@ describe("computed: availableLocations", () => {
         isAccessible: true,
         value: 7,
       });
-    });
 
+    });
     test("Empty visual containers return locationsCount, ignoring existance of locationsImage.", () => {
       const container = makeMockContainer({
         cType: "IMAGE",
@@ -49,8 +47,8 @@ describe("computed: availableLocations", () => {
         value: 7,
       });
     });
-  });
 
+  });
   /*
    * Containers which have some contents should correctly subtract that from
    * the locationsCount.
@@ -74,3 +72,4 @@ describe("computed: availableLocations", () => {
     });
   });
 });
+

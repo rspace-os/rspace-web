@@ -1,34 +1,23 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
- 
+
+import { describe, expect, test } from "vitest";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
-import each from "jest-each";
+import { render } from "@testing-library/react";
 import InputWrapper from "../InputWrapper";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../theme";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 const expectText = (text: string) => (container: Element) => {
   expect(container).toHaveTextContent("Nothing here" + text);
-};
 
+};
 const expectNothing = expectText("");
 const expectHelpText = expectText("help");
 const expectCounter = expectText("3 / 2");
-const expectCountError = expectText("No more than 2 characters permitted.");
 
+const expectCountError = expectText("No more than 2 characters permitted.");
 describe("InputWrapper", () => {
   describe("Renders correctly", () => {
-    each`
+    test.each`
       disabled     | maxLength    | error        | value        | helperText   | expectFn
       ${undefined} | ${undefined} | ${undefined} | ${undefined} | ${undefined} | ${expectNothing}
       ${undefined} | ${undefined} | ${undefined} | ${undefined} | ${null}      | ${expectNothing}
@@ -138,7 +127,7 @@ describe("InputWrapper", () => {
       ${true}      | ${2}         | ${true}      | ${"foo"}     | ${undefined} | ${expectNothing}
       ${true}      | ${2}         | ${true}      | ${"foo"}     | ${null}      | ${expectNothing}
       ${true}      | ${2}         | ${true}      | ${"foo"}     | ${"help"}    | ${expectHelpText}
-    `.test(
+    `(
       "{disabled = $disabled, maxLength = $maxLength, error = $error, value = $value, helperText = $helperText}",
       ({
         disabled,
@@ -173,3 +162,4 @@ describe("InputWrapper", () => {
     );
   });
 });
+

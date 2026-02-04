@@ -1,19 +1,14 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  cleanup,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import ContextMenuAction from "../ContextMenuAction";
+
 import fc from "fast-check";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 function OuterComponent({
   onKeyDown,
   children,
@@ -22,15 +17,15 @@ function OuterComponent({
   children: React.ReactNode;
 }) {
   return <div onKeyDown={onKeyDown}>{children}</div>;
-}
 
+}
 function InnerComponent() {
   return <input />;
-}
 
+}
 describe("ContextMenuAction", () => {
   test("When as a menuitem, keyDown events should not propagated through ContextMenuAction", async () => {
-    const onKeyDown = jest.fn();
+    const onKeyDown = vi.fn();
     render(
       <OuterComponent onKeyDown={onKeyDown}>
         <ContextMenuAction
@@ -43,14 +38,14 @@ describe("ContextMenuAction", () => {
           <InnerComponent />
         </ContextMenuAction>
       </OuterComponent>
+
     );
-
     const input = await screen.findByRole("textbox");
+
     fireEvent.keyDown(input, {});
-
     expect(onKeyDown).not.toHaveBeenCalled();
-  });
 
+  });
   describe("Disabled state", () => {
     test("When disabled, should render aria-disabled.", () => {
       fc.assert(
@@ -73,3 +68,4 @@ describe("ContextMenuAction", () => {
     });
   });
 });
+

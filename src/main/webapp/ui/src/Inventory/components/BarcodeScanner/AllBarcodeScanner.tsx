@@ -66,7 +66,7 @@ export default function AllBarcodeScanner({
 
   /* check for API support in browser, init browser's BarcodeDetector */
   if ("BarcodeDetector" in window) {
-     
+
     barcodeDetector = new window.BarcodeDetector({
       formats: supportedFormats,
     });

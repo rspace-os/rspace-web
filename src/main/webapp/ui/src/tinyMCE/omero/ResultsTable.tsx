@@ -1,3 +1,4 @@
+
 import React, { type ComponentType, forwardRef } from "react";
 import { FormControlLabel, TableContainer } from "@mui/material";
 import Table from "@mui/material/Table";
@@ -229,6 +230,27 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
     ref
   ) => {
     const { classes } = useStyles();
+    const renderWells = (
+      wells:
+        | OmeroItem["imageGridDetails"][number][number][number]
+        | Array<OmeroItem["imageGridDetails"][number][number][number]>,
+      rowIndex: number,
+      columnIndex: number,
+    ) => {
+      const items = Array.isArray(wells) ? wells : [wells];
+      return items.map((well, wellIndex) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const key: string =
+          React.isValidElement(well) && well.key !== null
+            ? well.key
+            : // @ts-expect-error Fix this later
+              React.isValidElement(well) && well.props["data-testid"]
+              ? // @ts-expect-error Fix this later
+                well.props["data-testid"]
+              : `${rowIndex}-${columnIndex}-${wellIndex}`;
+        return <React.Fragment key={key}>{well}</React.Fragment>;
+      });
+    };
 
     function handleRequestSort(
       event: React.MouseEvent<HTMLSpanElement>,
@@ -392,236 +414,218 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                           {cell.id === "description" &&
                           item.imageGridDetails ? (
                             <>
-                              {item.imageGridDetails.map((wellList) =>
-                                wellList.map((wells) => (
+                              {item.imageGridDetails.map((wellList, rowIndex) =>
+                                wellList.map((wells, columnIndex) => (
                                   <div
-                                    key={
-                                      // @ts-expect-error TS can't reason about this
-                                      wells[0].props["data-testid"]
-                                    }
+                                    key={`${rowIndex}-${columnIndex}`}
                                   >
-                                    {wells}
+                                    {renderWells(wells, rowIndex, columnIndex)}
                                   </div>
                                 ))
                               )}
-                              <dt className={classes.nameText}>{item.paths}</dt>
+                              <div className={classes.nameText}>
+                                {item.paths}
+                              </div>
                             </>
                           ) : cell.id === "path" ? (
-                            <>
-                              <dl>
-                                <dt
-                                  id={`${item.type}_name_display_${item.id}`}
-                                  data-testid={`${item.type}_name_display_${item.id}`}
-                                  className={classes.nameText}
-                                >
-                                  {item.name}
-                                </dt>
-                                {item.displayType ? (
-                                  <dt className={classes.boldText}>
-                                    {item.displayType}
-                                  </dt>
-                                ) : (
-                                  <dt className={classes.boldText}>
-                                    {item.type}
-                                  </dt>
-                                )}
-                                <dt>
-                                  {" "}
-                                  {item.fetched ? (
-                                    <dt
-                                      id={`${item.type}_details_fetched_${item.id}`}
-                                      className={classes.boldText}
-                                    >
-                                      details fetched
-                                    </dt>
-                                  ) : (
-                                    <a
-                                      id={`${item.type}_fetch_details_${item.id}`}
-                                      data-testid={`${item.type}_fetch_details_${item.id}`}
-                                      href={
-                                        "#" +
-                                        `${item.type}_name_display_${item.id}`
-                                      }
-                                      onClick={() => {
-                                        void addDetailsToItem(item);
-                                        item.fetched = true;
-                                      }}
-                                    >
-                                      {item.type === "image" ? (
-                                        <dt>re-draw image</dt>
-                                      ) : (
-                                        <dt>fetch details</dt>
-                                      )}
-                                    </a>
-                                  )}
-                                  {item.gridShown ? (
-                                    <a
-                                      id={`${item.type}_hide_grid_${item.id}`}
-                                      data-testid={`${item.type}_hide_grid_${item.id}`}
-                                      href={
-                                        "#" +
-                                        `${item.type}_name_display_${item.id}`
-                                      }
-                                      onClick={() => {
-                                        hideChildren(item, true);
-                                      }}
-                                    >
-                                      hide image grid{" "}
-                                      {item.samplesUrls &&
-                                      item.samplesUrls.length > 1
-                                        ? " (there are other fields)"
-                                        : ""}
-                                    </a>
-                                  ) : item.type === "plateAcquisition" ? (
-                                    <>
-                                      {item.samplesUrls?.map((url, pos) => (
-                                        <React.Fragment key={pos}>
-                                          <a
-                                            href={
-                                              "#" +
-                                              `${item.type}_name_display_${item.id}`
-                                            }
-                                            onClick={() => {
-                                              void addGridOfThumbnailsToItem(
-                                                item,
-                                                pos
-                                              );
-                                            }}
-                                          >
-                                            <dt
-                                              id={`${item.type}_show_grid_${item.id}`}
-                                              data-testid={`${item.type}_show_grid_${item.id}`}
-                                              className={classes.boldText}
-                                            >
-                                              show grid of wells for field{" "}
-                                              {pos + 1}
-                                            </dt>
-                                          </a>
-                                        </React.Fragment>
-                                      ))}
-                                    </>
-                                  ) : item.type === "dataset" ? (
-                                    <>
-                                      <a
-                                        href={
-                                          "#" +
-                                          `${item.type}_name_display_${item.id}`
-                                        }
-                                        onClick={() => {
-                                          void addGridOfThumbnailsToItem(
-                                            item,
-                                            0
-                                          );
-                                        }}
-                                      >
-                                        <dt
-                                          id={`${item.type}_show_grid_${item.id}`}
-                                          data-testid={`${item.type}_show_grid_${item.id}`}
-                                          className={classes.boldText}
-                                        >
-                                          show image grid{" "}
-                                          {item.childCounts !== 0
-                                            ? " [" + item.childCounts + "] "
-                                            : " [1]"}
-                                        </dt>
-                                      </a>
-                                    </>
-                                  ) : (
-                                    <></>
-                                  )}{" "}
-                                  {item.type === "image" && (
-                                    <FormControlLabel
-                                      id={`${item.type}_change_thumbnail_label_${item.id}`}
-                                      control={
-                                        <Checkbox
-                                          id={`${item.type}_change_thumbnail_${item.id}`}
-                                          size="small"
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            item.fetchLarge = !item.fetchLarge;
-                                            item.fetched = false;
-                                            item.fetchNew = true;
-                                            refreshItems();
-                                          }}
-                                          checked={Boolean(item.fetchLarge)}
-                                          color="primary"
-                                          inputProps={{
-                                            "aria-label": "get large thumbnail",
-                                          }}
-                                        />
-                                      }
-                                      slotProps={{
-                                        typography: {
-                                          fontSize: "0.75em",
-                                          fontWeight: "900",
-                                        },
-                                      }}
-                                      label={`large thumbnail`}
-                                    />
-                                  )}
-                                </dt>
-                                <dt>
-                                  <a
-                                    id={`${item.type}_omero_link_${item.id}`}
-                                    target="_blank"
-                                    href={getLinkToOmero(item, omero_web_url)}
-                                    rel="noreferrer"
-                                  >
-                                    see in omero
-                                  </a>
-                                </dt>
-                                <dt
-                                  id={`${item.type}_fetch_children_${item.id}`}
-                                >
-                                  {" "}
-                                  {itemHasFetchableChildren(item) && (
-                                    <a
-                                      data-testid={`${item.type}_fetch_childrenLink_${item.id}`}
-                                      href={
-                                        "#" +
-                                        `${item.type}_name_display_${item.id}`
-                                      }
-                                      onClick={() => {
-                                        item.showingChildren
-                                          ? hideChildren(item)
-                                          : void populateOmeroItemWithFetchedChildrenOrShowHiddenChildren(
-                                              item
-                                            );
-                                      }}
-                                    >
-                                      {getFetchText(item)}{" "}
-                                      {isDataSetOrPlateAcquistion(item)
-                                        ? "[" + item.addedChildren.length + "]"
-                                        : item.childCounts !== 0
-                                        ? "[" + item.childCounts + "]"
-                                        : "[1]"}
-                                    </a>
-                                  )}
-                                </dt>
-                                {item.parentType && (
-                                  <dt
-                                    id={`${item.type}_link_parent_${item.id}`}
-                                    data-testid={`${item.type}_link_parent_${item.id}`}
+                            <div>
+                              <div
+                                id={`${item.type}_name_display_${item.id}`}
+                                data-testid={`${item.type}_name_display_${item.id}`}
+                                className={classes.nameText}
+                              >
+                                {item.name}
+                              </div>
+                              <div className={classes.boldText}>
+                                {item.displayType ?? item.type}
+                              </div>
+                              <div>
+                                {item.fetched ? (
+                                  <span
+                                    id={`${item.type}_details_fetched_${item.id}`}
                                     className={classes.boldText}
                                   >
-                                    {
-                                      <a
-                                        href={
-                                          "#" +
-                                          `${item.parentType}_name_display_${item.parentId}`
-                                        }
-                                      >
-                                        {" -> parent_" + item.parentType}
-                                      </a>
+                                    details fetched
+                                  </span>
+                                ) : (
+                                  <a
+                                    id={`${item.type}_fetch_details_${item.id}`}
+                                    data-testid={`${item.type}_fetch_details_${item.id}`}
+                                    href={
+                                      "#" +
+                                      `${item.type}_name_display_${item.id}`
                                     }
-                                  </dt>
+                                    onClick={() => {
+                                      void addDetailsToItem(item);
+                                      item.fetched = true;
+                                    }}
+                                  >
+                                    {item.type === "image"
+                                      ? "re-draw image"
+                                      : "fetch details"}
+                                  </a>
                                 )}
-                              </dl>
-                            </>
+                                {item.gridShown ? (
+                                  <a
+                                    id={`${item.type}_hide_grid_${item.id}`}
+                                    data-testid={`${item.type}_hide_grid_${item.id}`}
+                                    href={
+                                      "#" +
+                                      `${item.type}_name_display_${item.id}`
+                                    }
+                                    onClick={() => {
+                                      hideChildren(item, true);
+                                    }}
+                                  >
+                                    hide image grid{" "}
+                                    {item.samplesUrls &&
+                                    item.samplesUrls.length > 1
+                                      ? " (there are other fields)"
+                                      : ""}
+                                  </a>
+                                ) : item.type === "plateAcquisition" ? (
+                                  <div>
+                                    {item.samplesUrls?.map((url, pos) => (
+                                      <div key={pos}>
+                                        <a
+                                          href={
+                                            "#" +
+                                            `${item.type}_name_display_${item.id}`
+                                          }
+                                          onClick={() => {
+                                            void addGridOfThumbnailsToItem(
+                                              item,
+                                              pos
+                                            );
+                                          }}
+                                        >
+                                          <span
+                                            id={`${item.type}_show_grid_${item.id}`}
+                                            data-testid={`${item.type}_show_grid_${item.id}`}
+                                            className={classes.boldText}
+                                          >
+                                            show grid of wells for field{" "}
+                                            {pos + 1}
+                                          </span>
+                                        </a>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : item.type === "dataset" ? (
+                                  <div>
+                                    <a
+                                      href={
+                                        "#" +
+                                        `${item.type}_name_display_${item.id}`
+                                      }
+                                      onClick={() => {
+                                        void addGridOfThumbnailsToItem(item, 0);
+                                      }}
+                                    >
+                                      <span
+                                        id={`${item.type}_show_grid_${item.id}`}
+                                        data-testid={`${item.type}_show_grid_${item.id}`}
+                                        className={classes.boldText}
+                                      >
+                                        show image grid{" "}
+                                        {item.childCounts !== 0
+                                          ? " [" + item.childCounts + "] "
+                                          : " [1]"}
+                                      </span>
+                                    </a>
+                                  </div>
+                                ) : null}{" "}
+                                {item.type === "image" && (
+                                  <FormControlLabel
+                                    id={`${item.type}_change_thumbnail_label_${item.id}`}
+                                    control={
+                                      <Checkbox
+                                        id={`${item.type}_change_thumbnail_${item.id}`}
+                                        size="small"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          item.fetchLarge = !item.fetchLarge;
+                                          item.fetched = false;
+                                          item.fetchNew = true;
+                                          refreshItems();
+                                        }}
+                                        checked={Boolean(item.fetchLarge)}
+                                        color="primary"
+                                        inputProps={{
+                                          "aria-label": "get large thumbnail",
+                                        }}
+                                      />
+                                    }
+                                    slotProps={{
+                                      typography: {
+                                        fontSize: "0.75em",
+                                        fontWeight: "900",
+                                      },
+                                    }}
+                                    label={`large thumbnail`}
+                                  />
+                                )}
+                              </div>
+                              <div>
+                                <a
+                                  id={`${item.type}_omero_link_${item.id}`}
+                                  target="_blank"
+                                  href={getLinkToOmero(item, omero_web_url)}
+                                  rel="noreferrer"
+                                >
+                                  see in omero
+                                </a>
+                              </div>
+                              <div
+                                id={`${item.type}_fetch_children_${item.id}`}
+                              >
+                                {itemHasFetchableChildren(item) && (
+                                  <a
+                                    data-testid={`${item.type}_fetch_childrenLink_${item.id}`}
+                                    href={
+                                      "#" +
+                                      `${item.type}_name_display_${item.id}`
+                                    }
+                                    onClick={() => {
+                                      item.showingChildren
+                                        ? hideChildren(item)
+                                        : void populateOmeroItemWithFetchedChildrenOrShowHiddenChildren(
+                                            item
+                                          );
+                                    }}
+                                  >
+                                    {getFetchText(item)}{" "}
+                                    {isDataSetOrPlateAcquistion(item)
+                                      ? "[" + item.addedChildren.length + "]"
+                                      : item.childCounts !== 0
+                                      ? "[" + item.childCounts + "]"
+                                      : "[1]"}
+                                  </a>
+                                )}
+                              </div>
+                              {item.parentType && (
+                                <div
+                                  id={`${item.type}_link_parent_${item.id}`}
+                                  data-testid={`${item.type}_link_parent_${item.id}`}
+                                  className={classes.boldText}
+                                >
+                                  <a
+                                    href={
+                                      "#" +
+                                      `${item.parentType}_name_display_${item.parentId}`
+                                    }
+                                  >
+                                    {" -> parent_" + item.parentType}
+                                  </a>
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <>
                               {item.descriptionElems}
-                              <dt className={classes.nameText}>{item.paths}</dt>
+                              <div className={classes.nameText}>
+                                {item.paths}
+                              </div>
                             </>
                           )}
                         </TableCell>

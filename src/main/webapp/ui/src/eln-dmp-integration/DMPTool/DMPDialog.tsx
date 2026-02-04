@@ -151,7 +151,7 @@ function DMPDialogContent({
 
   useEffect(() => {
     void getDMPs("MINE");
-     
+
   }, []);
 
   const handleImport = async () => {

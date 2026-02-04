@@ -1,12 +1,10 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { describe, expect, test, vi } from 'vitest';
 import { makeMockTemplate } from "./mocking";
 
-jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../stores/RootStore", () => () => ({}));
-
+vi.mock("../../../use-stores", () => () => {});
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({})
+}));
 describe("computed: paramsForBackend", () => {
   /*
    * `paramsForBackend` is used for submitting the TemplateModel to the API and as
@@ -24,3 +22,4 @@ describe("computed: paramsForBackend", () => {
     });
   });
 });
+

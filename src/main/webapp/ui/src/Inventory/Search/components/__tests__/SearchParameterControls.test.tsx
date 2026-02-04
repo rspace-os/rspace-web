@@ -1,10 +1,5 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import Search from "../../../../stores/models/Search";
@@ -16,16 +11,21 @@ import materialTheme from "../../../../theme";
 import "../../../../../__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 
-jest.mock("../../../../common/InvApiService", () => ({}));
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+import { test, type Mock, describe, expect, vi } from 'vitest';
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  }}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   searchStore: {
     search: null,
     savedSearches: [{ name: "Test search", resultType: "SAMPLE" }],
     savedBaskets: [],
   },
+})
 }));
 
-window.fetch = jest.fn(() =>
+window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
@@ -43,14 +43,8 @@ window.fetch = jest.fn(() =>
     formData: () => Promise.resolve(new FormData()),
     text: () => Promise.resolve(""),
   } as Response)
-) as jest.Mock;
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+) as Mock;
 describe("SearchParameterControls", () => {
   describe("Saved searches controls", () => {
     test("If the search disallows a particular record type, saved searches with that type filter should be disabled.", async () => {
@@ -60,15 +54,15 @@ describe("SearchParameterControls", () => {
           savedSearches: [{ name: "Test search", resultType: "SAMPLE" }],
           savedBaskets: [],
         },
-      });
 
+      });
       const search = new Search({
         factory: mockFactory(),
         uiConfig: {
           allowedTypeFilters: new Set(["CONTAINER"]),
         },
-      });
 
+      });
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
@@ -82,8 +76,8 @@ describe("SearchParameterControls", () => {
             </SearchContext.Provider>
           </storesContext.Provider>
         </ThemeProvider>
-      );
 
+      );
       await user.click(screen.getByRole("button", { name: "Saved Searches" }));
       expect(
         screen.getByRole("menuitem", { name: /^Test search/ })
@@ -91,3 +85,4 @@ describe("SearchParameterControls", () => {
     });
   });
 });
+

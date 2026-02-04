@@ -1,8 +1,4 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getAvailableRaidIdentifiersAjax,
   getRaidIntegrationInfoAjax,
@@ -132,7 +128,7 @@ const mockIntegrationInfoFailure: IntegrationRaidInfo = {
 beforeEach(() => {
   // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
   fetchMock.resetMocks();
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("getAvailableRaidIdentifiersAjax", () => {

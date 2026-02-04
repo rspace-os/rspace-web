@@ -46,7 +46,6 @@ export default function ConnectedAppsTable() {
     }
   };
 
-
   useEffect(() => {
     void fetchApps();
   }, []);

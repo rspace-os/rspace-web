@@ -1,15 +1,14 @@
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { arbRsSet } from "./helpers";
 import { Optional } from "../../optional";
-import RsSet from "../../set";
 
+import RsSet from "../../set";
 const presentIfTrue =
   <T>(f: (x: T) => boolean): ((x: T) => Optional<T>) =>
   (x) =>
-    f(x) ? Optional.present(x) : Optional.empty();
 
+    f(x) ? Optional.present(x) : Optional.empty();
 describe("mapOptional", () => {
   test("Idempotence", () => {
     fc.assert(
@@ -25,8 +24,8 @@ describe("mapOptional", () => {
         }
       )
     );
-  });
 
+  });
   test("A function that always returns Optional.empty will always result in an empty set.", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
@@ -35,8 +34,8 @@ describe("mapOptional", () => {
         );
       })
     );
-  });
 
+  });
   test("A function that always returns Optional.present will always result in an unchanged set.", () => {
     fc.assert(
       fc.property(arbRsSet(fc.anything()), (set) => {
@@ -45,8 +44,8 @@ describe("mapOptional", () => {
         );
       })
     );
-  });
 
+  });
   test("Empty set in, empty set out", () => {
     fc.assert(
       fc.property(
@@ -59,8 +58,8 @@ describe("mapOptional", () => {
         }
       )
     );
-  });
 
+  });
   test("Set before is superset of set after mapOptional i.e. size is less than or equal after", () => {
     fc.assert(
       fc.property(
@@ -74,3 +73,4 @@ describe("mapOptional", () => {
     );
   });
 });
+

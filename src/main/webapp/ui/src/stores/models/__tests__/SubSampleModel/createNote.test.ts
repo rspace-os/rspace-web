@@ -1,12 +1,10 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import { makeMockSubSample } from "./mocking";
 import ApiService from "../../../../common/InvApiService";
 
-jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../use-stores", () => () => {});
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   peopleStore: {
     currentUser: {
       firstName: "Joe",
@@ -23,11 +21,13 @@ jest.mock("../../../stores/RootStore", () => () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
-}));
-jest.mock("../../../../common/InvApiService", () => ({
-  post: jest.fn(() => ({ data: { notes: [] } })),
+})
 }));
 
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  post: vi.fn(() => ({ data: { notes: [] } })),
+  }}));
 describe("action: createNote", () => {
   /*
    * When previewing a subsample, the user can create a note that is
@@ -38,13 +38,13 @@ describe("action: createNote", () => {
       const subSample = makeMockSubSample();
       subSample.editing = false;
       void subSample.createNote({ content: "A new note" });
-      const postSpy = jest.spyOn(ApiService, "post");
+      const postSpy = vi.spyOn(ApiService, "post");
       expect(postSpy).toHaveBeenCalledWith("subSamples/1/notes", {
         content: "A new note",
       });
     });
-  });
 
+  });
   /*
    * When editing a subsample, the user can create a note, but it is only saved
    * when the whole form is.
@@ -54,7 +54,7 @@ describe("action: createNote", () => {
       const subSample = makeMockSubSample();
       subSample.editing = true;
       (subSample as any).lastEditInput = new Date();
-      const setAttributesDirtySpy = jest.spyOn(subSample, "setAttributesDirty");
+      const setAttributesDirtySpy = vi.spyOn(subSample, "setAttributesDirty");
       void subSample.createNote({ content: "A new note" });
       expect(setAttributesDirtySpy).toHaveBeenCalledWith({
         notes: expect.arrayContaining([
@@ -64,3 +64,4 @@ describe("action: createNote", () => {
     });
   });
 });
+

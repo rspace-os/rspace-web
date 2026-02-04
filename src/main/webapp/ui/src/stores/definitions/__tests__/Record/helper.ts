@@ -8,7 +8,7 @@ export const arbitraryId: Arbitrary<Id> = fc
   .map((n) => n as number | null);
 
 export const arbitraryGlobalId = (
-  prefix: GlobalIdPrefix
+  prefix: GlobalIdPrefix,
 ): Arbitrary<GlobalId> =>
   arbitraryId.map((id) => {
     if (!id) throw new Error("id must not be null");

@@ -1,21 +1,15 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect } from 'vitest';
 import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import ToggleView from "../ToggleView";
 import { TYPE_LABEL } from "../../../../stores/definitions/Search";
 import materialTheme from "../../../../theme";
+
 import { ThemeProvider } from "@mui/material/styles";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("ToggleView", () => {
   test("Current view should have aria-current property", () => {
     render(
@@ -28,10 +22,10 @@ describe("ToggleView", () => {
           onChange={() => Promise.resolve()}
         />
       </ThemeProvider>
+
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Change view" }));
-
     expect(
       screen.getByRole("menuitem", {
         name: TYPE_LABEL[
@@ -41,3 +35,4 @@ describe("ToggleView", () => {
     ).toHaveAttribute("aria-current", "true");
   });
 });
+

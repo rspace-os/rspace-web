@@ -1,36 +1,29 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
 import { makeMockSubSample } from "../../../stores/models/__tests__/SubSampleModel/mocking";
 import Breadcrumbs from "../Breadcrumbs";
 
-jest.mock("../../../common/InvApiService", () => {});
-jest.mock("../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
+})
+
 }));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("Breadcrumbs", () => {
   describe("When the passed record is deleted", () => {
     test("In Trash should be shown.", () => {
       const subsample = makeMockSubSample({
         deleted: true,
+
       });
 
       render(<Breadcrumbs record={subsample} />);
-
       expect(screen.getByRole("navigation")).toHaveTextContent("In Trash");
     });
   });
 });
+

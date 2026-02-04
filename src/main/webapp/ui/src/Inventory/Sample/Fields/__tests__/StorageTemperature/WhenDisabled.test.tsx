@@ -1,10 +1,6 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import {
   CELSIUS,
   KELVIN,
@@ -12,16 +8,10 @@ import {
   type Temperature,
 } from "../../../../../stores/definitions/Units";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../../../theme";
 
 import StorageTemperature from "../../StorageTemperature";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 const mockFieldOwner = (mockedParts: {
   fieldValues: {
     storageTempMin: Temperature | null;
@@ -34,26 +24,26 @@ const mockFieldOwner = (mockedParts: {
   };
 }) => {
   const defaults = {
-    isFieldEditable: jest.fn().mockImplementation(() => false),
+    isFieldEditable: vi.fn().mockImplementation(() => false),
     fieldValues: {
       storageTempMin: null,
       storageTempMax: null,
     },
-    setFieldsDirty: jest.fn(),
+    setFieldsDirty: vi.fn(),
     canChooseWhichToEdit: false,
-    setFieldEditable: jest.fn(),
+    setFieldEditable: vi.fn(),
     noValueLabel: {
       storageTempMin: null,
       storageTempMax: null,
     },
-  };
 
+  };
   return {
     ...defaults,
     ...mockedParts,
   };
-};
 
+};
 describe("StorageTemperature", () => {
   describe("When disabled, the component should,", () => {
     describe('Show "Unspecified" when,', () => {
@@ -75,8 +65,8 @@ describe("StorageTemperature", () => {
               })}
             />
           </ThemeProvider>
-        );
 
+        );
         expect(container).toHaveTextContent("unspecified");
       });
       test("`storageTempMax` is null.", () => {
@@ -97,8 +87,8 @@ describe("StorageTemperature", () => {
               })}
             />
           </ThemeProvider>
-        );
 
+        );
         expect(container).toHaveTextContent("unspecified");
       });
       test("Both values are null.", () => {
@@ -119,12 +109,12 @@ describe("StorageTemperature", () => {
               })}
             />
           </ThemeProvider>
-        );
 
+        );
         expect(container).toHaveTextContent("unspecified");
       });
-    });
 
+    });
     describe("Display a string when both values are valid temperatures,", () => {
       test("That includer both min and max values.", () => {
         const { container } = render(
@@ -144,8 +134,8 @@ describe("StorageTemperature", () => {
               })}
             />
           </ThemeProvider>
-        );
 
+        );
         expect(container).toHaveTextContent("1");
         expect(container).toHaveTextContent("2");
       });
@@ -168,8 +158,8 @@ describe("StorageTemperature", () => {
                 })}
               />
             </ThemeProvider>
-          );
 
+          );
           expect(container).toHaveTextContent("0°C");
         });
         test("Kelvin", () => {
@@ -190,8 +180,8 @@ describe("StorageTemperature", () => {
                 })}
               />
             </ThemeProvider>
-          );
 
+          );
           expect(container).toHaveTextContent("0K");
         });
         test("Fahrenheit", () => {
@@ -212,11 +202,12 @@ describe("StorageTemperature", () => {
                 })}
               />
             </ThemeProvider>
-          );
 
+          );
           expect(container).toHaveTextContent("0°F");
         });
       });
     });
   });
 });
+

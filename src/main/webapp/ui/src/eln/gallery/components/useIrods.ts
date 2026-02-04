@@ -400,7 +400,7 @@ export default function useIrods(
   );
   React.useEffect(() => {
     void fetchConfiguredLocations();
-     
+
   }, [sortedStringOfSelectedIds]);
 
   if (loading) return { tag: "loading" };

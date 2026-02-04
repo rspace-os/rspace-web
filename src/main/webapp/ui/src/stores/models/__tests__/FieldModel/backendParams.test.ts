@@ -1,16 +1,15 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { describe, expect, test, vi } from 'vitest';
 import { makeMockField } from "./mocking";
 
-jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../use-stores", () => () => {});
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
-}));
+})
 
+}));
 describe("computed: paramsForBackend", () => {
   /*
    * `paramsForBackend` is used for submitting the SampleModel to the API and as
@@ -43,3 +42,4 @@ describe("computed: paramsForBackend", () => {
     });
   });
 });
+

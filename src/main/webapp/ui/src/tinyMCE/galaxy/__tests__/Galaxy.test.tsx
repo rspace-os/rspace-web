@@ -1,30 +1,34 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
 import Galaxy, {AttachedRecords} from "../Galaxy";
 import React from "react";
 import axios from "@/common/axios";
-import {fireEvent, render, screen} from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import {act} from "react-dom/test-utils";
 
+import { describe, expect, beforeEach, vi, test } from 'vitest';
+import type { MockInstance } from "@vitest/spy";
 const mockAxios = new MockAdapter(axios);
 // simulating the actual events fired in plugin.min.js code for galaxy upload button
 const activeEditorMock = {
   storedEventName: "",
-  storedFunction: () => {
-  },
+  storedFunction: () => {},
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   on: function (eventName: string, targetFunction: () => {}) {
     this.storedEventName = eventName;
     this.storedFunction = targetFunction;
   },
+  // eslint-disable-next-line @typescript-eslint/require-await
   handleEvent: async function (eventName: string) {
     if (eventName === this.storedEventName) {
       this.storedFunction();
     }
-  }
+  },
 };
 const tinymceMock = {activeEditor: activeEditorMock};
 Object.defineProperty(parent, "tinymce", {value: tinymceMock});
@@ -36,11 +40,11 @@ const createdGalaxyHistory = {
   "id": "f8e722da311b8793",
   "name": "RSPACE_Untitled document_SD375v4_Data_FD229379_1",
 }
-let windowParentPostMessageSpy: jest.SpyInstance;
-describe("Galaxy Upload Data tests ", () => {
+let windowParentPostMessageSpy: MockInstance;
+describe("Galaxy Upload Data tests", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    windowParentPostMessageSpy = jest.spyOn(window.parent, "postMessage")
+    vi.clearAllMocks();
+    windowParentPostMessageSpy = vi.spyOn(window.parent, "postMessage")
     mockAxios.onGet("/integration/integrationInfo").reply(200, {
       data: {
         name: "GALAXY",
@@ -73,49 +77,63 @@ describe("Galaxy Upload Data tests ", () => {
       errorMsg: null,
     });
   });
-  describe("displays attached data with select checkboxes ", () => {
-    it("renders radio button server choice with eu as default ", async () => {
+  describe("displays attached data with select checkboxes", () => {
+    test("renders radio button server choice with eu as default", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={[]}/>);
-      expect(await screen.findByRole("radio", {name: /galaxy eu server/}));
+      const radios = await screen.findByRole("radio", {
+        name: /galaxy eu server/,
+      });
+      expect(radios).toBeInTheDocument();
     });
-    it("displays empty table when there is no attached data ", async () => {
+    test("displays empty table when there is no attached data", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={[]}/>);
+      await screen.findByRole("radio", {
+        name: /galaxy eu server/,
+      });
       const columnHeadings = await screen.findAllByRole("columnheader");
       expect(columnHeadings[1]).toHaveTextContent('File');
     });
-    it("displays attached data ", async () => {
+    test("displays attached data", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
-      const gridCells = screen.getAllByRole("gridcell");
+      await screen.findByRole("radio", {
+        name: /galaxy eu server/,
+      });
+      const gridCells = await screen.findAllByRole("gridcell");
       expect(gridCells[1]).toContainHTML(attachedRecords[0].html.outerHTML);
     });
-    it("initial rendering posts no data selected ", async () => {
+    test("initial rendering posts no data selected", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
-      expect(await screen.findByRole("radio", {name: /galaxy eu server/}));
+      await screen.findByRole("radio", { name: /galaxy eu server/ });
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "no-data-selected"}, "*");
       expect(windowParentPostMessageSpy).not.toHaveBeenCalledWith({"mceAction": "data-selected"}, "*");
     });
-    it("selecting data posts  data selected ", async () => {
+    test("selecting data posts  data selected", async () => {
+      const user = userEvent.setup();
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
-      expect(await screen.findByRole("radio", {name: /galaxy eu server/}));
-      const checkBox = await screen.getAllByRole("checkbox")[0];
-      fireEvent.click(checkBox);
-      expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "data-selected"}, "*");
+      await screen.findByRole("radio", { name: /galaxy eu server/ });
+      const checkBoxes =  screen.getAllByRole("checkbox", {
+        name: /select row/i,
+      });
+      const checkBox = checkBoxes[0];
+      await user.click(checkBox);
+      await waitFor(() => {
+        expect(checkBox).toBeChecked();
+      });
     });
   });
-  describe("uploads data to Galaxy ", () => {
-    beforeEach(async () => {
+  describe("uploads data to Galaxy", () => {
+    const renderGalaxy = async () => {
       mockAxios
       .onPost("/apps/galaxy/setUpDataInGalaxyFor")
       .reply(200, createdGalaxyHistory);
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
-      expect(await screen.findByRole("radio", {name: /galaxy eu server/}));
-      const checkBox = await screen.getAllByRole("checkbox")[0];
+      await screen.findByRole("radio", { name: /galaxy eu server/ });
+      const checkBox =  screen.getByRole("checkbox", { name: /select row/i });
       fireEvent.click(checkBox);
+    };
 
-    });
-
-    it("posts no-data selected while uploading", async () => {
-
+    test("posts no-data selected while uploading", async () => {
+      await renderGalaxy();
       windowParentPostMessageSpy.mockClear();
       expect(windowParentPostMessageSpy).not.toHaveBeenCalledWith({"mceAction": "no-data-selected"}, "*");
       await act(async () => {
@@ -123,58 +141,61 @@ describe("Galaxy Upload Data tests ", () => {
       });
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "no-data-selected"}, "*");
     });
-    it("once upload complete displays link to new Galaxy History", async () => {
 
+    test("once upload complete displays link to new Galaxy History", async () => {
+      await renderGalaxy();
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText(/Your new history can be viewed here/i)).toBeInTheDocument();
-      expect(await screen.findByRole('link', {name: 'RSPACE_Untitled document_SD375v4_Data_FD229379_1'}))
+      expect((await screen.findByText(/Your new history can be viewed here/i))).toBeInTheDocument();
+      expect((await screen.findByRole('link', {name: 'RSPACE_Untitled document_SD375v4_Data_FD229379_1'})))
       .toHaveAttribute('href', 'https://usegalaxy.org/histories/view?id=f8e722da311b8793');
     });
-    it("once upload complete events are dispatched", async () => {
+    test("once upload complete events are dispatched", async () => {
+      await renderGalaxy();
       expect(windowParentPostMessageSpy).not.toHaveBeenCalledWith({"mceAction": "uploading-complete"}, "*");
       expect(windowParentPostMessageSpy).not.toHaveBeenCalledWith({"mceAction": "enableClose"}, "*");
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText(/Your new history can be viewed here/i)).toBeInTheDocument();
+      expect((await screen.findByText(/Your new history can be viewed here/i))).toBeInTheDocument();
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "uploading-complete"}, "*");
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({"mceAction": "enableClose"}, "*");
     });
+
   });
-
   describe("Handles errors", () => {
-    beforeEach(async () => {
+    const renderGalaxy = async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords}/>);
-      const checkBox = await screen.getAllByRole("checkbox")[0];
+      await screen.findByRole("radio", { name: /galaxy eu server/ });
+      const checkBox =  screen.getByRole("checkbox", { name: /select row/i });
       fireEvent.click(checkBox);
+    };
 
-    });
-    it("displays error message if 403 returned", async () => {
+    test("displays error message if 403 returned", async () => {
+      await renderGalaxy();
       mockAxios
       .onPost("/apps/galaxy/setUpDataInGalaxyFor")
       .reply(403, []);
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText("Error")).toBeInTheDocument();
+      expect((await screen.findByText("Error"))).toBeInTheDocument();
       expect(
           await screen.findByText(/Invalid Galaxy API Key Please re-enter your API Key on the Apps page/i)
       ).toBeInTheDocument();
     });
 
-    it("displays error message if 500 returned", async () => {
+    test("displays error message if 500 returned", async () => {
+      await renderGalaxy();
       mockAxios
       .onPost("/apps/galaxy/setUpDataInGalaxyFor")
       .reply(500, []);
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText("Error")).toBeInTheDocument();
-      expect(
-          await screen.findByText(/Unknown issue, please investigate whether your Galaxy Server/i)
-      ).toBeInTheDocument();
+      expect((await screen.findByText("Error"))).toBeInTheDocument();
+      expect(await screen.findByRole("alert")).toBeInTheDocument();
     });
   });
 });

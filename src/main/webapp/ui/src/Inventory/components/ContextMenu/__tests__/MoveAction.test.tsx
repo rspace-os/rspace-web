@@ -1,11 +1,7 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { action, observable } from "mobx";
-import "@testing-library/jest-dom";
 import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
@@ -19,20 +15,19 @@ import "__mocks__/matchMedia";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import userEvent from "@testing-library/user-event";
 
-jest.mock("../../../Search/SearchView", () => jest.fn(() => <></>));
-jest.mock("@mui/material/Dialog", () =>
-  jest.fn(({ children }: { children: React.ReactNode }) => <>{children}</>)
-);
-
+vi.mock("../../../Search/SearchView", () => ({
+  default: vi.fn(() => <></>),
+}));
+vi.mock("@mui/material/Dialog", () => ({
+  default: vi.fn(({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  )),
+}));
 // this is because the Search component renders hidden "Cancel" buttons
-jest.mock("../../../Search/Search", () => jest.fn(() => <></>));
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("../../../Search/Search", () => ({
+  default: vi.fn(() => <></>),
+}));
 describe("MoveAction", () => {
   test("After the dialog is closed, the overflow context menu should have been closed.", async () => {
     const user = userEvent.setup();
@@ -62,7 +57,7 @@ describe("MoveAction", () => {
       })
     );
 
-    const closeMenu = jest.fn(() => {});
+    const closeMenu = vi.fn(() => {});
     render(
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={rootStore}>
@@ -75,11 +70,11 @@ describe("MoveAction", () => {
           <MoveDialog />
         </storesContext.Provider>
       </ThemeProvider>
+
     );
-
     await user.click(screen.getAllByRole("button", { name: "Move" })[0]);
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
 
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(closeMenu).toHaveBeenCalled();
   });
 });

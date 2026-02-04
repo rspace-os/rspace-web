@@ -131,7 +131,7 @@ export type AccentColor = {
  *
  * This function creates a new theme, given an accent colour.
  */
- 
+
 export default function createAccentedTheme(accent: AccentColor): Theme {
   const prefersMoreContrast = window.matchMedia(
     "(prefers-contrast: more)",

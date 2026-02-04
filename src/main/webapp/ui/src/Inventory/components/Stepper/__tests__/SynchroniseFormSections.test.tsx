@@ -1,34 +1,27 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import React, { useEffect, useContext } from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { test, describe, expect } from 'vitest';
+import "@/__tests__/mocks/useUiPreference";
+import React,
+  { useEffect,
+  useContext } from "react";
+import { render } from "@testing-library/react";
 import SynchroniseFormSections from "../SynchroniseFormSections";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
+
 import { type RecordType } from "../../../../stores/definitions/InventoryRecord";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 function MockFormSectionInOuterContext() {
   const formSectionContext = useContext(FormSectionsContext);
   if (!formSectionContext)
     throw new Error("FormSectionContext is required by StepperPanel");
-  const { setExpanded } = formSectionContext;
 
+  const { setExpanded } = formSectionContext;
   useEffect(() => {
     // this closes the form section as managed by the outer context...
     setExpanded("container", "overview", false);
+
   }, []);
-
   return <></>;
-}
 
+}
 function MockFormSectionInInnerContext({
   onMountExpectFn,
 }: {
@@ -38,17 +31,17 @@ function MockFormSectionInInnerContext({
 }) {
   const formSectionContext = useContext(FormSectionsContext);
   if (!formSectionContext)
-    throw new Error("FormSectionContext is required by StepperPanel");
 
+    throw new Error("FormSectionContext is required by StepperPanel");
   useEffect(() => {
     onMountExpectFn((recordType, section) =>
       formSectionContext.isExpanded(recordType, section)
     );
+
   }, []);
-
   return <></>;
-}
 
+}
 describe("SynchroniseFormSections", () => {
   test("Nesting SynchroniseFormSections should result in the inner one taking effect.", () => {
     const onMountExpectFn = (
@@ -59,8 +52,8 @@ describe("SynchroniseFormSections", () => {
        * section is open
        */
       expect(isExpanded("container", "overview")).toBe(true);
-    };
 
+    };
     render(
       <SynchroniseFormSections>
         <MockFormSectionInOuterContext />
@@ -71,3 +64,4 @@ describe("SynchroniseFormSections", () => {
     );
   });
 });
+

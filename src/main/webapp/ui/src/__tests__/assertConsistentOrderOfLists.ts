@@ -1,8 +1,9 @@
-/* eslint-env jest */
 
-type Assertion = {
+import { expect } from "vitest";
+
+type CustomMatcherResult = {
   pass: boolean;
-  message: (() => string) | undefined;
+  message: () => string;
 };
 
 type ListName = string;
@@ -69,9 +70,14 @@ const formatErrorMessage = (
  * topological sorting.
  */
 export function toHaveConsistentOrdering(
-  this: jest.MatcherUtils & Readonly<jest.MatcherState>,
+  this: {
+    utils: {
+      printExpected: (val: string) => string;
+      printReceived: (val: string) => string;
+    };
+  },
   mapOfListsOfNumbers: Map<ListName, Array<string>>
-): jest.CustomMatcherResult {
+): CustomMatcherResult {
   /*
    * This Map map pairs of strings (x,y) to the list in which they are found
    * in a given order.
@@ -112,7 +118,7 @@ export function toHaveConsistentOrdering(
          * have seen [a,b] and [b,c] then seeing [c,a] should now be an error.
          */
         for (const [json, lists] of seenPairs) {
-          const [x, y] = JSON.parse(json);
+          const [x, y] = JSON.parse(json) as [string, string];
           if (y === first)
             seenPairs.set(JSON.stringify([x, second]), [
               ...lists,
@@ -135,11 +141,9 @@ export function toHaveConsistentOrdering(
   };
 }
 
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toHaveConsistentOrdering(): R;
-    }
+declare module "vitest" {
+  interface Assertion {
+    toHaveConsistentOrdering(): unknown;
   }
 }
 
@@ -152,3 +156,4 @@ export function assertConsistentOrderOfLists(
 ): void {
   expect(lists).toHaveConsistentOrdering();
 }
+

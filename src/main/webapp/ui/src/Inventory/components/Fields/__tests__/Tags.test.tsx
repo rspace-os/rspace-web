@@ -1,10 +1,9 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  cleanup,
+} from "@testing-library/react";
 import Tags from "../Tags";
 import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
@@ -12,20 +11,14 @@ import materialTheme from "../../../../theme";
 import { Optional } from "../../../../util/optional";
 import "../../../../../__mocks__/matchMedia";
 
-window.fetch = jest.fn(() =>
+window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
     json: () => Promise.resolve({}),
   } as Response)
+
 );
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("Tags", () => {
   test("Should enter an error state when value is longer than 8000 characters.", () => {
     fc.assert(
@@ -56,8 +49,8 @@ describe("Tags", () => {
               }}
             />
           </ThemeProvider>
-        );
 
+        );
         expect(container).toHaveTextContent(
           "Tags must be no longer than 8000 characters."
         );
@@ -66,3 +59,4 @@ describe("Tags", () => {
     );
   });
 });
+

@@ -1,7 +1,3 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
 import React from "react";
 import {
   render,
@@ -9,19 +5,16 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { axe, toHaveNoViolations } from "jest-axe";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "@/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RaidConnectionsDisassociateButton from "../RaidConnectionsDisassociateButton";
-import "@testing-library/jest-dom";
 import "../../../../../__mocks__/matchMedia";
 
-expect.extend(toHaveNoViolations);
-
 // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
-const mockMutateAsync = jest.fn();
-const mockReset = jest.fn();
+const mockMutateAsync = vi.fn();
+const mockReset = vi.fn();
 const mockMutationState: {
   isError: boolean;
   error: Error | null;
@@ -30,8 +23,8 @@ const mockMutationState: {
   error: null,
 };
 
-jest.mock("@/modules/raid/mutations", () => ({
-  useRemoveRaidIdentifierMutation: jest.fn(() => ({
+vi.mock("@/modules/raid/mutations", () => ({
+  useRemoveRaidIdentifierMutation: vi.fn(() => ({
     mutateAsync: mockMutateAsync,
     reset: mockReset,
     get isError() {
@@ -72,12 +65,14 @@ describe("RaidConnectionsDisassociateButton", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockMutationState.isError = false;
     mockMutationState.error = null;
     // Setup window.RS for ConfirmationDialog
     if (!window.RS) {
-      window.RS = {};
+      window.RS = ({
+        exportModal: { openWithExportSelection: vi.fn() },
+      } as unknown) as RSGlobal & typeof RS;
     }
   });
 
@@ -85,7 +80,8 @@ describe("RaidConnectionsDisassociateButton", () => {
     it("Should have no axe violations when dialog is closed", async () => {
       const { baseElement } = renderWithProviders(defaultProps);
 
-      expect(await axe(baseElement)).toHaveNoViolations();
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      await expect(baseElement).toBeAccessible();
     });
 
     it("Should have no axe violations when dialog is open", async () => {
@@ -98,7 +94,8 @@ describe("RaidConnectionsDisassociateButton", () => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      expect(await axe(baseElement)).toHaveNoViolations();
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      await expect(baseElement).toBeAccessible();
     });
   });
 

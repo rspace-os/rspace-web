@@ -3,8 +3,8 @@ import React from "react";
 import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
 import AxeBuilder from "@axe-core/playwright";
 import * as Jwt from "jsonwebtoken";
-import { sleep } from "@/util/Util";
 
+import { sleep } from "@/util/Util";
 const feature = test.extend<{
   Given: {
     "the fieldmark import dialog is mounted": () => Promise<void>;
@@ -50,8 +50,8 @@ const feature = test.extend<{
       },
       "the notebooks have been fetched": async () => {
         const dialog = page.getByRole("dialog");
-        await expect(dialog).toBeVisible();
 
+        await expect(dialog).toBeVisible();
         // Wait for the DataGrid to appear
         const dataGrid = page.getByRole("grid");
         await expect(dataGrid).toBeVisible();
@@ -173,8 +173,8 @@ const feature = test.extend<{
         ).toBeVisible();
         await expect(
           page.getByRole("gridcell", { name: "published" }),
-        ).toBeVisible();
 
+        ).toBeVisible();
         await expect(
           page.getByRole("radio", { name: "Select notebook: Test Notebook 1" }),
         ).toBeVisible();
@@ -263,8 +263,8 @@ const feature = test.extend<{
         const importingAlert = page
           .getByRole("alert")
           .filter({ hasText: "Importing notebook" });
-        await expect(importingAlert).toBeVisible();
 
+        await expect(importingAlert).toBeVisible();
         // Then check that the identifier UI is hidden
         const identifierSelect = page.getByRole("combobox", {
           name: "Identifier field",
@@ -278,20 +278,20 @@ const feature = test.extend<{
       "a detailed error alert should be visible": async () => {
         const alert = page.getByRole("alert");
         await expect(alert).toBeVisible();
-        await expect(alert).toContainText("Could not import notebook.");
 
+        await expect(alert).toContainText("Could not import notebook.");
         // Click the toggle button to expand the sub-messages with detailed errors
         await alert
           .getByRole("button", { name: "2 sub-messages. Toggle to show" })
-          .click();
 
+          .click();
         // Verify each detailed error message is shown in the dropdown
         const firstErrorMessage = alert.getByRole("alert").filter({
           hasText:
             'Error importing notebook "1726126204618-rspace-igsn-demo" from Fieldmark: Unable to find an existing assignable identifier: 10.82316/mq1c-b544',
         });
-        await expect(firstErrorMessage).toBeVisible();
 
+        await expect(firstErrorMessage).toBeVisible();
         const secondErrorMessage = alert.getByRole("alert").filter({
           hasText:
             "Additional validation error: Sample template validation failed",
@@ -303,8 +303,8 @@ const feature = test.extend<{
   networkRequests: async ({}, use) => {
     await use([]);
   },
-});
 
+});
 feature.beforeEach(async ({ router, page, networkRequests }) => {
   page.on("request", (request) => {
     networkRequests.push({
@@ -514,12 +514,12 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
     },
   );
-});
 
+});
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
-});
 
+});
 test.describe("FieldmarkImportDialog", () => {
   test.describe("accessibility", () => {
     feature(
@@ -529,8 +529,8 @@ test.describe("FieldmarkImportDialog", () => {
         await Then["there shouldn't be any axe violations"]();
       },
     );
-  });
 
+  });
   test.describe("notebook fetching", () => {
     feature(
       "should fetch and display notebooks when opened",
@@ -540,8 +540,8 @@ test.describe("FieldmarkImportDialog", () => {
         await Then["the notebooks should be displayed in the table"]();
       },
     );
-  });
 
+  });
   test.describe("notebook import", () => {
     feature(
       "should make an import request when a notebook is selected and imported",
@@ -553,8 +553,8 @@ test.describe("FieldmarkImportDialog", () => {
           "an import request should be made to the server with the correct notebook ID"
         ]();
       },
-    );
 
+    );
     feature(
       "should make an import request without identifier column when notebook has no identifier columns",
       async ({ Given, When, Then }) => {
@@ -565,8 +565,8 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         Then["an import request should be made without an identifier column"]();
       },
-    );
 
+    );
     feature(
       "should make an import request with selected identifier column when notebook has identifier columns",
       async ({ Given, When, Then }) => {
@@ -579,8 +579,8 @@ test.describe("FieldmarkImportDialog", () => {
           "an import request should be made with the selected identifier column"
         ]();
       },
-    );
 
+    );
     feature(
       "should show importing alert during import process",
       async ({ Given, When, Then, router }) => {
@@ -606,8 +606,8 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["an importing alert should be visible"]();
       },
-    );
 
+    );
     feature(
       "should show success alert after import completes",
       async ({ Given, When, Then }) => {
@@ -618,8 +618,8 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["a success alert should be visible"]();
       },
-    );
 
+    );
     feature(
       "should show loading state on import button during import",
       async ({ Given, When, Then, router }) => {
@@ -645,8 +645,8 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["the import button should show loading state"]();
       },
-    );
 
+    );
     feature(
       "should display IGSN message when igsnCandidateFields endpoint returns IGSN error",
       async ({ Given, When, Then }) => {
@@ -657,8 +657,8 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["the IGSN message should be displayed"]();
       },
-    );
 
+    );
     feature(
       "should hide identifier parsing UI during import when identifier field is unselected",
       async ({ Given, When, Then, router }) => {
@@ -685,8 +685,8 @@ test.describe("FieldmarkImportDialog", () => {
           "the identifier parsing UI should be hidden during import"
         ]();
       },
-    );
 
+    );
     feature(
       "should show detailed error message when import fails with validation errors",
       async ({ Given, When, Then, router }) => {
@@ -694,8 +694,8 @@ test.describe("FieldmarkImportDialog", () => {
           "/api/inventory/v1/import/fieldmark/notebook",
           async (route) => {
             const request = route.request();
-            const postData = request.postData();
 
+            const postData = request.postData();
             if (
               postData?.includes('"notebookId":"test-project-detailed-error"')
             ) {

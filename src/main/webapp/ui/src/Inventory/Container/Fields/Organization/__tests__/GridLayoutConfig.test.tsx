@@ -1,23 +1,11 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { describe, expect, test } from 'vitest';
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import GridLayoutConfig from "../GridLayoutConfig";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../../../theme";
-import { axe, toHaveNoViolations } from "jest-axe";
-
-expect.extend(toHaveNoViolations);
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
 
 describe("GridLayoutConfig", () => {
   test("Should have no axe violations.", async () => {
@@ -29,14 +17,15 @@ describe("GridLayoutConfig", () => {
         columnsLabelType: "ABC",
         rowsLabelType: "ABC",
       },
-    });
 
+    });
     const { container } = render(
       <ThemeProvider theme={materialTheme}>
         <GridLayoutConfig container={gridContainer} />
       </ThemeProvider>
     );
 
-    expect(await axe(container)).toHaveNoViolations();
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
+    await expect(container).toBeAccessible();
   });
 });

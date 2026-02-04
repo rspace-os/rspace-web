@@ -1,12 +1,12 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "../../../__mocks__/createObjectURL";
+import { test, describe, vi } from 'vitest';
 import "../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen, within } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  cleanup,
+  screen,
+  within,
+} from "@testing-library/react";
 import RsSet from "../../util/set";
 import ContainerForm from "../Container/Form";
 import ContainerNewRecordForm from "../Container/NewRecordForm";
@@ -31,58 +31,68 @@ import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSectio
 import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { assertConsistentOrderOfLists } from "../../__tests__/assertConsistentOrderOfLists";
 import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
-import { IsValid } from "../../components/ValidatingSubmitButton";
 
+import { IsValid } from "../../components/ValidatingSubmitButton";
 class ResizeObserver {
   observe(): void {}
   unobserve(): void {}
   disconnect(): void {}
 }
 
-jest.mock("../Sample/Content/SubsampleListing", () =>
-  jest.fn(() => <div></div>)
-);
-jest.mock("../Container/Content/Content", () => jest.fn(() => <div></div>));
-jest.mock("../Template/Fields/SamplesList", () => jest.fn(() => <div></div>));
-jest.mock("../components/Fields/Attachments/Attachments", () =>
-  jest.fn(() => <div></div>)
-);
-jest.mock("../components/Fields/ExtraFields/ExtraFields", () =>
-  jest.fn(() => <div></div>)
-);
-jest.mock("../components/ContextMenu/ContextMenu", () =>
-  jest.fn(() => <div></div>)
-);
-jest.mock("../Sample/Fields/Template/Template", () =>
-  jest.fn(() => <div></div>)
-);
-jest.mock("../Sample/Fields/Quantity", () => jest.fn(() => <div></div>));
-jest.mock("../../common/InvApiService", () => ({
-  get: () => ({}),
-  query: () => ({}),
+vi.mock("../Sample/Content/SubsampleListing", () => ({
+  default: vi.fn(() => <div></div>),
 }));
-jest.mock("../../stores/stores/RootStore", () => () => ({
-  searchStore: {
-    savedSearches: [{ name: "Dummy saved search", query: "foo" }],
-  },
-  uiStore: {
-    addAlert: () => {},
-  },
-  unitStore: {
-    getUnit: () => ({
-      id: 1,
-      label: "items",
-      category: "dimensionless",
-      description: "",
-    }),
+vi.mock("../Container/Content/Content", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../Template/Fields/SamplesList", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../components/Fields/Attachments/Attachments", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../components/Fields/ExtraFields/ExtraFields", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../components/ContextMenu/ContextMenu", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../Sample/Fields/Template/Template", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../Sample/Fields/Quantity", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../../common/InvApiService", () => ({
+  default: {
+    get: () => ({}),
+    query: () => ({}),
   },
 }));
-jest.mock("../../components/Ketcher/KetcherDialog", () =>
-  jest.fn(() => <div></div>)
-);
 
+vi.mock("../../stores/stores/RootStore", () => ({
+  default: () => ({
+    searchStore: {
+      savedSearches: [{ name: "Dummy saved search", query: "foo" }],
+    },
+    uiStore: {
+      addAlert: () => {},
+    },
+    unitStore: {
+      getUnit: () => ({
+        id: 1,
+        label: "items",
+        category: "dimensionless",
+        description: "",
+      }),
+    },
+  }),
+}));
+vi.mock("../../components/Ketcher/KetcherDialog", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 // Cast to any to avoid TypeScript errors with the mock implementation
-window.fetch = jest.fn(() =>
+window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
@@ -100,19 +110,13 @@ window.fetch = jest.fn(() =>
     body: null,
     bodyUsed: false,
   } as Response)
+
 ) as any;
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 type MakeRootStoreArgs = {
   activeResult: InventoryRecord | null;
   batchEditingRecords?: Array<InventoryRecord>;
-};
 
+};
 function makeRootStore({
   activeResult,
   batchEditingRecords,
@@ -143,8 +147,8 @@ function makeRootStore({
       unitsOfCategory: () => [],
     },
   });
-}
 
+}
 function getSectionNames(
   reactComponent: React.ReactNode,
   rootStore: MakeRootStoreArgs
@@ -159,18 +163,19 @@ function getSectionNames(
   const sectionNames = screen
     .getAllByRole("region")
     .map(
-      (r) => within(r).getByRole("heading", { level: 3 }).textContent as string
+      (r) => within(r).getByRole("heading", { level: 3 }).textContent
     );
   cleanup();
   return sectionNames;
-}
 
+}
 describe("Form Section Order", () => {
   test("Across all of the forms, all of the sections should be in a consistent order.", () => {
     window.ResizeObserver =
       ResizeObserver as unknown as typeof global.ResizeObserver;
-    window.scrollTo = jest.fn() as any;
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    window.scrollTo = vi.fn() as any;
     assertConsistentOrderOfLists(
       new Map([
         [
@@ -260,3 +265,4 @@ describe("Form Section Order", () => {
     );
   });
 });
+

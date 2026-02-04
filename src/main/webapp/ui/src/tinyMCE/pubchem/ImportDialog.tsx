@@ -6,7 +6,6 @@ import { type Editor } from ".";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import CompoundSearchDialog from "./CompoundSearchDialog";
 
-
 /**
  * This dialog is opened by the TinyMCE plugin, allowing the users to browse
  * chemistry files on PubChem and importing into their document.

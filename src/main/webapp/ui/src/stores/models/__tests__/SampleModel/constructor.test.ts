@@ -1,9 +1,5 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
 
+import { test, describe, expect, vi } from 'vitest';
 import SampleModel from "../../SampleModel";
 import SubSampleModel from "../../SubSampleModel";
 import { sampleAttrs } from "./mocking";
@@ -11,13 +7,15 @@ import { subsampleAttrs } from "../SubSampleModel/mocking";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import { type Factory } from "../../../definitions/Factory";
 
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   peopleStore: {},
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
-})); // break import cycle
+})
 
+})); // break import cycle
 function mockSampleWithTwoSubsamples(factory: Factory) {
   const attrs = sampleAttrs();
   attrs.subSamples = [
@@ -31,11 +29,11 @@ function mockSampleWithTwoSubsamples(factory: Factory) {
       id: 3,
       globalId: "SS3",
     },
+
   ];
-
   return factory.newRecord(attrs);
-}
 
+}
 describe("constructor", () => {
   /*
    * The SampleModel's constructor is passed a Factory which is used to
@@ -47,38 +45,38 @@ describe("constructor", () => {
       // Create a recursive factory reference
       // We need to declare factory before we use it in mockNewRecord
       // but initialize it after we create the mockFactory
-      let factoryRef!: Factory;
 
+      let factoryRef!: Factory;
       // Create mock implementation that returns either SampleModel or SubSampleModel
-      const mockNewRecord = jest
+      const mockNewRecord = vi
         .fn()
         .mockImplementation((attrs: any) =>
           /^SA\d+/.test(attrs.globalId)
             ? new SampleModel(factoryRef, attrs)
             : new SubSampleModel(factoryRef, attrs)
-        );
 
+        );
       // Create factory function
       const createFactory = (): Factory =>
         mockFactory({
           newRecord: mockNewRecord,
-          newFactory: jest.fn().mockImplementation(createFactory),
-        });
+          newFactory: vi.fn().mockImplementation(createFactory),
 
+        });
       // Initialize factory
       const factory = createFactory();
+
       factoryRef = factory;
 
       mockSampleWithTwoSubsamples(factory);
 
       expect(mockNewRecord).toHaveBeenCalledTimes(3);
-
       // the root sample
       expect(mockNewRecord).toHaveBeenNthCalledWith(
         1,
         expect.objectContaining({ globalId: "SA1" })
-      );
 
+      );
       // both the subsamples (sample is passed manually)
       expect(mockNewRecord).toHaveBeenNthCalledWith(
         2,
@@ -91,3 +89,4 @@ describe("constructor", () => {
     });
   });
 });
+

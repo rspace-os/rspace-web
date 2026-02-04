@@ -1,37 +1,32 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { describe, expect, test, vi } from "vitest";
 import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  cleanup,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import ScopeField, { type Scope } from "../ScopeField";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../theme";
-import each from "jest-each";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("ScopeField", () => {
-  each(["Mine", "Public", "Both"]).test(
+  test.each(["Mine", "Public", "Both"])(
     "getDMPs is called correctly when the scope is %s",
     (scope: string) => {
       cleanup();
-      const getDMPs = jest.fn<[Scope], unknown[]>();
 
+      const getDMPs = vi.fn<(scope: Scope) => void>();
       render(
         <ThemeProvider theme={materialTheme}>
           <ScopeField getDMPs={getDMPs} />
         </ThemeProvider>
-      );
 
+      );
       fireEvent.click(screen.getByRole("radio", { name: scope }));
       expect(getDMPs).toHaveBeenCalledTimes(1);
       expect(getDMPs).toHaveBeenCalledWith(scope.toUpperCase());
     }
   );
 });
+

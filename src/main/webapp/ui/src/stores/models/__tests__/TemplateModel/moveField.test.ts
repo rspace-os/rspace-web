@@ -1,19 +1,18 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { describe, expect, test, vi } from 'vitest';
 import fc from "fast-check";
 import { makeMockTemplate } from "./mocking";
 import { arrayOfSameElements } from "../../../../util/__tests__/helpers";
 import { type FieldModelAttrs } from "../../FieldModel";
 
-jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     assertValidUnitId: () => {},
   },
-}));
+})
 
+}));
 const fieldData: Array<FieldModelAttrs> = [
   {
     id: 19,
@@ -127,8 +126,8 @@ const fieldData: Array<FieldModelAttrs> = [
     attachment: null,
     mandatory: false,
   },
-];
 
+];
 describe("action: moveField", () => {
   describe("Property Tests", () => {
     test("Moving to top should be idempotent.", () => {
@@ -184,3 +183,4 @@ describe("action: moveField", () => {
     });
   });
 });
+

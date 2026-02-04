@@ -200,7 +200,7 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
                 error={error(aliasValue.alias)}
                 helperText={error(aliasValue.alias) ? helperText : ""}
                 disabled={aliasDisabled || !customSelected}
-                 
+
                 autoFocus={customSelected}
                 InputProps={{
                   classes: {

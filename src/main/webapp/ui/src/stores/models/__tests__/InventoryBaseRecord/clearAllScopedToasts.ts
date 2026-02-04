@@ -1,8 +1,6 @@
 /*
- * @jest-environment jsdom
  */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { expect } from "vitest";
 import InventoryBaseRecord from "../../InventoryBaseRecord";
 import { type Command } from "fast-check";
 import { type Model } from "./common";
@@ -26,3 +24,4 @@ export class ClearAllScopedToastsCommand
     return "clearAllScopedToasts";
   }
 }
+

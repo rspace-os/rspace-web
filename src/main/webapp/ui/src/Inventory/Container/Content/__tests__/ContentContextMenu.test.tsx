@@ -1,10 +1,10 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import * as React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  cleanup,
+  screen,
+} from "@testing-library/react";
 import SearchContext from "../../../../stores/contexts/Search";
 import Search from "../../../../stores/models/Search";
 import {
@@ -22,16 +22,9 @@ import * as ArrayUtils from "../../../../util/ArrayUtils";
 import { take, incrementForever } from "../../../../util/iterators";
 import fc from "fast-check";
 
-jest.mock("../../../components/ContextMenu/ContextMenuButton", () =>
-  jest.fn(() => <div></div>),
-);
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("../../../components/ContextMenu/ContextMenuButton", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 describe("ContentContextMenu", () => {
   describe("Has an open button that should", () => {
     test("be disabled when the only location selected is empty.", () => {
@@ -71,8 +64,8 @@ describe("ContentContextMenu", () => {
             <ContentContextMenu />
           </SearchContext.Provider>
         </ThemeProvider>,
-      );
 
+      );
       expect(ContextMenuButton).toHaveBeenCalledWith(
         expect.objectContaining({
           disabledHelp: "Nothing selected.",
@@ -135,8 +128,8 @@ describe("ContentContextMenu", () => {
                 <ContentContextMenu />
               </SearchContext.Provider>
             </ThemeProvider>,
-          );
 
+          );
           expect(screen.getByText(`${width * height}`)).toBeVisible();
         },
       ),
@@ -144,3 +137,4 @@ describe("ContentContextMenu", () => {
     );
   });
 });
+

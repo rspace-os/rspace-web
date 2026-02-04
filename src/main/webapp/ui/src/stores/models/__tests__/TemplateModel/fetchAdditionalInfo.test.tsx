@@ -1,27 +1,26 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test, vi } from 'vitest';
 import { makeMockTemplate, templateAttrs } from "./mocking";
 import InvApiService from "../../../../common/InvApiService";
 import { AxiosResponse } from "@/common/axios";
 
-jest.mock("../../../../common/InvApiService", () => ({
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
   get: () => ({}),
-}));
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+  }}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   uiStore: {
     addAlert: () => {},
     setPageNavigationConfirmation: () => {},
     setDirty: () => {},
   },
-}));
+})
 
+}));
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const template = makeMockTemplate();
-    jest.spyOn(InvApiService, "get").mockImplementation(() =>
+    vi.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.resolve({
         data: templateAttrs(),
         status: 200,
@@ -29,13 +28,13 @@ describe("fetchAdditionalInfo", () => {
         headers: {},
         config: {},
       } as AxiosResponse)
-    );
 
+    );
     let firstCallDone = false;
     await template.fetchAdditionalInfo().then(() => {
       firstCallDone = true;
-    });
 
+    });
     await template.fetchAdditionalInfo();
     /*
      * The second call should not have resolved until the first resolved and
@@ -44,3 +43,4 @@ describe("fetchAdditionalInfo", () => {
     expect(firstCallDone).toBe(true);
   });
 });
+

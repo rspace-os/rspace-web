@@ -1,9 +1,8 @@
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import RsSet, { unionWith } from "../../set";
-import { arbitraryMappableSets } from "./helpers";
 
+import { arbitraryMappableSets } from "./helpers";
 describe("unionWith", () => {
   test("Idempotence", () => {
     fc.assert(

@@ -4,8 +4,8 @@ import {
   SimpleExample,
   HorizontalExample,
 } from "./useOneDimensionalRovingTabIndex.story";
-import { type emptyObject } from "../../util/types";
 
+import { type emptyObject } from "../../util/types";
 const feature = test.extend<{
   Given: {
     "the simple example component is rendered": () => Promise<void>;
@@ -118,8 +118,8 @@ const feature = test.extend<{
       },
     });
   },
-});
 
+});
 test.describe("useOneDimensionalRovingTabIndex", () => {
   feature("Tab focuses the before button", async ({ Given, When, Then }) => {
     await Given["the simple example component is rendered"]();

@@ -1,16 +1,17 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
-import { makeMockSubSample, subsampleAttrs } from "./mocking";
+import {
+ makeMockSubSample,
+ subsampleAttrs } from "./mocking";
 import { sampleAttrs } from "../SampleModel/mocking";
 import InvApiService from "../../../../common/InvApiService";
 
-jest.mock("../../../../common/InvApiService", () => ({
-  query: jest.fn(() => ({})),
-}));
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+import { describe, expect, vi, test } from 'vitest';
+import type { MockInstance } from "@vitest/spy";
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  query: vi.fn(() => ({})),
+  }}));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   uiStore: {
     addAlert: () => {},
     setPageNavigationConfirmation: () => {},
@@ -22,12 +23,13 @@ jest.mock("../../../../stores/stores/RootStore", () => () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
-}));
+})
 
+}));
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const subsample = makeMockSubSample();
-    (jest.spyOn(InvApiService, "query") as jest.SpyInstance).mockImplementation(
+    (vi.spyOn(InvApiService, "query") as MockInstance).mockImplementation(
       () =>
         Promise.resolve({
           data: {
@@ -35,13 +37,13 @@ describe("fetchAdditionalInfo", () => {
             ...subsampleAttrs(),
           },
         } as any)
-    );
 
+    );
     let firstCallDone = false;
     await subsample.fetchAdditionalInfo().then(() => {
       firstCallDone = true;
-    });
 
+    });
     await subsample.fetchAdditionalInfo();
     /*
      * The second call should not have resolved until the first resolved and
@@ -50,3 +52,4 @@ describe("fetchAdditionalInfo", () => {
     expect(firstCallDone).toBe(true);
   });
 });
+

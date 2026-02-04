@@ -1,38 +1,36 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect } from 'vitest';
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import ErrorBoundary from "../ErrorBoundary";
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 function AlwaysError(): React.ReactNode {
   throw new Error("foo");
-}
 
+}
 describe("ErrorBoundary", () => {
   test("Reports the support email address.", () => {
     /*
      * This is needed because the `render` function will report any errors
      * using console.error, even though the ErrorBoundary catches them, which
-     * just pollutes the output of the jest CLI runner
+     * just pollutes the output of the vitest CLI runner
      */
-     
-    jest.spyOn(global.console, "error").mockImplementation(() => {});
 
-    const { container } = render(
-      <ErrorBoundary>
-        <AlwaysError />
-      </ErrorBoundary>
-    );
-
-    expect(container).toHaveTextContent("support@researchspace.com");
+    const restoreConsole = silenceConsole(["error"], [/./]);
+    const errorHandler = (event: ErrorEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("error", errorHandler);
+    try {
+      const { container } = render(
+        <ErrorBoundary>
+          <AlwaysError />
+        </ErrorBoundary>
+      );
+      expect(container).toHaveTextContent("support@researchspace.com");
+    } finally {
+      window.removeEventListener("error", errorHandler);
+      restoreConsole();
+    }
   });
 });

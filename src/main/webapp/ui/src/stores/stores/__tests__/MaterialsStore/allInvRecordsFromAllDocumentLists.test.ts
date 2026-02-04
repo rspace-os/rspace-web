@@ -1,21 +1,10 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import { cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { test, describe, expect } from 'vitest';
 import getRootStore from "../../RootStore";
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
 import { subsampleAttrs } from "../../../models/__tests__/SubSampleModel/mocking";
 import { sampleAttrs } from "../../../models/__tests__/SampleModel/mocking";
+
 import { ListOfMaterials } from "../../../models/MaterialsModel";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("allInvRecordsFromAllDocumentLists", () => {
   test("The same record across multiple lists of materials of one field should list the record once.", () => {
     const { materialsStore } = getRootStore();
@@ -35,8 +24,8 @@ describe("allInvRecordsFromAllDocumentLists", () => {
         elnFieldId: 1,
         materials: [{ invRec: container, usedQuantity: null }],
       }),
-    ]);
 
+    ]);
     expect(materialsStore.allInvRecordsFromAllDocumentLists.size).toBe(1);
   });
   test("The same record across multiple lists of materials of multiple fields should list the record once.", () => {
@@ -59,16 +48,16 @@ describe("allInvRecordsFromAllDocumentLists", () => {
         elnFieldId: 1,
         materials: [{ invRec: container, usedQuantity: null }],
       }),
-    ]);
 
+    ]);
     expect(materialsStore.allInvRecordsFromAllDocumentLists.size).toBe(1);
   });
   test("Different records with the same id in a single list of materials of a single field should list both records.", () => {
+
     const { materialsStore } = getRootStore();
-
     // having to set this back to empty set because the state of the tests are bleeding into eachother
-    materialsStore.documentLists = new Map();
 
+    materialsStore.documentLists = new Map();
     const sample = sampleAttrs({
       id: 1,
       globalId: "SA1",
@@ -89,8 +78,9 @@ describe("allInvRecordsFromAllDocumentLists", () => {
           { invRec: sample, usedQuantity: null },
         ],
       }),
-    ]);
 
+    ]);
     expect(materialsStore.allInvRecordsFromAllDocumentLists.size).toBe(2);
   });
 });
+

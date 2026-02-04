@@ -139,7 +139,6 @@ export class RecordLockedError extends Error {
   record: InventoryBaseRecord;  
   lockOwner: LockOwner;
 
-   
   constructor(record: InventoryBaseRecord, lockOwner: LockOwner) {
     super();
     this.name = "RecordLockedError";
@@ -1754,7 +1753,6 @@ export default class InventoryBaseRecord
     throw new Error("Abstract computed property; not implemented.");
   }
 
-   
   get noValueLabel(): {
     [key in keyof InventoryBaseRecordEditableFields]: string | null;
   } & {

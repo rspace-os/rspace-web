@@ -1,30 +1,20 @@
-/*
- * @jest-environment jsdom
- */
+import { test, describe, expect } from 'vitest';
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import { mockIGSNIdentifier } from "./mocking";
 import { IdentifiersList } from "../Identifiers";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
-import "../../../../../../__mocks__/createObjectURL";
 import "../../../../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../../../theme";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 const sample1: InventoryRecord = makeMockSample();
 sample1.identifiers = [mockIGSNIdentifier("sample")];
 const container1: InventoryRecord = makeMockContainer();
-container1.identifiers = [mockIGSNIdentifier("container")];
 
+container1.identifiers = [mockIGSNIdentifier("container")];
 describe("Identifiers section", () => {
   describe("When an identifier exists", () => {
     test("Identifier fields sections are rendered", () => {
@@ -48,3 +38,4 @@ describe("Identifiers section", () => {
     });
   });
 });
+

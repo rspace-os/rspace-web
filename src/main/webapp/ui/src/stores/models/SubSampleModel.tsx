@@ -509,7 +509,6 @@ export class SubSampleCollection
     };
   }
 
-   
   get noValueLabel(): {
     [key in keyof BatchSubSampleEditableFields]: string | null;
   } {

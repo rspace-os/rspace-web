@@ -1,22 +1,15 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect } from 'vitest';
+import "@/__tests__/mocks/useOauthToken";
 import React from "react";
-import { render, screen, act } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RsSet from "../../../util/set";
 import { useGalleryActions, rootDestination } from "../useGalleryActions";
 import { dummyId, Description, LocalGalleryFile } from "../useGalleryListing";
 import Alerts from "../../../components/Alerts/Alerts";
 import MockAdapter from "axios-mock-adapter";
+
 import axios from "@/common/axios";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
 describe("useGalleryActions", () => {
   describe("duplicateFiles", () => {
     function TestingDuplicateComponent() {
@@ -52,12 +45,12 @@ describe("useGalleryActions", () => {
           click me
         </button>
       );
-    }
 
+    }
     test("errorMessages should result in an error alert", async () => {
       const user = userEvent.setup();
-      const mockAxios = new MockAdapter(axios);
 
+      const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("/gallery/ajax/copyGalleries").reply(200, {
         data: null,
         error: {
@@ -67,44 +60,38 @@ describe("useGalleryActions", () => {
         errorMsg: {
           errorMessages: ["This is a test error message."],
         },
-      });
 
+      });
       render(
         <Alerts>
           <TestingDuplicateComponent />
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button"));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
-
       expect(toast).toHaveTextContent("This is a test error message.");
     });
     test("exceptionMessage should result in an error alert", async () => {
       const user = userEvent.setup();
-      const mockAxios = new MockAdapter(axios);
 
+      const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("/gallery/ajax/copyGalleries").reply(200, {
         exceptionMessage: "This is a test error message.",
         tstamp: "2024-12-10T15:12:57.591Z",
         errorId: "dvnaxNHumB",
-      });
 
+      });
       render(
         <Alerts>
           <TestingDuplicateComponent />
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button"));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
-
       expect(toast).toHaveTextContent("This is a test error message.");
     });
   });
@@ -142,12 +129,12 @@ describe("useGalleryActions", () => {
           click me
         </button>
       );
-    }
 
+    }
     test("errorMessages should result in an error alert", async () => {
       const user = userEvent.setup();
-      const mockAxios = new MockAdapter(axios);
 
+      const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("/gallery/ajax/deleteElementFromGallery").reply(200, {
         data: null,
         error: {
@@ -157,44 +144,38 @@ describe("useGalleryActions", () => {
         errorMsg: {
           errorMessages: ["This is a test error message."],
         },
-      });
 
+      });
       render(
         <Alerts>
           <TestingDeleteComponent />
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button"));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
-
       expect(toast).toHaveTextContent("This is a test error message.");
     });
     test("exceptionMessage should result in an error alert", async () => {
       const user = userEvent.setup();
-      const mockAxios = new MockAdapter(axios);
 
+      const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("/gallery/ajax/deleteElementFromGallery").reply(200, {
         exceptionMessage: "This is a test error message.",
         tstamp: "2024-12-10T15:12:57.591Z",
         errorId: "dvnaxNHumB",
-      });
 
+      });
       render(
         <Alerts>
           <TestingDeleteComponent />
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button"));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
-
       expect(toast).toHaveTextContent("This is a test error message.");
     });
   });
@@ -234,12 +215,12 @@ describe("useGalleryActions", () => {
           click me
         </button>
       );
-    }
 
+    }
     test("errorMessages should result in an error alert", async () => {
       const user = userEvent.setup();
-      const mockAxios = new MockAdapter(axios);
 
+      const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("/gallery/ajax/moveGalleriesElements").reply(200, {
         data: null,
         error: {
@@ -249,44 +230,38 @@ describe("useGalleryActions", () => {
         errorMsg: {
           errorMessages: ["This is a test error message."],
         },
-      });
 
+      });
       render(
         <Alerts>
           <TestingMoveComponent />
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button"));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
-
       expect(toast).toHaveTextContent("This is a test error message.");
     });
     test("exceptionMessage should result in an error alert", async () => {
       const user = userEvent.setup();
-      const mockAxios = new MockAdapter(axios);
 
+      const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("/gallery/ajax/moveGalleriesElements").reply(200, {
         exceptionMessage: "This is a test error message.",
         tstamp: "2024-12-10T15:12:57.591Z",
         errorId: "dvnaxNHumB",
-      });
 
+      });
       render(
         <Alerts>
           <TestingMoveComponent />
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button"));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
-
       expect(toast).toHaveTextContent("This is a test error message.");
     });
   });
@@ -337,56 +312,48 @@ describe("useGalleryActions", () => {
           click me
         </button>
       );
-    }
 
+    }
     test("successful description update should result in success alert", async () => {
       const user = userEvent.setup();
-      const mockAxios = new MockAdapter(axios);
 
+      const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("description").reply(200, {
         success: true,
-      });
 
+      });
       render(
         <Alerts>
           <TestingChangeDescriptionComponent shouldFail={false} />
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button"));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
-
       expect(toast).toHaveTextContent("Successfully updated description.");
-    });
 
+    });
     test("exceptionMessage error response format should result in error toast", async () => {
       const user = userEvent.setup();
-      const mockAxios = new MockAdapter(axios);
 
+      const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("description").reply(200, {
         exceptionMessage:
           "Something went wrong: \ndescription too long, should be max 250 chars\n\n",
         tstamp: "2025-09-15T14:17:48.775+01:00",
         errorId: "XWBuZQsJik",
-      });
 
+      });
       render(
         <Alerts>
           <TestingChangeDescriptionComponent shouldFail={true} />
         </Alerts>,
       );
 
-      await act(async () => {
-        await user.click(screen.getByRole("button"));
-        // Wait a bit for the async error handling to complete
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      });
+      await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
-
       expect(toast).toHaveTextContent("Failed to update description.");
       expect(toast).toHaveTextContent(
         "Something went wrong: description too long, should be max 250 chars",

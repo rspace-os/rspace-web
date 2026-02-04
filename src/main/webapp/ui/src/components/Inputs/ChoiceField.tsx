@@ -133,7 +133,7 @@ export default function ChoiceField<OptionValue extends string>({
           {option.editing && (
             <TextField
               variant="standard"
-               
+
               autoFocus={!option.value}
               value={option.value}
               onChange={(e) => {

@@ -138,7 +138,6 @@ function EnableAutoshareDialog({
             label="Folder name"
             placeholder={username}
             autoFocus={true}
-            variant="outlined"
             fullWidth
             size="small"
             onChange={handleChange}

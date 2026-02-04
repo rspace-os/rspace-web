@@ -17,7 +17,7 @@ const Inner = () => {
   React.useEffect(() => {
     uiStore.addAlert = addAlert;
     uiStore.removeAlert = removeAlert;
-     
+
   }, [uiStore]);
 
   return <> </>;

@@ -22,7 +22,6 @@ export default function EventBoundary({
      * the `div` itself for this to work.
      */
 
-     
     <div
       onKeyDown={(e) => {
         e.stopPropagation();

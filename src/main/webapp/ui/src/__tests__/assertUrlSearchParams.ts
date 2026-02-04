@@ -1,4 +1,3 @@
-/* eslint-env jest */
 
 /*
  * These are some custom assertions for working with instances of
@@ -6,19 +5,19 @@
  *
  * To use, simply import this script into the test script. Flow supression will
  * be required at each call site as Flow doesn't have a nice way of telling it
- * that `expect` from jest has been extended.
+ * that `expect` from vitest has been extended.
  */
 
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      urlSearchParamContaining(expected: { [key: string]: string }): R;
-      urlSearchParamHasKey(expectedKey: string): R;
-    }
-    interface Expect {
-      urlSearchParamContaining(expected: { [key: string]: string }): any;
-      urlSearchParamHasKey(expectedKey: string): any;
-    }
+import { expect } from "vitest";
+
+declare module "vitest" {
+  interface Assertion<T = any> {
+    urlSearchParamContaining(expected: Record<string, string>): T;
+    urlSearchParamHasKey(expectedKey: string): T;
+  }
+  interface AsymmetricMatchersContaining {
+    urlSearchParamContaining(expected: Record<string, string>): unknown;
+    urlSearchParamHasKey(expectedKey: string): unknown;
   }
 }
 
@@ -28,7 +27,7 @@ expect.extend({
    * and values resembling that of a passed object.
    *
    * @example
-   *  const querySpy = jest
+   *  const querySpy = vi
    *    .spyOn(ApiServiceBase.prototype, "query")
    *    .mockImplementation(() =>
    *      Promise.resolve({ data: { containers: [] } })
@@ -57,7 +56,7 @@ expect.extend({
    * particular key.
    *
    * @example
-   *  const querySpy = jest
+   *  const querySpy = vi
    *    .spyOn(ApiServiceBase.prototype, "query")
    *    .mockImplementation(() =>
    *      Promise.resolve({ data: { containers: [] } })
@@ -74,3 +73,4 @@ expect.extend({
 });
 
 export {};
+

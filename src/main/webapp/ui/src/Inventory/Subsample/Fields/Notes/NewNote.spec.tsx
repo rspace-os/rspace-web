@@ -1,25 +1,25 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { NewNoteStory } from "./NewNote.story";
-import AxeBuilder from "@axe-core/playwright";
 
+import AxeBuilder from "@axe-core/playwright";
 const createCallbackSpy = () => {
   let called = false;
-  let allCalls: Array<Array<unknown>> = [];
 
+  let allCalls: Array<Array<unknown>> = [];
   const handler = (...args: Array<unknown>) => {
     called = true;
     allCalls.push(args);
-  };
 
+  };
   const asyncHandler = (...args: Array<unknown>) => {
     called = true;
     allCalls.push(args);
     return Promise.resolve();
+
   };
 
   const hasBeenCalled = () => called;
-
   return {
     handler,
     asyncHandler,
@@ -28,8 +28,8 @@ const createCallbackSpy = () => {
     getAllCalls: () => allCalls,
     getCallCount: () => allCalls.length,
   };
-};
 
+};
 const createFlagSpy = ({ initialValue }: { initialValue: boolean }) => {
   let value = initialValue;
   let setIsCalled = false;
@@ -48,8 +48,8 @@ const createFlagSpy = ({ initialValue }: { initialValue: boolean }) => {
     hasBeenSet: () => setIsCalled,
     hasBeenUnset: () => unsetIsCalled,
   };
-};
 
+};
 const feature = test.extend<{
   Given: {
     "that the new note field has been mounted": () => Promise<{
@@ -278,12 +278,12 @@ const feature = test.extend<{
           onErrorStateChangeSpy: ReturnType<typeof createCallbackSpy>;
         }) => {
           const allCalls = onErrorStateChangeSpy.getAllCalls();
-          expect(allCalls.length).toBeGreaterThanOrEqual(1);
 
+          expect(allCalls.length).toBeGreaterThanOrEqual(1);
           // Verify that no call was made with true (error state)
           const hasErrorCall = allCalls.some((call) => call[0] === true);
-          expect(hasErrorCall).toBe(false);
 
+          expect(hasErrorCall).toBe(false);
           // All calls should be with false (no error)
           allCalls.forEach((call) => {
             expect(call).toEqual([false]);
@@ -315,19 +315,19 @@ const feature = test.extend<{
   networkRequests: async ({}, use) => {
     await use([]);
   },
-});
 
+});
 test.describe("NewNote", () => {
   feature("Has no accessibility violations", async ({ Given, Then }) => {
     await Given["that the new note field has been mounted"]();
     await Then["there shouldn't be any axe violations"]();
-  });
 
+  });
   feature("Validates empty notes", async ({ Given, When, Then }) => {
     await Given["that the new note field has been mounted"]();
     await Then["there should be an error message"]("Note cannot be empty.");
-  });
 
+  });
   test.describe("Validates notes that exceed character limit", () => {
     test.skip(
       ({ browserName }) => browserName === "firefox",
@@ -345,8 +345,8 @@ test.describe("NewNote", () => {
         );
       },
     );
-  });
 
+  });
   feature(
     "Successfully creates a note with valid input",
     async ({ Given, When, Then }) => {
@@ -359,8 +359,8 @@ test.describe("NewNote", () => {
       await When["the user clicks the create note button"]();
       await Then["createNote should be triggered"]({ createNoteSpy });
     },
-  );
 
+  );
   feature(
     "Handles transitioning from valid to invalid state",
     async ({ Given, When, Then }) => {
@@ -376,8 +376,8 @@ test.describe("NewNote", () => {
       });
       await Then["there should be an error message"]("Note cannot be empty.");
     },
-  );
 
+  );
   feature(
     "Handles transitioning from invalid to valid state",
     async ({ Given, When, Then }) => {
@@ -395,8 +395,8 @@ test.describe("NewNote", () => {
       });
       await Then["there should not be an error message"]();
     },
-  );
 
+  );
   feature(
     "Resets field after successful note creation",
     async ({ Given, When, Then, page }) => {
@@ -409,16 +409,16 @@ test.describe("NewNote", () => {
         onErrorStateChangeSpy,
       });
     },
-  );
 
+  );
   feature("Handles non-editable state correctly", async ({ Given, Then }) => {
     await Given[
       "that the new note field has been mounted with non-editable record"
     ]();
     await Then["the create note button should be enabled"]();
     await Then["there should be an error message"]("Notes are not editable");
-  });
 
+  });
   feature(
     "Does not trigger error state during programmatic reset after successful note creation",
     async ({ Given, When, Then }) => {
@@ -439,8 +439,8 @@ test.describe("NewNote", () => {
         onErrorStateChangeSpy,
       });
     },
-  );
 
+  );
   feature(
     "Clear button clears the field and resets error state",
     async ({ Given, When, Then }) => {
@@ -456,8 +456,8 @@ test.describe("NewNote", () => {
         onErrorStateChangeSpy,
       });
     },
-  );
 
+  );
   feature(
     "Clear button works when field is in error state",
     async ({ Given, When, Then }) => {
@@ -474,8 +474,8 @@ test.describe("NewNote", () => {
         onErrorStateChangeSpy,
       });
     },
-  );
 
+  );
   feature(
     "Clear button is idempotent when field is already empty",
     async ({ Given, When, Then }) => {
@@ -493,8 +493,8 @@ test.describe("NewNote", () => {
         onErrorStateChangeSpy,
       });
     },
-  );
 
+  );
   test.describe("dirty flag", () => {
     feature(
       "Manages dirty flag correctly when the subsample is in preview",
