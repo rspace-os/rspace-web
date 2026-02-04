@@ -9,8 +9,11 @@
 
 <%-- This script is an addition to make the new apps page backwards compatible. --%>
 <script>
+    // NOTE: This channel name must match the exported GITHUB_CONNECTION_CHANNEL constant in GitHub.tsx.
+    const GITHUB_CONNECTION_CHANNEL_NAME = 'rspace.apps.github.connection';
+
     window.addEventListener("load", () => {
-        const channel = new BroadcastChannel('rspace.apps.github.connection');
+        const channel = new BroadcastChannel(GITHUB_CONNECTION_CHANNEL_NAME);
         channel.postMessage({
             type: 'GITHUB_CONNECTED',
             authToken: "${gitHubAccessToken}"
