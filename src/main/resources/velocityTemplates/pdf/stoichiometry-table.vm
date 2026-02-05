@@ -1,8 +1,9 @@
+<link href="https://fonts.googleapis.com/css2?family=Arial:wght@400&display=swap" rel="stylesheet">
 <div id='stoichiometry'>
   <br>
   <h4>Stoichiometry Information for $header</h4>
   <div class="stoichiometry-table-container">
-    <table id='stoichiometry-table' class='stoichiometry-table' border='1'>
+    <table id='stoichiometry-table' class='stoichiometry-table'>
       <thead>
       <tr>
         <th class='stoichiometry-table-name'>Name</th>
