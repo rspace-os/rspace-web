@@ -1,6 +1,6 @@
 body {
 	text-align: left;
-	font-family: Arial, sans-serif;
+	font-family: arial, sans-serif;
 	color: #444;
 	margin: 0;
 	padding: 10px 0;
@@ -10,7 +10,7 @@ body {
 
 /* LINKS */
 a, a:link
-            a:active {
+a:active {
 	color: #1465b7;
 	text-decoration: none;
 }
@@ -37,22 +37,22 @@ a:hover {
 	background-color: #d0d3d3;
 }
 
-/*table.stoichiometry-table{*/
-/*	border: 1px solid #ddd;*/
-/*	width: 100%;*/
-/*}*/
+table.stoichiometry-table{
+	border: 1px solid #ddd;
+	width: 100%;
+}
 
-/*table.stoichiometry-table td {*/
-/*	border: 1px solid #ddd;*/
-/*}*/
+table.stoichiometry-table td {
+	border: 1px solid #ddd;
+}
 
-/*table.stoichiometry-table th {*/
-/*	border: 1px solid #ddd;*/
-/*}*/
+table.stoichiometry-table th {
+	border: 1px solid #ddd;
+}
 
-/*div.stoichiometry-table-container {*/
-/*	overflow-x: auto;*/
-/*}*/
+div.stoichiometry-table-container {
+	overflow-x: auto;
+}
 
 hr {
 	border: 0;
@@ -68,9 +68,9 @@ hr {
 	background-color: #DDDDDD;
 }
 #nfs td, #nfs th {
-    border: 1px solid #ddd;
-    padding: 8px;
-    vertical-align: top;
+	border: 1px solid #ddd;
+	padding: 8px;
+	vertical-align: top;
 }
 
 div.lomDiv {
@@ -88,51 +88,51 @@ table.lomTable td {
 /* The following rules scale up old syntax using pt unit size  */
 
 span[style*="font-size: 8pt;"]{
-    font-size: 14px !important;
+	font-size: 14px !important;
 }
 span[style*="line-height: 8pt;"]{
-    line-height: 14px !important;
+	line-height: 14px !important;
 }
 
 span[style*="font-size: 10pt;"]{
-    font-size: 17px !important;
+	font-size: 17px !important;
 }
 span[style*="line-height: 10pt;"]{
-    line-height: 17px !important;
+	line-height: 17px !important;
 }
 
 span[style*="font-size: 12pt;"]{
-    font-size: 20px !important;
+	font-size: 20px !important;
 }
 span[style*="line-height: 12pt;"]{
-    line-height: 20px !important;
+	line-height: 20px !important;
 }
 
 span[style*="font-size: 14pt;"]{
-    font-size: 24px !important;
+	font-size: 24px !important;
 }
 span[style*="line-height: 14pt;"]{
-    line-height: 24px !important;
+	line-height: 24px !important;
 }
 
 span[style*="font-size: 18pt;"]{
-    font-size: 30px !important;
+	font-size: 30px !important;
 }
 span[style*="line-height: 18pt;"]{
-    line-height: 30px !important;
+	line-height: 30px !important;
 }
 
 span[style*="font-size: 24pt;"]{
-    font-size: 40px !important;
+	font-size: 40px !important;
 }
 span[style*="line-height: 24pt;"]{
-    line-height: 40px !important;
+	line-height: 40px !important;
 }
 
 span[style*="font-size: 36pt;"]{
-    font-size: 64px !important;
+	font-size: 64px !important;
 }
 span[style*="line-height: 36pt;"]{
-    line-height: 64px !important;
+	line-height: 64px !important;
 }
 
