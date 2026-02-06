@@ -1,0 +1,29 @@
+<style>
+  .stoichiometry-table-notes, .stoichiometry-table-name {
+    max-width: 50px;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    border: 1px solid #dddddd;
+  }
+  .stoichiometry-table th,  .stoichiometry-table thead tr {
+    border: 1px solid #dddddd;
+    text-align: left;
+    max-width: 50px;
+    width: 50px;
+    font-size: 70%;
+  }
+  .stoichiometry-table td {
+    border: 1px solid #dddddd;
+    text-align: left;
+    max-width: 2em;
+    border-collapse: collapse;
+    font-size: 70%;
+  }
+
+  table {
+    border-collapse: collapse;
+    border: 1px solid #dddddd;
+  }
+
+
+</style>

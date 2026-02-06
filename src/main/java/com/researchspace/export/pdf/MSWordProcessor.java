@@ -120,28 +120,21 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
       IRSpaceDoc strucDoc)
       throws IOException, FileNotFoundException {
     String html = exportInput.getDocumentAsHtml();
-    //    Document jsoup = Jsoup.parse(html);
-    //    Elements images = jsoup.getElementsByTag("img");
-    //    extractImageFileAndUpdateLinkFromImages(tempExportFile, exportConfig, images);
-
-    //    html = jsoup.html();
-    //    if (html.contains("data-stoichiometry-table")) {
-    //      html = stoichiometryHtmlGenerator.addStoichiometryLinks(html,
-    // exportConfig.getExporter());
-    //    }
-    //    String pageSize = exportConfig.getPageSize().equals("A4") ? "A4" : "LETTER";
-    //    String footerFormattedDate = formatFooterDate(strucDoc, exportConfig);
-    //    html =
-    //        addStyleElement(
-    //            html,
-    //            makeHtmlStyleElement(
-    //                pageSize, !exportConfig.isIncludeFooterAtEndOnly(), footerFormattedDate));
-    html = pdfHtmlGenerator.prepareHtml(exportInput, strucDoc, exportConfig);
     Document jsoup = Jsoup.parse(html);
     Elements images = jsoup.getElementsByTag("img");
     extractImageFileAndUpdateLinkFromImages(tempExportFile, exportConfig, images);
-    html = jsoup.html();
 
+    html = jsoup.html();
+    if (html.contains("data-stoichiometry-table")) {
+      html = stoichiometryHtmlGenerator.addStoichiometryLinks(html, exportConfig.getExporter());
+    }
+    String pageSize = exportConfig.getPageSize().equals("A4") ? "A4" : "LETTER";
+    String footerFormattedDate = formatFooterDate(strucDoc, exportConfig);
+    html =
+        addStyleElement(
+            html,
+            makeHtmlStyleElement(
+                pageSize, !exportConfig.isIncludeFooterAtEndOnly(), footerFormattedDate));
     File htmlInput =
         new File(tempExportFile.getParentFile(), getBaseName(tempExportFile.getName()) + ".html");
     FileUtils.write(htmlInput, html, "UTF-8");
@@ -165,10 +158,8 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
   private String makeHtmlStyleElement(String pageSize, boolean footerEachPage, String footerDate) {
     Map<String, Object> context = new HashMap<>();
     context.put("pageSize", pageSize);
-    context.put("footerEachPage", footerEachPage);
-    context.put("footerDate", footerDate);
     return VelocityEngineUtils.mergeTemplateIntoString(
-        velocityEngine, "pdf/styles.vm", "UTF-8", context);
+        velocityEngine, "doc/styles.vm", "UTF-8", context);
   }
 
   private String addStyleElement(String html, String styles) {
