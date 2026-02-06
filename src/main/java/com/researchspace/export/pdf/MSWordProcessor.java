@@ -45,7 +45,6 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
 
   private @Autowired ImageRetrieverHelper imageHelper;
   @Autowired private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
-  @Autowired private PdfHtmlGenerator pdfHtmlGenerator;
   @Autowired private VelocityEngine velocityEngine;
   public final SimpleDateFormat simpleDateFmt = new SimpleDateFormat("yyyy-MM-dd");
 
