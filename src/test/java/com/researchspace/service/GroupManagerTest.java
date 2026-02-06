@@ -43,11 +43,13 @@ import java.util.Arrays;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class GroupManagerTest extends SpringTransactionalTest {
 
   @Autowired SystemPropertyManager systemPropertyManager;
+  @Autowired SharingHandler sharingHandler;
 
   @Before
   public void setUp() throws Exception {
@@ -980,5 +982,25 @@ public class GroupManagerTest extends SpringTransactionalTest {
         IllegalArgumentException.class);
     // TODO new pi has group permissions; old pi has lost them
     // should oonly be able to set RIG pi if user has global PI role
+  }
+
+  @Test
+  public void testIsRecordPartOfGroup() throws Exception {
+    User pi1 = createAndSaveAPi();
+    initialiseContentWithEmptyContent(pi1);
+    Group projectGroup = createGroupForUsers(pi1, pi1.getUsername(), "", pi1);
+
+    Folder rootSharedFolder = folderMgr.getFolder(projectGroup.getCommunalGroupFolderId(), pi1);
+    StructuredDocument docPartOfProject =
+        createBasicDocumentInRootFolderWithText(pi1, "any text in project");
+    sharingHandler.shareIntoSharedFolderOrNotebook(
+        pi1, rootSharedFolder, docPartOfProject.getId(), null);
+    StructuredDocument docNotPartOfProject =
+        createBasicDocumentInRootFolderWithText(pi1, "any text in root");
+
+    Assertions.assertTrue(
+        grpMgr.isRecordPartOfGroup(pi1, docPartOfProject.getId(), projectGroup.getId()));
+    Assertions.assertFalse(
+        grpMgr.isRecordPartOfGroup(pi1, docNotPartOfProject.getId(), projectGroup.getId()));
   }
 }

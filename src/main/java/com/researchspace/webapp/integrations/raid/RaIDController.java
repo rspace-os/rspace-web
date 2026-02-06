@@ -37,7 +37,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.HttpClientErrorException;
@@ -238,34 +237,6 @@ public class RaIDController extends BaseOAuth2Controller {
       el = inputValidator.populateErrorList(errors, new ErrorList());
     }
     return new AjaxReturnObject<>(groupManager.getGroupInfoById(projectGroupId).orElse(null), el);
-  }
-
-  // TODO[nik]:  remove the GET once the UI is complete RSDEV-852 and RSDEV-853
-  @GetMapping("/disassociate/{projectGroupId}")
-  @ResponseStatus(HttpStatus.CREATED)
-  @ResponseBody
-  public AjaxReturnObject<ApiGroupInfo> disassociateRaidToGroup_GET(
-      @PathVariable Long projectGroupId) {
-    return disassociateRaidFromGroup(projectGroupId);
-  }
-
-  // TODO[nik]:  remove the GET once the UI is complete RSDEV-852 and RSDEV-853
-  @GetMapping("/associate/{projectGroupId}/{raidServerAlias}/{raidTitle}")
-  @ResponseStatus(HttpStatus.CREATED)
-  @ResponseBody
-  public AjaxReturnObject<ApiGroupInfo> associateRaidToGroup_GET(
-      @PathVariable Long projectGroupId,
-      @PathVariable String raidServerAlias,
-      @PathVariable String raidTitle,
-      @RequestParam(name = "raidIdentifier") String raidIdentifier,
-      Principal principal) {
-
-    RaidGroupAssociationDTO input =
-        new RaidGroupAssociationDTO(
-            projectGroupId,
-            groupManager.getGroup(projectGroupId).getDisplayName(),
-            new RaIDReferenceDTO(raidServerAlias, raidIdentifier));
-    return associateRaidToGroup(input, principal);
   }
 
   private Set<RaIDReferenceDTO> getAvailableRaids(Principal principal) {

@@ -239,12 +239,29 @@ public class ExportControllerTest {
   public static ExportArchiveDialogConfigDTO
       createExportRaidAndElnArchiveConfigSelectionForProjectGroup(
           Long groupId, String rspaceProjectName, String username, Long id, String name) {
+    return createExportRaidAndElnArchiveConfigSelectionForProjectGroup(
+        groupId,
+        rspaceProjectName,
+        username,
+        new Long[] {id},
+        new String[] {name},
+        new String[] {"NORMAL"});
+  }
+
+  public static ExportArchiveDialogConfigDTO
+      createExportRaidAndElnArchiveConfigSelectionForProjectGroup(
+          Long groupId,
+          String rspaceProjectName,
+          String username,
+          Long[] ids,
+          String[] names,
+          String[] types) {
     ExportSelection exportSelection = new ExportSelection();
     exportSelection.setType(ExportType.SELECTION);
     exportSelection.setUsername(username);
-    exportSelection.setExportIds(new Long[] {id});
-    exportSelection.setExportNames(new String[] {name});
-    exportSelection.setExportTypes(new String[] {"NORMAL"});
+    exportSelection.setExportIds(ids);
+    exportSelection.setExportNames(names);
+    exportSelection.setExportTypes(types);
 
     ExportArchiveDialogConfigDTO exportConfig = new ExportArchiveDialogConfigDTO();
     exportConfig.setExportSelection(exportSelection);
@@ -255,7 +272,7 @@ public class ExportControllerTest {
             groupId,
             rspaceProjectName,
             new RaIDReferenceDTO("DEMO", "https://raid.org/10.12345/FGH896")));
-
+    exportConfig.setProjectGroupId(groupId);
     RepoDepositConfig depositConfig = createRepoDepositConfig(false);
     depositConfig.setExportToRaid(false);
 

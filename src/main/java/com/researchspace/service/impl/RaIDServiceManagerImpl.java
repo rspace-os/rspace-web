@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 public class RaIDServiceManagerImpl implements RaIDServiceManager {
 
   @Autowired private RaIDDao raidDao;
-  @Autowired private GroupManager grpManager;
+  @Autowired private GroupManager groupManager;
   @Autowired private FolderManager folderManagerImpl;
 
   @Override
@@ -52,13 +52,13 @@ public class RaIDServiceManagerImpl implements RaIDServiceManager {
   @Override
   public Optional<RaidGroupAssociationDTO> getAssociatedRaidByFolderId(User user, Long folderId) {
     Folder currentFolder = folderManagerImpl.getFolder(folderId, user);
-    Group projectGroup = grpManager.getGroupFromAnyLevelOfSharedFolder(user, currentFolder, null);
+    Group projectGroup = groupManager.getGroupFromAnyLevelOfSharedFolder(user, currentFolder, null);
     return Optional.of(new RaidGroupAssociationDTO(projectGroup.getRaid()));
   }
 
   @Override
   public void bindRaidToGroupAndSave(User user, RaidGroupAssociationDTO raidToGroupAssociation) {
-    Group projectGroup = grpManager.getGroup(raidToGroupAssociation.getProjectGroupId());
+    Group projectGroup = groupManager.getGroup(raidToGroupAssociation.getProjectGroupId());
     projectGroup.setRaid(
         new UserRaid(
             user,
@@ -67,15 +67,15 @@ public class RaIDServiceManagerImpl implements RaIDServiceManager {
             raidToGroupAssociation.getRaid().getRaidTitle(),
             raidToGroupAssociation.getRaid().getRaidIdentifier(),
             raidToGroupAssociation.getRaid().getRaidAgencyUrl()));
-    grpManager.saveGroup(projectGroup, false, user);
+    groupManager.saveGroup(projectGroup, false, user);
   }
 
   @Override
   public void unbindRaidFromGroupAndSave(User user, Long projectGroupId) {
-    Group projectGroup = grpManager.getGroup(projectGroupId);
+    Group projectGroup = groupManager.getGroup(projectGroupId);
     Long raidIdToRemove = projectGroup.getRaid().getId();
     projectGroup.setRaid(null);
-    grpManager.saveGroup(projectGroup, false, user);
+    groupManager.saveGroup(projectGroup, false, user);
     raidDao.remove(raidIdToRemove);
   }
 }

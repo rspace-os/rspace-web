@@ -55,6 +55,7 @@ import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.PropertyConstraint;
 import com.researchspace.model.record.ACLPropagationPolicy;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.ChildAddPolicy;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IRecordFactory;
@@ -1225,6 +1226,24 @@ public class GroupManagerImpl implements GroupManager {
   @Override
   public Group getGroupByCommunalGroupFolderId(Long communalGroupFolderId) {
     return groupDao.getByCommunalGroupFolderId(communalGroupFolderId);
+  }
+
+  @Override
+  public boolean isRecordPartOfGroup(User user, Long recordId, Long projectGroupId) {
+    BaseRecord currentRecord = recordManager.get(recordId);
+    Set<Folder> parents = currentRecord.getParentFolders();
+    Iterator<Folder> it = parents.iterator();
+    boolean isPartOfProject = false;
+    Group currentProjectGroup = null;
+    Folder currentFolder = null;
+    while (it.hasNext() && !isPartOfProject) {
+      currentFolder = it.next();
+      if (currentFolder.isSharedFolder()) {
+        currentProjectGroup = this.getGroupFromAnyLevelOfSharedFolder(user, currentFolder, null);
+        isPartOfProject = projectGroupId.equals(currentProjectGroup.getId());
+      }
+    }
+    return isPartOfProject;
   }
 
   private Folder doCreateAutoshareFolder(User user, Group group, UserGroup ug, String folderName) {

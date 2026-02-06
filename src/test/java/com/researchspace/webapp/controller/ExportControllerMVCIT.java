@@ -9,6 +9,7 @@ import static com.researchspace.webapp.controller.ExportControllerTest.createExp
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -239,6 +240,7 @@ public class ExportControllerMVCIT extends MVCTestBase {
             pi1.getUsername(),
             doc.getId(),
             doc.getName());
+    exportRequestDTO.getRepositoryConfig().setExportToRaid(true);
     String requestContent = mapper.writeValueAsString(exportRequestDTO);
     log.info(requestContent);
 
@@ -247,14 +249,76 @@ public class ExportControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void exportElnByPiTest() throws Exception {
+  public void exportElnWithoutRaidOnManifestByPiTest() throws Exception {
     // GIVEN
     User pi1 = createAndSaveUser(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
     initUser(pi1);
     Group projectGroup = createGroupForUsers(pi1, pi1.getUsername(), "", pi1);
+    Folder rootSharedFolder = folderMgr.getFolder(projectGroup.getCommunalGroupFolderId(), pi1);
+    logoutAndLoginAs(pi1);
+    StructuredDocument docPartOfProject =
+        createBasicDocumentInRootFolderWithText(pi1, "any text in project");
+    sharingHandler.shareIntoSharedFolderOrNotebook(
+        pi1, rootSharedFolder, docPartOfProject.getId(), null);
+    StructuredDocument docNotPartOfProject =
+        createBasicDocumentInRootFolderWithText(pi1, "any text in root");
+    User toAdd = createAndSaveUser(getRandomAlphabeticString("other"));
+    initUser(toAdd);
+    grpMgr.addUserToGroup(pi1.getUsername(), projectGroup.getId(), RoleInGroup.DEFAULT);
 
+    ObjectMapper mapper = new ObjectMapper();
+    ExportArchiveDialogConfigDTO exportRequestDTO =
+        createExportRaidAndElnArchiveConfigSelectionForProjectGroup(
+            projectGroup.getId(),
+            projectGroup.getDisplayName(),
+            pi1.getUsername(),
+            new Long[] {docPartOfProject.getId(), docNotPartOfProject.getId()},
+            new String[] {docPartOfProject.getName(), docNotPartOfProject.getName()},
+            new String[] {"NORMAL", "NORMAL"});
+    String requestContent = mapper.writeValueAsString(exportRequestDTO);
+    log.info(requestContent);
+
+    try {
+      raIDServiceManager.bindRaidToGroupAndSave(pi1, exportRequestDTO.getRaidAssociated());
+
+      // WHEN
+      exportAndExpectSuccess(pi1, requestContent);
+
+      // THEN
+      Map<String, byte[]> mapFileByName = extractElnExportMapByFilename(pi1);
+
+      // assert entry into manifest.txt
+      String actualExportedManifest =
+          new String(mapFileByName.get("manifest.txt"), StandardCharsets.UTF_8);
+      String raidIdentifierUrl = exportRequestDTO.getRaidAssociated().getRaid().getRaidIdentifier();
+      assertFalse(
+          actualExportedManifest.contains("ProjectID:" + raidIdentifierUrl),
+          "RaID has been found inside the manifest.txt, but it should not have");
+
+      // assert entries into RO-crate
+      String actualRoCrate = new String(mapFileByName.get("ro-crate-metadata.json"));
+      String projectId = "#project-" + projectGroup.getDisplayName() + "-" + projectGroup.getId();
+      actualRoCrate = flattenJson(actualRoCrate);
+      assertFalse(actualRoCrate.contains("\"isPartOf\":{\"@id\":\"" + projectId + "\"}"));
+      assertFalse(actualRoCrate.contains("\"name\":\"" + projectGroup.getDisplayName() + "\""));
+      assertFalse(actualRoCrate.contains("\"url\":\"" + raidIdentifierUrl + "\""));
+      assertFalse(actualRoCrate.contains("\"@id\":\"" + projectId + "\"}"));
+      assertFalse(actualRoCrate.contains("\"@type\":\"ResearchProject\"}"));
+    } finally {
+      raIDServiceManager.unbindRaidFromGroupAndSave(pi1, projectGroup.getId());
+    }
+  }
+
+  @Test
+  public void exportElnWithRaidOnManifestByPiTest() throws Exception {
+    // GIVEN
+    User pi1 = createAndSaveUser(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    initUser(pi1);
+    Group projectGroup = createGroupForUsers(pi1, pi1.getUsername(), "", pi1);
+    Folder rootSharedFolder = folderMgr.getFolder(projectGroup.getCommunalGroupFolderId(), pi1);
     logoutAndLoginAs(pi1);
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(pi1, "any text");
+    sharingHandler.shareIntoSharedFolderOrNotebook(pi1, rootSharedFolder, doc.getId(), null);
     User toAdd = createAndSaveUser(getRandomAlphabeticString("other"));
     initUser(toAdd);
     grpMgr.addUserToGroup(pi1.getUsername(), projectGroup.getId(), RoleInGroup.DEFAULT);
@@ -269,30 +333,35 @@ public class ExportControllerMVCIT extends MVCTestBase {
             doc.getName());
     String requestContent = mapper.writeValueAsString(exportRequestDTO);
     log.info(requestContent);
+    try {
+      raIDServiceManager.bindRaidToGroupAndSave(pi1, exportRequestDTO.getRaidAssociated());
 
-    raIDServiceManager.bindRaidToGroupAndSave(pi1, exportRequestDTO.getRaidAssociated());
+      // WHEN
+      exportAndExpectSuccess(pi1, requestContent);
 
-    // WHEN
-    exportAndExpectSuccess(pi1, requestContent);
+      // THEN
+      Map<String, byte[]> mapFileByName = extractElnExportMapByFilename(pi1);
 
-    // THEN
-    Map<String, byte[]> mapFileByName = extractElnExportMapByFilename(pi1);
+      // assert entry into manifest.txt
+      String actualExportedManifest =
+          new String(mapFileByName.get("manifest.txt"), StandardCharsets.UTF_8);
+      String raidIdentifierUrl = exportRequestDTO.getRaidAssociated().getRaid().getRaidIdentifier();
+      assertTrue(
+          actualExportedManifest.contains("ProjectID:" + raidIdentifierUrl),
+          "RaID not fount inside the manifest.txt");
 
-    // assert entry into manifest.txt
-    String actualExportedManifest =
-        new String(mapFileByName.get("manifest.txt"), StandardCharsets.UTF_8);
-    String raidIdentifierUrl = exportRequestDTO.getRaidAssociated().getRaid().getRaidIdentifier();
-    assertTrue(actualExportedManifest.contains("ProjectID:" + raidIdentifierUrl));
-
-    // assert entries into RO-crate
-    String actualRoCrate = new String(mapFileByName.get("ro-crate-metadata.json"));
-    String projectId = "#project-" + projectGroup.getDisplayName() + "-" + projectGroup.getId();
-    actualRoCrate = flattenJson(actualRoCrate);
-    assertTrue(actualRoCrate.contains("\"isPartOf\":{\"@id\":\"" + projectId + "\"}"));
-    assertTrue(actualRoCrate.contains("\"name\":\"" + projectGroup.getDisplayName() + "\""));
-    assertTrue(actualRoCrate.contains("\"url\":\"" + raidIdentifierUrl + "\""));
-    assertTrue(actualRoCrate.contains("\"@id\":\"" + projectId + "\"}"));
-    assertTrue(actualRoCrate.contains("\"@type\":\"ResearchProject\"}"));
+      // assert entries into RO-crate
+      String actualRoCrate = new String(mapFileByName.get("ro-crate-metadata.json"));
+      String projectId = "#project-" + projectGroup.getDisplayName() + "-" + projectGroup.getId();
+      actualRoCrate = flattenJson(actualRoCrate);
+      assertTrue(actualRoCrate.contains("\"isPartOf\":{\"@id\":\"" + projectId + "\"}"));
+      assertTrue(actualRoCrate.contains("\"name\":\"" + projectGroup.getDisplayName() + "\""));
+      assertTrue(actualRoCrate.contains("\"url\":\"" + raidIdentifierUrl + "\""));
+      assertTrue(actualRoCrate.contains("\"@id\":\"" + projectId + "\"}"));
+      assertTrue(actualRoCrate.contains("\"@type\":\"ResearchProject\"}"));
+    } finally {
+      raIDServiceManager.unbindRaidFromGroupAndSave(pi1, projectGroup.getId());
+    }
   }
 
   @Test
@@ -407,12 +476,9 @@ public class ExportControllerMVCIT extends MVCTestBase {
                         "workspace.export.msgFailure",
                         new String[] {
                           "Export",
-                          "The submitted RaID \""
-                              + exportRequestDTO.getRaidAssociated().getRaid().getRaidIdentifier()
-                              + "\" "
-                              + "is not currently associated to the projectId \""
-                              + exportRequestDTO.getRaidAssociated().getProjectGroupId()
-                              + "\""
+                          "The projectID \""
+                              + exportRequestDTO.getProjectGroupId()
+                              + "\" has not got any RaidAssociated"
                         })));
   }
 
