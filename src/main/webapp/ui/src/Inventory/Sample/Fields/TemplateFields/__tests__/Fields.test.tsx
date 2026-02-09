@@ -1,31 +1,24 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import "../../../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, fireEvent, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  fireEvent,
+  screen,
+} from "@testing-library/react";
 import Fields from "../Fields";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 
-jest.mock("../../../../../components/Ketcher/KetcherDialog", () =>
-  jest.fn(() => <div></div>)
-);
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("../../../../../components/Ketcher/KetcherDialog", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 describe("Fields", () => {
   describe("Sample with number field behaves correctly.", () => {
     test("Checks validity of input", () => {
-      const INITIAL_VALUE = "2";
 
+      const INITIAL_VALUE = "2";
       const activeResult = makeMockSample({
         fields: [
           {
@@ -42,16 +35,16 @@ describe("Fields", () => {
           },
         ],
       });
-      jest
+      vi
         .spyOn(activeResult, "setAttributesDirty")
-        .mockImplementation(() => {});
 
+        .mockImplementation(() => {});
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
           <Fields onErrorStateChange={() => {}} sample={activeResult} />
         </ThemeProvider>
-      );
 
+      );
       const input = screen.getByDisplayValue(INITIAL_VALUE);
       fireEvent.input(input, {
         target: {
@@ -61,11 +54,11 @@ describe("Fields", () => {
       expect(container).toHaveTextContent(
         "Invalid value. Please enter a valid value."
       );
+
     });
-
     test("Passed step='any' to input", () => {
-      const INITIAL_VALUE = "2";
 
+      const INITIAL_VALUE = "2";
       const activeResult = makeMockSample({
         fields: [
           {
@@ -82,18 +75,19 @@ describe("Fields", () => {
           },
         ],
       });
-      jest
+      vi
         .spyOn(activeResult, "setAttributesDirty")
-        .mockImplementation(() => {});
 
+        .mockImplementation(() => {});
       render(
         <ThemeProvider theme={materialTheme}>
           <Fields onErrorStateChange={() => {}} sample={activeResult} />
         </ThemeProvider>
-      );
 
+      );
       const input = screen.getByDisplayValue(INITIAL_VALUE);
       expect(input).toHaveAttribute("step", "any");
     });
   });
 });
+

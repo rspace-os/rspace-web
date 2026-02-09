@@ -1,10 +1,6 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import fc from "fast-check";
 import SelectAction from "../SelectAction";
 import {
@@ -14,14 +10,7 @@ import {
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
-jest.mock("../../../../common/InvApiService", () => {});
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 describe("SelectAction", () => {
   describe("Shows a badge that should", () => {
     test("display the count of selected records.", () => {
@@ -55,3 +44,4 @@ describe("SelectAction", () => {
     });
   });
 });
+

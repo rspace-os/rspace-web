@@ -1,16 +1,15 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import { makeMockImportDataUsingExistingTemplate } from "./mocking";
 
-jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../use-stores", () => () => {});
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   authStore: {
     isSynchronizing: true,
   },
-}));
+})
 
+}));
 describe("method: transformTemplateInfoForSubmission", () => {
   /*
    * When the user is importing with an existing template, the behaviour of
@@ -32,8 +31,8 @@ describe("method: transformTemplateInfoForSubmission", () => {
       expect(
         JSON.stringify(uploadModel.transformTemplateInfoForSubmission())
       ).toEqual(expect.any(String));
-    });
 
+    });
     /*
      * Attaching other data MAY be permitted but the id of the selected tempalte is REQUIRED.
      */
@@ -45,3 +44,4 @@ describe("method: transformTemplateInfoForSubmission", () => {
     });
   });
 });
+

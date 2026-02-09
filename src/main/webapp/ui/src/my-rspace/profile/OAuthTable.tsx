@@ -76,7 +76,6 @@ export default function OAuthTable() {
     }
   };
 
-
   const addApp = (app: OAuthApp) => {
     setApps((oldApps) => [app, ...oldApps]);
   };

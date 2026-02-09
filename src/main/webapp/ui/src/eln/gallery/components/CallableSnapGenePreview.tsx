@@ -313,7 +313,7 @@ function RestrictionSites({
     setPage(0);
     setEnzymeList([]);
     void fetchEnzymes();
-     
+
   }, [enzymeSet]);
 
   const handleRequestSort = (_event: unknown, property: string) => {
@@ -577,13 +577,13 @@ function OrfTable({
 
   React.useEffect(() => {
     void fetchData();
-     
+
   }, []);
 
   React.useEffect(() => {
     setPage(0);
     filterResults(results);
-     
+
   }, [readingFrameOption]);
 
   const handleRequestSort = (_event: unknown, property: string) => {

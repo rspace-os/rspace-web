@@ -1,8 +1,4 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { getGroupById } from "../queries";
 import type { GroupInfo } from "../schema";
 import type { RestApiError } from "@/modules/common/api/schema";
@@ -55,7 +51,7 @@ const mockRestApiError: RestApiError = {
 beforeEach(() => {
   // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
   fetchMock.resetMocks();
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("getGroupById", () => {

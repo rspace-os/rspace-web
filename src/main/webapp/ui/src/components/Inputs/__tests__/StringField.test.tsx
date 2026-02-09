@@ -1,37 +1,27 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
- 
+
+import { describe, expect, test, vi } from "vitest";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import StringField from "../StringField";
 import TextField from "@mui/material/TextField";
-import each from "jest-each";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 
-jest.mock("@mui/material/TextField", () => jest.fn(() => <div></div>));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("@mui/material/TextField", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 const expectLabel = (text: string) => (container: Node) =>
-  expect(container).toHaveTextContent(text);
 
+  expect(container).toHaveTextContent(text);
 const expectTextField = (value: string) => () =>
   expect(TextField).toHaveBeenCalledWith(
     expect.objectContaining({ value }),
     expect.anything()
-  );
 
+  );
 describe("StringField", () => {
   describe("Renders correctly", () => {
-    each`
+    test.each`
       disabled     | value    | noValueLabel | expectFn
       ${true}      | ${""}    | ${undefined} | ${expectLabel("None")}
       ${true}      | ${""}    | ${"foo"}     | ${expectLabel("foo")}
@@ -45,7 +35,7 @@ describe("StringField", () => {
       ${undefined} | ${""}    | ${"foo"}     | ${expectTextField("")}
       ${undefined} | ${"bar"} | ${undefined} | ${expectTextField("bar")}
       ${undefined} | ${"bar"} | ${"foo"}     | ${expectTextField("bar")}
-    `.test(
+    `(
       '{disabled = $disabled, value = "$value", noValueLabel = $noValueLabel}',
       ({
         disabled,
@@ -72,3 +62,4 @@ describe("StringField", () => {
     );
   });
 });
+

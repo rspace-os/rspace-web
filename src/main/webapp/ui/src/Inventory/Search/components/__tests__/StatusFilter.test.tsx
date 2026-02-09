@@ -1,20 +1,10 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect } from 'vitest';
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
 import materialTheme from "../../../../theme";
 import StatusFilter from "../StatusFilter";
+
 import { ThemeProvider } from "@mui/material/styles";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("StatusFilter", () => {
   test("Current status should have aria-current property", () => {
     render(
@@ -25,8 +15,8 @@ describe("StatusFilter", () => {
           anchorEl={document.createElement("div")}
         />
       </ThemeProvider>
-    );
 
+    );
     expect(
       screen.getByRole("menuitem", {
         name: "Current",
@@ -34,3 +24,4 @@ describe("StatusFilter", () => {
     ).toHaveAttribute("aria-current", "true");
   });
 });
+

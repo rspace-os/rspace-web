@@ -103,7 +103,7 @@ import Analytics from "../../../components/Analytics";
  * information.
  */
 const EventBoundary = ({ children }: { children: React.ReactNode }) => (
-   
+
   <div
     onKeyDown={(e) => {
       e.stopPropagation();
@@ -336,9 +336,9 @@ const TagDialog = ({
                     onSelection={(newTag) => {
                       if (!addedTags.includes(newTag))
                         setAddedTags([...addedTags, newTag]);
-                      setDeletedTags(
-                        deletedTags.filter((dTag) => dTag !== newTag),
-                      );
+                        setDeletedTags(
+                          deletedTags.filter((dTag) => dTag !== newTag),
+                        );
                     }}
                     onClose={() => {
                       setAnchorEl(null);
@@ -480,7 +480,7 @@ const PiAction = ({
   return (
     <>
       <MenuItem
-         
+
         autoFocus={autoFocus}
         disabled={allowedPiAction.isError}
         onClick={() => {
@@ -1038,7 +1038,7 @@ const SelectionActions = ({
                    * ../../../../../QuirksOfMaterialUi.md, section
                    * "Custom components that wrap `MenuItem`s"
                    */
-                   
+
                   autoFocus
                   selectedUser={selectedUser}
                   setActionsAnchorEl={setActionsAnchorEl}

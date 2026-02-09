@@ -1,7 +1,4 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from "react";
 import {
   cleanup,
@@ -10,7 +7,6 @@ import {
   waitFor,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import GitHub, { type GitHubConnectedMessage } from "../GitHub";
 import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";
@@ -18,15 +14,13 @@ import axios from "@/common/axios";
 import { observable } from "mobx";
 import { render, within } from "../../../../__tests__/customQueries";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
-import { axe, toHaveNoViolations } from "jest-axe";
-import "../../../../../__mocks__/matchMedia";
 
-expect.extend(toHaveNoViolations);
+import "../../../../../__mocks__/matchMedia";
 
 const broadcastHandlers: Array<
   (e: MessageEvent<GitHubConnectedMessage>) => void
 > = [];
-jest.mock("use-broadcast-channel", () => ({
+vi.mock("use-broadcast-channel", () => ({
   useBroadcastChannel: (
     _channel: string,
     handler: (e: MessageEvent<GitHubConnectedMessage>) => void
@@ -36,7 +30,7 @@ jest.mock("use-broadcast-channel", () => ({
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   broadcastHandlers.length = 0;
 });
 
@@ -53,13 +47,14 @@ describe("GitHub", () => {
           }}
           update={() => {}}
         />
+
       );
 
       fireEvent.click(screen.getByRole("button"));
-
       expect(await screen.findByRole("dialog")).toBeVisible();
 
-      expect(await axe(baseElement)).toHaveNoViolations();
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      await expect(baseElement).toBeAccessible();
     });
   });
   describe("Correct rendering", () => {
@@ -72,10 +67,10 @@ describe("GitHub", () => {
           }}
           update={() => {}}
         />
+
       );
 
       fireEvent.click(screen.getByRole("button"));
-
       expect(
         screen.getByText("There are no linked repositories.")
       ).toBeVisible();
@@ -95,15 +90,15 @@ describe("GitHub", () => {
           }}
           update={() => {}}
         />
+
       );
 
       fireEvent.click(screen.getByRole("button"));
-
       expect(
         within(screen.getByRole("table")).getByText("username/someRepo")
       ).toBeVisible();
-    });
 
+    });
     test("If the server responds with a missing ACCESS_TOKEN then the repo should be shown in an invalid state", () => {
       render(
         <GitHub
@@ -119,22 +114,22 @@ describe("GitHub", () => {
           }}
           update={() => {}}
         />
+
       );
 
       fireEvent.click(screen.getByRole("button"));
-
       expect(
         within(screen.getByRole("table")).getByText("username/someRepo")
-      ).toBeVisible();
 
+      ).toBeVisible();
       expect(
         screen.getByText(
           "Repository is in an invalid state. Please remove and re-add."
         )
       ).toBeVisible();
     });
-  });
 
+  });
   describe("Adding repositories", () => {
     test("When requested, all repositories should be listed in a table.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -149,13 +144,13 @@ describe("GitHub", () => {
         error: null,
       });
 
-      jest.spyOn(window, "open").mockImplementation(
+      vi.spyOn(window, "open").mockImplementation(
         () =>
           ({
             close: () => {},
           } as unknown as Window)
-      );
 
+      );
       render(
         <GitHub
           integrationState={{
@@ -164,6 +159,7 @@ describe("GitHub", () => {
           }}
           update={() => {}}
         />
+
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -180,8 +176,8 @@ describe("GitHub", () => {
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
-      });
 
+      });
       const newReposTable = screen.getAllByRole("table")[1];
       expect(
         // @ts-expect-error findTableCell comes from customQueries
@@ -205,13 +201,13 @@ describe("GitHub", () => {
       });
       mockAxios.onPost("integration/saveAppOptions");
 
-      jest.spyOn(window, "open").mockImplementation(
+      vi.spyOn(window, "open").mockImplementation(
         () =>
           ({
             close: () => {},
           } as unknown as Window)
-      );
 
+      );
       render(
         <GitHub
           integrationState={{
@@ -220,6 +216,7 @@ describe("GitHub", () => {
           }}
           update={() => {}}
         />
+
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -236,8 +233,8 @@ describe("GitHub", () => {
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
-      });
 
+      });
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(
@@ -245,16 +242,16 @@ describe("GitHub", () => {
             "cell"
           )[1]
         ).getByRole("button", { name: /add/i })
-      );
 
+      );
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("GITHUB");
       expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({
         GITHUB_REPOSITORY_FULL_NAME: "a repo",
         GITHUB_ACCESS_TOKEN: "oauth token",
       });
-    });
 
+    });
     test("When the add button next to a repo is tapped, it should be added to the conncted repos table and removed from the all repos table.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
@@ -282,13 +279,13 @@ describe("GitHub", () => {
         },
       });
 
-      jest.spyOn(window, "open").mockImplementation(
+      vi.spyOn(window, "open").mockImplementation(
         () =>
           ({
             close: () => {},
           } as unknown as Window)
-      );
 
+      );
       render(
         <GitHub
           integrationState={observable({
@@ -297,6 +294,7 @@ describe("GitHub", () => {
           })}
           update={() => {}}
         />
+
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -313,8 +311,8 @@ describe("GitHub", () => {
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
-      });
 
+      });
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(
@@ -322,14 +320,14 @@ describe("GitHub", () => {
             "cell"
           )[1]
         ).getByRole("button", { name: /add/i })
-      );
 
+      );
       await waitFor(() => {
         expect(
           screen.queryByText("There are no linked repositories.")
         ).not.toBeInTheDocument();
-      });
 
+      });
       const connectedReposTable = screen.getAllByRole("table")[0];
       expect(
         // @ts-expect-error findTableCell comes from customQueries
@@ -337,8 +335,8 @@ describe("GitHub", () => {
           columnHeading: "Repository Name",
           rowIndex: 0,
         })
-      ).toHaveTextContent("a repo");
 
+      ).toHaveTextContent("a repo");
       expect(
         // @ts-expect-error findTableCell comes from customQueries
         await within(allReposTable).findTableCell({
@@ -351,8 +349,8 @@ describe("GitHub", () => {
       const integrationState = observable<IntegrationStates["GITHUB"]>({
         mode: "DISABLED",
         credentials: [],
-      });
 
+      });
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -379,11 +377,12 @@ describe("GitHub", () => {
         },
       });
 
-      jest.spyOn(window, "open").mockImplementation(
+      vi.spyOn(window, "open").mockImplementation(
         () =>
           ({
             close: () => {},
           } as unknown as Window)
+
       );
 
       render(<GitHub integrationState={integrationState} update={() => {}} />);
@@ -402,8 +401,8 @@ describe("GitHub", () => {
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
-      });
 
+      });
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(
@@ -411,18 +410,18 @@ describe("GitHub", () => {
             "cell"
           )[1]
         ).getByRole("button", { name: /add/i })
-      );
 
+      );
       await waitFor(() => {
         expect(
           screen.queryByText("There are no linked repositories.")
         ).not.toBeInTheDocument();
-      });
 
+      });
       expect(integrationState.credentials.length).toBe(1);
     });
-  });
 
+  });
   describe("Removing repositories", () => {
     test("Removing a repository should make the correct API call.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -434,8 +433,8 @@ describe("GitHub", () => {
           name: "GITHUB",
           options: {},
         },
-      });
 
+      });
       render(
         <GitHub
           integrationState={{
@@ -450,18 +449,18 @@ describe("GitHub", () => {
           }}
           update={() => {}}
         />
+
       );
 
       fireEvent.click(screen.getByRole("button"));
 
       fireEvent.click(screen.getByRole("button", { name: /remove/i }));
-
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("GITHUB");
+
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
 
       const table = screen.getByRole("table");
-
       await waitFor(() => {
         expect(
           within(table).queryByText("username/someRepo")
@@ -478,8 +477,8 @@ describe("GitHub", () => {
             optionsId: "1",
           }),
         ],
-      });
 
+      });
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success: true,
@@ -489,6 +488,7 @@ describe("GitHub", () => {
           name: "DATAVERSE",
           options: {},
         },
+
       });
 
       render(<GitHub integrationState={integrationState} update={() => {}} />);
@@ -496,11 +496,10 @@ describe("GitHub", () => {
       fireEvent.click(screen.getByRole("button"));
 
       fireEvent.click(screen.getByRole("button", { name: /remove/i }));
-
       await waitFor(() => {
         expect(screen.queryByText("username/someRepo")).not.toBeInTheDocument();
-      });
 
+      });
       expect(integrationState.credentials.length).toBe(0);
     });
   });

@@ -77,6 +77,8 @@ export default function DataciteCard({
     JSON.stringify(updatedSettings) !== JSON.stringify(savedSettings);
 
   const connectionStatusId = useId();
+  const showConnectionStatus = !unsavedChanges && Boolean(lastTestResult);
+
   return (
     <Card elevation={0} variant="outlined">
       <CardContent sx={{ pt: 0.5 }}>
@@ -191,13 +193,13 @@ export default function DataciteCard({
       </CardContent>
       {unsavedChanges && <WarningBar />}
       <CardActions sx={{ justifyContent: "flex-end" }}>
-        <Fade in={!unsavedChanges && Boolean(lastTestResult)}>
+        <Fade in={showConnectionStatus}>
           <Box mr={1} role="status" id={connectionStatusId}>
             {lastTestResult?.response === "success" && (
               <Typography variant="caption" sx={{ color: "success.main" }}>
                 Connection succeeded
               </Typography>
-            )}
+              )}
             {lastTestResult?.response === "failed" && (
               <Typography variant="caption" sx={{ color: "warningRed" }}>
                 Connection failed. {lastTestResult.message}
@@ -229,10 +231,10 @@ export default function DataciteCard({
                 setLastTestResult({
                   response: "failed",
                   message: getErrorMessage(e, "Unknown reason."),
-                });
               });
+            });
           }}
-          aria-controls={connectionStatusId}
+          aria-controls={showConnectionStatus ? connectionStatusId : undefined}
         >
           Test Connection
         </Button>

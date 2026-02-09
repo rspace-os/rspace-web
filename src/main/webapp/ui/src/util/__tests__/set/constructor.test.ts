@@ -1,15 +1,14 @@
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import RsSet from "../../set";
 import fc from "fast-check";
-import { arbRsSet } from "./helpers";
 
+import { arbRsSet } from "./helpers";
 describe("constructor", () => {
   describe("Should behave just like native set", () => {
     const expectSameSizeAsNativeSet = (data?: Iterable<unknown> | null) => {
       expect(new RsSet(data).size).toEqual(new Set(data).size);
-    };
 
+    };
     test("undefined", () => {
       expectSameSizeAsNativeSet();
     });
@@ -42,3 +41,4 @@ describe("constructor", () => {
     });
   });
 });
+

@@ -1,25 +1,19 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect } from 'vitest';
 import "../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import DMPToolMenuItem from "../DMPToolMenuItem";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
+
 import { ThemeProvider } from "@mui/material/styles";
 
 const mockAxios = new MockAdapter(axios);
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("DMPToolMenuItem", () => {
   test("If the DMPTool is enabled but the user is not authenticated then the menu item should be disabled.", async () => {
     mockAxios.onGet("/apps/dmptool/baseUrlHost").reply(200, "example.com");
@@ -32,18 +26,18 @@ describe("DMPToolMenuItem", () => {
         oauthConnected: false,
         options: {},
       },
-    });
 
+    });
     render(
       <ThemeProvider theme={materialTheme}>
         <DMPToolMenuItem onClick={() => {}} />
       </ThemeProvider>
-    );
 
+    );
     void (await waitFor(async () => {
       expect(await screen.findByRole("menuitem")).toBeVisible();
-    }));
 
+    }));
     expect(screen.getByRole("menuitem")).toHaveAttribute(
       "aria-disabled",
       "true"
@@ -53,3 +47,4 @@ describe("DMPToolMenuItem", () => {
     ).toBeVisible();
   });
 });
+

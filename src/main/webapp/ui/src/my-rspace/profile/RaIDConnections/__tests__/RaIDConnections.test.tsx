@@ -1,148 +1,230 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
 import React from "react";
 import {
   render,
   screen,
   waitFor,
 } from "@testing-library/react";
-import { axe, toHaveNoViolations } from "jest-axe";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "@/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RaIDConnections from "../RaIDConnections";
-import "@testing-library/jest-dom";
 import "../../../../../__mocks__/matchMedia";
+import type { GroupInfo } from "@/modules/groups/schema";
+import type { IntegrationRaidInfo } from "@/modules/raid/schema";
+import type { UseSuspenseQueryResult } from "@tanstack/react-query";
 
-expect.extend(toHaveNoViolations);
+type IntegrationRaidInfoData = Extract<
+  IntegrationRaidInfo,
+  { success: true }
+>["data"];
 
 // Mock data
-const mockOauthTokenData = { token: "test-token-123" };
+const mockOauthTokenData = "test-token-123";
 
-const mockIntegrationDataSuccess = {
-  success: true,
-  data: {
+const createGroup = (
+  overrides: Partial<GroupInfo> & Pick<GroupInfo, "id" | "name" | "type">,
+): GroupInfo => ({
+  globalId: `GR${overrides.id}`,
+  sharedFolderId: 1,
+  sharedSnippetFolderId: 2,
+  members: [],
+  raid: null,
+  ...overrides,
+});
+
+const createIntegrationInfo = (
+  overrides: Partial<IntegrationRaidInfo>,
+): IntegrationRaidInfo => {
+  if (overrides.success === false) {
+    return {
+      success: false,
+      errorMsg: "Integration error",
+      error: { errorMessages: [] },
+      ...overrides,
+    } as IntegrationRaidInfo;
+  }
+
+  const baseOptions = ({
+    RAID_CONFIGURED_SERVERS: [
+      { url: "https://raid.server1.com", alias: "server1" },
+    ],
+    SERVER_1: {
+      RAID_OAUTH_CONNECTED: true,
+      RAID_URL: "https://raid.server1.com",
+      RAID_ALIAS: "server1",
+    },
+  } as unknown) as IntegrationRaidInfoData["options"];
+  const baseData: IntegrationRaidInfoData = {
+    name: "RAID",
+    displayName: "RaID",
     available: true,
     enabled: true,
-    options: {
-      RAID_CONFIGURED_SERVERS: ["server1"],
-      SERVER_1: {
-        RAID_OAUTH_CONNECTED: "true",
-        RAID_SERVER_URL: "https://raid.server1.com",
-      },
+    oauthConnected: true,
+    options: baseOptions,
+  };
+
+  const { data: overrideData, success: _success, ...rest } =
+    overrides as { data?: Partial<IntegrationRaidInfoData>; success?: true };
+  const dataOverrides = overrideData ?? {};
+
+  return {
+    success: true,
+    ...rest,
+    data: {
+      ...baseData,
+      ...dataOverrides,
     },
-  },
+  };
 };
 
-const mockIntegrationDataNotAvailable = {
+const asOauthTokenResult = (
+  token: string,
+): UseSuspenseQueryResult<string, Error> =>
+  ({ data: token } as UseSuspenseQueryResult<string, Error>);
+const asRaidIntegrationResult = (
+  data: IntegrationRaidInfo,
+): UseSuspenseQueryResult<IntegrationRaidInfo, Error> =>
+  ({ data } as UseSuspenseQueryResult<IntegrationRaidInfo, Error>);
+const asGroupResult = (
+  data: GroupInfo,
+): UseSuspenseQueryResult<GroupInfo, Error> =>
+  ({ data } as UseSuspenseQueryResult<GroupInfo, Error>);
+const asGroupErrorResult = (
+  error: Error,
+): UseSuspenseQueryResult<GroupInfo, Error> =>
+  ({ error } as UseSuspenseQueryResult<GroupInfo, Error>);
+
+const mockIntegrationDataSuccess = createIntegrationInfo({});
+
+const mockIntegrationDataNotAvailable = createIntegrationInfo({
   success: true,
   data: {
+    name: "RAID",
+    displayName: "RaID",
     available: false,
     enabled: false,
+    oauthConnected: false,
     options: {},
   },
-};
+});
 
-const mockIntegrationDataNotEnabled = {
+const mockIntegrationDataNotEnabled = createIntegrationInfo({
   success: true,
   data: {
+    name: "RAID",
+    displayName: "RaID",
     available: true,
     enabled: false,
+    oauthConnected: false,
     options: {},
   },
-};
+});
 
-const mockIntegrationDataNoConnectedServers = {
+const mockIntegrationDataNoConnectedServers = createIntegrationInfo({
   success: true,
   data: {
+    name: "RAID",
+    displayName: "RaID",
     available: true,
     enabled: true,
-    options: {
-      RAID_CONFIGURED_SERVERS: ["server1"],
+    oauthConnected: false,
+    options: ({
+      RAID_CONFIGURED_SERVERS: [
+        { url: "https://raid.server1.com", alias: "server1" },
+      ],
       SERVER_1: {
         RAID_OAUTH_CONNECTED: false,
-        RAID_SERVER_URL: "https://raid.server1.com",
+        RAID_URL: "https://raid.server1.com",
+        RAID_ALIAS: "server1",
       },
-    },
+    } as unknown) as IntegrationRaidInfoData["options"],
   },
-};
+});
 
-const mockIntegrationDataError = {
+const mockIntegrationDataError: IntegrationRaidInfo = {
   success: false,
   errorMsg: "Failed to load integration info",
+  error: { errorMessages: [] },
 };
 
-const mockGroupDataProjectGroup = {
+const mockGroupDataProjectGroup = createGroup({
   id: 12345,
   name: "Test Project Group",
   type: "PROJECT_GROUP",
-};
+});
 
-const mockGroupDataLabGroup = {
+const mockGroupDataLabGroup = createGroup({
   id: 12346,
   name: "Test Lab Group",
   type: "LAB_GROUP",
-};
+});
 
-const mockGroupDataProjectGroupWithRaid = {
+const mockGroupDataProjectGroupWithRaid = createGroup({
   id: 12345,
   name: "Test Project Group",
   type: "PROJECT_GROUP",
   raid: {
+    raidServerAlias: "server1",
     raidIdentifier: "https://raid.org/12345",
     raidTitle: "My Research Project",
   },
-};
+});
 
-const mockGroupDataLabGroupWithRaid = {
+const mockGroupDataLabGroupWithRaid = createGroup({
   id: 12346,
   name: "Test Lab Group",
   type: "LAB_GROUP",
   raid: {
+    raidServerAlias: "server1",
     raidIdentifier: "https://raid.org/67890",
     raidTitle: "Previous Lab Project",
   },
-};
+});
 
 const mockGroupsError = new Error("Failed to load group info");
 
 // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
-jest.mock("@/modules/common/hooks/auth", () => ({
-  useOauthTokenQuery: jest.fn(),
+vi.mock("@/modules/common/hooks/auth", () => ({
+  useOauthTokenQuery: vi.fn(),
 }));
 
-jest.mock("@/modules/raid/queries", () => ({
-  useRaidIntegrationInfoAjaxQuery: jest.fn(),
+vi.mock("@/modules/raid/queries", () => ({
+  useRaidIntegrationInfoAjaxQuery: vi.fn(),
 }));
 
-jest.mock("@/modules/groups/queries", () => ({
-  useGetGroupByIdQuery: jest.fn(),
+vi.mock("@/modules/groups/queries", () => ({
+  useGetGroupByIdQuery: vi.fn(),
 }));
 
 // Mock child components
-jest.mock("../RaIDConnectionsEntry", () => {
-  return function MockRaIDConnectionsEntry({ groupId }: { groupId: string }) {
+vi.mock("../RaIDConnectionsEntry", () => {
+  return {
+    default: function MockRaIDConnectionsEntry({ groupId }: { groupId: string }) {
     return (
       <div data-testid="raid-connections-entry">
         RaID Connections Entry for group {groupId}
       </div>
     );
+    },
   };
 });
 
-jest.mock("@/components/ErrorBoundary", () => {
-  return function MockErrorBoundary({ children }: { children: React.ReactNode }) {
+vi.mock("@/components/ErrorBoundary", () => {
+  return {
+    default: function MockErrorBoundary({ children }: { children: React.ReactNode }) {
     return <div data-testid="error-boundary">{children}</div>;
+    },
   };
 });
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-const { useOauthTokenQuery } = jest.requireMock("@/modules/common/hooks/auth");
-const { useRaidIntegrationInfoAjaxQuery } = jest.requireMock("@/modules/raid/queries");
-const { useGetGroupByIdQuery } = jest.requireMock("@/modules/groups/queries");
-/* eslint-enable @typescript-eslint/no-unsafe-assignment */
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useRaidIntegrationInfoAjaxQuery } from "@/modules/raid/queries";
+import { useGetGroupByIdQuery } from "@/modules/groups/queries";
+
+const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
+const mockedUseRaidIntegrationInfoAjaxQuery = vi.mocked(useRaidIntegrationInfoAjaxQuery);
+const mockedUseGetGroupByIdQuery = vi.mocked(useGetGroupByIdQuery);
 
 const renderWithProviders = (props: { groupId: string }) => {
   const queryClient = new QueryClient({
@@ -167,18 +249,18 @@ describe("RaIDConnections", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-    useOauthTokenQuery.mockReturnValue({ data: mockOauthTokenData });
-    /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    vi.clearAllMocks();
+     
+    mockedUseOauthTokenQuery.mockReturnValue(asOauthTokenResult(mockOauthTokenData));
+     
   });
 
   describe("Accessibility", () => {
     it("Should have no axe violations when RaID is available", async () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       const { baseElement } = renderWithProviders(defaultProps);
 
       await waitFor(() => {
@@ -186,37 +268,38 @@ describe("RaIDConnections", () => {
       });
 
       // Disable region rule as this is a sub-component that would be within a landmark in the real app
-      expect(await axe(baseElement, { rules: { region: { enabled: false } } })).toHaveNoViolations();
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      await expect(baseElement).toBeAccessible();
     });
 
     it("Should have no axe violations when RaID is unavailable", async () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNotAvailable });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNotAvailable));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       const { baseElement } = renderWithProviders(defaultProps);
 
-      // Disable region rule as this is a sub-component that would be within a landmark in the real app
-      expect(await axe(baseElement, { rules: { region: { enabled: false } } })).toHaveNoViolations();
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      await expect(baseElement).toBeAccessible();
     });
   });
 
   describe("Rendering and Layout", () => {
     it("Should render the component title", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByRole("heading", { name: /RaID Connections/i })).toBeInTheDocument();
     });
 
     it("Should render ErrorBoundary component", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByTestId("error-boundary")).toBeInTheDocument();
@@ -225,20 +308,20 @@ describe("RaIDConnections", () => {
 
   describe("Integration Data Error Handling", () => {
     it("Should display error message when integration data fails to load", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataError });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataError));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/Error loading RaID integration info: Failed to load integration info/i)).toBeInTheDocument();
     });
 
     it("Should not render RaIDConnectionsEntry when integration data fails", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataError });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataError));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.queryByTestId("raid-connections-entry")).not.toBeInTheDocument();
@@ -247,20 +330,20 @@ describe("RaIDConnections", () => {
 
   describe("Group Data Error Handling", () => {
     it("Should display error message when group data fails to load", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ error: mockGroupsError });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupErrorResult(mockGroupsError));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/Error loading group info: Failed to load group info/i)).toBeInTheDocument();
     });
 
     it("Should not render RaIDConnectionsEntry when group data fails", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ error: mockGroupsError });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupErrorResult(mockGroupsError));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.queryByTestId("raid-connections-entry")).not.toBeInTheDocument();
@@ -269,10 +352,10 @@ describe("RaIDConnections", () => {
 
   describe("RaID Availability States", () => {
     it("Should display unavailable message when RaID is not available", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNotAvailable });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNotAvailable));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/RaID is not available for this RSpace instance/i)).toBeInTheDocument();
@@ -280,40 +363,40 @@ describe("RaIDConnections", () => {
     });
 
     it("Should display unavailable message when RaID is not enabled", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNotEnabled });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNotEnabled));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/RaID is not enabled for this RSpace instance/i)).toBeInTheDocument();
     });
 
     it("Should display unavailable message when no RaID servers are connected", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNoConnectedServers });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNoConnectedServers));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/RaID has been enabled, but no RaID servers have been connected yet/i)).toBeInTheDocument();
     });
 
     it("Should display unavailable message when group is not a project group", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataLabGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataLabGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/RaID is disabled for this project - only project groups can have RaID Connections/i)).toBeInTheDocument();
     });
 
     it("Should not render RaIDConnectionsEntry when RaID is unavailable", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNotAvailable });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNotAvailable));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.queryByTestId("raid-connections-entry")).not.toBeInTheDocument();
@@ -322,10 +405,10 @@ describe("RaIDConnections", () => {
 
   describe("RaID Available State", () => {
     it("Should render RaIDConnectionsEntry when all conditions are met", async () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       await waitFor(() => {
@@ -334,10 +417,10 @@ describe("RaIDConnections", () => {
     });
 
     it("Should pass groupId prop to RaIDConnectionsEntry", async () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       await waitFor(() => {
@@ -346,10 +429,10 @@ describe("RaIDConnections", () => {
     });
 
     it("Should not display unavailable message when RaID is available", async () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       await waitFor(() => {
@@ -365,10 +448,10 @@ describe("RaIDConnections", () => {
 
   describe("hasConnectedServers Logic", () => {
     it("Should correctly identify connected servers", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       // Should render the entry component, indicating hasConnectedServers is true
@@ -376,10 +459,10 @@ describe("RaIDConnections", () => {
     });
 
     it("Should correctly identify no connected servers when RAID_OAUTH_CONNECTED is false", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNoConnectedServers });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNoConnectedServers));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       // Should not render the entry component, indicating hasConnectedServers is false
@@ -388,25 +471,32 @@ describe("RaIDConnections", () => {
     });
 
     it("Should filter out RAID_CONFIGURED_SERVERS key when checking for connected servers", () => {
-      const mockIntegrationDataWithConfiguredServers = {
+      const mockIntegrationDataWithConfiguredServers = createIntegrationInfo({
         success: true,
         data: {
+          name: "RAID",
+          displayName: "RaID",
           available: true,
           enabled: true,
-          options: {
-            RAID_CONFIGURED_SERVERS: ["server1", "server2"],
+          oauthConnected: true,
+          options: ({
+            RAID_CONFIGURED_SERVERS: [
+              { url: "https://raid.server1.com", alias: "server1" },
+              { url: "https://raid.server2.com", alias: "server2" },
+            ],
             SERVER_1: {
-              RAID_OAUTH_CONNECTED: "true",
-              RAID_SERVER_URL: "https://raid.server1.com",
+              RAID_OAUTH_CONNECTED: true,
+              RAID_URL: "https://raid.server1.com",
+              RAID_ALIAS: "server1",
             },
-          },
+          } as unknown) as IntegrationRaidInfoData["options"],
         },
-      };
+      });
 
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataWithConfiguredServers });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataWithConfiguredServers));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       // Should render the entry component, ignoring RAID_CONFIGURED_SERVERS in the check
@@ -414,19 +504,22 @@ describe("RaIDConnections", () => {
     });
 
     it("Should handle empty options object", () => {
-      const mockIntegrationDataEmptyOptions = {
+      const mockIntegrationDataEmptyOptions = createIntegrationInfo({
         success: true,
         data: {
+          name: "RAID",
+          displayName: "RaID",
           available: true,
           enabled: true,
+          oauthConnected: false,
           options: {},
         },
-      };
+      });
 
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataEmptyOptions });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataEmptyOptions));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       // Should not render the entry component
@@ -437,10 +530,10 @@ describe("RaIDConnections", () => {
 
   describe("Priority of Unavailable Messages", () => {
     it("Should prioritize non-project group message over other unavailability reasons", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNotAvailable });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataLabGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNotAvailable));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataLabGroup));
+       
       renderWithProviders(defaultProps);
 
       // Should show the non-project group message first
@@ -450,30 +543,30 @@ describe("RaIDConnections", () => {
     });
 
     it("Should show not available message when group is project group but RaID is not available", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNotAvailable });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNotAvailable));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/RaID is not available for this RSpace instance/i)).toBeInTheDocument();
     });
 
     it("Should show not enabled message when RaID is available but not enabled", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNotEnabled });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNotEnabled));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/RaID is not enabled for this RSpace instance/i)).toBeInTheDocument();
     });
 
     it("Should show no connected servers message when enabled but no servers connected", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNoConnectedServers });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNoConnectedServers));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/no RaID servers have been connected yet/i)).toBeInTheDocument();
@@ -482,10 +575,10 @@ describe("RaIDConnections", () => {
 
   describe("Previously Connected RaID Display", () => {
     it("Should display previous RaID connection when group is not a project group", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataLabGroupWithRaid });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataLabGroupWithRaid));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/RaID is disabled for this project - only project groups can have RaID Connections/i)).toBeInTheDocument();
@@ -494,10 +587,10 @@ describe("RaIDConnections", () => {
     });
 
     it("Should display previous RaID connection when RaID is not available", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNotAvailable });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroupWithRaid });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNotAvailable));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroupWithRaid));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/RaID is not available for this RSpace instance/i)).toBeInTheDocument();
@@ -506,10 +599,10 @@ describe("RaIDConnections", () => {
     });
 
     it("Should display previous RaID connection when RaID is not enabled", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNotEnabled });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroupWithRaid });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNotEnabled));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroupWithRaid));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/RaID is not enabled for this RSpace instance/i)).toBeInTheDocument();
@@ -518,10 +611,10 @@ describe("RaIDConnections", () => {
     });
 
     it("Should display previous RaID connection when no servers are connected", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNoConnectedServers });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroupWithRaid });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNoConnectedServers));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroupWithRaid));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/no RaID servers have been connected yet/i)).toBeInTheDocument();
@@ -530,10 +623,10 @@ describe("RaIDConnections", () => {
     });
 
     it("Should NOT display previous RaID connection when group has no RaID data", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNotAvailable });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNotAvailable));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/RaID is not available for this RSpace instance/i)).toBeInTheDocument();
@@ -541,10 +634,10 @@ describe("RaIDConnections", () => {
     });
 
     it("Should NOT display previous RaID connection when RaID is available", async () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroupWithRaid });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroupWithRaid));
+       
       renderWithProviders(defaultProps);
 
       await waitFor(() => {
@@ -555,20 +648,21 @@ describe("RaIDConnections", () => {
     });
 
     it("Should display previous RaID connection with empty title", () => {
-      const mockGroupDataWithEmptyTitle = {
+      const mockGroupDataWithEmptyTitle = createGroup({
         id: 12345,
         name: "Test Project Group",
         type: "PROJECT_GROUP",
         raid: {
+          raidServerAlias: "server1",
           raidIdentifier: "https://raid.org/12345",
           raidTitle: "",
         },
-      };
+      });
 
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataNotAvailable });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataWithEmptyTitle });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataNotAvailable));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataWithEmptyTitle));
+       
       renderWithProviders(defaultProps);
 
       expect(screen.getByText(/Previously connected to:/i)).toBeInTheDocument();
@@ -578,20 +672,20 @@ describe("RaIDConnections", () => {
 
   describe("Integration with Hooks", () => {
     it("Should call useOauthTokenQuery", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
        
       expect(useOauthTokenQuery).toHaveBeenCalled();
     });
 
     it("Should call useRaidIntegrationInfoAjaxQuery", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(useRaidIntegrationInfoAjaxQuery).toHaveBeenCalled();
@@ -599,10 +693,10 @@ describe("RaIDConnections", () => {
     });
 
     it("Should call useGetGroupByIdQuery with correct parameters", () => {
-      /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-      useRaidIntegrationInfoAjaxQuery.mockReturnValue({ data: mockIntegrationDataSuccess });
-      useGetGroupByIdQuery.mockReturnValue({ data: mockGroupDataProjectGroup });
-      /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+       
+      mockedUseRaidIntegrationInfoAjaxQuery.mockReturnValue(asRaidIntegrationResult(mockIntegrationDataSuccess));
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataProjectGroup));
+       
       renderWithProviders(defaultProps);
 
       expect(useGetGroupByIdQuery).toHaveBeenCalledWith({

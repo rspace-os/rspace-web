@@ -74,7 +74,7 @@ export default function useOneDimensionalRovingTabIndex<
 
   React.useEffect(() => {
     if (hasFocus) refOfRovingTabIndex.current?.focus();
-     
+
   }, [rovingTabIndex]);
 
   function getTabIndex(i: number) {

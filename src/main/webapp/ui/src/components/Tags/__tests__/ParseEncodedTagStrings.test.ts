@@ -1,11 +1,7 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import { encodeTags } from "../ParseEncodedTagStrings";
-import { Optional } from "../../../util/optional";
 
+import { Optional } from "../../../util/optional";
 describe("ParseEncodedTagStrings", () => {
   describe("encodeTags", () => {
     test("Empty array should return empty string.", () => {
@@ -71,3 +67,4 @@ describe("ParseEncodedTagStrings", () => {
     });
   });
 });
+

@@ -1,23 +1,10 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect } from 'vitest';
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import DataciteCard from "../DataciteCard";
-import { axe, toHaveNoViolations } from "jest-axe";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../../theme";
-
-expect.extend(toHaveNoViolations);
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("DataciteCard", () => {
   test("Should have no axe violations.", async () => {
     const { container } = render(
@@ -34,6 +21,7 @@ describe("DataciteCard", () => {
       </ThemeProvider>
     );
 
-    expect(await axe(container)).toHaveNoViolations();
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
+    await expect(container).toBeAccessible();
   });
 });

@@ -1,20 +1,10 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
 
+import { describe, expect, test } from 'vitest';
 import { mapObject } from "../../Util";
+
 import fc from "fast-check";
 
-/*
- * fast-check intentionally generates strings that are likely to lead to
- * weird JavaScript behaviour, such as "__proto__". However, this string
- * breaks the implementation of mapObject and it is not worth adding
- * complexity to the function for the sake of a key that wont happen in
- * reality.
- */
 const arbObjectKey = fc.string().filter((str) => str !== "__proto__");
-
 describe("mapObject", () => {
   test("Is identity when valueFunc returns its respective input.", () => {
     fc.assert(
@@ -22,8 +12,8 @@ describe("mapObject", () => {
         expect(mapObject((_, v) => v, obj)).toEqual(obj);
       })
     );
-  });
 
+  });
   test("Output object always has the same number of key-value pairs.", () => {
     fc.assert(
       fc.property(
@@ -38,8 +28,8 @@ describe("mapObject", () => {
         }
       )
     );
-  });
 
+  });
   test("Composing calls to mapObject is the same as one call with the valueFunc composed.", () => {
     fc.assert(
       fc.property(
@@ -57,3 +47,4 @@ describe("mapObject", () => {
     );
   });
 });
+

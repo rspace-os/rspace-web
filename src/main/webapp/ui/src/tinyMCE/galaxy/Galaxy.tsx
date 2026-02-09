@@ -271,6 +271,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                         aria-label="Choose Galaxy Server"
                         name="Choose Galaxy Server"
                         defaultValue={targetAlias}
+                        value={targetAlias}
                         onChange={handleDataTypeChange}
                       >
                         {servers.map((server) => (

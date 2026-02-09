@@ -247,7 +247,7 @@ function TreeListing({
       }
     }
     void browse();
-     
+
   }, [fsId, path]);
 
   return (

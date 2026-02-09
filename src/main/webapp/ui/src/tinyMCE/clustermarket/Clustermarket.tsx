@@ -189,7 +189,7 @@ function Clustermarket({
               isMaintenance,
             );
           setEquipment(equipmentTableRows);
-           
+
           // @ts-expect-error global
           RS.trackEvent("FetchClustermarketEquipmentData", {
             count: equipmentTableRows.length,
@@ -205,7 +205,7 @@ function Clustermarket({
               isMaintenance,
             );
           setBookings(bookingTableRows);
-           
+
           // @ts-expect-error global
           RS.trackEvent("FetchClustermarketBookingData", {
             count: bookingTableRows.length,

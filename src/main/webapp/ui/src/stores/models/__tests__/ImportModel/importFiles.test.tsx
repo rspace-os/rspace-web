@@ -1,11 +1,7 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, beforeEach, vi } from 'vitest';
 import InvApiService from "../../../../common/InvApiService";
 import getRootStore from "../../../stores/RootStore";
 import ImportModel from "../../ImportModel";
-import "@testing-library/jest-dom";
 import { templateAttrs } from "../TemplateModel/mocking";
 import { runInAction } from "mobx";
 import {
@@ -14,21 +10,17 @@ import {
   InternalAxiosRequestConfig,
 } from "@/common/axios";
 
-jest.mock("../../../../common/InvApiService", () => ({
-  post: jest.fn(),
-}));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  post: vi.fn(),
+  }}));
 const mockErrorMsg =
-  "Unexpected number of values in CSV line, expected: 2, was: 3";
 
+  "Unexpected number of values in CSV line, expected: 2, was: 3";
 describe("method: importFile", () => {
   describe("When the server responds with some errors,", () => {
     beforeEach(() => {
-      jest
+      vi
         .spyOn(InvApiService, "post")
         .mockImplementation((_resource: string, _params: object | FormData) => {
           const mockResponse: AxiosResponse = {
@@ -60,26 +52,26 @@ describe("method: importFile", () => {
           };
           return Promise.resolve(mockResponse);
         });
-      jest
+      vi
         .spyOn(ImportModel.prototype, "transformTemplateInfoForSubmission")
         .mockImplementation(() => ({ fields: [], name: "Template" }));
-      jest
+      vi
         .spyOn(ImportModel.prototype, "makeMappingsObject")
         .mockImplementation(() => ({}));
-    });
 
+    });
     test("they should have the correct index.", async () => {
       const uploadModel = new ImportModel("SAMPLES");
 
-      const addAlertSpy = jest.fn();
+      const addAlertSpy = vi.fn();
       runInAction(() => {
         getRootStore().uiStore.addAlert = addAlertSpy;
       });
 
-      jest
+      vi
         .spyOn(uploadModel.state, "transitionTo")
-        .mockImplementation(() => {});
 
+        .mockImplementation(() => {});
       await uploadModel.importFiles();
       expect(addAlertSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -101,3 +93,4 @@ describe("method: importFile", () => {
     });
   });
 });
+

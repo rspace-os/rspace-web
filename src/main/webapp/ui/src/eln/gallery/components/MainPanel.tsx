@@ -102,7 +102,7 @@ import { IconButton, Paper } from "@mui/material";
 
 function useIsBeingMoved(): (
   file: GalleryFile,
-   
+
   fileBeingMoved: GalleryFile | null | typeof undefined,
 ) => boolean {
   const selection = useGallerySelection();
@@ -136,7 +136,7 @@ const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
 }));
 
 const StyledBreadcrumb = styled(
-   
+
   React.forwardRef<
     HTMLDivElement,
     ChipProps<
@@ -445,7 +445,7 @@ const StyledMenu = styled(Menu)(({ open }) => ({
 
 const FileCard = styled(
   observer(
-     
+
     React.forwardRef(
       (
         {
@@ -944,7 +944,7 @@ const GridView = observer(
     const [gridHasFocus, setGridHasFocus] = React.useState(false);
     React.useEffect(() => {
       if (gridHasFocus) focusFileCardRef.current?.focus();
-       
+
     }, [tabIndexCoord]);
 
     /*
