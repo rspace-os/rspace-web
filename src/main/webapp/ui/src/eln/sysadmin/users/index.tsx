@@ -330,22 +330,20 @@ const TagDialog = ({
                       setAnchorEl(e.currentTarget);
                     }}
                   />
-                  {anchorEl ? (
-                    <TagsCombobox
-                      value={new RsSet(visibleTags)}
-                      anchorEl={anchorEl}
-                      onSelection={(newTag) => {
-                        if (!addedTags.includes(newTag))
-                          setAddedTags([...addedTags, newTag]);
-                          setDeletedTags(
-                            deletedTags.filter((dTag) => dTag !== newTag),
-                          );
-                      }}
-                      onClose={() => {
-                        setAnchorEl(null);
-                      }}
-                    />
-                  ) : null}
+                  <TagsCombobox
+                    value={new RsSet(visibleTags)}
+                    anchorEl={anchorEl}
+                    onSelection={(newTag) => {
+                      if (!addedTags.includes(newTag))
+                        setAddedTags([...addedTags, newTag]);
+                        setDeletedTags(
+                          deletedTags.filter((dTag) => dTag !== newTag),
+                        );
+                    }}
+                    onClose={() => {
+                      setAnchorEl(null);
+                    }}
+                  />
                 </Grid>
               </Grid>
             </Grid>
