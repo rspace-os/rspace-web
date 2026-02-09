@@ -1,9 +1,8 @@
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { arbRsSet, arbSubsetOf } from "./helpers";
-import RsSet from "../../set";
 
+import RsSet from "../../set";
 describe("isSupersetOf", () => {
   test("Works with fc.subarray", () => {
     fc.assert(

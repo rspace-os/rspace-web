@@ -33,7 +33,7 @@ export const addRaidIdentifierAjax = async ({
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to add RaID identifier: ${response.statusText}`);
+    throw new Error(`Failed to add RAiD identifier: ${response.statusText}`);
   }
 
   if (response.status !== 201) {
@@ -78,7 +78,7 @@ export const removeRaidIdentifierAjax = async ({
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to remove RaID identifier: ${response.statusText}`);
+    throw new Error(`Failed to remove RAiD identifier: ${response.statusText}`);
   }
 
   if (response.status !== 201) {

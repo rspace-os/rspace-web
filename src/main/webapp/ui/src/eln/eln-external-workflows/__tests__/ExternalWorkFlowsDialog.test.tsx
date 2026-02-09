@@ -1,14 +1,10 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, beforeEach,  } from 'vitest';
 import React from "react";
 import axios from "@/common/axios";
-import {render, screen, fireEvent, waitFor} from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen, fireEvent } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-import ExternalWorkflowInvocations, {InvocationsAndDataCount} from "../ExternalWorkflowInvocations";
 
+import ExternalWorkflowInvocations, {InvocationsAndDataCount} from "../ExternalWorkflowInvocations";
 const mockAxios = new MockAdapter(axios);
 const GalaxyDataSummary = {
   "rspaceFieldName": "Data",
@@ -25,7 +21,7 @@ const GalaxyInvocationsAndDataCount: InvocationsAndDataCount = {
   dataCount: 2,
   invocationCount: 1
 }
-describe("Renders with table of  data ", () => {
+describe("Renders with table of  data", () => {
   beforeEach(() => {
     mockAxios
     .onGet("/apps/galaxy/galaxyDataExists/1")
@@ -38,13 +34,13 @@ describe("Renders with table of  data ", () => {
     .reply(200, GalaxyInvocationsAndDataCount);
   });
 
-  it("displays WorkFlow Data table headers", async () => {
-    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
-    expect(await screen.findByRole("button")).toBeDisabled();
-    await waitFor(() => expect(screen.getByRole("button")).toBeEnabled(), {
-      timeout: 5000,
+  test("displays WorkFlow Data table headers", async () => {
+    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
+    const toggleButton = await screen.findByRole("button", {
+      name: /Show computational workflows associated with this field/i,
     });
-    fireEvent.click(screen.getByRole("button"));
+    expect(toggleButton).toBeEnabled();
+    fireEvent.click(toggleButton);
     expect(await screen.findByText(/Galaxy WorkFlow Data/i)).toBeInTheDocument();
     expect(await screen.findByText("Data Uploaded")).toBeInTheDocument();
     expect(await screen.findByText("Container/Galaxy History")).toBeInTheDocument();
@@ -52,14 +48,14 @@ describe("Renders with table of  data ", () => {
     expect(await screen.findByText("Invocation Status")).toBeInTheDocument();
     expect(await screen.findByText("Invocation Created")).toBeInTheDocument();
   });
-  it("displays WorkFlow Data ", async () => {
-    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
-    expect(await screen.findByRole("button")).toBeDisabled();
-    await waitFor(() => expect(screen.getByRole("button")).toBeEnabled(), {
-      timeout: 5000,
+  test("displays WorkFlow Data", async () => {
+    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
+    const toggleButton = await screen.findByRole("button", {
+      name: /Show computational workflows associated with this field/i,
     });
-    expect(await screen.findByRole("button")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button"));
+    expect(toggleButton).toBeEnabled();
+    expect(toggleButton).toBeInTheDocument();
+    fireEvent.click(toggleButton);
     expect(await screen.findByText(/Galaxy WorkFlow Data/i)).toBeInTheDocument();
     const gridCells = screen.getAllByRole("gridcell");
     expect(gridCells[0]).toHaveTextContent('Galaxy1-_anaphase_1750407920234.jpg__1753183694203.jpg');
@@ -67,8 +63,8 @@ describe("Renders with table of  data ", () => {
     expect(gridCells[2]).toHaveTextContent('Invocation Name');
     expect(gridCells[3]).toHaveTextContent('FAILED');
     expect(gridCells[4]).toHaveTextContent(new Date(GalaxyDataSummary.createdOn).toLocaleString());
-  });
 
+  });
 });
 describe("Handles errors", () => {
   beforeEach(() => {
@@ -76,35 +72,39 @@ describe("Handles errors", () => {
     .onGet("/apps/galaxy/galaxyDataExists/1")
     .reply(200, true);
   });
-  it("displays error message if 404 returned", async () => {
+  test("displays error message if 404 returned", async () => {
     mockAxios
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(404, []);
-    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
-    expect(await screen.findByText("Error")).toBeInTheDocument();
+    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
+    expect((await screen.findByText("Error"))).toBeInTheDocument();
     expect(
         await screen.findByText(/Unable to retrieve any relevant results./i)
     ).toBeInTheDocument();
   });
-  it("displays error message if 403 returned", async () => {
+  test("displays error message if 403 returned", async () => {
     mockAxios
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(403, []);
-    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
-    expect(await screen.findByText("Error")).toBeInTheDocument();
+    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
+    expect((await screen.findByText("Error"))).toBeInTheDocument();
     expect(
         await screen.findByText(/Invalid Galaxy API Key Please re-enter your API Key on the Apps page/i)
     ).toBeInTheDocument();
   });
 
-  it("displays error message if 500 returned", async () => {
+  test("displays error message if 500 returned", async () => {
     mockAxios
     .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
     .reply(500, []);
-    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false}/>);
-    expect(await screen.findByText("Error")).toBeInTheDocument();
+    render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
+    expect((await screen.findByText("Error"))).toBeInTheDocument();
     expect(
-        await screen.findByText(/Unknown issue, please investigate whether your Galaxy Server/i)
+        await screen.findByText((content) =>
+          content.includes(
+            "Unknown issue, please investigate whether your Galaxy Server"
+          )
+        )
     ).toBeInTheDocument();
   })
 });

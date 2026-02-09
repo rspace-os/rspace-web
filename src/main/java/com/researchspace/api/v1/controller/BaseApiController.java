@@ -101,9 +101,11 @@ public class BaseApiController implements ServletContextAware {
   }
 
   protected void buildAndAddSelfLink(final String endpoint, final IdentifiableObject info) {
-    String path = endpoint + "/" + info.getId();
-    String link = getApiBaseURI().path(path).build().encode().toUriString();
-    info.addSelfLink(link);
+    if (info.getId() != null) {
+      String path = endpoint + "/" + info.getId();
+      String link = getApiBaseURI().path(path).build().encode().toUriString();
+      info.addSelfLink(link);
+    }
   }
 
   protected void addFileLinks(ApiDocument apiDocument) {

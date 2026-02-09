@@ -1,16 +1,15 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { describe, expect, test, vi } from 'vitest';
 import { makeMockSample, makeMockSampleWithASubsample } from "./mocking";
 
-jest.mock("../../../use-stores", () => () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../use-stores", () => () => {});
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),
   },
-}));
+})
 
+}));
 describe("computed: paramsForBackend", () => {
   /*
    * `paramsForBackend` is used for submitting the SampleModel to the API and as
@@ -25,8 +24,8 @@ describe("computed: paramsForBackend", () => {
       expect(JSON.stringify(Sample.paramsForBackend)).toEqual(
         expect.any(String)
       );
-    });
 
+    });
     test("the Sample has a subsample.", () => {
       const Sample = makeMockSampleWithASubsample();
       expect(JSON.stringify(Sample.paramsForBackend)).toEqual(
@@ -35,3 +34,4 @@ describe("computed: paramsForBackend", () => {
     });
   });
 });
+

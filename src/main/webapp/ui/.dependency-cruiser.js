@@ -109,7 +109,7 @@ module.exports = {
           "src/CreateGroup/CreateGroup.js",
           "src/my-rspace/directory/groups/MyLabGroups.js",
           "src/system-ror/RoRIntegration.js",
-          "src/Export/ExportModal.js",
+          "src/Export/ExportModal.tsx",
           "src/my-rspace/directory/groups/GroupEditBar.js",
           "src/Toolbar/Workspace/Toolbar.js",
           "src/Toolbar/Notebook/Toolbar.js",

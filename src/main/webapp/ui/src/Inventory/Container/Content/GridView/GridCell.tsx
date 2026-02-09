@@ -13,7 +13,7 @@ interface StyledCellProps {
 }
 
 const StyledCell = styled(
-   
+
   React.forwardRef<
     HTMLTableCellElement,
     StyledCellProps & React.ComponentProps<typeof TableCell> & { theme?: any }

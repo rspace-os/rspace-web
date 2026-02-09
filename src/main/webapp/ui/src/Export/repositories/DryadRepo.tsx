@@ -109,7 +109,7 @@ export default function DryadRepo({
           name="license"
           select
           label="License *"
-          defaultValue={0}
+          defaultValue={repo.license.licenses.length ? "0" : ""}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           helperText="Please select your license"
@@ -130,8 +130,7 @@ export default function DryadRepo({
           label="Granting Organization *"
           options={crossrefFunders}
           getOptionLabel={(option) => option.name}
-          // @ts-expect-error An undocumented API, it seems
-          getOptionSelected={(option, value) => option.name === value.name}
+          isOptionEqualToValue={(option, value) => option.name === value.name}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleCrossrefFunderChange}
           onInputChange={handleFetchCrossrefFunder}

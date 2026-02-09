@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { SimpleCarousel } from "./Carousel.story";
-import AxeBuilder from "@axe-core/playwright";
 
+import AxeBuilder from "@axe-core/playwright";
 const feature = test.extend<{
   Given: {
     "the carousel is shown": () => Promise<void>;
@@ -70,8 +70,8 @@ const feature = test.extend<{
       },
     });
   },
-});
 
+});
 feature.beforeEach(async ({ router }) => {
   await router.route("/deploymentproperties/ajax/property*", (route) => {
     return route.fulfill({
@@ -107,16 +107,16 @@ feature.beforeEach(async ({ router }) => {
       ),
     });
   });
+
 });
 
 feature.afterEach(({}) => {});
-
 test.describe("Carousel", () => {
   feature("Should have no axe violations", async ({ Given, Then }) => {
     await Given["the carousel is shown"]();
     await Then["there shouldn't be any axe violations"]();
-  });
 
+  });
   feature(
     "Should show an indicator of progress through listing.",
     async ({ Given, When, Then }) => {
@@ -125,8 +125,8 @@ test.describe("Carousel", () => {
       await When["the user clicks the next button"]();
       await Then["the progress indicator should read"]("2 / 8");
     }
-  );
 
+  );
   feature(
     "Moving to a different file resets the zoom level",
     async ({ Given, When, Then }) => {

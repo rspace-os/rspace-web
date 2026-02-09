@@ -1,4 +1,4 @@
- 
+
 import tinymce, { RawEditorOptions } from "tinymce";
 import React from "react";
 import { Editor } from "@tinymce/tinymce-react";

@@ -157,7 +157,7 @@ function RadioField<OptionValue extends string>({
             )}
             {option.editing && (
               <TextField
-                 
+
                 autoFocus={!option.value}
                 variant="standard"
                 value={option.value}

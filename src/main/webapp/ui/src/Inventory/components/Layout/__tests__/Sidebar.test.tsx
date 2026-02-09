@@ -1,31 +1,24 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import "../../../../../__mocks__/matchMedia";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import Sidebar from "../Sidebar";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
-import { axe, toHaveNoViolations } from "jest-axe";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import { LandmarksProvider } from "../../../../components/LandmarksContext";
 
-expect.extend(toHaveNoViolations);
+vi.mock("../../../../hooks/api/integrationHelpers", () => ({
+  useIntegrationIsAllowedAndEnabled: () => ({
+    tag: "success",
+    value: false,
+  }),
+}));
 
 const mockAxios = new MockAdapter(axios);
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("Sidebar", () => {
   test("Should have no axe violations.", async () => {
     mockAxios.onGet("livechatProperties").reply(200, {
@@ -52,6 +45,7 @@ describe("Sidebar", () => {
       </ThemeProvider>
     );
 
-    expect(await axe(container)).toHaveNoViolations();
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
+    await expect(container).toBeAccessible();
   });
 });

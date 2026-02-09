@@ -1,28 +1,18 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
 
+import { render, screen } from "@testing-library/react";
 import FileField from "../FileField";
 import Alert from "@mui/material/Alert";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 
-jest.mock("@mui/material/Alert", () =>
-  jest.fn(() => {
+vi.mock("@mui/material/Alert", () => ({
+  default: vi.fn(() => {
     return <div data-testid="Alert"></div>;
-  })
-);
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+  }),
+}));
 describe("FileField", () => {
   /*
    * The warningAlert allows for custom warning meesages to be associated with
@@ -52,3 +42,4 @@ describe("FileField", () => {
     });
   });
 });
+

@@ -1,7 +1,4 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { describe, expect, test, vi } from 'vitest';
 import fc from "fast-check";
 import { makeMockSample } from "../SampleModel/mocking";
 import { makeMockBench, makeMockContainer } from "../ContainerModel/mocking";
@@ -11,8 +8,8 @@ import {
 } from "../SubSampleModel/mocking";
 import getRootStore from "../../../stores/RootStore";
 import { personAttrs } from "../PersonModel/mocking";
-import PersonModel from "../../PersonModel";
 
+import PersonModel from "../../PersonModel";
 const mockRootStore = {
   peopleStore: {
     currentUser: null,
@@ -22,9 +19,10 @@ const mockRootStore = {
   },
 };
 
-jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => mockRootStore);
-
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => mockRootStore,
+}));
 describe("computed: recordLinkLabel", () => {
   test("Samples should always return their name.", () => {
     const sample = makeMockSample();
@@ -41,8 +39,8 @@ describe("computed: recordLinkLabel", () => {
   test("Regular containers should always return their name.", () => {
     const container = makeMockContainer();
     expect(container.recordLinkLabel).toBe(container.name);
-  });
 
+  });
   test("A bench, where the current user is unknown, should show the owner's name.", () => {
     const bench = makeMockBench({
       owner: {
@@ -78,3 +76,4 @@ describe("computed: recordLinkLabel", () => {
     expect(bench.recordLinkLabel).toBe("Joe Bloggs's Bench");
   });
 });
+

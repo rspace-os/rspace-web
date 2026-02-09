@@ -98,7 +98,7 @@ export function DialogBoundary({
  * A Dialog that is rendered within the boundary defined by DialogBoundary.
  *
  * If one of the descendents of the Dialog is not a Material UI DialogTitle
- * then jest-axe will rightly complain that the dialog does not have a label.
+ * then vi-axe will rightly complain that the dialog does not have a label.
  * Instead of passing `aria-label` or `aria-labelledby` here, be sure to use
  * a DialogTitle as the Material UI Dialog and DialogTitle already contain
  * the logic for wiring up the `aria-labelledby` attribute correctly.

@@ -1,5 +1,5 @@
-/* eslint-env jest */
 
+import { expect } from "vitest";
 import { match } from "../util/Util";
 import { Optional } from "../util/optional";
 import * as ArrayUtils from "../util/ArrayUtils";
@@ -130,3 +130,4 @@ expect.extend({
     };
   },
 });
+

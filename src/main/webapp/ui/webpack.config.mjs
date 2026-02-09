@@ -2,6 +2,8 @@ import path from 'node:path';
 import webpack from "webpack";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 
+const isCi = process.env.CI === "true" || process.env.CI === "1";
+
 /** @type {import('webpack').Configuration} */
 const config = {
   entry: {
@@ -39,7 +41,7 @@ const config = {
     createGroup: "./src/CreateGroup/CreateGroup.js",
     myLabGroups: "./src/my-rspace/directory/groups/MyLabGroups.js",
     rorIntegration: "./src/system-ror/RoRIntegration.tsx",
-    exportModal: "./src/Export/ExportModal.js",
+    exportModal: "./src/Export/ExportModal.tsx",
     groupEditBar: "./src/my-rspace/directory/groups/GroupEditBar.js",
     workspaceToolbar: "./src/Toolbar/Workspace/Toolbar.js",
     notebookToolbar: "./src/Toolbar/Notebook/Toolbar.js",
@@ -82,7 +84,7 @@ const config = {
       "./src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
     sysadminUsers: "./src/eln/sysadmin/users/index.tsx",
     raidConnections:
-      "./src/my-rspace/profile/RaIDConnections/RaIDConnectionsEntrypoint.tsx",
+      "./src/my-rspace/profile/RaidConnections/RaidConnectionsEntrypoint.tsx",
   },
   output: {
     filename: "[name].js",
@@ -101,7 +103,7 @@ const config = {
       analyzerMode: Boolean(process.env.FRONTEND_BUILD_STATS)
         ? "server"
         : "disabled",
-      generateStatsFile: true,
+      generateStatsFile: isCi,
     }),
   ],
   optimization: {

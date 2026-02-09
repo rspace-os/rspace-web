@@ -1,50 +1,55 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
-import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import { render, screen } from "@testing-library/react";
+import {
+  makeMockContainer,
+  containerAttrs,
+} from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import SearchContext from "../../../../stores/contexts/Search";
 import Search from "../../../../stores/models/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import NavigateToNode from "../NavigateToNode";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import Node from "../Node";
 
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
-  searchStore: {
-    search: {},
-  },
-  uiStore: {
-    addAlert: () => {},
-  },
-  authStore: {
-    isSynchronizing: false,
-  },
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
+    searchStore: {
+      search: {},
+    },
+    uiStore: {
+      addAlert: () => {},
+    },
+    authStore: {
+      isSynchronizing: false,
+    },
+    moveStore: {
+      selectedResultsIncludesContainers: false,
+      selectedResultsIncludesSubSamples: false,
+      selectedResults: [],
+    },
+    peopleStore: {
+      currentUser: { username: "user" },
+    },
+  }),
+
 }));
-
 // mocking this to avoid testing dependency
-jest.mock("../NavigateToNode", () => jest.fn(() => <div></div>));
 
-// jest.mock("../../../../theme", () => ({
+vi.mock("../NavigateToNode", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+// vi.mock("../../../../theme", () => ({
 //   __esModule: true,
 //   default: materialTheme,
 //   globalStyles: () => ({
 //     greyOut: "MOCK_GREY_OUT_CLASS_NAME",
 //   }),
+
 // }));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("Node", () => {
   describe("When the node in question is a container with contents, there should", () => {
     test("Be a button that navigates to the container's contents", () => {
@@ -52,8 +57,14 @@ describe("Node", () => {
         factory: mockFactory(),
       });
       search.alwaysFilterOut = () => true;
-      const container = makeMockContainer();
-      jest.spyOn(container, "loadChildren").mockImplementation(() => {});
+      const container = makeMockContainer({
+        parentContainers: [containerAttrs({ globalId: "IC2" })],
+      });
+      container.contentSearch.cacheFetcher.results = [];
+      vi
+        .spyOn(container, "fetchAdditionalInfo")
+        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(container, "loadChildren").mockImplementation(() => {});
       render(
         <ThemeProvider theme={materialTheme}>
           <SearchContext.Provider
@@ -87,7 +98,13 @@ describe("Node", () => {
       factory: mockFactory(),
     });
     search.alwaysFilterOut = () => true;
-    const container = makeMockContainer();
+    const container = makeMockContainer({
+      parentContainers: [containerAttrs({ globalId: "IC2" })],
+    });
+    container.contentSearch.cacheFetcher.results = [];
+    vi
+      .spyOn(container, "fetchAdditionalInfo")
+      .mockImplementation(() => Promise.resolve());
     render(
       <ThemeProvider theme={materialTheme}>
         <SearchContext.Provider

@@ -1,50 +1,42 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import * as React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
 import materialTheme from "../../../../theme";
+
 import { ThemeProvider } from "@mui/material/styles";
-
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
-import { personAttrs } from "../../../../stores/models/__tests__/PersonModel/mocking";
 
+import { personAttrs } from "../../../../stores/models/__tests__/PersonModel/mocking";
 import Card from "../Card";
 
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   searchStore: {
     search: {
       alwaysFilterOut: () => false,
       fetcher: { basketSearch: false },
     },
   },
+})
 }));
-jest.mock("react-router", () => ({
+vi.mock("react-router", () => ({
   useNavigate: () => ({}),
+
 }));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("Card", () => {
   describe("When the passed record has been deleted,", () => {
     test("the card's name should be crossed through.", () => {
       const mockContainer = makeMockContainer({
         owner: personAttrs(),
       });
-      mockContainer.deleted = true;
 
+      mockContainer.deleted = true;
       render(
         <ThemeProvider theme={materialTheme}>
           <Card record={mockContainer} />
         </ThemeProvider>
-      );
 
+      );
       const titleText = screen.getByText("A list container");
       const decorationLineStyle = window
         .getComputedStyle(titleText)
@@ -53,3 +45,4 @@ describe("Card", () => {
     });
   });
 });
+

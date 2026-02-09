@@ -11,16 +11,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.MultiValueMap;
 
 @Data
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 public class ApiShareSearchConfig extends ApiGenericSearchConfig {
 
-  public static final int MAX_SHARE_ITEM_IDS = 1000;
+  private static final int MAX_SHARE_ITEM_IDS = 1000;
 
   @Size(
       max = MAX_SHARE_ITEM_IDS,
-      message = "Max number of ids on sharedItemIds list is " + MAX_SHARE_ITEM_IDS + ".")
+      message = "Maximum number of ids in sharedItemIds is " + MAX_SHARE_ITEM_IDS + ".")
   private List<Long> sharedItemIds;
 
   @Override

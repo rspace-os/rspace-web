@@ -106,7 +106,7 @@ export class Material {
   /*
    * Performs a deep copy of this, except for Result objects.
    */
-   
+
   clone(): Material {
     void this.invRec.fetchAdditionalInfo();
     return new Material({
@@ -427,7 +427,7 @@ export class ListOfMaterials {
   /*
    * Performs a deep copy of this, except for Result objects.
    */
-   
+
   clone(): ListOfMaterials {
     const copy = new ListOfMaterials({
       ...this,

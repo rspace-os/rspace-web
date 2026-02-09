@@ -1,16 +1,16 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import * as Jwt from "jsonwebtoken";
-import AxeBuilder from "@axe-core/playwright";
 
+import AxeBuilder from "@axe-core/playwright";
 // Import the story components
 import {
   ActionsMenuWithNonFolder,
   ActionsMenuWithFolder,
   ActionsMenuWithMultipleFiles,
   ActionsMenuWithSnippet,
-} from "./ActionsMenu.story";
 
+} from "./ActionsMenu.story";
 const feature = test.extend<{
   Given: {
     "the actions menu with a non-folder is mounted": () => Promise<void>;
@@ -106,8 +106,8 @@ const feature = test.extend<{
       },
     });
   },
-});
 
+});
 feature.beforeEach(async ({ router }) => {
   await router.route("/session/ajax/analyticsProperties", (route) => {
     return route.fulfill({
@@ -117,40 +117,60 @@ feature.beforeEach(async ({ router }) => {
         analyticsEnabled: false,
       }),
     });
-  });
 
+  });
   await router.route("/userform/ajax/preference*", (route) => {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({}),
     });
-  });
 
+  });
   await router.route("/deploymentproperties/ajax/property*", (route) => {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify(false),
     });
-  });
 
+  });
   await router.route("/collaboraOnline/supportedExts", (route) => {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({}),
     });
-  });
 
+  });
+  await router.route("/integration/integrationInfo?name=RAID", (route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        data: {
+          name: "RAID",
+          displayName: "RAiD",
+          available: false,
+          enabled: false,
+          oauthConnected: false,
+          options: {
+            RAID_CONFIGURED_SERVERS: [],
+          },
+        },
+      }),
+    });
+
+  });
   await router.route("/officeOnline/supportedExts", (route) => {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({}),
     });
-  });
 
+  });
   await router.route("/export/ajax/defaultPDFConfig", (route) => {
     return route.fulfill({
       status: 200,
@@ -159,8 +179,8 @@ feature.beforeEach(async ({ router }) => {
         data: { pageSize: "A4" },
       }),
     });
-  });
 
+  });
   await router.route("/gallery/getUploadedFiles", (route) => {
     return route.fulfill({
       status: 200,
@@ -174,16 +194,16 @@ feature.beforeEach(async ({ router }) => {
         },
       }),
     });
-  });
 
+  });
   await router.route("**/*.svg", (route) => {
     return route.fulfill({
       status: 200,
       contentType: "image/svg+xml",
       body: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="none"/></svg>`,
     });
-  });
 
+  });
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
@@ -200,16 +220,16 @@ feature.beforeEach(async ({ router }) => {
       }),
     });
   });
-});
 
+});
 test.describe("ActionsMenu", () => {
   test.describe("Should have no axe violations", () => {
     feature("Should have no axe violations", async ({ Given, Then }) => {
       await Given["the actions menu with a non-folder is mounted"]();
       await Then["there shouldn't be any axe violations"]();
     });
-  });
 
+  });
   test.describe("File menu options", () => {
     feature(
       "When the selected file isn't a folder, open should not be visible",
@@ -218,8 +238,8 @@ test.describe("ActionsMenu", () => {
         await When["the user clicks the actions menu button"]();
         await Then["the Open option should not be visible"]();
       },
-    );
 
+    );
     feature(
       "When the selected file is a folder, open should be visible",
       async ({ Given, When, Then }) => {
@@ -227,8 +247,8 @@ test.describe("ActionsMenu", () => {
         await When["the user clicks the actions menu button"]();
         await Then["the Open option should be visible"]();
       },
-    );
 
+    );
     feature(
       "When the selected file is a snippet, download should be disabled",
       async ({ Given, When, Then }) => {

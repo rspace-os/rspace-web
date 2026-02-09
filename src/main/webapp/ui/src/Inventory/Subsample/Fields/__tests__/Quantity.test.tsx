@@ -1,38 +1,33 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup, fireEvent, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  fireEvent,
+  screen,
+} from "@testing-library/react";
 import Quantity from "../Quantity";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { type Quantity as QuantityType } from "../../../../stores/definitions/HasQuantity";
 
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
   unitStore: {
-    unitsOfCategory: jest.fn(() => [
+    unitsOfCategory: vi.fn(() => [
       { id: 5, label: "µg", category: "mass" },
       { id: 6, label: "mg", category: "mass" },
       { id: 7, label: "g", category: "mass" },
     ]),
-    getUnit: jest.fn(),
+    getUnit: vi.fn(),
   },
+})
+
 }));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("Quantity", () => {
   test("Should support scientific notation.", () => {
     const INITIAL_VALUE = 0;
 
-    const setFieldsDirty = jest.fn();
-
+    const setFieldsDirty = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
         <Quantity
@@ -55,11 +50,11 @@ describe("Quantity", () => {
           quantityCategory="mass"
         />
       </ThemeProvider>
+
     );
-
     const input = screen.getByDisplayValue(INITIAL_VALUE);
-    fireEvent.input(input, { target: { value: "4e-2" } });
 
+    fireEvent.input(input, { target: { value: "4e-2" } });
     expect(setFieldsDirty).toHaveBeenCalledWith({
       quantity: {
         numericValue: 0.04,
@@ -68,3 +63,4 @@ describe("Quantity", () => {
     });
   });
 });
+

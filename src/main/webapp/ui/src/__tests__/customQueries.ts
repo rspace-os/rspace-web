@@ -1,4 +1,3 @@
-/* eslint-env jest */
 /*
  * This module is for defining custom queries as part of our unit testing
  * toolchain. For documentation on custom queries, see these links
@@ -139,3 +138,4 @@ const customWithin: typeof getQueriesForElement &
 export * from "@testing-library/react";
 // override render method
 export { customRender as render, customWithin as within };
+

@@ -38,7 +38,7 @@ import Zenodo from "./integrations/Zenodo";
 import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
-import RaIDIntergrationCard from "@/eln/apps/integrations/RaID/RaIDIntegrationCard";
+import RaidIntegrationCard from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
 
 type CardListingArgs = {
   /*
@@ -55,7 +55,6 @@ type CardListingArgs = {
   integrationStates: IntegrationStates;
 };
 
- 
 function CardListing({
   mode,
   integrationStates,
@@ -82,7 +81,7 @@ function CardListing({
         integrationStates.ASCENSCIA = await update("ASCENSCIA", newState);
       });
     },
-     
+
     [update]
   );
 
@@ -199,7 +198,7 @@ function CardListing({
     },
     [update, integrationStates.FIGSHARE],
   );
-  
+
   const galaxyUpdate = React.useCallback(
     (newState: IntegrationStates["GALAXY"]) => {
       void runInAction(async () => {
@@ -357,7 +356,7 @@ function CardListing({
         />
       )}
       {integrationStates.API_DIRECT.mode === mode && <ApiDirect />}
-      { integrationStates.API_DIRECT.mode === mode && <Jupyter />}
+      {integrationStates.API_DIRECT.mode === mode && <Jupyter />}
       {integrationStates.ASCENSCIA.mode === mode && (
         <Ascenscia
           integrationState={integrationStates.ASCENSCIA}
@@ -497,7 +496,7 @@ function CardListing({
         />
       )}
       {integrationStates.RAID.mode === mode && (
-        <RaIDIntergrationCard
+        <RaidIntegrationCard
           integrationState={integrationStates.RAID}
           update={raidUpdate}
         />

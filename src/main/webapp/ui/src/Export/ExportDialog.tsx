@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { startTransition, Suspense, useEffect, useState } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../theme";
@@ -15,16 +15,16 @@ import ExportRepo from "./ExportRepo";
 import ExportFileStore from "./ExportFileStore";
 import LoadingFade from "../components/LoadingFade";
 import Confirm from "../components/ConfirmProvider";
-import { runInAction, action, observable } from "mobx";
+import { action, observable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import {
-  makePane,
   appendPane,
-  numberOfPanes,
   getIndexOfPane,
   getPaneByKey,
+  makePane,
+  numberOfPanes,
 } from "./WizardPanes";
-import { type Repo, DEFAULT_REPO_CONFIG } from "./repositories/common";
+import { DEFAULT_REPO_CONFIG, type Repo } from "./repositories/common";
 import { lift3 } from "../util/optional";
 import { type Tag } from "./repositories/Tags";
 import * as ArrayUtils from "../util/ArrayUtils";
@@ -35,51 +35,19 @@ import Divider from "@mui/material/Divider";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import useViewportDimensions from "../hooks/browser/useViewportDimensions";
 import { type ExportSelection } from "./common";
-import { doNotAwait } from "../util/Util";
 import { PdfExportDetails } from "./PdfExport";
 import { HtmlXmlExportDetails } from "./HtmlXmlExport";
 import { WordExportDetails } from "./WordExport";
 import AnalyticsContext from "../stores/contexts/Analytics";
-
-type ExportConfig = {
-  archiveType: string;
-  repository: boolean;
-  fileStores: boolean;
-  allVersions: boolean;
-  repoData: Array<unknown>;
-};
-
-const DEFAULT_STATE = {
-  open: false,
-  loading: false,
-  exportSubmitResponse: "",
-  exportSelection: {
-    type: "selection",
-    exportTypes: [] as Array<"MEDIA_FILE" | "NOTEBOOK" | "NORMAL" | "FOLDER">,
-    exportNames: [] as Array<string>,
-    exportIds: [] as Array<string>,
-  } as ExportSelection,
-  exportConfig: {
-    archiveType: "" as ArchiveType | "",
-    repository: false,
-    fileStores: false,
-    allVersions: false,
-    repoData: [] as Array<Repo>,
-  },
-  repositoryConfig: DEFAULT_REPO_CONFIG,
-  nfsConfig: {
-    excludedFileExtensions: "",
-    includeNfsFiles: false,
-    maxFileSizeInMB: 50 as number | string,
-  },
-  exportDetails: {
-    archiveType: "" as ArchiveType | "",
-    repository: false,
-    fileStores: false,
-    allVersions: false,
-    repoData: [],
-  } as ExportConfig,
-};
+import ExportDialogRaid from "@/Export/ExportDialogRaid";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { DEFAULT_STATE, ExportConfig } from "@/Export/constants";
+import { useRaidIntegrationInfoAjaxQuery } from "@/modules/raid/queries";
+import { getRaidExportEligibility } from "@/modules/raid/services/export";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
+import { GroupInfo } from "@/modules/groups/schema";
 
 /*
  * This react component implements the entire export flow for ELN documents.
@@ -100,19 +68,54 @@ type ExportDialogArgs = {
   allowFileStores: boolean;
 };
 
+const isArchiveExport = (
+  archiveType: (typeof DEFAULT_STATE)["exportConfig"]["archiveType"],
+) => {
+  return (
+    archiveType === "html" || archiveType === "xml" || archiveType === "eln"
+  );
+};
+
 function ExportDialog({
   open,
   onClose,
   exportSelection,
   allowFileStores,
 }: ExportDialogArgs): React.ReactNode {
+  const { data: token } = useOauthTokenQuery();
   const { addAlert } = React.useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
   const { trackEvent } = React.useContext(AnalyticsContext);
-
   const [state, setState] = useState<typeof DEFAULT_STATE>(
     observable(DEFAULT_STATE),
   );
+
+  const { data: raidData } = useRaidIntegrationInfoAjaxQuery();
+  const raidEnabled = raidData.success ? raidData.data.enabled : false;
+
+  const exportIds = exportSelection.exportIds ?? [];
+  const shouldFetchCommonGroups =
+    exportSelection.type === "selection" && exportIds.length > 0 && Boolean(token);
+  const { data: commonGroups = new Map<number, GroupInfo | null>() } =
+    useCommonGroupsShareListingQuery({
+      token,
+      params: { sharedItemIds: exportIds as string[] },
+      enabled: shouldFetchCommonGroups,
+    });
+
+  useEffect(() => {
+    if (!shouldFetchCommonGroups) {
+      updateProjectGroupId(null);
+      return;
+    }
+    const raidExportStatus = getRaidExportEligibility(commonGroups);
+
+    const projectGroupId = raidExportStatus.isEligible
+      ? raidExportStatus.projectGroup.id
+      : null;
+
+    updateProjectGroupId(projectGroupId);
+  }, [commonGroups, shouldFetchCommonGroups]);
 
   const [firstPane, setFirstPane] = useState(
     makePane("FormatChoice", "Export"),
@@ -123,14 +126,20 @@ function ExportDialog({
     const newListOfPanes = makePane("FormatChoice", "Export");
     appendPane(newListOfPanes, makePane("FormatSpecificOptions", "Export"));
 
-    if (state.exportConfig.repository)
+    if (state.exportConfig.repository) {
+      // TODO: move this back to after setup repository
+      if (isArchiveExport(state.exportConfig.archiveType) && raidEnabled) {
+        appendPane(newListOfPanes, makePane("ExportDialogRaid", "RAiD"));
+      }
       appendPane(newListOfPanes, makePane("ExportRepo", "Setup Repository"));
+    }
 
-    if (state.exportConfig.fileStores)
+    if (state.exportConfig.fileStores) {
       appendPane(
         newListOfPanes,
         makePane("ExportFileStore", "Filestore Links Export Configuration"),
       );
+    }
 
     setFirstPane(newListOfPanes);
     setActivePane(newListOfPanes);
@@ -138,7 +147,7 @@ function ExportDialog({
 
   useEffect(() => {
     createWizardPanes();
-  }, []);
+  }, [state.exportConfig.archiveType]);
 
   useEffect(() => {
     setInitialDocPDF(exportSelection);
@@ -198,14 +207,30 @@ function ExportDialog({
 
     if (!activePane.next) {
       submitExport();
-      handleClose();
+      startTransition(() => {
+        handleClose();
+      });
     } else {
-      setActivePane(activePane.next);
+      startTransition(() => {
+        setActivePane(activePane.next!);
+      });
     }
   };
 
   const handleBack = () => {
     if (activePane.prev) setActivePane(activePane.prev);
+  };
+
+  const prepareExportData = () => {
+    return {
+      exportSelection: { ...state.exportSelection },
+      exportConfig: { ...state.exportDetails },
+      repositoryConfig: state.repositoryConfig.depositToRepository
+        ? { ...state.repositoryConfig }
+        : {},
+      nfsConfig: { ...state.nfsConfig },
+      ...(raidEnabled ? { projectGroupId: state.projectGroupId } : {})
+    };
   };
 
   const submitExport = () => {
@@ -214,18 +239,10 @@ function ExportDialog({
       state.loading = true;
     });
 
-    const url =
-      archiveType === "html" || archiveType === "xml" || archiveType === "eln"
-        ? "/export/ajax/exportArchive"
-        : "/export/ajax/export";
-    const data = {
-      exportSelection: { ...state.exportSelection },
-      exportConfig: { ...state.exportDetails },
-      repositoryConfig: state.repositoryConfig.depositToRepository
-        ? { ...state.repositoryConfig }
-        : {},
-      nfsConfig: { ...state.nfsConfig },
-    };
+    const url = isArchiveExport(archiveType)
+      ? "/export/ajax/exportArchive"
+      : "/export/ajax/export";
+    const data = prepareExportData();
     axios
       .post<string>(url, data)
       .then((response) => {
@@ -262,10 +279,8 @@ function ExportDialog({
         ? "/export/ajax/exportRecordTagsArchive"
         : "/export/ajax/exportRecordTagsPdfsAndDocs";
     const data = {
-      exportSelection: { ...state.exportSelection },
-      exportConfig: { ...state.exportDetails },
+      ...prepareExportData(),
       repositoryConfig: {},
-      nfsConfig: { ...state.nfsConfig },
     };
 
     try {
@@ -406,6 +421,12 @@ function ExportDialog({
     });
   };
 
+  const updateProjectGroupId = (groupId: number | null) => {
+    runInAction(() => {
+      state.projectGroupId = groupId;
+    });
+  };
+
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
@@ -421,54 +442,67 @@ function ExportDialog({
               {activePane.title}
             </DialogTitle>
             <DialogContent>
-              {activePane.key === "FormatChoice" && (
-                <FormatChoice
-                  exportSelection={state.exportSelection}
-                  exportConfigUpdate={exportConfigUpdate}
-                  archiveType={state.exportConfig.archiveType}
-                  allowFileStores={allowFileStores}
-                  repoSelected={state.exportConfig.repository}
-                  fileStoresSelected={state.exportConfig.fileStores}
-                  allVersions={state.exportConfig.allVersions}
-                  updateFileStores={updateFileStoreFilters}
-                  validator={getPaneByKey(firstPane, "FormatChoice").validator}
-                />
-              )}
-              {activePane.key === "FormatSpecificOptions" &&
-                state.exportConfig.archiveType !== "" && (
-                  <>
-                    <FormatSpecificOptions
-                      exportType={state.exportConfig.archiveType}
-                      // @ts-expect-error Impossible to type check this
-                      exportDetails={state.exportDetails}
-                      updateExportDetails={updateExportDetails}
-                      validator={
-                        getPaneByKey(firstPane, "FormatSpecificOptions")
-                          .validator
-                      }
-                    />
-                  </>
+              <Suspense
+                fallback={<FontAwesomeIcon icon={faSpinner} spin size="3x" />}
+              >
+                {activePane.key === "FormatChoice" && (
+                  <FormatChoice
+                    exportSelection={state.exportSelection}
+                    exportConfigUpdate={exportConfigUpdate}
+                    archiveType={state.exportConfig.archiveType}
+                    allowFileStores={allowFileStores}
+                    repoSelected={state.exportConfig.repository}
+                    fileStoresSelected={state.exportConfig.fileStores}
+                    allVersions={state.exportConfig.allVersions}
+                    updateFileStores={updateFileStoreFilters}
+                    validator={
+                      getPaneByKey(firstPane, "FormatChoice").validator
+                    }
+                  />
                 )}
-              {activePane.key === "ExportRepo" && (
-                <ExportRepo
-                  repoList={state.exportConfig.repoData}
-                  repoDetails={state.repositoryConfig}
-                  updateRepoConfig={updateRepoConfig}
-                  validator={getPaneByKey(firstPane, "ExportRepo").validator}
-                  fetchTags={fetchTags}
-                />
-              )}
-              {activePane.key === "ExportFileStore" && (
-                <ExportFileStore
-                  exportConfig={state.exportDetails}
-                  exportSelection={state.exportSelection}
-                  nfsConfig={state.nfsConfig}
-                  updateFilters={updateFileStoreFilters}
-                  validator={
-                    getPaneByKey(firstPane, "ExportFileStore").validator
-                  }
-                />
-              )}
+                {activePane.key === "FormatSpecificOptions" &&
+                  state.exportConfig.archiveType !== "" && (
+                    <>
+                      <FormatSpecificOptions
+                        exportType={state.exportConfig.archiveType}
+                        // @ts-expect-error Impossible to type check this
+                        exportDetails={state.exportDetails}
+                        updateExportDetails={updateExportDetails}
+                        validator={
+                          getPaneByKey(firstPane, "FormatSpecificOptions")
+                            .validator
+                        }
+                      />
+                    </>
+                  )}
+                {activePane.key === "ExportRepo" && (
+                  <ExportRepo
+                    state={state}
+                    repoList={state.exportConfig.repoData}
+                    repoDetails={state.repositoryConfig}
+                    updateRepoConfig={updateRepoConfig}
+                    validator={getPaneByKey(firstPane, "ExportRepo").validator}
+                    fetchTags={fetchTags}
+                  />
+                )}
+                {activePane.key === "ExportDialogRaid" && (
+                  <ExportDialogRaid
+                    state={state}
+                    updateRepoConfig={updateRepoConfig}
+                  ></ExportDialogRaid>
+                )}
+                {activePane.key === "ExportFileStore" && (
+                  <ExportFileStore
+                    exportConfig={state.exportDetails}
+                    exportSelection={state.exportSelection}
+                    nfsConfig={state.nfsConfig}
+                    updateFilters={updateFileStoreFilters}
+                    validator={
+                      getPaneByKey(firstPane, "ExportFileStore").validator
+                    }
+                  />
+                )}
+              </Suspense>
             </DialogContent>
             <LoadingFade loading={state.loading} />
             <DialogActions>
@@ -501,7 +535,9 @@ function ExportDialog({
                   <Button
                     size="small"
                     data-test-id="createGroupNextButton"
-                    onClick={doNotAwait(handleNext)}
+                    onClick={() => {
+                      void handleNext();
+                    }}
                     disabled={state.exportConfig.archiveType === ""}
                   >
                     {activePane.next ? "Next" : "Export"}

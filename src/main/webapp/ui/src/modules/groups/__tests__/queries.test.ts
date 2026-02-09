@@ -1,8 +1,4 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { getGroupById } from "../queries";
 import type { GroupInfo } from "../schema";
 import type { RestApiError } from "@/modules/common/api/schema";
@@ -55,7 +51,7 @@ const mockRestApiError: RestApiError = {
 beforeEach(() => {
   // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
   fetchMock.resetMocks();
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("getGroupById", () => {
@@ -66,10 +62,11 @@ describe("getGroupById", () => {
 
     const result = await getGroupById("32768", { token });
 
+    expect(result).not.toBeNull();
     expect(result).toEqual(mockGroupInfo);
-    expect(result.members).toHaveLength(2);
-    expect(result.raid).not.toBeNull();
-    expect(result.raid?.raidIdentifier).toBe("raid-123");
+    expect(result?.members).toHaveLength(2);
+    expect(result?.raid).not.toBeNull();
+    expect(result?.raid?.raidIdentifier).toBe("raid-123");
 
     // Verify the fetch was called with correct URL
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -87,7 +84,8 @@ describe("getGroupById", () => {
     const result = await getGroupById("32768", { token });
 
     expect(result).toEqual(mockGroupInfoWithoutRaid);
-    expect(result.raid).toBeNull();
+    expect(result).toHaveProperty("raid");
+    expect(result?.raid).toBeNull();
   });
 
   test("should include authorization header in request", async () => {
@@ -120,17 +118,60 @@ describe("getGroupById", () => {
     );
   });
 
-  test("should throw error when group not found", async () => {
+  test("should return null when group not found (404)", async () => {
     fetchMock.mockResponseOnce(JSON.stringify(mockRestApiError), {
       status: 404,
       statusText: "Not Found",
     });
 
-    await expect(getGroupById("99999", { token })).rejects.toThrow(
-      "Group not found"
-    );
+    const result = await getGroupById("99999", { token });
 
+    expect(result).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("should throw error when server returns 400", async () => {
+    const badRequestError: RestApiError = {
+      status: "BAD_REQUEST",
+      httpCode: 400,
+      internalCode: 40001,
+      message: "Bad request",
+      messageCode: "group.bad.request",
+      errors: ["The request was invalid"],
+      iso8601Timestamp: "2026-01-26T12:00:00.000Z",
+      data: null,
+    };
+
+    fetchMock.mockResponseOnce(JSON.stringify(badRequestError), {
+      status: 400,
+      statusText: "Bad Request",
+    });
+
+    await expect(getGroupById("32768", { token })).rejects.toThrow(
+      "Bad request"
+    );
+  });
+
+  test("should throw error when server returns 503", async () => {
+    const serviceUnavailableError: RestApiError = {
+      status: "SERVICE_UNAVAILABLE",
+      httpCode: 503,
+      internalCode: 50301,
+      message: "Service unavailable",
+      messageCode: "server.unavailable",
+      errors: ["Upstream service unavailable"],
+      iso8601Timestamp: "2026-01-26T12:00:00.000Z",
+      data: null,
+    };
+
+    fetchMock.mockResponseOnce(JSON.stringify(serviceUnavailableError), {
+      status: 503,
+      statusText: "Service Unavailable",
+    });
+
+    await expect(getGroupById("32768", { token })).rejects.toThrow(
+      "Service unavailable"
+    );
   });
 
   test("should throw error when server returns 500", async () => {

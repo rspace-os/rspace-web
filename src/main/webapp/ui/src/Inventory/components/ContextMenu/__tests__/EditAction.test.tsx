@@ -1,29 +1,18 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
 import {
   render,
-  cleanup,
   waitFor,
   screen,
   fireEvent,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import EditAction from "../EditAction";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../../theme";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("EditAction", () => {
   describe("When tapped the context action should", () => {
     /*
@@ -34,7 +23,7 @@ describe("EditAction", () => {
     test("call uiStore's setVisiblePanel", async () => {
       const rootStore = makeMockRootStore({
         uiStore: {
-          setVisiblePanel: jest.fn(() => {}),
+          setVisiblePanel: vi.fn(() => {}),
         },
         searchStore: {
           search: {
@@ -60,20 +49,21 @@ describe("EditAction", () => {
         </ThemeProvider>,
       );
 
-      const setVisiblePanelSpy = jest.spyOn(
+      const setVisiblePanelSpy = vi.spyOn(
         rootStore.uiStore,
         "setVisiblePanel",
-      );
 
+      );
       await waitFor(() => {
         expect(screen.getByRole("button", { name: "Edit" })).toBeEnabled();
+
       });
 
       fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-
       await waitFor(() => {
         expect(setVisiblePanelSpy).toHaveBeenCalledWith("right");
       });
     });
   });
 });
+

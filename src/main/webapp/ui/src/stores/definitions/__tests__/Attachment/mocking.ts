@@ -1,7 +1,5 @@
 /*
- * @jest-environment jsdom
  */
-/* eslint-env jest */
 
 import { type Attachment } from "../../Attachment";
 import { type GlobalId } from "../../BaseRecord";

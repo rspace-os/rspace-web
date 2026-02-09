@@ -19,7 +19,7 @@ const allowedColor = (
 ) => theme.palette[allowed ? "success" : "error"].light;
 
 const WrapperDiv = styled(
-   
+
   forwardRef<
     HTMLDivElement,
     {

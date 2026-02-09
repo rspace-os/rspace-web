@@ -1,19 +1,17 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
 
+import { test, describe, expect, vi } from 'vitest';
 import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
 import { containerAttrs } from "./mocking";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import { type Factory } from "../../../definitions/Factory";
 import { type InventoryRecord } from "../../../definitions/InventoryRecord";
 
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   peopleStore: {},
-})); // break import cycle
+})
 
+})); // break import cycle
 function mockContainerWithTwoContents(factory: Factory) {
   const attrs = containerAttrs();
   attrs.locations = [
@@ -37,11 +35,11 @@ function mockContainerWithTwoContents(factory: Factory) {
       coordY: 1,
       id: 2,
     },
+
   ];
-
   return factory.newRecord(attrs);
-}
 
+}
 describe("constructor", () => {
   /*
    * The ContainerModel's constructor is passed a Factory which is used to
@@ -52,40 +50,38 @@ describe("constructor", () => {
   describe("Factory argument", () => {
     test("should be used in the instantiation of all child records.", () => {
       // Define a mock factory with circular references
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mockFactoryRef: any = {};
-
       // Create a mock newRecord implementation
-      const mockNewRecord = jest
+      const mockNewRecord = vi
         .fn()
         .mockImplementation(
           (attrs: Record<string, unknown> & { globalId: string | null }) => {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             return new ContainerModel(mockFactoryRef, attrs as ContainerAttrs);
           }
-        );
 
+        );
       // Create a mock factory with the mock implementations
       const factory = mockFactory({
         newRecord: mockNewRecord,
-         
-        newFactory: jest.fn().mockReturnValue(mockFactoryRef),
+
+        newFactory: vi.fn().mockReturnValue(mockFactoryRef),
+
       });
-
       // Assign the factory to the reference to resolve circular dependency
-      Object.assign(mockFactoryRef, factory);
 
+      Object.assign(mockFactoryRef, factory);
       // Execute the test
+
       mockContainerWithTwoContents(factory);
 
       expect(mockNewRecord).toHaveBeenCalledTimes(5);
-
       // the root container
       expect(mockNewRecord).toHaveBeenNthCalledWith(
         1,
         expect.objectContaining({ globalId: "IC1" })
-      );
 
+      );
       // the first child, and it's parent (i.e. the root)
       expect(mockNewRecord).toHaveBeenNthCalledWith(
         2,
@@ -94,8 +90,8 @@ describe("constructor", () => {
       expect(mockNewRecord).toHaveBeenNthCalledWith(
         3,
         expect.objectContaining({ globalId: "IC1" })
-      );
 
+      );
       // the second child and it's parent (i.e. the root)
       expect(mockNewRecord).toHaveBeenNthCalledWith(
         4,
@@ -108,3 +104,4 @@ describe("constructor", () => {
     });
   });
 });
+

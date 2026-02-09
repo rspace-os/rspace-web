@@ -726,7 +726,7 @@ function decodeRaid(data: FetchedState): IntegrationStates["RAID"] {
                 return Result.Error<{
                   url: string;
                   alias: string;
-                }>([new Error("Could not parse out RaID configured server")]);
+                }>([new Error("Could not parse out RAiD configured server")]);
               }
             })
           )
@@ -765,7 +765,7 @@ function decodeRaid(data: FetchedState): IntegrationStates["RAID"] {
                   authenticated: boolean;
                   optionsId: OptionsId;
                 }>([
-                  new Error("Could not parse out RaID authenticated server"),
+                  new Error("Could not parse out RAiD authenticated server"),
                 ]);
               }
             })
@@ -775,7 +775,6 @@ function decodeRaid(data: FetchedState): IntegrationStates["RAID"] {
     },
   };
 }
-
 
 function decodeSlack(data: FetchedState): IntegrationStates["SLACK"] {
   return {
@@ -1402,7 +1401,7 @@ export function useIntegrationsEndpoint(): {
   };
 
   const update = React.useCallback(
-       
+
       async <I extends Integration>(
           integration: I,
           newState: IntegrationStates[I]
@@ -1535,7 +1534,6 @@ export function useIntegrationsEndpoint(): {
       []
   );
 
-   
   const saveAppOptions = async <I extends Integration>(
       appName: I,
       optionsId: Optional<OptionsId>,

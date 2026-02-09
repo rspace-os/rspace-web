@@ -1,9 +1,8 @@
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { arbRsSet, arbSetOfSetsWithHighOverlap } from "./helpers";
-import { flattenWithIntersection } from "../../set";
 
+import { flattenWithIntersection } from "../../set";
 describe("flattenWithIntersection", () => {
   test("Size of output is less than or equal to the maximum of the sizes of input sets", () => {
     fc.assert(

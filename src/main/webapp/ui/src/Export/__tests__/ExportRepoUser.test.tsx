@@ -1,23 +1,16 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup, act } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  act,
+} from "@testing-library/react";
 import ExportRepoUser from "../ExportRepoUser";
 import { type Person } from "../repositories/common";
 import MockAdapter from "axios-mock-adapter";
+
 import axios from "@/common/axios";
 
 const mockAxios = new MockAdapter(axios, { onNoMatch: "throwException" });
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 function renderExportRepoUser({
   people,
   updatePeople,
@@ -33,8 +26,8 @@ function renderExportRepoUser({
       submitAttempt={false}
     />
   );
-}
 
+}
 describe("ExportRepoUser", () => {
   test("If no people are passed as prop, then the current user should be fetched.", async () => {
     mockAxios.onGet("/directory/ajax/subject").reply(200, {
@@ -44,16 +37,16 @@ describe("ExportRepoUser", () => {
       },
     });
 
-    const updatePeople = jest.fn<[Array<Person>], unknown[]>();
+    const updatePeople = vi.fn<(people: Array<Person>) => void>();
     await act(() => renderExportRepoUser({ people: [], updatePeople }));
     expect(updatePeople).toHaveBeenCalled();
-  });
 
+  });
   test("If people are passed as prop, current user is not fetched.", async () => {
     // `/directory/ajax/subject` is not mocked so that if ExportRepoUser
     // attempts to the make a call the test fails
 
-    const updatePeople = jest.fn<[Array<Person>], unknown[]>();
+    const updatePeople = vi.fn<(people: Array<Person>) => void>();
     await act(() =>
       renderExportRepoUser({
         people: [
@@ -69,3 +62,4 @@ describe("ExportRepoUser", () => {
     expect(updatePeople).not.toHaveBeenCalled();
   });
 });
+

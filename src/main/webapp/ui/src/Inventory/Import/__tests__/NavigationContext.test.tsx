@@ -1,27 +1,21 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import React, { useContext } from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
-import each from "jest-each";
+import { describe, expect, test, vi } from "vitest";
+import React,
+  { useContext } from "react";
+import {
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import NavigationContext from "../NavigationContext";
 import { storesContext } from "../../../stores/stores-context";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
+
 import userEvent from "@testing-library/user-event";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 type NavigateToProps = {
   url: string;
-};
 
+};
 const NavigateTo = ({ url }: NavigateToProps) => {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
@@ -34,11 +28,11 @@ const NavigateTo = ({ url }: NavigateToProps) => {
       Click me
     </button>
   );
-};
 
+};
 describe("NavigationContext", () => {
   describe("Performs correctly", () => {
-    each`
+    test.each`
       url                    | areChanges | userDiscards | expectToNavigate
       ${"/inventory/import"} | ${false}   | ${false}     | ${true}
       ${"/inventory/import"} | ${false}   | ${true}      | ${true}
@@ -48,7 +42,7 @@ describe("NavigationContext", () => {
       ${"/inventory/search"} | ${false}   | ${true}      | ${true}
       ${"/inventory/search"} | ${true}    | ${false}     | ${false}
       ${"/inventory/search"} | ${true}    | ${true}      | ${true}
-    `.test(
+    `(
       "{url = $url, areChanges = $areChanges, userDiscards = $userDiscards}",
       async ({
         url,
@@ -69,7 +63,7 @@ describe("NavigationContext", () => {
           state: {},
           key: "",
         };
-        const navFn = jest.fn();
+        const navFn = vi.fn();
         render(
           <storesContext.Provider
             value={makeMockRootStore({
@@ -104,3 +98,4 @@ describe("NavigationContext", () => {
     );
   });
 });
+

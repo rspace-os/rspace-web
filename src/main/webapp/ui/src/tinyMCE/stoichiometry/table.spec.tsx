@@ -4,12 +4,12 @@ import React from "react";
 import { StoichiometryTableWithDataStory } from "./table.story";
 import AxeBuilder from "@axe-core/playwright";
 import fs from "fs/promises";
-import * as Jwt from "jsonwebtoken";
 
+import * as Jwt from "jsonwebtoken";
 async function getColumnIndexByHeader(table: Locator, headerText: string) {
   const allHeaders = table.getByRole("columnheader");
-  const count = await allHeaders.count();
 
+  const count = await allHeaders.count();
   for (let i = 0; i < count; i++) {
     const text = await allHeaders.nth(i).textContent();
     if (text?.trim() === headerText) {
@@ -17,8 +17,8 @@ async function getColumnIndexByHeader(table: Locator, headerText: string) {
     }
   }
   return -1; // Not found
-}
 
+}
 async function getRowByColumnValue(
   page: Page,
   table: Locator,
@@ -29,8 +29,8 @@ async function getRowByColumnValue(
   const columnIndex = await getColumnIndexByHeader(table, columnHeaderText);
   if (columnIndex === -1) {
     throw new Error(`Column "${columnHeaderText}" not found`);
-  }
 
+  }
   // Find the row where that column has the specified value
   return table
     .getByRole("row")
@@ -41,8 +41,8 @@ async function getRowByColumnValue(
         .nth(columnIndex)
         .filter({ hasText: cellValue }),
     });
-}
 
+}
 const feature = test.extend<{
   Given: {
     "the table is loaded with data": () => Promise<void>;
@@ -156,8 +156,8 @@ const feature = test.extend<{
       csv: Download;
     }) => Promise<void>;
     "the loading dialog should be visible": () => Promise<void>;
-    "the loading dialog should not be visible": () => Promise<void>;
 
+    "the loading dialog should not be visible": () => Promise<void>;
     "Compound {name} has {column} of {value}": ({
       name,
       column,
@@ -275,8 +275,8 @@ const feature = test.extend<{
           .filter({ hasNot: page.getByRole("columnheader") });
         const targetRow = dataRows.nth(row);
         const massCell = targetRow.getByRole("gridcell").nth(5); // Mass column
-        await massCell.dblclick();
 
+        await massCell.dblclick();
         // Wait for input to appear and be focused
         const input = page.locator('input[type="number"]');
         await input.waitFor({ state: "visible" });
@@ -292,8 +292,8 @@ const feature = test.extend<{
           .filter({ hasNot: page.getByRole("columnheader") });
         const targetRow = dataRows.nth(row);
         const molesCell = targetRow.getByRole("gridcell").nth(6); // Moles column
-        await molesCell.dblclick();
 
+        await molesCell.dblclick();
         // Wait for input to appear and be focused
         const input = page.locator('input[type="number"]');
         await input.waitFor({ state: "visible" });
@@ -309,8 +309,8 @@ const feature = test.extend<{
           .filter({ hasNot: page.getByRole("columnheader") });
         const targetRow = dataRows.nth(row);
         const actualMassCell = targetRow.getByRole("gridcell").nth(7); // Actual Mass column
-        await actualMassCell.dblclick();
 
+        await actualMassCell.dblclick();
         // Wait for input to appear and be focused
         const input = page.locator('input[type="number"]');
         await input.waitFor({ state: "visible" });
@@ -326,8 +326,8 @@ const feature = test.extend<{
           .filter({ hasNot: page.getByRole("columnheader") });
         const targetRow = dataRows.nth(row);
         const actualMolesCell = targetRow.getByRole("gridcell").nth(8); // Actual Moles column
-        await actualMolesCell.dblclick();
 
+        await actualMolesCell.dblclick();
         // Wait for input to appear and be focused
         const input = page.locator('input[type="number"]');
         await input.waitFor({ state: "visible" });
@@ -343,8 +343,8 @@ const feature = test.extend<{
           .filter({ hasNot: page.getByRole("columnheader") });
         const targetRow = dataRows.nth(row);
         const equivalentCell = targetRow.getByRole("gridcell").nth(3); // Equivalent column
-        await equivalentCell.dblclick();
 
+        await equivalentCell.dblclick();
         // Wait for input to appear and be focused
         const input = page.locator('input[type="number"]');
         await input.waitFor({ state: "visible" });
@@ -361,8 +361,8 @@ const feature = test.extend<{
       },
       "the table displays molecule data": async () => {
         const table = page.getByRole("grid");
-        await expect(table).toBeVisible();
 
+        await expect(table).toBeVisible();
         // Check that we have at least some data rows beyond the header
         const rows = page.getByRole("row");
         const rowCount = await rows.count();
@@ -410,12 +410,12 @@ const feature = test.extend<{
           // Find all rows with reactant role
           const dataRows = page
             .getByRole("row")
-            .filter({ hasNot: page.getByRole("columnheader") });
 
+            .filter({ hasNot: page.getByRole("columnheader") });
           // Get the first row (should be Benzene based on mock data)
           const firstRow = dataRows.first();
-          await expect(firstRow).toContainText("Benzene");
 
+          await expect(firstRow).toContainText("Benzene");
           // Check that the radio button in the Limiting Reagent column is checked for the first reactant
           const limitingReagentRadio = firstRow.getByRole("radio", {
             name: /Select Benzene as limiting reagent/,
@@ -450,12 +450,12 @@ const feature = test.extend<{
         const dataRows = page
           .getByRole("row")
           .filter({ hasNot: page.getByRole("columnheader") });
-        const firstRow = dataRows.first();
 
+        const firstRow = dataRows.first();
         // Get all cells in first row and find yield column (should be index 9 based on headers)
         const cells = firstRow.getByRole("gridcell");
-        const yieldCell = cells.nth(9); // Yield/Excess column is typically the 10th column (0-indexed = 9)
 
+        const yieldCell = cells.nth(9); // Yield/Excess column is typically the 10th column (0-indexed = 9)
         // Check that the yield cell contains dash (—) indicating no yield value
         await expect(yieldCell).toContainText("—");
       },
@@ -464,12 +464,12 @@ const feature = test.extend<{
         const dataRows = page
           .getByRole("row")
           .filter({ hasNot: page.getByRole("columnheader") });
-        const secondRow = dataRows.nth(1);
 
+        const secondRow = dataRows.nth(1);
         // Get all cells in second row and find yield column
         const cells = secondRow.getByRole("gridcell");
-        const yieldCell = cells.nth(9); // Yield/Excess column
 
+        const yieldCell = cells.nth(9); // Yield/Excess column
         // Check that the yield cell contains a percentage or dash (since mock data has no actualAmount)
         const cellContent = await yieldCell.textContent();
         // Since mock data has no actualAmount, it should show dash, but structure should be there for yield
@@ -480,12 +480,12 @@ const feature = test.extend<{
         const dataRows = page
           .getByRole("row")
           .filter({ hasNot: page.getByRole("columnheader") });
-        const firstRow = dataRows.first();
 
+        const firstRow = dataRows.first();
         // Get all cells in first row and find yield column
         const cells = firstRow.getByRole("gridcell");
-        const yieldCell = cells.nth(9); // Yield/Excess column
 
+        const yieldCell = cells.nth(9); // Yield/Excess column
         // Check that the yield cell contains a percentage or dash (since mock data has no actualAmount)
         const cellContent = await yieldCell.textContent();
         expect(cellContent).toMatch(/—|\d+%/);
@@ -495,12 +495,12 @@ const feature = test.extend<{
         const dataRows = page
           .getByRole("row")
           .filter({ hasNot: page.getByRole("columnheader") });
-        const secondRow = dataRows.nth(1);
 
+        const secondRow = dataRows.nth(1);
         // Get all cells in second row and find yield column
         const cells = secondRow.getByRole("gridcell");
-        const yieldCell = cells.nth(9); // Yield/Excess column
 
+        const yieldCell = cells.nth(9); // Yield/Excess column
         // Check that the yield cell contains dash (—) indicating no yield value
         await expect(yieldCell).toContainText("—");
       },
@@ -579,8 +579,8 @@ const feature = test.extend<{
         const colIndex = await getColumnIndexByHeader(
           page.getByRole("grid"),
           column,
-        );
 
+        );
         const row = await getRowByColumnValue(
           page,
           page.getByRole("grid"),
@@ -593,8 +593,8 @@ const feature = test.extend<{
       },
     });
   },
-});
 
+});
 feature.beforeEach(async ({ router }) => {
   await router.route("/api/v1/stoichiometry*", (route) => {
     // Mock data based on CSV with calculation relationships
@@ -742,15 +742,15 @@ feature.beforeEach(async ({ router }) => {
           notes: null,
         },
       ],
-    };
 
+    };
     return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify(mockResponse),
     });
-  });
 
+  });
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
@@ -766,12 +766,12 @@ feature.beforeEach(async ({ router }) => {
         data: Jwt.sign(payload, "dummySecretKey"),
       }),
     });
-  });
 
+  });
   await router.route("/api/v1/stoichiometry/molecule/info", (route) => {
     const requestBody = route.request().postDataJSON();
-    const smiles = requestBody?.chemical;
 
+    const smiles = requestBody?.chemical;
     let mockInfo;
     switch (smiles) {
       case "CN1C=NC2=C1C(=O)N(C(=O)N2C)C": // Caffeine
@@ -791,19 +791,19 @@ feature.beforeEach(async ({ router }) => {
           molecularWeight: 100.0,
           formula: "Unknown",
         };
-    }
 
+    }
     return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify(mockInfo),
     });
-  });
 
+  });
   await router.route("/api/v1/pubchem/search", (route) => {
     const requestBody = route.request().postDataJSON();
-    const searchTerm = requestBody?.searchTerm?.toLowerCase();
 
+    const searchTerm = requestBody?.searchTerm?.toLowerCase();
     return route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -819,8 +819,8 @@ feature.beforeEach(async ({ router }) => {
         },
       ]),
     });
-  });
 
+  });
   await router.route("/gallery/getUploadedFiles*", (route) => {
     const mockGalleryResponse = {
       data: {
@@ -843,23 +843,23 @@ feature.beforeEach(async ({ router }) => {
           totalHits: 1,
         },
       },
-    };
 
+    };
     return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify(mockGalleryResponse),
     });
   });
-});
 
+});
 test.describe("Stoichiometry Table", () => {
   feature("Has no accessibility violations", async ({ Given, Once, Then }) => {
     await Given["the table is loaded with data"]();
     await Once["the table has loaded"]();
     await Then["there shouldn't be any axe violations"]();
-  });
 
+  });
   feature(
     "supports high-contrast mode",
     async ({ Given, Then, Once, page }) => {
@@ -868,8 +868,8 @@ test.describe("Stoichiometry Table", () => {
       await Once["the table has loaded"]();
       await Then["there shouldn't be any axe violations"]();
     },
-  );
 
+  );
   feature(
     "Renders and displays data correctly",
     async ({ Given, Once, Then }) => {
@@ -878,14 +878,14 @@ test.describe("Stoichiometry Table", () => {
       await Then["the table should be visible"]();
       await Then["the table displays molecule data"]();
     },
-  );
 
+  );
   feature("Displays expected column headers", async ({ Given, Once, Then }) => {
     await Given["the table is loaded with data"]();
     await Once["the table has loaded"]();
     await Then["the default columns should be visible"]();
-  });
 
+  });
   feature(
     "Sets first reactant as default limiting reagent when none is selected",
     async ({ Given, Once, Then }) => {
@@ -895,8 +895,8 @@ test.describe("Stoichiometry Table", () => {
         "the first reactant should be selected as the default limiting reagent"
       ]();
     },
-  );
 
+  );
   feature(
     "There should be a menu for exporting the stoichiometry table to CSV",
     async ({ Given, Then }) => {
@@ -905,8 +905,8 @@ test.describe("Stoichiometry Table", () => {
         "there should be a menu for exporting the stoichiometry table to CSV"
       ]();
     },
-  );
 
+  );
   feature(
     "When exporting to CSV, all molecule rows should be included",
     async ({ Given, Once, When, Then }) => {
@@ -915,8 +915,8 @@ test.describe("Stoichiometry Table", () => {
       const csv = await When["a CSV export is downloaded"]();
       await Then["{CSV} should have {count} rows"]({ csv, count: 4 }); // 4 molecules in mock data
     },
-  );
 
+  );
   feature(
     "When exporting to CSV, role strings should be transformed correctly",
     async ({ Given, Once, When, Then }) => {
@@ -925,8 +925,8 @@ test.describe("Stoichiometry Table", () => {
       const csv = await When["a CSV export is downloaded"]();
       await Then["{CSV} should contain the correct role strings"]({ csv });
     },
-  );
 
+  );
   feature(
     "Given the first row is selected as the limiting reagent, then the first row should NOT have a yield value and the second row should have a yield value",
     async ({ Given, Once, Then }) => {
@@ -936,8 +936,8 @@ test.describe("Stoichiometry Table", () => {
       await Then["the first row should NOT have a yield value"]();
       await Then["the second row should have a yield value"]();
     },
-  );
 
+  );
   feature(
     "Given the first row is selected as the limiting reagent, when the user taps the limiting reagent cell of the second row, then the first row should have a yield value and the second row should NOT have a yield value",
     async ({ Given, Once, When, Then }) => {
@@ -945,17 +945,17 @@ test.describe("Stoichiometry Table", () => {
       await Once["the table has loaded"]();
       // Initially first row is limiting reagent, verify initial state
       await Then["the first row should NOT have a yield value"]();
+
       await Then["the second row should have a yield value"]();
-
       // Change limiting reagent to second row
-      await When["the user taps the limiting reagent cell of the second row"]();
 
+      await When["the user taps the limiting reagent cell of the second row"]();
       // Now verify the yield values have switched
       await Then["the first row should have a yield value"]();
       await Then["the second row should NOT have a yield value"]();
     },
-  );
 
+  );
   test.describe("Adding reagants", () => {
     feature(
       "User can access the Add Reagent menu",
@@ -965,26 +965,26 @@ test.describe("Stoichiometry Table", () => {
         await When["the user clicks Add Reagent"]();
         await Then["the Add Reagent menu should be visible"]();
       },
-    );
 
+    );
     feature(
       "User can add a reagent from PubChem",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         await When["the user clicks Add Reagent"]();
         await When["the user selects PubChem from the menu"]();
-        await Then["the PubChem dialog should open"]();
 
+        await Then["the PubChem dialog should open"]();
         await When["the user searches for {compound} in PubChem"]({
           compound: "caffeine",
         });
+
         await Then["PubChem search results should be displayed"]();
-
         await When["the user clicks Insert"]();
-        await Then["the loading dialog should be visible"]();
 
+        await Then["the loading dialog should be visible"]();
         await Once["the loading dialog disappears"]();
         await Then["the table should contain a new row with {name}"]({
           name: "Caffeine",
@@ -995,27 +995,27 @@ test.describe("Stoichiometry Table", () => {
         await Then["the new row should have role agent"]();
         await Then["there should be {count} molecules in total"]({ count: 5 }); // 4 original + 1 new
       },
-    );
 
+    );
     feature(
       "User can add a reagent manually using SMILES",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         await When["the user clicks Add Reagent"]();
         await When["the user selects Manual entry from the menu"]();
-        await Then["the manual SMILES dialog should open"]();
 
+        await Then["the manual SMILES dialog should open"]();
         await When["the user enters SMILES {smiles} with name {name}"]({
           smiles: "CCO",
           name: "Ethanol",
         });
+
         await When["the user adds the manual reagent"]();
-
         await Then["the loading dialog should be visible"]();
-        await Once["the loading dialog disappears"]();
 
+        await Once["the loading dialog disappears"]();
         await Then["the table should contain a new row with {name}"]({
           name: "Ethanol",
         });
@@ -1025,27 +1025,27 @@ test.describe("Stoichiometry Table", () => {
         await Then["the new row should have role agent"]();
         await Then["there should be {count} molecules in total"]({ count: 5 }); // 4 original + 1 new
       },
-    );
 
+    );
     feature(
       "User can add a reagent from Gallery",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         // Open Gallery dialog
         await When["the user clicks Add Reagent"]();
         await When["the user selects Gallery from the menu"]();
-        await Then["the Gallery dialog should open"]();
 
+        await Then["the Gallery dialog should open"]();
         // Select a chemistry file and add it
         await When["the user selects the first chemistry file from Gallery"]();
-        await When["the user adds the selected files from Gallery"]();
 
+        await When["the user adds the selected files from Gallery"]();
         // Check loading dialog appears and disappears
         await Then["the loading dialog should be visible"]();
-        await Once["the loading dialog disappears"]();
 
+        await Once["the loading dialog disappears"]();
         // Verify the new reagent is added correctly (using filename without extension)
         await Then["the table should contain a new row with {name}"]({
           name: "ethanol",
@@ -1056,14 +1056,14 @@ test.describe("Stoichiometry Table", () => {
         await Then["the new row should have role agent"]();
         await Then["there should be {count} molecules in total"]({ count: 5 }); // 4 original + 1 new
       },
-    );
 
+    );
     feature(
       "Multiple reagents can be added sequentially",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         // Add first reagent (Ethanol)
         await When["the user clicks Add Reagent"]();
         await When["the user selects Manual entry from the menu"]();
@@ -1073,8 +1073,8 @@ test.describe("Stoichiometry Table", () => {
         });
         await When["the user adds the manual reagent"]();
         await Once["the loading dialog disappears"]();
-        await Then["there should be {count} molecules in total"]({ count: 5 });
 
+        await Then["there should be {count} molecules in total"]({ count: 5 });
         // Add second reagent (Caffeine via PubChem)
         await When["the user clicks Add Reagent"]();
         await When["the user selects PubChem from the menu"]();
@@ -1082,8 +1082,8 @@ test.describe("Stoichiometry Table", () => {
           compound: "caffeine",
         });
         await When["the user clicks Insert"]();
-        await Once["the loading dialog disappears"]();
 
+        await Once["the loading dialog disappears"]();
         // Verify both reagents are present
         await Then["the table should contain a new row with {name}"]({
           name: "Ethanol",
@@ -1094,290 +1094,290 @@ test.describe("Stoichiometry Table", () => {
         await Then["there should be {count} molecules in total"]({ count: 6 }); // 4 original + 2 new
       },
     );
-  });
 
+  });
   test.describe("Calculation Logic", () => {
     feature(
       "Editing actual mass updates actual moles correctly",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         // Edit actual mass of second row (Cyclopentadiene) from 5 to 8
         await When["the user edits actual mass in row {row} to {value}"]({
           row: 1,
           value: "8",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Actual Moles (mol)",
           value: "8",
         });
       },
-    );
 
+    );
     feature(
       "Editing actual moles updates actual mass correctly",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         // Edit actual moles of second row (Cyclopentadiene) from 5 to 6
         await When["the user edits actual moles in row {row} to {value}"]({
           row: 1,
           value: "6",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Actual Mass (g)",
           value: "6",
         });
       },
-    );
 
+    );
     feature(
       "Editing actual mass updates yield correctly for non-limiting reactants",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         // Edit actual mass of second row (Cyclopentadiene) from 5 to 10
         await When["the user edits actual mass in row {row} to {value}"]({
           row: 1,
           value: "10",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Actual Moles (mol)",
           value: "10",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Yield/Excess (%)",
           value: "150%",
         });
       },
-    );
 
+    );
     feature(
       "Multiple actual mass edits work correctly",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         // Edit actual mass of product (Cyclopentane) from 5 to 7
         await When["the user edits actual mass in row {row} to {value}"]({
           row: 2,
           value: "7",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentane",
           column: "Actual Moles (mol)",
           value: "7",
         });
       },
-    );
 
+    );
     feature(
       "Changing limiting reagent adjusts equivalent values",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         await Then["Compound {name} has {column} of {value}"]({
           name: "Benzene",
           column: "Equivalent",
           value: "1",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Equivalent",
           value: "2",
-        });
 
+        });
         await When[
           "the user taps the limiting reagent cell of the second row"
-        ]();
 
+        ]();
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Equivalent",
           value: "1",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Benzene",
           column: "Equivalent",
           value: "0.5",
         });
       },
-    );
 
+    );
     feature(
       "Changing limiting reagent updates mass/moles editability and yield calculations",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         await Then["Compound {name} has {column} of {value}"]({
           name: "Benzene",
           column: "Yield/Excess (%)",
           value: "—",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Yield/Excess (%)",
           value: "500%",
-        });
 
+        });
         await When[
           "the user taps the limiting reagent cell of the second row"
-        ]();
 
+        ]();
         await Then["Compound {name} has {column} of {value}"]({
           name: "Benzene",
           column: "Yield/Excess (%)",
           value: "20%",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Yield/Excess (%)",
           value: "—",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentane",
           column: "Yield/Excess (%)",
           value: "66.7%",
         });
       },
-    );
 
+    );
     feature(
       "Changing limiting reagent updates mass/moles editability",
       async ({ Given, Once, When, Then, page }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         // Initially only Benzene (limiting reagent) mass should be editable
         const dataRows = page
           .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
 
+          .filter({ hasNot: page.getByRole("columnheader") });
         // Try editing mass of Benzene (should work - it's limiting reagent)
         const benzeneRow = dataRows.nth(0);
         const benzeneMassCell = benzeneRow.getByRole("gridcell").nth(5);
-        await benzeneMassCell.dblclick();
 
+        await benzeneMassCell.dblclick();
         let input = page.locator('input[type="number"]');
         await input.waitFor({ state: "visible" });
         await input.fill("15");
-        await input.press("Enter");
 
+        await input.press("Enter");
         await Then["Compound {name} has {column} of {value}"]({
           name: "Benzene",
           column: "Mass (g)",
           value: "15",
-        });
 
+        });
         // Change limiting reagent to Cyclopentadiene
         await When[
           "the user taps the limiting reagent cell of the second row"
-        ]();
 
+        ]();
         // Now try editing mass of Cyclopentadiene (should work - new limiting reagent)
         await When["the user edits mass in row {row} to {value}"]({
           row: 1,
           value: "25",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Mass (g)",
           value: "25",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Moles (mol)",
           value: "25",
         });
       },
-    );
 
+    );
     feature(
       "Yield is computed correctly for products",
       async ({ Given, Once, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentane",
           column: "Yield/Excess (%)",
           value: "500%",
         });
       },
-    );
 
+    );
     feature(
       "Editing equivalent normalizes all coefficients correctly",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         // Edit equivalent of Cyclopentadiene from 2 to 4
         await When["the user edits equivalent in row {row} to {value}"]({
           row: 1,
           value: "4",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Benzene",
           column: "Equivalent",
           value: "1",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Equivalent",
           value: "4",
-        });
 
+        });
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentane",
           column: "Equivalent",
           value: "3",
         });
       },
-    );
 
+    );
     feature(
       "Editing negative equivalent value reverts to original value",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
-        await Once["the table has loaded"]();
 
+        await Once["the table has loaded"]();
         // Check original value
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",
           column: "Equivalent",
           value: "2",
-        });
 
+        });
         // Try to edit equivalent of Cyclopentadiene to -1 (should fail)
         await When["the user edits equivalent in row {row} to {value}"]({
           row: 1,
           value: "-1",
-        });
 
+        });
         // Value should remain unchanged (reverted to original)
         await Then["Compound {name} has {column} of {value}"]({
           name: "Cyclopentadiene",

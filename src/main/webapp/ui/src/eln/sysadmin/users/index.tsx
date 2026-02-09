@@ -42,6 +42,7 @@ import {
 import TextField from "@mui/material/TextField";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ChecklistIcon from "@mui/icons-material/Checklist";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import CustomTooltip from "../../../components/CustomTooltip";
 import {
   useUserListing,
@@ -103,7 +104,7 @@ import Analytics from "../../../components/Analytics";
  * information.
  */
 const EventBoundary = ({ children }: { children: React.ReactNode }) => (
-   
+
   <div
     onKeyDown={(e) => {
       e.stopPropagation();
@@ -336,9 +337,9 @@ const TagDialog = ({
                     onSelection={(newTag) => {
                       if (!addedTags.includes(newTag))
                         setAddedTags([...addedTags, newTag]);
-                      setDeletedTags(
-                        deletedTags.filter((dTag) => dTag !== newTag),
-                      );
+                        setDeletedTags(
+                          deletedTags.filter((dTag) => dTag !== newTag),
+                        );
                     }}
                     onClose={() => {
                       setAnchorEl(null);
@@ -480,7 +481,7 @@ const PiAction = ({
   return (
     <>
       <MenuItem
-         
+
         autoFocus={autoFocus}
         disabled={allowedPiAction.isError}
         onClick={() => {
@@ -1038,7 +1039,7 @@ const SelectionActions = ({
                    * ../../../../../QuirksOfMaterialUi.md, section
                    * "Custom components that wrap `MenuItem`s"
                    */
-                   
+
                   autoFocus
                   selectedUser={selectedUser}
                   setActionsAnchorEl={setActionsAnchorEl}
@@ -2054,16 +2055,20 @@ export const UsersPage = (): React.ReactNode => {
   );
 };
 
+const queryClient = new QueryClient();
+
 const wrapperDiv = document.getElementById("sysadminUsers");
 if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-        <UiPreferences>
-          <UsersPage />
-        </UiPreferences>
-      </ThemeProvider>
-    </StyledEngineProvider>,
+    <QueryClientProvider client={queryClient}>
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+          <UiPreferences>
+            <UsersPage />
+          </UiPreferences>
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </QueryClientProvider>
   );
 }

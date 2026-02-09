@@ -48,6 +48,32 @@ const StyledDialog = styled(Dialog)(() => ({
   },
 }));
 
+const isTestEnv =
+  typeof process !== "undefined" && process.env.NODE_ENV === "test";
+
+type NoopTransitionProps = {
+  in?: boolean;
+  children?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+};
+
+const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
+  ({ in: inProp, children, className, style }, ref) => {
+  if (!inProp) return null;
+  if (React.isValidElement(children)) {
+    return React.cloneElement(children, {
+      ref,
+      className,
+      style,
+      tabIndex: -1,
+    });
+  }
+  return children ?? null;
+  }
+);
+NoopTransition.displayName = "NoopTransition";
+
 const imageTypeFromFile = (file: Blob): string => file.type.split("/")[1];
 
 const readAsBinaryString = (file: Blob): Promise<string> =>
@@ -213,6 +239,16 @@ function ImageEditingDialog({
       open={open}
       onClose={close}
       aria-labelledby={titleId}
+      TransitionComponent={isTestEnv ? NoopTransition : undefined}
+      transitionDuration={isTestEnv ? 0 : undefined}
+      BackdropProps={
+        isTestEnv
+          ? { TransitionComponent: NoopTransition, transitionDuration: 0 }
+          : undefined
+      }
+      disableAutoFocus={isTestEnv}
+      disableEnforceFocus={isTestEnv}
+      disableRestoreFocus={isTestEnv}
     >
       <DialogTitle id={titleId}>Edit Image</DialogTitle>
       <DialogContent

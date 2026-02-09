@@ -9,6 +9,7 @@ import com.researchspace.api.v1.controller.BaseApiController;
 import com.researchspace.api.v1.controller.DocumentApiPaginationCriteria;
 import com.researchspace.api.v1.model.ApiShareInfo;
 import com.researchspace.api.v1.model.ApiShareSearchResult;
+import com.researchspace.api.v1.model.ApiShareSearchResultWithFolderShares;
 import com.researchspace.api.v1.model.ApiSharingResult;
 import com.researchspace.api.v1.model.DocumentShares;
 import com.researchspace.api.v1.model.GroupSharePostItem;
@@ -171,17 +172,24 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
         createInternalPaginationCriteria(pgCrit);
     configureSearch(apiShareSrchConfig, internalPgCrit);
 
-    ISearchResults<RecordGroupSharing> internalShares =
-        recordShareMgr.listSharedRecordsForUser(user, internalPgCrit);
+    ISearchResults<RecordGroupSharing> internalShares;
+    boolean listSharesForRecordIds =
+        !CollectionUtils.isEmpty(apiShareSrchConfig.getSharedItemIds());
 
-    if (!CollectionUtils.isEmpty(apiShareSrchConfig.getSharedItemIds())) {
-      internalShares
-          .getResults()
-          .removeIf(
-              rgs -> !apiShareSrchConfig.getSharedItemIds().contains(rgs.getShared().getId()));
+    if (listSharesForRecordIds) {
+      internalShares =
+          recordShareMgr.listSharesForRecordsAndUser(
+              apiShareSrchConfig.getSharedItemIds(), internalPgCrit, user);
+    } else {
+      internalShares = recordShareMgr.listSharedRecordsForUser(user, internalPgCrit);
     }
 
-    return buildApiShareSearchResult(pgCrit, apiShareSrchConfig, internalShares);
+    ApiShareSearchResult result =
+        buildApiShareSearchResult(pgCrit, apiShareSrchConfig, internalShares);
+    if (listSharesForRecordIds) {
+      result = new ApiShareSearchResultWithFolderShares(result);
+    }
+    return result;
   }
 
   @Override

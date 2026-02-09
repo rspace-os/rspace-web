@@ -122,9 +122,10 @@ public class AsyncDepositorImplTest {
         "https://dataverse.org/dataset.xhtml?persistentId=doi:10.70122/FK2/FNGEGH";
     String expectedDoiLink = "https://doi.org/10.70122/FK2/FNGEGH";
     String expectedRaidIdentifier = "https://raid.org/10.12345/ERTY88";
-    String expectedRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
+    String expectedRaidUrl = "https://demo.app.raid.org.au/raid/10.12345/ERTY88";
+    String originalRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
     RaIDReferenceDTO expectedRaidReference =
-        new RaIDReferenceDTO("serverAlias1", "RaidTitle", expectedRaidIdentifier, expectedRaidUrl);
+        new RaIDReferenceDTO("serverAlias1", "RaidTitle", expectedRaidIdentifier, originalRaidUrl);
     when(mockRaidServiceClientAdapter.updateRaIDRelatedObject(
             anyUser.getUsername(), expectedRaidReference, expectedDoiLink))
         .thenReturn(true);

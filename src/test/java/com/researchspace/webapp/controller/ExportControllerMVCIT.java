@@ -317,8 +317,9 @@ public class ExportControllerMVCIT extends MVCTestBase {
     Group projectGroup = createGroupForUsers(pi1, pi1.getUsername(), "", pi1);
     Folder rootSharedFolder = folderMgr.getFolder(projectGroup.getCommunalGroupFolderId(), pi1);
     logoutAndLoginAs(pi1);
+    Folder sharedSubFolder = createSubFolder(rootSharedFolder, "SharedSubFolder", pi1);
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(pi1, "any text");
-    sharingHandler.shareIntoSharedFolderOrNotebook(pi1, rootSharedFolder, doc.getId(), null);
+    sharingHandler.shareIntoSharedFolderOrNotebook(pi1, sharedSubFolder, doc.getId(), null);
     User toAdd = createAndSaveUser(getRandomAlphabeticString("other"));
     initUser(toAdd);
     grpMgr.addUserToGroup(pi1.getUsername(), projectGroup.getId(), RoleInGroup.DEFAULT);
@@ -329,8 +330,8 @@ public class ExportControllerMVCIT extends MVCTestBase {
             projectGroup.getId(),
             projectGroup.getDisplayName(),
             pi1.getUsername(),
-            doc.getId(),
-            doc.getName());
+            sharedSubFolder.getId(),
+            sharedSubFolder.getName());
     String requestContent = mapper.writeValueAsString(exportRequestDTO);
     log.info(requestContent);
     try {
