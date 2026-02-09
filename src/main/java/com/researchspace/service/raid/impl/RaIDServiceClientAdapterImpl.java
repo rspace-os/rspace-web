@@ -106,9 +106,12 @@ public class RaIDServiceClientAdapterImpl
             getExistingAccessTokenOrRefreshIfExpired(username, serverAlias));
     return verboseRaidList.stream()
         .map(
-            r ->
+            raid ->
                 new RaIDReferenceDTO(
-                    serverAlias, r.getTitle().get(0).getText(), r.getIdentifier().getId()))
+                    serverAlias,
+                    raid.getTitle().get(0).getText(),
+                    raid.getIdentifier().getId(),
+                    raid.getIdentifier().getRaidAgencyUrl()))
         .collect(Collectors.toSet());
   }
 
@@ -123,7 +126,10 @@ public class RaIDServiceClientAdapterImpl
             raidPrefix,
             raidSuffix);
     return new RaIDReferenceDTO(
-        serverAlias, verboseRaid.getTitle().get(0).getText(), verboseRaid.getIdentifier().getId());
+        serverAlias,
+        verboseRaid.getTitle().get(0).getText(),
+        verboseRaid.getIdentifier().getId(),
+        verboseRaid.getIdentifier().getRaidAgencyUrl());
   }
 
   @Override

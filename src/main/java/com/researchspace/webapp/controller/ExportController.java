@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.session.SessionAttributeUtils.RS_IMPORT_XML_ARCHIVE_PROGRESS;
+import static com.researchspace.webapp.integrations.raid.RaIDController.validateRaidGroupAssociation;
 
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchiveResult;
@@ -20,6 +21,7 @@ import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
+import com.researchspace.model.dtos.export.AbstractExportDialog;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
 import com.researchspace.model.field.ErrorList;
@@ -487,7 +489,7 @@ public class ExportController extends BaseController {
           new String[] {"Export", getMultiDocExportErrorMsg(errorBuffer)});
     }
 
-    if (!hasValidRaidAssociation(principal.getName(), raidAssociated)) {
+    if (!validateRaidAndDecorate(exportConfig)) {
       return getRaidValidationError(raidAssociated);
     }
 
@@ -692,7 +694,7 @@ public class ExportController extends BaseController {
       return getText("workspace.export.noDiskSpace");
     }
 
-    if (!hasValidRaidAssociation(principal.getName(), exportDialogConfig.getRaidAssociated())) {
+    if (!validateRaidAndDecorate(exportDialogConfig)) {
       return getRaidValidationError(exportDialogConfig.getRaidAssociated());
     }
 
@@ -769,22 +771,32 @@ public class ExportController extends BaseController {
         });
   }
 
-  private boolean hasValidRaidAssociation(
-      String username, RaidGroupAssociationDTO raidGroupAssociation) {
+  private boolean validateRaidAndDecorate(AbstractExportDialog exportDialog) {
+    RaidGroupAssociationDTO raidGroupAssociation = exportDialog.getRaidAssociated();
     if (raidGroupAssociation != null) {
       // validate raid exists and it is associated
-      Optional<RaidGroupAssociationDTO> raidAssociated =
-          raidServiceManager.getAssociatedRaidByUserAliasAndProjectId(
-              userManager.getUserByUsername(username),
-              raidGroupAssociation.getRaid().getRaidServerAlias(),
-              raidGroupAssociation.getProjectGroupId());
-      return raidAssociated.isPresent()
-          && raidAssociated
-              .get()
-              .getRaid()
-              .getRaidIdentifier()
-              .equals(raidGroupAssociation.getRaid().getRaidIdentifier());
-    }
+      try {
+        validateRaidGroupAssociation(raidGroupAssociation);
+        Optional<RaidGroupAssociationDTO> raidAssociated =
+            raidServiceManager.getAssociatedRaidByAliasAndProjectId(
+                raidGroupAssociation.getRaid().getRaidServerAlias(),
+                raidGroupAssociation.getProjectGroupId());
+        if (raidAssociated.isPresent()
+            && raidAssociated
+                .get()
+                .getRaid()
+                .getRaidIdentifier()
+                .equals(raidGroupAssociation.getRaid().getRaidIdentifier())) {
+          exportDialog.setRaidAssociated(raidAssociated.get());
+          return true;
+        } else { // it is not associated
+          return false;
+        }
+      } catch (Exception e) {
+        log.error("Export validation error: " + e.getMessage());
+        return false;
+      }
+    } // nothing to export for Raid
     return true;
   }
 

@@ -98,8 +98,7 @@ public class RaIDController extends BaseOAuth2Controller {
     BindingResult errors = new BeanPropertyBindingResult(null, "raidGroupAssociation");
     try {
       result =
-          raidServiceManager.getAssociatedRaidByUserAliasAndProjectId(
-              userManager.getUserByUsername(principal.getName()), raidServerAlias, projectGroupId);
+          raidServiceManager.getAssociatedRaidByAliasAndProjectId(raidServerAlias, projectGroupId);
     } catch (Exception e) {
       log.error("Not able to get RaID list for the user \"{}\":", principal.getName(), e);
       errors.reject(
@@ -168,7 +167,7 @@ public class RaIDController extends BaseOAuth2Controller {
         new BeanPropertyBindingResult(raidGroupAssociation, "raidGroupAssociation");
     Group group = null;
     try {
-      validateInput(raidGroupAssociation);
+      validateRaidGroupAssociation(raidGroupAssociation);
       User user = userManager.getAuthenticatedUserInSession();
       group = groupManager.getGroup(raidGroupAssociation.getProjectGroupId());
       raidGroupAssociation.setRaid(
@@ -265,7 +264,7 @@ public class RaIDController extends BaseOAuth2Controller {
         new RaidGroupAssociationDTO(
             projectGroupId,
             groupManager.getGroup(projectGroupId).getDisplayName(),
-            new RaIDReferenceDTO(raidServerAlias, raidTitle, raidIdentifier));
+            new RaIDReferenceDTO(raidServerAlias, raidIdentifier));
     return associateRaidToGroup(input, principal);
   }
 
@@ -326,7 +325,7 @@ public class RaIDController extends BaseOAuth2Controller {
     return result;
   }
 
-  private static void validateInput(RaidGroupAssociationDTO raidGroupAssociation) {
+  public static void validateRaidGroupAssociation(RaidGroupAssociationDTO raidGroupAssociation) {
     Validate.isTrue(raidGroupAssociation.getProjectGroupId() != null, "projectGroupId is missing");
     Validate.isTrue(
         StringUtils.isNotBlank(raidGroupAssociation.getRaid().getRaidIdentifier()),

@@ -4,6 +4,7 @@ import com.researchspace.archive.ArchiveResult;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
+import com.researchspace.model.dtos.RaidUpdateResult;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.repository.spi.IRepository;
 import com.researchspace.repository.spi.RepositoryConfig;
@@ -13,6 +14,7 @@ import java.util.concurrent.Future;
 import org.springframework.scheduling.annotation.Async;
 
 public interface IAsyncArchiveDepositor {
+
   @Async(value = "archiveTaskExecutor")
   Future<RepositoryOperationResult> depositDocument(
       App app,
@@ -31,5 +33,13 @@ public interface IAsyncArchiveDepositor {
       RepoDepositConfig metadata,
       RepositoryConfig repoCfg,
       Future<ArchiveResult> archive)
+      throws InterruptedException, ExecutionException;
+
+  @Async(value = "archiveTaskExecutor")
+  Future<RaidUpdateResult> reportDoiToRaid(
+      App app,
+      Future<RepositoryOperationResult> depositResult,
+      User subject,
+      RepoDepositConfig repoDepositConfig)
       throws InterruptedException, ExecutionException;
 }

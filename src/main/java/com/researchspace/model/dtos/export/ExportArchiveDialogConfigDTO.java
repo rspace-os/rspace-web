@@ -2,10 +2,7 @@ package com.researchspace.model.dtos.export;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
-import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.dtos.NfsExportConfig;
-import com.researchspace.model.dtos.RaidGroupAssociationDTO;
-import com.researchspace.model.repository.RepoDepositConfig;
 import java.util.HashSet;
 import java.util.Set;
 import javax.validation.Valid;
@@ -18,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @Data
 @NoArgsConstructor
-public class ExportArchiveDialogConfigDTO {
+public class ExportArchiveDialogConfigDTO extends AbstractExportDialog {
 
   @Data
   @NoArgsConstructor
@@ -37,11 +34,8 @@ public class ExportArchiveDialogConfigDTO {
     Boolean allVersions;
   }
 
-  @Valid private ExportSelection exportSelection;
   @Valid private ArchiveDialogConfig exportConfig;
   @Valid private NfsExportConfig nfsConfig;
-  @Valid private RepoDepositConfig repositoryConfig;
-  @Valid private RaidGroupAssociationDTO raidAssociated;
 
   public ArchiveExportConfig toArchiveExportConfig() {
     ArchiveExportConfig archiveExportCfg = new ArchiveExportConfig();
@@ -53,7 +47,7 @@ public class ExportArchiveDialogConfigDTO {
     }
     archiveExportCfg.setDescription(exportConfig.getDescription());
     archiveExportCfg.setHasAllVersion(exportConfig.getAllVersions());
-    archiveExportCfg.setExportScope(ExportScope.valueOf(exportSelection.getType().name()));
+    archiveExportCfg.setExportScope(ExportScope.valueOf(super.exportSelection.getType().name()));
     archiveExportCfg.setRaidGroupAssociated(this.getRaidAssociated());
 
     if (repositoryConfig != null) {
