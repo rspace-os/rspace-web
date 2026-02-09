@@ -2,7 +2,7 @@ package com.researchspace.core.util;
 
 import java.util.Date;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.After;
 import org.junit.Before;

@@ -10,7 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.charset.Charset;
 
-import javax.xml.bind.UnmarshalException;
+import jakarta.xml.bind.UnmarshalException;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
