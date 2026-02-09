@@ -41,7 +41,7 @@ const config = {
     createGroup: "./src/CreateGroup/CreateGroup.js",
     myLabGroups: "./src/my-rspace/directory/groups/MyLabGroups.js",
     rorIntegration: "./src/system-ror/RoRIntegration.tsx",
-    exportModal: "./src/Export/ExportModal.js",
+    exportModal: "./src/Export/ExportModal.tsx",
     groupEditBar: "./src/my-rspace/directory/groups/GroupEditBar.js",
     workspaceToolbar: "./src/Toolbar/Workspace/Toolbar.js",
     notebookToolbar: "./src/Toolbar/Notebook/Toolbar.js",
@@ -84,7 +84,7 @@ const config = {
       "./src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
     sysadminUsers: "./src/eln/sysadmin/users/index.tsx",
     raidConnections:
-      "./src/my-rspace/profile/RaIDConnections/RaIDConnectionsEntrypoint.tsx",
+      "./src/my-rspace/profile/RaidConnections/RaidConnectionsEntrypoint.tsx",
   },
   output: {
     filename: "[name].js",

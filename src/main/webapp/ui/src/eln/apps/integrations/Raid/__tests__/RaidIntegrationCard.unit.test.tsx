@@ -11,12 +11,10 @@ import materialTheme from "@/theme";
 import { ThemeProvider } from "@mui/material/styles";
 import "../../../../../../__mocks__/matchMedia";
 import AlertContext, { Alert } from "@/stores/contexts/Alert";
-import RaIDIntegrationCard, {
-  RaIDConnectedMessage,
-} from "@/eln/apps/integrations/RaID/RaIDIntegrationCard";
 import { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
 
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import RaidIntegrationCard, { RaidConnectedMessage } from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
 const mockSaveAppOptions = vi.fn();
 const mockDeleteAppOptions = vi.fn();
 vi.mock("@/eln/apps/useIntegrationsEndpoint", () => ({
@@ -26,9 +24,9 @@ vi.mock("@/eln/apps/useIntegrationsEndpoint", () => ({
   }),
 
 }));
-const broadcastHandlers: Array<(e: MessageEvent<RaIDConnectedMessage>) => void> = [];
+const broadcastHandlers: Array<(e: MessageEvent<RaidConnectedMessage>) => void> = [];
 vi.mock("use-broadcast-channel", () => ({
-  useBroadcastChannel: (_channel: string, handler: (e: MessageEvent<RaIDConnectedMessage>) => void) => {
+  useBroadcastChannel: (_channel: string, handler: (e: MessageEvent<RaidConnectedMessage>) => void) => {
     broadcastHandlers.push(handler);
   },
 
@@ -46,18 +44,18 @@ const renderWithProviders = (
   const view = render(
     <ThemeProvider theme={materialTheme}>
       <AlertContext.Provider value={result}>
-        <RaIDIntegrationCard integrationState={integrationState} update={update} />
+        <RaidIntegrationCard integrationState={integrationState} update={update} />
       </AlertContext.Provider>
     </ThemeProvider>
   );
   return { ...view, addAlert };
 
 };
-describe("RaIDIntegrationCard", () => {
+describe("RaidIntegrationCard", () => {
   let restoreConsole = () => {};
   beforeEach(() => {
     vi.clearAllMocks();
-    restoreConsole = silenceConsole(["log"], ["RaIDIntegrationCard:"]);
+    restoreConsole = silenceConsole(["log"], ["RaidIntegrationCard:"]);
   });
   afterEach(() => {
     restoreConsole();
@@ -132,13 +130,13 @@ describe("RaIDIntegrationCard", () => {
 
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
       act(() => {
-        broadcastHandlers.forEach((h) => h({ data: { type: "RAID_CONNECTED", alias: "srvA" } } as MessageEvent<RaIDConnectedMessage>));
+        broadcastHandlers.forEach((h) => h({ data: { type: "RAID_CONNECTED", alias: "srvA" } } as MessageEvent<RaidConnectedMessage>));
 
       });
       expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
       expect(addAlert).toHaveBeenCalled();
       const alertArg = (vi.mocked(addAlert).mock.calls[0] as Alert[])[0];
-      expect(alertArg.message).toContain("Successfully connected to srvA RaID server.");
+      expect(alertArg.message).toContain("Successfully connected to srvA RAiD server.");
     });
 
     test("Ignores broadcast messages for unknown serverAlias", async () => {
@@ -156,7 +154,7 @@ describe("RaIDIntegrationCard", () => {
 
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
       act(() => {
-        broadcastHandlers.forEach((h) => h({ data: { type: "RAID_CONNECTED", alias: "srvB" } } as MessageEvent<RaIDConnectedMessage>));
+        broadcastHandlers.forEach((h) => h({ data: { type: "RAID_CONNECTED", alias: "srvB" } } as MessageEvent<RaidConnectedMessage>));
 
       });
       expect(screen.queryByRole("button", { name: /disconnect/i })).not.toBeInTheDocument();
@@ -178,7 +176,7 @@ describe("RaIDIntegrationCard", () => {
 
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
       act(() => {
-        broadcastHandlers.forEach((h) => h('aaaaaaa' as unknown as MessageEvent<RaIDConnectedMessage>));
+        broadcastHandlers.forEach((h) => h('aaaaaaa' as unknown as MessageEvent<RaidConnectedMessage>));
 
       });
       expect(screen.queryByRole("button", { name: /disconnect/i })).not.toBeInTheDocument();

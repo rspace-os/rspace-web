@@ -1,4 +1,4 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import "@/__tests__/mocks/useUiPreference";
 import React from "react";
 import {
@@ -15,7 +15,19 @@ import USER_LISTING from "./userListing.json";
 import PDF_CONFIG from "./pdfConfig.json";
 import { render, within } from "../../../../__tests__/customQueries";
 
-// @ts-expect-error RS is legacy
+vi.mock("@/modules/common/hooks/auth", () => ({
+  useOauthTokenQuery: () => ({ data: "test-token" }),
+}));
+
+vi.mock("@/modules/raid/queries", () => ({
+  useRaidIntegrationInfoAjaxQuery: () => ({
+    data: { success: true, data: { enabled: false } },
+  }),
+}));
+
+vi.mock("@/modules/share/queries", () => ({
+  useCommonGroupsShareListingQuery: () => ({ data: new Map() }),
+}));
 
 window.RS = { newFileStoresExportEnabled: false };
 
@@ -60,4 +72,3 @@ describe("Table Listing", () => {
     ).toHaveTextContent("0 B");
   });
 });
-

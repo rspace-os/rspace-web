@@ -27,6 +27,10 @@ export async function getGroupById(
 
   const data: unknown = await response.json();
 
+  if (response.status === 404) {
+    return null;
+  }
+
   if (!response.ok) {
     // Try to parse and throw typed error
     const errorResult: Either<Error, RestApiError> = parse(

@@ -143,6 +143,26 @@ feature.beforeEach(async ({ router }) => {
     });
 
   });
+  await router.route("/integration/integrationInfo?name=RAID", (route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        data: {
+          name: "RAID",
+          displayName: "RAiD",
+          available: false,
+          enabled: false,
+          oauthConnected: false,
+          options: {
+            RAID_CONFIGURED_SERVERS: [],
+          },
+        },
+      }),
+    });
+
+  });
   await router.route("/officeOnline/supportedExts", (route) => {
     return route.fulfill({
       status: 200,

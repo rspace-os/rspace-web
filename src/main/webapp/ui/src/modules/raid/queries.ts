@@ -1,14 +1,14 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
-  GetAvailableRaIDListResponseSchema,
+  GetAvailableRaidListResponseSchema,
   IntegrationRaidInfoResponseSchema,
   type IntegrationRaidInfo,
-  GetAvailableRaIDListResponse,
+  GetAvailableRaidListResponse,
 } from "@/modules/raid/schema";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 
 /**
- * Query key factory for RaID-related queries
+ * Query key factory for RAiD-related queries
  */
 export const raidQueryKeys = {
   all: ["rspace.apps.raid"] as const,
@@ -18,11 +18,11 @@ export const raidQueryKeys = {
 };
 
 /**
- * Fetches the list of available RaID identifiers for the current user
- * @returns Promise that resolves to the GetRaIDListResponse
+ * Fetches the list of available RAiD identifiers for the current user
+ * @returns Promise that resolves to the GetRAiDListResponse
  * @throws Error if the request fails or validation fails
  */
-export async function getAvailableRaidIdentifiersAjax(): Promise<GetAvailableRaIDListResponse> {
+export async function getAvailableRaidIdentifiersAjax(): Promise<GetAvailableRaidListResponse> {
   const response = await fetch("/apps/raid", {
     method: "GET",
     headers: {
@@ -33,18 +33,18 @@ export async function getAvailableRaidIdentifiersAjax(): Promise<GetAvailableRaI
   const data: unknown = await response.json();
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch RaID apps: ${response.statusText}`);
+    throw new Error(`Failed to fetch RAiD apps: ${response.statusText}`);
   }
 
-  return parseOrThrow(GetAvailableRaIDListResponseSchema, data);
+  return parseOrThrow(GetAvailableRaidListResponseSchema, data);
 }
 
 /**
- * Hook to fetch the list of RaID apps with Suspense
+ * Hook to fetch the list of RAiD apps with Suspense
  * Throws on error - wrap with Error Boundary
- * @returns useSuspenseQuery result with GetRaIDListResponse data
+ * @returns useSuspenseQuery result with GetRAiDListResponse data
  */
-export function useGetAvailableRaIDIdentifiersAjaxQuery() {
+export function useGetAvailableRaidIdentifiersAjaxQuery() {
   return useSuspenseQuery({
     queryKey: raidQueryKeys.availableRaidIdentifiers(),
     queryFn: getAvailableRaidIdentifiersAjax,
@@ -52,7 +52,7 @@ export function useGetAvailableRaIDIdentifiersAjaxQuery() {
 }
 
 /**
- * Fetch RaID integration information
+ * Fetch RAiD integration information
  * @returns Promise that resolves to the IntegrationRaIdInfo
  * @throws Error if the request fails or validation fails
  */
@@ -68,7 +68,7 @@ export async function getRaidIntegrationInfoAjax(): Promise<IntegrationRaidInfo>
 
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch RaID integration info: ${response.statusText}`,
+      `Failed to fetch RAiD integration info: ${response.statusText}`,
     );
   }
 
@@ -76,7 +76,7 @@ export async function getRaidIntegrationInfoAjax(): Promise<IntegrationRaidInfo>
 }
 
 /**
- * Hook to fetch RaID integration information with Suspense
+ * Hook to fetch RAiD integration information with Suspense
  * Throws on error - wrap with Error Boundary
  * @returns useSuspenseQuery result with IntegrationRaIdInfo data
  */

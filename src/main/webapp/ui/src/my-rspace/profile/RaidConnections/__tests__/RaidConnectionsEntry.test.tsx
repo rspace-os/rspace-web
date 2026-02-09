@@ -9,7 +9,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "@/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import RaIDConnectionsEntry from "../RaIDConnectionsEntry";
 import "../../../../../__mocks__/matchMedia";
 import type { GroupInfo } from "@/modules/groups/schema";
 import type { UseSuspenseQueryResult } from "@tanstack/react-query";
@@ -35,7 +34,7 @@ const mockGroupData = createGroup({
   raid: {
     raidServerAlias: "server1",
     raidIdentifier: "https://raid.org/12345",
-    raidTitle: "Test RaID Project",
+    raidTitle: "Test RAiD Project",
   },
 });
 
@@ -96,6 +95,7 @@ vi.mock("../RaidConnectionsDisassociateButton", () => {
 
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useGetGroupByIdQuery } from "@/modules/groups/queries";
+import RaidConnectionsEntry from "@/my-rspace/profile/RaidConnections/RaidConnectionsEntry";
 
 const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
 const mockedUseGetGroupByIdQuery = vi.mocked(useGetGroupByIdQuery);
@@ -127,13 +127,13 @@ const renderWithProviders = (props: { groupId: string }) => {
   return render(
     <ThemeProvider theme={materialTheme}>
       <QueryClientProvider client={queryClient}>
-        <RaIDConnectionsEntry {...props} />
+        <RaidConnectionsEntry {...props} />
       </QueryClientProvider>
     </ThemeProvider>
   );
 };
 
-describe("RaIDConnectionsEntry", () => {
+describe("RaidConnectionsEntry", () => {
   const defaultProps = {
     groupId: "12345",
   };
@@ -146,7 +146,7 @@ describe("RaIDConnectionsEntry", () => {
   });
 
   describe("Accessibility", () => {
-    it("Should have no axe violations when RaID is connected", async () => {
+    it("Should have no axe violations when RAiD is connected", async () => {
        
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
        
@@ -157,7 +157,7 @@ describe("RaIDConnectionsEntry", () => {
       await expect(baseElement).toBeAccessible();
     });
 
-    it("Should have no axe violations when RaID is not connected", async () => {
+    it("Should have no axe violations when RAiD is not connected", async () => {
        
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
        
@@ -188,18 +188,18 @@ describe("RaIDConnectionsEntry", () => {
     });
   });
 
-  describe("Rendering with RaID connected", () => {
+  describe("Rendering with RAiD connected", () => {
     beforeEach(() => {
        
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
        
     });
 
-    it("Should render RaID title and identifier when connected", () => {
+    it("Should render RAiD title and identifier when connected", () => {
       renderWithProviders(defaultProps);
 
       // Both Typography and DisassociateButton contain the text, so use getAllByText
-      const elements = screen.getAllByText(/Test RaID Project/i);
+      const elements = screen.getAllByText(/Test RAiD Project/i);
       expect(elements.length).toBeGreaterThan(0);
       expect(elements[0]).toBeInTheDocument();
 
@@ -208,26 +208,26 @@ describe("RaIDConnectionsEntry", () => {
       expect(identifierElements[0]).toBeInTheDocument();
     });
 
-    it("Should render disassociate button when RaID is connected", () => {
+    it("Should render disassociate button when RAiD is connected", () => {
       renderWithProviders(defaultProps);
 
       expect(screen.getByTestId("disassociate-button")).toBeInTheDocument();
     });
 
-    it("Should not render add button when RaID is connected", () => {
+    it("Should not render add button when RAiD is connected", () => {
       renderWithProviders(defaultProps);
 
       expect(screen.queryByRole("button", { name: /add/i })).not.toBeInTheDocument();
     });
 
-    it("Should display full RaID information in correct format", () => {
+    it("Should display full RAiD information in correct format", () => {
       renderWithProviders(defaultProps);
 
       // Check for "Title (Identifier)" format
       const typography = screen.getByText((content, element) => {
         return (
           element?.tagName.toLowerCase() === "p" &&
-          content.includes("Test RaID Project") &&
+          content.includes("Test RAiD Project") &&
           content.includes("https://raid.org/12345")
         );
       });
@@ -236,14 +236,14 @@ describe("RaIDConnectionsEntry", () => {
     });
   });
 
-  describe("Rendering without RaID connected", () => {
+  describe("Rendering without RAiD connected", () => {
     beforeEach(() => {
        
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
        
     });
 
-    it("Should render 'Not connected' message when no RaID", () => {
+    it("Should render 'Not connected' message when no RAiD", () => {
       renderWithProviders(defaultProps);
 
       expect(screen.getByText("Not connected")).toBeInTheDocument();
@@ -468,7 +468,7 @@ describe("RaIDConnectionsEntry", () => {
       renderWithProviders(defaultProps);
 
       const disassociateButton = screen.getByTestId("disassociate-button");
-      expect(disassociateButton).toHaveTextContent("Disassociate Test RaID Project");
+      expect(disassociateButton).toHaveTextContent("Disassociate Test RAiD Project");
       expect(disassociateButton).toHaveTextContent("https://raid.org/12345");
     });
 

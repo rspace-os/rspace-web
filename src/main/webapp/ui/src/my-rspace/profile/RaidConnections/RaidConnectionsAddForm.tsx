@@ -4,26 +4,26 @@ import { Button, Stack, TextField as MuiTextField } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import {
   raidQueryKeys,
-  useGetAvailableRaIDIdentifiersAjaxQuery,
+  useGetAvailableRaidIdentifiersAjaxQuery,
 } from "@/modules/raid/queries";
 import { useAddRaidIdentifierMutation } from "@/modules/raid/mutations";
 import { useQueryClient } from "@tanstack/react-query";
 
-// Schema for a RaID option
+// Schema for a RAiD option
 const RaidOptionSchema = v.object({
   label: v.string(),
   raidServerAlias: v.string(),
   raidIdentifier: v.pipe(
     v.string(),
-    v.nonEmpty("RaID identifier is required"),
-    v.minLength(3, "RaID identifier must be at least 3 characters")
+    v.nonEmpty("RAiD identifier is required"),
+    v.minLength(3, "RAiD identifier must be at least 3 characters")
   ),
 });
 
 const RaidConnectionsFormSchema = v.object({
   raidOption: v.pipe(
     v.nullable(RaidOptionSchema),
-    v.check((val) => val !== null, "RaID identifier is required")
+    v.check((val) => val !== null, "RAiD identifier is required")
   ),
 });
 
@@ -36,7 +36,7 @@ interface RaidConnectionsAddFormProps {
 }
 
 const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAddFormProps) => {
-  const { data } = useGetAvailableRaIDIdentifiersAjaxQuery();
+  const { data } = useGetAvailableRaidIdentifiersAjaxQuery();
   const queryClient = useQueryClient();
   const mutation = useAddRaidIdentifierMutation({ groupId });
 
@@ -49,7 +49,7 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
     },
     onSubmit: async ({ value }) => {
       if (!value.raidOption) {
-        throw new Error("RaID option is required");
+        throw new Error("RAiD option is required");
       }
 
       await mutation.mutateAsync({
@@ -66,7 +66,7 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
   });
 
   if (!data.success) {
-    return <>Error loading RaID identifier options: {data.errorMsg}</>;
+    return <>Error loading RAiD identifier options: {data.errorMsg}</>;
   }
 
   const options = data.data.map((option) => ({
@@ -99,11 +99,11 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
                 option.raidIdentifier === value.raidIdentifier &&
                 option.raidServerAlias === value.raidServerAlias
               }
-              noOptionsText="No valid available RaID found, or the RaID has been used by another project group."
+              noOptionsText="No valid available RAiD found, or the RAiD has been used by another project group."
               renderInput={(params) => (
                 <MuiTextField
                   {...params}
-                  label="RaID Identifier"
+                  label="RAiD Identifier"
                   required
                   error={field.state.meta.errors.length > 0 || mutation.isError}
                   helperText={

@@ -16,7 +16,19 @@ import userEvent from "@testing-library/user-event";
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-member-access
 window.Blob = require("node:buffer").Blob;
 
-// @ts-expect-error RS is legacy
+vi.mock("@/modules/common/hooks/auth", () => ({
+  useOauthTokenQuery: () => ({ data: "test-token" }),
+}));
+
+vi.mock("@/modules/raid/queries", () => ({
+  useRaidIntegrationInfoAjaxQuery: () => ({
+    data: { success: true, data: { enabled: false } },
+  }),
+}));
+
+vi.mock("@/modules/share/queries", () => ({
+  useCommonGroupsShareListingQuery: () => ({ data: new Map() }),
+}));
 
 window.RS = { newFileStoresExportEnabled: false };
 

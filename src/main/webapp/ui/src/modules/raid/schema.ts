@@ -5,36 +5,36 @@ import {
 } from "@/modules/common/api/schema";
 
 
-// RaID Reference DTO Schema
-export const RaIDReferenceDTOSchema = v.object({
+// RAiD Reference DTO Schema
+export const RaidReferenceDTOSchema = v.object({
   raidServerAlias: v.string(),
   raidIdentifier: v.string(),
   raidTitle: v.string(),
 });
 
-export type RaIDReferenceDTO = v.InferOutput<typeof RaIDReferenceDTOSchema>;
+export type RaidReferenceDTO = v.InferOutput<typeof RaidReferenceDTOSchema>;
 
-// Ajax return object for RaID list endpoint
-export const GetAvailableRaIDListResponseSchema = v.variant("success", [
+// Ajax return object for RAiD list endpoint
+export const GetAvailableRaidListResponseSchema = v.variant("success", [
   v.object({
     success: v.literal(true),
-    data: v.array(RaIDReferenceDTOSchema),
+    data: v.array(RaidReferenceDTOSchema),
   }),
   AjaxOperationFailureResponseSchema,
 ]);
 
-export type GetAvailableRaIDListResponse = v.InferOutput<
-  typeof GetAvailableRaIDListResponseSchema
+export type GetAvailableRaidListResponse = v.InferOutput<
+  typeof GetAvailableRaidListResponseSchema
 >;
 
 // Schema for the credentials stored under each options key
-export const RaIDOptionValueSchema = v.object({
+export const RaidOptionValueSchema = v.object({
   RAID_OAUTH_CONNECTED: v.pipe(v.string(), v.transform((val) => val === "true")),
   RAID_URL: v.pipe(v.string(), v.url()),
   RAID_ALIAS: v.string(),
 });
 
-export const RaIDConfiguredOptionValueSchema = v.object({
+export const RaidConfiguredOptionValueSchema = v.object({
   url: v.pipe(v.string(), v.url()),
   alias: v.string(),
 });
@@ -42,18 +42,19 @@ export const RaIDConfiguredOptionValueSchema = v.object({
 // Data object for the integration info
 export const IntegrationRaidInfoDataSchema = v.object({
   name: v.literal("RAID"),
-  displayName: v.literal("RaID"),
+  // TODO: Remove RaID when backend fixes capitalisation
+  displayName: v.picklist(["RaID", "RAiD"]),
   available: v.boolean(),
   enabled: v.boolean(),
   oauthConnected: v.boolean(),
   options: v.objectWithRest(
     {
       RAID_CONFIGURED_SERVERS: v.optional(
-        v.array(RaIDConfiguredOptionValueSchema),
+        v.array(RaidConfiguredOptionValueSchema),
       ),
     },
-    RaIDOptionValueSchema,
-  )
+    RaidOptionValueSchema,
+  ),
 });
 
 // Full response schema
