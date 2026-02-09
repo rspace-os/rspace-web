@@ -1,4 +1,4 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from "react";
 import {
   cleanup,
@@ -7,7 +7,6 @@ import {
   waitFor,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import GitHub, { type GitHubConnectedMessage } from "../GitHub";
 import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";
@@ -18,12 +17,10 @@ import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
 import "../../../../../__mocks__/matchMedia";
 
-expect.extend(toHaveNoViolations);
-
 const broadcastHandlers: Array<
   (e: MessageEvent<GitHubConnectedMessage>) => void
 > = [];
-jest.mock("use-broadcast-channel", () => ({
+vi.mock("use-broadcast-channel", () => ({
   useBroadcastChannel: (
     _channel: string,
     handler: (e: MessageEvent<GitHubConnectedMessage>) => void
@@ -33,7 +30,7 @@ jest.mock("use-broadcast-channel", () => ({
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   broadcastHandlers.length = 0;
 });
 
@@ -507,4 +504,3 @@ describe("GitHub", () => {
     });
   });
 });
-
