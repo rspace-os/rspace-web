@@ -56,7 +56,7 @@ public class DocConverterConfigTest {
   @Profile(
       "docconverter") // needs to  define its own profile so that it doesn't pollute configuration
   // of other tests
-  public static class DocConverterProdConfigTSS extends DocConverterAsposeConfig {
+  public static class DocConverterProdConfigTSS extends DocConverterProdConfig {
     // needed for Spring
 
     @Mock RSpaceDocumentCreator docCreator;
@@ -129,7 +129,7 @@ public class DocConverterConfigTest {
   @ActiveProfiles(profiles = {"prod", "docconverter"})
   @TestPropertySource(properties = {"aspose.app="})
   public static class TestBase extends AbstractJUnit4SpringContextTests {
-    @Autowired DocConverterAsposeConfig cfg;
+    @Autowired DocConverterProdConfig cfg;
 
     List<DocumentConversionService> getConverterList() {
       CompositeDocumentConvertor docConverter =
