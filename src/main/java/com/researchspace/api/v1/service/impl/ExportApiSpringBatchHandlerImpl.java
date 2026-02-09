@@ -118,7 +118,8 @@ public class ExportApiSpringBatchHandlerImpl implements ExportApiHandler {
         sw.getTime(),
         toExport.getRecordsToExportSize());
     List<GlobalIdentifier> toFilterIds = toExport.getRecordsToExport();
-    List<BaseRecord> filteredByPerm = baseRecMgr.getByIdAndReadPermission(toFilterIds, apiClient);
+    List<BaseRecord> filteredByPerm =
+        baseRecMgr.getByGlobalIdsAndReadPermission(toFilterIds, apiClient);
     ExportRecordList filtered = filterItemsToExportByPermission(toExport, filteredByPerm);
     sw.stop();
     log.info(

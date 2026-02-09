@@ -2,8 +2,9 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -22,18 +23,23 @@ import com.researchspace.api.v1.model.UserSharePostItem;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.EcatMediaFile;
+import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.TreeViewItem;
+import com.researchspace.service.GroupManager;
 import com.researchspace.testutils.TestGroup;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
@@ -41,6 +47,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 @WebAppConfiguration
 public class ShareApiControllerMVCIT extends API_MVC_TestBase {
+
+  @Autowired private GroupManager groupManager;
 
   @Before
   public void setup() throws Exception {
@@ -461,6 +469,66 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     mockMvc
         .perform(get("/api/v1/share/document/" + doc.getId()).header("apiKey", otherKey))
         .andExpect(status().isNotFound());
+  }
+
+  @Test
+  public void getSharesForSelectionOfRecordsAndFolders() throws Exception {
+
+    TestGroup testGrp1 = createTestGroup(3, new TestGroupConfig(true));
+    Group group = testGrp1.getGroup();
+
+    User pi = testGrp1.getPi();
+    logoutAndLoginAs(pi);
+    Folder sharedSubFolder =
+        doInTransaction(
+            () ->
+                createFolder(
+                    folderMgr.getFolder(group.getCommunalGroupFolderId(), pi),
+                    pi,
+                    "groupSubFolder"));
+    Folder groupSharedFolder = sharedSubFolder.getParent();
+    StructuredDocument piDocToShare = createBasicDocumentInRootFolderWithText(pi, "anytext");
+    shareRecordIntoGroupSubfolder(pi, piDocToShare, group, sharedSubFolder, "write");
+    Folder piWorkspaceFolder = createFolder(piDocToShare.getParent(), pi, "piWorkspaceFolder");
+
+    User sharer = testGrp1.getUserByPrefix("u1");
+    logoutAndLoginAs(sharer);
+    StructuredDocument docToShare = createBasicDocumentInRootFolderWithText(sharer, "anytext");
+    Folder userWorkspaceFolder =
+        createFolder(docToShare.getParent(), sharer, "userWorkspaceFolder");
+    shareRecordWithGroup(sharer, group, docToShare);
+
+    String apiKey = createNewApiKeyForUser(sharer);
+    // list shares for own shared doc, and owned workspace folder
+    ApiShareSearchResult apiShareSearchResult =
+        listSharesWithSharedItemIds(
+            sharer, apiKey, List.of(docToShare.getId(), userWorkspaceFolder.getId()));
+    assertEquals(1, apiShareSearchResult.getTotalHits().intValue());
+    assertEquals(docToShare.getId(), apiShareSearchResult.getShares().get(0).getSharedItemId());
+
+    // list shares for own shared doc, pi's shared doc, group's shared folder, group's shared
+    // subfolder
+    apiShareSearchResult =
+        listSharesWithSharedItemIds(
+            sharer,
+            apiKey,
+            List.of(
+                docToShare.getId(),
+                piDocToShare.getId(),
+                groupSharedFolder.getId(),
+                sharedSubFolder.getId()));
+    assertEquals(4, apiShareSearchResult.getTotalHits().intValue());
+
+    // attempt to list shares for pi's folder
+    AuthorizationException authEx =
+        assertThrows(
+            AuthorizationException.class,
+            () -> listSharesWithSharedItemIds(sharer, apiKey, List.of(piWorkspaceFolder.getId())));
+    assertEquals(
+        String.format(
+            "Unauthorized attempt by [%s] to list shares of record [%d]",
+            sharer.getUsername(), piWorkspaceFolder.getId()),
+        authEx.getMessage());
   }
 
   @Test

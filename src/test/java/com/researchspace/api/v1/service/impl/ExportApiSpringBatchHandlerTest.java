@@ -108,7 +108,7 @@ public class ExportApiSpringBatchHandlerTest {
   }
 
   private void mockLoadRecords() {
-    Mockito.when(brMgr.getByIdAndReadPermission(Mockito.anyList(), Mockito.any(User.class)))
+    Mockito.when(brMgr.getByGlobalIdsAndReadPermission(Mockito.anyList(), Mockito.any(User.class)))
         .thenReturn(Collections.emptyList());
   }
 

@@ -171,14 +171,14 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
         createInternalPaginationCriteria(pgCrit);
     configureSearch(apiShareSrchConfig, internalPgCrit);
 
-    ISearchResults<RecordGroupSharing> internalShares =
-        recordShareMgr.listSharedRecordsForUser(user, internalPgCrit);
+    ISearchResults<RecordGroupSharing> internalShares;
 
-    if (!CollectionUtils.isEmpty(apiShareSrchConfig.getSharedItemIds())) {
-      internalShares
-          .getResults()
-          .removeIf(
-              rgs -> !apiShareSrchConfig.getSharedItemIds().contains(rgs.getShared().getId()));
+    if (CollectionUtils.isEmpty(apiShareSrchConfig.getSharedItemIds())) {
+      internalShares = recordShareMgr.listSharedRecordsForUser(user, internalPgCrit);
+    } else {
+      internalShares =
+          recordShareMgr.listSharesForRecordsAndUser(
+              apiShareSrchConfig.getSharedItemIds(), internalPgCrit, user);
     }
 
     return buildApiShareSearchResult(pgCrit, apiShareSrchConfig, internalShares);

@@ -409,8 +409,7 @@ public class RecordGroupSharingDaoHibernateImpl
 
     List<RecordGroupSharing> rcgs = query.list();
 
-    ISearchResults<RecordGroupSharing> rc =
-        new SearchResultsImpl<RecordGroupSharing>(rcgs, pcg, count);
+    ISearchResults<RecordGroupSharing> rc = new SearchResultsImpl<>(rcgs, pcg, count);
     return rc;
   }
 
@@ -487,5 +486,17 @@ public class RecordGroupSharingDaoHibernateImpl
     query.setParameter("recordId", recordId);
     List<RecordGroupSharing> rc = query.list();
     return rc;
+  }
+
+  @Override
+  public List<RecordGroupSharing> getRecordGroupSharingsForRecordIds(
+      List<Long> recordAndNotebookIds) {
+    Query<RecordGroupSharing> query =
+        getSession()
+            .createQuery(
+                " from RecordGroupSharing rgs where rgs.shared.id in (:recordIDs)",
+                RecordGroupSharing.class)
+            .setParameter("recordIDs", recordAndNotebookIds);
+    return query.list();
   }
 }

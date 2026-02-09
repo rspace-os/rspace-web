@@ -52,10 +52,12 @@ import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.DocumentSharedStateCalculator;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.RecordSharingManager;
@@ -76,6 +78,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 @Service("recordSharing")
@@ -87,6 +90,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   private IRecordFactory recFactory;
   @Autowired private CommunityServiceManager communityService;
   @Autowired private UserContentUpdater userContentUpdater;
+  @Autowired private BaseRecordManager baseRecordManager;
+  @Autowired @Lazy private GroupManager groupManager;
 
   @Autowired
   public void setRecFactory(IRecordFactory recFactory) {
@@ -140,6 +145,50 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         groupshareRecordDao.listSharedRecordsForUser(u, pcg);
     populateSharingPermissionType(sharedForUser.getResults());
     return sharedForUser;
+  }
+
+  @Override
+  public ISearchResults<RecordGroupSharing> listSharesForRecordsAndUser(
+      List<Long> sharedItemIds, PaginationCriteria<RecordGroupSharing> pgCrit, User user) {
+
+    List<Long> recordAndNotebookIds = new ArrayList<>();
+    List<Folder> sharedFolders = new ArrayList<>();
+
+    for (Long recordId : sharedItemIds) {
+      BaseRecord br;
+      try {
+        br = baseRecordManager.get(recordId, user);
+      } catch (AuthorizationException e) {
+        // rethrow with more appropriate exception message
+        throw new AuthorizationException(
+            String.format(
+                "Unauthorized attempt by [%s] to list shares of record [%d]",
+                user.getUsername(), recordId));
+      }
+
+      if (br.isFolder() && !br.isNotebook()) {
+        if (((Folder) br).isSharedFolder()) {
+          sharedFolders.add((Folder) br);
+        }
+      } else {
+        recordAndNotebookIds.add(recordId);
+      }
+    }
+
+    List<RecordGroupSharing> resultSharings =
+        groupshareRecordDao.getRecordGroupSharingsForRecordIds(recordAndNotebookIds);
+
+    for (Folder folder : sharedFolders) {
+      Group group = groupManager.getGroupFromAnyLevelOfSharedFolder(user, folder, null);
+      if (group != null) {
+        RecordGroupSharing folderPseudoRgs = new RecordGroupSharing();
+        folderPseudoRgs.setShared(folder);
+        folderPseudoRgs.setSharee(group);
+        resultSharings.add(folderPseudoRgs);
+      }
+    }
+
+    return Repaginator.paginateResults(pgCrit, resultSharings, resultSharings.size());
   }
 
   @Override
