@@ -512,10 +512,10 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
 
     // list shares for shared subfolder (should return one pseudo-share element)
     apiShareSearchResult =
-        listSharesWithSharedItemIds(
-            sharer, apiKey, List.of(sharedSubFolder.getId()));
+        listSharesWithSharedItemIds(sharer, apiKey, List.of(sharedSubFolder.getId()));
     assertEquals(1, apiShareSearchResult.getTotalHits().intValue());
-    assertEquals(sharedSubFolder.getId(), apiShareSearchResult.getShares().get(0).getSharedItemId());
+    assertEquals(
+        sharedSubFolder.getId(), apiShareSearchResult.getShares().get(0).getSharedItemId());
     assertNull(apiShareSearchResult.getShares().get(0).getId()); // pseudo-item without id
     assertTrue(apiShareSearchResult.getShares().get(0).getLinks().isEmpty()); // no self link
 
