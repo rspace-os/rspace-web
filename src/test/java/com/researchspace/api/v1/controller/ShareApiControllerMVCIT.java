@@ -4,6 +4,8 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -499,15 +501,25 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     shareRecordWithGroup(sharer, group, docToShare);
 
     String apiKey = createNewApiKeyForUser(sharer);
-    // list shares for own shared doc, and owned workspace folder
+    // list shares for own shared doc and workspace folder (should return one share - for doc)
     ApiShareSearchResult apiShareSearchResult =
         listSharesWithSharedItemIds(
             sharer, apiKey, List.of(docToShare.getId(), userWorkspaceFolder.getId()));
     assertEquals(1, apiShareSearchResult.getTotalHits().intValue());
     assertEquals(docToShare.getId(), apiShareSearchResult.getShares().get(0).getSharedItemId());
+    assertNotNull(apiShareSearchResult.getShares().get(0).getId());
+    assertFalse(apiShareSearchResult.getShares().get(0).getLinks().isEmpty());
 
-    // list shares for own shared doc, pi's shared doc, group's shared folder, group's shared
-    // subfolder
+    // list shares for shared subfolder (should return one pseudo-share element)
+    apiShareSearchResult =
+        listSharesWithSharedItemIds(
+            sharer, apiKey, List.of(sharedSubFolder.getId()));
+    assertEquals(1, apiShareSearchResult.getTotalHits().intValue());
+    assertEquals(sharedSubFolder.getId(), apiShareSearchResult.getShares().get(0).getSharedItemId());
+    assertNull(apiShareSearchResult.getShares().get(0).getId()); // pseudo-item without id
+    assertTrue(apiShareSearchResult.getShares().get(0).getLinks().isEmpty()); // no self link
+
+    // list shares for two docs and two shared folders
     apiShareSearchResult =
         listSharesWithSharedItemIds(
             sharer,
