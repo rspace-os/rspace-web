@@ -1,6 +1,8 @@
 package com.researchspace.model.dtos;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.researchspace.model.raid.UserRaid;
 import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.io.Serializable;
@@ -12,7 +14,11 @@ import lombok.NoArgsConstructor;
 public class RaidGroupAssociationDTO implements Serializable {
 
   private Long projectGroupId;
+
+  @JsonInclude(value = Include.NON_NULL)
   private String rspaceProjectName;
+
+  @JsonInclude(value = Include.NON_NULL)
   private RaIDReferenceDTO raid;
 
   @JsonIgnore private String roCrateId;

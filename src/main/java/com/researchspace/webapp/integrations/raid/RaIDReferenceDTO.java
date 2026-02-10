@@ -51,7 +51,9 @@ public class RaIDReferenceDTO implements Serializable {
     this.raidServerAlias = raidServerAlias;
     this.raidTitle = raidTitle;
     this.raidIdentifier = raidIdentifier;
-    this.raidAgencyUrl = raidAgencyUrl;
+    if(raidAgencyUrl != null){ //FIXME: remove the `replace` once RaID has fixed his bug (HELP-2751)
+      this.raidAgencyUrl = raidAgencyUrl.replace("static","app");
+    }
     try {
       String[] raidIdentifierSplit = raidIdentifier.split("/");
       this.raidPrefix = raidIdentifierSplit[raidIdentifierSplit.length - 2];
