@@ -20,7 +20,7 @@ public class ApiShareSearchConfig extends ApiGenericSearchConfig {
 
   @Size(
       max = MAX_SHARE_ITEM_IDS,
-      message = "Max number of ids on sharedItemIds list is " + MAX_SHARE_ITEM_IDS + ".")
+      message = "Maximum number of ids in sharedItemIds is " + MAX_SHARE_ITEM_IDS + ".")
   private List<Long> sharedItemIds;
 
   @Override
