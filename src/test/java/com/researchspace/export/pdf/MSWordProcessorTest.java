@@ -4,7 +4,6 @@ import static com.researchspace.testutils.RSpaceTestUtils.setupVelocityWithTextF
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.never;
@@ -29,8 +28,6 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -43,20 +40,18 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 public class MSWordProcessorTest {
 
-  public static final String STOICHIOMETRY_HTML = "<html><div data-stoichiometry-table=\"{\"id\":1, \"revision\":null}\"></div></html>";
+  public static final String STOICHIOMETRY_HTML =
+      "<html><div data-stoichiometry-table=\"{\"id\":1, \"revision\":null}\"></div></html>";
   MSWordProcessor mswordExporter;
   @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock DocumentConversionService converter;
   @Mock ImageRetrieverHelper imageRetriever;
   @Mock IRSpaceDoc rspaceDoc;
-  @Mock
-  private VelocityEngine velocityEngine;
-  @Mock
-  private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
+  @Mock private VelocityEngine velocityEngine;
+  @Mock private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
   private RichTextUpdater rtupdater;
-  private  ExportToFileConfig cfg;
-  @Mock
-  private User exporter;
+  private ExportToFileConfig cfg;
+  @Mock private User exporter;
   private String htmlProcessed;
   private File outfile;
   private ExportProcesserInput input;
@@ -73,12 +68,13 @@ public class MSWordProcessorTest {
     mswordExporter.setDocConverter(converter);
     mswordExporter.setImageHelper(imageRetriever);
     ReflectionTestUtils.setField(mswordExporter, "velocityEngine", velocityEngine);
-    ReflectionTestUtils.setField(mswordExporter, "stoichiometryHtmlGenerator", stoichiometryHtmlGenerator);
+    ReflectionTestUtils.setField(
+        mswordExporter, "stoichiometryHtmlGenerator", stoichiometryHtmlGenerator);
     rtupdater = new RichTextUpdater();
     rtupdater.setVelocity(setupVelocityWithTextFieldTemplates());
     htmlProcessed = Jsoup.parse(STOICHIOMETRY_HTML).html();
-    when(stoichiometryHtmlGenerator.addStoichiometryLinks(eq(htmlProcessed),eq(exporter))).thenReturn(
-        htmlProcessed);
+    when(stoichiometryHtmlGenerator.addStoichiometryLinks(eq(htmlProcessed), eq(exporter)))
+        .thenReturn(htmlProcessed);
   }
 
   @After
@@ -96,8 +92,7 @@ public class MSWordProcessorTest {
     mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
     verify(imageRetriever, Mockito.never())
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
-    verify(converter, never())
-        .convert(any(Convertible.class), eq("doc"), eq(outfile));
+    verify(converter, never()).convert(any(Convertible.class), eq("doc"), eq(outfile));
   }
 
   @NotNull
@@ -111,21 +106,20 @@ public class MSWordProcessorTest {
     mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
     Mockito.verify(imageRetriever, never())
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
-    verify(converter, atMost(1))
-        .convert(any(Convertible.class), eq("doc"), eq(outfile));
+    verify(converter, atMost(1)).convert(any(Convertible.class), eq("doc"), eq(outfile));
   }
 
   @Test
   public void testMakeExportAddsStyling() throws IOException {
     returnSuccesfullExport(outfile, success);
     mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
-    verify(velocityEngine).mergeTemplate(eq("doc/styles.vm"),eq("UTF-8"), any(VelocityContext.class), any(Writer.class));
+    verify(velocityEngine)
+        .mergeTemplate(
+            eq("doc/styles.vm"), eq("UTF-8"), any(VelocityContext.class), any(Writer.class));
   }
 
   private void returnSuccesfullExport(File outfile, ConversionResult success) {
-    Mockito.when(
-            converter.convert(
-                any(Convertible.class), eq("doc"), eq(outfile)))
+    Mockito.when(converter.convert(any(Convertible.class), eq("doc"), eq(outfile)))
         .thenReturn(success);
   }
 
@@ -133,26 +127,25 @@ public class MSWordProcessorTest {
   public void testStoichiometryExportIsAdded() throws IOException {
     returnSuccesfullExport(outfile, success);
     mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
-    verify(stoichiometryHtmlGenerator, never()).addStoichiometryLinks(STOICHIOMETRY_HTML,cfg.getExporter());
+    verify(stoichiometryHtmlGenerator, never())
+        .addStoichiometryLinks(STOICHIOMETRY_HTML, cfg.getExporter());
     input = createStoichiometryHTML();
     success = new ConversionResult(outfile, "ms/word");
     returnSuccesfullExport(outfile, success);
     mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
-    verify(stoichiometryHtmlGenerator).addStoichiometryLinks(htmlProcessed,cfg.getExporter());
+    verify(stoichiometryHtmlGenerator).addStoichiometryLinks(htmlProcessed, cfg.getExporter());
   }
 
   @Test
   public void testMakeExportWithImages() throws IOException {
     input = createAnyHTMLWithImage();
-    when(converter.convert(any(Convertible.class), eq("doc"), eq(outfile)))
-        .thenReturn(success);
+    when(converter.convert(any(Convertible.class), eq("doc"), eq(outfile))).thenReturn(success);
     when(imageRetriever.getImageBytesFromImgSrc(Mockito.anyString(), eq(cfg)))
         .thenReturn(new byte[] {1, 2, 3, 4});
     mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
     verify(imageRetriever, atMost(1))
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
-    verify(converter, atMost(1))
-        .convert(any(Convertible.class), eq("doc"), eq(outfile));
+    verify(converter, atMost(1)).convert(any(Convertible.class), eq("doc"), eq(outfile));
   }
 
   private ExportProcesserInput createAnyHTMLWithImage() {
