@@ -2565,7 +2565,15 @@ paths:
   /share:
     get:
       summary: List or search shared items
-      description: Lists documents, notebooks and snippets shared by the API account.
+      description: > 
+        Lists documents, notebooks and snippets shared by the API account.
+        
+        
+        Optionally, a comma-separated list of record ids can be passed in `sharedItemIds` param, 
+        to only find the shares for these records. User must have read permission to all the requested
+        records. `sharedItemIds` may contain ids pointing to folders, in that case, if the folder is 
+        a group shared folder (or subfolder), the pseudo-share info object will be returned, 
+        describing the target group as if folder was shared with this group.
       produces:
         - application/json
       tags:
