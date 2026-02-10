@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.hibernate.Criteria;
@@ -491,6 +492,10 @@ public class RecordGroupSharingDaoHibernateImpl
   @Override
   public List<RecordGroupSharing> getRecordGroupSharingsForRecordIds(
       List<Long> recordAndNotebookIds) {
+
+    if (CollectionUtils.isEmpty(recordAndNotebookIds)) {
+      return List.of();
+    }
     Query<RecordGroupSharing> query =
         getSession()
             .createQuery(
