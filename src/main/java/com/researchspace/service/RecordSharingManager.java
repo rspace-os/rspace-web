@@ -43,7 +43,7 @@ public interface RecordSharingManager {
    * according to provided pagination criteria.
    *
    * <p>If sharedItemIds list contains shared folders, the result list will contain pseudo-share
-   * elements containing target user/folder, but no id (as there is no underlying db share)
+   * elements containing target user/group, but no id (as there is no underlying db share)
    *
    * @param sharedItemIds
    * @param pgCrit
