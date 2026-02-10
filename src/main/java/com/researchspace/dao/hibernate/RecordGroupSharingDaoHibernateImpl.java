@@ -494,7 +494,7 @@ public class RecordGroupSharingDaoHibernateImpl
       List<Long> recordAndNotebookIds) {
 
     if (CollectionUtils.isEmpty(recordAndNotebookIds)) {
-      return List.of();
+      return new ArrayList<>();
     }
     Query<RecordGroupSharing> query =
         getSession()
