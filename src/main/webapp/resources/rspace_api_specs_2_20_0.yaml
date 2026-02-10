@@ -2569,7 +2569,7 @@ paths:
         Lists documents, notebooks and snippets shared by the API account.
         
         
-        Optionally, a comma-separated list of record ids can be passed in `sharedItemIds` param, 
+        Optionally, a list of record ids can be passed in `sharedItemIds` param, 
         to only find the shares for these records. User must have read permission to all the requested
         records. `sharedItemIds` may contain ids pointing to folders, in that case, if the folder is 
         a group shared folder (or subfolder), the pseudo-share info object will be returned, 
@@ -2587,7 +2587,7 @@ paths:
           type: string
           description: 'Whole or part of the SharedItem''s name, or ID or global ID.'
         - name: sharedItemIds
-          description: A comma-separated list of IDs of records for which to find the share status
+          description: A list of IDs of records for which to find the share status
           in: query
           type: array
           required: false
