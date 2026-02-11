@@ -37,6 +37,7 @@ on:
 
 env:
   RS_FILE_BASE: /tmp/${{ github.ref_name }}-filestore
+  CI: "true"
 
 jobs:
 #  initialize:
