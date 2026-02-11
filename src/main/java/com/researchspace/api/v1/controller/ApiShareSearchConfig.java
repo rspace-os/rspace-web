@@ -16,7 +16,7 @@ import org.springframework.util.MultiValueMap;
 @NoArgsConstructor
 public class ApiShareSearchConfig extends ApiGenericSearchConfig {
 
-  public static final int MAX_SHARE_ITEM_IDS = 1000;
+  private static final int MAX_SHARE_ITEM_IDS = 1000;
 
   @Size(
       max = MAX_SHARE_ITEM_IDS,
