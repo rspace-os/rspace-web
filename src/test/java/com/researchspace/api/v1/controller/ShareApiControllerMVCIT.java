@@ -15,7 +15,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiFolder;
+import com.researchspace.api.v1.model.ApiShareInfo;
 import com.researchspace.api.v1.model.ApiShareSearchResult;
+import com.researchspace.api.v1.model.ApiShareSearchResultWithFolderShares;
 import com.researchspace.api.v1.model.ApiSharingResult;
 import com.researchspace.api.v1.model.DocumentShares;
 import com.researchspace.api.v1.model.GroupSharePostItem;
@@ -152,7 +154,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     return getFromJsonResponseBody(getResult, ApiShareSearchResult.class);
   }
 
-  private ApiShareSearchResult listSharesWithSharedItemIds(
+  private ApiShareSearchResultWithFolderShares listSharesWithSharedItemIds(
       User sharer, String apiKey, List<Long> sharedItemIds) throws Exception {
     MvcResult getResult =
         mockMvc
@@ -160,7 +162,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
                 createShareGetBuilder(sharer, apiKey)
                     .param("sharedItemIds", StringUtils.join(sharedItemIds, ",")))
             .andReturn();
-    return getFromJsonResponseBody(getResult, ApiShareSearchResult.class);
+    return getFromJsonResponseBody(getResult, ApiShareSearchResultWithFolderShares.class);
   }
 
   private MockHttpServletRequestBuilder createShareGetBuilder(User sharer, String apiKey) {
@@ -506,21 +508,24 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
         listSharesWithSharedItemIds(
             sharer, apiKey, List.of(docToShare.getId(), userWorkspaceFolder.getId()));
     assertEquals(1, apiShareSearchResult.getTotalHits().intValue());
-    assertEquals(docToShare.getId(), apiShareSearchResult.getShares().get(0).getSharedItemId());
-    assertNotNull(apiShareSearchResult.getShares().get(0).getId());
-    assertFalse(apiShareSearchResult.getShares().get(0).getLinks().isEmpty());
+    assertEquals(1, apiShareSearchResult.getShares().size());
+    ApiShareInfo sharedDocInfo = apiShareSearchResult.getShares().get(0);
+    assertEquals(docToShare.getId(), sharedDocInfo.getSharedItemId());
+    assertNotNull(sharedDocInfo.getId());
+    assertFalse(sharedDocInfo.getLinks().isEmpty());
 
     // list shares for shared subfolder (should return one pseudo-share element)
-    apiShareSearchResult =
+    ApiShareSearchResultWithFolderShares apiShareSearchResultWithFolders =
         listSharesWithSharedItemIds(sharer, apiKey, List.of(sharedSubFolder.getId()));
-    assertEquals(1, apiShareSearchResult.getTotalHits().intValue());
-    assertEquals(
-        sharedSubFolder.getId(), apiShareSearchResult.getShares().get(0).getSharedItemId());
-    assertNull(apiShareSearchResult.getShares().get(0).getId()); // pseudo-item without id
-    assertTrue(apiShareSearchResult.getShares().get(0).getLinks().isEmpty()); // no self link
+    assertEquals(1, apiShareSearchResultWithFolders.getTotalHits().intValue());
+    assertEquals(1, apiShareSearchResultWithFolders.getFolderShares().size());
+    ApiShareInfo sharedFolderInfo = apiShareSearchResultWithFolders.getFolderShares().get(0);
+    assertEquals(sharedSubFolder.getId(), sharedFolderInfo.getSharedItemId());
+    assertNull(sharedFolderInfo.getId()); // pseudo-item without id
+    assertTrue(sharedFolderInfo.getLinks().isEmpty()); // no self link
 
     // list shares for two docs and two shared folders
-    apiShareSearchResult =
+    apiShareSearchResultWithFolders =
         listSharesWithSharedItemIds(
             sharer,
             apiKey,
@@ -529,7 +534,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
                 piDocToShare.getId(),
                 groupSharedFolder.getId(),
                 sharedSubFolder.getId()));
-    assertEquals(4, apiShareSearchResult.getTotalHits().intValue());
+    assertEquals(4, apiShareSearchResultWithFolders.getTotalHits().intValue());
 
     // attempt to list shares for pi's folder
     AuthorizationException authEx =

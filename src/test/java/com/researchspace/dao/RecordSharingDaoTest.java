@@ -104,8 +104,7 @@ public class RecordSharingDaoTest extends BaseDaoTestCase {
     // confirm multi-id method variant
     assertEquals(
         2, rShareDao.getRecordGroupSharingsForRecordIds(List.of(anyRecord.getId())).size());
-    assertEquals(
-        0, rShareDao.getRecordGroupSharingsForRecordIds(List.of()).size());
+    assertEquals(0, rShareDao.getRecordGroupSharingsForRecordIds(List.of()).size());
   }
 
   @Test
