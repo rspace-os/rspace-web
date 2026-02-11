@@ -1,4 +1,3 @@
-/** RSpace API Access your RSpace documents programmatically. */
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,7 +8,6 @@ import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-/** DocumentSearchResults */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @JsonPropertyOrder({"totalHits", "pageNumber", "shares", "_links"})

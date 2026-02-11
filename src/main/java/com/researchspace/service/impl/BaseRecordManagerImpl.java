@@ -97,9 +97,9 @@ public class BaseRecordManagerImpl implements BaseRecordManager {
   }
 
   @Override
-  public List<BaseRecord> getByIdAndReadPermission(
+  public List<BaseRecord> getByGlobalIdsAndReadPermission(
       List<GlobalIdentifier> baseRecordIds, User subject) {
-    List<BaseRecord> brs = new ArrayList<BaseRecord>();
+    List<BaseRecord> brs = new ArrayList<>();
     for (GlobalIdentifier gId : baseRecordIds) {
       BaseRecord br = get(gId.getDbId(), subject, false);
       brs.add(br);

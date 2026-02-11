@@ -100,6 +100,11 @@ public class RecordSharingDaoTest extends BaseDaoTestCase {
 
     // when asked about sharing status should also return both groups
     assertEquals(2, rShareDao.getRecordGroupSharingsForRecord(anyRecord.getId()).size());
+
+    // confirm multi-id method variant
+    assertEquals(
+        2, rShareDao.getRecordGroupSharingsForRecordIds(List.of(anyRecord.getId())).size());
+    assertEquals(0, rShareDao.getRecordGroupSharingsForRecordIds(List.of()).size());
   }
 
   @Test
