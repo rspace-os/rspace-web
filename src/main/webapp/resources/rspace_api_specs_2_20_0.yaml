@@ -2596,7 +2596,7 @@ paths:
           collectionFormat: csv
       responses:
         '200':
-          description: A listing of shared items.
+          description: A listing of shared items. `"folderShares"` property is present only if `"sharedItemIds"` param was used.
           schema:
             title: Shared Item Search Results
             properties:
@@ -2606,6 +2606,8 @@ paths:
                 type: number
               shares:
                 $ref: '#/definitions/SharedList'
+              folderShares:
+                $ref: '#/definitions/SharedFolderList'
               _links:
                 $ref: '#/definitions/LinkItemList'
     post:
@@ -4443,6 +4445,39 @@ definitions:
     example:
       id: 1234
       sharedItemId: 23456
+      sharedItemName: "my shared document"
+      sharedTargetId: 1234
+      sharedTargetType: GROUP
+      permission: READ
+  ShareFolderInfo:
+    description: Represents the information about a shared folder
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Will always be null, as there is no underlying share object for folders
+      sharedItemId:
+        type: integer
+        format: int64
+        description: The id of the shared folder
+      shareItemName:
+        type: string
+        description: The display name of the shared folder
+      sharedTargetId:
+        type: integer
+        format: int64
+        description: The id of the target user or group
+      sharedTargetType:
+        type: string
+        description: One of 'GROUP' or 'USER'
+      permission:
+        type: string
+        description: The access permission granted; one of 'READ' or 'EDIT'
+    example:
+      id: null
+      sharedItemId: 23456
+      sharedItemName: "my shared (sub)folder"
+      sharedTargetId: 1234
       sharedTargetType: GROUP
       permission: READ
   SharedList:
@@ -4450,6 +4485,11 @@ definitions:
     type: array
     items:
       $ref: '#/definitions/ShareInfo'
+  SharedFolderList:
+    description: 'List of ShareInfo object metadata for shared folders. These are pseudo-shares, without id.'
+    type: array
+    items:
+      $ref: '#/definitions/ShareFolderInfo'
   DocumentShares:
     description: All shares for a document, including direct shares and shares via notebooks
     properties:
