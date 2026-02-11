@@ -4455,6 +4455,7 @@ definitions:
       id:
         type: integer
         format: int64
+        nullable: true
         description: Will always be null, as there is no underlying share object for folders
       sharedItemId:
         type: integer
