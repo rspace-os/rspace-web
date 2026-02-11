@@ -1815,13 +1815,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>protocols-java-client</artifactId>
-      <version>1.1.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-      </exclusions>
+      <version>72f5747918</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
