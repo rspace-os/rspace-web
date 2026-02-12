@@ -57,6 +57,17 @@ import org.apache.shiro.crypto.hash.Sha256Hash;
 import org.jetbrains.annotations.NotNull;
 
 public class RoCrateHandler {
+  public static ContextualEntity createLicenseEntity() {
+    ContextualEntity license =
+        new ContextualEntity.ContextualEntityBuilder()
+            .setId("https://www.gnu.org/licenses/agpl-3.0-standalone.html")
+            .addProperty(
+                "description",
+                "This is the GNU AFFERO GENERAL PUBLIC LICENSE,  Version 3, 19 November 2007.")
+            .build();
+
+    return license;
+  }
 
   private static final String DESCRIPTION = "description";
   private static final String SCHEMAS_DIR = "./schemas/";
@@ -78,6 +89,7 @@ public class RoCrateHandler {
       List<ArchiveFolder> folderTree,
       IArchiveExportConfig aconfig) {
     RoCrate.RoCrateBuilder roCrateBuilder = new RoCrate.RoCrateBuilder("name", DESCRIPTION);
+    roCrateBuilder.setLicense(createLicenseEntity());
     RoCrate roCrate = roCrateBuilder.build();
     for (ArchiveFolder af : folderTree) {
       boolean isGroupExport = aconfig.isGroupScope();
@@ -212,7 +224,7 @@ public class RoCrateHandler {
       addSha256Hash(formSchema, new File(schemasFolder, ZIP_FORM_SCHEMA));
       roCrate.addDataEntity(formSchema.build(), true);
       DataSetEntity.DataSetBuilder resources = new DataSetEntity.DataSetBuilder();
-      resources.setId("./" + RESOURCES);
+      resources.setId("./" + RESOURCES + "/");
       resources.addProperty("text", "Common resources shared among exported data");
       roCrate.addDataEntity(resources.build(), true);
       if (aconfig.isUserScope() || aconfig.isGroupScope()) {
@@ -259,7 +271,6 @@ public class RoCrateHandler {
         ContextualEntityBuilder raidContext = createRaidContextEntity(aconfig);
         roCrate.addContextualEntity(raidContext.build());
       }
-      // TODO - add a license when we go opensource??
       RootDataEntity rde = roCrate.getRootDataEntity();
       // Recommended to be a DOI - change this to be a DOI if we ever have one for RSpace instances
       rde.addProperty(IDENTIFIER, aconfig.getArchivalMeta().getSource());

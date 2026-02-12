@@ -145,7 +145,7 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
         DataSetEntity.DataSetBuilder dsb = null;
         if (roCrate != null) {
           dsb = new DataSetEntity.DataSetBuilder();
-          dsb.setId("./" + recordFolder.getName());
+          dsb.setId("./" + recordFolder.getName() + "/");
           DataSetEntity out = dsb.build();
           roCrate.addDataEntity(out, true);
           List<String> listIsPartOf = new LinkedList<>();
