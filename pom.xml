@@ -446,7 +446,7 @@
     <dependency>
       <groupId>edu.kit.datamanager</groupId>
       <artifactId>ro-crate-java</artifactId>
-      <version>1.1.0</version>
+      <version>2.1.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-validator</groupId>

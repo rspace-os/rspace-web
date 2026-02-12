@@ -34,8 +34,8 @@ import edu.kit.datamanager.ro_crate.entities.data.DataSetEntity;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity;
 import edu.kit.datamanager.ro_crate.entities.data.RootDataEntity;
 import edu.kit.datamanager.ro_crate.externalproviders.personprovider.OrcidProvider;
-import edu.kit.datamanager.ro_crate.writer.FolderWriter;
-import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
+import edu.kit.datamanager.ro_crate.writer.CrateWriter;
+import edu.kit.datamanager.ro_crate.writer.Writers;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,6 +46,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
@@ -57,17 +58,19 @@ import org.apache.shiro.crypto.hash.Sha256Hash;
 import org.jetbrains.annotations.NotNull;
 
 public class RoCrateHandler {
+
+  private final String datasetID;
+
   public static ContextualEntity createLicenseEntity() {
     ContextualEntity license =
         new ContextualEntity.ContextualEntityBuilder()
             .setId("https://www.gnu.org/licenses/agpl-3.0-standalone.html")
-            .addProperty(
-                "description",
-                "This is the GNU AFFERO GENERAL PUBLIC LICENSE,  Version 3, 19 November 2007.")
             .build();
 
     return license;
   }
+
+  private static final ContextualEntity license = createLicenseEntity();
 
   private static final String DESCRIPTION = "description";
   private static final String SCHEMAS_DIR = "./schemas/";
@@ -79,17 +82,20 @@ public class RoCrateHandler {
   private final RoCrate roCrate;
   private final DataSetEntity.DataSetBuilder dsb;
 
-  public RoCrateHandler(RoCrate roCrate, DataSetEntity.DataSetBuilder dsb) {
+  public RoCrateHandler(RoCrate roCrate, DataSetEntity.DataSetBuilder dsb, String datasetID) {
     this.roCrate = roCrate;
     this.dsb = dsb;
+    this.datasetID = datasetID;
   }
 
   public static RoCrate startProcessRoCrate(
       List<RoCrateLogicalFolder> topLevelFolders,
       List<ArchiveFolder> folderTree,
       IArchiveExportConfig aconfig) {
-    RoCrate.RoCrateBuilder roCrateBuilder = new RoCrate.RoCrateBuilder("name", DESCRIPTION);
-    roCrateBuilder.setLicense(createLicenseEntity());
+    RoCrate.RoCrateBuilder roCrateBuilder =
+        new RoCrate.RoCrateBuilder(
+            "name", DESCRIPTION, "" + LocalDate.now().getYear(), license.getId());
+    roCrateBuilder.setLicense(license);
     RoCrate roCrate = roCrateBuilder.build();
     for (ArchiveFolder af : folderTree) {
       boolean isGroupExport = aconfig.isGroupScope();
@@ -114,7 +120,7 @@ public class RoCrateHandler {
       roCrateLogicalFolder.setRspaceID(af.getId());
       roCrateLogicalFolder.setRspaceParentID(af.getParentId());
       topLevelFolders.add(roCrateLogicalFolder);
-      roCrate.addDataEntity(dsTop, true);
+      roCrate.addDataEntity(dsTop);
     }
     // set ids on nested toplevel folders
     for (RoCrateLogicalFolder roCrateLogicalFolder : topLevelFolders) {
@@ -216,42 +222,42 @@ public class RoCrateHandler {
       docSchema.setEncodingFormat(APPLICATION_XML);
       docSchema.addProperty("text", "schema for RSpace documents");
       addSha256Hash(docSchema, new File(schemasFolder, ZIP_SCHEMA));
-      roCrate.addDataEntity(docSchema.build(), true);
+      roCrate.addDataEntity(docSchema.build());
       FileEntity.FileEntityBuilder formSchema = new FileEntity.FileEntityBuilder();
       formSchema.setId(SCHEMAS_DIR + ZIP_FORM_SCHEMA);
       formSchema.addProperty("text", "schema for RSpace forms");
       formSchema.setEncodingFormat(APPLICATION_XML);
       addSha256Hash(formSchema, new File(schemasFolder, ZIP_FORM_SCHEMA));
-      roCrate.addDataEntity(formSchema.build(), true);
+      roCrate.addDataEntity(formSchema.build());
       DataSetEntity.DataSetBuilder resources = new DataSetEntity.DataSetBuilder();
       resources.setId("./" + RESOURCES + "/");
       resources.addProperty("text", "Common resources shared among exported data");
-      roCrate.addDataEntity(resources.build(), true);
+      roCrate.addDataEntity(resources.build());
       if (aconfig.isUserScope() || aconfig.isGroupScope()) {
         FileEntity.FileEntityBuilder userSchema = new FileEntity.FileEntityBuilder();
         userSchema.setId(SCHEMAS_DIR + USERS_SCHEMA);
         userSchema.addProperty("text", "schema for RSpace Users and Groups");
         userSchema.setEncodingFormat(APPLICATION_XML);
-        roCrate.addDataEntity(userSchema.build(), true);
+        roCrate.addDataEntity(userSchema.build());
         addSha256Hash(userSchema, new File(schemasFolder, USERS_SCHEMA));
         FileEntity.FileEntityBuilder userXml = new FileEntity.FileEntityBuilder();
         userXml.setId(SCHEMAS_DIR + USERS);
         userXml.addProperty("text", "Data on exported users and Groups");
         addSha256Hash(userXml, new File(schemasFolder, USERS));
         userXml.setEncodingFormat(APPLICATION_XML);
-        roCrate.addDataEntity(userXml.build(), true);
+        roCrate.addDataEntity(userXml.build());
         FileEntity.FileEntityBuilder messagesSchema = new FileEntity.FileEntityBuilder();
         messagesSchema.setId(SCHEMAS_DIR + MESSAGES_SCHEMA);
         messagesSchema.addProperty("text", "schema for RSpace Messages");
         addSha256Hash(messagesSchema, new File(schemasFolder, MESSAGES_SCHEMA));
         messagesSchema.setEncodingFormat(APPLICATION_XML);
-        roCrate.addDataEntity(messagesSchema.build(), true);
+        roCrate.addDataEntity(messagesSchema.build());
         FileEntity.FileEntityBuilder messagesXML = new FileEntity.FileEntityBuilder();
         messagesXML.setId(SCHEMAS_DIR + MESSAGES);
         addSha256Hash(messagesXML, new File(schemasFolder, MESSAGES));
         messagesXML.addProperty("text", "Data on the messages of exported users");
         userXml.setEncodingFormat(APPLICATION_XML);
-        roCrate.addDataEntity(messagesXML.build(), true);
+        roCrate.addDataEntity(messagesXML.build());
       }
       if (thereWereNfsExports(archived)) {
         FileEntity.FileEntityBuilder messagesSchema = new FileEntity.FileEntityBuilder();
@@ -259,13 +265,13 @@ public class RoCrateHandler {
         messagesSchema.addProperty("text", "Data on remote Nfs files linked in the export");
         messagesSchema.setEncodingFormat(APPLICATION_XML);
         addSha256Hash(messagesSchema, new File(schemasFolder, NFS_EXPORT_XML));
-        roCrate.addDataEntity(messagesSchema.build(), true);
+        roCrate.addDataEntity(messagesSchema.build());
       }
       if (thereWereNfsExportedExports(archived)) {
         DataSetEntity.DataSetBuilder exportedNFS = new DataSetEntity.DataSetBuilder();
         exportedNFS.setId("./" + FILESTORE_FILES_ARCHIVE_DIR);
         exportedNFS.addProperty("text", "Contains remote nfs files linked by exported documents");
-        roCrate.addDataEntity(exportedNFS.build(), true);
+        roCrate.addDataEntity(exportedNFS.build());
       }
       if (aconfig.hasRaidAssociation()) {
         ContextualEntityBuilder raidContext = createRaidContextEntity(aconfig);
@@ -286,7 +292,7 @@ public class RoCrateHandler {
               + "_"
               + exportTime);
       rde.addProperty(DESCRIPTION, aconfig.getDescription());
-      RoCrateWriter folderRoCrateWriter = new RoCrateWriter(new FolderWriter());
+      CrateWriter<String> folderRoCrateWriter = Writers.newFolderWriter();
       folderRoCrateWriter.save(roCrate, exportContext.getArchiveAssmblyFlder().getPath());
       replaceSingleKeyWordsInRoCrate(exportContext);
     }
@@ -458,7 +464,7 @@ public class RoCrateHandler {
       fefeb.addProperty("text", description);
     }
     DataEntity de = fefeb.build();
-    roCrate.addDataEntity(de, false);
+    roCrate.addDataEntity(de, datasetID);
     dsb.addToHasPart(de);
   }
 
@@ -472,7 +478,7 @@ public class RoCrateHandler {
     addDatesToFileEntityBuilder(
         mediaFeb, mediaFile.getCreationDate(), mediaFile.getModificationDateAsDate());
     DataEntity mediaDE = mediaFeb.build();
-    roCrate.addDataEntity(mediaDE, false);
+    roCrate.addDataEntity(mediaDE, datasetID);
     dsb.addToHasPart(mediaDE);
   }
 
@@ -497,7 +503,7 @@ public class RoCrateHandler {
           mediaFeb.addProperty("text", FILE_LINK_TEXT);
           addDatesToFileEntityBuilder(mediaFeb, agm.getCreationDate(), agm.getModificationDate());
           DataEntity mediaDE = mediaFeb.build();
-          roCrate.addDataEntity(mediaDE, false);
+          roCrate.addDataEntity(mediaDE, datasetID);
           dsb.addToHasPart(mediaDE);
         } else {
           if (agm.getParentGalleryFolderId() == null) {
@@ -515,7 +521,7 @@ public class RoCrateHandler {
             link.setId("./" + recordFolder.getName() + "/" + agm.getLinkFile());
             link.addProperty("text", FILE_LINK_TEXT);
             DataEntity mediaDE = link.build();
-            roCrate.addDataEntity(mediaDE, false);
+            roCrate.addDataEntity(mediaDE, datasetID);
             dsb.addToHasPart(mediaDE);
           } else {
             // Its a ***link*** to Gallery file in a full user/group export.
@@ -534,7 +540,7 @@ public class RoCrateHandler {
             link.setId("./" + recordFolder.getName() + "/" + pathToItemInGallery);
             link.addProperty("text", FILE_LINK_TEXT);
             DataEntity mediaDE = link.build();
-            roCrate.addDataEntity(mediaDE, false);
+            roCrate.addDataEntity(mediaDE, datasetID);
             dsb.addToHasPart(mediaDE);
           }
         }
@@ -565,7 +571,7 @@ public class RoCrateHandler {
             "A non exported remote file linked to by an exported RSpace Structured Document");
       }
       DataEntity mediaDE = mediaFeb.build();
-      roCrate.addDataEntity(mediaDE, false);
+      roCrate.addDataEntity(mediaDE, datasetID);
       dsb.addToHasPart(mediaDE);
     }
   }
