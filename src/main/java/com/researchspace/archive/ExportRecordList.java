@@ -3,6 +3,7 @@ package com.researchspace.archive;
 import static java.util.stream.Collectors.toCollection;
 
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,6 +51,7 @@ public class ExportRecordList implements ImmutableExportRecordList {
   private List<ArchiveFolder> foldersToExport = new ArrayList<ArchiveFolder>();
 
   private List<ExternalWorkFlowData> externalWorkFlows = new ArrayList<>();
+  private List<StoichiometryDTO> stoichiometries = new ArrayList<>();
 
   /**
    * Get immutable read-only view of the record Ids to export
@@ -66,6 +68,13 @@ public class ExportRecordList implements ImmutableExportRecordList {
   @Override
   public List<ExternalWorkFlowData> getExternalWorkFlows() {
     return externalWorkFlows;
+  }
+
+  /** This is deliberately modifiable */
+  @XmlTransient
+  @Override
+  public List<StoichiometryDTO> getStoichiometries() {
+    return stoichiometries;
   }
 
   /**
@@ -223,6 +232,11 @@ public class ExportRecordList implements ImmutableExportRecordList {
   @Override
   public boolean containsExternalWorkFlowData(Long rcdId) {
     return externalWorkFlows.stream().anyMatch(ewfd -> ewfd.getId().equals(rcdId));
+  }
+
+  @Override
+  public boolean containsStoichiometries(Long rcdId) {
+    return stoichiometries.stream().anyMatch(stoi -> stoi.getId().equals(rcdId));
   }
 
   private boolean gidEqualsIgnoreVersion(GlobalIdentifier rcdId, GlobalIdentifier oid) {

@@ -104,5 +104,6 @@ public interface BaseRecordManager {
    * @param subject
    * @return
    */
-  List<BaseRecord> getByIdAndReadPermission(List<GlobalIdentifier> baseRecordIds, User subject);
+  List<BaseRecord> getByGlobalIdsAndReadPermission(
+      List<GlobalIdentifier> baseRecordIds, User subject);
 }

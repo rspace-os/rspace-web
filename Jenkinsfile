@@ -26,7 +26,7 @@ pipeline {
         booleanParam(name: 'AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to AWS')
         booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
         booleanParam(name: 'DOCKER_AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to Docker on AWS - see the README in build/ folder for more details')
-        booleanParam(name: 'FRONTEND_TESTS', defaultValue: false, description: 'Run TypeScript/Jest tests (runs after changes to frontend files by default)')
+        booleanParam(name: 'FRONTEND_TESTS', defaultValue: false, description: 'Run TypeScript/Vitest tests (runs after changes to frontend files by default)')
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
@@ -159,7 +159,7 @@ pipeline {
                 }
             }
         }
-        stage('Jest Tests (feature branch)') {
+        stage('Vitest Tests (feature branch)') {
             when {
                 not {
                     branch 'main'
@@ -175,26 +175,27 @@ pipeline {
                 }
             }
             steps {
-                echo 'Running Jest tests'
+                echo 'Running Vitest tests'
                 sh 'git fetch origin main:main || true'
                 dir('src/main/webapp/ui') {
-                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2 --changedSince=main'
+                    // In Jenkins we limit this to 2 to not overwhelm the CI machine
+                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers 2 --changed main'
                 }
             }
             post {
                 failure {
                     notify currentBuild.result
-                    notifySlack('FAILURE', "Jest tests failed: ${currentBuild.result}")
+                    notifySlack('FAILURE', "Vitest tests failed: ${currentBuild.result}")
                 }
                 fixed {
                     notify currentBuild.result
                 }
                 success {
-                    junit checksName: 'Jest Tests', testResults: '**/ui/junit.xml', allowEmptyResults: true
+                    junit checksName: 'Vitest Tests', testResults: '**/ui/junit.xml', allowEmptyResults: true
                 }
             }
         }
-        stage('Jest Tests (main branch)') {
+        stage('Vitest Tests (main branch)') {
             when {
                 branch 'main'
                 anyOf {
@@ -208,7 +209,7 @@ pipeline {
                 }
             }
             steps {
-                echo 'Running Jest tests'
+                echo 'Running Vitest tests'
                 dir('src/main/webapp/ui') {
                     sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2'
                 }
@@ -216,13 +217,13 @@ pipeline {
             post {
                 failure {
                     notify currentBuild.result
-                    notifySlack('FAILURE', "Jest tests failed: ${currentBuild.result}")
+                    notifySlack('FAILURE', "Vitest tests failed: ${currentBuild.result}")
                 }
                 fixed {
                     notify currentBuild.result
                 }
                 success {
-                    junit checksName: 'Jest Tests', testResults: '**/ui/junit.xml'
+                    junit checksName: 'Vitest Tests', testResults: '**/ui/junit.xml'
                 }
             }
         }
@@ -479,7 +480,7 @@ pipeline {
                 // this is to create a valid datbase name from the branch name
 
                 echo "sanitised DB Name is $SANITIZED_DBNAME"
-                sh "./mvnw  clean verify -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                sh "./mvnw clean verify -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Djavax.xml.accessExternalDTD=all\
                   -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\

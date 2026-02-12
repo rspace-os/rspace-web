@@ -37,7 +37,7 @@ const OverviewSection = observer(
      */
     React.useEffect(() => {
       setFormSectionError(formSectionError, "name", true);
-       
+
     }, []);
 
     return (

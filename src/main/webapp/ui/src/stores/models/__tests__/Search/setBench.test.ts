@@ -1,44 +1,28 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { test, describe, expect, vi } from 'vitest';
 import Search from "../../Search";
 import ApiServiceBase from "../../../../common/ApiServiceBase";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import "../../../../__tests__/assertUrlSearchParams";
 
-// Add type definition for the custom matcher
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace jest {
-    interface Matchers<R> {
-      urlSearchParamContaining: (expected: Record<string, string>) => R;
-    }
-    interface Expect {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      urlSearchParamContaining: (expected: Record<string, string>) => any;
-    }
-  }
-}
-
-jest.mock("../../../stores/RootStore", () => () => ({
+vi.mock("../../../stores/RootStore", () => ({
+  default: () => ({
   authStore: {
     isSynchronizing: false,
   },
   uiStore: {
-    addAlert: jest.fn(),
+    addAlert: vi.fn(),
   },
+})
 })); // break import cycle
-jest.mock("../../../stores/SearchStore", () => {}); // break import cycle
 
+vi.mock("../../../stores/SearchStore", () => ({ default: class {} })); // break import cycle
 describe("action: setBench", () => {
   describe("When called with any value it should", () => {
     test("set the page number to 0.", () => {
       const search = new Search({
         factory: mockFactory(),
       });
-      const querySpy = jest
+      const querySpy = vi
         .spyOn(ApiServiceBase.prototype, "query")
         .mockImplementation(() =>
           Promise.resolve({
@@ -48,15 +32,15 @@ describe("action: setBench", () => {
             headers: {},
             config: {} as any,
           })
-        );
 
+        );
       void search.setPage(1);
       expect(querySpy).toHaveBeenCalledTimes(1);
       expect(querySpy).toHaveBeenCalledWith(
         "containers",
         expect.urlSearchParamContaining({ pageNumber: "1" })
-      );
 
+      );
       search.setBench(null);
       expect(querySpy).toHaveBeenCalledTimes(2);
       expect(querySpy).toHaveBeenCalledWith(
@@ -66,3 +50,4 @@ describe("action: setBench", () => {
     });
   });
 });
+

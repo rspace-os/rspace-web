@@ -1,10 +1,6 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
-import RsSet from "../../set";
+import { describe, expect, test } from 'vitest';
 
+import RsSet from "../../set";
 describe("subtractWithEq", () => {
   test("Simple example", () => {
     expect(

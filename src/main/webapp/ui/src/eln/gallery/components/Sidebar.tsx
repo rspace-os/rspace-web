@@ -144,7 +144,7 @@ const UploadMenuItem = ({
         onClick={() => {
           inputRef.current?.click();
         }}
-         
+
         autoFocus={autoFocus}
         tabIndex={tabIndex}
         compact
@@ -265,7 +265,7 @@ const NewFolderMenuItem = ({
         onClick={() => {
           setOpen(true);
         }}
-         
+
         autoFocus={autoFocus}
         tabIndex={tabIndex}
         aria-haspopup="dialog"
@@ -368,7 +368,7 @@ const AddFilestoreMenuItem = ({
             onClick={() => {
               setOpen(true);
             }}
-             
+
             autoFocus={autoFocus}
             tabIndex={tabIndex}
             aria-haspopup="dialog"
@@ -409,7 +409,7 @@ const DmpMenuSection = ({
      */
     // @ts-expect-error gallery is a global function
     window.gallery = showDmpPanel;
-     
+
   }, []);
 
   if (!showArgos && !showDmponline && !showDmptool) return null;
@@ -456,7 +456,7 @@ const Sidebar = ({
     autorun(() => {
       if (viewport.isViewportSmall) setDrawerOpen(false);
     });
-     
+
   }, [viewport]);
 
   const showFilestores = FetchingData.getSuccessValue(filestoresEnabled)

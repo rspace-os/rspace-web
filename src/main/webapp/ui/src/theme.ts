@@ -15,7 +15,7 @@ export type RecordPalette = {
 };
 
 declare module "@mui/material/styles" {
-   
+
   interface Theme {
     borders: {
       table?: string;
@@ -34,7 +34,6 @@ declare module "@mui/material/styles" {
     } & Transitions;
   }
 
-   
   interface SimplePaletteColorOptions {
     saturated?: string;
     placeholderText?: string;
@@ -48,7 +47,7 @@ declare module "@mui/material/styles" {
 }
 
 declare module "@mui/material/styles/createTheme" {
-   
+
   interface ThemeOptions {
     borders?: {
       table: string;
@@ -65,7 +64,7 @@ declare module "@mui/material/styles/createTheme" {
 }
 
 declare module "@mui/material/styles/createPalette" {
-   
+
   interface PaletteColor {
     background: string;
     saturated?: string;
@@ -152,14 +151,14 @@ declare module "@mui/material/styles/createPalette" {
  * accept.
  */
 declare module "@mui/material/Button" {
-   
+
   interface ButtonPropsColorOverrides {
     standardIcon: true;
     callToAction: true;
   }
 }
 declare module "@mui/material/IconButton" {
-   
+
   interface IconButtonPropsColorOverrides {
     standardIcon: true;
   }
@@ -175,13 +174,13 @@ declare module "@mui/material/Switch" {
   }
 }
 declare module "@mui/material/Chip" {
-   
+
   interface ChipPropsColorOverrides {
     callToAction: true;
   }
 }
 declare module "@mui/material/Fab" {
-   
+
   interface FabPropsColorOverrides {
     callToAction: true;
   }

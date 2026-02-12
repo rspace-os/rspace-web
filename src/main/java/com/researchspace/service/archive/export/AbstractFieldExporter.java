@@ -57,7 +57,8 @@ abstract class AbstractFieldExporter<T extends IFieldLinkableElement> {
     T item = itemPair.getElement();
     item = getRevisionIfAvailable(context.getRevision(), item);
     if (!context.getExportRecordList().containsFieldAttachment(item.getOid())
-        && !context.getExportRecordList().containsExternalWorkFlowData(item.getId())) {
+        && !context.getExportRecordList().containsExternalWorkFlowData(item.getId())
+        && !context.getExportRecordList().containsStoichiometries(item.getId())) {
       log.warn(
           "fieldExport: Item  [{}] is not in whitelisted set of field attachments", item.getOid());
       return false;

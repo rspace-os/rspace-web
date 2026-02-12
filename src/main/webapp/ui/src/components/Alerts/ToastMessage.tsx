@@ -42,7 +42,7 @@ function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
     if (!alert.isInfinite) {
       setTimeoutId(setTimeout(() => removeAlert(alert), alert.duration));
     }
-     
+
   }, []);
 
   const stopTimeout = () => {

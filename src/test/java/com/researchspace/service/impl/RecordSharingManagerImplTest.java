@@ -5,11 +5,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.dao.UserDao;
+import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
@@ -20,7 +22,9 @@ import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.service.BaseRecordManager;
 import com.researchspace.testutils.TestFactory;
+import java.util.List;
 import org.apache.shiro.authz.Permission;
 import org.junit.After;
 import org.junit.Before;
@@ -39,14 +43,15 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
 
   @Mock RecordGroupSharingDao groupshareRecordDao;
   @Mock IPermissionUtils permissnUtils;
+  @Mock BaseRecordManager baseRecordManager;
   @Mock FolderDao folderDao;
   @Mock RecordDao recordDao;
   @Mock UserDao userDao;
   @Mock GroupDao grpDao;
 
-  private Long docId01 = 75567l;
-  private Long docId02 = 74205l;
-  private Long docId03 = 75633l;
+  private Long docId01 = 75567L;
+  private Long docId02 = 74205L;
+  private Long docId03 = 75633L;
 
   private RecordGroupSharing rgs;
   private User u;
@@ -55,7 +60,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
   @Before
   public void setUp() throws Exception {
     u = new User();
-    u.setId(1701l);
+    u.setId(1701L);
     u.setUsername("Test user");
 
     record = TestFactory.createAnyRecord(u);
@@ -72,6 +77,9 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     when(permissnUtils.findBy(any(), any(), any(), any())).thenReturn(cbp);
     when(permissnUtils.createFromString("WRITE")).thenReturn(PermissionType.WRITE);
     when(permissnUtils.createFromString("READ")).thenReturn(PermissionType.READ);
+    when(baseRecordManager.get(docId01, u)).thenReturn(record);
+    when(groupshareRecordDao.getRecordGroupSharingsForRecordIds(List.of(docId01)))
+        .thenReturn(List.of(rgs));
   }
 
   @After
@@ -80,87 +88,87 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
   @Test
   public void testUserSingleSharedDocChangeFromReadToWrite() {
     u.addPermission("RECORD:READ:id=" + docId01);
-    ErrorList el = recordSharingManager.updatePermissionForRecord(1l, "WRITE", "unused");
+    ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
-    assertEquals(el, null);
-    assertEquals(u.getPermissions().size(), 1);
+    assertEquals(null, el);
+    assertEquals(1, u.getPermissions().size());
     ConstraintBasedPermission finalPermission =
         (ConstraintBasedPermission) u.getPermissions().iterator().next();
-    assertEquals(finalPermission.getActions().size(), 1);
-    assertEquals(finalPermission.getActions().iterator().next(), PermissionType.WRITE);
+    assertEquals(1, finalPermission.getActions().size());
+    assertEquals(PermissionType.WRITE, finalPermission.getActions().iterator().next());
     assertEquals(finalPermission.getIdConstraint().getId().iterator().next(), record.getId());
 
-    assertEquals(rgs.getShared().getSharingACL().getAclElements().size(), 1);
+    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
     assertEquals(
-        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString(),
-        "Test user=RECORD:WRITE:");
+        "Test user=RECORD:WRITE:",
+        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
   }
 
   @Test
   public void testUserSingleSharedDocChangeFromReadToRead() {
     u.addPermission("RECORD:READ:id=" + docId01);
-    ErrorList el = recordSharingManager.updatePermissionForRecord(1l, "READ", "unused");
+    ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
-    assertEquals(el, null);
-    assertEquals(u.getPermissions().size(), 1);
+    assertEquals(null, el);
+    assertEquals(1, u.getPermissions().size());
     ConstraintBasedPermission finalPermission =
         (ConstraintBasedPermission) u.getPermissions().iterator().next();
-    assertEquals(finalPermission.getActions().size(), 1);
-    assertEquals(finalPermission.getActions().iterator().next(), PermissionType.READ);
+    assertEquals(1, finalPermission.getActions().size());
+    assertEquals(PermissionType.READ, finalPermission.getActions().iterator().next());
     assertEquals(finalPermission.getIdConstraint().getId().iterator().next(), record.getId());
 
-    assertEquals(rgs.getShared().getSharingACL().getAclElements().size(), 1);
+    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
     assertEquals(
-        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString(),
-        "Test user=RECORD:READ:");
+        "Test user=RECORD:READ:",
+        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
   }
 
   @Test
   public void testUserSingleSharedDocChangeFromEditToRead() {
     u.addPermission("RECORD:WRITE:id=" + docId01);
-    ErrorList el = recordSharingManager.updatePermissionForRecord(1l, "READ", "unused");
+    ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
-    assertEquals(el, null);
-    assertEquals(u.getPermissions().size(), 1);
+    assertEquals(null, el);
+    assertEquals(1, u.getPermissions().size());
     ConstraintBasedPermission finalPermission =
         (ConstraintBasedPermission) u.getPermissions().iterator().next();
-    assertEquals(finalPermission.getActions().size(), 1);
-    assertEquals(finalPermission.getActions().iterator().next(), PermissionType.READ);
+    assertEquals(1, finalPermission.getActions().size());
+    assertEquals(PermissionType.READ, finalPermission.getActions().iterator().next());
     assertEquals(finalPermission.getIdConstraint().getId().iterator().next(), record.getId());
 
-    assertEquals(rgs.getShared().getSharingACL().getAclElements().size(), 1);
+    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
     assertEquals(
-        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString(),
-        "Test user=RECORD:READ:");
+        "Test user=RECORD:READ:",
+        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
   }
 
   @Test
   public void testUserSingleSharedDocChangeFromEditToEdit() {
     u.addPermission("RECORD:WRITE:id=" + docId01);
-    ErrorList el = recordSharingManager.updatePermissionForRecord(1l, "WRITE", "unused");
+    ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
-    assertEquals(el, null);
-    assertEquals(u.getPermissions().size(), 1);
+    assertEquals(null, el);
+    assertEquals(1, u.getPermissions().size());
     ConstraintBasedPermission finalPermission =
         (ConstraintBasedPermission) u.getPermissions().iterator().next();
-    assertEquals(finalPermission.getActions().size(), 1);
-    assertEquals(finalPermission.getActions().iterator().next(), PermissionType.WRITE);
+    assertEquals(1, finalPermission.getActions().size());
+    assertEquals(PermissionType.WRITE, finalPermission.getActions().iterator().next());
     assertEquals(finalPermission.getIdConstraint().getId().iterator().next(), record.getId());
 
-    assertEquals(rgs.getShared().getSharingACL().getAclElements().size(), 1);
+    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
     assertEquals(
-        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString(),
-        "Test user=RECORD:WRITE:");
+        "Test user=RECORD:WRITE:",
+        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
   }
 
   @Test
   public void testUserTwoSharedDocsChangeOneFromReadToWrite() {
     u.addPermission("RECORD:READ:id=" + docId01);
     u.addPermission("RECORD:READ:id=" + docId02);
-    ErrorList el = recordSharingManager.updatePermissionForRecord(1l, "WRITE", "unused");
+    ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
-    assertEquals(el, null);
-    assertEquals(u.getPermissions().size(), 2);
+    assertEquals(null, el);
+    assertEquals(2, u.getPermissions().size());
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -176,23 +184,23 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
       }
     }
 
-    assertEquals(readFound, true);
-    assertEquals(writeFound, true);
+    assertEquals(true, readFound);
+    assertEquals(true, writeFound);
 
-    assertEquals(rgs.getShared().getSharingACL().getAclElements().size(), 1);
+    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
     assertEquals(
-        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString(),
-        "Test user=RECORD:WRITE:");
+        "Test user=RECORD:WRITE:",
+        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
   }
 
   @Test
   public void testUserTwoSharedDocsChangeOneFromWriteToRead() {
     u.addPermission("RECORD:WRITE:id=" + docId01);
     u.addPermission("RECORD:READ:id=" + docId02);
-    ErrorList el = recordSharingManager.updatePermissionForRecord(1l, "READ", "unused");
+    ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
-    assertEquals(el, null);
-    assertEquals(u.getPermissions().size(), 2);
+    assertEquals(null, el);
+    assertEquals(2, u.getPermissions().size());
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -213,15 +221,15 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
       }
     }
 
-    assertEquals(readFound, true);
-    assertEquals(writeFound, false);
-    assertEquals(doc1Found, true);
-    assertEquals(doc2Found, true);
+    assertEquals(true, readFound);
+    assertEquals(false, writeFound);
+    assertEquals(true, doc1Found);
+    assertEquals(true, doc2Found);
 
-    assertEquals(rgs.getShared().getSharingACL().getAclElements().size(), 1);
+    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
     assertEquals(
-        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString(),
-        "Test user=RECORD:READ:");
+        "Test user=RECORD:READ:",
+        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
   }
 
   // The following four tests ("test...TwoIDsInOnePerm") test for the issue
@@ -230,10 +238,10 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
   @Test
   public void testUserTwoSharedDocsChangeOneFromReadToWriteTwoIDsInOnePerm() {
     u.addPermission("RECORD:READ:id=" + docId02 + "," + docId01);
-    ErrorList el = recordSharingManager.updatePermissionForRecord(1l, "WRITE", "unused");
+    ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
-    assertEquals(el, null);
-    assertEquals(u.getPermissions().size(), 2);
+    assertEquals(null, el);
+    assertEquals(2, u.getPermissions().size());
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -249,22 +257,22 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
       }
     }
 
-    assertEquals(readFound, true);
-    assertEquals(writeFound, true);
+    assertEquals(true, readFound);
+    assertEquals(true, writeFound);
 
-    assertEquals(rgs.getShared().getSharingACL().getAclElements().size(), 1);
+    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
     assertEquals(
-        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString(),
-        "Test user=RECORD:WRITE:");
+        "Test user=RECORD:WRITE:",
+        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
   }
 
   @Test
   public void testUserTwoSharedDocsChangeOneFromReadToReadTwoIDsInOnePerm() {
     u.addPermission("RECORD:READ:id=" + docId02 + "," + docId01);
-    ErrorList el = recordSharingManager.updatePermissionForRecord(1l, "READ", "unused");
+    ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
-    assertEquals(el, null);
-    assertEquals(u.getPermissions().size(), 2);
+    assertEquals(null, el);
+    assertEquals(2, u.getPermissions().size());
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -285,24 +293,24 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
       }
     }
 
-    assertEquals(readFound, true);
-    assertEquals(writeFound, false);
-    assertEquals(doc1Found, true);
-    assertEquals(doc2Found, true);
+    assertEquals(true, readFound);
+    assertEquals(false, writeFound);
+    assertEquals(true, doc1Found);
+    assertEquals(true, doc2Found);
 
-    assertEquals(rgs.getShared().getSharingACL().getAclElements().size(), 1);
+    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
     assertEquals(
-        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString(),
-        "Test user=RECORD:READ:");
+        "Test user=RECORD:READ:",
+        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
   }
 
   @Test
   public void testUserTwoSharedDocsChangeOneFromWriteToReadTwoIDsInOnePerm() {
     u.addPermission("RECORD:WRITE:id=" + docId02 + "," + docId01);
-    ErrorList el = recordSharingManager.updatePermissionForRecord(1l, "READ", "unused");
+    ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
-    assertEquals(el, null);
-    assertEquals(u.getPermissions().size(), 2);
+    assertEquals(null, el);
+    assertEquals(2, u.getPermissions().size());
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -318,22 +326,22 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
       }
     }
 
-    assertEquals(readFound, true);
-    assertEquals(writeFound, true);
+    assertEquals(true, readFound);
+    assertEquals(true, writeFound);
 
-    assertEquals(rgs.getShared().getSharingACL().getAclElements().size(), 1);
+    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
     assertEquals(
-        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString(),
-        "Test user=RECORD:READ:");
+        "Test user=RECORD:READ:",
+        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
   }
 
   @Test
   public void testUserTwoSharedDocsChangeOneFromWriteToWriteTwoIDsInOnePerm() {
     u.addPermission("RECORD:WRITE:id=" + docId02 + "," + docId01);
-    ErrorList el = recordSharingManager.updatePermissionForRecord(1l, "WRITE", "unused");
+    ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
-    assertEquals(el, null);
-    assertEquals(u.getPermissions().size(), 2);
+    assertEquals(null, el);
+    assertEquals(2, u.getPermissions().size());
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -354,15 +362,15 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
       }
     }
 
-    assertEquals(readFound, false);
-    assertEquals(writeFound, true);
-    assertEquals(doc1Found, true);
-    assertEquals(doc2Found, true);
+    assertEquals(false, readFound);
+    assertEquals(true, writeFound);
+    assertEquals(true, doc1Found);
+    assertEquals(true, doc2Found);
 
-    assertEquals(rgs.getShared().getSharingACL().getAclElements().size(), 1);
+    assertEquals(1, rgs.getShared().getSharingACL().getAclElements().size());
     assertEquals(
-        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString(),
-        "Test user=RECORD:WRITE:");
+        "Test user=RECORD:WRITE:",
+        rgs.getShared().getSharingACL().getAclElements().get(0).getAsString());
   }
 
   // Test that when we start with multiple permissions, as when
@@ -379,10 +387,10 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     u.addPermission("RECORD:READ:id=" + docId01);
     u.addPermission("RECORD:READ:id=" + docId02);
     u.addPermission("RECORD:READ:id=" + docId03);
-    ErrorList el = recordSharingManager.updatePermissionForRecord(1l, "READ", "unused");
+    ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
-    assertEquals(el, null);
-    assertEquals(u.getPermissions().size(), 5);
+    assertEquals(null, el);
+    assertEquals(5, u.getPermissions().size());
 
     boolean readFound = false;
     boolean writeFound = false;
@@ -416,13 +424,21 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
       }
     }
 
-    assertEquals(readFound, true);
-    assertEquals(writeFound, true);
-    assertEquals(doc1FoundRead, true);
-    assertEquals(doc2FoundRead, true);
-    assertEquals(doc3FoundRead, true);
-    assertEquals(doc1FoundWrite, false);
-    assertEquals(doc2FoundWrite, true);
-    assertEquals(doc3FoundWrite, true);
+    assertEquals(true, readFound);
+    assertEquals(true, writeFound);
+    assertEquals(true, doc1FoundRead);
+    assertEquals(true, doc2FoundRead);
+    assertEquals(true, doc3FoundRead);
+    assertEquals(false, doc1FoundWrite);
+    assertEquals(true, doc2FoundWrite);
+    assertEquals(true, doc3FoundWrite);
+  }
+
+  @Test
+  public void testRetrieveSharesForListOfRecordIds() {
+    ISearchResults<RecordGroupSharing> shares =
+        recordSharingManager.listSharesForRecordsAndUser(
+            List.of(docId01), new PaginationCriteria<>(), u);
+    assertEquals(1, shares.getHits().intValue());
   }
 }

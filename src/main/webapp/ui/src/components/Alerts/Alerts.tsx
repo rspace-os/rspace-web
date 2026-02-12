@@ -52,7 +52,7 @@ function Alerts({ children }: AlertsArgs): React.ReactNode {
         });
       },
     }),
-     
+
     [],
   );
 

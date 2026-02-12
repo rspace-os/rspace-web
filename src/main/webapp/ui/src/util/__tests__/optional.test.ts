@@ -1,19 +1,16 @@
-/*
- * @jest-environment jsdom
- */
 //@flow
-/* eslint-env jest */
+import { describe, expect, test } from 'vitest';
 import fc, { type Arbitrary } from "fast-check";
-import { Optional } from "../optional";
 
+import { Optional } from "../optional";
 /**
  * Generates an arbitrary Optional<T> from an arbitrary T.
  * Sometimes it will return an empty Optional, sometimes it will return a
  * non-empty Optional with the passed value.
  */
 const arbOptional = <T>(arb: Arbitrary<T>): Arbitrary<Optional<T>> =>
-  fc.option(arb).map((x) => Optional.fromNullable(x));
 
+  fc.option(arb).map((x) => Optional.fromNullable(x));
 describe("optional", () => {
   /*
    * The Optional type adheres to the definition of a Functor, which is to say
@@ -42,8 +39,8 @@ describe("optional", () => {
         )
       );
     });
-  });
 
+  });
   /*
    * The Optional type also adheres to the definitions of a Monad, which is to
    * say that functions that produce Optionals can be chained together. For
@@ -91,3 +88,4 @@ describe("optional", () => {
     });
   });
 });
+

@@ -54,6 +54,7 @@ public class ArchivalGalleryMetadata {
   private @XmlElement Long originalVersion;
 
   private String linkToOriginalFile;
+  private @XmlElement Long ecatChemFieldId;
 
   public ArchivalGalleryMetadata() {
     this.contentType = "application/octet-stream";
@@ -66,5 +67,13 @@ public class ArchivalGalleryMetadata {
     String originalOwner = getCreatedBy() != null ? getCreatedBy() : "n/a";
     return new ImportOverride(
         created, modified, originalOwner, allowCreationDateAfterModificationDate);
+  }
+
+  public void setEcatChemFieldId(Long ecatChemFieldId) {
+    this.ecatChemFieldId = ecatChemFieldId;
+  }
+
+  public Long getEcatChemFieldId() {
+    return ecatChemFieldId;
   }
 }

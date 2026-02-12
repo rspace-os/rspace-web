@@ -1,10 +1,5 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
 import React from "react";
-import { render, cleanup, act, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, act, screen } from "@testing-library/react";
 import "../../../../../__mocks__/barcode-detection-api";
 import AllBarcodeScanner from "../AllBarcodeScanner";
 import { sleep } from "../../../../util/Util";
@@ -13,21 +8,15 @@ import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+import { test, describe, expect, vi } from 'vitest';
 describe("AllBarcodeScanner", () => {
   test("Should scan correctly.", async () => {
     const user = userEvent.setup();
-    jest
-      .spyOn(HTMLVideoElement.prototype, "play")
-      .mockImplementation(() => Promise.resolve());
 
-    const onScan = jest.fn() as jest.Mock<void, [BarcodeInput]>;
-
+    vi.spyOn(HTMLVideoElement.prototype, "play").mockImplementation(() =>
+      Promise.resolve()
+    );
+    const onScan = vi.fn<(input: BarcodeInput) => void>();
     render(
       <ThemeProvider theme={materialTheme}>
         <AllBarcodeScanner
@@ -36,8 +25,8 @@ describe("AllBarcodeScanner", () => {
           buttonPrefix="Scan"
         />
       </ThemeProvider>,
-    );
 
+    );
     /*
      * Wait a second because the barcode scanner checks for a barcode once per
      * second. The extra 100ms is just to ensure that this code doesn't execute
@@ -45,10 +34,10 @@ describe("AllBarcodeScanner", () => {
      */
     await act(async () => {
       await sleep(1100);
+
     });
 
     await user.click(screen.getByText("Scan"));
-
     /*
      * This mocked value comes from src/main/webapp/ui/__mocks__/barcode-detection-api.js
      */
@@ -58,3 +47,4 @@ describe("AllBarcodeScanner", () => {
     });
   });
 });
+

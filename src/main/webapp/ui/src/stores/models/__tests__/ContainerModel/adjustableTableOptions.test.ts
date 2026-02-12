@@ -1,12 +1,7 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import { makeMockContainer } from "./mocking";
-import { personAttrs } from "../PersonModel/mocking";
-import { assertNotNull } from "../../../../util/__tests__/helpers";
 
+import { personAttrs } from "../PersonModel/mocking";
 describe("adjustableTableOptions", () => {
   describe("Number of Empty Locations", () => {
     test("List containers should have unlimited empty locations.", () => {
@@ -15,13 +10,14 @@ describe("adjustableTableOptions", () => {
         owner: personAttrs(),
       });
 
-      const cellContent = assertNotNull(
-        container.adjustableTableOptions().get("Number of Empty Locations")
-      );
-
+      const optionValue = container
+        .adjustableTableOptions()
+        .get("Number of Empty Locations");
+      expect(optionValue).not.toBeNull();
+      const cellContent = optionValue!;
       expect(cellContent().data).toEqual("Unlimited");
-    });
 
+    });
     test("Empty grid containers should render the number of locations.", () => {
       const container = makeMockContainer({
         cType: "GRID",
@@ -35,13 +31,14 @@ describe("adjustableTableOptions", () => {
         owner: personAttrs(),
       });
 
-      const cellContent = assertNotNull(
-        container.adjustableTableOptions().get("Number of Empty Locations")
-      );
-
+      const optionValue = container
+        .adjustableTableOptions()
+        .get("Number of Empty Locations");
+      expect(optionValue).not.toBeNull();
+      const cellContent = optionValue!;
       expect(cellContent().data).toEqual("6");
-    });
 
+    });
     test("If contentSummary is null, then nothing should be shown.", () => {
       const container = makeMockContainer({
         cType: "GRID",
@@ -56,10 +53,11 @@ describe("adjustableTableOptions", () => {
         contentSummary: null,
       });
 
-      const cellContent = assertNotNull(
-        container.adjustableTableOptions().get("Number of Empty Locations")
-      );
-
+      const optionValue = container
+        .adjustableTableOptions()
+        .get("Number of Empty Locations");
+      expect(optionValue).not.toBeNull();
+      const cellContent = optionValue!;
       expect(cellContent().data).toBe(null);
     });
   });

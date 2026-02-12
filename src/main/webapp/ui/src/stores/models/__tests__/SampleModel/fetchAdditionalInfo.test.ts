@@ -1,12 +1,8 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test, vi } from 'vitest';
 import { makeMockSample, sampleAttrs } from "./mocking";
 import { makeMockTemplate } from "../TemplateModel/mocking";
-import InvApiService from "../../../../common/InvApiService";
 
+import InvApiService from "../../../../common/InvApiService";
 const mockRootStore = {
   unitStore: {
     assertValidUnitId: () => {},
@@ -18,40 +14,47 @@ const mockRootStore = {
     setDirty: () => {},
   },
   searchStore: {
-    getTemplate: jest.fn().mockRejectedValue(new Error("Test error")),
+    getTemplate: vi.fn().mockRejectedValue(new Error("Test error")),
   },
 };
 
-jest.mock("../../../../common/InvApiService", () => ({
-  query: () => ({}),
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+    query: () => ({}),
+  },
 }));
-jest.mock("../../../../stores/stores/RootStore", () => () => mockRootStore);
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => mockRootStore,
 
+}));
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const template = makeMockTemplate();
     mockRootStore.searchStore.getTemplate.mockImplementation(() =>
       Promise.resolve(template)
-    );
 
+    );
     const sample = makeMockSample({
       templateId: 1,
     });
-    // @ts-expect-error Mock implementation return type incompatibility
-    jest.spyOn(InvApiService, "query").mockImplementation(() =>
+    vi.spyOn(InvApiService, "query").mockImplementation(() =>
       Promise.resolve({
         data: {
           ...sampleAttrs(),
           templateId: 1,
         },
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {} as any,
       })
-    );
 
+    );
     let firstCallDone = false;
     void sample.fetchAdditionalInfo().then(() => {
       firstCallDone = true;
-    });
 
+    });
     await sample.fetchAdditionalInfo();
     /*
      * The second call should not have resolved until the first resolved and
@@ -66,12 +69,16 @@ describe("fetchAdditionalInfo", () => {
   });
   test("Calls made on a sample without a template should resolve.", async () => {
     const sample = makeMockSample();
-    // @ts-expect-error Mock implementation return type incompatibility
-    jest.spyOn(InvApiService, "query").mockImplementation(() =>
+    vi.spyOn(InvApiService, "query").mockImplementation(() =>
       Promise.resolve({
         data: sampleAttrs(),
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {} as any,
       })
     );
     await expect(sample.fetchAdditionalInfo()).resolves.toBeUndefined();
   });
 });
+

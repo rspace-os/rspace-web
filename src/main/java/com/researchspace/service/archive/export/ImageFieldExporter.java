@@ -21,7 +21,7 @@ public class ImageFieldExporter extends AbstractFieldExporter<EcatImage> {
       if (el.hasAttr("alt")) {
         String imageName = el.attr("alt");
         if (!imageName.isEmpty()) {
-          el.before("<p>" + imageName + ": </p>");
+          el.before("<br>" + imageName + ": </br>");
         }
       }
     }

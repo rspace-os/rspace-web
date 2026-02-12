@@ -63,14 +63,16 @@ public class RaIDControllerMCVIT extends MVCTestBase {
   private static final String SERVER_ALIAS_2 = "alias2";
   private static final String RAID_TITLE_1 = "Raid Title 1";
   private static final String RAID_TITLE_2 = "Raid Title 2";
-  private static final String IDENTIFIER_ASSOCIATED_1 =
-      "https://static.demo.raid.org.au/10.83334/c74980b1";
-  private static final String IDENTIFIER_ASSOCIATED_2 =
-      "https://static.demo.raid.org.au/10.83334/5b94e1cf";
+  private static final String IDENTIFIER_ASSOCIATED_1 = "https://raid.org/10.83334/c74980b1";
+  private static final String IDENTIFIER_ASSOCIATED_2 = "https://raid.org/10.83334/5b94e1cf";
+  private static final String URL_ASSOCIATED_1 =
+      "https://static.demo.raid.org.au/raid/10.83334/c74980b1";
+  private static final String URL_ASSOCIATED_2 =
+      "https://static.demo.raid.org.au/raid/10.83334/5b94e1cf";
   private static final RaIDReferenceDTO EXPECTED_RAID_ASSOCIATED_1 =
-      new RaIDReferenceDTO(SERVER_ALIAS_1, RAID_TITLE_1, IDENTIFIER_ASSOCIATED_1);
+      new RaIDReferenceDTO(SERVER_ALIAS_1, RAID_TITLE_1, IDENTIFIER_ASSOCIATED_1, URL_ASSOCIATED_1);
   private static final RaIDReferenceDTO RAID_ASSOCIATED_2 =
-      new RaIDReferenceDTO(SERVER_ALIAS_1, RAID_TITLE_2, IDENTIFIER_ASSOCIATED_2);
+      new RaIDReferenceDTO(SERVER_ALIAS_1, RAID_TITLE_2, IDENTIFIER_ASSOCIATED_2, URL_ASSOCIATED_2);
 
   @Autowired private RaIDController raidController;
 
@@ -117,7 +119,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
   }
 
   @Test
-  public void testGetRaidListByUser() throws Exception {
+  public void testGetAvailableRaidList() throws Exception {
     // GIVEN
     Map<String, RaIDServerConfigurationDTO> serverByAlias =
         Map.of(
@@ -137,7 +139,8 @@ public class RaIDControllerMCVIT extends MVCTestBase {
                         "/TestResources/raid/json/raid-test-1.json", Charset.defaultCharset()),
                     RaID.class)
                 .getIdentifier()
-                .getId());
+                .getId(),
+            URL_ASSOCIATED_1);
 
     MvcResult result =
         mockMvc
@@ -158,7 +161,10 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             .map(
                 r ->
                     new RaIDReferenceDTO(
-                        SERVER_ALIAS_1, r.getTitle().get(0).getText(), r.getIdentifier().getId()))
+                        SERVER_ALIAS_1,
+                        r.getTitle().get(0).getText(),
+                        r.getIdentifier().getId(),
+                        r.getIdentifier().getRaidAgencyUrl()))
             .collect(Collectors.toSet());
     when(mockedRaidClientAdapter.getRaIDList(piUser.getUsername(), SERVER_ALIAS_1))
         .thenReturn(configuredRaidList1);
@@ -172,7 +178,10 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             .map(
                 r ->
                     new RaIDReferenceDTO(
-                        SERVER_ALIAS_2, r.getTitle().get(0).getText(), r.getIdentifier().getId()))
+                        SERVER_ALIAS_2,
+                        r.getTitle().get(0).getText(),
+                        r.getIdentifier().getId(),
+                        r.getIdentifier().getRaidAgencyUrl()))
             .collect(Collectors.toSet());
     when(mockedRaidClientAdapter.getRaIDList(piUser.getUsername(), SERVER_ALIAS_2))
         .thenReturn(configuredRaidList2);
@@ -185,7 +194,11 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             piUser.getUsername(), RAID_APP_NAME, SERVER_ALIAS_2))
         .thenReturn(Optional.empty());
 
-    // WHEN
+    // WHEN another user
+    User anotherPiUser = createAndSaveUser("anotherPi" + getRandomName(10), Constants.PI_ROLE);
+    initUser(anotherPiUser);
+    logoutAndLoginAs(anotherPiUser);
+
     result =
         mockMvc
             .perform(get("/apps/raid").principal(piUser::getUsername))
@@ -315,9 +328,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             projectGroupCreationWithoutRaid.getGroupName(),
             new RaIDReferenceDTO(
                 EXPECTED_RAID_ASSOCIATED_1.getRaidServerAlias(),
-                EXPECTED_RAID_ASSOCIATED_1.getRaidTitle(),
                 EXPECTED_RAID_ASSOCIATED_1.getRaidIdentifier()));
-    raidToGroupAssociation.getRaid().setRaidTitle(null);
 
     result =
         mockMvc
@@ -336,7 +347,11 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     UserRaid expectedCreatedUserRaid =
         raidServiceManager.getUserRaid(actualProjectGroup.getRaid().getId());
     assertEquals(expectedCreatedUserRaid, actualProjectGroup.getRaid());
+
+    // verify it is decorated
     assertEquals(EXPECTED_RAID_ASSOCIATED_1.getRaidTitle(), expectedCreatedUserRaid.getRaidTitle());
+    assertEquals(
+        EXPECTED_RAID_ASSOCIATED_1.getRaidAgencyUrl(), expectedCreatedUserRaid.getRaidAgencyUrl());
   }
 
   @Test
@@ -383,7 +398,8 @@ public class RaIDControllerMCVIT extends MVCTestBase {
 
     // THEN
     assertTrue(
-        extractErrorMessage(result).contains(
+        extractErrorMessage(result)
+            .contains(
                 "Not able to associate RaID to group: "
                     + "The RaID \""
                     + IDENTIFIER_ASSOCIATED_2
@@ -438,7 +454,10 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             .map(
                 el ->
                     new RaIDReferenceDTO(
-                        el.get("raidServerAlias"), el.get("raidTitle"), el.get("raidIdentifier")))
+                        el.get("raidServerAlias"),
+                        el.get("raidTitle"),
+                        el.get("raidIdentifier"),
+                        el.get("raidAgencyUrl")))
             .collect(Collectors.toSet());
   }
 
@@ -463,7 +482,8 @@ public class RaIDControllerMCVIT extends MVCTestBase {
         new RaIDReferenceDTO(
             groupAssociation.get("raid").get("raidServerAlias"),
             groupAssociation.get("raid").get("raidTitle"),
-            groupAssociation.get("raid").get("raidIdentifier")));
+            groupAssociation.get("raid").get("raidIdentifier"),
+            groupAssociation.get("raid").get("raidAgencyUrl")));
   }
 
   @NotNull

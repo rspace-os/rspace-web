@@ -130,7 +130,7 @@ export default function useLinkedDocuments(file: GalleryFile): {
 
   React.useEffect(() => {
     void getLinkedDocuments();
-     
+
   }, [file]);
 
   return {

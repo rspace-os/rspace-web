@@ -63,7 +63,7 @@ public interface RecordGroupSharingDao extends GenericDao<RecordGroupSharing, Lo
   /**
    * Gets all records shared by a user, from all groups to which he belongs.
    *
-   * @param user
+   * @param u
    * @return
    */
   List<RecordGroupSharing> getSharedRecordsForUser(User u);
@@ -170,6 +170,9 @@ public interface RecordGroupSharingDao extends GenericDao<RecordGroupSharing, Lo
    * @return an possibly empty but non-null list
    */
   List<RecordGroupSharing> getRecordGroupSharingsForRecord(Long recordId);
+
+  /** Returns information about how the list of records was shared. */
+  List<RecordGroupSharing> getRecordGroupSharingsForRecordIds(List<Long> recordAndNotebookIds);
 
   /**
    * Gets a recordgroupsharing object based on sharer and sharee

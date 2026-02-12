@@ -1,16 +1,11 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
- 
+
+import { test, describe, expect, afterEach, vi } from "vitest";
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render } from "@testing-library/react";
 import AttachmentField from "../AttachmentField";
 import TextField from "@mui/material/TextField";
 import FileField from "../../../../../components/Inputs/FileField";
 import { ExistingAttachment } from "../../../../../stores/models/AttachmentModel";
-import each from "jest-each";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import { containerAttrs } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
@@ -18,34 +13,38 @@ import ContainerModel from "../../../../../stores/models/ContainerModel";
 import MemoisedFactory from "../../../../../stores/models/Factory/MemoisedFactory";
 import type { Attachment } from "../../../../../stores/definitions/Attachment";
 
-jest.mock("@mui/material/TextField", () => jest.fn(() => <div></div>));
-jest.mock("../../../../../components/Inputs/FileField", () =>
-  jest.fn(() => <div></div>),
-);
-jest.mock("../../../../../components/Ketcher/KetcherDialog", () =>
-  jest.fn(() => <div></div>),
-);
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+import { DeploymentPropertyContext } from "../../../../../hooks/api/useDeploymentProperty";
+vi.mock("@mui/material/TextField", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../../../../../components/Inputs/FileField", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../../../../../components/Ketcher/KetcherDialog", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+const renderWithDeploymentProperties = (ui: React.ReactElement) =>
+  render(
+    <DeploymentPropertyContext.Provider
+      value={new Map([["chemistry.provider", ""]])}
+    >
+      {ui}
+    </DeploymentPropertyContext.Provider>,
+  );
 const expectLabel = (text: string) => (container: HTMLElement) =>
-  expect(container).toHaveTextContent(text);
 
+  expect(container).toHaveTextContent(text);
 const expectTextField = (value: string) => () =>
   expect(TextField).toHaveBeenCalledWith(
     expect.objectContaining({ value }),
     expect.anything(),
-  );
 
+  );
 const activeResult = new ContainerModel(new MemoisedFactory(), {
   ...containerAttrs(),
   cType: "LIST",
-});
 
+});
 const makeAttachment = (attrs?: { name: string }) =>
   new ExistingAttachment(
     {
@@ -59,11 +58,14 @@ const makeAttachment = (attrs?: { name: string }) =>
     },
     "",
     () => {},
-  );
 
+  );
 describe("AttachmentField", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
   describe("Description field", () => {
-    each`
+    test.each`
       disabled     | value    | noValueLabel | expectFn
       ${true}      | ${""}    | ${undefined} | ${expectLabel("No description")}
       ${true}      | ${""}    | ${"foo"}     | ${expectLabel("foo")}
@@ -77,7 +79,7 @@ describe("AttachmentField", () => {
       ${undefined} | ${""}    | ${"foo"}     | ${expectTextField("")}
       ${undefined} | ${"bar"} | ${undefined} | ${expectTextField("bar")}
       ${undefined} | ${"bar"} | ${"foo"}     | ${expectTextField("bar")}
-    `.test(
+    `(
       '$# {disabled = $disabled, value = "$value", noValueLabel = $noValueLabel}',
       ({
         disabled,
@@ -90,7 +92,7 @@ describe("AttachmentField", () => {
         noValueLabel: undefined | string;
         expectFn: (container: HTMLElement) => void;
       }) => {
-        const { container } = render(
+        const { container } = renderWithDeploymentProperties(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
               attachment={null}
@@ -110,7 +112,7 @@ describe("AttachmentField", () => {
   describe("Help text", () => {
     describe('value = ""', () => {
       test("Help text is shown.", () => {
-        const { container } = render(
+        const { container } = renderWithDeploymentProperties(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
               attachment={null}
@@ -128,7 +130,7 @@ describe("AttachmentField", () => {
     });
     describe('value = "foo"', () => {
       test("Help text is not shown.", () => {
-        const { container } = render(
+        const { container } = renderWithDeploymentProperties(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
               attachment={null}
@@ -146,7 +148,7 @@ describe("AttachmentField", () => {
     });
   });
   describe("File Selector", () => {
-    each`
+    describe.each`
       disableFileUpload | attachment          | showFileField | showNoAttachmentLabel
       ${true}           | ${null}             | ${false}      | ${false}
       ${true}           | ${makeAttachment()} | ${false}      | ${false}
@@ -154,7 +156,7 @@ describe("AttachmentField", () => {
       ${false}          | ${makeAttachment()} | ${true}       | ${false}
       ${undefined}      | ${null}             | ${true}       | ${true}
       ${undefined}      | ${makeAttachment()} | ${true}       | ${false}
-    `.describe(
+    `(
       "$# {disableFileUpload = $disableFileUpload, attachment }",
       ({
         disableFileUpload,
@@ -169,7 +171,7 @@ describe("AttachmentField", () => {
       }) => {
         let textContent: string | null;
         function renderAttachmentField(): void {
-          const { container } = render(
+          const { container } = renderWithDeploymentProperties(
             <ThemeProvider theme={materialTheme}>
               <AttachmentField
                 attachment={attachment}
@@ -209,7 +211,7 @@ describe("AttachmentField", () => {
   describe("File viewer", () => {
     describe("attachment = ExistingAttachment", () => {
       test("Attachment's filename should be shown.", () => {
-        const { container } = render(
+        const { container } = renderWithDeploymentProperties(
           <ThemeProvider theme={materialTheme}>
             <AttachmentField
               attachment={makeAttachment({ name: "image.png" })}

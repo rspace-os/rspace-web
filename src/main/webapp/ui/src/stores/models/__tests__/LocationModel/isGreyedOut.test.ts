@@ -1,12 +1,7 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import LocationModel from "../../LocationModel";
-import { makeMockContainer } from "../ContainerModel/mocking";
-import each from "jest-each";
 
+import { makeMockContainer } from "../ContainerModel/mocking";
 describe("method: isGreyedOut", () => {
   /*
    * This test asserts every permutation of state that could affect what the
@@ -26,7 +21,7 @@ describe("method: isGreyedOut", () => {
    *    such, this only has a value when both performingSearch and hasContent
    *    are true.
    */
-  each`
+  test.each`
     alwaysFilterOut | performingSearch | hasContent | inSearchResults | isGreyedOut
     ${false}        | ${false}         | ${false}   | ${null}         | ${false}
     ${false}        | ${false}         | ${true}    | ${null}         | ${false}
@@ -38,7 +33,7 @@ describe("method: isGreyedOut", () => {
     ${true}         | ${true}          | ${false}   | ${null}         | ${true}
     ${true}         | ${true}          | ${true}    | ${false}        | ${true}
     ${true}         | ${true}          | ${true}    | ${true}         | ${true}
-  `.test(
+  `(
     "{" +
       "alwaysFilterOut = $alwaysFilterOut," +
       "performingSearch = $performingSearch," +
@@ -73,11 +68,12 @@ describe("method: isGreyedOut", () => {
         coordY: 1,
         content,
         parentContainer,
-      });
 
+      });
       expect(location.isGreyedOut(parentContainer.contentSearch)).toBe(
         isGreyedOut
       );
     }
   );
 });
+

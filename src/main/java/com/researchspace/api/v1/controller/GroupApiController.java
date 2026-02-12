@@ -2,18 +2,14 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.GroupApi;
 import com.researchspace.api.v1.model.ApiGroupInfo;
-import com.researchspace.api.v1.model.IdentifiableNameableApiObject;
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.GroupSearchCriteria;
 import com.researchspace.service.GroupManager;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,10 +25,7 @@ public class GroupApiController extends BaseApiController implements GroupApi {
   /** Gets groups for API client ordered by display name */
   @Override
   public List<ApiGroupInfo> listCurrentUserGroups(@RequestAttribute(name = "user") User user) {
-    return user.getGroups().stream()
-        .map(ApiGroupInfo::new)
-        .sorted(Comparator.comparing(IdentifiableNameableApiObject::getName))
-        .collect(Collectors.toList());
+    return groupManager.getGroupInfoListByUser(user);
   }
 
   @Override
@@ -50,11 +43,7 @@ public class GroupApiController extends BaseApiController implements GroupApi {
     PaginationCriteria<Group> pgCrit = new PaginationCriteria<>();
     pgCrit.setSearchCriteria(searchCriteria);
     pgCrit.setGetAllResults();
-    ISearchResults<Group> groupSearchResult = groupManager.list(user, pgCrit);
-
-    return groupSearchResult.getResults().stream()
-        .map(ApiGroupInfo::new)
-        .collect(Collectors.toList());
+    return groupManager.getGroupInfoListByQuery(user, pgCrit);
   }
 
   @Override

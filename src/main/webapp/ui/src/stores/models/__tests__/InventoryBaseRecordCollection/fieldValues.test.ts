@@ -1,15 +1,13 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { describe, expect, test, vi } from 'vitest';
 import InventoryBaseRecordCollection from "../../InventoryBaseRecordCollection";
 import { PersistedBarcode } from "../../Barcode";
 import { makeMockContainer } from "../ContainerModel/mocking";
 import RsSet from "../../../../util/set";
 
-jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
-
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({})
+}));
 describe("Computed: fieldValues", () => {
   describe("Should support batch editing of barcodes.", () => {
     test("Should return any shared new barcodes.", () => {
@@ -22,25 +20,25 @@ describe("Computed: fieldValues", () => {
           id: 2,
           globalId: "IC2",
         }),
+
       ]);
 
       const collection = new InventoryBaseRecordCollection(containers);
-
       const barcode = new PersistedBarcode({
         data: "foo",
         newBarcodeRequest: true,
         description: "bar",
-      });
 
+      });
       containers.forEach((container) => {
         container.setFieldsDirty({
           barcodes: [barcode],
         });
+
       });
-
       expect(collection.fieldValues.barcodes).toEqual([barcode]);
-    });
 
+    });
     test("Should not return any shared existing barcodes.", () => {
       const containers = new RsSet([
         makeMockContainer({
@@ -71,11 +69,12 @@ describe("Computed: fieldValues", () => {
             },
           ],
         }),
+
       ]);
 
       const collection = new InventoryBaseRecordCollection(containers);
-
       expect(collection.fieldValues.barcodes).toEqual([]);
     });
   });
 });
+

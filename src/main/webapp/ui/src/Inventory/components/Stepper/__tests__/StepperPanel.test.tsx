@@ -1,10 +1,7 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import React, { useState } from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { test, describe, expect, vi } from 'vitest';
+import React,
+  { useState } from "react";
+import { render, screen } from "@testing-library/react";
 import StepperPanel from "../StepperPanel";
 import "../../../../../__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
@@ -13,15 +10,10 @@ import SynchroniseFormSections from "../SynchroniseFormSections";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import userEvent from "@testing-library/user-event";
 
-jest.mock("../../../../common/InvApiService", () => {});
-jest.mock("../../../../stores/stores/RootStore", () => () => ({}));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({})
+}));
 describe("StepperPanel", () => {
   describe("Renders correctly", () => {
     test("When expanded", () => {
@@ -60,12 +52,12 @@ describe("StepperPanel", () => {
       );
       expect(screen.getByTestId("content")).not.toBeVisible();
     });
-  });
 
+  });
   describe("Expands and collapses properly", () => {
     test("Expand button works correctly", async () => {
       const user = userEvent.setup();
-      const setExpanded = jest.fn();
+      const setExpanded = vi.fn();
       render(
         <ThemeProvider theme={materialTheme}>
           <FormSectionsContext.Provider
@@ -80,14 +72,14 @@ describe("StepperPanel", () => {
             </StepperPanel>
           </FormSectionsContext.Provider>
         </ThemeProvider>
-      );
 
+      );
       await user.click(screen.getByLabelText("Expand section"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", true);
     });
     test("Collapse button works correctly", async () => {
       const user = userEvent.setup();
-      const setExpanded = jest.fn();
+      const setExpanded = vi.fn();
       render(
         <ThemeProvider theme={materialTheme}>
           <FormSectionsContext.Provider
@@ -102,13 +94,13 @@ describe("StepperPanel", () => {
             </StepperPanel>
           </FormSectionsContext.Provider>
         </ThemeProvider>
-      );
 
+      );
       await user.click(screen.getByLabelText("Collapse section"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", false);
     });
-  });
 
+  });
   describe("Expand/Collapse all appears after performing the operation once", () => {
     function TestComponent({
       setAllExpanded,
@@ -135,30 +127,30 @@ describe("StepperPanel", () => {
           </FormSectionsContext.Provider>
         </ThemeProvider>
       );
-    }
 
+    }
     test("Collapse all", async () => {
       const user = userEvent.setup();
-      const setAllExpanded = jest.fn();
-      render(<TestComponent setAllExpanded={setAllExpanded} openInit={true} />);
+      const setAllExpanded = vi.fn();
 
+      render(<TestComponent setAllExpanded={setAllExpanded} openInit={true} />);
       await user.click(screen.getByLabelText("Collapse section"));
       await user.click(screen.getByRole("button", { name: "Collapse All" }));
       expect(setAllExpanded).toHaveBeenCalledWith("container", false);
     });
     test("Expand all", async () => {
       const user = userEvent.setup();
-      const setAllExpanded = jest.fn();
+      const setAllExpanded = vi.fn();
       render(
         <TestComponent setAllExpanded={setAllExpanded} openInit={false} />
-      );
 
+      );
       await user.click(screen.getByLabelText("Expand section"));
       await user.click(screen.getByRole("button", { name: "Expand All" }));
       expect(setAllExpanded).toHaveBeenCalledWith("container", true);
     });
-  });
 
+  });
   describe("Accessibility", () => {
     test("Has role region", () => {
       render(
@@ -174,3 +166,4 @@ describe("StepperPanel", () => {
     });
   });
 });
+

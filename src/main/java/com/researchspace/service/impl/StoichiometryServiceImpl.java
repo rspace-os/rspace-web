@@ -169,6 +169,13 @@ public class StoichiometryServiceImpl implements StoichiometryService {
     throw new NotFoundException("Couldn't retrieve molecule info for provided structure");
   }
 
+  @Override
+  public Stoichiometry createNewFromDataWithoutInventoryLinks(
+      StoichiometryDTO stoichiometryDTO, RSChemElement chemElement, User user) {
+    return stoichiometryManager.createNewFromDataWithoutInventoryLinks(
+        stoichiometryDTO, chemElement, user);
+  }
+
   private static boolean analysisExists(Optional<ElementalAnalysisDTO> analysis) {
     return analysis.isPresent()
         && analysis.get().getMoleculeInfo() != null

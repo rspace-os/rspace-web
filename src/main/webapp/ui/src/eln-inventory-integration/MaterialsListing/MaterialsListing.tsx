@@ -218,7 +218,7 @@ const MaterialsListing = observer(
 
     useEffect(() => {
       materialsStore.canEdit = canEdit;
-       
+
     }, [canEdit]);
 
     useEffect(() => {
@@ -226,13 +226,13 @@ const MaterialsListing = observer(
         .setup()
         .then(() => setLoading(false))
         .catch((e) => console.error(e));
-       
+
     }, []);
 
     useEffect(() => {
       if (!loading)
         void materialsStore.getFieldMaterialsListings(parseInt(elnFieldId, 10));
-       
+
     }, [loading]);
 
     return !loading ? (

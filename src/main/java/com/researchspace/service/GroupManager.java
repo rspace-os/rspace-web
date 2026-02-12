@@ -36,6 +36,12 @@ public interface GroupManager {
   /** Get a ApiGroupInfo by its id */
   Optional<ApiGroupInfo> getGroupInfoById(Long groupId);
 
+  /** Get a list of ApiGroupInfo where the user belongs */
+  List<ApiGroupInfo> getGroupInfoListByUser(User subject);
+
+  /** Get a list of ApiGroupInfo returned by the query (pagCrit) */
+  List<ApiGroupInfo> getGroupInfoListByQuery(User subject, PaginationCriteria<Group> pagCrit);
+
   /** Gets all the Groups */
   List<Group> list();
 
@@ -261,4 +267,6 @@ public interface GroupManager {
   Folder createAutoshareFolder(User user, Group group, String folderName);
 
   Group getGroupByCommunalGroupFolderId(Long communalGroupFolderId);
+
+  boolean isRecordPartOfGroup(User user, Long recordId, Long projectId);
 }

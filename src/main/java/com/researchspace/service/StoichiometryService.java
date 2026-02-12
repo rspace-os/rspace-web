@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
@@ -20,4 +21,7 @@ public interface StoichiometryService {
   void delete(long stoichiometryId, User user);
 
   StoichiometryMolecule getMoleculeInfo(String smiles);
+
+  Stoichiometry createNewFromDataWithoutInventoryLinks(
+      StoichiometryDTO stoichiometryDTO, RSChemElement chemElement, User user);
 }

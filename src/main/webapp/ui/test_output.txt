@@ -1,0 +1,500 @@
+npm verbose cli /Users/tyteen4a03/Library/Application Support/fnm/node-versions/v24.11.1/installation/bin/node /Users/tyteen4a03/.local/state/fnm_multishells/15914_1769897109041/bin/npm
+npm info using npm@11.6.2
+npm info using node@v24.11.1
+npm verbose title npm run test
+npm verbose argv "run" "test"
+npm verbose logfile logs-max:10 dir:/Users/tyteen4a03/.npm/_logs/2026-01-31T22_34_05_836Z-
+npm verbose logfile /Users/tyteen4a03/.npm/_logs/2026-01-31T22_34_05_836Z-debug-0.log
+
+> ui@1.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui[39m
+
+ [32m✓[39m src/eln/sysadmin/users/__tests__/GrantUserPiRole.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 2867[2mms[22m[39m
+     [33m[2m✓[22m[39m When `checkVerificationPasswordNeeded` returns true, a message should be shown. [33m 1681[2mms[22m[39m
+     [33m[2m✓[22m[39m When `checkVerificationPasswordNeeded` returns false, a message should not be shown. [33m 1185[2mms[22m[39m
+ [32m✓[39m src/Inventory/Sample/Fields/__tests__/Quantity.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 4777[2mms[22m[39m
+       [33m[2m✓[22m[39m When there is only one subsample being created, "per subsample" should not be shown. [33m 1320[2mms[22m[39m
+       [33m[2m✓[22m[39m When there are multiple subsamples being created, "per subsample" should be shown. [33m 1282[2mms[22m[39m
+       [33m[2m✓[22m[39m Whole units of quantity should have zero decimal places. [33m 1037[2mms[22m[39m
+       [33m[2m✓[22m[39m Fractional units of quantity should have zero or two decimal places. [33m 1136[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/ContextMenu/__tests__/CreateDialog.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[33m 3202[2mms[22m[39m
+       [33m[2m✓[22m[39m Subsamples [33m 475[2mms[22m[39m
+       [33m[2m✓[22m[39m No fields [33m 349[2mms[22m[39m
+       [33m[2m✓[22m[39m Success case [33m 357[2mms[22m[39m
+       [33m[2m✓[22m[39m Clearing the quantity field disables the submit button [33m 321[2mms[22m[39m
+ [32m✓[39m src/eln/sysadmin/users/__tests__/csvExport.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 3493[2mms[22m[39m
+       [33m[2m✓[22m[39m When no rows are selected, every row of the current page should be included in the export. [33m 993[2mms[22m[39m
+       [33m[2m✓[22m[39m When one rows is selected, just it should be included in the csv export. [33m 778[2mms[22m[39m
+       [33m[2m✓[22m[39m All of the columns should be included in the CSV file. [33m 1185[2mms[22m[39m
+       [33m[2m✓[22m[39m The usage column should be a precise number. [33m 536[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Fields/__tests__/Name.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 4898[2mms[22m[39m
+     [33m[2m✓[22m[39m Should enter an error state when value is only a single character. [33m 885[2mms[22m[39m
+     [33m[2m✓[22m[39m Should not enter an error state when value is longer than 1 character but shorter than 256. [33m 994[2mms[22m[39m
+     [33m[2m✓[22m[39m Should enter an error state when value is longer than 255 characters. [33m 738[2mms[22m[39m
+     [33m[2m✓[22m[39m Entering fewer than 2 characters, after having entered something valid, should error. [33m 1180[2mms[22m[39m
+     [33m[2m✓[22m[39m When the entered text is of a valid length, there should be character count shown. [33m 699[2mms[22m[39m
+ [32m✓[39m src/Export/__tests__/ExportDialog.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[33m 4188[2mms[22m[39m
+         [33m[2m✓[22m[39m but without being logged in should show a warning. [33m 652[2mms[22m[39m
+         [33m[2m✓[22m[39m but without scanning should show a warning. [33m 398[2mms[22m[39m
+       [33m[2m✓[22m[39m Tags should be pre-populated from the tags on the documents [33m 595[2mms[22m[39m
+       [33m[2m✓[22m[39m allVersions is set by the version switch. [33m 332[2mms[22m[39m
+         [33m[2m✓[22m[39m DOC export: pageSize = LETTER [33m 307[2mms[22m[39m
+ [32m✓[39m src/Inventory/__tests__/formSectionOrder.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 3130[2mms[22m[39m
+     [33m[2m✓[22m[39m Across all of the forms, all of the sections should be in a consistent order. [33m 3129[2mms[22m[39m
+[90mstderr[2m | src/components/__tests__/ImageEditingDialog.test.tsx[2m > [22m[2mImageEditingDialog[2m > [22m[2mShould have no axe violations.
+[22m[39mWarning: An update to TransitionGroup inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at TransitionGroup (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-transition-group/cjs/TransitionGroup.js:57:30)
+    at span
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at TouchRipple (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/ButtonBase/TouchRipple.js:139:59)
+    at button
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at ButtonBase (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/ButtonBase/ButtonBase.js:94:59)
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at IconButton (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/IconButton/IconButton.js:113:59)
+    at div
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at ButtonGroup (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/ButtonGroup/ButtonGroup.js:149:59)
+    at div
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at DialogActions (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/DialogActions/DialogActions.js:55:59)
+    at div
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at Paper (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/Paper/Paper.js:70:59)
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at div
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/src/components/ImageEditingDialog.tsx:52:10
+    at FocusTrap (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/Unstable_TrapFocus/FocusTrap.js:86:5)
+    at div
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at Portal (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/Portal/Portal.js:34:5)
+    at Modal (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/Modal/Modal.js:88:59)
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at Dialog (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/Dialog/Dialog.js:161:59)
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at ImageEditingDialog (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/mobx-react-lite/dist/mobxreactlite.cjs.development.js:247:12)
+
+ [32m✓[39m src/components/__tests__/ImageEditingDialog.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 2406[2mms[22m[39m
+     [33m[2m✓[22m[39m Should have no axe violations. [33m 1241[2mms[22m[39m
+     [33m[2m✓[22m[39m Rotating four times in either direction is a no-op. [33m 906[2mms[22m[39m
+ [32m✓[39m src/Inventory/Container/Fields/Organization/__tests__/GridDimensions.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 2099[2mms[22m[39m
+     [33m[2m✓[22m[39m Each of the standard dimension menu options sets the rows and columns to a valid number. [33m 785[2mms[22m[39m
+     [33m[2m✓[22m[39m The multiplication of the rows and columns should equal the size quoted in the menu item. [33m 655[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Stepper/__tests__/StepperPanelHeader.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 2479[2mms[22m[39m
+     [33m[2m✓[22m[39m When useFormSectionError is passed a unique list of strings, the badge should show a number equal to the list's length. [33m 747[2mms[22m[39m
+     [33m[2m✓[22m[39m When useFormSectionError is passed a list of strings, the badge should show a number equal to or less than the list's length. [33m 380[2mms[22m[39m
+     [33m[2m✓[22m[39m Errors can be unset, decrementing the badge. [33m 1048[2mms[22m[39m
+ [32m✓[39m src/eln/apps/integrations/__tests__/Dataverse.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 2533[2mms[22m[39m
+       [33m[2m✓[22m[39m Should have no axe violations. [33m 313[2mms[22m[39m
+       [33m[2m✓[22m[39m Saving a new config should not discard changes to an existing one. [33m 501[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ContainerModel/siblingGroups.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1692[2mms[22m[39m
+     [33m[2m✓[22m[39m Container with `n` subsamples, each from the same sample, should have one siblingGroup. [33m 956[2mms[22m[39m
+     [33m[2m✓[22m[39m Container with `n` subsamples, each from a different sample, should have `n` siblingGroups. [33m 680[2mms[22m[39m
+ [32m✓[39m src/Inventory/Container/Content/__tests__/ContentContextMenu.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 2380[2mms[22m[39m
+     [33m[2m✓[22m[39m When all locations are selected, the badge on the select all button should show the number of locations. [33m 2311[2mms[22m[39m
+ [32m✓[39m src/tinyMCE/galaxy/__tests__/Galaxy.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 2263[2mms[22m[39m
+       [33m[2m✓[22m[39m renders radio button server choice with eu as default  [33m 384[2mms[22m[39m
+       [33m[2m✓[22m[39m posts no-data selected while uploading [33m 323[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Fields/__tests__/BatchName.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 12126[2mms[22m[39m
+     [33m[2m✓[22m[39m Should enter an error state when value is only a single character and the suffix is NONE. [33m 1676[2mms[22m[39m
+     [33m[2m✓[22m[39m Should not enter an error state when value is only a single character and the suffix is not NONE. [33m 1384[2mms[22m[39m
+       [33m[2m✓[22m[39m When the suffix is "NONE". [33m 1383[2mms[22m[39m
+       [33m[2m✓[22m[39m When the suffix is "INDEX_NUMBER". [33m 1361[2mms[22m[39m
+       [33m[2m✓[22m[39m When the suffix is "INDEX_LETTER". [33m 1248[2mms[22m[39m
+       [33m[2m✓[22m[39m When the suffix is "CREATED". [33m 1034[2mms[22m[39m
+     [33m[2m✓[22m[39m Entering fewer than 2 characters, after having entered something valid, should error. [33m 1945[2mms[22m[39m
+     [33m[2m✓[22m[39m Should enter an error state when value is just whitespace. [33m 336[2mms[22m[39m
+     [33m[2m✓[22m[39m When the entered text is of a valid length, there should be character count shown. [33m 1707[2mms[22m[39m
+ [32m✓[39m src/eln/apps/integrations/__tests__/GitHub.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 883[2mms[22m[39m
+       [33m[2m✓[22m[39m Should have no axe violations. [33m 347[2mms[22m[39m
+ [32m✓[39m src/eln/apps/integrations/__tests__/Zenodo.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 994[2mms[22m[39m
+     [33m[2m✓[22m[39m should open, set API key, enable, and close dialog in sequence [33m 304[2mms[22m[39m
+ [32m✓[39m src/__tests__/__tests__/assertConsistentOrderOfLists.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 928[2mms[22m[39m
+     [33m[2m✓[22m[39m Mutually exclusive lists should always be true. [33m 910[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Fields/__tests__/Description.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 853[2mms[22m[39m
+     [33m[2m✓[22m[39m Should not enter an error state when value is shorter than 251. [33m 371[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/BarcodeScanner/__tests__/AllBarcodeScanner.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 1896[2mms[22m[39m
+     [33m[2m✓[22m[39m Should scan correctly. [33m 1891[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/ContextMenu/__tests__/SelectAction.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 3001[2mms[22m[39m
+       [33m[2m✓[22m[39m display the count of selected records. [33m 3000[2mms[22m[39m
+ [32m✓[39m src/Export/__tests__/FormatChoice.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 1941[2mms[22m[39m
+       [33m[2m✓[22m[39m When the repo/uiConfig endpoint returns an empty list, the switch should be disabled. [33m 1285[2mms[22m[39m
+ [32m✓[39m src/eln/apps/integrations/__tests__/Slack.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 3022[2mms[22m[39m
+       [33m[2m✓[22m[39m Should have no axe violations. [33m 625[2mms[22m[39m
+     [33m[2m✓[22m[39m When the add flow is triggered, the channel details should be shown. [33m 387[2mms[22m[39m
+     [33m[2m✓[22m[39m When the add flow is triggered, there should be a cancel button. [33m 1346[2mms[22m[39m
+     [33m[2m✓[22m[39m Channel label should be changeable. [33m 304[2mms[22m[39m
+ [32m✓[39m src/eln/apps/integrations/RaID/__tests__/RaIDIntegrationCard.unit.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[33m 3204[2mms[22m[39m
+       [33m[2m✓[22m[39m Should have no axe violations once dialog opened. [33m 728[2mms[22m[39m
+       [33m[2m✓[22m[39m Shows placeholder text when there are no authenticated servers. [33m 459[2mms[22m[39m
+       [33m[2m✓[22m[39m Renders server alias and URL link. [33m 780[2mms[22m[39m
+       [33m[2m✓[22m[39m Marks server authenticated and shows alert when RAID_CONNECTED message received. [33m 395[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/ContextMenu/__tests__/ContextMenuButton.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 564[2mms[22m[39m
+       [33m[2m✓[22m[39m When disabled, should render aria-disabled. [33m 563[2mms[22m[39m
+ [32m✓[39m src/Inventory/Sample/Fields/Template/__tests__/Template.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 920[2mms[22m[39m
+       [33m[2m✓[22m[39m all of the template's fields should be copied to the sample. [33m 819[2mms[22m[39m
+ [32m✓[39m src/eln/sysadmin/users/__tests__/table.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 1053[2mms[22m[39m
+     [33m[2m✓[22m[39m Usage should be shown in human-readable format [33m 1052[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/isUrl.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 646[2mms[22m[39m
+     [33m[2m✓[22m[39m When passed any url, isUrl should return true. [33m 645[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/BatchEditing/__tests__/BatchEditingItemsTable.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 736[2mms[22m[39m
+     [33m[2m✓[22m[39m Table body should have as many rows as records that are passed. [33m 735[2mms[22m[39m
+ [32m✓[39m src/tinyMCE/jove/__tests__/Jove.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 365[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/MoreInfoSidebar/__tests__/MoreInfoLinkedDocuments.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 534[2mms[22m[39m
+ [32m✓[39m src/common/__tests__/integrationHelpers.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 448[2mms[22m[39m
+ [32m✓[39m src/eln/eln-external-workflows/__tests__/ExternalWorkFlowsDialog.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 339[2mms[22m[39m
+ [32m✓[39m src/eln/apps/__tests__/App.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 344[2mms[22m[39m
+       [33m[2m✓[22m[39m Should have no axe violations. [33m 301[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/ContextMenu/__tests__/ContextMenuAction.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 687[2mms[22m[39m
+       [33m[2m✓[22m[39m When disabled, should render aria-disabled. [33m 624[2mms[22m[39m
+ [32m✓[39m src/eln-dmp-integration/DMPTool/__tests__/DMPDialog.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 864[2mms[22m[39m
+     [33m[2m✓[22m[39m Label is shown when no DMPs are returned. [33m 439[2mms[22m[39m
+     [33m[2m✓[22m[39m The latest request is always the one that's shown. [33m 419[2mms[22m[39m
+ [32m✓[39m src/eln/apps/integrations/__tests__/MSTeams.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 498[2mms[22m[39m
+ [32m✓[39m src/eln/apps/integrations/__tests__/Omero.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 296[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/TemplateModel/validate.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 386[2mms[22m[39m
+ [32m✓[39m src/eln/apps/integrations/__tests__/Figshare.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 223[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/TemplateModel/moveField.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 340[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Picker/__tests__/TemplatePicker.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 427[2mms[22m[39m
+       [33m[2m✓[22m[39m Tapping a saved search should change the templates listed [33m 426[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Inputs/__tests__/PeopleField.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 140[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Stepper/__tests__/StepperPanel.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 288[2mms[22m[39m
+ [32m✓[39m src/Export/repositories/__tests__/ZenodoRepo.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 251[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Print/__tests__/PrintDialog.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 279[2mms[22m[39m
+ [32m✓[39m src/components/Inputs/__tests__/InputWrapper.test.tsx [2m([22m[2m108 tests[22m[2m)[22m[32m 124[2mms[22m[39m
+ [32m✓[39m src/system-ror/__tests__/RoRIntegration.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 262[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Result/recordLinkLabel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 101[2mms[22m[39m
+ [32m✓[39m src/tinyMCE/clustermarket/__tests__/Clustermarket.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[33m 318[2mms[22m[39m
+ [32m✓[39m src/Inventory/Template/Fields/__tests__/CustomField.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 407[2mms[22m[39m
+       [33m[2m✓[22m[39m Keep field in existing samples [33m 311[2mms[22m[39m
+ [32m✓[39m src/Inventory/Template/Fields/__tests__/Alias.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 227[2mms[22m[39m
+ [32m✓[39m src/eln/gallery/__tests__/useGalleryActions.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 332[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Settings/__tests__/DataciteCard.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 269[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Fields/Barcodes/__tests__/FieldCard.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 206[2mms[22m[39m
+ [32m✓[39m src/Export/__tests__/ExportRepo.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 428[2mms[22m[39m
+     [33m[2m✓[22m[39m If chosen repository is Zenodo and more than 1 DMP is selected then a warning should be shown. [33m 355[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/disjunctiveUnion.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 470[2mms[22m[39m
+     [33m[2m✓[22m[39m if B is a subset of A, then the disjunctive union of A and B will be the same as A subtract B [33m 347[2mms[22m[39m
+ [32m✓[39m src/eln/apps/integrations/__tests__/ProtocolsIO.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 268[2mms[22m[39m
+ [32m✓[39m src/eln-inventory-integration/MaterialsListing/__tests__/MaterialsTable.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 169[2mms[22m[39m
+ [32m✓[39m src/Export/__tests__/ExportFileStore.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 259[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/__tests__/DeleteButton.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 115[2mms[22m[39m
+ [32m✓[39m src/Inventory/Container/Fields/Organization/__tests__/GridLayoutConfig.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 192[2mms[22m[39m
+ [32m✓[39m src/Inventory/Search/__tests__/ResultsTable.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 171[2mms[22m[39m
+ [32m✓[39m src/eln-dmp-integration/DMPTool/__tests__/ScopeField.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 125[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Fields/Attachments/__tests__/AttachmentField.test.tsx [2m([22m[2m27 tests[22m[2m)[22m[32m 187[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/MoveToTarget/__tests__/MoveDialog.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 230[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/InventoryBaseRecord/recordLinkLabel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 139[2mms[22m[39m
+ [32m✓[39m src/Inventory/Search/components/__tests__/SearchParameterControls.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 260[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/ContextMenu/__tests__/TransferAction.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 352[2mms[22m[39m
+     [33m[2m✓[22m[39m Dialog should close when cancel is tapped. [33m 351[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/BarcodeScanner/__tests__/QrCodeScanner.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 142[2mms[22m[39m
+ [32m✓[39m src/Inventory/Search/components/__tests__/Searchbar.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 266[2mms[22m[39m
+ [32m✓[39m src/Inventory/Container/Fields/__tests__/LocationsImageField.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 282[2mms[22m[39m
+ [32m✓[39m src/eln/apps/__tests__/IntegrationCard.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 220[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Export/__tests__/ExportDialog.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 250[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/ContextMenu/__tests__/MoveAction.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 277[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/partition.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 104[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/ValidatingSubmitButton.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 142[2mms[22m[39m
+ [32m✓[39m src/Inventory/Search/components/__tests__/ToggleView.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 118[2mms[22m[39m
+ [32m✓[39m src/Export/repositories/__tests__/DryadRepo.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 293[2mms[22m[39m
+ [32m✓[39m src/Inventory/Import/__tests__/NavigationContext.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 144[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Layout/__tests__/Sidebar.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 266[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/intersection.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 179[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/ContextMenu/__tests__/ContextMenuSplitButton.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 187[2mms[22m[39m
+ [32m✓[39m src/Export/__tests__/PdfExport.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 135[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/RecordTree/__tests__/Node.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 124[2mms[22m[39m
+[90mstdout[2m | src/Inventory/components/Fields/__tests__/Tags.test.tsx[2m > [22m[2mTags[2m > [22m[2mShould enter an error state when value is longer than 8000 characters.
+[22m[39m[33m12077[39m
+[33m12601[39m
+[33m8011[39m
+[33m11112[39m
+[33m9720[39m
+[33m8362[39m
+[33m8008[39m
+[33m8004[39m
+[33m12723[39m
+[33m12661[39m
+
+ [32m✓[39m src/Inventory/components/Fields/__tests__/Tags.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 148[2mms[22m[39m
+ [32m✓[39m src/Inventory/Search/components/__tests__/TypeFilter.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 126[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/intersectionMap.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 146[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/__tests__/RecordLink.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 157[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/union.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 145[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/subtract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 108[2mms[22m[39m
+ [32m✓[39m src/stores/stores/__tests__/SearchStore/createNewContainer.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 158[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/mapObject.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 91[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/DetailedListing/__tests__/Card.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 111[2mms[22m[39m
+ [32m✓[39m src/Inventory/Search/components/__tests__/NameDialog.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 113[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/optional.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 133[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Layout/__tests__/Layout2x1.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 174[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/subtractMap.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 116[2mms[22m[39m
+ [32m✓[39m src/Inventory/Search/components/__tests__/SortControls.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 143[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/mapOptional.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 108[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/ContextMenu/__tests__/EditAction.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 134[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/SubmitSpinnerButton.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 140[2mms[22m[39m
+[90mstderr[2m | src/Inventory/components/Tables/__tests__/AdjustableHeadCell.test.tsx[2m > [22m[2mAdjustableHeadCell[2m > [22m[2mThe menu of available options should[2m > [22m[2minclude an item with aria-current, as set by the `current` prop.
+[22m[39mWarning: validateDOMNesting(...): <td> cannot appear as a child of <div>.
+    at td
+    at /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@emotion/react/dist/emotion-element-e8f4cc37.development.cjs.js:60:23
+    at TableCell (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/TableCell/TableCell.js:108:59)
+    at AdjustableHeadCell (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/mobx-react-lite/dist/mobxreactlite.cjs.development.js:247:12)
+    at DefaultPropsProvider (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:18:3)
+    at RtlProvider (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/system/RtlProvider/index.js:19:7)
+    at ThemeProvider (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:39:5)
+    at ThemeProvider (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:53:5)
+    at ThemeProvider (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/@mui/material/node/styles/ThemeProvider.js:21:14)
+
+ [32m✓[39m src/Inventory/components/Tables/__tests__/AdjustableHeadCell.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 142[2mms[22m[39m
+ [32m✓[39m src/Inventory/Sample/Fields/__tests__/StorageTemperature/WhenEnabledAndUnspecified.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 78[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Validator.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 95[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/MaterialsModel/canEditQuantity.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 101[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Fields/Attachments/__tests__/PreviewAction.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 87[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/TemplateModel/setEditing.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Search/setupAndPerformInitialSearch.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 109[2mms[22m[39m
+ [32m✓[39m src/eln-dmp-integration/DMPTool/__tests__/DMPToolMenuItem.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 78[2mms[22m[39m
+ [32m✓[39m src/Inventory/Container/Fields/Organization/__tests__/Organization.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 98[2mms[22m[39m
+ [32m✓[39m src/Inventory/__tests__/useNavigateHelpers.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 89[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/RemoveButton.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 81[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/IconButtonWithTooltip.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+ [32m✓[39m src/components/PublicPages/__tests__/IdentifierPublicPage.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 97[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Layout/__tests__/InitialScreen.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/ArrayUtils/mapOptional.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 93[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/isSubsetOf.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 64[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/mapObjectKeyAndValue.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 86[2mms[22m[39m
+ [32m✓[39m src/Inventory/Search/components/__tests__/StatusFilter.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/unionWith.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 74[2mms[22m[39m
+ [32m✓[39m src/components/Inputs/__tests__/ChoiceField.test.tsx [2m([22m[2m18 tests[22m[2m)[22m[32m 70[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/map.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 87[2mms[22m[39m
+Error: Uncaught [Error: Only root HeadingContexts can specify a level. Skipping heading levels and reseting to a lower level are both accessibility violations]
+    at reportException (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:27451:7)
+    at performUnitOfWork (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:26560:12) Error: Only root HeadingContexts can specify a level. Skipping heading levels and reseting to a lower level are both accessibility violations
+    at HeadingContext (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/src/components/DynamicHeadingLevel.tsx:79:11)
+    at renderWithHooks (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:16305:18)
+    at mountIndeterminateComponent (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:20074:13)
+    at beginWork (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:21587:16)
+    at HTMLUnknownElement.callCallback (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Only root HeadingContexts can specify a level. Skipping heading levels and reseting to a lower level are both accessibility violations]
+    at reportException (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:27451:7)
+    at performUnitOfWork (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:26560:12) Error: Only root HeadingContexts can specify a level. Skipping heading levels and reseting to a lower level are both accessibility violations
+    at HeadingContext (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/src/components/DynamicHeadingLevel.tsx:79:11)
+    at renderWithHooks (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:16305:18)
+    at mountIndeterminateComponent (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:20074:13)
+    at beginWork (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:21587:16)
+    at HTMLUnknownElement.callCallback (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+ [32m✓[39m src/components/__tests__/DynamicHeadingLevel.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 74[2mms[22m[39m
+ [32m✓[39m src/components/Inputs/__tests__/FormField.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 76[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Fields/Identifiers/__tests__/Identifiers.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 96[2mms[22m[39m
+ [32m✓[39m src/components/Alerts/__tests__/Alerts.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 84[2mms[22m[39m
+ [32m✓[39m src/tinyMCE/omero/__tests__/Omero.test.jsx [2m([22m[2m31 tests[22m[2m)[22m[33m 65522[2mms[22m[39m
+     [33m[2m✓[22m[39m displays two results table headers [33m 323[2mms[22m[39m
+     [33m[2m✓[22m[39m projects can hide datasets [33m 5687[2mms[22m[39m
+     [33m[2m✓[22m[39m when projects are reordered datasets are reordered AFTER their parent projects  [33m 5625[2mms[22m[39m
+     [33m[2m✓[22m[39m datasets can show grids of images  [33m 5764[2mms[22m[39m
+     [33m[2m✓[22m[39m datasets can hide grids of images  [33m 5661[2mms[22m[39m
+     [33m[2m✓[22m[39m screens can show plates, plates can show plate acquisitions [33m 527[2mms[22m[39m
+     [33m[2m✓[22m[39m screens can hide plates [33m 5669[2mms[22m[39m
+     [33m[2m✓[22m[39m plates can hide plateacquisitions [33m 5737[2mms[22m[39m
+     [33m[2m✓[22m[39m when screen hides plates it also hides plates children [33m 5743[2mms[22m[39m
+     [33m[2m✓[22m[39m when screen shows plates it also shows plates children [33m 5759[2mms[22m[39m
+     [33m[2m✓[22m[39m plate acquisitions can show grids of images  [33m 5621[2mms[22m[39m
+     [33m[2m✓[22m[39m plate acquisitions can hide grids of images  [33m 5818[2mms[22m[39m
+     [33m[2m✓[22m[39m plates with only one (or none) plate acquisition can directly show grids of images beside the plate acquisition [33m 491[2mms[22m[39m
+     [33m[2m✓[22m[39m On click of an image in the grid of images it is inserted into the document as a new child and has annotations with image data [33m 5657[2mms[22m[39m
+ [32m✓[39m src/Export/__tests__/ExportRepoUser.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/isSupersetOf.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 65[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/ArrayUtils/reverse.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/filter.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/flattenWithUnion.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/flattenWithIntersection.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m src/components/Inputs/__tests__/RadioField/noMocks.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 80[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/__tests__/Breadcrumbs.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/constructor.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/Inventory/Sample/Fields/__tests__/StorageTemperature/Buttons.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 58[2mms[22m[39m
+ [32m✓[39m src/components/Inputs/__tests__/ImageField.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 64[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/InventoryBaseRecordCollection/formatIndex.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Search/deleteRecords.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/__tests__/InnerSearchNavigationContext.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 55[2mms[22m[39m
+ [32m✓[39m src/eln/gallery/__tests__/useGalleryListing.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 103[2mms[22m[39m
+ [32m✓[39m src/Inventory/Subsample/Fields/__tests__/Quantity.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ResultCollection/formatIndex.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/match.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/filterMap.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m src/Inventory/Sample/Fields/__tests__/StorageTemperature/WhenDisabled.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/InventoryBaseRecord/scopedToastsModelTests.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Result/scopedToastsModelTests.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m src/components/Inputs/__tests__/RadioField/mocksFormControlLabel.test.tsx [2m([22m[2m18 tests[22m[2m)[22m[32m 84[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/hasWithEq.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ContainerModel/constructor.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/components/Inputs/__tests__/DateField.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m src/Inventory/Sample/Fields/TemplateFields/__tests__/Fields.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/isSame.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/components/Inputs/__tests__/FileField.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/ErrorBoundary.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/MoveToTarget/__tests__/MoveInstructions.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ContainerModel/paramsForBackend.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/add.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/stores/definitions/__tests__/Units/getRelativeTime.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/hooks/browser/__tests__/useViewportDimensions.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m src/components/Inputs/__tests__/NumberField.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/outerProduct.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m src/components/Inputs/__tests__/StringField.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Fields/AccessPermissions/__tests__/OwnersGroupsTable.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ContainerModel/hasEnoughSpace.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/stores/stores/__tests__/MoveStore/moveSelected.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ImportModel/transformTemplateInfoForSubmission.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/iterators/take.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/iterators/incrementForever.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/stores/stores/__tests__/MaterialsStore/allInvRecordsFromAllDocumentLists.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/TemplateModel/updateSamplesToLatest.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/components/Inputs/__tests__/FormControl.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/LocationModel/isGreyedOut.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Tables/__tests__/AdjustableCell.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SubSampleModel/validate.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/InventoryBaseRecordCollection/fieldValues.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SubSampleModel/fetchAdditionalInfo.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SampleModel/fetchAdditionalInfo.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ContainerModel/populateFromJson.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Search/isActiveResultTemplateOfAny.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/clamp.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ResultCollection/fieldValues.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ContainerModel/availableLocations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/stores/stores/__tests__/SearchStore/createNewTemplate.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/TreeModel/setSelected.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/MaterialsModel/isValid.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SubSampleModel/paramsForBackend.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/FieldModel/constructor.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Search/setTypeFilter.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/stores/stores/__tests__/MoveStore/setTargetContainer.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/FieldModel/hasContent.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/eln/apps/__tests__/useIntegrationsEndpoint.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/stores/models/Factory/__tests__/MemoisedFactory.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/colors/hslToHex.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Search/setDeletedItems.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Search/setPageSize.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/reduce.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SubSampleModel/createNote.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SampleModel/paramsForBackend.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/stores/models/Factory/__tests__/AlwaysNewFactory.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/result/toPromise.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/error.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/FieldModel/validState.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Search/batchEditableInstance.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/ArrayUtils/zipWith.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/MaterialsModel/paramsForBackend.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SampleModel/populateFromJson.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/progress.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SubSampleModel/isFieldEditable.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SampleModel/constructor.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ContainerModel/adjustableTableOptions.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Search/setBench.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/TemplateModel/fetchAdditionalInfo.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/FieldModel/backendParams.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/TemplateModel/paramsForBackend.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/Inventory/components/Stepper/__tests__/SynchroniseFormSections.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Search/setActiveResult.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SubSampleModel/permalinkURL.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ContainerModel/fetchAdditionalInfo.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/stores/stores/__tests__/SearchStore/createNewSample.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SampleModel/validate.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/stores/models/Fetcher/__tests__/CoreFetcher/search.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SampleModel/saveFieldAttachments.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/TemplateModel/permalinkURL.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/result/all.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/FieldModel/validate.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/stores/definitions/__tests__/Units/CommonUnit.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Search/setOwner.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/ArrayUtils/all.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/files/formatFileSize.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/files/blobToBase64.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/parsers/parseDate.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SampleModel/permalinkURL.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ContainerModel/permalinkURL.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/subtractWithEq.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/stores/definitions/__tests__/Units/temperatureFromTo.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/labels.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/flattenWithIntersectionWithEq.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/ArrayUtils/filterNull.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/AttachmentModel/getFile.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/ImportModel/importFiles.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/tinyMCE/clustermarket/__tests__/ClustermarketData.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/parsers/objectPath.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/stores/definitions/__tests__/Units/truncateIsoTimestamp.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/unionWithEq.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/result/any.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/result/first.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/components/Tags/__tests__/ParseEncodedTagStrings.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/stores/stores/__tests__/PeopleStore/fetchMembersOfSameGroup.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/stores/stores/__tests__/SearchStore/getBaskets.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/SubSampleModel/Note.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/set/filterClass.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/parsers/isRecord.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/StringUtils/stripDiacritics.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/intersperse.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/filterClass.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/files/filenameExceptExtension.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/styles/mergeThemes.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/stores/models/__tests__/Alert.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/colors/selectColor.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/files/justFilenameExtension.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/iterators/sum.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/invertObject.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/result/orElseTry.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/doNotAwait.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/Util/sameKeysAndValues.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/optional/orElseTry.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m src/util/__tests__/unsafeUtils/traverseObjectTree.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m src/__tests__/theme/palette/record.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [2m[90m↓[39m[22m src/eln-dmp-integration/Argos/__tests__/DMPDialog.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+
+[2m Test Files [22m [1m[32m272 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (273)[39m
+[2m      Tests [22m [1m[32m995 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (999)[39m
+[2m   Start at [22m 23:34:06
+[2m   Duration [22m 111.64s[2m (transform 14.23s, setup 93.81s, import 528.13s, tests 163.42s, environment 169.48s)[22m
+
+JUNIT report written to /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui/junit.xml
+npm verbose cwd /Users/tyteen4a03/Documents/CodeProjects/rspace-web/src/main/webapp/ui
+npm verbose os Darwin 25.2.0
+npm verbose node v24.11.1
+npm verbose npm  v11.6.2
+npm verbose exit 0
+npm info ok

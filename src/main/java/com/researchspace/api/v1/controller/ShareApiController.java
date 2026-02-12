@@ -49,12 +49,12 @@ public class ShareApiController extends BaseApiController implements ShareApi {
   @Override
   public ApiShareSearchResult getShares(
       @Valid DocumentApiPaginationCriteria pgCrit,
-      @Valid ApiGenericSearchConfig apiSrchConfig,
+      @Valid ApiShareSearchConfig apiShareSrchConfig,
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
     throwBindExceptionIfErrors(errors);
-    return shareApiService.getShares(pgCrit, apiSrchConfig, user);
+    return shareApiService.getShares(pgCrit, apiShareSrchConfig, user);
   }
 
   @Override

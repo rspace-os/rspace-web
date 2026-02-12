@@ -142,7 +142,7 @@ const WholePage = styled(
          * encoded in the URL and so cannot be autoselected.
          */
       }
-       
+
     }, [autoSelect, galleryListing]);
 
     const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
@@ -165,7 +165,7 @@ const WholePage = styled(
     const { trackEvent } = React.useContext(AnalyticsContext);
     React.useEffect(() => {
       trackEvent("user:load:page:gallery", { section: selectedSection });
-       
+
     }, []);
 
     React.useEffect(() => {
@@ -474,7 +474,7 @@ function GalleryFileInFolder() {
 
   React.useEffect(() => {
     void fetchFileDetails();
-     
+
   }, []);
 
   return FetchingData.match<number, React.ReactNode>(folderId, {

@@ -1,22 +1,13 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
-import NoValue from "../../../components/NoValue";
+import { render } from "@testing-library/react";
 
+import NoValue from "../../../components/NoValue";
 import DateField from "../DateField";
 
-jest.mock("../../../components/NoValue", () => jest.fn(() => <></>));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
+vi.mock("../../../components/NoValue", () => ({
+  default: vi.fn(() => <></>),
+}));
 describe("DateField", () => {
   describe("When `null` is passed as the `value` and field is disabled,", () => {
     test("'None' is rendered", () => {
@@ -28,8 +19,8 @@ describe("DateField", () => {
         expect.anything()
       );
     });
-  });
 
+  });
   describe("When passed an invalid date string,", () => {
     test("there is an error message shown.", () => {
       const { container } = render(
@@ -39,3 +30,4 @@ describe("DateField", () => {
     });
   });
 });
+

@@ -15,14 +15,17 @@ import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
+import com.researchspace.service.StoichiometryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /** Container for Spring-injected services used by Field export classes */
 @Component
 class FieldExporterSupport {
 
+  private StoichiometryService stoichiometryService;
   private RichTextUpdater richTextUpdater;
   private AuditManager auditManager;
   private IPermissionUtils permUtils;
@@ -48,7 +51,8 @@ class FieldExporterSupport {
       @Autowired NfsFileHandler nfsFileHandler,
       @Autowired @Qualifier("compositeFileStore") FileStore fileStore,
       DiskSpaceChecker diskSpaceChecker,
-      @Autowired ExternalWorkFlowDataManager externalWorkFlowDataManager) {
+      @Autowired ExternalWorkFlowDataManager externalWorkFlowDataManager,
+      @Autowired @Lazy StoichiometryService stoichiometryService) {
 
     this.richTextUpdater = richTextUpdater;
     this.auditManager = auditManager;
@@ -62,6 +66,7 @@ class FieldExporterSupport {
     this.fileStore = fileStore;
     this.diskSpaceChecker = diskSpaceChecker;
     this.externalWorkFlowDataManager = externalWorkFlowDataManager;
+    this.stoichiometryService = stoichiometryService;
   }
 
   RichTextUpdater getRichTextUpdater() {
@@ -118,5 +123,9 @@ class FieldExporterSupport {
 
   public ExternalWorkFlowDataManager getExternalWorkFlowDataManager() {
     return externalWorkFlowDataManager;
+  }
+
+  public StoichiometryService getStoichiometryService() {
+    return stoichiometryService;
   }
 }

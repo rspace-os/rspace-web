@@ -1,20 +1,20 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test, vi } from 'vitest';
 import { makeMockSample } from "./mocking";
 import InvApiService from "../../../../common/InvApiService";
 
-jest.mock("../../../../stores/stores/RootStore", () => () => ({
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
+vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: () => ({
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
+}));
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+    post: vi.fn(),
   },
-}));
-jest.mock("../../../../common/InvApiService", () => ({
-  post: jest.fn(),
-}));
 
+}));
 describe("saveFieldAttachments", () => {
   describe("When the sample has an attachment field with an existing file", () => {
     /*
@@ -51,11 +51,11 @@ describe("saveFieldAttachments", () => {
         ],
       });
 
-      const spy = jest.spyOn(InvApiService, "post");
+      const spy = vi.spyOn(InvApiService, "post");
 
       await sample.saveFieldAttachments();
-
       expect(spy).not.toHaveBeenCalled();
     });
   });
 });
+

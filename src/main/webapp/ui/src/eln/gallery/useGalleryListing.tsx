@@ -1685,7 +1685,7 @@ export function useGalleryListing({
       FetchingData.getSuccessValue(path),
       FetchingData.getSuccessValue(section),
     );
-     
+
   }, [searchTerm, sortOrder, orderBy, listingOf, directFolderPath]);
 
   if (loading)
