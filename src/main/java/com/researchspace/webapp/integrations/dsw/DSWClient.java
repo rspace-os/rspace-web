@@ -4,21 +4,31 @@ import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.AppConfigElementSet;
+import com.researchspace.model.dmps.DMPSource;
+import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.dmps.DmpDto;
+import com.researchspace.service.DMPManager;
+import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.integrations.dsw.model.DSWDocument;
 import com.researchspace.webapp.integrations.dsw.model.DSWDocumentDTO;
+import com.researchspace.webapp.integrations.dsw.model.DSWDocumentReference;
 import com.researchspace.webapp.integrations.dsw.model.DSWDocuments;
 import com.researchspace.webapp.integrations.dsw.model.DSWProjects;
 import com.researchspace.webapp.integrations.dsw.model.DSWUser;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,14 +51,20 @@ public class DSWClient {
   public static final String DSW_APIKEY = "DSW_APIKEY";
   public static final String DSW_ALIAS = "DSW_ALIAS";
 
+  public static final String DSW_PATH_API = "/wizard-api/";
+  public static final String DSW_PATH_PROJECTS = "/wizard/projects/";
+
   @Setter
   @Getter
   @Value("${dsw.server.config:}")
   private String configurationMap;
 
   private final RestTemplate restTemplate;
-  private @Autowired UserConnectionManager source;
-  private @Autowired UserManager userManager;
+  @Autowired private UserConnectionManager source;
+  @Autowired private UserManager userManager;
+  @Autowired private MediaManager mediaManager;
+  @Autowired private DMPManager dmpManager;
+
   private ObjectMapper mapper = new ObjectMapper();
 
   public DSWClient() {
@@ -63,9 +79,17 @@ public class DSWClient {
     return headers;
   }
 
+  private HttpHeaders getHttpHeadersFiles(String serverAlias, DSWConnectionConfig connCfg) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(Collections.singletonList(MediaType.TEXT_HTML));
+    //    String apiKey = getApiKey(serverAlias);
+    //    headers.add("Authorization", "Bearer " + apiKey);
+    return headers;
+  }
+
   private String getApiKey(String serverAlias) {
     // User subject = userManager.getAuthenticatedUserInSession();
-    User subject = userManager.get(3l);
+    User subject = userManager.get(-12l);
     String accessToken =
         source
             .findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, serverAlias)
@@ -86,7 +110,8 @@ public class DSWClient {
     DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
     return restTemplate
         .exchange(
-            UriComponentsBuilder.fromUriString(connCfg.getRepositoryURL().get() + "/users/current")
+            UriComponentsBuilder.fromUriString(
+                    connCfg.getRepositoryURL().get() + DSW_PATH_API + "users/current")
                 .build()
                 .toUri(),
             HttpMethod.GET,
@@ -115,7 +140,8 @@ public class DSWClient {
             .exchange(
                 UriComponentsBuilder.fromUriString(
                         connCfg.getRepositoryURL().get()
-                            + "/projects?userUuids="
+                            + DSW_PATH_API
+                            + "projects?userUuids="
                             + dswUser.getUuid())
                     .build()
                     .toUri(),
@@ -124,7 +150,6 @@ public class DSWClient {
                 DSWProjects.class)
             //                JsonNode.class)
             .getBody();
-
     return projects;
   }
 
@@ -138,7 +163,8 @@ public class DSWClient {
             .exchange(
                 UriComponentsBuilder.fromUriString(
                         connCfg.getRepositoryURL().get()
-                            + "/projects/"
+                            + DSW_PATH_API
+                            + "projects/"
                             + projectUuid
                             + "/documents")
                     .build()
@@ -204,14 +230,87 @@ public class DSWClient {
       throws HttpClientErrorException, URISyntaxException, MalformedURLException {
     DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
 
-    JsonNode projectDocuments =
+    // JsonNode projectDocuments =
+    String projectDocuments =
         restTemplate
             .exchange(
                 UriComponentsBuilder.fromUriString(
                         connCfg.getRepositoryURL().get()
-                            + "/documents/"
+                            + DSW_PATH_API
+                            + "documents/"
                             + documentUuid
                             + "/download")
+                    .build()
+                    .toUri(),
+                HttpMethod.GET,
+                new HttpEntity<>(getHttpHeaders(serverAlias, connCfg)),
+                // JsonNode.class)
+                String.class)
+            .getBody();
+
+    System.out.println("@@@ Document URL string: " + projectDocuments);
+    try {
+      return mapper.readValue(projectDocuments, JsonNode.class);
+    } catch (Exception e) {
+      System.out.println("@@@ Error getting URL: " + e);
+      return null;
+    }
+  }
+
+  public JsonNode importDswFile(String serverAlias, AppConfigElementSet cfg, String documentUuid)
+      throws HttpClientErrorException, URISyntaxException, MalformedURLException {
+    DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
+
+    System.out.println("@@@ Downloading file with uuid: " + documentUuid);
+    JsonNode docUrl = getDocumentURL(serverAlias, cfg, documentUuid);
+    String url = docUrl.get("url").toString();
+    System.out.println("@@@ url for file: " + url);
+    byte[] fileContents = null;
+
+    try {
+      DSWDocumentReference dswDocumentRef =
+          mapper.readValue(docUrl.toString(), DSWDocumentReference.class);
+      url = dswDocumentRef.getUrl();
+      // Note that when retrieving the file we need to set that the URI has already
+      // been encoded (since it has been on return from DSW), otherwise restTemplate
+      // will encode it a second time.
+      fileContents =
+          restTemplate
+              .exchange(
+                  UriComponentsBuilder.fromUriString(url).build(true).toUri(),
+                  HttpMethod.GET,
+                  new HttpEntity<>(getHttpHeadersFiles(serverAlias, connCfg)),
+                  byte[].class)
+              .getBody();
+    } catch (Exception e) {
+      System.out.println("@@@ Something went wrong getting the file: " + e);
+    }
+
+    System.out.println("@@@ So here is the file I guess...: " + fileContents);
+
+    return null;
+  }
+
+  public JsonNode getProjectsForCurrentUserJson(String serverAlias, AppConfigElementSet cfg)
+      throws HttpClientErrorException, URISyntaxException, MalformedURLException {
+    DSWProjects projects = getProjectsForCurrentUser(serverAlias, cfg);
+    return mapper.valueToTree(projects.getProjects());
+  }
+
+  public JsonNode importPlan(String serverAlias, AppConfigElementSet cfg, String planUuid)
+      throws HttpClientErrorException, URISyntaxException, MalformedURLException {
+    DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
+
+    System.out.println("@@@ Downloading plan with uuid: " + planUuid);
+    JsonNode plan =
+        restTemplate
+            .exchange(
+                UriComponentsBuilder.fromUriString(
+                        connCfg.getRepositoryURL().get()
+                            + DSW_PATH_API
+                            + "projects/"
+                            + planUuid
+                            + "/questionnaire")
                     .build()
                     .toUri(),
                 HttpMethod.GET,
@@ -219,6 +318,41 @@ public class DSWClient {
                 JsonNode.class)
             .getBody();
 
-    return projectDocuments;
+    String json = plan.toString();
+    InputStream is = new ByteArrayInputStream(json.getBytes());
+
+    String projectName = plan.get("name").toString();
+
+    try {
+      // DSWProjectFromUUID projectFromUUID = mapper.readValue(json, DSWProjectFromUUID.class);
+      EcatDocumentFile file =
+          mediaManager.saveNewDMP(projectName, is, cfg.getUserAppConfig().getUser(), null);
+
+      Optional<DMPUser> dmpUser =
+          dmpManager.findByDmpId(planUuid, cfg.getUserAppConfig().getUser());
+      if (dmpUser.isEmpty()) {
+        dmpUser =
+            Optional.of(
+                new DMPUser(
+                    cfg.getUserAppConfig().getUser(),
+                    new DmpDto(
+                        planUuid,
+                        projectName,
+                        DMPSource.DSW,
+                        null,
+                        connCfg.getRepositoryURL().get() + DSW_PATH_PROJECTS + planUuid)));
+      }
+      if (file != null) {
+        dmpUser.get().setDmpDownloadFile(file);
+      } else {
+        log.warn("Unexpected null DSW project");
+      }
+      dmpManager.save(dmpUser.get());
+
+    } catch (Exception e) {
+      log.warn("Error attempting to save project with UUID " + planUuid, e);
+    }
+
+    return plan;
   }
 }
