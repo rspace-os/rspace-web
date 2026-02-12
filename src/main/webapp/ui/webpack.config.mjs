@@ -2,6 +2,8 @@ import path from 'node:path';
 import webpack from "webpack";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 
+const isCi = process.env.CI === "true" || process.env.CI === "1";
+
 /** @type {import('webpack').Configuration} */
 const config = {
   entry: {
@@ -101,7 +103,7 @@ const config = {
       analyzerMode: Boolean(process.env.FRONTEND_BUILD_STATS)
         ? "server"
         : "disabled",
-      generateStatsFile: true,
+      generateStatsFile: isCi,
     }),
   ],
   optimization: {

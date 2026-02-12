@@ -43,6 +43,7 @@ pipeline {
 
     environment {
         BUILD_FAILURE_EMAIL_LIST = 'dev@researchspace.com'
+        CI = 'true'
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
         DOCKER_AMI = 'ami-069082aeb2787a3ba'
