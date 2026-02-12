@@ -66,6 +66,7 @@ import com.researchspace.model.views.GroupInvitation;
 import com.researchspace.model.views.GroupInvitation.Invitee;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.UserView;
+import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FolderNotSharedException;
 import com.researchspace.service.GroupManager;
@@ -126,6 +127,7 @@ public class GroupManagerImpl implements GroupManager {
   private @Autowired FolderDao folderDao;
   private @Autowired GroupMembershipEventDao groupMembershipEventDao;
   private @Autowired RecordManager recordManager;
+  private @Autowired BaseRecordManager baseRecordManager;
   private @Autowired RaIDDao raidDao;
 
   private @Autowired IContentInitialiserUtils contentUtils;
@@ -1230,7 +1232,7 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public boolean isRecordPartOfGroup(User user, Long recordId, Long projectGroupId) {
-    BaseRecord currentRecord = recordManager.get(recordId);
+    BaseRecord currentRecord = baseRecordManager.get(recordId, user);
     Set<Folder> parents = currentRecord.getParentFolders();
     Iterator<Folder> it = parents.iterator();
     boolean isPartOfProject = false;
