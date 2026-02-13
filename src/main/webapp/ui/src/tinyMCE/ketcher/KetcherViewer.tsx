@@ -50,7 +50,6 @@ export const KetcherViewer = (): React.ReactNode => {
       }
     };
 
-    // @ts-expect-error global
     if ($(selectedNode).hasClass("chem")) {
       loadChemicalFile().catch(() => {
         // @ts-expect-error global
