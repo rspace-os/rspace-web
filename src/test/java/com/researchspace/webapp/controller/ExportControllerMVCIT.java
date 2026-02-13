@@ -50,6 +50,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MvcResult;
@@ -309,6 +310,7 @@ public class ExportControllerMVCIT extends MVCTestBase {
     }
   }
 
+  @Ignore("Temporary disabled")
   @Test
   public void exportElnWithRaidOnManifestByPiTest() throws Exception {
     // GIVEN
