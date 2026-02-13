@@ -23,9 +23,9 @@ import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DiskSpaceLimitException;
 import com.researchspace.service.archive.ArchiveExportServiceManager;
 import com.researchspace.service.archive.ExportImport;
@@ -52,6 +52,7 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
 
   protected final Logger log = LoggerFactory.getLogger(getClass());
 
+  protected @Autowired BaseRecordManager baseRecordManager;
   protected @Autowired RecordDao recordDao;
   protected @Autowired ArchiveDao archiveDao;
   protected @Autowired FormIconWriter formIconWriter;
@@ -133,7 +134,7 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
       RoCrate roCrate,
       List<RoCrateLogicalFolder> logicalTopLevelFolders) {
     try {
-      Record record = recordDao.get(rid.getDbId());
+      BaseRecord record = baseRecordManager.get(rid.getDbId(), aconfig.getExporter());
       List<AuditedRecord> versionsToExport =
           archivePlanner.getVersionsToExportForRecord(aconfig, rid, record);
       for (AuditedRecord ar : versionsToExport) {

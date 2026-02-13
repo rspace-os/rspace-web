@@ -50,7 +50,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MvcResult;
@@ -240,7 +239,8 @@ public class ExportControllerMVCIT extends MVCTestBase {
             projectGroup.getDisplayName(),
             pi1.getUsername(),
             doc.getId(),
-            doc.getName());
+            doc.getName(),
+            "NORMAL");
     exportRequestDTO.getRepositoryConfig().setExportToRaid(true);
     String requestContent = mapper.writeValueAsString(exportRequestDTO);
     log.info(requestContent);
@@ -310,18 +310,25 @@ public class ExportControllerMVCIT extends MVCTestBase {
     }
   }
 
-  @Ignore("Temporary disabled")
   @Test
   public void exportElnWithRaidOnManifestByPiTest() throws Exception {
     // GIVEN
     User pi1 = createAndSaveUser(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
     initUser(pi1);
+    logoutAndLoginAs(pi1);
     Group projectGroup = createGroupForUsers(pi1, pi1.getUsername(), "", pi1);
     Folder rootSharedFolder = folderMgr.getFolder(projectGroup.getCommunalGroupFolderId(), pi1);
-    logoutAndLoginAs(pi1);
     Folder sharedSubFolder = createSubFolder(rootSharedFolder, "SharedSubFolder", pi1);
-    StructuredDocument doc = createBasicDocumentInRootFolderWithText(pi1, "any text");
+
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(pi1, "any text in project");
     sharingHandler.shareIntoSharedFolderOrNotebook(pi1, sharedSubFolder, doc.getId(), null);
+
+    openTransaction();
+    sharedSubFolder = folderMgr.getFolder(sharedSubFolder.getId(), pi1);
+    sharedSubFolder.addChild(doc, pi1, false);
+    folderMgr.save(sharedSubFolder, pi1);
+    commitTransaction();
+
     User toAdd = createAndSaveUser(getRandomAlphabeticString("other"));
     initUser(toAdd);
     grpMgr.addUserToGroup(pi1.getUsername(), projectGroup.getId(), RoleInGroup.DEFAULT);
@@ -333,7 +340,8 @@ public class ExportControllerMVCIT extends MVCTestBase {
             projectGroup.getDisplayName(),
             pi1.getUsername(),
             sharedSubFolder.getId(),
-            sharedSubFolder.getName());
+            sharedSubFolder.getName(),
+            "FOLDER:SHARED_FOLDER");
     String requestContent = mapper.writeValueAsString(exportRequestDTO);
     log.info(requestContent);
     try {
@@ -357,11 +365,11 @@ public class ExportControllerMVCIT extends MVCTestBase {
       String actualRoCrate = new String(mapFileByName.get("ro-crate-metadata.json"));
       String projectId = "#project-" + projectGroup.getDisplayName() + "-" + projectGroup.getId();
       actualRoCrate = flattenJson(actualRoCrate);
-      assertTrue(actualRoCrate.contains("\"isPartOf\":{\"@id\":\"" + projectId + "\"}"));
+      assertTrue(actualRoCrate.contains("\"isPartOf\":[{\"@id\":\"" + projectId + "\"}"));
       assertTrue(actualRoCrate.contains("\"name\":\"" + projectGroup.getDisplayName() + "\""));
       assertTrue(actualRoCrate.contains("\"url\":\"" + raidIdentifierUrl + "\""));
-      assertTrue(actualRoCrate.contains("\"@id\":\"" + projectId + "\"}"));
-      assertTrue(actualRoCrate.contains("\"@type\":\"ResearchProject\"}"));
+      assertTrue(actualRoCrate.contains("\"@id\":\"" + projectId + "\""));
+      assertTrue(actualRoCrate.contains("\"@type\":\"ResearchProject\""));
     } finally {
       raIDServiceManager.unbindRaidFromGroupAndSave(pi1, projectGroup.getId());
     }
