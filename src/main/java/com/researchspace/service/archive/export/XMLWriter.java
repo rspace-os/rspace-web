@@ -2,17 +2,14 @@ package com.researchspace.service.archive.export;
 
 import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
-import com.researchspace.archive.ArchivalField;
 import com.researchspace.archive.ArchivalForm;
 import com.researchspace.archive.ArchivalGalleryMetadata;
 import com.researchspace.archive.ArchiveExternalWorkFlow;
-import com.researchspace.archive.ArchiveExternalWorkFlowInvocation;
 import com.researchspace.archive.model.ArchiveModelFactory;
 import com.researchspace.core.util.XMLReadWriteUtils;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import java.io.File;
-import java.util.HashSet;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,14 +55,10 @@ class XMLWriter implements ExportObjectWriter {
    */
   private void marshalExternalWorkFlows(ArchivalDocument archiveDoc, File recordFolder)
       throws Exception {
-    Set<ArchiveExternalWorkFlow> externalWorkFlows = new HashSet<>();
     AllArchiveExternalWorkFlowMetaData allArchiveExternalWorkFlowMetaData =
         new AllArchiveExternalWorkFlowMetaData();
-    for (ArchivalField af : archiveDoc.getListFields()) {
-      for (ArchiveExternalWorkFlowInvocation afi : af.getExternalWorkFlowInvocations()) {
-        externalWorkFlows.add(afi.getWorkFlowMetaData());
-      }
-    }
+    Set<ArchiveExternalWorkFlow> externalWorkFlows =
+        ExportObjectGenerator.getExternalWorkFlowsForDocument(archiveDoc);
     if (!externalWorkFlows.isEmpty()) {
       String exportFileName = recordFolder.getName() + "_externalWorkflows.xml";
       File externalWorkFlowFile = new File(recordFolder, exportFileName);

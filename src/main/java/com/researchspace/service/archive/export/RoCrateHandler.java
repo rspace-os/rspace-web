@@ -1,6 +1,7 @@
 package com.researchspace.service.archive.export;
 
 import static com.researchspace.service.archive.ExportImport.EXPORT_MANIFEST;
+import static com.researchspace.service.archive.ExportImport.EXT_WF_SCHEMA;
 import static com.researchspace.service.archive.ExportImport.FOLDER_TREE;
 import static com.researchspace.service.archive.ExportImport.MESSAGES;
 import static com.researchspace.service.archive.ExportImport.MESSAGES_SCHEMA;
@@ -23,6 +24,7 @@ import com.researchspace.archive.model.IArchiveExportConfig;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.RoRService;
 import com.researchspace.service.archive.ExportImport;
 import edu.kit.datamanager.ro_crate.RoCrate;
 import edu.kit.datamanager.ro_crate.entities.contextual.ContextualEntity;
@@ -33,6 +35,7 @@ import edu.kit.datamanager.ro_crate.entities.data.DataEntity;
 import edu.kit.datamanager.ro_crate.entities.data.DataSetEntity;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity;
 import edu.kit.datamanager.ro_crate.entities.data.RootDataEntity;
+import edu.kit.datamanager.ro_crate.entities.data.WorkflowEntity;
 import edu.kit.datamanager.ro_crate.externalproviders.personprovider.OrcidProvider;
 import edu.kit.datamanager.ro_crate.writer.CrateWriter;
 import edu.kit.datamanager.ro_crate.writer.Writers;
@@ -81,6 +84,7 @@ public class RoCrateHandler {
       "A file linked by an exported document or in a user Gallery";
   private final RoCrate roCrate;
   private final DataSetEntity.DataSetBuilder dsb;
+  private static RoRService rorService;
 
   public RoCrateHandler(RoCrate roCrate, DataSetEntity.DataSetBuilder dsb, String datasetID) {
     this.roCrate = roCrate;
@@ -160,6 +164,7 @@ public class RoCrateHandler {
       IArchiveExportConfig aconfig,
       List<ExportedRecord> archived) {
     moveFileIntoSchemasFolderForElnArchives(exportContext, schemasFolder, ZIP_SCHEMA);
+    moveFileIntoSchemasFolderForElnArchives(exportContext, schemasFolder, EXT_WF_SCHEMA);
     moveFileIntoSchemasFolderForElnArchives(exportContext, schemasFolder, ZIP_FORM_SCHEMA);
     moveFileIntoSchemasFolderForElnArchives(exportContext, schemasFolder, EXPORT_MANIFEST);
     if (thereWereNfsExports(archived)) {
@@ -187,18 +192,16 @@ public class RoCrateHandler {
       File schemasFolder = makeSchemasFolder(aconfig, exportContext, roCrate, archived);
       String orcidID = manifest.getKeyToValue().get("OrcidID");
       PersonEntity orcidDetails = null;
-      if (orcidID != null) {
-        orcidDetails =
-            OrcidProvider.getPerson("https://orcid.org/" + manifest.getKeyToValue().get("OrcidID"));
-      }
       PersonEntity.PersonEntityBuilder exporterBuilder =
           new PersonEntity.PersonEntityBuilder()
               .setEmail(aconfig.getExporter().getEmail())
               .setGivenName(aconfig.getExporter().getFirstName())
               .setFamilyName(aconfig.getExporter().getLastName())
               .addProperty("text", "The RSpace user who exported this data");
-      if (orcidID != null) {
-        exporterBuilder.setId(orcidDetails.getId());
+      if (orcidID != null && !orcidID.isEmpty()) {
+        orcidDetails =
+            OrcidProvider.getPerson("https://orcid.org/" + manifest.getKeyToValue().get("OrcidID"));
+        exporterBuilder.setId("https://orcid.org/" + orcidDetails.getId());
         exporterBuilder.addProperty(
             "alternateName",
             orcidDetails.getProperty("givenName").asText()
@@ -206,6 +209,13 @@ public class RoCrateHandler {
                 + orcidDetails.getProperty("familyName").asText());
       } else {
         exporterBuilder.setId(manifest.getKeyToValue().get("Exported by"));
+      }
+      String rorAffiliationID = rorService.getSystemRoRValue();
+      String rorAffiliationName = rorService.getRorNameForSystemRoRValue();
+      String combinedRor = "";
+      if (rorAffiliationID != null && !rorAffiliationID.isEmpty()) {
+        combinedRor = rorAffiliationID + " " + rorAffiliationName;
+        exporterBuilder.addProperty("affiliation", combinedRor);
       }
       PersonEntity exported = exporterBuilder.build();
       roCrate.addContextualEntity(exported);
@@ -223,6 +233,12 @@ public class RoCrateHandler {
       docSchema.addProperty("text", "schema for RSpace documents");
       addSha256Hash(docSchema, new File(schemasFolder, ZIP_SCHEMA));
       roCrate.addDataEntity(docSchema.build());
+      FileEntity.FileEntityBuilder extWFSchema = new FileEntity.FileEntityBuilder();
+      extWFSchema.setId(SCHEMAS_DIR + EXT_WF_SCHEMA);
+      extWFSchema.setEncodingFormat(APPLICATION_XML);
+      extWFSchema.addProperty("text", "schema for External Workflows");
+      addSha256Hash(extWFSchema, new File(schemasFolder, EXT_WF_SCHEMA));
+      roCrate.addDataEntity(extWFSchema.build());
       FileEntity.FileEntityBuilder formSchema = new FileEntity.FileEntityBuilder();
       formSchema.setId(SCHEMAS_DIR + ZIP_FORM_SCHEMA);
       formSchema.addProperty("text", "schema for RSpace forms");
@@ -407,6 +423,10 @@ public class RoCrateHandler {
     return false;
   }
 
+  public static void setRorService(RoRService rorService) {
+    RoCrateHandler.rorService = rorService;
+  }
+
   private void addDatesToFileEntityBuilder(
       FileEntity.FileEntityBuilder fe, Date created, Date modified) {
     DateFormat df = new SimpleDateFormat("dd:MM:yy:HH:mm:ss");
@@ -466,6 +486,18 @@ public class RoCrateHandler {
     DataEntity de = fefeb.build();
     roCrate.addDataEntity(de, datasetID);
     dsb.addToHasPart(de);
+  }
+
+  public void buildExtWorkFlowEntity(
+      String wfName, String extWorkFlowID, String externalServiceURL) {
+    WorkflowEntity wfENtity =
+        new WorkflowEntity.WorkflowEntityBuilder()
+            .setId(externalServiceURL)
+            .addProperty("name", wfName)
+            //            .addProperty("url", externalServiceURL)
+            .build();
+    roCrate.addDataEntity(wfENtity, datasetID);
+    dsb.addToHasPart(wfENtity);
   }
 
   public void buildFileEntityForEcatMedia(
