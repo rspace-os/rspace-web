@@ -5,7 +5,6 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { UsersPage } from "..";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../../../theme";
@@ -14,6 +13,7 @@ import axios from "@/common/axios";
 import USER_LISTING from "./userListing.json";
 import PDF_CONFIG from "./pdfConfig.json";
 import { render, within } from "../../../../__tests__/customQueries";
+import { UsersPage } from "@/eln/sysadmin/users";
 
 vi.mock("@/modules/common/hooks/auth", () => ({
   useOauthTokenQuery: () => ({ data: "test-token" }),
