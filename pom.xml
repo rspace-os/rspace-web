@@ -1647,31 +1647,11 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>galaxy-java-client</artifactId>
-      <version>1.0.3</version>
+      <version>524f1579e1</version>
       <exclusions>
         <exclusion>
           <groupId>org.jetbrains</groupId>
           <artifactId>annotations</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-core-util</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-context</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-web</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
