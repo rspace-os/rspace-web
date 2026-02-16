@@ -13,7 +13,7 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>4d52207008</version>
+    <version>2.1.4</version>
   </parent>
 
   <repositories>
@@ -239,7 +239,6 @@
             <dependency>com.lowagie:itext</dependency> <!-- used by javamelody -->
             <dependency>xalan:xalan</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>net.bull.javamelody:javamelody-core</dependency> <!-- used for monitoring -->
-            <dependency>org.javassist:javassist</dependency> <!-- updates outdated version of transitive dependency -->
             <dependency>dom4j:dom4j</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.apache.commons:commons-dbcp2</dependency> <!-- used but not referenced in code -->
             <dependency>io.jsonwebtoken:jjwt-impl</dependency> <!-- used but not referenced in code -->
@@ -383,28 +382,12 @@
           <artifactId>json-path</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-collections4</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>commons-io</groupId>
           <artifactId>commons-io</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-lang3</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
         </exclusion>
         <exclusion>
           <groupId>joda-time</groupId>
@@ -474,24 +457,8 @@
           <artifactId>json-path</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>com.fasterxml.jackson.dataformat</groupId>
           <artifactId>jackson-dataformat-yaml</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -540,7 +507,6 @@
     <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
-      <version>1.3.5</version>
     </dependency>
 
     <dependency>
@@ -584,10 +550,6 @@
           <artifactId>commons-lang3</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>commons-codec</groupId>
-          <artifactId>commons-codec</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
         </exclusion>
@@ -611,18 +573,6 @@
         <exclusion>
           <groupId>io.netty</groupId>
           <artifactId>netty-handler</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -914,10 +864,6 @@
           <artifactId>commons-io</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>commons-codec</groupId>
-          <artifactId>commons-codec</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-exec</artifactId>
         </exclusion>
@@ -927,23 +873,11 @@
         </exclusion>
         <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpcore</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
         </exclusion>
         <exclusion>
           <groupId>joda-time</groupId>
           <artifactId>joda-time</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.jsoup</groupId>
-          <artifactId>jsoup</artifactId>
         </exclusion>
         <exclusion>
           <groupId>net.sf.ehcache</groupId>
@@ -1139,7 +1073,6 @@
     <dependency>
       <groupId>commons-validator</groupId>
       <artifactId>commons-validator</artifactId>
-      <version>1.9.0</version>
     </dependency>
     <dependency>
       <groupId>gov.nih.imagej</groupId>
@@ -1280,7 +1213,6 @@
     <dependency>
       <groupId>org.javassist</groupId>
       <artifactId>javassist</artifactId>
-      <version>${javassist.version}</version>
     </dependency>
     <dependency>
       <groupId>joda-time</groupId>
@@ -1296,14 +1228,6 @@
         <exclusion>
           <groupId>javax.validation</groupId>
           <artifactId>validation-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
         </exclusion>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1444,12 +1368,6 @@
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-jackson</artifactId>
       <version>${jsonwebtoken.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1510,24 +1428,8 @@
           <artifactId>wstx-asl</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>joda-time</groupId>
           <artifactId>joda-time</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.jsoup</groupId>
-          <artifactId>jsoup</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.projectlombok</groupId>
@@ -1740,7 +1642,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>fieldmark-java-client</artifactId>
-      <version>4a6303762a</version>
+      <version>3.1.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1779,24 +1681,12 @@
       <version>0.1.0</version>
       <exclusions>
         <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
         </exclusion>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1823,7 +1713,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>dmptool-java-client</artifactId>
-      <version>f6fc4e4b7f</version>
+      <version>0.4.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1861,18 +1751,6 @@
       <artifactId>datacite-java-client</artifactId>
       <version>0.1.1</version>
       <exclusions>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>commons-io</groupId>
           <artifactId>commons-io</artifactId>
@@ -1961,10 +1839,6 @@
       <version>4.3.4.0-RELEASE</version>
       <exclusions>
         <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
         </exclusion>
@@ -1991,10 +1865,6 @@
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.apache.commons</groupId>
