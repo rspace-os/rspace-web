@@ -235,7 +235,6 @@ public class ExportObjectGenerator {
           String urlPrefix = getExtWFURLPrefix(extService);
           roCrateHandler.buildExtWorkFlowEntity(
               anArchiveExternalWorkFlow.getName(),
-              anArchiveExternalWorkFlow.getExtId(),
               anArchiveExternalWorkFlow.getBaseUrl()
                   + urlPrefix
                   + anArchiveExternalWorkFlow.getExtId()

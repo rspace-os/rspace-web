@@ -489,12 +489,11 @@ public class RoCrateHandler {
   }
 
   public void buildExtWorkFlowEntity(
-      String wfName, String extWorkFlowID, String externalServiceURL) {
+      String wfName,  String externalServiceURL) {
     WorkflowEntity wfENtity =
         new WorkflowEntity.WorkflowEntityBuilder()
             .setId(externalServiceURL)
             .addProperty("name", wfName)
-            //            .addProperty("url", externalServiceURL)
             .build();
     roCrate.addDataEntity(wfENtity, datasetID);
     dsb.addToHasPart(wfENtity);
