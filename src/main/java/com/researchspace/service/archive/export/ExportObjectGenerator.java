@@ -232,12 +232,12 @@ public class ExportObjectGenerator {
             getExternalWorkFlowsForDocument(archiveDoc);
         for (ArchiveExternalWorkFlow anArchiveExternalWorkFlow : externalWorkFlows) {
           String extService = anArchiveExternalWorkFlow.getExternalService();
-          String urlSuffix = getExtWFURLPrefix(extService);
+          String urlPrefix = getExtWFURLPrefix(extService);
           roCrateHandler.buildExtWorkFlowEntity(
               anArchiveExternalWorkFlow.getName(),
               anArchiveExternalWorkFlow.getExtId(),
               anArchiveExternalWorkFlow.getBaseUrl()
-                  + urlSuffix
+                  + urlPrefix
                   + anArchiveExternalWorkFlow.getExtId()
                   + getExtWFURLSuffix(extService));
         }
