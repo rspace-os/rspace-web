@@ -16,7 +16,6 @@ import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.service.BaseRecordManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.regex.Matcher;
 import org.junit.After;
@@ -36,7 +35,6 @@ public class ArchiveNamingStrategyTest {
 
   @Mock GroupDao grpDao;
   @Mock RecordDao recordDao;
-  @Mock BaseRecordManager baseRecordManager;
   @InjectMocks private ArchiveNamingStrategy archiveNamingStrategy;
 
   @Before
@@ -70,9 +68,9 @@ public class ArchiveNamingStrategyTest {
     final String docName = "Test Export of A-Cell_324 Experiment";
     final String docNameExpectedFileName = "Test-Export-of-A-Cell-324-Experiment";
     expected.setName(docName);
-    ArchiveExportConfig cfg = createXmlSelectionCfg();
-    when(baseRecordManager.get(5L, cfg.getExporter())).thenReturn(expected);
+    when(recordDao.get(5L)).thenReturn(expected);
 
+    ArchiveExportConfig cfg = createXmlSelectionCfg();
     ExportContext context = createExportContext(expected);
 
     String name = archiveNamingStrategy.generateArchiveName(cfg, context);

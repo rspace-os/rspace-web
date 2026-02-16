@@ -5,9 +5,9 @@ import static com.researchspace.archive.ArchiveUtils.getUniqueName;
 import com.researchspace.archive.ArchiveFileNameData;
 import com.researchspace.archive.model.IArchiveExportConfig;
 import com.researchspace.dao.GroupDao;
+import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.UserDao;
-import com.researchspace.model.record.BaseRecord;
-import com.researchspace.service.BaseRecordManager;
+import com.researchspace.model.record.Record;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
@@ -22,7 +22,7 @@ public class ArchiveNamingStrategy {
 
   private @Autowired GroupDao grpDao;
   private @Autowired UserDao userDao;
-  private @Autowired BaseRecordManager baseRecordManager;
+  private @Autowired RecordDao rcdDao;
 
   String generateArchiveName(IArchiveExportConfig aconfig, ExportContext context) {
 
@@ -32,10 +32,7 @@ public class ArchiveNamingStrategy {
     } else if (aconfig.isGroupScope()) {
       exportScope = grpDao.get(aconfig.getUserOrGroupId().getDbId()).getDisplayName();
     } else if (context.getExportRecordList().getRecordsToExportSize() == 1) {
-      BaseRecord record =
-          baseRecordManager.get(
-              context.getExportRecordList().getFirstRecordToExport().getDbId(),
-              aconfig.getExporter());
+      Record record = rcdDao.get(context.getExportRecordList().getFirstRecordToExport().getDbId());
       exportScope = new ArchiveFileNameData(record, null).getName();
     }
 

@@ -27,7 +27,6 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
-import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.RecordManager;
@@ -49,7 +48,6 @@ import org.springframework.context.annotation.Lazy;
 @Slf4j
 public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
 
-  private @Autowired BaseRecordManager baseRecordManager;
   private @Autowired RecordManager recordManager;
   private @Autowired IPermissionUtils permissions;
   private @Autowired FolderManager folderManager;
@@ -76,11 +74,11 @@ public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
     ExportIdCollector exportIdCollector = new ExportIdCollector(folderManager, exportConfig);
     ExportRecordList rcdList =
         exportIdCollector.getRecordsToArchive(exportIds, exportTypes, exporter);
-    User exportUser = userManager.getUserByUsername(exporter.getUsername());
+
     // Checking whether exporter has READ permissions for all initial items to export
     for (GlobalIdentifier recordOid : rcdList.getRecordsToExport()) {
       if (!permissions.isPermitted(
-          baseRecordManager.get(recordOid.getDbId(), exportUser), PermissionType.READ, exporter)) {
+          recordManager.get(recordOid.getDbId()), PermissionType.READ, exporter)) {
         throw new ExportFailureException(
             String.format(
                 "Unauthorized attempt by : %s to export record with id %d",
@@ -194,10 +192,9 @@ public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
   // get stream of parsed field contents for a document
   Stream<FieldContents> textFieldStream(
       GlobalIdentifier currentRecordOid, IArchiveExportConfig aconfig) {
-    BaseRecord currentBaseRecord =
-        baseRecordManager.get(currentRecordOid.getDbId(), aconfig.getExporter());
+    Record currentRecord = recordDao.get(currentRecordOid.getDbId());
     List<AuditedRecord> versionsToExport =
-        getVersionsToExportForRecord(aconfig, currentRecordOid, currentBaseRecord);
+        getVersionsToExportForRecord(aconfig, currentRecordOid, currentRecord);
     return versionsToExport.stream()
         .map(AuditedRecord::getRecord)
         .filter(BaseRecord::isStructuredDocument)
@@ -332,7 +329,7 @@ public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
 
   @SuppressWarnings("unchecked")
   public List<AuditedRecord> getVersionsToExportForRecord(
-      IArchiveExportConfig aconfig, GlobalIdentifier recordToExportOid, BaseRecord latestRecord) {
+      IArchiveExportConfig aconfig, GlobalIdentifier recordToExportOid, Record latestRecord) {
 
     List<AuditedRecord> versionsToExport = new ArrayList<>();
     if (aconfig.isAllVersion()) {

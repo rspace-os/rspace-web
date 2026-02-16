@@ -7,7 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.dtos.ExportSelection;
-import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Record;
 import java.util.List;
 import javax.transaction.Transactional;
 
@@ -24,7 +24,7 @@ public interface ArchiveExportPlanner {
       Group grp, User exporter, List<Long> ids, List<String> types, List<String> names);
 
   List<AuditedRecord> getVersionsToExportForRecord(
-      IArchiveExportConfig aconfig, GlobalIdentifier rid, BaseRecord record);
+      IArchiveExportConfig aconfig, GlobalIdentifier rid, Record record);
 
   @Transactional
   void updateExportListWithLinkedRecords(ExportRecordList exportList, IArchiveExportConfig aconfig);
