@@ -8,6 +8,7 @@ import {
   GridToolbarExportContainer,
   GridSlotProps,
   GridRowId,
+  DataGridProps,
 } from "@mui/x-data-grid";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -348,7 +349,7 @@ export default function IgsnTable({
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
 
-  const common = {
+  const common: DataGridProps<Identifier> = {
     rows: identifiers,
     columns: [
       DataGridColumn.newColumnWithFieldName<"doi", Identifier>("doi", {
@@ -393,6 +394,7 @@ export default function IgsnTable({
     disableColumnFilter: true,
     hideFooter: true,
     autoHeight: true,
+    showToolbar: true,
     slots: {
       pagination: null,
       toolbar: Toolbar,
@@ -408,7 +410,7 @@ export default function IgsnTable({
         setSearchTerm,
       },
       panel: {
-        anchorEl: columnsMenuAnchorEl,
+        target: columnsMenuAnchorEl,
       },
     },
     localeText: {
@@ -416,11 +418,16 @@ export default function IgsnTable({
     },
   };
 
+  const selectedRowIds = React.useMemo(
+    () => selectedIgsns.map((identifier) => identifier.doi).toArray(),
+    [selectedIgsns],
+  );
+
   if (disableMultipleRowSelection)
     return (
       <DataGridWithRadioSelection
         {...common}
-        getRowId={(row) => row.doi}
+        getRowId={(row: Identifier) => row.doi}
         selectRadioAriaLabelFunc={() => "Select IGSN"}
         onSelectionChange={(doi: GridRowId) => {
           const selectedIdentifier = identifiers.find((id) => id.doi === doi);
@@ -436,13 +443,19 @@ export default function IgsnTable({
   return (
     <DataGrid
       {...common}
-      getRowId={(row) => row.doi}
+      getRowId={(row: Identifier) => row.doi}
       checkboxSelection={true}
-      rowSelectionModel={selectedIgsns.map((id) => id.doi).toArray()}
-      onRowSelectionModelChange={(ids: GridRowSelectionModel) => {
-        const selectedIdentifiers = identifiers.filter((id) =>
-          ids.includes(id.doi),
-        );
+      rowSelectionModel={{
+        type: "include",
+        ids: new Set(selectedRowIds),
+      }}
+      onRowSelectionModelChange={(selectionModel: GridRowSelectionModel) => {
+        const selectedIdentifiers =
+          selectionModel.type === "include"
+            ? identifiers.filter((identifier) =>
+                selectionModel.ids.has(identifier.doi),
+              )
+            : identifiers;
         setSelectedIgsns(new RsSet(selectedIdentifiers));
       }}
     />

@@ -1,14 +1,19 @@
 import React from "react";
-import TableCell from "@mui/material/TableCell";
-import { withStyles } from "Styles";
+import MuiTableCell, { type TableCellProps } from "@mui/material/TableCell";
 
-const StyledTableCell = withStyles<
-  React.ComponentProps<typeof TableCell>,
-  { root: string }
->(() => ({
-  root: {
-    wordBreak: "break-word",
+const StyledTableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
+  function StyledTableCell({ sx, ...props }, ref) {
+    return (
+      <MuiTableCell
+        ref={ref}
+        {...props}
+        sx={[
+          { wordBreak: "break-word" },
+          ...((Array.isArray(sx) ? sx : [sx])).filter(Boolean),
+        ]}
+      />
+    );
   },
-}))(TableCell);
+);
 
 export default StyledTableCell;

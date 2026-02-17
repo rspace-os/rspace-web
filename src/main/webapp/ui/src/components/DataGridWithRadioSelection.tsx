@@ -1,10 +1,12 @@
 import React from "react";
 import {
   DataGrid,
+  type DataGridProps,
   GRID_CHECKBOX_SELECTION_COL_DEF,
   GridColDef,
   GridRenderCellParams,
   GridRowId,
+  type GridValidRowModel,
   useGridApiRef,
 } from "@mui/x-data-grid";
 import { Radio } from "@mui/material";
@@ -16,7 +18,7 @@ import { Radio } from "@mui/material";
  * what it suggests it does not change the checkboxes to radio buttons, which is
  * the more semantic UI element for singular selection.
  */
-export function DataGridWithRadioSelection({
+export function DataGridWithRadioSelection<R extends GridValidRowModel>({
   columns,
   onSelectionChange,
   localeText,
@@ -27,7 +29,7 @@ export function DataGridWithRadioSelection({
   /*
    * The list of other columns to which the selection column with be prepended.
    */
-  columns: GridColDef[];
+  columns: readonly GridColDef<R>[];
 
   /*
    * When the selection changes, this function will be called.
@@ -45,9 +47,9 @@ export function DataGridWithRadioSelection({
    * UI element is for to those using screen readers. This function allows
    * callers to specify a label that is specific to each row e.g. "Select Foo"
    */
-  selectRadioAriaLabelFunc: (col: GridRenderCellParams["row"]) => string;
+  selectRadioAriaLabelFunc: (row: R) => string;
 } & Omit<
-  React.ComponentProps<typeof DataGrid>,
+  DataGridProps<R>,
   | "columns"
   | "checkboxSelection"
   | "disableMultipleRowSelection"
@@ -63,7 +65,7 @@ export function DataGridWithRadioSelection({
     ? externalSelectedRowId
     : internalSelectedRowId;
 
-  const radioSelectionColumn: GridColDef = React.useMemo(() => {
+  const radioSelectionColumn: GridColDef<R> = React.useMemo(() => {
     const handleSelectionChange = (newSelectedId: GridRowId | null) => {
       if (!isControlled) {
         setInternalSelectedRowId(newSelectedId);
@@ -76,7 +78,7 @@ export function DataGridWithRadioSelection({
     return {
       ...GRID_CHECKBOX_SELECTION_COL_DEF,
       renderHeader: () => "Select",
-      renderCell: (params: GridRenderCellParams) => {
+      renderCell: (params: GridRenderCellParams<R>) => {
         const isSelected = selectedRowId === params.id;
 
         return (
@@ -126,7 +128,10 @@ export function DataGridWithRadioSelection({
       columns={allColumns}
       checkboxSelection
       disableMultipleRowSelection
-      rowSelectionModel={selectedRowId === null ? [] : [selectedRowId]}
+      rowSelectionModel={{
+        type: "include",
+        ids: selectedRowId === null ? new Set() : new Set([selectedRowId]),
+      }}
       localeText={{
         checkboxSelectionHeaderName: "Select",
         ...(localeText ?? {}),

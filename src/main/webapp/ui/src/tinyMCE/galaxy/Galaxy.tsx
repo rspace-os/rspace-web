@@ -6,7 +6,7 @@ import React, { useEffect, useState } from "react";
 import TitledBox from "@/components/TitledBox";
 import Stack from "@mui/material/Stack";
 import { DataGridColumn } from "@/util/table";
-import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";
+import { DataGrid, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 import CssBaseline from "@mui/material/CssBaseline";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid";
@@ -35,7 +35,7 @@ export type RSpaceErrorResponse = {
 export type RSpaceError = { message: string; response: RSpaceErrorResponse };
 
 function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
-  parent.tinymce.activeEditor?.on("galaxy-used", function () {
+  (parent as any).tinymce.activeEditor?.on("galaxy-used", function () {
     setDoUpload(true);
   });
 
@@ -89,7 +89,10 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
     [],
   );
   const [selectedAttachmentIds, setSelectedAttachmentIds] =
-    useState<GridRowSelectionModel>([]);
+    useState<GridRowSelectionModel>({
+      type: "include",
+      ids: new Set<GridRowId>([]),
+    });
   const [historyId, setHistoryId] = useState(null);
   const [historyName, setHistoryName] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -147,12 +150,16 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
   };
 
   const setUpGalaxyData = async () => {
+    const selectedIds: GridRowId[] = [];
+    if (selectedAttachmentIds.type === "include") {
+      selectedAttachmentIds.ids.forEach((id) => selectedIds.push(id));
+    }
     return axios.post("/apps/galaxy/setUpDataInGalaxyFor", null, {
       params: {
         targetAlias,
         recordId,
         fieldId,
-        selectedAttachmentIds: selectedAttachmentIds.join(","),
+        selectedAttachmentIds: selectedIds.join(","),
       },
     });
   };
@@ -176,10 +183,14 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
     doTheUpload();
   }, [doUpload]);
   useEffect(() => {
+    const selectedIds: GridRowId[] = [];
+    if (selectedAttachmentIds.type === "include") {
+      selectedAttachmentIds.ids.forEach((id) => selectedIds.push(id));
+    }
     window.parent.postMessage(
       {
         mceAction:
-          selectedAttachmentIds.length === 0 || servers.length === 0
+          selectedIds.length === 0 || servers.length === 0
             ? "no-data-selected"
             : "data-selected",
       },
@@ -345,10 +356,10 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
               <DataGrid
                 onRowSelectionModelChange={(
                   newRowSelectionModel: GridRowSelectionModel,
-                  _details,
                 ) => {
                   setSelectedAttachmentIds(newRowSelectionModel);
                 }}
+                rowSelectionModel={selectedAttachmentIds}
                 getRowHeight={() => "auto"}
                 rows={attachedFiles}
                 disableColumnSelector={true}
