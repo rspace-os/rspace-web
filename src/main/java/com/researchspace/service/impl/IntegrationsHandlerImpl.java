@@ -6,6 +6,9 @@ import static com.researchspace.service.SystemPropertyName.valueOfPropertyName;
 import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_ALIAS;
 import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_CONFIGURED_SERVERS;
 import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_OAUTH_CONNECTED;
+import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_ALIAS;
+import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_APIKEY;
+import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_CONFIGURED_SERVERS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIAS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
@@ -93,6 +96,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private @Autowired GalaxyService galaxyService;
 
   private final Map<SystemProperty, List<SystemProperty>> parent2ChildMap = new HashMap<>();
+
+  private static final Map<String, String> ENCODE_API_KEY_FOR_APPS =
+      Map.ofEntries(Map.entry(PYRAT_APP_NAME, PYRAT_APIKEY), Map.entry(DSW_APP_NAME, DSW_APIKEY));
 
   public void init() {
     List<SystemProperty> sysPropertyLookup = sysPropMgr.listSystemPropertyDefinitions();
@@ -215,6 +221,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         return;
       case ASCENSCIA_APP_NAME:
         setSingleUserToken(info, user, ASCENSCIA_APP_NAME, ASCENSCIA_USER_TOKEN);
+        return;
+      case DSW_APP_NAME:
+        setMultipleUserTokens(
+            info, user, DSW_APP_NAME, DSW_CONFIGURED_SERVERS, DSW_ALIAS, DSW_APIKEY);
         return;
       default:
     }
@@ -471,6 +481,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else if (GALAXY_APP_NAME.equals(appName) && optionsId != null) {
       saveNewUserConnectionForMultipleOptionApp(
           options.get(GALAXY_APIKEY), user, GALAXY_APP_NAME, options.get(GALAXY_ALIAS));
+    } else if (DSW_APP_NAME.equals(appName)) {
+      saveNewUserConnectionForMultipleOptionApp(
+          options.get(DSW_APIKEY), user, DSW_APP_NAME, options.get(DSW_ALIAS));
     }
   }
 
@@ -550,9 +563,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       User user) {
     Map<String, String> options;
     // remove the apiKey from the option otherwise it is saved in clear on the database
-    if (PYRAT_APP_NAME.equals(appName)) {
+    if (ENCODE_API_KEY_FOR_APPS.keySet().contains(appName)) {
       Map<String, String> safeMap = new HashMap<>(originalOptions);
-      safeMap.remove(PYRAT_APIKEY);
+      safeMap.remove(ENCODE_API_KEY_FOR_APPS.get(appName));
       options = safeMap;
     } else {
       options = originalOptions;
@@ -596,6 +609,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case FIELDMARK_APP_NAME:
       case GALAXY_APP_NAME:
       case ASCENSCIA_APP_NAME:
+      case DSW_APP_NAME:
         return true;
     }
     return isSingleOptionSetAppConfigIntegration(integrationName);

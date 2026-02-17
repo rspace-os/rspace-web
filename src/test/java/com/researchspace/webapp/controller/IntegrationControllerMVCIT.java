@@ -10,6 +10,7 @@ import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA
 import static com.researchspace.service.IntegrationsHandler.DMPONLINE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EVERNOTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
@@ -78,7 +79,7 @@ import org.springframework.test.web.servlet.MvcResult;
     })
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 29;
+  final int TOTAL_INTEGRATIONS = 30;
   Principal mockPrincipal = null;
 
   @Autowired private UserConnectionManager userConnectionManager;
@@ -139,6 +140,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(FIELDMARK_APP_NAME, new String[] {});
     expectedOptions.put(GALAXY_APP_NAME, new String[] {"GALAXY_CONFIGURED_SERVERS"});
     expectedOptions.put(ASCENSCIA_APP_NAME, new String[] {});
+    expectedOptions.put(DSW_APP_NAME, new String[] {});
 
     for (var info : infos.values()) {
       String integrationName = (String) info.get("name");
