@@ -5,7 +5,7 @@
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
     <!-- DSW integration -->
-    <changeSet id="2026-01-19a" context="run,dev-test" author="mrowe-tan">
+    <changeSet id="2026-01-19a" context="run" author="mrowe-tan">
       <comment>Create a new app - DSW</comment>
       <insert tableName="App">
         <column name="id" type="NUMERIC" value="NULL" />
@@ -15,7 +15,7 @@
       </insert>
     </changeSet>
 
-    <changeSet id="2026-01-19b" context="run,dev-test" author="mrowe-tan">
+    <changeSet id="2026-01-19b" context="run" author="mrowe-tan">
         <comment>Create a new system properties for DSW</comment>
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>

@@ -238,14 +238,19 @@ public class ExportControllerTest {
 
   public static ExportArchiveDialogConfigDTO
       createExportRaidAndElnArchiveConfigSelectionForProjectGroup(
-          Long groupId, String rspaceProjectName, String username, Long id, String name) {
+          Long groupId,
+          String rspaceProjectName,
+          String username,
+          Long id,
+          String name,
+          String type) {
     return createExportRaidAndElnArchiveConfigSelectionForProjectGroup(
         groupId,
         rspaceProjectName,
         username,
         new Long[] {id},
         new String[] {name},
-        new String[] {"NORMAL"});
+        new String[] {type});
   }
 
   public static ExportArchiveDialogConfigDTO
