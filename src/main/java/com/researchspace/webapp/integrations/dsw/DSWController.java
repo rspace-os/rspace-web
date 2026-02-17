@@ -9,6 +9,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.integrations.dsw.exception.DSWProjectRetrievalException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -28,14 +29,20 @@ import org.springframework.web.client.HttpClientErrorException;
 @RequestMapping("/apps/dsw")
 public class DSWController {
 
-  @Autowired private DSWClient client;
-  @Autowired private UserManager userManager;
-  @Autowired private UserAppConfigManager userAppConfigMgr;
+  private final DSWClient dswClient;
+  private final UserManager userManager;
+  private final UserAppConfigManager userAppConfigMgr;
 
   private static String MSG_PROJECT_ERROR = "Error retrieving DSW project";
   private static String MSG_PROJECTS_ERROR = "Error getting DSW projects";
 
-  public DSWController() {}
+  @Autowired
+  public DSWController(
+      DSWClient dswClient, UserManager userManager, UserAppConfigManager userAppConfigManager) {
+    this.dswClient = dswClient;
+    this.userManager = userManager;
+    this.userAppConfigMgr = userAppConfigManager;
+  }
 
   @GetMapping("/currentUser")
   @ResponseBody
@@ -50,78 +57,7 @@ public class DSWController {
         userAppConfigMgr.findByAppConfigElementSetId(
             uacfg.getAppConfigElementSets().iterator().next().getId());
     try {
-      return ResponseEntity.ok().body(client.currentUser(serverAlias, cfg.get()));
-    } catch (HttpClientErrorException e) {
-      JsonNode err = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
-      return ResponseEntity.status(e.getStatusCode()).body(err);
-    } catch (Exception e) {
-      return ResponseEntity.internalServerError().body(null);
-    }
-  }
-
-  @GetMapping("/availableDocs")
-  @ResponseBody
-  public ResponseEntity<JsonNode> availableDocs(@RequestParam() String serverAlias)
-      throws URISyntaxException, MalformedURLException {
-    // User user = userManager.getAuthenticatedUserInSession();
-    User user = userManager.get(-12l);
-    System.out.println("@@@ Using user: " + user.getUsername());
-    UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
-    // TODO: Fix this when we have multiple instances properly supported.  (Although we
-    //  might not need to change anything if there's always one result.)
-    Optional<AppConfigElementSet> cfg =
-        userAppConfigMgr.findByAppConfigElementSetId(
-            uacfg.getAppConfigElementSets().iterator().next().getId());
-    try {
-      return ResponseEntity.ok().body(client.getDocsForCurrentUser(serverAlias, cfg.get()));
-    } catch (HttpClientErrorException e) {
-      JsonNode err = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
-      return ResponseEntity.status(e.getStatusCode()).body(err);
-    } catch (Exception e) {
-      return ResponseEntity.internalServerError().body(null);
-    }
-  }
-
-  @GetMapping("/getDocument")
-  @ResponseBody
-  public ResponseEntity<JsonNode> getDocument(
-      @RequestParam() String serverAlias, @RequestParam() String documentUuid)
-      throws URISyntaxException, MalformedURLException {
-    // User user = userManager.getAuthenticatedUserInSession();
-    User user = userManager.get(-12l);
-    System.out.println("@@@ Using user: " + user.getUsername());
-    UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
-    // TODO: Fix this when we have multiple instances properly supported.  (Although we
-    //  might not need to change anything if there's always one result.)
-    Optional<AppConfigElementSet> cfg =
-        userAppConfigMgr.findByAppConfigElementSetId(
-            uacfg.getAppConfigElementSets().iterator().next().getId());
-    try {
-      return ResponseEntity.ok().body(client.getDocumentURL(serverAlias, cfg.get(), documentUuid));
-    } catch (HttpClientErrorException e) {
-      JsonNode err = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
-      return ResponseEntity.status(e.getStatusCode()).body(err);
-    } catch (Exception e) {
-      return ResponseEntity.internalServerError().body(null);
-    }
-  }
-
-  @PostMapping("/importDSWFile")
-  @ResponseBody
-  public ResponseEntity<JsonNode> importDSWFile(
-      @RequestParam() String serverAlias, @RequestParam() String documentUuid)
-      throws URISyntaxException, MalformedURLException {
-    // User user = userManager.getAuthenticatedUserInSession();
-    User user = userManager.get(-12l);
-    System.out.println("@@@ Using user to import: " + user.getUsername());
-    UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
-    // TODO: Fix this when we have multiple instances properly supported.  (Although we
-    //  might not need to change anything if there's always one result.)
-    Optional<AppConfigElementSet> cfg =
-        userAppConfigMgr.findByAppConfigElementSetId(
-            uacfg.getAppConfigElementSets().iterator().next().getId());
-    try {
-      return ResponseEntity.ok().body(client.importDswFile(serverAlias, cfg.get(), documentUuid));
+      return ResponseEntity.ok().body(dswClient.currentUser(serverAlias, cfg.get()));
     } catch (HttpClientErrorException e) {
       JsonNode err = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
       return ResponseEntity.status(e.getStatusCode()).body(err);
@@ -144,7 +80,7 @@ public class DSWController {
         userAppConfigMgr.findByAppConfigElementSetId(
             uacfg.getAppConfigElementSets().iterator().next().getId());
     try {
-      JsonNode plans = client.getProjectsForCurrentUserJson(serverAlias, cfg.get());
+      JsonNode plans = dswClient.getProjectsForCurrentUserJson(serverAlias, cfg.get());
       return new AjaxReturnObject<>(plans, null);
     } catch (Exception e) {
       log.warn(MSG_PROJECTS_ERROR, e);
@@ -167,11 +103,11 @@ public class DSWController {
         userAppConfigMgr.findByAppConfigElementSetId(
             uacfg.getAppConfigElementSets().iterator().next().getId());
     try {
-      JsonNode plan = client.importPlan(serverAlias, cfg.get(), planUuid);
+      JsonNode plan = dswClient.importPlan(serverAlias, cfg.get(), planUuid);
       return new AjaxReturnObject<>(plan, null);
-    } catch (Exception e) {
+    } catch (DSWProjectRetrievalException e) {
       log.warn(MSG_PROJECT_ERROR, e);
-      return new AjaxReturnObject<>(null, ErrorList.of(MSG_PROJECT_ERROR));
+      return new AjaxReturnObject<>(null, ErrorList.of(e.getMessage()));
     }
   }
 }

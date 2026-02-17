@@ -9,7 +9,7 @@ import lombok.Getter;
 public class DSWProject {
   @JsonProperty private String createdAt;
   @JsonProperty private String description;
-  @JsonProperty private boolean isTemplate;
+  @JsonProperty private boolean template;
   @JsonProperty private String name;
   @JsonProperty private String sharing;
   @JsonProperty private String state;
