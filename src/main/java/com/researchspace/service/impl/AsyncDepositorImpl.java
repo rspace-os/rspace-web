@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.model.apps.App.APP_DATAVERSE;
+import static com.researchspace.model.apps.App.APP_ZENODO;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -110,7 +111,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       result = repository.submitDeposit(new UserDepositorAdapter(subject), file, metadata, repoCfg);
     } catch (Exception e) {
       result =
-          new RepositoryOperationResult(false, "Submitting deposit failed:" + e.getMessage(), null);
+          new RepositoryOperationResult(
+              false, "Submitting deposit failed:" + e.getMessage(), null, null);
     }
     return result;
   }
@@ -133,12 +135,15 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       RepoDepositConfig repoDepositConfig) {
     boolean updateSucceed = false;
     String doiLink = "";
-    if (result.isSucceeded()
-        && APP_DATAVERSE.equals(repoDepositConfig.getAppName())) { // only supports DATAVERSE
-      // the url returned by DATAVERSE is something like:
-      // https://dataverse.org/dataset.xhtml?persistentId=doi:10.70122/FK2/FNGEGH
-      try {
-        doiLink = "https://doi.org/" + result.getUrl().toString().split("=doi:")[1];
+    if (result.isSucceeded()) {
+      try { // only supports DATAVERSE and ZENODO
+        if (APP_DATAVERSE.equals(repoDepositConfig.getAppName())) {
+          // the url returned by DATAVERSE is something like:
+          // https://dataverse.org/dataset.xhtml?persistentId=doi:10.70122/FK2/FNGEGH
+          doiLink = "https://doi.org/" + result.getUrl().toString().split("=doi:")[1];
+        } else if (APP_ZENODO.equals(repoDepositConfig.getAppName())) {
+          doiLink = result.getDoiUrl().toString();
+        }
         log.info(
             "Updating DOI link: \""
                 + doiLink
@@ -193,7 +198,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       // here to send to DMP
       if (repoDepositConfig.getAppName().equals(App.APP_DRYAD)) {
         RepositoryOperationResult newResultWithPublicLink =
-            new RepositoryOperationResult(true, result.getMessage(), getDryadPublicUrl(result));
+            new RepositoryOperationResult(
+                true, result.getMessage(), getDryadPublicUrl(result), result.getDoiUrl());
         dmpUpdateHandler.updateDMPS(
             newResultWithPublicLink::getUrl, subject, repoDepositConfig.getSelectedDMPs());
       } else {
@@ -276,11 +282,11 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         Files.delete(symbolicLinkPath);
         Files.delete(tempDir);
       } else {
-        repoDepositResult = new RepositoryOperationResult(false, "No file to deposit", null);
+        repoDepositResult = new RepositoryOperationResult(false, "No file to deposit", null, null);
       }
     } catch (IOException | URISyntaxException e) {
       log.error("Submitting deposit failed: {}", e.getMessage());
-      repoDepositResult = new RepositoryOperationResult(false, e.getMessage(), null);
+      repoDepositResult = new RepositoryOperationResult(false, e.getMessage(), null, null);
     }
     postDeposit(repoDepositResult, app, subject, null, repoDepositConfig);
     return new AsyncResult<>(repoDepositResult);
@@ -302,7 +308,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
           doDeposit(subject, repository, repoDepositConfig, repoCfg, archive.get().getExportFile());
     } catch (Exception e) {
       log.error("Submitting deposit failed: {}", e.getMessage());
-      result = new RepositoryOperationResult(false, e.getMessage(), null);
+      result = new RepositoryOperationResult(false, e.getMessage(), null, null);
     }
     postDeposit(result, app, subject, archive.get().getExportFile(), repoDepositConfig);
     return new AsyncResult<>(result);
@@ -317,7 +323,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       throws InterruptedException, ExecutionException {
 
     RepositoryOperationResult depositResult = futureDepositResult.get();
-    if (repoDepositConfig.isExportToRaid()) {
+    if (repoDepositConfig.isExportToRaid() // only supported by DATAVERSE and ZENODO
+        && (APP_DATAVERSE.equals(app.getName()) || APP_ZENODO.equals(app.getName()))) {
       RaidUpdateResult raidUpdateResult =
           reportDoiToRaid(depositResult, app, user, repoDepositConfig);
       notifyRaidUpdateComplete(raidUpdateResult, user);
