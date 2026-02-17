@@ -86,8 +86,7 @@ public class DSWClient {
   }
 
   private String getApiKey(String serverAlias) {
-    // User subject = userManager.getAuthenticatedUserInSession();
-    User subject = userManager.get(-12l);
+    User subject = userManager.getAuthenticatedUserInSession();
     String accessToken =
         source
             .findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, serverAlias)
@@ -119,16 +118,16 @@ public class DSWClient {
   }
 
   public DSWProjects getProjectsForCurrentUser(String serverAlias, AppConfigElementSet cfg)
-      throws HttpClientErrorException, URISyntaxException, MalformedURLException {
+      throws HttpClientErrorException, URISyntaxException, MalformedURLException, DSWProjectRetrievalException {
     DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
 
     JsonNode currentUser = currentUser(serverAlias, cfg);
     DSWUser dswUser = null;
     try {
       dswUser = mapper.readValue(currentUser.toString(), DSWUser.class);
-      System.out.println("@@@ DSW User: " + dswUser.getEmail());
     } catch (Exception e) {
-      System.out.println("@@@ Error! " + e.getMessage());
+      log.warn("Error reading current user details", e);
+      throw new DSWProjectRetrievalException("Error retrieving DSW user details");
     }
 
     DSWProjects projects =
@@ -149,7 +148,7 @@ public class DSWClient {
   }
 
   public JsonNode getProjectsForCurrentUserJson(String serverAlias, AppConfigElementSet cfg)
-      throws HttpClientErrorException, URISyntaxException, MalformedURLException {
+      throws HttpClientErrorException, URISyntaxException, MalformedURLException, DSWProjectRetrievalException {
     DSWProjects projects = getProjectsForCurrentUser(serverAlias, cfg);
     return mapper.valueToTree(projects.getProjects());
   }
@@ -162,7 +161,6 @@ public class DSWClient {
 
     DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
 
-    System.out.println("@@@ Downloading plan with uuid: " + planUuid);
     JsonNode plan =
         restTemplate
             .exchange(

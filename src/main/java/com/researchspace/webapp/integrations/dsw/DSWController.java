@@ -48,8 +48,7 @@ public class DSWController {
   @ResponseBody
   public ResponseEntity<JsonNode> currentUsers(@RequestParam() String serverAlias)
       throws URISyntaxException, MalformedURLException {
-    // User user = userManager.getAuthenticatedUserInSession();
-    User user = userManager.get(-12l);
+    User user = userManager.getAuthenticatedUserInSession();
     UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
     // TODO: Fix this when we have multiple instances properly supported.  (Although we
     //  might not need to change anything if there's always one result.)
@@ -70,9 +69,7 @@ public class DSWController {
   @ResponseBody
   public AjaxReturnObject<JsonNode> listDSWPlans(@RequestParam() String serverAlias)
       throws URISyntaxException, MalformedURLException {
-    // User user = userManager.getAuthenticatedUserInSession();
-    User user = userManager.get(-12l);
-    System.out.println("@@@ Using user: " + user.getUsername());
+    User user = userManager.getAuthenticatedUserInSession();
     UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
     // TODO: Fix this when we have multiple instances properly supported.  (Although we
     //  might not need to change anything if there's always one result.)
@@ -93,9 +90,7 @@ public class DSWController {
   public AjaxReturnObject<JsonNode> importPlan(
       @RequestParam() String serverAlias, @RequestParam() String planUuid)
       throws URISyntaxException, MalformedURLException {
-    // User user = userManager.getAuthenticatedUserInSession();
-    User user = userManager.get(-12l);
-    System.out.println("@@@ Using user to import: " + user.getUsername());
+    User user = userManager.getAuthenticatedUserInSession();
     UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
     // TODO: Fix this when we have multiple instances properly supported.  (Although we
     //  might not need to change anything if there's always one result.)
