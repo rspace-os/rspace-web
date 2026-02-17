@@ -13,6 +13,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageTree;
 import org.apache.pdfbox.rendering.ImageType;
@@ -32,7 +33,7 @@ public class PDFToImageConverter implements DocumentConversionService {
 
     PDDocument document2;
     try {
-      document2 = PDDocument.load(pdfFile);
+      document2 = Loader.loadPDF(pdfFile);
     } catch (IOException e1) {
       return new ConversionResult("Couldn't load pdf file: " + e1.getMessage());
     }

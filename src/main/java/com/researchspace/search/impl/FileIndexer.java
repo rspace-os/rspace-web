@@ -21,6 +21,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.tika.Tika;
@@ -186,7 +187,7 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
     Field contentFld = null;
     String suffix = FilenameUtils.getExtension(fx.getName()).toLowerCase();
     if (suffix.equals("pdf")) {
-      PDDocument pdoc = PDDocument.load(fx);
+      PDDocument pdoc = Loader.loadPDF(fx);
       String content = new PDFTextStripper().getText(pdoc);
       contentFld = new Field(FIELD_CONTENTS, content, Field.Store.NO, Field.Index.ANALYZED);
       pdoc.close();
