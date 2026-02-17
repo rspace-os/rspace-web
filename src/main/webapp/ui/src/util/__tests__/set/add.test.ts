@@ -1,8 +1,7 @@
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
-import { arbRsSet } from "./helpers";
 
+import { arbRsSet } from "./helpers";
 describe("add", () => {
   test("Result should be a subset of input set.", () => {
     fc.assert(

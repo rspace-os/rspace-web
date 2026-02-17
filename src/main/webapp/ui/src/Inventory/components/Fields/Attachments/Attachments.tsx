@@ -257,7 +257,7 @@ const FilesCard = observer(
 
     useEffect(() => {
       setOpen(attachments.length > 0);
-       
+
     }, [attachments]);
 
     return (

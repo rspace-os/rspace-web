@@ -1,8 +1,4 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test, vi } from 'vitest';
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
 import getRootStore from "../../RootStore";
 import Search from "../../../models/Search";
@@ -11,17 +7,17 @@ import ContainerModel from "../../../models/ContainerModel";
 import MemoisedFactory from "../../../models/Factory/MemoisedFactory";
 import { type AxiosResponse } from "axios";
 
-jest.mock("../../../../common/InvApiService", () => ({
-  bulk: jest.fn().mockResolvedValue({}),
-  get: jest.fn().mockResolvedValue({}),
-  query: jest.fn().mockResolvedValue({}),
-}));
-
+vi.mock("../../../../common/InvApiService", () => ({
+  default: {
+  bulk: vi.fn().mockResolvedValue({}),
+  get: vi.fn().mockResolvedValue({}),
+  query: vi.fn().mockResolvedValue({}),
+}}));
 describe("action: moveSelected", () => {
   describe("Moving the contents of a location into its current location should", () => {
     test("result in new records being allocated in memory.", async () => {
-      const { searchStore, moveStore } = getRootStore();
 
+      const { searchStore, moveStore } = getRootStore();
       /*
        * 1. Setup SearchStore with an activeResult that is a grid container
        * with a selected location with content.
@@ -47,7 +43,7 @@ describe("action: moveSelected", () => {
       });
       const preMoveContent: ContainerModel = activeResult.locations?.[0]
         .content as ContainerModel;
-      jest.spyOn(InvApiService, "query").mockImplementation(
+      vi.spyOn(InvApiService, "query").mockImplementation(
         () =>
           Promise.resolve({
             data: {
@@ -73,30 +69,30 @@ describe("action: moveSelected", () => {
       if (!location) throw new Error("Location should exist");
       location.toggleSelected(true);
       expect(location.selected).toBe(true);
-      expect(location.content?.selected).toBe(true);
 
+      expect(location.content?.selected).toBe(true);
       /*
        * 2. Setup move dialog to move selected location's content into its
        * current location
        */
-      jest
+      vi
         .spyOn(Search.prototype, "setSearchView")
         .mockImplementation(() => Promise.resolve());
       await moveStore.setIsMoving(true);
-      moveStore.setSelectedResults([preMoveContent]);
 
+      moveStore.setSelectedResults([preMoveContent]);
       const destination = activeResult;
-      jest
+      vi
         .spyOn(destination.contentSearch.fetcher, "performInitialSearch")
         .mockImplementation(() => Promise.resolve());
+
       await moveStore.setTargetContainer(destination);
 
       activeResult.locations?.[0].toggleSelected(true);
-
       /*
        * 3. Complete and assert move operation
        */
-      jest.spyOn(InvApiService, "bulk").mockImplementation(
+      vi.spyOn(InvApiService, "bulk").mockImplementation(
         () =>
           Promise.resolve({
             status: 200,
@@ -117,12 +113,12 @@ describe("action: moveSelected", () => {
             },
           }) as unknown as Promise<AxiosResponse<unknown>>
       );
-      jest
+      vi
         .spyOn(searchStore.search.fetcher, "performInitialSearch")
+
         .mockImplementation(() => Promise.resolve());
 
       await moveStore.moveSelected();
-
       const newLocation = activeResult.locations?.[0];
       expect(newLocation?.content).not.toBe(null);
       expect(newLocation?.content?.id).toEqual(preMoveContent.id);
@@ -134,3 +130,4 @@ describe("action: moveSelected", () => {
     });
   });
 });
+

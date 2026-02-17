@@ -111,7 +111,7 @@ export function useDeploymentProperty(
         }
       }
     })();
-     
+
   }, []);
 
   return value;

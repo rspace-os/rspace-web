@@ -6,6 +6,8 @@ import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.ConvertibleFile;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
+import com.researchspace.export.pdf.ExportToFileConfig.DATE_FOOTER_PREF;
+import com.researchspace.export.stoichiometry.StoichiometryHtmlGenerator;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.core.IRSpaceDoc;
@@ -13,18 +15,25 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.velocity.app.VelocityEngine;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Entities;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ui.velocity.VelocityEngineUtils;
 
 public class MSWordProcessor extends AbstractExportProcessor implements ExportProcessor {
 
@@ -35,6 +44,9 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
   private DocumentConversionService docConverter;
 
   private @Autowired ImageRetrieverHelper imageHelper;
+  @Autowired private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
+  @Autowired private VelocityEngine velocityEngine;
+  public final SimpleDateFormat simpleDateFmt = new SimpleDateFormat("yyyy-MM-dd");
 
   public void setDocConverter(DocumentConversionService docConverter) {
     this.docConverter = docConverter;
@@ -91,7 +103,8 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
               ExportFormat.WORD, exportConfig.getExportFormat()));
     }
     // this puts html and images in the same folder.
-    File htmlInput = extractImagesAndReplaceSrcLinks(tempExportFile, exportInput, exportConfig);
+    File htmlInput =
+        extractImagesAndReplaceSrcLinks(tempExportFile, exportInput, exportConfig, strucDoc);
     Convertible toconvert = new ConvertibleFile(htmlInput);
     ConversionResult result = docConverter.convert(toconvert, "doc", tempExportFile);
     if (!result.isSuccessful()) {
@@ -100,7 +113,10 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
   }
 
   private File extractImagesAndReplaceSrcLinks(
-      File tempExportFile, ExportProcesserInput exportInput, ExportToFileConfig exportConfig)
+      File tempExportFile,
+      ExportProcesserInput exportInput,
+      ExportToFileConfig exportConfig,
+      IRSpaceDoc strucDoc)
       throws IOException, FileNotFoundException {
     String html = exportInput.getDocumentAsHtml();
     Document jsoup = Jsoup.parse(html);
@@ -108,10 +124,57 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
     extractImageFileAndUpdateLinkFromImages(tempExportFile, exportConfig, images);
 
     html = jsoup.html();
+    if (html.contains("data-stoichiometry-table")) {
+      html = stoichiometryHtmlGenerator.addStoichiometryLinks(html, exportConfig.getExporter());
+    }
+    String pageSize = exportConfig.getPageSize().equals("A4") ? "A4" : "LETTER";
+    String footerFormattedDate = formatFooterDate(strucDoc, exportConfig);
+    html =
+        addStyleElement(
+            html,
+            makeHtmlStyleElement(
+                pageSize, !exportConfig.isIncludeFooterAtEndOnly(), footerFormattedDate));
     File htmlInput =
         new File(tempExportFile.getParentFile(), getBaseName(tempExportFile.getName()) + ".html");
     FileUtils.write(htmlInput, html, "UTF-8");
     return htmlInput;
+  }
+
+  private String formatFooterDate(IRSpaceDoc doc, ExportToFileConfig config) {
+    String footerFormattedDate;
+    DATE_FOOTER_PREF format = config.getDateTypeEnum();
+    if (format == DATE_FOOTER_PREF.NEW) {
+      footerFormattedDate = "Create date: " + simpleDateFmt.format(doc.getCreationDate());
+    } else if (format == DATE_FOOTER_PREF.UPD) {
+      footerFormattedDate =
+          "Last updated: " + simpleDateFmt.format(doc.getModificationDateAsDate());
+    } else {
+      footerFormattedDate = "Export date: " + LocalDate.now();
+    }
+    return footerFormattedDate;
+  }
+
+  private String makeHtmlStyleElement(String pageSize, boolean footerEachPage, String footerDate) {
+    Map<String, Object> context = new HashMap<>();
+    context.put("pageSize", pageSize);
+    return VelocityEngineUtils.mergeTemplateIntoString(
+        velocityEngine, "doc/styles.vm", "UTF-8", context);
+  }
+
+  private String addStyleElement(String html, String styles) {
+    Document document = stringToJsoupDoc(html);
+    Element head = document.head();
+    head.append(styles);
+    return document.toString();
+  }
+
+  private Document stringToJsoupDoc(String html) {
+    Document doc = Jsoup.parse(html);
+    doc.outputSettings()
+        .syntax(org.jsoup.nodes.Document.OutputSettings.Syntax.xml)
+        .escapeMode(Entities.EscapeMode.xhtml)
+        .charset("UTF-8");
+    return doc;
   }
 
   private void extractImageFileAndUpdateLinkFromImages(

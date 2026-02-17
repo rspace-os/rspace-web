@@ -4,6 +4,22 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.19.0 2026-02-06
+
+### ELN Features
+
+- RSDEV-911 export-import mechanism now supports stoichiometry reactions
+
+### ELN Bugfix
+
+- RSDEV-863 fix problem where change to permission type of shared document was sometimes not saved
+- RSDEV-971 fix problems with exporting to Figshare repository (caused by changes in Figshare API)
+- ISSUE#521 in public API, links returned by /folders/tree/{id} endpoint now have 'id' parameter applied correctly
+
+### Contributed by open-source community
+
+- ISSUE#478 Dataverse integration support for servers configured with multiple metadata languages (based on contribution from akos326)
+
 # 2.18.0 2026-01-08
 
 ### ELN Features

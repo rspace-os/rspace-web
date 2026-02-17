@@ -5,6 +5,7 @@ import static com.researchspace.service.UserFolderCreator.SHARED_SNIPPETS_FOLDER
 
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiGroupInfo;
+import com.researchspace.api.v1.model.IdentifiableNameableApiObject;
 import com.researchspace.core.util.FilterCriteria;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.ObjectToStringPropertyTransformer;
@@ -54,6 +55,7 @@ import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.PropertyConstraint;
 import com.researchspace.model.record.ACLPropagationPolicy;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.ChildAddPolicy;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IRecordFactory;
@@ -64,6 +66,7 @@ import com.researchspace.model.views.GroupInvitation;
 import com.researchspace.model.views.GroupInvitation.Invitee;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.UserView;
+import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FolderNotSharedException;
 import com.researchspace.service.GroupManager;
@@ -78,6 +81,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -123,6 +127,7 @@ public class GroupManagerImpl implements GroupManager {
   private @Autowired FolderDao folderDao;
   private @Autowired GroupMembershipEventDao groupMembershipEventDao;
   private @Autowired RecordManager recordManager;
+  private @Autowired BaseRecordManager baseRecordManager;
   private @Autowired RaIDDao raidDao;
 
   private @Autowired IContentInitialiserUtils contentUtils;
@@ -365,6 +370,23 @@ public class GroupManagerImpl implements GroupManager {
         .filter(g -> g.getId().equals(groupId))
         .findFirst()
         .map(ApiGroupInfo::new);
+  }
+
+  @Override
+  public List<ApiGroupInfo> getGroupInfoListByUser(User subject) {
+    Set<Group> groups = this.listGroupsForUser();
+    return groups.stream()
+        .map(ApiGroupInfo::new)
+        .sorted(Comparator.comparing(IdentifiableNameableApiObject::getName))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<ApiGroupInfo> getGroupInfoListByQuery(User user, PaginationCriteria<Group> pgCrit) {
+    ISearchResults<Group> groupSearchResult = this.list(user, pgCrit);
+    return groupSearchResult.getResults().stream()
+        .map(ApiGroupInfo::new)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -1206,6 +1228,24 @@ public class GroupManagerImpl implements GroupManager {
   @Override
   public Group getGroupByCommunalGroupFolderId(Long communalGroupFolderId) {
     return groupDao.getByCommunalGroupFolderId(communalGroupFolderId);
+  }
+
+  @Override
+  public boolean isRecordPartOfGroup(User user, Long recordId, Long projectGroupId) {
+    BaseRecord currentRecord = baseRecordManager.get(recordId, user);
+    Set<Folder> parents = currentRecord.getParentFolders();
+    Iterator<Folder> it = parents.iterator();
+    boolean isPartOfProject = false;
+    Group currentProjectGroup = null;
+    Folder currentFolder = null;
+    while (it.hasNext() && !isPartOfProject) {
+      currentFolder = it.next();
+      if (currentFolder.isSharedFolder()) {
+        currentProjectGroup = this.getGroupFromAnyLevelOfSharedFolder(user, currentFolder, null);
+        isPartOfProject = projectGroupId.equals(currentProjectGroup.getId());
+      }
+    }
+    return isPartOfProject;
   }
 
   private Folder doCreateAutoshareFolder(User user, Group group, UserGroup ug, String folderName) {

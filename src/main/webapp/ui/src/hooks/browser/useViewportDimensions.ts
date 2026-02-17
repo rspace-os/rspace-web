@@ -112,7 +112,7 @@ export default function useViewportDimensions(): ViewportDimensions {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-     
+
   }, []);
 
   return viewportDimensions;

@@ -1,23 +1,14 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect } from 'vitest';
 import React from "react";
-import { render, cleanup, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  render,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import ProtocolsIO from "../ProtocolsIO";
 import { Optional } from "../../../../util/optional";
-import { axe, toHaveNoViolations } from "jest-axe";
+
 import "../../../../../__mocks__/matchMedia";
-
-expect.extend(toHaveNoViolations);
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("ProtocolsIO", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
@@ -31,13 +22,14 @@ describe("ProtocolsIO", () => {
           }}
           update={() => {}}
         />
+
       );
 
       fireEvent.click(screen.getByRole("button"));
-
       expect(await screen.findByRole("dialog")).toBeVisible();
 
-      expect(await axe(baseElement)).toHaveNoViolations();
+      // @ts-expect-error toBeAccessible is from @sa11y/vitest
+      await expect(baseElement).toBeAccessible();
     });
   });
   test("Should have a connect button when the user is not authenticated.", () => {
@@ -51,10 +43,10 @@ describe("ProtocolsIO", () => {
         }}
         update={() => {}}
       />
+
     );
 
     fireEvent.click(screen.getByRole("button"));
-
     expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
   });
   test("Should have a disconnect button when the user is authenticated.", () => {
@@ -68,10 +60,10 @@ describe("ProtocolsIO", () => {
         }}
         update={() => {}}
       />
+
     );
 
     fireEvent.click(screen.getByRole("button"));
-
     expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
   });
 });

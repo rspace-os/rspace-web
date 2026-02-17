@@ -7,6 +7,21 @@
    Success -  RSpace was authorized to access repositories on GitHub. This window will be closed shortly.
 </div>
 
+<%-- This script is an addition to make the new apps page backwards compatible. --%>
+<script>
+    // NOTE: This channel name must match the exported GITHUB_CONNECTION_CHANNEL constant in GitHub.tsx.
+    const GITHUB_CONNECTION_CHANNEL_NAME = 'rspace.apps.github.connection';
+
+    window.addEventListener("load", () => {
+        const channel = new BroadcastChannel(GITHUB_CONNECTION_CHANNEL_NAME);
+        channel.postMessage({
+            type: 'GITHUB_CONNECTED',
+            authToken: "${gitHubAccessToken}"
+        })
+        window.close();
+    });
+</script>
+
 <!-- BEGIN GitHub repository chooser dialog -->
 <script type="text/template" data-template="rs-app-github-add-repository-apprise">
   <div class="bootstrap-namespace" style="margin: 0px !important">
@@ -37,5 +52,3 @@
   </div>
 </script>
 <!-- END GitHub repository chooser dialog -->
-
-<input id="gitHubAccessToken" type="hidden" value="${gitHubAccessToken}">

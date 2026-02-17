@@ -32,6 +32,7 @@ class RsChemElementFieldExporter extends AbstractFieldExporter<RSChemElement> {
     agm.setContentType("image/png");
     agm.setAnnotation(item.getChemElements());
     agm.setChemElementsFormat(item.getChemElementsFormat().name());
+    agm.setEcatChemFieldId(item.getEcatChemFileId());
     if (item.getImageFileProperty() != null) {
       agm.setLinkToOriginalFile(getLargePreviewUrlForReplacementUrl(newLink));
     }

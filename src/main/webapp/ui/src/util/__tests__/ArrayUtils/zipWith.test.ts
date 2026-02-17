@@ -1,14 +1,10 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import * as ArrayUtils from "../../ArrayUtils";
+
 import { monoids } from "../helpers";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 describe("zipWith", () => {
   test("Has property of associativity over monoids.", () => {
     fc.assert(
@@ -57,3 +53,4 @@ describe("zipWith", () => {
     );
   });
 });
+

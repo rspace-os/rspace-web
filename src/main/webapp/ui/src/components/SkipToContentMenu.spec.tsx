@@ -4,8 +4,8 @@ import {
   SimpleTestExample,
   DynamicLandmarksExample,
 } from "./SkipToContentMenu.story";
-import { type emptyObject } from "../util/types";
 
+import { type emptyObject } from "../util/types";
 const feature = test.extend<{
   Given: {
     "a simple skip-to-content component is rendered": () => Promise<void>;
@@ -126,8 +126,8 @@ const feature = test.extend<{
       },
     });
   },
-});
 
+});
 test.describe("SkipToContentButton", () => {
   feature(
     "Skip button becomes visible when focused",
@@ -137,8 +137,8 @@ test.describe("SkipToContentButton", () => {
       await Then["the skip button should be visible"]();
       await Then["the landmark options should be displayed"]();
     },
-  );
 
+  );
   feature(
     "Skip button allows navigation to landmarks",
     async ({ Given, When, Then }) => {
@@ -151,8 +151,8 @@ test.describe("SkipToContentButton", () => {
         landmarkName: "Header",
       });
     },
-  );
 
+  );
   feature(
     "Arrow keys navigate through landmarks",
     async ({ Given, When, Then }) => {
@@ -168,8 +168,8 @@ test.describe("SkipToContentButton", () => {
         landmarkName: "Header",
       });
     },
-  );
 
+  );
   feature(
     "Dynamic landmark registration updates the list",
     async ({ Given, When, Then }) => {
@@ -178,8 +178,8 @@ test.describe("SkipToContentButton", () => {
       await When["the user focuses the skip button"]();
       await Then["the landmark list should include the new landmarks"]();
     },
-  );
 
+  );
   feature(
     "Escape key closes the skip-to-content menu",
     async ({ Given, When, Then }) => {

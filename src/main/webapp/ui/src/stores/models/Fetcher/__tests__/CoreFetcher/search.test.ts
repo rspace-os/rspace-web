@@ -1,9 +1,5 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
 
+import { describe, expect, test, vi } from 'vitest';
 import CoreFetcher from "../../CoreFetcher";
 import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";
 import { type Factory } from "../../../../definitions/Factory";
@@ -11,13 +7,17 @@ import InvApiService from "../../../../../common/InvApiService";
 import "../../../../../__tests__/assertUrlSearchParams";
 import { AxiosResponse } from "axios";
 
-jest.mock("../../../../stores/RootStore", () => () => ({
+vi.mock("../../../../stores/RootStore", () => ({
+  default: () => ({
+  default: {
   uiStore: {
     addAlert: () => {},
   },
+  }})
 }));
-jest.mock("../../../../../common/InvApiService", () => ({
-  query: jest.fn(
+vi.mock("../../../../../common/InvApiService", () => ({
+  default: {
+  query: vi.fn(
     () =>
       new Promise<AxiosResponse>((resolve) =>
         resolve({
@@ -32,22 +32,22 @@ jest.mock("../../../../../common/InvApiService", () => ({
         })
       )
   ),
-}));
 
+  }}));
 describe("search", () => {
   describe("When a new search is performed,", () => {
     test("a new factory should be created.", async () => {
-      const mockNewFactory = jest.fn<any, any>().mockReturnValue({} as Factory);
+      const mockNewFactory = vi.fn().mockReturnValue({} as Factory);
       const factory = mockFactory({
         newFactory: mockNewFactory,
       });
       const fetcher = new CoreFetcher(factory, null);
-      await fetcher.search(null, () => {});
 
+      await fetcher.search(null, () => {});
       expect(mockNewFactory).toHaveBeenCalled();
     });
     test("and a page size is not specified, then 10 is passed in API call.", async () => {
-      const querySpy = jest
+      const querySpy = vi
         .spyOn(InvApiService, "query")
         .mockImplementation(() =>
           Promise.resolve({
@@ -59,12 +59,12 @@ describe("search", () => {
           })
         );
 
-      const mockNewFactory = jest.fn<any, any>().mockReturnValue({} as Factory);
+      const mockNewFactory = vi.fn<() => Factory>().mockReturnValue({} as Factory);
       const factory = mockFactory({
         newFactory: mockNewFactory,
       });
-      const fetcher = new CoreFetcher(factory, null);
 
+      const fetcher = new CoreFetcher(factory, null);
       await fetcher.search({}, () => {});
       expect(querySpy).toHaveBeenCalledWith(
         "containers",
@@ -73,3 +73,4 @@ describe("search", () => {
     });
   });
 });
+

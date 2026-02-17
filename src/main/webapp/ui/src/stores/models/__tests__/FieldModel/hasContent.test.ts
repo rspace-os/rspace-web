@@ -1,22 +1,16 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test, vi } from 'vitest';
 import FieldModel from "../../FieldModel";
-import each from "jest-each";
 import { makeMockSample } from "../SampleModel/mocking";
 
-jest.mock("../../../../common/InvApiService", () => {}); // break import cycle
-
+vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 describe("hasContent", () => {
   describe('type = "Number"', () => {
-    each`
+    test.each`
     value | boolValue
     ${0}  | ${true}
     ${4}  | ${true}
     ${""} | ${false}
-  `.test(
+  `(
       "{value = $value}",
       ({
         value,
@@ -41,3 +35,4 @@ describe("hasContent", () => {
     );
   });
 });
+

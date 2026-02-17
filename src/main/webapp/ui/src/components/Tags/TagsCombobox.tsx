@@ -589,6 +589,7 @@ export default function TagsCombobox<
       }
     },
   });
+  const { ref: inputRef, ...inputProps } = getInputProps();
 
   /*
    * Whenever tags are added or removed from `value`, update the set of
@@ -646,9 +647,7 @@ export default function TagsCombobox<
        * already be set.
        */
       setTimeout(() => {
-        (
-          getInputProps().ref as React.RefObject<HTMLInputElement>
-        ).current?.focus();
+        (inputRef as React.RefObject<HTMLInputElement>).current?.focus();
       }, 0);
     }
   }, [anchorEl]);
@@ -733,10 +732,11 @@ export default function TagsCombobox<
               ),
             }}
             inputProps={{
-              ...getInputProps(),
+              ...inputProps,
               id: textFieldId,
               value: filter,
             }}
+            inputRef={inputRef}
             onFocus={() => {
               /*
                * When the user taps on the "Add Tag" button we open the Popover

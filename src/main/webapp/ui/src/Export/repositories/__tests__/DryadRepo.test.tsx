@@ -1,28 +1,17 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
 import {
   render,
-  cleanup,
   screen,
   fireEvent,
   act,
 } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import DryadRepo from "../DryadRepo";
 import MockAdapter from "axios-mock-adapter";
+
 import axios from "@/common/axios";
 
 const mockAxios = new MockAdapter(axios);
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("DryadRepo", () => {
   /*
    * Call this function like so to avoid the "not wrapped in act(...)" warning:
@@ -67,8 +56,8 @@ describe("DryadRepo", () => {
         authors={[]}
       />
     );
-  };
 
+  };
   /*
    * We then want to mock that network call so that it is not attempted for
    * real in the test runtime.
@@ -78,16 +67,16 @@ describe("DryadRepo", () => {
       email: "joe.bloggs@example.com",
       fullName: "Joe Bloggs",
     },
+
   });
-
   test("Upon editing, title should be set to the entered value.", async () => {
-    const handleChange = jest.fn();
-    await act(() => void renderDryadRepo({ handleChange }));
+    const handleChange = vi.fn();
 
+    await act(() => void renderDryadRepo({ handleChange }));
     fireEvent.change(screen.getByRole("textbox", { name: /Title/ }), {
       target: { value: "foo" },
-    });
 
+    });
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({
@@ -96,16 +85,16 @@ describe("DryadRepo", () => {
         }),
       })
     );
+
   });
-
   test("Upon editing, description should be set to the entered value.", async () => {
-    const handleChange = jest.fn();
-    await act(() => void renderDryadRepo({ handleChange }));
+    const handleChange = vi.fn();
 
+    await act(() => void renderDryadRepo({ handleChange }));
     fireEvent.change(screen.getByRole("textbox", { name: /Add an abstract/ }), {
       target: { value: "foo" },
-    });
 
+    });
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({
@@ -116,3 +105,4 @@ describe("DryadRepo", () => {
     );
   });
 });
+

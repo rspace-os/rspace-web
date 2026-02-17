@@ -1,10 +1,10 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect } from 'vitest';
+import "@/__tests__/mocks/useUiPreference";
 import React from "react";
-import { cleanup, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import {
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { UsersPage } from "..";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
@@ -15,20 +15,15 @@ import USER_LISTING from "./userListing.json";
 import PDF_CONFIG from "./pdfConfig.json";
 import { render, within } from "../../../../__tests__/customQueries";
 
+// @ts-expect-error RS is legacy
+
 window.RS = { newFileStoresExportEnabled: false };
 
 const mockAxios = new MockAdapter(axios);
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("Table Listing", () => {
   test("Usage should be shown in human-readable format", async () => {
-    mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
 
+    mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
     mockAxios
       .onGet("/userform/ajax/preference?preference=UI_JSON_SETTINGS")
       .reply(200, {});
@@ -38,21 +33,21 @@ describe("Table Listing", () => {
       .reply(200, { ...PDF_CONFIG });
     mockAxios.onGet("/analyticsProperties").reply(200, {
       analyticsEnabled: false,
-    });
 
+    });
     render(
       <StyledEngineProvider injectFirst>
         <ThemeProvider theme={materialTheme}>
           <UsersPage />
         </ThemeProvider>
       </StyledEngineProvider>,
-    );
 
+    );
     const grid = await screen.findByRole("grid");
     await waitFor(() =>
       expect(within(grid).getAllByRole("row").length).toBeGreaterThan(1),
-    );
 
+    );
     expect(
       // @ts-expect-error findTableCell exists on the custom within function
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -65,3 +60,4 @@ describe("Table Listing", () => {
     ).toHaveTextContent("0 B");
   });
 });
+

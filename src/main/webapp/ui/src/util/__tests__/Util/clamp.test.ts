@@ -1,11 +1,7 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import "@testing-library/jest-dom";
+import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
-import { clamp } from "../../Util";
 
+import { clamp } from "../../Util";
 describe("clamp", () => {
   test("y <= clamp(x,y,z) <= z", () => {
     fc.assert(
@@ -17,3 +13,4 @@ describe("clamp", () => {
     );
   });
 });
+

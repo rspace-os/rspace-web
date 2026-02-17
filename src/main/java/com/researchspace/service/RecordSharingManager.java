@@ -30,15 +30,27 @@ public interface RecordSharingManager {
   List<RecordGroupSharing> getSharedRecordsForUser(User u);
 
   /**
-   * Gets a paginated list of records the user has shared, according to the supplied pagination
-   * criteria
+   * Gets a paginated list of record sharing details, according to the supplied pagination criteria
    *
    * @param u
    * @param pcg
-   * @return
    */
   ISearchResults<RecordGroupSharing> listSharedRecordsForUser(
       User u, PaginationCriteria<RecordGroupSharing> pcg);
+
+  /**
+   * Gets a paginated list of sharings details for the given list of records that user can access,
+   * according to provided pagination criteria.
+   *
+   * <p>If sharedItemIds list contains shared folders, the result list will contain pseudo-share
+   * elements containing target user/group, but no id (as there is no underlying db share)
+   *
+   * @param sharedItemIds
+   * @param pgCrit
+   * @param user
+   */
+  ISearchResults<RecordGroupSharing> listSharesForRecordsAndUser(
+      List<Long> sharedItemIds, PaginationCriteria<RecordGroupSharing> pgCrit, User user);
 
   /**
    * Return all (distinct) records a) published by the user AND b) belonging to the user and

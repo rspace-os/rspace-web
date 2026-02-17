@@ -16,7 +16,7 @@ import org.springframework.util.MultiValueMap;
 @NoArgsConstructor
 public class ApiGenericSearchConfig extends ApiSearchConfig {
 
-  public static final int MAX_QUERY_LENGTH = 2000;
+  private static final int MAX_QUERY_LENGTH = 2000;
 
   @Size(max = MAX_QUERY_LENGTH, message = "Max query length is " + MAX_QUERY_LENGTH + ".")
   private String query;

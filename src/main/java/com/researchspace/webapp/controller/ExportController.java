@@ -12,6 +12,7 @@ import com.researchspace.export.pdf.ExportConfigurer;
 import com.researchspace.export.pdf.ExportFormat;
 import com.researchspace.export.pdf.ExportToFileConfig;
 import com.researchspace.model.EcatDocumentFile;
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
@@ -20,6 +21,7 @@ import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
+import com.researchspace.model.dtos.export.AbstractExportDialog;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
 import com.researchspace.model.field.ErrorList;
@@ -68,6 +70,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.ui.Model;
@@ -464,6 +467,22 @@ public class ExportController extends BaseController {
     RepoDepositConfig repositoryConfig = exportConfig.getRepositoryConfig();
     RaidGroupAssociationDTO raidAssociated = exportConfig.getRaidAssociated();
 
+    Group projectGroup = null;
+    if (exportConfig.getProjectGroupId() != null) {
+      try {
+        projectGroup = groupManager.getGroup(exportConfig.getProjectGroupId());
+      } catch (ObjectRetrievalFailureException ex) {
+        return getText(
+            "workspace.export.msgFailure",
+            new String[] {
+              "Export",
+              "The projectGroup with ID \""
+                  + exportConfig.getProjectGroupId()
+                  + "\" does not exists."
+            });
+      }
+    }
+
     // Checks for JSON binding errors, like fields that must not be null
     if (errors.hasErrors()) {
       ErrorList el = new ErrorList();
@@ -486,15 +505,15 @@ public class ExportController extends BaseController {
           "workspace.export.msgFailure",
           new String[] {"Export", getMultiDocExportErrorMsg(errorBuffer)});
     }
+    User exporter = getUserByUsername(principal.getName());
 
-    if (!hasValidRaidAssociation(principal.getName(), raidAssociated)) {
-      return getRaidValidationError(raidAssociated);
+    if (exportConfig.getProjectGroupId() != null
+        && !validateRaidAndDecorate(exporter, projectGroup, exportConfig)) {
+      return getRaidValidationError(exportConfig);
     }
 
     updatePageSizePrefs(
         exportToFileConfig.getSetPageSizeAsDefault(), exportToFileConfig, principal);
-
-    User exporter = getUserByUsername(principal.getName());
 
     try {
       Future<EcatDocumentFile> futureExportDocument = null;
@@ -671,6 +690,23 @@ public class ExportController extends BaseController {
 
     ExportSelection exportSelection = exportDialogConfig.getExportSelection();
 
+    // check if the project group (for Raid) exists when it is filled
+    Group projectGroup = null;
+    if (exportDialogConfig.getProjectGroupId() != null) {
+      try {
+        projectGroup = groupManager.getGroup(exportDialogConfig.getProjectGroupId());
+      } catch (ObjectRetrievalFailureException ex) {
+        return getText(
+            "workspace.export.msgFailure",
+            new String[] {
+              "Export",
+              "The projectGroup with ID \""
+                  + exportDialogConfig.getProjectGroupId()
+                  + "\" does not exists."
+            });
+      }
+    }
+
     // Checks for JSON binding errors, like fields that must not be null
     if (errors.hasErrors()) {
       ErrorList el = new ErrorList();
@@ -691,14 +727,14 @@ public class ExportController extends BaseController {
     if (!diskSpaceChecker.canStartArchiveProcess()) {
       return getText("workspace.export.noDiskSpace");
     }
-
-    if (!hasValidRaidAssociation(principal.getName(), exportDialogConfig.getRaidAssociated())) {
-      return getRaidValidationError(exportDialogConfig.getRaidAssociated());
+    User exporter = getUserByUsername(principal.getName());
+    if (exportDialogConfig.getProjectGroupId() != null
+        && !validateRaidAndDecorate(exporter, projectGroup, exportDialogConfig)) {
+      return getRaidValidationError(exportDialogConfig);
     }
 
     try {
       URI baseUri = new URI(properties.getServerUrl());
-      User exporter = getUserByUsername(principal.getName());
 
       ArchiveExportConfig exportCfg = exportDialogConfig.toArchiveExportConfig();
 
@@ -755,37 +791,44 @@ public class ExportController extends BaseController {
     return getText("pdfArchiving.submission.successMsg");
   }
 
-  private String getRaidValidationError(RaidGroupAssociationDTO raidAssociated) {
+  private String getRaidValidationError(AbstractExportDialog exportDialog) {
     return getText(
         "workspace.export.msgFailure",
         new String[] {
           "Export",
-          "The submitted RaID \""
-              + raidAssociated.getRaid().getRaidIdentifier()
-              + "\" "
-              + "is not currently associated to the projectId \""
-              + raidAssociated.getProjectGroupId()
-              + "\""
+          "The projectID \""
+              + exportDialog.getProjectGroupId()
+              + "\" has not got any RaidAssociated"
         });
   }
 
-  private boolean hasValidRaidAssociation(
-      String username, RaidGroupAssociationDTO raidGroupAssociation) {
-    if (raidGroupAssociation != null) {
-      // validate raid exists and it is associated
-      Optional<RaidGroupAssociationDTO> raidAssociated =
-          raidServiceManager.getAssociatedRaidByUserAliasAndProjectId(
-              userManager.getUserByUsername(username),
-              raidGroupAssociation.getRaid().getRaidServerAlias(),
-              raidGroupAssociation.getProjectGroupId());
-      return raidAssociated.isPresent()
-          && raidAssociated
-              .get()
-              .getRaid()
-              .getRaidIdentifier()
-              .equals(raidGroupAssociation.getRaid().getRaidIdentifier());
+  private boolean validateRaidAndDecorate(
+      User user, Group projectGroup, AbstractExportDialog exportDialog) {
+    boolean isAllRecordsPartOfTheSameProject = true;
+
+    if (projectGroup.getRaid() == null) {
+      return !exportDialog.getRepositoryConfig().isExportToRaid();
+    } else { // raid is associated so you can start the process to decorate
+      // check if ALL files are on the same project
+      for (int i = 0;
+          i < exportDialog.getExportSelection().getExportIds().length
+              && isAllRecordsPartOfTheSameProject;
+          i++) {
+        isAllRecordsPartOfTheSameProject =
+            groupManager.isRecordPartOfGroup(
+                user, exportDialog.getExportSelection().getExportIds()[i], projectGroup.getId());
+      }
+      if (isAllRecordsPartOfTheSameProject) { // if so then decorate
+        exportDialog.setRaidAssociated(new RaidGroupAssociationDTO(projectGroup.getRaid()));
+      } else {
+        log.warn(
+            "The files selected are not part of the projectID \""
+                + projectGroup.getId()
+                + "\" the the export will not contain any RaID identifier on manifest and"
+                + " ro-crate.json");
+      }
+      return true;
     }
-    return true;
   }
 
   private String getMultiDocExportErrorMsg(StringBuilder erbf) {

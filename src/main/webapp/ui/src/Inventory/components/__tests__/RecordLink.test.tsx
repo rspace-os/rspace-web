@@ -1,10 +1,6 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect, vi } from 'vitest';
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
 import { RecordLink } from "../RecordLink";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
 import {
@@ -14,14 +10,8 @@ import {
 import { storesContext } from "../../../stores/stores-context";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
+
 import userEvent from "@testing-library/user-event";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 describe("RecordLink", () => {
   test("Clicking a link to a bench should show the search results.", async () => {
     const user = userEvent.setup();
@@ -33,7 +23,7 @@ describe("RecordLink", () => {
         trackEvent: () => {},
       },
     });
-    const spy = jest.spyOn(rootStore.uiStore, "setVisiblePanel");
+    const spy = vi.spyOn(rootStore.uiStore, "setVisiblePanel");
     const bench = makeMockBench({});
     render(
       <ThemeProvider theme={materialTheme}>
@@ -55,7 +45,7 @@ describe("RecordLink", () => {
         trackEvent: () => {},
       },
     });
-    const spy = jest.spyOn(rootStore.uiStore, "setVisiblePanel");
+    const spy = vi.spyOn(rootStore.uiStore, "setVisiblePanel");
     const container = makeMockContainer();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -68,3 +58,4 @@ describe("RecordLink", () => {
     expect(spy).toHaveBeenCalledWith("right");
   });
 });
+

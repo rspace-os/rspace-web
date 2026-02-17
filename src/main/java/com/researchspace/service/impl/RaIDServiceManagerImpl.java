@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 public class RaIDServiceManagerImpl implements RaIDServiceManager {
 
   @Autowired private RaIDDao raidDao;
-  @Autowired private GroupManager grpManager;
+  @Autowired private GroupManager groupManager;
   @Autowired private FolderManager folderManagerImpl;
 
   @Override
@@ -29,18 +29,17 @@ public class RaIDServiceManagerImpl implements RaIDServiceManager {
   }
 
   @Override
-  public Set<RaidGroupAssociationDTO> getAssociatedRaidsByUserAndAlias(
-      User user, String raidServerAlias) {
-    List<UserRaid> userRaidList = raidDao.getAssociatedRaidByUserAndAlias(user, raidServerAlias);
+  public Set<RaidGroupAssociationDTO> getAssociatedRaidsByAlias(String raidServerAlias) {
+    List<UserRaid> userRaidList = raidDao.getAssociatedRaidByAlias(raidServerAlias);
     return userRaidList.stream().map(RaidGroupAssociationDTO::new).collect(Collectors.toSet());
   }
 
   @Override
-  public Optional<RaidGroupAssociationDTO> getAssociatedRaidByUserAliasAndProjectId(
-      User user, String raidServerAlias, Long projectGroupId) {
+  public Optional<RaidGroupAssociationDTO> getAssociatedRaidByAliasAndProjectId(
+      String raidServerAlias, Long projectGroupId) {
     Optional<RaidGroupAssociationDTO> result = Optional.empty();
     Set<RaidGroupAssociationDTO> userRaidAlreadyAssociated =
-        this.getAssociatedRaidsByUserAndAlias(user, raidServerAlias);
+        this.getAssociatedRaidsByAlias(raidServerAlias);
     if (!userRaidAlreadyAssociated.isEmpty()) {
       result =
           userRaidAlreadyAssociated.stream()
@@ -53,29 +52,30 @@ public class RaIDServiceManagerImpl implements RaIDServiceManager {
   @Override
   public Optional<RaidGroupAssociationDTO> getAssociatedRaidByFolderId(User user, Long folderId) {
     Folder currentFolder = folderManagerImpl.getFolder(folderId, user);
-    Group projectGroup = grpManager.getGroupFromAnyLevelOfSharedFolder(user, currentFolder, null);
+    Group projectGroup = groupManager.getGroupFromAnyLevelOfSharedFolder(user, currentFolder, null);
     return Optional.of(new RaidGroupAssociationDTO(projectGroup.getRaid()));
   }
 
   @Override
   public void bindRaidToGroupAndSave(User user, RaidGroupAssociationDTO raidToGroupAssociation) {
-    Group projectGroup = grpManager.getGroup(raidToGroupAssociation.getProjectGroupId());
+    Group projectGroup = groupManager.getGroup(raidToGroupAssociation.getProjectGroupId());
     projectGroup.setRaid(
         new UserRaid(
             user,
             projectGroup,
             raidToGroupAssociation.getRaid().getRaidServerAlias(),
             raidToGroupAssociation.getRaid().getRaidTitle(),
-            raidToGroupAssociation.getRaid().getRaidIdentifier()));
-    grpManager.saveGroup(projectGroup, false, user);
+            raidToGroupAssociation.getRaid().getRaidIdentifier(),
+            raidToGroupAssociation.getRaid().getRaidAgencyUrl()));
+    groupManager.saveGroup(projectGroup, false, user);
   }
 
   @Override
   public void unbindRaidFromGroupAndSave(User user, Long projectGroupId) {
-    Group projectGroup = grpManager.getGroup(projectGroupId);
+    Group projectGroup = groupManager.getGroup(projectGroupId);
     Long raidIdToRemove = projectGroup.getRaid().getId();
     projectGroup.setRaid(null);
-    grpManager.saveGroup(projectGroup, false, user);
+    groupManager.saveGroup(projectGroup, false, user);
     raidDao.remove(raidIdToRemove);
   }
 }

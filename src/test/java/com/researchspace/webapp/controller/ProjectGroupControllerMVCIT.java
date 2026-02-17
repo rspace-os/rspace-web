@@ -51,8 +51,7 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
     projectGroupCreationObj = new CreateCloudGroup();
     projectGroupCreationObj.setGroupName("ProjectGroupWithRaid");
     projectGroupCreationObj.setSessionUser(pi);
-    projectGroupCreationObj.setRaid(
-        new RaIDReferenceDTO(RAID_SERVER_ALIAS, RAID_TITLE, RAID_IDENTIFIER));
+    projectGroupCreationObj.setRaid(new RaIDReferenceDTO(RAID_SERVER_ALIAS, RAID_IDENTIFIER));
     projectGroupCreationObj.setPiEmail(pi.getEmail());
   }
 

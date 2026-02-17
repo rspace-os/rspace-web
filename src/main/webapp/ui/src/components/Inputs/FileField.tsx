@@ -211,7 +211,7 @@ function FileField({
             inputProps={{
               accept,
             }}
-             
+
             inputComponent={forwardRef(function FileInputTrigger(
               _,
               ref: React.ForwardedRef<HTMLLabelElement>,

@@ -58,7 +58,7 @@ export default function useOfficeOnline(): {
     });
     // we should probably store the result in session storage
     // as it doesn't need to be loaded everytime this component is mounted
-     
+
   }, []);
 
   return { supportedExts };

@@ -5,7 +5,7 @@
       "updated": 1760540382
     },
     "identifier": {
-      "id": "https://static.demo.raid.org.au/10.83334/666b2cff",
+      "id": "https://raid.org/10.83334/666b2cff",
       "schemaUri": "https://raid.org/",
       "registrationAgency": {
         "id": "https://ror.org/038sjwq54",
@@ -16,7 +16,7 @@
         "schemaUri": "https://ror.org/",
         "servicePoint": 20000030
       },
-      "raidAgencyUrl": "https://demo.static.raid.org.au/10.83334/666b2cff",
+      "raidAgencyUrl": "https://demo.static.raid.org.au/raid/10.83334/666b2cff",
       "license": "Creative Commons CC-0",
       "version": 1
     },

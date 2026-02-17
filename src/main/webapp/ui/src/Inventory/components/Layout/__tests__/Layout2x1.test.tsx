@@ -1,24 +1,14 @@
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
+import { test, describe, expect } from 'vitest';
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
 import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
-import fc from "fast-check";
 
+import fc from "fast-check";
 import Layout2x1 from "../Layout2x1";
 import { ThemeProvider } from "@mui/material/styles";
+
 import materialTheme from "../../../../theme";
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 const fooBarTest = ({
   isSingleColumnLayout,
   visiblePanel,
@@ -47,8 +37,8 @@ const fooBarTest = ({
   if (showFoo) expect(screen.getByText("foo")).toBeVisible();
   expect(screen.getByText("bar")).toBeInTheDocument();
   if (showBar) expect(screen.getByText("bar")).toBeVisible();
-};
 
+};
 describe("Layout2x1", () => {
   /*
    * When isSingleColumnLayout is false (when the viewport is wide enough) both
@@ -69,8 +59,8 @@ describe("Layout2x1", () => {
         showFoo: true,
         showBar: true,
       }));
-  });
 
+  });
   /*
    * When isSingleColumnLayout is true (when the viewport is not wide enough)
    * only one side of the 2x1 layout is shown, based on `visiblePanel`.
@@ -90,8 +80,8 @@ describe("Layout2x1", () => {
         showFoo: false,
         showBar: true,
       }));
-  });
 
+  });
   describe("When isSingleColumnLayout = true and the content is the same", () => {
     test("both sides show the same.", () => {
       fc.assert(
@@ -113,3 +103,4 @@ describe("Layout2x1", () => {
     });
   });
 });
+

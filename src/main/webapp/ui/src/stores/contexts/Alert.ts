@@ -10,7 +10,7 @@ type AlertVariant = "success" | "warning" | "error" | "notice";
  * but there are times when two alerts get created in the same millisecond.
  * Being a primitive value and not being exported, not other code can depend
  * on this value so this isn't a huge concern, although do watch out when
- * writing jest tests.
+ * writing vitest tests.
  */
 let id = 0;
 

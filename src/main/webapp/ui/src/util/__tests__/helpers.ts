@@ -1,11 +1,9 @@
-/* eslint-env jest */
 
 import fc, { type Arbitrary } from "fast-check";
 import * as ArrayUtils from "../ArrayUtils";
 
 /*
- * This file contains a bunch of generic helper code for writing Inventory jest
- * tests.
+ * This file contains a bunch of generic helper code for writing Inventory tests.
  */
 
 /**
@@ -14,27 +12,11 @@ import * as ArrayUtils from "../ArrayUtils";
  */
 export const arrayOfSameElements = <T>(
   arrayA: Array<T>,
-  arrayB: Array<T>
+  arrayB: Array<T>,
 ): boolean =>
   ArrayUtils.zipWith(arrayA, arrayB, (a, b) => a === b).every(
-    (isSame) => isSame
+    (isSame) => isSame,
   );
-
-/**
- * Performs the combination of asserting that the value is not null for jest,
- * and performing type refinement for flow.
- */
-export const assertNotNull = <T>(x: T | null | undefined): T => {
-  // first we assert that x is not null for the purposes of the jest test
-  expect(x).not.toBeNull();
-
-  // but flow still thinks that x could be null, so we refine the type
-  if (x !== null && typeof x !== "undefined") return x;
-
-  // now we're left with a conditional branch that can never happen
-  // have to throw as an implicit undefined return would cause flow to complain
-  throw new Error("Impossible state");
-};
 
 /*
  * === Monoids ===
@@ -64,38 +46,38 @@ export type ArbitraryMonoid<T> = Arbitrary<
 const addition: ArbitraryMonoid<number> = fc.tuple(
   fc.constant(() => fc.integer()),
   fc.constant((x: number, y: number) => x + y),
-  fc.constant(0)
+  fc.constant(0),
 );
 const multiplication: ArbitraryMonoid<number> = fc.tuple(
   // the range of these integers is constrained to avoid performance issues
   fc.constant(() => fc.integer({ min: -1000, max: 1000 })),
   fc.constant((x: number, y: number) => x * y),
-  fc.constant(1)
+  fc.constant(1),
 );
 const conjunction: ArbitraryMonoid<boolean> = fc.tuple(
   fc.constant(() => fc.boolean()),
   fc.constant((x: boolean, y: boolean) => x && y),
-  fc.constant(true)
+  fc.constant(true),
 );
 const disjunction: ArbitraryMonoid<boolean> = fc.tuple(
   fc.constant(() => fc.boolean()),
   fc.constant((x: boolean, y: boolean) => x || y),
-  fc.constant(false)
+  fc.constant(false),
 );
 const concatenation: ArbitraryMonoid<string> = fc.tuple(
   fc.constant(() => fc.string()),
   fc.constant((x: string, y: string) => `${x}${y}`),
-  fc.constant("")
+  fc.constant(""),
 );
 const maximum: ArbitraryMonoid<number> = fc.tuple(
   fc.constant(() => fc.float()),
   fc.constant((x: number, y: number) => Math.max(x, y)),
-  fc.constant(-Infinity)
+  fc.constant(-Infinity),
 );
 const minimum: ArbitraryMonoid<number> = fc.tuple(
   fc.constant(() => fc.float()),
   fc.constant((x: number, y: number) => Math.min(x, y)),
-  fc.constant(Infinity)
+  fc.constant(Infinity),
 );
 
 /**
