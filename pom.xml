@@ -1574,7 +1574,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dryad-adapter</artifactId>
-      <version>fb114dc541</version>
+      <version>1.0.4</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1637,7 +1637,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>galaxy-java-client</artifactId>
-      <version>524f1579e1</version>
+      <version>1.1.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.jetbrains</groupId>
@@ -1648,7 +1648,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>argos-java-client</artifactId>
-      <version>994efc0573</version>
+      <version>0.1.1</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1689,7 +1689,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>datacite-java-client</artifactId>
-      <version>3e7c06d485</version>
+      <version>0.2.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
