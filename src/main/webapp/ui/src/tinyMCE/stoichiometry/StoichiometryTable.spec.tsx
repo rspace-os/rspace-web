@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import { Download, Locator, Page } from "playwright-core";
 import React from "react";
-import { StoichiometryTableWithDataStory } from "./table.story";
 import AxeBuilder from "@axe-core/playwright";
 import fs from "fs/promises";
+import { StoichiometryTableWithDataStory } from './StoichiometryTable.story';
 
 import * as Jwt from "jsonwebtoken";
 

@@ -3,7 +3,7 @@ import React from "react";
 import {
   StoichiometryDialogWithCalculateButtonStory,
   StoichiometryDialogWithTableStory,
-} from "./dialog.story";
+} from "./StoichiometryDialog.story";
 import * as Jwt from "jsonwebtoken";
 
 import AxeBuilder from "@axe-core/playwright";

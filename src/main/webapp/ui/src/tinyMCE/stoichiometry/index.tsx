@@ -5,7 +5,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ACCENT_COLOR } from "../../assets/branding/chemistry";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import StoichiometryDialog from "./dialog";
+import StoichiometryDialog from "./StoichiometryDialog";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import CssBaseline from "@mui/material/CssBaseline";

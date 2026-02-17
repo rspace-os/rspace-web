@@ -1,4 +1,4 @@
-import { mapObject, match } from "./Util";
+import { mapObject } from "./Util";
 import { type Order } from "./types";
 import { type GridColDef } from "@mui/x-data-grid";
 

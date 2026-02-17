@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
-import FormHelperText from "@mui/material/FormHelperText";
 import TextField from "@mui/material/TextField";
 import ValidatingSubmitButton, {
   IsInvalid,
@@ -20,7 +19,7 @@ export type AddReagentDialogArgs = {
   onAddReagent: (smilesString: string, name: string) => void;
 };
 
-const AddReagentDialog = ({
+const StoichiometryAddReagentDialog = ({
   open,
   onClose,
   onAddReagent,
@@ -95,4 +94,4 @@ const AddReagentDialog = ({
   );
 };
 
-export default AddReagentDialog;
+export default StoichiometryAddReagentDialog;
