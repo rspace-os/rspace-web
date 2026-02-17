@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Button from "@mui/material/Button";
 import Search from "../../../stores/models/Search";
@@ -9,9 +9,7 @@ import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import CardHeader from "@mui/material/CardHeader";
 import SearchComponent from "../../Search/Search";
-import { withStyles } from "Styles";
 import { menuIDs } from "../../../util/menuIDs";
-import RsSet from "../../../util/set";
 import Box from "@mui/material/Box";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import {
@@ -23,51 +21,9 @@ import InnerSearchNavigationContext from "../InnerSearchNavigationContext";
 
 const TABS: Array<SearchViewType> = ["LIST", "TREE"];
 
-const MaxSizeCard = withStyles<
-  { elevation: number; testId?: string; children: React.ReactNode },
-  { root: string }
->((theme) => ({
-  root: {
-    height: "100%",
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    padding: theme.spacing(1),
-  },
-}))(({ classes, children, elevation, testId }) => (
-  <Card elevation={elevation} classes={classes} data-test-id={testId}>
-    {children}
-  </Card>
-));
-
-const FullHeightCardContent = withStyles<
-  { paddingless: boolean } & React.ComponentProps<typeof CardContent>,
-  { root: string }
->((theme, { paddingless }) => ({
-  root: {
-    flexGrow: 1,
-    overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-    padding: `${theme.spacing(paddingless ? 0 : 2)} !important`,
-    paddingTop: "0 !important",
-    overflowX: "hidden",
-  },
-}))(({ paddingless, ...props }) => <CardContent {...props} />);
-
-const CustomCardHeader = withStyles<
-  { title: React.ReactNode },
-  { root: string }
->(() => ({
-  root: {
-    flexWrap: "nowrap",
-  },
-}))(({ title, classes }) => (
-  <CardHeader title={title} classes={classes} sx={{ py: 1 }} />
-));
-
 type InventoryPickerArgs = {
   onAddition: (records: Array<InventoryRecord>) => void;
+  onCancel?: () => void;
   elevation?: number;
   search: Search;
   header?: React.ReactNode;
@@ -75,10 +31,12 @@ type InventoryPickerArgs = {
   testId?: string;
   paddingless?: boolean;
   showActions?: boolean;
+  resetActiveResultOnClose?: boolean;
 };
 
 function InventoryPicker({
   onAddition,
+  onCancel,
   elevation = 0,
   search,
   header,
@@ -86,10 +44,37 @@ function InventoryPicker({
   testId,
   paddingless = false,
   showActions = false,
+  resetActiveResultOnClose = false,
 }: InventoryPickerArgs): React.ReactNode {
   const handleSearch = (props: CoreFetcherArgs) => {
     void search.fetcher.performInitialSearch(props);
   };
+
+  const resetActiveResultIfNeeded = useCallback(() => {
+    if (!resetActiveResultOnClose) return;
+    search.activeResult = null;
+  }, [resetActiveResultOnClose, search]);
+
+  const handleAddition = useCallback((records: Array<InventoryRecord>) => {
+    try {
+      onAddition(records);
+    } finally {
+      resetActiveResultIfNeeded();
+    }
+  }, [onAddition, resetActiveResultIfNeeded]);
+
+  const handleCancel = useCallback(() => {
+    if (search.uiConfig.instantConfirm || !onCancel) {
+      handleAddition([]);
+      return;
+    }
+
+    try {
+      onCancel();
+    } finally {
+      resetActiveResultIfNeeded();
+    }
+  }, [handleAddition, onCancel, resetActiveResultIfNeeded, search.uiConfig.instantConfirm]);
 
   /*
    * When the user selects a result, the activeResult is set. This logic then
@@ -99,21 +84,42 @@ function InventoryPicker({
    */
   useEffect(() => {
     const singularSelection = search.uiConfig.selectionMode === "SINGLE";
-    if (singularSelection && search.activeResult) {
-      onAddition([search.activeResult]);
+    const instantConfirm = search.uiConfig.instantConfirm;
+    if (singularSelection && instantConfirm && search.activeResult) {
+      handleAddition([search.activeResult]);
     }
-  }, [search.activeResult, onAddition, search.uiConfig.selectionMode]);
+  }, [handleAddition, search.activeResult, search.uiConfig.selectionMode, search.uiConfig.instantConfirm]);
 
-  const selectedRecords =
-    search.searchView === "LIST" ? [...search.selectedResults] : [];
-  if (search.searchView === "TREE" && search.tree.selectedNode)
-    selectedRecords.push(search.tree.selectedNode);
-  const selectedAndNotAllowed = new RsSet(selectedRecords).filter(
-    search.alwaysFilterOut,
+  const getSelectedRecords = () => {
+    if (search.uiConfig.selectionMode === "SINGLE") {
+      return search.activeResult ? [search.activeResult] : [];
+    }
+    const selectedRecords =
+      search.searchView === "LIST" ? [...search.selectedResults] : [];
+    if (search.searchView === "TREE" && search.tree.selectedNode) {
+      selectedRecords.push(search.tree.selectedNode);
+    }
+
+    return selectedRecords;
+  }
+
+  const selectedRecords = getSelectedRecords();
+  const hasDisallowedSelection = selectedRecords.some((record) =>
+    search.alwaysFilterOut(record),
   );
 
   return (
-    <MaxSizeCard elevation={elevation} testId={testId}>
+    <Card
+      elevation={elevation}
+      data-test-id={testId}
+      sx={{
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        p: 1,
+      }}
+    >
       <SearchContext.Provider
         value={{
           search,
@@ -129,8 +135,20 @@ function InventoryPicker({
         }}
       >
         <InnerSearchNavigationContext>
-          {typeof header !== "undefined" && <CustomCardHeader title={header} />}
-          <FullHeightCardContent paddingless={paddingless}>
+          {typeof header !== "undefined" && (
+            <CardHeader title={header} sx={{ flexWrap: "nowrap", py: 1 }} />
+          )}
+          <CardContent
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              padding: `${paddingless ? 0 : 2} !important`,
+              paddingTop: "0 !important",
+              overflowX: "hidden",
+            }}
+          >
             <Box mb={1}>
               <SearchComponent
                 TABS={TABS}
@@ -146,7 +164,7 @@ function InventoryPicker({
               </Box>
             )}
             <SearchViewComponent contextMenuId={menuIDs.PICKER} />
-          </FullHeightCardContent>
+          </CardContent>
         </InnerSearchNavigationContext>
       </SearchContext.Provider>
       {showActions && (
@@ -157,25 +175,19 @@ function InventoryPicker({
               color="callToAction"
               disableElevation
               onClick={() => {
-                onAddition(selectedRecords);
+                handleAddition(selectedRecords);
               }}
-              disabled={
-                selectedRecords.length === 0 || !selectedAndNotAllowed.isEmpty
-              }
+              disabled={selectedRecords.length === 0 || hasDisallowedSelection}
             >
               Choose
             </Button>
-            <Button
-              onClick={() => {
-                onAddition([]);
-              }}
-            >
+            <Button onClick={handleCancel}>
               Cancel
             </Button>
           </>
         </CardActions>
       )}
-    </MaxSizeCard>
+    </Card>
   );
 }
 

@@ -8,6 +8,20 @@ export default defineConfig({
     alias: [
       { find: /^@\//, replacement: `${path.resolve(__dirname, "src")}/` },
       {
+        find: /^@mui\/material\/styles$/,
+        replacement: path.resolve(
+          __dirname,
+          "node_modules/@mui/material/node/styles/index.js",
+        ),
+      },
+      {
+        find: /^@mui\/x-data-grid$/,
+        replacement: path.resolve(
+          __dirname,
+          "src/test-stubs/MuiDataGridStub.tsx",
+        ),
+      },
+      {
         find: /^Styles$/,
         replacement: path.resolve(__dirname, "src/util/styles.ts"),
       },
@@ -35,6 +49,12 @@ export default defineConfig({
         ),
       },
     ],
+    externalConditions: ["require"],
+  },
+  ssr: {
+    resolve: {
+      externalConditions: ["require"],
+    },
   },
   test: {
     environment: "jsdom",

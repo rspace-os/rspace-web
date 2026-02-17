@@ -38,6 +38,7 @@ on:
 env:
   RS_FILE_BASE: /tmp/${{ github.ref_name }}-filestore
   CI: "true"
+  NODE_OPTIONS: "--conditions=require"
 
 jobs:
 #  initialize:
@@ -58,7 +59,7 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
       - uses: actions/checkout@v5
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -210,9 +211,22 @@ jobs:
 
       - name: Run Playwright tests
         working-directory: src/main/webapp/ui
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results-${{ matrix.browser }}.json
         run: |
           rm -rf playwright/.cache
-          npm run test-ct -- --project=${{ matrix.browser }} --workers=2
+          npm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
+
+      - name: Summarize Playwright report
+        if: always()
+        uses: daun/playwright-report-summary@v3
+        with:
+          report-file: src/main/webapp/ui/playwright-report/results-${{ matrix.browser }}.json
+          report-tag: ${{ matrix.browser }}
+          create-comment: ${{ github.event_name == 'pull_request' }}
+          job-summary: true
+          comment-title: Playwright component test results
+          test-command: npm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
 
 #  full-java-tests:
 #    runs-on: ubuntu-latest

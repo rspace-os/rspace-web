@@ -2,7 +2,7 @@ import React from "react";
 import Box from "@mui/material/Box";
 import { withStyles } from "Styles";
 import Typography from "@mui/material/Typography";
-import NoResultsSvg from "/src/assets/graphics/NoResults.svg";
+import NoResultsSvg from "@/assets/graphics/NoResults.svg";
 import Divider from "@mui/material/Divider";
 import docLinks from "../../../assets/DocLinks";
 import Link from "@mui/material/Link";

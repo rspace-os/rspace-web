@@ -150,78 +150,78 @@ function AttachmentField<
         )}
       </Grid>
       {!disableFileUpload && !disabled && (
-        /* this should be disabled, no? what is disableFileUpload? */ <Grid
+        /* this should be disabled, no? what is disableFileUpload? */ (<Grid
           item
           sx={{ mt: 1 }}
         >
-          <Grid container direction="column" spacing={1}>
-            <Grid item>
-              <FileField
-                accept="*"
-                buttonLabel="Upload"
-                onChange={({ file }) => onFileSelection(file)}
-                showSelectedFilename={false}
-                icon={<UploadIcon />}
-                loading={false}
-                error={false}
-                disabled={disabled}
-                explanatoryText="Upload a file from your device."
-                containerProps={{
-                  wrap: "nowrap",
-                  alignItems: "stretch",
-                  flexDirection: "column",
+        <Grid container direction="column" spacing={1}>
+          <Grid item>
+            <FileField
+              accept="*"
+              buttonLabel="Upload"
+              onChange={({ file }) => onFileSelection(file)}
+              showSelectedFilename={false}
+              icon={<UploadIcon />}
+              loading={false}
+              error={false}
+              disabled={disabled}
+              explanatoryText="Upload a file from your device."
+              containerProps={{
+                wrap: "nowrap",
+                alignItems: "stretch",
+                flexDirection: "column",
+              }}
+              InputProps={{
+                startAdornment: (
+                  <Grid item>
+                    <BigIconButton
+                      onClick={() => {
+                        setGalleryDialogOpen(true);
+                      }}
+                      icon={<AttachFileIcon />}
+                      label="Browse Gallery"
+                      explanatoryText="Link to existing items in the Gallery."
+                    />
+                  </Grid>
+                ),
+              }}
+            />
+          </Grid>
+          {galleryDialogOpen && (
+            <React.Suspense fallback={<></>}>
+              <GalleryPicker
+                open={true}
+                onClose={() => {
+                  setGalleryDialogOpen(false);
                 }}
-                InputProps={{
-                  startAdornment: (
-                    <Grid item>
-                      <BigIconButton
-                        onClick={() => {
-                          setGalleryDialogOpen(true);
-                        }}
-                        icon={<AttachFileIcon />}
-                        label="Browse Gallery"
-                        explanatoryText="Link to existing items in the Gallery."
-                      />
-                    </Grid>
-                  ),
+                onSubmit={(files) => {
+                  files.only.do((file) => {
+                    onFileSelection(file);
+                  });
+                  setGalleryDialogOpen(false);
                 }}
+                onlyAllowSingleSelection
+                validateSelection={(file) =>
+                  file.isSnippet
+                    ? Result.Error([
+                        new Error(
+                          "Snippets cannot be attached to Inventory records.",
+                        ),
+                      ])
+                    : Result.Ok(null)
+                }
               />
-            </Grid>
-            {galleryDialogOpen && (
-              <React.Suspense fallback={<></>}>
-                <GalleryPicker
-                  open={true}
-                  onClose={() => {
-                    setGalleryDialogOpen(false);
-                  }}
-                  onSubmit={(files) => {
-                    files.only.do((file) => {
-                      onFileSelection(file);
-                    });
-                    setGalleryDialogOpen(false);
-                  }}
-                  onlyAllowSingleSelection
-                  validateSelection={(file) =>
-                    file.isSnippet
-                      ? Result.Error([
-                          new Error(
-                            "Snippets cannot be attached to Inventory records.",
-                          ),
-                        ])
-                      : Result.Ok(null)
-                  }
-                />
-              </React.Suspense>
+            </React.Suspense>
+          )}
+          <Grid item>
+            {!attachment && (
+              <Box pl={2}>
+                <NoValue label="No File Attached" />
+              </Box>
             )}
-            <Grid item>
-              {!attachment && (
-                <Box pl={2}>
-                  <NoValue label="No File Attached" />
-                </Box>
-              )}
-            </Grid>
           </Grid>
         </Grid>
+      </Grid>)
       )}
       <Grid item>
         {attachment && (
