@@ -119,7 +119,7 @@ ui/dist/baseSearch.js
 ui/dist/confirmationDialog.js
 ui/dist/connectedApps.js
 ui/dist/createGroup.js
-ui/dist/exportModal.js
+ui/dist/exportModal.tsx
 ui/dist/externalWorkFlows.js
 ui/dist/jupyterNotebooks.js
 ui/dist/fileTreeToolbar.js

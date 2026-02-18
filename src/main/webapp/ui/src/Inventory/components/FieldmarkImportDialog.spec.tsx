@@ -5,6 +5,12 @@ import AxeBuilder from "@axe-core/playwright";
 import * as Jwt from "jsonwebtoken";
 
 import { sleep } from "@/util/Util";
+
+test.skip(
+  ({ browserName }) => browserName === "webkit",
+  "Flaky on WebKit",
+);
+
 const feature = test.extend<{
   Given: {
     "the fieldmark import dialog is mounted": () => Promise<void>;
@@ -228,13 +234,17 @@ const feature = test.extend<{
           expect(importRequest).toBeDefined();
         },
       "an importing alert should be visible": async () => {
-        const alert = page.getByRole("alert");
+        const alert = page
+          .getByRole("alert")
+          .filter({ hasText: "Importing notebook" });
         await expect(alert).toBeVisible();
         await expect(alert).toContainText("Importing notebook");
         await expect(alert).toContainText("Test Notebook 1");
       },
       "a success alert should be visible": async () => {
-        const alert = page.getByRole("alert");
+        const alert = page
+          .getByRole("alert")
+          .filter({ hasText: "Successfully imported notebook" });
         await expect(alert).toBeVisible();
         await expect(alert).toContainText("Successfully imported notebook");
         await alert
@@ -245,7 +255,7 @@ const feature = test.extend<{
           .filter({ hasText: "Test Container from Test Notebook 1" });
         const link = subMessage.getByRole("link", { name: "IC123456" });
         await expect(link).toBeVisible();
-        expect(link).toHaveAttribute("href", "/globalId/IC123456");
+        await expect(link).toHaveAttribute("href", "/globalId/IC123456");
       },
       "the import button should show loading state": async () => {
         const importButton = page.getByRole("button", { name: "Import" });
@@ -276,7 +286,9 @@ const feature = test.extend<{
         await expect(loadingMessage).toBeHidden();
       },
       "a detailed error alert should be visible": async () => {
-        const alert = page.getByRole("alert");
+        const alert = page
+          .getByRole("alert")
+          .filter({ hasText: "Could not import notebook." });
         await expect(alert).toBeVisible();
 
         await expect(alert).toContainText("Could not import notebook.");

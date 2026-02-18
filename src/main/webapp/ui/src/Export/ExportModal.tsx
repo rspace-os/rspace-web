@@ -1,10 +1,10 @@
-"use strict";
-
 import ExportDialog from "./ExportDialog";
 import { createRoot } from "react-dom/client";
 import React from "react";
 import Alerts from "../components/Alerts/Alerts";
 import Analytics from "../components/Analytics";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ExportSelection } from "@/Export/common";
 
 /*
  * This module initialises the ExportDialog react component within the
@@ -15,23 +15,33 @@ import Analytics from "../components/Analytics";
  * with a particular selection.
  */
 
+const queryClient = new QueryClient();
+
 const domContainer = document.getElementById("exportModal");
+if (!domContainer) {
+  throw new Error("Could not find export modal container");
+}
+
 const root = createRoot(domContainer);
 root.render(
-  <Alerts>
-    <ExportDialog
-      exportSelection={{
-        type: "selection",
-        exportTypes: [],
-        exportNames: [],
-        exportIds: [],
-      }}
-      open={false}
-      allowFileStores={RS.netFileStoresExportEnabled}
-    />
-  </Alerts>,
+  <QueryClientProvider client={queryClient}>
+    <Alerts>
+      <ExportDialog
+        exportSelection={{
+          type: "selection",
+          exportTypes: [],
+          exportNames: [],
+          exportIds: [],
+        }}
+        open={false}
+        // @ts-expect-error RS is legacy
+        allowFileStores={RS.netFileStoresExportEnabled}
+      />
+    </Alerts>
+  </QueryClientProvider>,
 );
 
+// @ts-expect-error RS is legacy
 RS.exportModal = {
   /*
    * JS code across the rest of the ELN can call this method -- assuming that
@@ -53,21 +63,29 @@ RS.exportModal = {
    *   exportIds: Array<string>
    * |}
    */
-  openWithExportSelection: (exportSelection) => {
+  openWithExportSelection: (exportSelection: ExportSelection) => {
     const adjustedSelection = {
       ...exportSelection,
       exportIds: exportSelection.exportIds || [],
     };
     root.render(
-      <Alerts>
-        <Analytics>
-          <ExportDialog
-            exportSelection={adjustedSelection}
-            open={true}
-            allowFileStores={RS.netFileStoresExportEnabled}
-          />
-        </Analytics>
-      </Alerts>,
+      <QueryClientProvider client={queryClient}>
+        <Alerts>
+          <Analytics>
+              {/*
+               * TODO 07022026: As we're introducing Suspense into ExportDialog itself, we need to design a Suspense
+               * boundary by moving the Dialog components up a level.
+                */}
+            <ExportDialog
+              // @ts-expect-error RS is legacy
+              exportSelection={adjustedSelection}
+              open={true}
+              // @ts-expect-error RS is legacy
+              allowFileStores={RS.netFileStoresExportEnabled}
+            />
+          </Analytics>
+        </Alerts>
+      </QueryClientProvider>,
     );
   },
 };

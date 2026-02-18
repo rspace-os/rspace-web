@@ -41,7 +41,7 @@ const RaidConnectionsDisassociateButton = ({
         consequences={
           <>
             <Typography variant="body1">
-              Are you sure you want to disassociate the RaID identifier{" "}
+              Are you sure you want to disassociate the RAiD identifier{" "}
               <strong>{raidTitle}</strong> ({raidIdentifier}) from this project
               group?
             </Typography>

@@ -726,7 +726,7 @@ function decodeRaid(data: FetchedState): IntegrationStates["RAID"] {
                 return Result.Error<{
                   url: string;
                   alias: string;
-                }>([new Error("Could not parse out RaID configured server")]);
+                }>([new Error("Could not parse out RAiD configured server")]);
               }
             })
           )
@@ -765,7 +765,7 @@ function decodeRaid(data: FetchedState): IntegrationStates["RAID"] {
                   authenticated: boolean;
                   optionsId: OptionsId;
                 }>([
-                  new Error("Could not parse out RaID authenticated server"),
+                  new Error("Could not parse out RAiD authenticated server"),
                 ]);
               }
             })

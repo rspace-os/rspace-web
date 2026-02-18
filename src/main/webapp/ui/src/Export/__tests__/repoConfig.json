@@ -26,5 +26,6 @@
     ],
     "publish": false,
     "otherProperties": {}
-  }
+  },
+  "exportToRaid": false
 }

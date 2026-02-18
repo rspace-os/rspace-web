@@ -16,8 +16,9 @@ import zenodoRepoList from "./zenodoRepoList.json";
 import fc, { type Arbitrary } from "fast-check";
 import { mkValidator } from "../../util/Validator";
 import "../../../__mocks__/matchMedia";
-
 import { type Tag } from "../repositories/Tags";
+import { DEFAULT_STATE } from "@/Export/constants";
+
 type DMP = {
   dmpUserInternalId: number;
   dmpTitle: string;
@@ -37,11 +38,11 @@ const props = {
     ...repo,
     repoCfg: -1,
   })),
+  state: DEFAULT_STATE,
   repoDetails: repoConfig,
   validator: mkValidator(),
   updateRepoConfig: () => {},
   fetchTags: vi.fn().mockResolvedValue([] as Array<Tag>),
-
 };
 describe("ExportRepo", () => {
   test("Should display selection message", async () => {
@@ -119,6 +120,7 @@ describe("ExportRepo", () => {
                 <ExportRepo
                   repoDetails={props.repoDetails}
                   repoList={generatedRepoList}
+                  state={DEFAULT_STATE}
                   updateRepoConfig={() => {}}
                   validator={mkValidator()}
                   fetchTags={props.fetchTags}

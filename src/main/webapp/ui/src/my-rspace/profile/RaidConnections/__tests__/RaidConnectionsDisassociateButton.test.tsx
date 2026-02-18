@@ -61,7 +61,7 @@ describe("RaidConnectionsDisassociateButton", () => {
   const defaultProps = {
     groupId: "12345",
     raidIdentifier: "https://raid.org/12345",
-    raidTitle: "Test RaID Project",
+    raidTitle: "Test RAiD Project",
   };
 
   beforeEach(() => {
@@ -70,9 +70,9 @@ describe("RaidConnectionsDisassociateButton", () => {
     mockMutationState.error = null;
     // Setup window.RS for ConfirmationDialog
     if (!window.RS) {
-      window.RS = ({
+      window.RS = {
         exportModal: { openWithExportSelection: vi.fn() },
-      } as unknown) as RSGlobal & typeof RS;
+      } as any;
     }
   });
 
@@ -145,7 +145,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       ).toBeInTheDocument();
     });
 
-    it("Should display RaID title and identifier in dialog", async () => {
+    it("Should display RAiD title and identifier in dialog", async () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
@@ -155,7 +155,7 @@ describe("RaidConnectionsDisassociateButton", () => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      expect(screen.getByText(/Test RaID Project/i)).toBeInTheDocument();
+      expect(screen.getByText(/Test RAiD Project/i)).toBeInTheDocument();
       expect(screen.getByText(/https:\/\/raid.org\/12345/i)).toBeInTheDocument();
     });
 
@@ -322,7 +322,7 @@ describe("RaidConnectionsDisassociateButton", () => {
     });
 
     it("Should handle different raidTitle values", async () => {
-      const customTitle = "My Custom RaID Project";
+      const customTitle = "My Custom RAiD Project";
       renderWithProviders({
         ...defaultProps,
         raidTitle: customTitle,
@@ -339,7 +339,7 @@ describe("RaidConnectionsDisassociateButton", () => {
     });
 
     it("Should handle special characters in raidTitle", async () => {
-      const titleWithSpecialChars = "RaID & Project <Test>";
+      const titleWithSpecialChars = "RAiD & Project <Test>";
       renderWithProviders({
         ...defaultProps,
         raidTitle: titleWithSpecialChars,
@@ -352,7 +352,7 @@ describe("RaidConnectionsDisassociateButton", () => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      expect(screen.getByText(/RaID & Project/i)).toBeInTheDocument();
+      expect(screen.getByText(/RAiD & Project/i)).toBeInTheDocument();
     });
   });
 });

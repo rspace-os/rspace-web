@@ -28,6 +28,7 @@ import axios from "@/common/axios";
 import Divider from "@mui/material/Divider";
 import { type Tag } from "./repositories/Tags";
 import { AutocompleteInputChangeReason } from "@mui/material/Autocomplete";
+import { DEFAULT_STATE } from "@/Export/constants";
 
 const STANDARD_VALIDATIONS = {
   description: false,
@@ -43,6 +44,7 @@ const DRYAD_VALIDATIONS = {
 };
 
 type ExportRepoArgs = {
+  state: typeof DEFAULT_STATE;
   validator: Validator;
   repoList: Array<Repo>;
   repoDetails: RepoDetails;
@@ -121,6 +123,7 @@ const DmpSelector = observer(
 );
 
 function ExportRepo({
+  state: upstreamState,
   validator,
   repoList,
   repoDetails,
@@ -148,6 +151,7 @@ function ExportRepo({
       selectedFunder: {},
       tags: [] as Array<Tag>,
       metadataLanguage: "",
+      exportToRaid: upstreamState.repositoryConfig.exportToRaid,
     })
   );
   const [fetchingTags, setFetchingTags] = useState(false);
@@ -218,11 +222,13 @@ function ExportRepo({
         otherProperties: state.otherProperties,
         tags: state.tags,
       },
+      exportToRaid: state.exportToRaid,
     };
   };
 
   const updateRemoteConfig = () => {
-    updateRepoConfig(getParams());
+    const params = getParams();
+    updateRepoConfig(params);
   };
 
   const handleChange = <Key extends keyof typeof state>(event: {

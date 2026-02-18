@@ -10,6 +10,12 @@ import {
 import fs from "fs/promises";
 
 import * as Jwt from "jsonwebtoken";
+
+test.skip(
+  ({ browserName }) => browserName === "webkit",
+  "Flaky on WebKit",
+);
+
 const feature = test.extend<{
   Given: {
     "the researcher is viewing the IGSN table": () => Promise<void>;

@@ -14,11 +14,11 @@ const mockFailureResponse = {
       {
         field: "raid",
         errorCode: "VALIDATION_FAILED",
-        defaultMessage: "Invalid RaID identifier",
+        defaultMessage: "Invalid RAiD identifier",
       },
     ],
   },
-  errorMsg: "Failed to associate RaID identifier",
+  errorMsg: "Failed to associate RAiD identifier",
 };
 
 beforeEach(() => {
@@ -42,7 +42,7 @@ describe("addRaidIdentifierAjax", () => {
     },
   };
 
-  it("should add RaID identifier successfully with 201 status", async () => {
+  it("should add RAiD identifier successfully with 201 status", async () => {
     fetchMock.mockResponseOnce("", { status: 201 });
 
     const result = await addRaidIdentifierAjax(mockParams);
@@ -101,7 +101,7 @@ describe("addRaidIdentifierAjax", () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errorMessages[0].defaultMessage).toBe(
-          "Invalid RaID identifier"
+          "Invalid RAiD identifier"
         );
       }
     }
@@ -114,7 +114,7 @@ describe("addRaidIdentifierAjax", () => {
     });
 
     await expect(addRaidIdentifierAjax(mockParams)).rejects.toThrow(
-      "Failed to add RaID identifier: Internal Server Error"
+      "Failed to add RAiD identifier: Internal Server Error"
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -127,7 +127,7 @@ describe("addRaidIdentifierAjax", () => {
     });
 
     await expect(addRaidIdentifierAjax(mockParams)).rejects.toThrow(
-      "Failed to add RaID identifier: Not Found"
+      "Failed to add RAiD identifier: Not Found"
     );
   });
 
@@ -138,7 +138,7 @@ describe("addRaidIdentifierAjax", () => {
     });
 
     await expect(addRaidIdentifierAjax(mockParams)).rejects.toThrow(
-      "Failed to add RaID identifier: Unauthorized"
+      "Failed to add RAiD identifier: Unauthorized"
     );
   });
 
@@ -149,7 +149,7 @@ describe("addRaidIdentifierAjax", () => {
     });
 
     await expect(addRaidIdentifierAjax(mockParams)).rejects.toThrow(
-      "Failed to add RaID identifier: Forbidden"
+      "Failed to add RAiD identifier: Forbidden"
     );
   });
 
@@ -211,7 +211,7 @@ describe("removeRaidIdentifierAjax", () => {
     groupId: "123",
   };
 
-  it("should remove RaID identifier successfully with 201 status", async () => {
+  it("should remove RAiD identifier successfully with 201 status", async () => {
     fetchMock.mockResponseOnce("", { status: 201 });
 
     const result = await removeRaidIdentifierAjax(mockParams);
@@ -264,7 +264,7 @@ describe("removeRaidIdentifierAjax", () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errorMessages[0].defaultMessage).toBe(
-          "Invalid RaID identifier"
+          "Invalid RAiD identifier"
         );
       }
     }
@@ -277,7 +277,7 @@ describe("removeRaidIdentifierAjax", () => {
     });
 
     await expect(removeRaidIdentifierAjax(mockParams)).rejects.toThrow(
-      "Failed to remove RaID identifier: Internal Server Error"
+      "Failed to remove RAiD identifier: Internal Server Error"
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -290,7 +290,7 @@ describe("removeRaidIdentifierAjax", () => {
     });
 
     await expect(removeRaidIdentifierAjax(mockParams)).rejects.toThrow(
-      "Failed to remove RaID identifier: Not Found"
+      "Failed to remove RAiD identifier: Not Found"
     );
   });
 
@@ -301,7 +301,7 @@ describe("removeRaidIdentifierAjax", () => {
     });
 
     await expect(removeRaidIdentifierAjax(mockParams)).rejects.toThrow(
-      "Failed to remove RaID identifier: Unauthorized"
+      "Failed to remove RAiD identifier: Unauthorized"
     );
   });
 
@@ -312,7 +312,7 @@ describe("removeRaidIdentifierAjax", () => {
     });
 
     await expect(removeRaidIdentifierAjax(mockParams)).rejects.toThrow(
-      "Failed to remove RaID identifier: Forbidden"
+      "Failed to remove RAiD identifier: Forbidden"
     );
   });
 

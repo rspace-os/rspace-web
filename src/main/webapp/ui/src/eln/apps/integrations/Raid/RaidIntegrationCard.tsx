@@ -10,7 +10,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
-import RaIDIcon from "../../../../assets/branding/raid/logo.svg";
+import RaidIcon from "../../../../assets/branding/raid/logo.svg";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
@@ -22,24 +22,21 @@ import Typography from "@mui/material/Typography";
 import RsSet from "../../../../util/set";
 import { LOGO_COLOR } from "@/assets/branding/raid";
 import Link from "@mui/material/Link";
-import {useBroadcastChannel} from "use-broadcast-channel";
+import { useBroadcastChannel } from "use-broadcast-channel";
 
-type RaIDArgs = {
+type RaidArgs = {
   integrationState: IntegrationStates["RAID"];
   update: (newIntegrationState: IntegrationStates["RAID"]) => void;
 };
 
-export interface RaIDConnectedMessage extends Record<string, unknown> {
+export interface RaidConnectedMessage extends Record<string, unknown> {
   type: "RAID_CONNECTED";
   alias: string;
 }
 
 export const RAID_CONNECTION_CHANNEL = "rspace.apps.raid.connection";
 
-/*
- * RaID uses preconfigured servers. Users select
- */
-const RaIDIntegrationCard = ({ integrationState, update }: RaIDArgs) => {
+const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
   const authenticatedServers = useLocalObservable(() => [
@@ -49,9 +46,9 @@ const RaIDIntegrationCard = ({ integrationState, update }: RaIDArgs) => {
     null
   );
 
-  useBroadcastChannel<RaIDConnectedMessage>(RAID_CONNECTION_CHANNEL, (e: MessageEvent<RaIDConnectedMessage>) => {
+  useBroadcastChannel<RaidConnectedMessage>(RAID_CONNECTION_CHANNEL, (e: MessageEvent<RaidConnectedMessage>) => {
     if (!e.data || e.data.type !== "RAID_CONNECTED" || !e.data.alias) {
-      console.log("RaIDIntegrationCard: Ignoring unknown message", e.data);
+      console.log("RaidIntegrationCard: Ignoring unknown message", e.data);
       return;
     }
 
@@ -61,7 +58,10 @@ const RaIDIntegrationCard = ({ integrationState, update }: RaIDArgs) => {
           (s) => s.alias === e.data.alias
         );
       if (index === -1) {
-        console.log("RaIDIntegrationCard: Could not find server with alias", e.data.alias);
+        console.log(
+          "RaidIntegrationCard: Could not find server with alias",
+          e.data.alias,
+        );
         return;
       }
 
@@ -70,7 +70,7 @@ const RaIDIntegrationCard = ({ integrationState, update }: RaIDArgs) => {
       addAlert(
         mkAlert({
           variant: "success",
-          message: `Successfully connected to ${e.data.alias} RaID server.`,
+          message: `Successfully connected to ${e.data.alias} RAiD server.`,
         })
       );
     });
@@ -94,7 +94,7 @@ const RaIDIntegrationCard = ({ integrationState, update }: RaIDArgs) => {
         addAlert(
           mkAlert({
             variant: "error",
-            title: `Could not disconnect ${alias} RaID connection`,
+            title: `Could not disconnect ${alias} RAiD connection`,
             message: `Server responded with status ${response.status}: ${response.statusText}`,
           }),
         );
@@ -118,7 +118,7 @@ const RaIDIntegrationCard = ({ integrationState, update }: RaIDArgs) => {
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Could not disconnect ${alias} RaID connection`,
+          title: `Could not disconnect ${alias} RAiD connection`,
           message: e instanceof Error ? e.message : JSON.stringify(e),
         }),
       );
@@ -149,7 +149,7 @@ const RaIDIntegrationCard = ({ integrationState, update }: RaIDArgs) => {
       addAlert(
           mkAlert({
             variant: "error",
-            title: `Could not disconnect ${alias} RaID connection.`,
+            title: `Could not disconnect ${alias} RAiD connection.`,
             message: e instanceof Error ? e.message : JSON.stringify(e),
           }),
       );
@@ -189,14 +189,14 @@ const RaIDIntegrationCard = ({ integrationState, update }: RaIDArgs) => {
         mkAlert({
             variant: "success",
             message:
-                "Successfully added new RaID server.",
+                "Successfully added new RAiD server.",
         })
       );
     } catch (e) {
       addAlert(
           mkAlert({
             variant: "error",
-            title: `Could not add ${alias} as a new RaID connection.`,
+            title: `Could not add ${alias} as a new RAiD connection.`,
             message: e instanceof Error ? e.message : JSON.stringify(e),
           }),
       );
@@ -206,10 +206,10 @@ const RaIDIntegrationCard = ({ integrationState, update }: RaIDArgs) => {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
-        name="RaID"
+        name="RAiD"
         integrationState={integrationState}
         explanatoryText="Incorporate Research Activity Identifiers (RAiDs) into your projects and report your research activities to your RAiD records."
-        image={RaIDIcon}
+        image={RaidIcon}
         color={LOGO_COLOR}
         usageText="Connect your RSpace projects to RAiD (Research Activity Identifiers) to track and report research activities such as repository exports. RAiD provides persistent identifiers for research projects, enabling seamless reporting of research activities to funders and institutions."
         helpLinkText="documentation"
@@ -219,9 +219,9 @@ const RaIDIntegrationCard = ({ integrationState, update }: RaIDArgs) => {
           <>
             <Typography variant="body1">Configure your RAiD service point to enable authentication and project association:</Typography>
             <ol>
-              <li>Ask your system administrator to set up RaID server connections. See <Link href="https://documentation.researchspace.com/article/zb4c2c8a4b-raid-integration">our documentation for system administrators</Link> for more information.</li>
-              <li>Click the <strong>Add</strong> button below and select the RaID server you would like to connect to.</li>
-              <li>Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RaID credentials.</li>
+              <li>Ask your system administrator to set up RAiD server connections. See <Link href="https://documentation.researchspace.com/article/zb4c2c8a4b-raid-integration">our documentation for system administrators</Link> for more information.</li>
+              <li>Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.</li>
+              <li>Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials.</li>
               <li>Start associating RAiDs with your project groups.</li>
             </ol>
             <Typography variant="body1">Multiple service points can be added to support different RAiD registries. Each project group owner can authenticate and manage their own RAiD associations.</Typography>
@@ -310,6 +310,6 @@ const RaIDIntegrationCard = ({ integrationState, update }: RaIDArgs) => {
 }
 
 /**
- * The card and dialog for configuring the RaID integration
+ * The card and dialog for configuring the RAiD integration
  */
-export default observer(RaIDIntegrationCard);
+export default observer(RaidIntegrationCard);
