@@ -151,7 +151,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
                 + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
                 + "\"");
         updateSucceed =
-            raIDServiceClientAdapter.updateRaIDRelatedObject(
+            raIDServiceClientAdapter.addRaIDRelatedObject(
                 subject.getUsername(), repoDepositConfig.getRaidAssociated().getRaid(), doiLink);
       } catch (Exception e) {
         log.error(
