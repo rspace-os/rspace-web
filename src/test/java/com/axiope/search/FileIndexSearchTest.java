@@ -5,15 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.dao.EcatDocumentFileDao;
-import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
@@ -45,20 +44,9 @@ public class FileIndexSearchTest {
     }
   }
 
-  class FileSearcherTSS extends FileIndexSearcher {
-    public FileSearcherTSS() throws IOException {
-      super();
-    }
-
-    /** Overrides real setter to provide a test instance of the file index folder */
-    public String getIndexFolderPath() {
-      return indexFolder.getAbsolutePath();
-    }
-  }
-
   private @Mock EcatDocumentFileDao docDao;
 
-  FileSearchStrategy searcher = new LuceneSearchStrategy();
+  LuceneSearchStrategy searcher = new LuceneSearchStrategy();
 
   final String pdfPath = "src/test/resources/TestResources/smartscotland3.pdf";
   // this is 2nd in list when sorted alphabeticallt
@@ -74,6 +62,8 @@ public class FileIndexSearchTest {
   final String odtSearch = "Cycling";
   final String odsSearch = "primers";
   final String odpSearch = "Olympics";
+  final String docxWithEmbeddedPdfPath =
+      "src/test/resources/TestResources/docWithEmbeddedEMFPDF.docx";
 
   String[] pathsToIndex = new String[] {pdfPath, msPath, odpPath, odsPath, odtPath};
   // corrupted is 3rd in list
@@ -94,31 +84,32 @@ public class FileIndexSearchTest {
     assertFalse(idxer.accept(RSpaceTestUtils.getResource("Picture1.png")));
   }
 
-  private void setUpindexFiles(boolean failFast, String... pathsToIndex) throws Exception {
-    FileIndexer idxer = null;
+  private void setUpIndexFiles(boolean failFast, String... pathsToIndex) throws Exception {
+    searcher.setIndexFolderDirectly(indexFolder);
+    FileIndexer indexer;
     Stream.of(pathsToIndex)
         .forEach(
             (path) -> {
               File inF = new File(path);
               try {
                 copyToDataFolder(inF);
-              } catch (Exception e) {
-                e.printStackTrace();
+              } catch (IOException e) {
+                fail("Couldn't copy file to data folder for indexing: " + e.getMessage());
               }
             });
 
-    idxer = new FileIndexerTSS();
+    indexer = new FileIndexerTSS();
+    indexer.setIndexFolderDirectly(indexFolder);
     try {
-      // int nbr = idxer.indexFileStore();
-      idxer.init(true);
-      int nbr = idxer.indexFolder(dataFolder, failFast);
-      assertTrue(nbr == idxer.getWriter().numDocs());
+      indexer.init(true);
+      int indexedDocs = indexer.indexFolder(dataFolder, failFast);
+      assertEquals(indexedDocs, indexer.getWriter().numDocs());
     } finally {
-      idxer.close();
+      indexer.close();
     }
   }
 
-  private void copyToDataFolder(File inF) throws IOException, FileNotFoundException {
+  private void copyToDataFolder(File inF) throws IOException {
     if (inF.exists()) {
       File ouF = new File(dataFolder, inF.getName());
       IOUtils.copy(new FileInputStream(inF), new FileOutputStream(ouF));
@@ -127,7 +118,7 @@ public class FileIndexSearchTest {
 
   @Test
   void failFastIndexerThrowsIAEForCorrupted() throws Exception {
-    assertThrows(IOException.class, () -> setUpindexFiles(true, pathsToIndexWithCorruptFile));
+    assertThrows(IOException.class, () -> setUpIndexFiles(true, pathsToIndexWithCorruptFile));
     assertEquals(0, searcher.searchFiles(odtSearch, createAnyUser("any")).size());
     // this gets indexed first, before NonIdexable.pdf, and can still be searched
     assertEquals(1, searcher.searchFiles(msSearch, createAnyUser("any")).size());
@@ -135,18 +126,29 @@ public class FileIndexSearchTest {
 
   @Test
   void failFastIndexerContinues() throws Exception {
-    setUpindexFiles(false, pathsToIndexWithCorruptFile);
+    setUpIndexFiles(false, pathsToIndexWithCorruptFile);
     // even though an earlier file fails, this still gets indexed
     assertEquals(1, searcher.searchFiles(odtSearch, createAnyUser("any")).size());
   }
 
+  // this specific type of file (docx with embedded EMF with embedded PDF) has previously caused
+  // indexing to fail, so test that it can be indexed and searched successfully
+  @Test
+  void testIndexingDocxWithEmbeddedPdf() throws Exception {
+    setUpIndexFiles(true, docxWithEmbeddedPdfPath);
+
+    List<FileSearchResult> results = searcher.searchFiles("Outer_haystack", createAnyUser("any"));
+
+    assertTrue(
+        results.stream().anyMatch(f -> f.getFileName().equals("docWithEmbeddedEMFPDF.docx")));
+  }
+
   @Test
   void testFileSearcher() throws Exception {
-    setUpindexFiles(true, pathsToIndex);
+    setUpIndexFiles(true, pathsToIndex);
 
-    List<String> files = Arrays.asList(new String[] {pdfPath, msPath, odtPath, odsPath, odpPath});
-    List<String> terms =
-        Arrays.asList(new String[] {pdfSearch, msSearch, odtSearch, odsSearch, odpSearch});
+    List<String> files = Arrays.asList(pdfPath, msPath, odtPath, odsPath, odpPath);
+    List<String> terms = Arrays.asList(pdfSearch, msSearch, odtSearch, odsSearch, odpSearch);
 
     IntStream.range(0, files.size())
         .forEach(
