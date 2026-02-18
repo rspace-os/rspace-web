@@ -27,15 +27,15 @@ public interface RaIDServiceClientAdapter extends MultiInstanceClient<RaIDServer
       throws HttpServerErrorException, URISyntaxException, JsonProcessingException;
 
   /****
-   * Update the specified RaID RelatedObject field with the doiLink
+   * Add the doiLink into the specified RaID RelatedObjects
    *
    * @param username
    * @param doiLink
-   * @return true if the RelatedObject section has been correctly updated
+   * @return true if the doiLink has been correctly added to the RelatedObjects
    * @throws URISyntaxException
    * @throws JsonProcessingException
    */
-  boolean updateRaIDRelatedObject(String username, RaIDReferenceDTO raid, String doiLink)
+  boolean addRaIDRelatedObject(String username, RaIDReferenceDTO raid, String doiLink)
       throws URISyntaxException, JsonProcessingException;
 
   String performRedirectConnect(String serverAlias)

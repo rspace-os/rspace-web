@@ -131,7 +131,7 @@ public class AsyncDepositorImplTest {
     String originalRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
     RaIDReferenceDTO expectedRaidReference =
         new RaIDReferenceDTO("serverAlias1", "RaidTitle", expectedRaidIdentifier, originalRaidUrl);
-    when(mockRaidServiceClientAdapter.updateRaIDRelatedObject(
+    when(mockRaidServiceClientAdapter.addRaIDRelatedObject(
             anyUser.getUsername(), expectedRaidReference, expectedDoiLink))
         .thenReturn(true);
 
@@ -158,7 +158,7 @@ public class AsyncDepositorImplTest {
 
     // THEN
     Mockito.verify(mockRaidServiceClientAdapter)
-        .updateRaIDRelatedObject(anyUser.getUsername(), expectedRaidReference, expectedDoiLink);
+        .addRaIDRelatedObject(anyUser.getUsername(), expectedRaidReference, expectedDoiLink);
     Mockito.verify(comm)
         .systemNotify(
             Mockito.any(NotificationType.class),
@@ -185,7 +185,7 @@ public class AsyncDepositorImplTest {
     String originalRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
     RaIDReferenceDTO expectedRaidReference =
         new RaIDReferenceDTO("serverAlias1", "RaidTitle", expectedRaidIdentifier, originalRaidUrl);
-    when(mockRaidServiceClientAdapter.updateRaIDRelatedObject(
+    when(mockRaidServiceClientAdapter.addRaIDRelatedObject(
             anyUser.getUsername(), expectedRaidReference, expectedDoiLink))
         .thenReturn(true);
 
@@ -213,7 +213,7 @@ public class AsyncDepositorImplTest {
 
     // THEN
     Mockito.verify(mockRaidServiceClientAdapter)
-        .updateRaIDRelatedObject(anyUser.getUsername(), expectedRaidReference, expectedDoiLink);
+        .addRaIDRelatedObject(anyUser.getUsername(), expectedRaidReference, expectedDoiLink);
     Mockito.verify(comm)
         .systemNotify(
             Mockito.any(NotificationType.class),
