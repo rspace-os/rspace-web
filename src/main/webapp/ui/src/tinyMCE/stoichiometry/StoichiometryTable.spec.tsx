@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/experimental-ct-react";
-import { Download, Locator, Page } from "playwright-core";
+import { Download, Locator, Page, Route } from "playwright-core";
 import React from "react";
 import AxeBuilder from "@axe-core/playwright";
 import fs from "fs/promises";
@@ -48,6 +48,40 @@ async function getRowByColumnValue(
         .filter({ hasText: cellValue }),
     });
 
+}
+function getDataRows(page: Page): Locator {
+  return page
+    .getByRole("row")
+    .filter({ hasNot: page.getByRole("columnheader") });
+}
+
+async function editNumericCell({
+  page,
+  row,
+  column,
+  value,
+}: {
+  page: Page;
+  row: number;
+  column: number;
+  value: string;
+}) {
+  const targetRow = getDataRows(page).nth(row);
+  const targetCell = targetRow.getByRole("gridcell").nth(column);
+  await targetCell.dblclick();
+
+  const input = page.locator('input[type="number"]');
+  await input.waitFor({ state: "visible" });
+  await input.fill(value);
+  await input.press("Enter");
+}
+
+function fulfillJson(route: Route, body: unknown, status = 200) {
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    body: JSON.stringify(body),
+  });
 }
 const feature = test.extend<{
   Given: {
@@ -276,86 +310,31 @@ const feature = test.extend<{
         await page.getByRole("button", { name: /add/i }).click();
       },
       "the user edits mass in row {row} to {value}": async ({ row, value }) => {
-        const dataRows = page
-          .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
-        const targetRow = dataRows.nth(row);
-        const massCell = targetRow.getByRole("gridcell").nth(5); // Mass column
-
-        await massCell.dblclick();
-        // Wait for input to appear and be focused
-        const input = page.locator('input[type="number"]');
-        await input.waitFor({ state: "visible" });
-        await input.fill(value);
-        await input.press("Enter");
+        await editNumericCell({ page, row, column: 5, value });
       },
       "the user edits moles in row {row} to {value}": async ({
         row,
         value,
       }) => {
-        const dataRows = page
-          .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
-        const targetRow = dataRows.nth(row);
-        const molesCell = targetRow.getByRole("gridcell").nth(6); // Moles column
-
-        await molesCell.dblclick();
-        // Wait for input to appear and be focused
-        const input = page.locator('input[type="number"]');
-        await input.waitFor({ state: "visible" });
-        await input.fill(value);
-        await input.press("Enter");
+        await editNumericCell({ page, row, column: 6, value });
       },
       "the user edits actual mass in row {row} to {value}": async ({
         row,
         value,
       }) => {
-        const dataRows = page
-          .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
-        const targetRow = dataRows.nth(row);
-        const actualMassCell = targetRow.getByRole("gridcell").nth(7); // Actual Mass column
-
-        await actualMassCell.dblclick();
-        // Wait for input to appear and be focused
-        const input = page.locator('input[type="number"]');
-        await input.waitFor({ state: "visible" });
-        await input.fill(value);
-        await input.press("Enter");
+        await editNumericCell({ page, row, column: 7, value });
       },
       "the user edits actual moles in row {row} to {value}": async ({
         row,
         value,
       }) => {
-        const dataRows = page
-          .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
-        const targetRow = dataRows.nth(row);
-        const actualMolesCell = targetRow.getByRole("gridcell").nth(8); // Actual Moles column
-
-        await actualMolesCell.dblclick();
-        // Wait for input to appear and be focused
-        const input = page.locator('input[type="number"]');
-        await input.waitFor({ state: "visible" });
-        await input.fill(value);
-        await input.press("Enter");
+        await editNumericCell({ page, row, column: 8, value });
       },
       "the user edits equivalent in row {row} to {value}": async ({
         row,
         value,
       }) => {
-        const dataRows = page
-          .getByRole("row")
-          .filter({ hasNot: page.getByRole("columnheader") });
-        const targetRow = dataRows.nth(row);
-        const equivalentCell = targetRow.getByRole("gridcell").nth(3); // Equivalent column
-
-        await equivalentCell.dblclick();
-        // Wait for input to appear and be focused
-        const input = page.locator('input[type="number"]');
-        await input.waitFor({ state: "visible" });
-        await input.fill(value);
-        await input.press("Enter");
+        await editNumericCell({ page, row, column: 3, value });
       },
     });
   },
@@ -750,11 +729,7 @@ feature.beforeEach(async ({ router }) => {
       ],
 
     };
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(mockResponse),
-    });
+    return fulfillJson(route, mockResponse);
 
   });
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
@@ -765,12 +740,8 @@ feature.beforeEach(async ({ router }) => {
       refreshTokenHash:
         "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        data: Jwt.sign(payload, "dummySecretKey"),
-      }),
+    return fulfillJson(route, {
+      data: Jwt.sign(payload, "dummySecretKey"),
     });
 
   });
@@ -799,32 +770,21 @@ feature.beforeEach(async ({ router }) => {
         };
 
     }
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(mockInfo),
-    });
+    return fulfillJson(route, mockInfo);
 
   });
   await router.route("/api/v1/pubchem/search", (route) => {
-    const requestBody = route.request().postDataJSON();
-
-    const searchTerm = requestBody?.searchTerm?.toLowerCase();
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([
-        {
-          name: "Caffeine",
-          pngImage: "data:image/png;base64,mock-caffeine-image",
-          smiles: "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
-          cas: "58-08-2",
-          formula: "C8H10N4O2",
-          pubchemId: "2519",
-          pubchemUrl: "https://pubchem.ncbi.nlm.nih.gov/compound/2519",
-        },
-      ]),
-    });
+    return fulfillJson(route, [
+      {
+        name: "Caffeine",
+        pngImage: "data:image/png;base64,mock-caffeine-image",
+        smiles: "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+        cas: "58-08-2",
+        formula: "C8H10N4O2",
+        pubchemId: "2519",
+        pubchemUrl: "https://pubchem.ncbi.nlm.nih.gov/compound/2519",
+      },
+    ]);
 
   });
   await router.route("/gallery/getUploadedFiles*", (route) => {
@@ -851,11 +811,7 @@ feature.beforeEach(async ({ router }) => {
       },
 
     };
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(mockGalleryResponse),
-    });
+    return fulfillJson(route, mockGalleryResponse);
   });
 
 });
