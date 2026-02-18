@@ -130,12 +130,13 @@ public class FileIndexSearchTest {
     assertEquals(1, searcher.searchFiles(odtSearch, createAnyUser("any")).size());
   }
 
+  // this specific type of file (docx with embedded EMF with embedded PDF) has previously caused
+  // indexing to fail, so test that it can be indexed and searched successfully
   @Test
   void testIndexingDocxWithEmbeddedPdf() throws Exception {
     setUpindexFiles(true, docxWithEmbeddedPdfPath);
 
-    List<FileSearchResult> results =
-        searcher.searchFiles("someSearchStringToFind", createAnyUser("any"));
+    List<FileSearchResult> results = searcher.searchFiles("Outer_haystack", createAnyUser("any"));
 
     assertTrue(
         results.stream().anyMatch(f -> f.getFileName().equals("docWithEmbeddedEMFPDF.docx")));
