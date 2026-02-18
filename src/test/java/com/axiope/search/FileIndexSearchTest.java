@@ -31,9 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class FileIndexSearchTest {
 
   class FileIndexerTSS extends FileIndexer {
-    /**
-     * Overrides real setter to provide a test instance of the file index folder
-     */
+    /** Overrides real setter to provide a test instance of the file index folder */
     public String getIndexFolderPath() {
       return indexPath;
     }
@@ -140,8 +138,7 @@ public class FileIndexSearchTest {
         searcher.searchFiles("someSearchStringToFind", createAnyUser("any"));
 
     assertTrue(
-        results.stream()
-            .anyMatch(f -> f.getFileName().equals("docWithEmbeddedEMFPDF.docx")));
+        results.stream().anyMatch(f -> f.getFileName().equals("docWithEmbeddedEMFPDF.docx")));
   }
 
   @Test
@@ -149,8 +146,7 @@ public class FileIndexSearchTest {
     setUpindexFiles(true, pathsToIndex);
 
     List<String> files = Arrays.asList(pdfPath, msPath, odtPath, odsPath, odpPath);
-    List<String> terms =
-        Arrays.asList(pdfSearch, msSearch, odtSearch, odsSearch, odpSearch);
+    List<String> terms = Arrays.asList(pdfSearch, msSearch, odtSearch, odsSearch, odpSearch);
 
     IntStream.range(0, files.size())
         .forEach(
