@@ -11,7 +11,7 @@ import materialTheme from "@/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RaidConnectionsAddForm from "../RaidConnectionsAddForm";
 import "../../../../../__mocks__/matchMedia";
-import { GetAvailableRaIDListResponse } from "@/modules/raid/schema";
+import { GetAvailableRaidListResponse } from "@/modules/raid/schema";
 
 // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
 const mockMutateAsync = vi.fn();
@@ -24,7 +24,7 @@ const mockMutationState: {
   error: null,
 };
 
-let mockQueryData: GetAvailableRaIDListResponse = {
+let mockQueryData: GetAvailableRaidListResponse = {
   success: true,
   data: [],
 };
@@ -33,7 +33,7 @@ vi.mock("@/modules/raid/queries", () => ({
   raidQueryKeys: {
     availableRaidIdentifiers: vi.fn(() => ["rspace.apps.raid", "availableIds"]),
   },
-  useGetAvailableRaIDIdentifiersAjaxQuery: vi.fn(() => ({
+  useGetAvailableRaidIdentifiersAjaxQuery: vi.fn(() => ({
     get data() {
       return mockQueryData;
     },
@@ -80,12 +80,12 @@ const givenMockQueryData = () => {
       {
         raidServerAlias: "server1",
         raidIdentifier: "raid-123",
-        raidTitle: "Test RaID 1",
+        raidTitle: "Test RAiD 1",
       },
       {
         raidServerAlias: "server2",
         raidIdentifier: "raid-456",
-        raidTitle: "Test RaID 2",
+        raidTitle: "Test RAiD 2",
       },
     ],
   };
@@ -122,7 +122,6 @@ describe("RaidConnectionsAddForm", () => {
     it("Should have no axe violations with empty options", async () => {
       const { container } = renderWithProviders(defaultProps);
 
-      // Disable region rule as this is a form component that would be wrapped in a landmark in production
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       await expect(container).toBeAccessible();
     });
@@ -131,7 +130,6 @@ describe("RaidConnectionsAddForm", () => {
       givenMockQueryData();
       const { container } = renderWithProviders(defaultProps);
 
-      // Disable region rule as this is a form component that would be wrapped in a landmark in production
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       await expect(container).toBeAccessible();
     });
@@ -141,7 +139,7 @@ describe("RaidConnectionsAddForm", () => {
     it("Should render the form with autocomplete field", () => {
       renderWithProviders(defaultProps);
 
-      expect(screen.getByLabelText(/RaID Identifier/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/RAiD Identifier/i)).toBeInTheDocument();
     });
 
     it("Should render Add and Cancel buttons", () => {
@@ -155,30 +153,30 @@ describe("RaidConnectionsAddForm", () => {
       givenMockQueryError("Failed to load data");
       renderWithProviders(defaultProps);
 
-      expect(screen.getByText(/Error loading RaID identifier options: Failed to load data/i)).toBeInTheDocument();
+      expect(screen.getByText(/Error loading RAiD identifier options: Failed to load data/i)).toBeInTheDocument();
     });
 
     it("Should not render form when query fails", () => {
       givenMockQueryError("Failed to load data");
       renderWithProviders(defaultProps);
 
-      expect(screen.queryByLabelText(/RaID Identifier/i)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/RAiD Identifier/i)).not.toBeInTheDocument();
     });
   });
 
   describe("Autocomplete Interaction", () => {
-    it("Should populate autocomplete with available RaID identifiers", async () => {
+    it("Should populate autocomplete with available RAiD identifiers", async () => {
       givenMockQueryData();
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
 
       await waitFor(() => {
-        expect(screen.getByText("Test RaID 1 (raid-123)")).toBeInTheDocument();
-        expect(screen.getByText("Test RaID 2 (raid-456)")).toBeInTheDocument();
+        expect(screen.getByText("Test RAiD 1 (raid-123)")).toBeInTheDocument();
+        expect(screen.getByText("Test RAiD 2 (raid-456)")).toBeInTheDocument();
       });
     });
 
@@ -186,13 +184,13 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
 
       await waitFor(() => {
         expect(
-          screen.getByText(/No valid available RaID found, or the RaID has been used by another project group./i)
+          screen.getByText(/No valid available RAiD found, or the RAiD has been used by another project group./i)
         ).toBeInTheDocument();
       });
     });
@@ -202,13 +200,13 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
-      await user.click(screen.getByText("Test RaID 1 (raid-123)"));
+      await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue("Test RaID 1 (raid-123)")).toBeInTheDocument();
+        expect(screen.getByDisplayValue("Test RAiD 1 (raid-123)")).toBeInTheDocument();
       });
     });
 
@@ -219,31 +217,31 @@ describe("RaidConnectionsAddForm", () => {
           {
             raidServerAlias: "server1",
             raidIdentifier: "raid-123",
-            raidTitle: "Test RaID 1",
+            raidTitle: "Test RAiD 1",
           },
           {
             raidServerAlias: "server2",
             raidIdentifier: "raid-456",
-            raidTitle: "Test RaID 2",
+            raidTitle: "Test RAiD 2",
           },
           {
             raidServerAlias: "server3",
             raidIdentifier: "raid-789",
-            raidTitle: "Test RaID 3",
+            raidTitle: "Test RAiD 3",
           },
         ],
       };
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
 
       await waitFor(() => {
-        expect(screen.getByText("Test RaID 1 (raid-123)")).toBeInTheDocument();
-        expect(screen.getByText("Test RaID 2 (raid-456)")).toBeInTheDocument();
-        expect(screen.getByText("Test RaID 3 (raid-789)")).toBeInTheDocument();
+        expect(screen.getByText("Test RAiD 1 (raid-123)")).toBeInTheDocument();
+        expect(screen.getByText("Test RAiD 2 (raid-456)")).toBeInTheDocument();
+        expect(screen.getByText("Test RAiD 3 (raid-789)")).toBeInTheDocument();
       });
     });
   });
@@ -262,10 +260,10 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
-      await user.click(screen.getByText("Test RaID 1 (raid-123)"));
+      await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
       await waitFor(() => {
         const addButton = screen.getByRole("button", { name: /Add/i });
@@ -282,16 +280,16 @@ describe("RaidConnectionsAddForm", () => {
   });
 
   describe("Form Submission", () => {
-    it("Should submit form with selected RaID option", async () => {
+    it("Should submit form with selected RAiD option", async () => {
       givenMockQueryData();
       mockMutateAsync.mockResolvedValue({});
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
-      await user.click(screen.getByText("Test RaID 1 (raid-123)"));
+      await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
       const addButton = screen.getByRole("button", { name: /Add/i });
       await user.click(addButton);
@@ -310,10 +308,10 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
-      await user.click(screen.getByText("Test RaID 1 (raid-123)"));
+      await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
       const addButton = screen.getByRole("button", { name: /Add/i });
       await user.click(addButton);
@@ -329,10 +327,10 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
-      await user.click(screen.getByText("Test RaID 1 (raid-123)"));
+      await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
       const addButton = screen.getByRole("button", { name: /Add/i });
       await user.click(addButton);
@@ -350,10 +348,10 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
-      await user.click(screen.getByText("Test RaID 1 (raid-123)"));
+      await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
       const addButton = screen.getByRole("button", { name: /Add/i });
       await user.click(addButton);
@@ -369,10 +367,10 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
-      await user.click(screen.getByText("Test RaID 1 (raid-123)"));
+      await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
       const addButton = screen.getByRole("button", { name: /Add/i });
       await user.click(addButton);
@@ -400,14 +398,14 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       // Select an option
       await user.click(autocomplete);
-      await user.click(screen.getByText("Test RaID 1 (raid-123)"));
+      await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue("Test RaID 1 (raid-123)")).toBeInTheDocument();
+        expect(screen.getByDisplayValue("Test RAiD 1 (raid-123)")).toBeInTheDocument();
       });
 
       // Click cancel
@@ -422,21 +420,21 @@ describe("RaidConnectionsAddForm", () => {
   describe("Error Handling", () => {
     it("Should display mutation error message", async () => {
       mockMutationState.isError = true;
-      mockMutationState.error = new Error("Failed to add RaID");
+      mockMutationState.error = new Error("Failed to add RAiD");
 
       renderWithProviders(defaultProps);
 
       await waitFor(() => {
-        expect(screen.getByText(/Failed to add RaID/i)).toBeInTheDocument();
+        expect(screen.getByText(/Failed to add RAiD/i)).toBeInTheDocument();
       });
     });
 
     it("Should show error on autocomplete field when mutation fails", async () => {
       mockMutationState.isError = true;
-      mockMutationState.error = new Error("Failed to add RaID");
+      mockMutationState.error = new Error("Failed to add RAiD");
 
       renderWithProviders(defaultProps);
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       // Check if the input has error styling (aria-invalid)
       await waitFor(() => {
@@ -450,16 +448,16 @@ describe("RaidConnectionsAddForm", () => {
     //     {
     //       raidServerAlias: "server1",
     //       raidIdentifier: "raid-123",
-    //       raidTitle: "Test RaID 1",
+    //       raidTitle: "Test RAiD 1",
     //     },
     //   ];
     //
     //   renderWithProviders(defaultProps);
     //   const user = userEvent.setup();
-    //   const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+    //   const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
     //
     //   await user.click(autocomplete);
-    //   await user.click(screen.getByText("Test RaID 1 (raid-123)"));
+    //   await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
     //
     //   // Set up rejection after selection
     //   mockMutateAsync.mockRejectedValueOnce(new Error("Network error"));
@@ -492,58 +490,58 @@ describe("RaidConnectionsAddForm", () => {
         groupId: "67890",
       });
 
-      expect(screen.getByLabelText(/RaID Identifier/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/RAiD Identifier/i)).toBeInTheDocument();
     });
 
-    it("Should handle special characters in RaID titles", async () => {
+    it("Should handle special characters in RAiD titles", async () => {
       mockQueryData = {
         success: true,
         data: [
           {
             raidServerAlias: "server1",
             raidIdentifier: "raid-123",
-            raidTitle: "Test & RaID <Special>",
+            raidTitle: "Test & RAiD <Special>",
           },
         ],
       };
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
 
       await waitFor(() => {
-        expect(screen.getByText("Test & RaID <Special> (raid-123)")).toBeInTheDocument();
+        expect(screen.getByText("Test & RAiD <Special> (raid-123)")).toBeInTheDocument();
       });
     });
 
-    it("Should handle long RaID identifiers", async () => {
+    it("Should handle long RAiD identifiers", async () => {
       mockQueryData = {
         success: true,
         data: [
           {
             raidServerAlias: "server1",
             raidIdentifier: "raid-123456789012345678901234567890",
-            raidTitle: "Test RaID",
+            raidTitle: "Test RAiD",
           },
         ],
       };
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
 
       await waitFor(() => {
         expect(
-          screen.getByText("Test RaID (raid-123456789012345678901234567890)")
+          screen.getByText("Test RAiD (raid-123456789012345678901234567890)")
         ).toBeInTheDocument();
       });
     });
 
-    it("Should handle empty string in RaID title", async () => {
+    it("Should handle empty string in RAiD title", async () => {
       mockQueryData = {
         success: true,
         data: [
@@ -557,7 +555,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
 
@@ -569,9 +567,9 @@ describe("RaidConnectionsAddForm", () => {
   });
 
   describe("Form Validation", () => {
-    it("Should require RaID identifier field", () => {
+    it("Should require RAiD identifier field", () => {
       renderWithProviders(defaultProps);
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       expect(autocomplete).toBeRequired();
     });
@@ -592,26 +590,26 @@ describe("RaidConnectionsAddForm", () => {
           {
             raidServerAlias: "server1",
             raidIdentifier: "raid-123",
-            raidTitle: "Test RaID 1",
+            raidTitle: "Test RAiD 1",
           },
           {
             raidServerAlias: "server2",
             raidIdentifier: "raid-123",
-            raidTitle: "Test RaID 1 (alt)",
+            raidTitle: "Test RAiD 1 (alt)",
           },
         ],
       };
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RaID Identifier/i);
+      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
 
       await user.click(autocomplete);
 
       // Both options should be available
-      expect(screen.getByText("Test RaID 1 (raid-123)")).toBeInTheDocument();
+      expect(screen.getByText("Test RAiD 1 (raid-123)")).toBeInTheDocument();
       expect(
-        screen.getByText("Test RaID 1 (alt) (raid-123)")
+        screen.getByText("Test RAiD 1 (alt) (raid-123)")
       ).toBeInTheDocument();
     });
   });

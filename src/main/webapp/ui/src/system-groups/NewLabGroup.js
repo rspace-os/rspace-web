@@ -178,7 +178,7 @@ export default function NewLabGroup() {
                 </Select>
                 {values.groupType === PROJECT_GROUP && (
                   <Typography variant="body2">
-                    If RaID has been set up, you can associate a RaID identifier
+                    If RAiD has been set up, you can associate a RAiD identifier
                     with the project group after it has been created.
                   </Typography>
                 )}

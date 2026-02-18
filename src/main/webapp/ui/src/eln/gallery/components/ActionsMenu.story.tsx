@@ -7,6 +7,15 @@ import createAccentedTheme from "../../../accentedTheme";
 import Result from "../../../util/result";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
 
 const nonFolderFile: GalleryFile = {
   deconstructor: () => {},
@@ -131,6 +140,22 @@ const snippetFile: GalleryFile = {
   metadata: {},
 };
 
+function renderWithProviders(files: Array<GalleryFile>) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <React.Suspense fallback={null}>
+        <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+          <LandmarksProvider>
+            <GallerySelection>
+              <ActionsMenuWrapper files={files} />
+            </GallerySelection>
+          </LandmarksProvider>
+        </ThemeProvider>
+      </React.Suspense>
+    </QueryClientProvider>
+  );
+}
+
 function ActionsMenuWrapper({ files }: { files: Array<GalleryFile> }) {
   const selection = useGallerySelection();
   React.useEffect(() => {
@@ -149,51 +174,20 @@ function ActionsMenuWrapper({ files }: { files: Array<GalleryFile> }) {
 }
 
 export function ActionsMenuWithNonFolder() {
-  return (
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <LandmarksProvider>
-        <GallerySelection>
-          <ActionsMenuWrapper files={[nonFolderFile]} />
-        </GallerySelection>
-      </LandmarksProvider>
-    </ThemeProvider>
-  );
+  return renderWithProviders([nonFolderFile]);
 }
 
 export function ActionsMenuWithFolder() {
-  return (
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <LandmarksProvider>
-        <GallerySelection>
-          <ActionsMenuWrapper files={[folderFile]} />
-        </GallerySelection>
-      </LandmarksProvider>
-    </ThemeProvider>
-  );
+  return renderWithProviders([folderFile]);
 }
 
 export function ActionsMenuWithMultipleFiles() {
-  return (
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <LandmarksProvider>
-        <GallerySelection>
-          <ActionsMenuWrapper
-            files={[folderFile, { ...folderFile, globalId: "GF4", key: "GF4" }]}
-          />
-        </GallerySelection>
-      </LandmarksProvider>
-    </ThemeProvider>
-  );
+  return renderWithProviders([
+    folderFile,
+    { ...folderFile, globalId: "GF4", key: "GF4" },
+  ]);
 }
 
 export function ActionsMenuWithSnippet() {
-  return (
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <LandmarksProvider>
-        <GallerySelection>
-          <ActionsMenuWrapper files={[snippetFile]} />
-        </GallerySelection>
-      </LandmarksProvider>
-    </ThemeProvider>
-  );
+  return renderWithProviders([snippetFile]);
 }

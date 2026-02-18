@@ -98,6 +98,7 @@ export const DEFAULT_REPO_CONFIG = {
     otherProperties: {},
   },
   depositToRepository: false as boolean,
+  exportToRaid: false,
 };
 
 export type RepoDetails = typeof DEFAULT_REPO_CONFIG;

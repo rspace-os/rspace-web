@@ -7,7 +7,6 @@ describe("constructor", () => {
   describe("Should behave just like native set", () => {
     const expectSameSizeAsNativeSet = (data?: Iterable<unknown> | null) => {
       expect(new RsSet(data).size).toEqual(new Set(data).size);
-
     };
     test("undefined", () => {
       expectSameSizeAsNativeSet();

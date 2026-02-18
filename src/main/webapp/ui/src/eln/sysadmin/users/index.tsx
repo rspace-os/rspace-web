@@ -42,6 +42,7 @@ import {
 import TextField from "@mui/material/TextField";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ChecklistIcon from "@mui/icons-material/Checklist";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import CustomTooltip from "../../../components/CustomTooltip";
 import {
   useUserListing,
@@ -2054,16 +2055,20 @@ export const UsersPage = (): React.ReactNode => {
   );
 };
 
+const queryClient = new QueryClient();
+
 const wrapperDiv = document.getElementById("sysadminUsers");
 if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-        <UiPreferences>
-          <UsersPage />
-        </UiPreferences>
-      </ThemeProvider>
-    </StyledEngineProvider>,
+    <QueryClientProvider client={queryClient}>
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+          <UiPreferences>
+            <UsersPage />
+          </UiPreferences>
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </QueryClientProvider>
   );
 }

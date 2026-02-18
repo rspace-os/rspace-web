@@ -50,8 +50,6 @@ describe("constructor", () => {
   describe("Factory argument", () => {
     test("should be used in the instantiation of all child records.", () => {
       // Define a mock factory with circular references
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
       const mockFactoryRef: any = {};
       // Create a mock newRecord implementation
       const mockNewRecord = vi

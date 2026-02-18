@@ -1,11 +1,10 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import "@/__tests__/mocks/useUiPreference";
 import React from "react";
 import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { UsersPage } from "..";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../../../theme";
@@ -14,8 +13,21 @@ import axios from "@/common/axios";
 import USER_LISTING from "./userListing.json";
 import PDF_CONFIG from "./pdfConfig.json";
 import { render, within } from "../../../../__tests__/customQueries";
+import { UsersPage } from "@/eln/sysadmin/users";
 
-// @ts-expect-error RS is legacy
+vi.mock("@/modules/common/hooks/auth", () => ({
+  useOauthTokenQuery: () => ({ data: "test-token" }),
+}));
+
+vi.mock("@/modules/raid/queries", () => ({
+  useRaidIntegrationInfoAjaxQuery: () => ({
+    data: { success: true, data: { enabled: false } },
+  }),
+}));
+
+vi.mock("@/modules/share/queries", () => ({
+  useCommonGroupsShareListingQuery: () => ({ data: new Map() }),
+}));
 
 window.RS = { newFileStoresExportEnabled: false };
 
@@ -60,4 +72,3 @@ describe("Table Listing", () => {
     ).toHaveTextContent("0 B");
   });
 });
-

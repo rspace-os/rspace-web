@@ -1,14 +1,14 @@
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import React, { Suspense, useState } from "react";
-import RaidConnectionsAddForm from "@/my-rspace/profile/RaIDConnections/RaidConnectionsAddForm";
 import { Button, Stack } from "@mui/material";
 import Typography from "@mui/material/Typography";
-import RaidConnectionsDisassociateButton from "@/my-rspace/profile/RaIDConnections/RaidConnectionsDisassociateButton";
 import { useGetGroupByIdQuery } from "@/modules/groups/queries";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import RaidConnectionsDisassociateButton from "@/my-rspace/profile/RaidConnections/RaidConnectionsDisassociateButton";
+import RaidConnectionsAddForm from "@/my-rspace/profile/RaidConnections/RaidConnectionsAddForm";
 
-const RaIDConnectionsEntry = ({
+const RaidConnectionsEntry = ({
   groupId,
 }: {
   groupId: string;
@@ -75,4 +75,4 @@ const RaIDConnectionsEntry = ({
 
 };
 
-export default RaIDConnectionsEntry;
+export default RaidConnectionsEntry;

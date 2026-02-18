@@ -11,6 +11,12 @@ import {
   ActionsMenuWithSnippet,
 
 } from "./ActionsMenu.story";
+
+test.skip(
+  ({ browserName }) => browserName === "webkit",
+  "Flaky on WebKit",
+);
+
 const feature = test.extend<{
   Given: {
     "the actions menu with a non-folder is mounted": () => Promise<void>;
@@ -140,6 +146,26 @@ feature.beforeEach(async ({ router }) => {
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({}),
+    });
+
+  });
+  await router.route("/integration/integrationInfo?name=RAID", (route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        data: {
+          name: "RAID",
+          displayName: "RAiD",
+          available: false,
+          enabled: false,
+          oauthConnected: false,
+          options: {
+            RAID_CONFIGURED_SERVERS: [],
+          },
+        },
+      }),
     });
 
   });

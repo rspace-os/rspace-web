@@ -17,6 +17,6 @@
     },
     "resolveJsonModule": true,
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
-    "types": ["@testing-library/jest-dom", "@sa11y/vitest"]
+    "types": ["@testing-library/jest-dom", "@sa11y/vitest", "jquery"]
   }
 }

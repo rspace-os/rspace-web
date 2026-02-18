@@ -4,33 +4,33 @@ import {
   getRaidIntegrationInfoAjax,
 } from "../queries";
 import type {
-  GetAvailableRaIDListResponse,
+  GetAvailableRaidListResponse,
   IntegrationRaidInfo,
-  RaIDReferenceDTO,
+  RaidReferenceDTO,
 } from "../schema";
 
-const mockRaIDReference1: RaIDReferenceDTO = {
+const mockRaidReference1: RaidReferenceDTO = {
   raidServerAlias: "test-server-1",
   raidIdentifier: "raid-123",
-  raidTitle: "Test RaID Project 1",
+  raidTitle: "Test RAiD Project 1",
 };
 
-const mockRaIDReference2: RaIDReferenceDTO = {
+const mockRaidReference2: RaidReferenceDTO = {
   raidServerAlias: "test-server-2",
   raidIdentifier: "raid-456",
-  raidTitle: "Test RaID Project 2",
+  raidTitle: "Test RAiD Project 2",
 };
 
-const mockAvailableRaIDListSuccess: GetAvailableRaIDListResponse = {
+const mockAvailableRaidListSuccess: GetAvailableRaidListResponse = {
   success: true,
-  data: [mockRaIDReference1, mockRaIDReference2],
+  data: [mockRaidReference1, mockRaidReference2],
 };
 
 const mockIntegrationInfoSuccess: IntegrationRaidInfo = {
   success: true,
   data: {
     name: "RAID",
-    displayName: "RaID",
+    displayName: "RAiD",
     available: true,
     enabled: true,
     oauthConnected: true,
@@ -65,7 +65,7 @@ const mockIntegrationInfoSuccessResponse: IntegrationRaidInfo = {
   success: true,
   data: {
     name: "RAID",
-    displayName: "RaID",
+    displayName: "RAiD",
     available: true,
     enabled: true,
     oauthConnected: true,
@@ -99,7 +99,7 @@ const mockIntegrationInfoDisabled: IntegrationRaidInfo = {
   success: true,
   data: {
     name: "RAID",
-    displayName: "RaID",
+    displayName: "RAiD",
     available: true,
     enabled: false,
     oauthConnected: false,
@@ -132,12 +132,12 @@ beforeEach(() => {
 });
 
 describe("getAvailableRaidIdentifiersAjax", () => {
-  it("should fetch available RaID identifiers successfully", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaIDListSuccess));
+  it("should fetch available RAiD identifiers successfully", async () => {
+    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaidListSuccess));
 
     const result = await getAvailableRaidIdentifiersAjax();
 
-    expect(result).toEqual(mockAvailableRaIDListSuccess);
+    expect(result).toEqual(mockAvailableRaidListSuccess);
     expect(result.success).toBe(true);
     expect(result).toHaveProperty("data");
     if (result.success) {
@@ -156,7 +156,7 @@ describe("getAvailableRaidIdentifiersAjax", () => {
   });
 
   it("should include X-Requested-With header", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaIDListSuccess));
+    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaidListSuccess));
 
     await getAvailableRaidIdentifiersAjax();
 
@@ -170,17 +170,17 @@ describe("getAvailableRaidIdentifiersAjax", () => {
     );
   });
 
-  it("should handle empty RaID list successfully", async () => {
-    const mockAvailableRaIDListEmpty: GetAvailableRaIDListResponse = {
+  it("should handle empty RAiD list successfully", async () => {
+    const mockAvailableRaidListEmpty: GetAvailableRaidListResponse = {
       success: true,
       data: [],
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaIDListEmpty));
+    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaidListEmpty));
 
     const result = await getAvailableRaidIdentifiersAjax();
 
-    expect(result).toEqual(mockAvailableRaIDListEmpty);
+    expect(result).toEqual(mockAvailableRaidListEmpty);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data).toHaveLength(0);
@@ -188,29 +188,29 @@ describe("getAvailableRaidIdentifiersAjax", () => {
   });
 
   it("should handle failure response from server", async () => {
-    const mockAvailableRaIDListFailure: GetAvailableRaIDListResponse = {
+    const mockAvailableRaidListFailure: GetAvailableRaidListResponse = {
       success: false,
       error: {
         errorMessages: [
           {
             field: "raidIdentifiers",
             errorCode: "CONNECTION_FAILED",
-            defaultMessage: "Unable to fetch RaID identifiers",
+            defaultMessage: "Unable to fetch RAiD identifiers",
           },
         ],
       },
-      errorMsg: "Connection to RaID server failed",
+      errorMsg: "Connection to RAiD server failed",
     };
 
 
-    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaIDListFailure));
+    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaidListFailure));
 
     const result = await getAvailableRaidIdentifiersAjax();
 
-    expect(result).toEqual(mockAvailableRaIDListFailure);
+    expect(result).toEqual(mockAvailableRaidListFailure);
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errorMessages[0].defaultMessage).toBe("Unable to fetch RaID identifiers");
+      expect(result.error.errorMessages[0].defaultMessage).toBe("Unable to fetch RAiD identifiers");
     }
   });
 
@@ -221,7 +221,7 @@ describe("getAvailableRaidIdentifiersAjax", () => {
     });
 
     await expect(getAvailableRaidIdentifiersAjax()).rejects.toThrow(
-      "Failed to fetch RaID apps: Internal Server Error"
+      "Failed to fetch RAiD apps: Internal Server Error"
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -234,7 +234,7 @@ describe("getAvailableRaidIdentifiersAjax", () => {
     });
 
     await expect(getAvailableRaidIdentifiersAjax()).rejects.toThrow(
-      "Failed to fetch RaID apps: Not Found"
+      "Failed to fetch RAiD apps: Not Found"
     );
   });
 
@@ -245,7 +245,7 @@ describe("getAvailableRaidIdentifiersAjax", () => {
     });
 
     await expect(getAvailableRaidIdentifiersAjax()).rejects.toThrow(
-      "Failed to fetch RaID apps: Unauthorized"
+      "Failed to fetch RAiD apps: Unauthorized"
     );
   });
 
@@ -285,8 +285,8 @@ describe("getAvailableRaidIdentifiersAjax", () => {
     await expect(getAvailableRaidIdentifiersAjax()).rejects.toThrow();
   });
 
-  it("should validate all required fields in RaIDReferenceDTO", async () => {
-    // Mock a response with incomplete RaIDReferenceDTO
+  it("should validate all required fields in RaidReferenceDTO", async () => {
+    // Mock a response with incomplete RaidReferenceDTO
     fetchMock.mockResponseOnce(
       JSON.stringify({
         success: true,
@@ -308,7 +308,7 @@ describe("getAvailableRaidIdentifiersAjax", () => {
       success: true,
       data: [
         {
-          ...mockRaIDReference1,
+          ...mockRaidReference1,
           extraField: "should be ignored",
         },
       ],
@@ -327,7 +327,7 @@ describe("getAvailableRaidIdentifiersAjax", () => {
 });
 
 describe("getRaidIntegrationInfoAjax", () => {
-  it("should fetch RaID integration info successfully", async () => {
+  it("should fetch RAiD integration info successfully", async () => {
     fetchMock.mockResponseOnce(JSON.stringify(mockIntegrationInfoSuccess));
 
     const result = await getRaidIntegrationInfoAjax();
@@ -337,7 +337,7 @@ describe("getRaidIntegrationInfoAjax", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.name).toBe("RAID");
-      expect(result.data.displayName).toBe("RaID");
+      expect(result.data.displayName).toBe("RAiD");
       expect(result.data.available).toBe(true);
       expect(result.data.enabled).toBe(true);
       expect(result.data.oauthConnected).toBe(true);
@@ -402,7 +402,7 @@ describe("getRaidIntegrationInfoAjax", () => {
     });
 
     await expect(getRaidIntegrationInfoAjax()).rejects.toThrow(
-      "Failed to fetch RaID integration info: Internal Server Error"
+      "Failed to fetch RAiD integration info: Internal Server Error"
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -418,7 +418,7 @@ describe("getRaidIntegrationInfoAjax", () => {
     );
 
     await expect(getRaidIntegrationInfoAjax()).rejects.toThrow(
-      "Failed to fetch RaID integration info: Not Found"
+      "Failed to fetch RAiD integration info: Not Found"
     );
   });
 
@@ -429,7 +429,7 @@ describe("getRaidIntegrationInfoAjax", () => {
     });
 
     await expect(getRaidIntegrationInfoAjax()).rejects.toThrow(
-      "Failed to fetch RaID integration info: Unauthorized"
+      "Failed to fetch RAiD integration info: Unauthorized"
     );
   });
 
@@ -459,7 +459,7 @@ describe("getRaidIntegrationInfoAjax", () => {
         success: true,
         data: {
           name: "RAID",
-          displayName: "RaID",
+          displayName: "RAiD",
           // Missing required fields: available, enabled, oauthConnected, options
         },
       })
@@ -474,7 +474,7 @@ describe("getRaidIntegrationInfoAjax", () => {
         success: true,
         data: {
           name: "WRONG_NAME",
-          displayName: "RaID",
+          displayName: "RAiD",
           available: true,
           enabled: true,
           oauthConnected: true,
@@ -488,7 +488,7 @@ describe("getRaidIntegrationInfoAjax", () => {
     await expect(getRaidIntegrationInfoAjax()).rejects.toThrow();
   });
 
-  it("should validate displayName field must be 'RaID'", async () => {
+  it("should validate displayName field must be 'RAiD'", async () => {
     fetchMock.mockResponseOnce(
       JSON.stringify({
         success: true,
@@ -514,7 +514,7 @@ describe("getRaidIntegrationInfoAjax", () => {
         success: true,
         data: {
           name: "RAID",
-          displayName: "RaID",
+          displayName: "RAiD",
           available: true,
           enabled: true,
           oauthConnected: true,
@@ -538,7 +538,7 @@ describe("getRaidIntegrationInfoAjax", () => {
       success: true,
       data: {
         name: "RAID",
-        displayName: "RaID",
+        displayName: "RAiD",
         available: true,
         enabled: true,
         oauthConnected: true,

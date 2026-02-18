@@ -1,4 +1,4 @@
-import { test, describe, expect, beforeEach, vi } from 'vitest';
+import { test, describe, expect, beforeEach, vi } from "vitest";
 import "@/__tests__/mocks/useUiPreference";
 import React from "react";
 import {
@@ -18,7 +18,19 @@ import PDF_CONFIG from "./pdfConfig.json";
 import userEvent from "@testing-library/user-event";
 const mockAxios = new MockAdapter(axios);
 
-// @ts-expect-error RS is legacy
+vi.mock("@/modules/common/hooks/auth", () => ({
+  useOauthTokenQuery: () => ({ data: "test-token" }),
+}));
+
+vi.mock("@/modules/raid/queries", () => ({
+  useRaidIntegrationInfoAjaxQuery: () => ({
+    data: { success: true, data: { enabled: false } },
+  }),
+}));
+
+vi.mock("@/modules/share/queries", () => ({
+  useCommonGroupsShareListingQuery: () => ({ data: new Map() }),
+}));
 
 window.RS = { newFileStoresExportEnabled: false };
 beforeEach(() => {

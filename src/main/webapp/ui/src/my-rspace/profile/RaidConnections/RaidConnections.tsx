@@ -4,13 +4,13 @@ import Stack from "@mui/material/Stack";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useRaidIntegrationInfoAjaxQuery } from "@/modules/raid/queries";
-import RaIDConnectionsEntry from "@/my-rspace/profile/RaIDConnections/RaIDConnectionsEntry";
 import { useGetGroupByIdQuery } from "@/modules/groups/queries";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import Link from "@mui/material/Link";
+import RaidConnectionsEntry from "@/my-rspace/profile/RaidConnections/RaidConnectionsEntry";
 
-const RaIDConnections = ({ groupId }: { groupId: string }) => {
+const RaidConnections = ({ groupId }: { groupId: string }) => {
   const { data: token } = useOauthTokenQuery();
   const { data: integrationData } = useRaidIntegrationInfoAjaxQuery();
   const {
@@ -21,7 +21,7 @@ const RaIDConnections = ({ groupId }: { groupId: string }) => {
   if (!integrationData.success) {
     return (
       <Typography variant="body2">
-        Error loading RaID integration info: {integrationData.errorMsg}
+        Error loading RAiD integration info: {integrationData.errorMsg}
       </Typography>
     );
   }
@@ -34,36 +34,46 @@ const RaIDConnections = ({ groupId }: { groupId: string }) => {
     );
   }
 
+  if (groupData === null) {
+    return (
+      <Typography variant="body2">
+        Group not found, or you may not have permission to view this group.
+      </Typography>
+    );
+  }
+
   const groupType = groupData?.type;
 
   const hasConnectedServers = Object.entries(integrationData?.data.options || {})
     .filter(([key]) => key !== "RAID_CONFIGURED_SERVERS")
     .some(([, value]) => !Array.isArray(value) && value.RAID_OAUTH_CONNECTED);
 
-  const isUnavailable =
+  const shouldShowUnavailableMessage =
     !integrationData?.data?.available ||
     !integrationData?.data?.enabled ||
     !hasConnectedServers ||
     groupType !== "PROJECT_GROUP";
 
+  const isEnabled = integrationData?.data?.enabled;
+
   const getUnavailableMessage = () => {
     if (groupType !== "PROJECT_GROUP") {
-      return <>RaID is disabled for this project - only project groups can have RaID Connections.</>;
+      return <>RAiD is disabled for this project - only project groups can have RAiD connections.</>;
     }
 
     if (!integrationData?.data?.available) {
-      return <>RaID is not available for this RSpace instance. Please contact your system administrator to enable RaID.</>;
+      return <>RAiD is not available for this RSpace instance. Please contact your system administrator to enable RAiD.</>;
     }
 
     if (!integrationData?.data?.enabled) {
-      return <>RaID is not enabled for this RSpace instance. To enable RaID Connections, go to the <Link href="/apps">Apps page</Link> and enable RaID.</>;
+      return <>RAiD is not enabled for your account. To add or change RAiD connections, go to the <Link href="/apps">Apps page</Link> and enable RAiD.</>;
     }
 
     if (!hasConnectedServers) {
       return (
         <>
-          RaID has been enabled, but no RaID servers have been connected yet.
-          Please go to the <Link href="/apps">Apps page</Link> and add a RaID
+          RAiD has been enabled, but no RAiD servers have been connected yet.
+          Please go to the <Link href="/apps">Apps page</Link> and add a RAiD
           server.
         </>
       );
@@ -77,18 +87,32 @@ const RaIDConnections = ({ groupId }: { groupId: string }) => {
 
   return (
     <Stack spacing={1} sx={{ width: "100%" }} direction="column">
-      <Typography variant="h6">RaID Connections</Typography>
+      <Typography variant="h6">RAiD Connections</Typography>
       <ErrorBoundary>
         <Suspense
           fallback={<FontAwesomeIcon icon={faSpinner} spin size="3x" />}
         >
-          {isUnavailable ? (
+          {shouldShowUnavailableMessage ? (
             <Stack spacing={1} direction="column">
               <Typography variant="body2">{getUnavailableMessage()}</Typography>
-              {raidIdentifier && (<Typography variant="body2"><strong>Previously connected to:</strong> {raidTitle} ({raidIdentifier})</Typography>)}
+              {raidIdentifier && (
+                <Typography variant="body2">
+                  <strong>
+                    {/* It shouldn't be possible for groups to change types
+                       (so a project group can never become a lab group),
+                        but handling it here just in case */}
+                    {(!integrationData.data?.available ||
+                    groupType !== "PROJECT_GROUP")
+                      ? "Previously"
+                      : "Currently"}{" "}
+                    connected to:
+                  </strong>{" "}
+                  {raidTitle} ({raidIdentifier})
+                </Typography>
+              )}
             </Stack>
           ) : (
-            <RaIDConnectionsEntry groupId={groupId} />
+            <RaidConnectionsEntry groupId={groupId} />
           )}
         </Suspense>
       </ErrorBoundary>
@@ -96,4 +120,4 @@ const RaIDConnections = ({ groupId }: { groupId: string }) => {
   );
 };
 
-export default RaIDConnections;
+export default RaidConnections;

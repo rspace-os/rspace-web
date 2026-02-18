@@ -1,5 +1,6 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import "../../../__mocks__/matchMedia";
+import "@/__tests__/mocks/muiTransitions";
 import React,
   { useState } from "react";
 import {
@@ -19,14 +20,20 @@ import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
 import Alerts from "../../components/Alerts/Alerts";
 import userEvent from "@testing-library/user-event";
 
-vi.mock("react-transition-group", () => ({
-  Transition: ({ children, in: inProp }: { children: any; in: boolean }) =>
-    typeof children === "function"
-      ? children(inProp ? "entered" : "exited", {})
-      : children ?? null,
-  CSSTransition: ({ children }: { children: any }) => children ?? null,
-  TransitionGroup: ({ children }: { children: any }) => children ?? null,
+vi.mock("@/modules/common/hooks/auth", () => ({
+  useOauthTokenQuery: () => ({ data: "test-token" }),
 }));
+
+vi.mock("@/modules/raid/queries", () => ({
+  useRaidIntegrationInfoAjaxQuery: () => ({
+    data: { success: true, data: { enabled: false } },
+  }),
+}));
+
+vi.mock("@/modules/share/queries", () => ({
+  useCommonGroupsShareListingQuery: () => ({ data: new Map() }),
+}));
+
 window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
@@ -393,16 +400,13 @@ describe("ExportDialog", () => {
               );
 
             }
-
-            await user.click(screen.getByRole("button", { name: "Next" }));
-            await waitFor(() => {
-              expect(
-                screen.getByRole("button", { name: "Export" })
-              ).toBeVisible();
-
+            const nextButton = screen.getByRole("button", { name: "Next" });
+            await waitFor(() => expect(nextButton).toBeEnabled());
+            await user.click(nextButton);
+            const exportButton = await screen.findByRole("button", {
+              name: "Export",
             });
-
-            fireEvent.click(screen.getByRole("button", { name: "Export" }));
+            fireEvent.click(exportButton);
             await waitFor(() => {
               expect(screen.getByText(/submitted to the server/)).toBeVisible();
 

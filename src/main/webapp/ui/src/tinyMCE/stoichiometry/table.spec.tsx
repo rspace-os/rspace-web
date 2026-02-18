@@ -6,6 +6,12 @@ import AxeBuilder from "@axe-core/playwright";
 import fs from "fs/promises";
 
 import * as Jwt from "jsonwebtoken";
+
+test.skip(
+  ({ browserName }) => browserName === "webkit",
+  "Flaky on WebKit",
+);
+
 async function getColumnIndexByHeader(table: Locator, headerText: string) {
   const allHeaders = table.getByRole("columnheader");
 

@@ -1,5 +1,5 @@
 import * as v from "valibot";
-import { RaIDReferenceDTOSchema } from "@/modules/raid/schema";
+import { RaidReferenceDTOSchema } from "@/modules/raid/schema";
 
 // User Group Info Schema - represents a user in a group
 export const UserGroupInfoSchema = v.object({
@@ -20,7 +20,7 @@ export const GroupInfoSchema = v.object({
   sharedSnippetFolderId: v.number(),
   members: v.array(UserGroupInfoSchema),
   raid: v.nullable(
-    RaIDReferenceDTOSchema,
+    RaidReferenceDTOSchema,
   ),
 });
 
