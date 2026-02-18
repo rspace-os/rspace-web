@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.dao.EcatDocumentFileDao;
 import com.researchspace.search.impl.FileIndexer;
@@ -83,7 +84,7 @@ public class FileIndexSearchTest {
     assertFalse(idxer.accept(RSpaceTestUtils.getResource("Picture1.png")));
   }
 
-  private void setUpindexFiles(boolean failFast, String... pathsToIndex) throws Exception {
+  private void setUpIndexFiles(boolean failFast, String... pathsToIndex) throws Exception {
     searcher.setIndexFolderDirectly(indexFolder);
     FileIndexer indexer;
     Stream.of(pathsToIndex)
@@ -92,8 +93,8 @@ public class FileIndexSearchTest {
               File inF = new File(path);
               try {
                 copyToDataFolder(inF);
-              } catch (Exception e) {
-                e.printStackTrace();
+              } catch (IOException e) {
+                fail("Couldn't copy file to data folder for indexing: " + e.getMessage());
               }
             });
 
@@ -117,7 +118,7 @@ public class FileIndexSearchTest {
 
   @Test
   void failFastIndexerThrowsIAEForCorrupted() throws Exception {
-    assertThrows(IOException.class, () -> setUpindexFiles(true, pathsToIndexWithCorruptFile));
+    assertThrows(IOException.class, () -> setUpIndexFiles(true, pathsToIndexWithCorruptFile));
     assertEquals(0, searcher.searchFiles(odtSearch, createAnyUser("any")).size());
     // this gets indexed first, before NonIdexable.pdf, and can still be searched
     assertEquals(1, searcher.searchFiles(msSearch, createAnyUser("any")).size());
@@ -125,7 +126,7 @@ public class FileIndexSearchTest {
 
   @Test
   void failFastIndexerContinues() throws Exception {
-    setUpindexFiles(false, pathsToIndexWithCorruptFile);
+    setUpIndexFiles(false, pathsToIndexWithCorruptFile);
     // even though an earlier file fails, this still gets indexed
     assertEquals(1, searcher.searchFiles(odtSearch, createAnyUser("any")).size());
   }
@@ -134,7 +135,7 @@ public class FileIndexSearchTest {
   // indexing to fail, so test that it can be indexed and searched successfully
   @Test
   void testIndexingDocxWithEmbeddedPdf() throws Exception {
-    setUpindexFiles(true, docxWithEmbeddedPdfPath);
+    setUpIndexFiles(true, docxWithEmbeddedPdfPath);
 
     List<FileSearchResult> results = searcher.searchFiles("Outer_haystack", createAnyUser("any"));
 
@@ -144,7 +145,7 @@ public class FileIndexSearchTest {
 
   @Test
   void testFileSearcher() throws Exception {
-    setUpindexFiles(true, pathsToIndex);
+    setUpIndexFiles(true, pathsToIndex);
 
     List<String> files = Arrays.asList(pdfPath, msPath, odtPath, odsPath, odpPath);
     List<String> terms = Arrays.asList(pdfSearch, msSearch, odtSearch, odsSearch, odpSearch);
