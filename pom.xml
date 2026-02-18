@@ -2523,7 +2523,7 @@
             <artifactId>frontend-maven-plugin</artifactId>
             <version>1.15.1</version>
             <configuration>
-              <nodeVersion>v24.11.0</nodeVersion>
+              <nodeVersion>v24.13.1</nodeVersion>
               <workingDirectory>src/main/webapp/ui</workingDirectory>
             </configuration>
             <executions>
