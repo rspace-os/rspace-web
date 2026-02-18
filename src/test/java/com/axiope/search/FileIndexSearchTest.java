@@ -7,13 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.EcatDocumentFileDao;
-import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
@@ -33,7 +31,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class FileIndexSearchTest {
 
   class FileIndexerTSS extends FileIndexer {
-    /** Overrides real setter to provide a test instance of the file index folder */
+    /**
+     * Overrides real setter to provide a test instance of the file index folder
+     */
     public String getIndexFolderPath() {
       return indexPath;
     }
@@ -45,20 +45,9 @@ public class FileIndexSearchTest {
     }
   }
 
-  class FileSearcherTSS extends FileIndexSearcher {
-    public FileSearcherTSS() throws IOException {
-      super();
-    }
-
-    /** Overrides real setter to provide a test instance of the file index folder */
-    public String getIndexFolderPath() {
-      return indexFolder.getAbsolutePath();
-    }
-  }
-
   private @Mock EcatDocumentFileDao docDao;
 
-  FileSearchStrategy searcher = new LuceneSearchStrategy();
+  LuceneSearchStrategy searcher = new LuceneSearchStrategy();
 
   final String pdfPath = "src/test/resources/TestResources/smartscotland3.pdf";
   // this is 2nd in list when sorted alphabeticallt
@@ -74,6 +63,8 @@ public class FileIndexSearchTest {
   final String odtSearch = "Cycling";
   final String odsSearch = "primers";
   final String odpSearch = "Olympics";
+  final String docxWithEmbeddedPdfPath =
+      "src/test/resources/TestResources/docWithEmbeddedEMFPDF.docx";
 
   String[] pathsToIndex = new String[] {pdfPath, msPath, odpPath, odsPath, odtPath};
   // corrupted is 3rd in list
@@ -95,7 +86,8 @@ public class FileIndexSearchTest {
   }
 
   private void setUpindexFiles(boolean failFast, String... pathsToIndex) throws Exception {
-    FileIndexer idxer = null;
+    searcher.setIndexFolderDirectly(indexFolder);
+    FileIndexer indexer;
     Stream.of(pathsToIndex)
         .forEach(
             (path) -> {
@@ -107,18 +99,18 @@ public class FileIndexSearchTest {
               }
             });
 
-    idxer = new FileIndexerTSS();
+    indexer = new FileIndexerTSS();
+    indexer.setIndexFolderDirectly(indexFolder);
     try {
-      // int nbr = idxer.indexFileStore();
-      idxer.init(true);
-      int nbr = idxer.indexFolder(dataFolder, failFast);
-      assertTrue(nbr == idxer.getWriter().numDocs());
+      indexer.init(true);
+      int indexedDocs = indexer.indexFolder(dataFolder, failFast);
+      assertEquals(indexedDocs, indexer.getWriter().numDocs());
     } finally {
-      idxer.close();
+      indexer.close();
     }
   }
 
-  private void copyToDataFolder(File inF) throws IOException, FileNotFoundException {
+  private void copyToDataFolder(File inF) throws IOException {
     if (inF.exists()) {
       File ouF = new File(dataFolder, inF.getName());
       IOUtils.copy(new FileInputStream(inF), new FileOutputStream(ouF));
@@ -141,12 +133,24 @@ public class FileIndexSearchTest {
   }
 
   @Test
+  void testIndexingDocxWithEmbeddedPdf() throws Exception {
+    setUpindexFiles(true, docxWithEmbeddedPdfPath);
+
+    List<FileSearchResult> results =
+        searcher.searchFiles("someSearchStringToFind", createAnyUser("any"));
+
+    assertTrue(
+        results.stream()
+            .anyMatch(f -> f.getFileName().equals("docWithEmbeddedEMFPDF.docx")));
+  }
+
+  @Test
   void testFileSearcher() throws Exception {
     setUpindexFiles(true, pathsToIndex);
 
-    List<String> files = Arrays.asList(new String[] {pdfPath, msPath, odtPath, odsPath, odpPath});
+    List<String> files = Arrays.asList(pdfPath, msPath, odtPath, odsPath, odpPath);
     List<String> terms =
-        Arrays.asList(new String[] {pdfSearch, msSearch, odtSearch, odsSearch, odpSearch});
+        Arrays.asList(pdfSearch, msSearch, odtSearch, odsSearch, odpSearch);
 
     IntStream.range(0, files.size())
         .forEach(
