@@ -1,7 +1,5 @@
 import React, { useCallback } from "react";
-import {
-  DataGrid
-} from "@mui/x-data-grid";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -12,7 +10,6 @@ import useStoichiometry, {
   type RsChemElement,
   StoichiometryRequest,
 } from "../../hooks/api/useStoichiometry";
-import { DataGridColumn } from "../../util/table";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import type { EditableMolecule, StoichiometryTableRef } from "./types";
 import { calculateMoles, calculateUpdatedMolecules } from "./utils";
@@ -241,92 +238,85 @@ const StoichiometryTable = React.forwardRef<
     (m) => m.limitingReagent && m.role.toLowerCase() === "reactant",
   );
 
-  const columns = [
-    DataGridColumn.newColumnWithFieldName<"name", EditableMolecule>("name", {
+  const columns: GridColDef<EditableMolecule>[] = [
+    {
+      field: "name",
       headerName: "Name",
       sortable: false,
       flex: 1.5,
-    }),
-    DataGridColumn.newColumnWithValueGetter<"role", EditableMolecule, string>(
-      "role",
-      ({ role }) =>
+    },
+    {
+      field: "role",
+      valueGetter: (_value, { role }) =>
         (({
           REACTANT: "Reactant",
           PRODUCT: "Product",
           AGENT: "Reagent",
         } as Record<string, string>)[role] ?? "Unknown role"),
-      {
-        headerName: "Role",
-        sortable: false,
-        flex: 1,
-        renderCell: ({ row }) => <StoichiometryTableRoleChip role={row.role || ""} />,
+      headerName: "Role",
+      sortable: false,
+      flex: 1,
+      renderCell: ({ row }) => <StoichiometryTableRoleChip role={row.role || ""} />,
+    },
+    {
+      field: "limitingReagent",
+      headerName: "Limiting Reagent",
+      sortable: false,
+      flex: 1,
+      align: "center",
+      renderCell: (params) =>
+        params.row.role.toLowerCase() === "reactant" ? (
+          <Radio
+            checked={params.row.limitingReagent || false}
+            disabled={!editable}
+            inputProps={{
+              "aria-label": `Select ${params.row.name} as limiting reagent`,
+            }}
+            onChange={(e) => {
+              if (e.target.checked && editable) {
+                const updatedRow = { ...params.row, limitingReagent: true };
+                const newMolecules = calculateUpdatedMolecules(
+                  allMolecules,
+                  updatedRow,
+                );
+                setAllMolecules(newMolecules);
+                onChangesUpdate?.(true);
+              }
+            }}
+          />
+        ) : (
+          <>&mdash;</>
+        ),
+    },
+    {
+      field: "coefficient",
+      headerName: "Equivalent",
+      sortable: false,
+      flex: 1,
+      type: "number",
+      editable,
+      headerAlign: "left",
+      cellClassName: (params) => {
+        if (limitingReagent && params.id === limitingReagent.id) {
+          return "stoichiometry-disabled-cell";
+        }
+        return "";
       },
-    ),
-    DataGridColumn.newColumnWithFieldName<"limitingReagent", EditableMolecule>(
-      "limitingReagent",
-      {
-        headerName: "Limiting Reagent",
-        sortable: false,
-        flex: 1,
-        align: "center",
-        renderCell: (params) =>
-          params.row.role.toLowerCase() === "reactant" ? (
-            <Radio
-              checked={params.row.limitingReagent || false}
-              disabled={!editable}
-              inputProps={{
-                "aria-label": `Select ${params.row.name} as limiting reagent`,
-              }}
-              onChange={(e) => {
-                if (e.target.checked && editable) {
-                  const updatedRow = { ...params.row, limitingReagent: true };
-                  const newMolecules = calculateUpdatedMolecules(
-                    allMolecules,
-                    updatedRow,
-                  );
-                  setAllMolecules(newMolecules);
-                  onChangesUpdate?.(true);
-                }
-              }}
-            />
-          ) : (
-            <>&mdash;</>
-          ),
-      },
-    ),
-    DataGridColumn.newColumnWithFieldName<"coefficient", EditableMolecule>(
-      "coefficient",
-      {
-        headerName: "Equivalent",
-        sortable: false,
-        flex: 1,
-        type: "number",
-        editable,
-        headerAlign: "left",
-
-        cellClassName: (params) => {
-          if (limitingReagent && params.id === limitingReagent.id) {
-            return "stoichiometry-disabled-cell";
-          }
-          return "";
-        },
-      },
-    ),
-    DataGridColumn.newColumnWithFieldName<"molecularWeight", EditableMolecule>(
-      "molecularWeight",
-      {
-        headerName: "Molecular Weight (g/mol)",
-        sortable: false,
-        flex: 1.2,
-        type: "number",
-        headerAlign: "left",
-        renderCell: (params) =>
-          params.value !== null && params.value !== undefined
-            ? Number(params.value).toFixed(3)
-            : <>&#8212;</>,
-      },
-    ),
-    DataGridColumn.newColumnWithFieldName<"mass", EditableMolecule>("mass", {
+    },
+    {
+      field: "molecularWeight",
+      headerName: "Molecular Weight (g/mol)",
+      sortable: false,
+      flex: 1.2,
+      type: "number",
+      headerAlign: "left",
+      renderCell: (params) =>
+        params.value !== null && params.value !== undefined
+          ? Number(params.value).toFixed(3)
+          : <>&#8212;</>,
+    },
+    {
+      field: "mass",
       headerName: "Mass (g)",
       sortable: false,
       flex: 1,
@@ -343,105 +333,91 @@ const StoichiometryTable = React.forwardRef<
         }
         return "";
       },
-    }),
-    DataGridColumn.newColumnWithValueGetter<
-      "moles",
-      EditableMolecule,
-      number | null
-    >(
-      "moles",
-      (row: EditableMolecule) => calculateMoles(row.mass, row.molecularWeight),
-      {
-        headerName: "Moles (mol)",
-        sortable: false,
-        flex: 1,
-        headerAlign: "left",
-        type: "number",
-        editable,
-        renderCell: (params) =>
-          params.value !== null && params.value !== undefined
-            ? Number(params.value).toFixed(3)
-            : <>&#8212;</>,
-        cellClassName: (params) => {
-          if (limitingReagent && params.id !== limitingReagent.id) {
-            return "stoichiometry-disabled-cell";
-          }
-          return "";
-        },
+    },
+    {
+      field: "moles",
+      valueGetter: (_value, row) => calculateMoles(row.mass, row.molecularWeight),
+      headerName: "Moles (mol)",
+      sortable: false,
+      flex: 1,
+      headerAlign: "left",
+      type: "number",
+      editable,
+      renderCell: (params) =>
+        params.value !== null && params.value !== undefined
+          ? Number(params.value).toFixed(3)
+          : <>&#8212;</>,
+      cellClassName: (params) => {
+        if (limitingReagent && params.id !== limitingReagent.id) {
+          return "stoichiometry-disabled-cell";
+        }
+        return "";
       },
-    ),
-    DataGridColumn.newColumnWithFieldName<"actualAmount", EditableMolecule>(
-      "actualAmount",
-      {
-        headerName: "Actual Mass (g)",
-        sortable: false,
-        flex: 1,
-        headerAlign: "left",
-        editable,
-        type: "number",
-        renderCell: (params) =>
-          params.value !== null && params.value !== undefined
-            ? Number(params.value).toFixed(3)
-            : <>&mdash;</>,
-      },
-    ),
-    DataGridColumn.newColumnWithValueGetter<
-      "actualMoles",
-      EditableMolecule,
-      number | null
-    >(
-      "actualMoles",
-      (row: EditableMolecule) =>
+    },
+    {
+      field: "actualAmount",
+      headerName: "Actual Mass (g)",
+      sortable: false,
+      flex: 1,
+      headerAlign: "left",
+      editable,
+      type: "number",
+      renderCell: (params) =>
+        params.value !== null && params.value !== undefined
+          ? Number(params.value).toFixed(3)
+          : <>&mdash;</>,
+    },
+    {
+      field: "actualMoles",
+      valueGetter: (_value, row) =>
         calculateMoles(row.actualAmount, row.molecularWeight),
-      {
-        headerName: "Actual Moles (mol)",
-        sortable: false,
-        headerAlign: "left",
-        editable,
-        flex: 1,
-        type: "number",
-        renderCell: (params) => {
-          return params.value !== null ? (
-            Number(params.value).toFixed(3)
-          ) : (
-            <>&mdash;</>
-          );
-        },
+      headerName: "Actual Moles (mol)",
+      sortable: false,
+      headerAlign: "left",
+      editable,
+      flex: 1,
+      type: "number",
+      renderCell: (params) => {
+        return params.value !== null ? (
+          Number(params.value).toFixed(3)
+        ) : (
+          <>&mdash;</>
+        );
       },
-    ),
-    DataGridColumn.newColumnWithFieldName<"actualYield", EditableMolecule>(
-      "actualYield",
-      {
-        headerName: "Yield/Excess (%)",
-        sortable: false,
-        headerAlign: "left",
-        flex: 1,
-        type: "number",
-        editable: false,
-        renderCell: (params) => {
-          // Don't show yield for limiting reagent
-          if (limitingReagent && params.id === limitingReagent.id) {
-            return <>&#8212;</>;
-          }
-          const value = params.value;
-          return value !== null && value !== undefined ? (
-            `${Number(
-              (Number(Number(value).toFixed(3)) * 100).toFixed(3),
-            )}%`
-          ) : (
-            <>&#8212;</>
-          );
-        },
+    },
+    {
+      field: "actualYield",
+      headerName: "Yield/Excess (%)",
+      sortable: false,
+      headerAlign: "left",
+      flex: 1,
+      type: "number",
+      editable: false,
+      renderCell: (params) => {
+        // Don't show yield for limiting reagent
+        if (limitingReagent && params.id === limitingReagent.id) {
+          return <>&#8212;</>;
+        }
+        const value = params.value as number | null | undefined;
+        return value !== null && value !== undefined ? (
+          `${Number((Number(Number(value).toFixed(3)) * 100).toFixed(3))}%`
+        ) : (
+          <>&#8212;</>
+        );
       },
-    ),
-    DataGridColumn.newColumnWithFieldName<"notes", EditableMolecule>("notes", {
+    },
+    {
+      field: "notes",
       headerName: "Notes",
       sortable: false,
       flex: 1.5,
       type: "string",
       editable,
-      renderCell: (params) => params.value ?? <>&mdash;</>,
-    }),
+      renderCell: (params) => {
+        const value = params.value as string | null | undefined;
+        return value ?? <>&mdash;</>;
+      },
+    },
   ];
 
   if (loading) {
@@ -498,7 +474,11 @@ const StoichiometryTable = React.forwardRef<
       <DataGrid
         rows={allMolecules ?? []}
         columns={columns}
-        isCellEditable={({ field, row }) => {
+        isCellEditable={(params) => {
+          const { field, row } = params as {
+            field: string;
+            row: EditableMolecule;
+          };
           /*
            * When a limiting reagent is defined, the user may only edit its
            * mass or moles, with the other masses and moles being computed
@@ -512,7 +492,6 @@ const StoichiometryTable = React.forwardRef<
             return row.id === limitingReagent.id;
           return true;
         }}
-        autoHeight
         hideFooter
         disableColumnFilter
         getRowId={(row) => row.id}
