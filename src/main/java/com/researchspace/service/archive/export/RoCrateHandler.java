@@ -212,13 +212,17 @@ public class RoCrateHandler {
       }
       String rorAffiliationID = rorService.getSystemRoRValue();
       String rorAffiliationName = rorService.getRorNameForSystemRoRValue();
-      String combinedRor = "";
       if (rorAffiliationID != null && !rorAffiliationID.isEmpty()) {
-        combinedRor = rorAffiliationID + " " + rorAffiliationName;
-        exporterBuilder.addProperty("affiliation", combinedRor);
+        OrganizationEntity rorOrg =
+            new OrganizationEntity.OrganizationEntityBuilder()
+                .setId(rorAffiliationID)
+                .addProperty("name", rorAffiliationName)
+                .build();
+        roCrate.addContextualEntity(rorOrg);
       }
       PersonEntity exported = exporterBuilder.build();
       roCrate.addContextualEntity(exported);
+
       OrganizationEntity rSpace =
           new OrganizationEntity.OrganizationEntityBuilder()
               .setId("#RSpace")
@@ -488,8 +492,7 @@ public class RoCrateHandler {
     dsb.addToHasPart(de);
   }
 
-  public void buildExtWorkFlowEntity(
-      String wfName,  String externalServiceURL) {
+  public void buildExtWorkFlowEntity(String wfName, String externalServiceURL) {
     WorkflowEntity wfENtity =
         new WorkflowEntity.WorkflowEntityBuilder()
             .setId(externalServiceURL)
