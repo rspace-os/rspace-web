@@ -27,6 +27,7 @@ pipeline {
         booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
         booleanParam(name: 'DOCKER_AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to Docker on AWS - see the README in build/ folder for more details')
         booleanParam(name: 'FRONTEND_TESTS', defaultValue: false, description: 'Run TypeScript/Vitest tests (runs after changes to frontend files by default)')
+        booleanParam(name: 'FRONTEND_TESTS_TYPESCRIPT_CHECK', defaultValue: false, description: 'Run TypeScript check as a part of front-end tests')
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
@@ -124,14 +125,8 @@ pipeline {
         }
         stage('TypeScript Check') {
             when {
-                anyOf {
-                    expression { return params.FRONTEND_TESTS }
-                    changeset '**/*.ts'
-                    changeset '**/*.tsx'
-                    changeset '**/*.jsp'
-                    changeset '**/*.css'
-                    changeset '**/*.json'
-                }
+                expression { return params.FRONTEND_TESTS }
+                expression { return params.FRONTEND_TESTS_TYPESCRIPT_CHECK }
             }
             steps {
                 dir('src/main/webapp/ui') {
