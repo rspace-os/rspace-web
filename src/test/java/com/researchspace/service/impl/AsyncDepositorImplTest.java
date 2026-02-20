@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.model.apps.App.APP_DATAVERSE;
+import static com.researchspace.model.apps.App.APP_ZENODO;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -71,7 +72,7 @@ public class AsyncDepositorImplTest {
 
   @Test
   public void testMessageNoLink() {
-    RepositoryOperationResult result = new RepositoryOperationResult(true, "hello", null);
+    RepositoryOperationResult result = new RepositoryOperationResult(true, "hello", null, null);
     underTest.postDeposit(
         result,
         SystemPropertyTestFactory.createAnyApp(),
@@ -91,7 +92,11 @@ public class AsyncDepositorImplTest {
   @Test
   public void testMessageLink() throws MalformedURLException {
     RepositoryOperationResult result =
-        new RepositoryOperationResult(true, "hello", new URL("http://www.bbc.co.uk"));
+        new RepositoryOperationResult(
+            true,
+            "hello",
+            new URL("http://www.bbc.co.uk"),
+            new URL("http://doi.org/10.12384/ACHFAT"));
     underTest.postDeposit(
         result,
         SystemPropertyTestFactory.createAnyApp(),
@@ -110,7 +115,7 @@ public class AsyncDepositorImplTest {
   }
 
   @Test
-  public void testMessageDoiLinkWithRaid()
+  public void testMessageDoiLinkWithRaidAndDataverse()
       throws MalformedURLException,
           URISyntaxException,
           JsonProcessingException,
@@ -140,12 +145,68 @@ public class AsyncDepositorImplTest {
         new RaidUpdateResult(
             true, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
     Future<RepositoryOperationResult> futureRepoOperationResult =
-        new AsyncResult<>(new RepositoryOperationResult(true, "", new URL(expectedResultUrl)));
+        new AsyncResult<>(
+            new RepositoryOperationResult(true, "", new URL(expectedResultUrl), null));
 
     // WHEN
     Future<RaidUpdateResult> futureRaidUpdateResult =
         underTest.reportDoiToRaid(
-            new App(repoName, repoName, true),
+            new App(APP_DATAVERSE, repoName, true),
+            futureRepoOperationResult,
+            anyUser,
+            raidDepositConfig);
+
+    // THEN
+    Mockito.verify(mockRaidServiceClientAdapter)
+        .updateRaIDRelatedObject(anyUser.getUsername(), expectedRaidReference, expectedDoiLink);
+    Mockito.verify(comm)
+        .systemNotify(
+            Mockito.any(NotificationType.class),
+            (Mockito.contains(expectedDoiLink)),
+            Mockito.eq(anyUser.getUsername()),
+            Mockito.eq(true));
+    RaidUpdateResult actualRaidUpdateResult = futureRaidUpdateResult.get();
+    assertEquals(expectedRaidUpdateResult, actualRaidUpdateResult);
+  }
+
+  @Test
+  public void testMessageDoiLinkWithRaidAndZenodo()
+      throws MalformedURLException,
+          URISyntaxException,
+          JsonProcessingException,
+          ExecutionException,
+          InterruptedException {
+    // GIVEN
+    String repoName = "Zenodo";
+    String expectedResultUrl = "https://zenodo.org/records/18663592";
+    String expectedDoiLink = "https://doi.org/10.70122/FK2/FNGEGH";
+    String expectedRaidIdentifier = "https://raid.org/10.12345/ERTY88";
+    String expectedRaidUrl = "https://demo.app.raid.org.au/raid/10.12345/ERTY88";
+    String originalRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
+    RaIDReferenceDTO expectedRaidReference =
+        new RaIDReferenceDTO("serverAlias1", "RaidTitle", expectedRaidIdentifier, originalRaidUrl);
+    when(mockRaidServiceClientAdapter.updateRaIDRelatedObject(
+            anyUser.getUsername(), expectedRaidReference, expectedDoiLink))
+        .thenReturn(true);
+
+    RepoDepositConfig raidDepositConfig = new RepoDepositConfig();
+    raidDepositConfig.setExportToRaid(true);
+    raidDepositConfig.setAppName(APP_ZENODO);
+    raidDepositConfig.setRaidAssociated(
+        new RaidGroupAssociationDTO(1L, "RSpaceProjectName", expectedRaidReference));
+
+    RaidUpdateResult expectedRaidUpdateResult =
+        new RaidUpdateResult(
+            true, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
+    Future<RepositoryOperationResult> futureRepoOperationResult =
+        new AsyncResult<>(
+            new RepositoryOperationResult(
+                true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
+
+    // WHEN
+    Future<RaidUpdateResult> futureRaidUpdateResult =
+        underTest.reportDoiToRaid(
+            new App(APP_ZENODO, repoName, true),
             futureRepoOperationResult,
             anyUser,
             raidDepositConfig);

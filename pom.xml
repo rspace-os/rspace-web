@@ -1372,7 +1372,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-repository-spi</artifactId>
-      <version>1.1.1</version>
+      <version>1.1.2</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1570,16 +1570,34 @@
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-figshare-adapter</artifactId>
       <version>1.1.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rspace-repository-spi</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dryad-adapter</artifactId>
       <version>1.0.4</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rspace-repository-spi</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-zenodo-adapter</artifactId>
-      <version>0.3.3</version>
+      <version>0.3.4</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rspace-repository-spi</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
