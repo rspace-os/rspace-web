@@ -85,7 +85,6 @@ public class FileIndexSearchTest {
   }
 
   private void setUpIndexFiles(boolean failFast, String... pathsToIndex) throws Exception {
-    searcher.setIndexFolderDirectly(indexFolder);
     FileIndexer indexer;
     Stream.of(pathsToIndex)
         .forEach(
@@ -99,7 +98,6 @@ public class FileIndexSearchTest {
             });
 
     indexer = new FileIndexerTSS();
-    indexer.setIndexFolderDirectly(indexFolder);
     try {
       indexer.init(true);
       int indexedDocs = indexer.indexFolder(dataFolder, failFast);
