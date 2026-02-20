@@ -46,7 +46,7 @@ pipeline {
         CI = 'true'
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
-        AWS_TOMCAT_AMI = 'ami-0472af19af2fe2af2'
+        AWS_TOMCAT_AMI = 'ami-0a87ca4c9e75c2d8c'
         APP_VERSION = readMavenPom().getVersion()
 
         NODE_OPTIONS="--max-old-space-size=5120"
