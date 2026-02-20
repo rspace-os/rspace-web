@@ -25,7 +25,6 @@ pipeline {
         booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')
         booleanParam(name: 'AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to AWS')
         booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
-        booleanParam(name: 'DOCKER_AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to Docker on AWS - see the README in build/ folder for more details')
         booleanParam(name: 'FRONTEND_TESTS', defaultValue: false, description: 'Run TypeScript/Vitest tests (runs after changes to frontend files by default)')
         booleanParam(name: 'FRONTEND_TESTS_TYPESCRIPT_CHECK', defaultValue: false, description: 'Run TypeScript check as a part of front-end tests')
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
@@ -47,11 +46,8 @@ pipeline {
         CI = 'true'
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
-        DOCKER_AMI = 'ami-069082aeb2787a3ba'
         AWS_TOMCAT_AMI = 'ami-0472af19af2fe2af2'
         APP_VERSION = readMavenPom().getVersion()
-        DOCKERHUB_PWD = credentials('DOCKER_HUB_RSPACEOPS')
-        DOCKERHUB_REPO = 'rspaceops/rspace-services'
 
         NODE_OPTIONS="--max-old-space-size=5120"
     }
@@ -270,7 +266,6 @@ pipeline {
                 anyOf {
                     expression { return params.AWS_DEPLOY }
                     expression { return params.ONLY_BUILD_WAR }
-                    expression { return params.DOCKER_AWS_DEPLOY }
                     expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
                     changeset '**/*.ts'
@@ -370,64 +365,6 @@ pipeline {
                                 ]
                         ],
                         wait: false
-                )
-            }
-        }
-        // currently this requires a feature branch build( to compile the war file correctly for deployment)
-        stage('Deploy package to Docker on AWS') {
-            when {
-                expression { return params.DOCKER_AWS_DEPLOY }
-            }
-            steps {
-                dir('./build/packer/web') {
-                    echo 'Building docker image and pushing to DockerHub'
-                    sh '''
-                   builtWarVersion=$(ls ../../../target | grep war | awk -F ".war" '{print $1}')
-                   docker login --username rspaceops --password ${DOCKERHUB_PWD}
-                   echo "CWD is $(pwd)"
-                   packer build --var app_version="$builtWarVersion" --var docker_image_tag="rspace-web-$BRANCH_NAME" packer-docker.json
-                  '''
-                }
-                build(
-                  job: 'aws-deploy',
-                      parameters: [
-                         [
-                            $class: 'StringParameterValue',
-                            name: 'SERVER_NAME',
-                            value: "$BRANCH_NAME-docker-$BUILD_ID"
-                         ],
-                         [
-                            $class: 'StringParameterValue',
-                            name: 'AMI',
-                            value: "$DOCKER_AMI"
-                         ],
-                         [
-                            $class: 'BooleanParameterValue',
-                            name: 'DOCKER_AWS_DEPLOY',
-                            value: 'true'
-                         ],
-                         [
-                          $class: 'StringParameterValue',
-                           name: 'WAR',
-                           value: "$WORKSPACE/target/*.war"
-                         ],
-                         [
-                           $class: 'StringParameterValue',
-                           name: 'DEPLOYMENT_PROPERTY_OVERRIDE',
-                           value: "$WORKSPACE/${BRANCH_NAME}.properties"
-                         ],
-                         [
-                           $class: 'StringParameterValue',
-                           name: 'PARENT_WORKSPACE',
-                           value: "$WORKSPACE"
-                         ],
-                         [
-                           $class: 'StringParameterValue',
-                           name: 'BRANCH_NAME',
-                           value: "${BRANCH_NAME}"
-                         ]
-                    ],
-                    wait: false
                 )
             }
         }
