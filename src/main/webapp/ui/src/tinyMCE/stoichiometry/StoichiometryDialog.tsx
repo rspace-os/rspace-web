@@ -10,8 +10,6 @@ import ValidatingSubmitButton, {
 import DialogContent from "@mui/material/DialogContent";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import StoichiometryTable, { type StoichiometryTableRef } from "./table";
-import { doNotAwait } from "../../util/Util";
 import Stack from "@mui/material/Stack";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
 import * as FetchingData from "../../util/fetchingData";
@@ -20,6 +18,8 @@ import { useConfirm } from "../../components/ConfirmProvider";
 import ConfirmProvider from "../../components/ConfirmProvider";
 import useStoichiometry from "@/hooks/api/useStoichiometry";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import StoichiometryTable from "@/tinyMCE/stoichiometry/StoichiometryTable";
+import { StoichiometryTableRef } from "@/tinyMCE/stoichiometry/types";
 
 function StandaloneDialogInner({
   open,
@@ -102,7 +102,7 @@ function StandaloneDialogInner({
   const handleCalculate = () => {
     trackEvent("user:create:stoichiometry_table:document_editor");
     setLoading(true);
-    doNotAwait(async () => {
+    void (async () => {
       try {
         if (!chemId) throw new Error("chemId is required");
         const { id, revision } = await calculateStoichiometry({
@@ -124,10 +124,11 @@ function StandaloneDialogInner({
     setSaving(true);
     if (!stoichiometryId)
       throw new Error("stoichiometryId is required to save");
-    doNotAwait(async () => {
+    void (async () => {
       try {
         const newRevision = await tableRef.current?.save();
-        onSave?.(stoichiometryId, newRevision!);
+        // @ts-expect-error To fix
+        onSave?.(stoichiometryId, newRevision);
         console.log("Stoichiometry data saved successfully");
       } catch (e) {
         console.error("Save failed", e);
@@ -177,7 +178,9 @@ function StandaloneDialogInner({
   return (
     <Dialog
       open={actuallyOpen}
-      onClose={doNotAwait(handleClose)}
+      onClose={() => {
+        void handleClose();
+      }}
       aria-labelledby={titleId}
       maxWidth="xl"
       fullWidth
@@ -247,17 +250,24 @@ function StandaloneDialogInner({
           </ValidatingSubmitButton>
         )}
         {showTable && (
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
           <Button onClick={handleDelete} variant="outlined" color="error">
             Delete
           </Button>
         )}
-        <Button onClick={doNotAwait(handleClose)}>Close</Button>
+        <Button
+          onClick={() => {
+            void handleClose();
+          }}
+        >
+          Close
+        </Button>
       </DialogActions>
     </Dialog>
   );
 }
 
-export default function StandaloneDialog(
+export default function StoichiometryDialog(
   props: React.ComponentProps<typeof StandaloneDialogInner>,
 ): React.ReactNode {
   return (

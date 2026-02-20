@@ -2,7 +2,7 @@ import React from "react";
 import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/chemistry";
-import StoichiometryDialog from "./dialog";
+import StoichiometryDialog from "./StoichiometryDialog";
 import Alerts from "../../components/Alerts/Alerts";
 
 export function StoichiometryDialogWithCalculateButtonStory({

@@ -3,16 +3,19 @@ import React from "react";
 import {
   StoichiometryDialogWithCalculateButtonStory,
   StoichiometryDialogWithTableStory,
-} from "./dialog.story";
+} from "./StoichiometryDialog.story";
 import * as Jwt from "jsonwebtoken";
 
 import AxeBuilder from "@axe-core/playwright";
-const createOnTableCreatedSpy = () => {
+type CalledSpy = {
+  handler: () => void;
+  hasBeenCalled: () => boolean;
+};
 
+const createCalledSpy = (): CalledSpy => {
   let called = false;
   const handler = () => {
     called = true;
-
   };
 
   const hasBeenCalled = () => called;
@@ -20,72 +23,31 @@ const createOnTableCreatedSpy = () => {
     handler,
     hasBeenCalled,
   };
-
 };
-const createOnChangesUpdateSpy = () => {
-  let currentValue = false;
 
-  let callCount = 0;
-  const handler = (hasChanges: boolean) => {
-    currentValue = hasChanges;
-    callCount++;
+const hasStoichiometryRequest = (
+  networkRequests: Array<{ url: URL; postData: string | null; method: string }>,
+  method: "POST" | "PUT" | "DELETE",
+): boolean =>
+  networkRequests.some(
+    (request) =>
+      request.url.pathname.includes("/api/v1/stoichiometry") &&
+      request.method === method,
+  );
 
-  };
-  const getCurrentValue = () => currentValue;
-  const getCallCount = () => callCount;
-
-  const hasBeenCalled = () => callCount > 0;
-  return {
-    handler,
-    getCurrentValue,
-    getCallCount,
-    hasBeenCalled,
-  };
-
-};
-const createOnSaveSpy = () => {
-
-  let called = false;
-  const handler = () => {
-    called = true;
-
-  };
-
-  const hasBeenCalled = () => called;
-  return {
-    handler,
-    hasBeenCalled,
-  };
-
-};
-const createOnDeleteSpy = () => {
-
-  let called = false;
-  const handler = () => {
-    called = true;
-
-  };
-
-  const hasBeenCalled = () => called;
-  return {
-    handler,
-    hasBeenCalled,
-  };
-
-};
 const feature = test.extend<{
   Given: {
     "the dialog is open without a stoichiometry table": ({
       onTableCreatedSpy,
     }?: {
-      onTableCreatedSpy?: ReturnType<typeof createOnTableCreatedSpy>;
+      onTableCreatedSpy?: CalledSpy;
     }) => Promise<void>;
     "the dialog is open with a stoichiometry table": ({
       onSaveSpy,
       onDeleteSpy,
     }?: {
-      onSaveSpy?: ReturnType<typeof createOnSaveSpy>;
-      onDeleteSpy?: ReturnType<typeof createOnDeleteSpy>;
+      onSaveSpy?: CalledSpy;
+      onDeleteSpy?: CalledSpy;
     }) => Promise<void>;
   };
   When: {
@@ -102,7 +64,7 @@ const feature = test.extend<{
     "the callback should have been invoked": ({
       onTableCreatedSpy,
     }: {
-      onTableCreatedSpy: ReturnType<typeof createOnTableCreatedSpy>;
+      onTableCreatedSpy: CalledSpy;
     }) => void;
     "a POST request should have been made to create the stoichiometry table": () => void;
     "the save button should not be visible": () => Promise<void>;
@@ -205,12 +167,7 @@ const feature = test.extend<{
       },
       "a POST request should have been made to create the stoichiometry table":
         () => {
-          const postRequest = networkRequests.find(
-            (request) =>
-              request.url.pathname.includes("/api/v1/stoichiometry") &&
-              request.postData !== null,
-          );
-          expect(postRequest).toBeDefined();
+          expect(hasStoichiometryRequest(networkRequests, "POST")).toBe(true);
         },
       "the save button should not be visible": async () => {
         const saveButton = page.getByTestId("SubmitButton");
@@ -222,21 +179,13 @@ const feature = test.extend<{
       },
       "a PUT request should have been made to update the stoichiometry table":
         () => {
-          const putRequest = networkRequests.find(
-            (request) =>
-              request.url.pathname.includes("/api/v1/stoichiometry") &&
-              request.method === "PUT",
-          );
-          expect(putRequest).toBeDefined();
+          expect(hasStoichiometryRequest(networkRequests, "PUT")).toBe(true);
         },
       "a DELETE request should have been made to delete the stoichiometry table":
         () => {
-          const deleteRequest = networkRequests.find(
-            (request) =>
-              request.url.pathname.includes("/api/v1/stoichiometry") &&
-              request.method === "DELETE",
+          expect(hasStoichiometryRequest(networkRequests, "DELETE")).toBe(
+            true,
           );
-          expect(deleteRequest).toBeDefined();
         },
       "the delete button should be visible": async () => {
         const deleteButton = page.getByRole("button", { name: "Delete" });
@@ -504,7 +453,7 @@ test.describe("Stoichiometry Dialog", () => {
   feature(
     "invokes callback when table is successfully created",
     async ({ Given, When, Then }) => {
-      const onTableCreatedSpy = createOnTableCreatedSpy();
+      const onTableCreatedSpy = createCalledSpy();
       await Given["the dialog is open without a stoichiometry table"]({
         onTableCreatedSpy,
       });
