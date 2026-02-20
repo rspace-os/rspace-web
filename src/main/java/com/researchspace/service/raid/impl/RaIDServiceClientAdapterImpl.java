@@ -11,6 +11,7 @@ import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.raid.client.RaIDClient;
 import com.researchspace.raid.model.RaID;
+import com.researchspace.raid.model.RaIDRelatedObject;
 import com.researchspace.raid.model.RaIDServicePoint;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.raid.RaIDServerConfigurationDTO;
@@ -133,17 +134,16 @@ public class RaIDServiceClientAdapterImpl
   }
 
   @Override
-  public boolean updateRaIDRelatedObject(String username, RaIDReferenceDTO raid, String doiLink)
+  public boolean addRaIDRelatedObject(String username, RaIDReferenceDTO raid, String doiLink)
       throws URISyntaxException, JsonProcessingException {
     RaID newUpdatedRaid =
-        raidClient.updateRaIDRelatedObject(
+        raidClient.addRaIDRelatedObject(
             getApiBaseUrl(raid.getRaidServerAlias()),
             getExistingAccessTokenOrRefreshIfExpired(username, raid.getRaidServerAlias()),
             raid.getRaidPrefix(),
             raid.getRaidSuffix(),
             doiLink);
-    return !newUpdatedRaid.getRelatedObject().isEmpty()
-        && doiLink.equals(newUpdatedRaid.getRelatedObject().get(0).getId());
+    return newUpdatedRaid.getRelatedObject().contains(new RaIDRelatedObject(doiLink));
   }
 
   @Override

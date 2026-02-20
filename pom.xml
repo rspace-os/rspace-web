@@ -1681,7 +1681,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>raid-java-client</artifactId>
-      <version>3.0.0</version>
+      <version>PRT-1042-client-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
