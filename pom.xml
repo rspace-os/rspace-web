@@ -1524,7 +1524,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>2.19.0</version>
+      <version>21aac6ec82</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
