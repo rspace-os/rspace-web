@@ -2,6 +2,7 @@ package com.researchspace.webapp.integrations.dsw;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,6 +31,7 @@ import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.MVCTestBase;
+import com.researchspace.webapp.integrations.dsw.exception.DSWProjectRetrievalException;
 import com.researchspace.webapp.integrations.dsw.model.DSWProject;
 import com.researchspace.webapp.integrations.dsw.model.DSWUser;
 import java.util.Arrays;
@@ -178,6 +180,18 @@ public class DSWControllerTest extends MVCTestBase {
       assertEquals(TEST_PROJECT_NAME, project.getData().get("name").asText());
       assertEquals(projectForRetrieval.getUuid(), project.getData().get("uuid").asText());
 
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined("nightly")
+  public void testImportPlanIncorrectUuid() {
+    try {
+      assertThrows(
+          DSWProjectRetrievalException.class,
+          () -> dswController.importPlan(DSW_SERVER_ALIAS, "Not-a-valid-uuid"));
     } catch (Exception e) {
       fail(e.getMessage());
     }

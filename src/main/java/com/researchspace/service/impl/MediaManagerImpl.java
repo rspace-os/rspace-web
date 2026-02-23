@@ -251,6 +251,28 @@ public class MediaManagerImpl implements MediaManager {
   }
 
   @Override
+  public EcatDocumentFile saveNewDMPWithDescription(
+      String originalFileName,
+      InputStream inputStream,
+      User user,
+      ImportOverride override,
+      String description)
+      throws IOException {
+    return (EcatDocumentFile)
+        doSaveMediaFile(
+            inputStream,
+            null,
+            originalFileName,
+            originalFileName,
+            null,
+            null,
+            description,
+            user,
+            override,
+            MediaUtils.DMP_MEDIA_FLDER_NAME);
+  }
+
+  @Override
   public EcatChemistryFile saveNewChemFile(
       String originalFileName,
       InputStream inputStream,
