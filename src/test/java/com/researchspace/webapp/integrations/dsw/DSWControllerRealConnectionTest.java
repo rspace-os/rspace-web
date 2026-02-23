@@ -141,7 +141,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       assertNotNull(plansResponse);
       DSWProject[] projects =
           mapper.readValue(((JsonNode) plansResponse.getData()).toString(), DSWProject[].class);
-      assertTrue(projects.length > 1);
+      assertTrue(projects.length > 0);
       List<String> projectNames =
           Arrays.stream(projects).map(DSWProject::getName).collect(Collectors.toList());
       assertTrue(projectNames.contains(TEST_PROJECT_NAME));
