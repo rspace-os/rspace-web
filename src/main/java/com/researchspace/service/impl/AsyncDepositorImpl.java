@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository.RAID_METADATA_PROPERTY;
 import static com.researchspace.model.apps.App.APP_DATAVERSE;
 import static com.researchspace.model.apps.App.APP_ZENODO;
 
@@ -137,11 +138,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     String doiLink = "";
     if (result.isSucceeded()) {
       try { // only supports DATAVERSE and ZENODO
-        if (APP_DATAVERSE.equals(repoDepositConfig.getAppName())) {
-          // the url returned by DATAVERSE is something like:
-          // https://dataverse.org/dataset.xhtml?persistentId=doi:10.70122/FK2/FNGEGH
-          doiLink = "https://doi.org/" + result.getUrl().toString().split("=doi:")[1];
-        } else if (APP_ZENODO.equals(repoDepositConfig.getAppName())) {
+        if (APP_DATAVERSE.equals(repoDepositConfig.getAppName())
+            || APP_ZENODO.equals(repoDepositConfig.getAppName())) {
           doiLink = result.getDoiUrl().toString();
         }
         log.info(
@@ -488,6 +486,13 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
               .build());
     }
     metadata.setTerms(terms);
+
+    if (archiveConfig.getRaidAssociated() != null) {
+      metadata.setOtherProperties(
+          Map.of(
+              RAID_METADATA_PROPERTY,
+              archiveConfig.getRaidAssociated().getRaid().getRaidIdentifier()));
+    }
 
     return setDmpOnlineDmpToolOnSubmissionMetadata(
         subject,

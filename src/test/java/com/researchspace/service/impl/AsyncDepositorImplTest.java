@@ -146,7 +146,8 @@ public class AsyncDepositorImplTest {
             true, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
     Future<RepositoryOperationResult> futureRepoOperationResult =
         new AsyncResult<>(
-            new RepositoryOperationResult(true, "", new URL(expectedResultUrl), null));
+            new RepositoryOperationResult(
+                true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
 
     // WHEN
     Future<RaidUpdateResult> futureRaidUpdateResult =
