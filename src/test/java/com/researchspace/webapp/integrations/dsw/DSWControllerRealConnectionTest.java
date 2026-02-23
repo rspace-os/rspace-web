@@ -45,7 +45,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 
 @RunWith(ConditionalTestRunner.class)
-public class DSWControllerTest extends MVCTestBase {
+public class DSWControllerRealConnectionTest extends MVCTestBase {
 
   private static String DSW_SERVER_ALIAS = "This string is bypassed by unit tests";
   private static String TEST_PROJECT_NAME = "RSpace Nightly Test Project";

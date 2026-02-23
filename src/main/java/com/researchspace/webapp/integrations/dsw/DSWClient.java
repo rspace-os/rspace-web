@@ -23,11 +23,8 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Optional;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -46,11 +43,6 @@ public class DSWClient {
 
   public static final String DSW_PATH_API = "/wizard-api/";
   public static final String DSW_PATH_PROJECTS = "/wizard/projects/";
-
-  @Setter
-  @Getter
-  @Value("${dsw.server.config:}")
-  private String configurationMap;
 
   private final RestTemplate restTemplate;
   @Autowired private UserConnectionManager source;
@@ -118,7 +110,10 @@ public class DSWClient {
   }
 
   public DSWProjects getProjectsForCurrentUser(String serverAlias, AppConfigElementSet cfg)
-      throws HttpClientErrorException, URISyntaxException, MalformedURLException, DSWProjectRetrievalException {
+      throws HttpClientErrorException,
+          URISyntaxException,
+          MalformedURLException,
+          DSWProjectRetrievalException {
     DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
 
     JsonNode currentUser = currentUser(serverAlias, cfg);
@@ -148,7 +143,10 @@ public class DSWClient {
   }
 
   public JsonNode getProjectsForCurrentUserJson(String serverAlias, AppConfigElementSet cfg)
-      throws HttpClientErrorException, URISyntaxException, MalformedURLException, DSWProjectRetrievalException {
+      throws HttpClientErrorException,
+          URISyntaxException,
+          MalformedURLException,
+          DSWProjectRetrievalException {
     DSWProjects projects = getProjectsForCurrentUser(serverAlias, cfg);
     return mapper.valueToTree(projects.getProjects());
   }
