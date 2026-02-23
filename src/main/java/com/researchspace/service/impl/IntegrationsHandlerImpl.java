@@ -320,7 +320,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       info.setDisplayName(appConfig.getApp().getLabel());
       Map<String, Object> options = new HashMap<>();
 
-      // For PyRAT and RaID we need to fetch the configured servers returned by the client
+      // For PyRAT and RAiD we need to fetch the configured servers returned by the client
       if (info.getName().equals(PYRAT_APP_NAME)) {
         createMultiServerEntries(options, PYRAT_CONFIGURED_SERVERS, pyratClient);
       } else if (info.getName().equals(RAID_APP_NAME)) {

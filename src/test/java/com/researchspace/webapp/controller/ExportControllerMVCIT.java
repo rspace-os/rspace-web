@@ -294,7 +294,7 @@ public class ExportControllerMVCIT extends MVCTestBase {
       String raidIdentifierUrl = exportRequestDTO.getRaidAssociated().getRaid().getRaidIdentifier();
       assertFalse(
           actualExportedManifest.contains("ProjectID:" + raidIdentifierUrl),
-          "RaID has been found inside the manifest.txt, but it should not have");
+          "RAiD has been found inside the manifest.txt, but it should not have");
 
       // assert entries into RO-crate
       String actualRoCrate = new String(mapFileByName.get("ro-crate-metadata.json"));
@@ -359,7 +359,7 @@ public class ExportControllerMVCIT extends MVCTestBase {
       String raidIdentifierUrl = exportRequestDTO.getRaidAssociated().getRaid().getRaidIdentifier();
       assertTrue(
           actualExportedManifest.contains("ProjectID:" + raidIdentifierUrl),
-          "RaID not fount inside the manifest.txt");
+          "RAiD not fount inside the manifest.txt");
 
       // assert entries into RO-crate
       String actualRoCrate = new String(mapFileByName.get("ro-crate-metadata.json"));

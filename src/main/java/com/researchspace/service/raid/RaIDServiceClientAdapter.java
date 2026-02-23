@@ -27,7 +27,7 @@ public interface RaIDServiceClientAdapter extends MultiInstanceClient<RaIDServer
       throws HttpServerErrorException, URISyntaxException, JsonProcessingException;
 
   /****
-   * Add the doiLink into the specified RaID RelatedObjects
+   * Add the doiLink into the specified RAiD RelatedObjects
    *
    * @param username
    * @param doiLink

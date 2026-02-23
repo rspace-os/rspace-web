@@ -824,7 +824,7 @@ public class ExportController extends BaseController {
         log.warn(
             "The files selected are not part of the projectID \""
                 + projectGroup.getId()
-                + "\" the the export will not contain any RaID identifier on manifest and"
+                + "\" the the export will not contain any RAiD identifier on manifest and"
                 + " ro-crate.json");
       }
       return true;

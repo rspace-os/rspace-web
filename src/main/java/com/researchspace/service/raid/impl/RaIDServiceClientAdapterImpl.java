@@ -203,7 +203,7 @@ public class RaIDServiceClientAdapterImpl
       this.getServicePoint(username, serverAlias, getServicePointId(serverAlias));
     } catch (Exception e) {
       log.error(
-          "Couldn't perform test connection action on RaID. "
+          "Couldn't perform test connection action on RAiD. "
               + "The connection will be flagged as NOT ALIVE",
           e);
       isConnectionAlive = false;
@@ -249,7 +249,7 @@ public class RaIDServiceClientAdapterImpl
     Optional<UserConnection> optConn =
         userConnectionManager.findByUserNameProviderName(username, RAID_APP_NAME, serverAlias);
     if (optConn.isEmpty()) {
-      log.error("No RaID connection found for user {}", username);
+      log.error("No RAiD connection found for user {}", username);
     }
     return optConn;
   }
@@ -281,16 +281,16 @@ public class RaIDServiceClientAdapterImpl
         getExistingRaidUserConnection(username, serverAlias);
     if (optUserConnection.isEmpty()) {
       throw new HttpClientErrorException(
-          HttpStatus.NOT_FOUND, "No RaID connection found for the user " + username);
+          HttpStatus.NOT_FOUND, "No RAiD connection found for the user " + username);
     }
 
     UserConnection userConnection = optUserConnection.get();
     userConnection.setAccessToken(accessToken.getAccessToken());
     userConnection.setRefreshToken(accessToken.getRefreshToken());
     userConnection.setExpireTime(getExpireTime(accessToken.getExpiresIn()));
-    userConnection.setDisplayName("RaID refreshed access token");
+    userConnection.setDisplayName("RAiD refreshed access token");
     userConnectionManager.save(userConnection);
-    log.info("Token refreshed for RaID for user {}", username);
+    log.info("Token refreshed for RAiD for user {}", username);
   }
 
   private long getExpireTime(Long expiresIn) {
@@ -302,7 +302,7 @@ public class RaIDServiceClientAdapterImpl
     if (!this.getServerMapByAlias().containsKey(serverAlias)
         || StringUtils.isBlank(this.getServerMapByAlias().get(serverAlias).getClientId())) {
       throw new HttpClientErrorException(
-          HttpStatus.NOT_FOUND, "RaID clientId for alias=\"" + serverAlias + "\" not found");
+          HttpStatus.NOT_FOUND, "RAiD clientId for alias=\"" + serverAlias + "\" not found");
     }
     return this.getServerMapByAlias().get(serverAlias).getClientId();
   }
@@ -312,7 +312,7 @@ public class RaIDServiceClientAdapterImpl
     if (!this.getServerMapByAlias().containsKey(serverAlias)
         || StringUtils.isBlank(this.getServerMapByAlias().get(serverAlias).getClientSecret())) {
       throw new HttpClientErrorException(
-          HttpStatus.NOT_FOUND, "RaID clientSecret for alias=\"" + serverAlias + "\" not found");
+          HttpStatus.NOT_FOUND, "RAiD clientSecret for alias=\"" + serverAlias + "\" not found");
     }
     return this.getServerMapByAlias().get(serverAlias).getClientSecret();
   }
@@ -322,7 +322,7 @@ public class RaIDServiceClientAdapterImpl
     if (!this.getServerMapByAlias().containsKey(serverAlias)
         || this.getServerMapByAlias().get(serverAlias).getServicePointId() == null) {
       throw new HttpClientErrorException(
-          HttpStatus.NOT_FOUND, "RaID servicePointId for alias=\"" + serverAlias + "\" not found");
+          HttpStatus.NOT_FOUND, "RAiD servicePointId for alias=\"" + serverAlias + "\" not found");
     }
     return this.getServerMapByAlias().get(serverAlias).getServicePointId();
   }
