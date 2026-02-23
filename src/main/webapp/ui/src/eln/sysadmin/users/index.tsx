@@ -1493,7 +1493,10 @@ export const UsersPage = (): React.ReactNode => {
   const { userListing } = useUserListing();
 
   const [rowSelectionModel, setRowSelectionModel] =
-    React.useState<GridRowSelectionModel>([]);
+    React.useState<GridRowSelectionModel>({
+      type: 'include',
+      ids: new Set([]),
+    });
   const [sortModel, setSortModel] = React.useState<Array<GridSortItem>>([]);
   const [groupsAnchorEl, setGroupsAnchorEl] =
     React.useState<HTMLElement | null>(null);
@@ -1993,17 +1996,21 @@ export const UsersPage = (): React.ReactNode => {
                             rowSelectionModel,
                           },
                           panel: {
+                            target: columnsMenuAnchorEl,
+                          },
+                          basePopper: {
                             // this has to be here because the panel isn't a
                             // descendent of .MuiDataGrid as it is rendered
                             // inside a Portal
-                            sx: {
-                              "& .MuiPaper-root": {
-                                boxShadow:
-                                  // this is copied from the other menus
-                                  "0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12)",
+                            material: {
+                              sx: {
+                                "& .MuiPaper-root": {
+                                  boxShadow:
+                                    // this is copied from the other menus
+                                    "0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12)",
+                                },
                               },
                             },
-                            anchorEl: columnsMenuAnchorEl,
                           },
                         }}
                         loading={FetchingData.match(userListing, {
@@ -2016,7 +2023,7 @@ export const UsersPage = (): React.ReactNode => {
                           error: () => ({ "aria-hidden": true }),
                           success: () => ({}),
                         })}
-                      />
+                        showToolbar />
                     </div>
                     <Panel
                       anchorEl={groupsAnchorEl}

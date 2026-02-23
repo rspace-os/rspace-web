@@ -4,6 +4,7 @@ import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/chemistry";
 import StoichiometryDialog from "./StoichiometryDialog";
 import Alerts from "../../components/Alerts/Alerts";
+import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
 
 export function StoichiometryDialogWithCalculateButtonStory({
   onTableCreated,
@@ -26,7 +27,9 @@ export function StoichiometryDialogWithCalculateButtonStory({
 
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <ThemeProvider
+        theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
+      >
         <Alerts>
           <StoichiometryDialog
             open={open}
@@ -55,7 +58,9 @@ export function StoichiometryDialogWithTableStory({
 
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <ThemeProvider
+        theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
+      >
         <Alerts>
           <StoichiometryDialog
             open={open}
@@ -88,7 +93,9 @@ export function StoichiometryDialogClosedStory(): React.ReactNode {
 
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <ThemeProvider
+        theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
+      >
         <Alerts>
           <div>Dialog is closed</div>
           <StoichiometryDialog

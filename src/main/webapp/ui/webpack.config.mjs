@@ -50,7 +50,7 @@ const config = {
     galleryToolbar: "./src/Toolbar/Gallery/Toolbar.tsx",
     newLabGroup: "./src/system-groups/NewLabGroup.js",
     tinymceSidebarInfo: "./src/tinyMCE/sidebarInfo.js",
-    previewInfo: "./src/tinyMCE/previewInfo.js",
+    PreviewInfo: "./src/tinyMCE/PreviewInfo.tsx",
     userDetails: "./src/components/UserDetails_deprecated.js",
     groupUserActivity: "./src/my-rspace/directory/groups/GroupUserActivity.js",
     groupActivity: "./src/my-rspace/profile/GroupActivity.js",

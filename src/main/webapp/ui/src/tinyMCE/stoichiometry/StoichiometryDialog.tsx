@@ -1,4 +1,5 @@
 import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import AppBar from "../../components/AppBar";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -11,15 +12,23 @@ import DialogContent from "@mui/material/DialogContent";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
+import CircularProgress from "@mui/material/CircularProgress";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
 import * as FetchingData from "../../util/fetchingData";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { useConfirm } from "../../components/ConfirmProvider";
 import ConfirmProvider from "../../components/ConfirmProvider";
-import useStoichiometry from "@/hooks/api/useStoichiometry";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import useOauthToken from "@/hooks/auth/useOauthToken";
+import { useCalculateStoichiometryMutation } from "@/modules/stoichiometry/mutations";
 import StoichiometryTable from "@/tinyMCE/stoichiometry/StoichiometryTable";
-import { StoichiometryTableRef } from "@/tinyMCE/stoichiometry/types";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false },
+    mutations: { retry: false },
+  },
+});
 
 function StandaloneDialogInner({
   open,
@@ -43,18 +52,25 @@ function StandaloneDialogInner({
   onDelete?: () => void;
 }): React.ReactNode {
   const titleId = React.useId();
-  const { calculateStoichiometry } = useStoichiometry();
+  const { getToken } = useOauthToken();
+  const calculateStoichiometryMutation = useCalculateStoichiometryMutation({
+    getToken,
+  });
   const { addAlert } = React.useContext(AlertContext);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const confirm = useConfirm();
-  const tableRef = React.useRef<StoichiometryTableRef>(null);
   const [showTable, setShowTable] = React.useState(
     stoichiometryId !== undefined,
   );
-  const [loading, setLoading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [hasTableChanges, setHasTableChanges] = React.useState(false);
   const [actuallyOpen, setActuallyOpen] = React.useState(false);
+  const [saveRequestId, setSaveRequestId] = React.useState<number | undefined>(
+    undefined,
+  );
+  const [deleteRequestId, setDeleteRequestId] = React.useState<
+    number | undefined
+  >(undefined);
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
 
   React.useEffect(() => {
@@ -79,7 +95,6 @@ function StandaloneDialogInner({
           if (isEnabled) {
             setActuallyOpen(true);
             setShowTable(stoichiometryId !== undefined);
-            setLoading(false);
             setHasTableChanges(false);
           } else {
             setActuallyOpen(false);
@@ -101,41 +116,29 @@ function StandaloneDialogInner({
 
   const handleCalculate = () => {
     trackEvent("user:create:stoichiometry_table:document_editor");
-    setLoading(true);
     void (async () => {
       try {
         if (!chemId) throw new Error("chemId is required");
-        const { id, revision } = await calculateStoichiometry({
-          chemId: chemId || undefined,
-          recordId: recordId,
-        });
+        const { id, revision } = await calculateStoichiometryMutation.mutateAsync(
+          {
+            chemId: chemId || undefined,
+            recordId,
+          },
+        );
         setShowTable(true);
         onTableCreated?.(id, revision);
       } catch (e) {
         console.error("Calculation failed", e);
-      } finally {
-        setLoading(false);
       }
     })();
   };
 
   const handleSave = () => {
     trackEvent("user:save:stoichiometry_table:document_editor");
-    setSaving(true);
     if (!stoichiometryId)
       throw new Error("stoichiometryId is required to save");
-    void (async () => {
-      try {
-        const newRevision = await tableRef.current?.save();
-        // @ts-expect-error To fix
-        onSave?.(stoichiometryId, newRevision);
-        console.log("Stoichiometry data saved successfully");
-      } catch (e) {
-        console.error("Save failed", e);
-      } finally {
-        setSaving(false);
-      }
-    })();
+    setSaving(true);
+    setSaveRequestId((currentId) => (currentId ?? 0) + 1);
   };
 
   const handleDelete = async () => {
@@ -150,14 +153,7 @@ function StandaloneDialogInner({
 
     if (shouldDelete) {
       trackEvent("user:delete:stoichiometry_table:document_editor");
-      try {
-        await tableRef.current?.delete();
-        onDelete?.();
-        setShowTable(false);
-        setHasTableChanges(false);
-      } catch (e) {
-        console.error("Delete failed", e);
-      }
+      setDeleteRequestId((currentId) => (currentId ?? 0) + 1);
     }
   };
 
@@ -212,9 +208,11 @@ function StandaloneDialogInner({
               variant="contained"
               color="primary"
               onClick={handleCalculate}
-              disabled={loading}
+              disabled={calculateStoichiometryMutation.isPending}
             >
-              {loading ? "Calculating..." : "Calculate Stoichiometry"}
+              {calculateStoichiometryMutation.isPending
+                ? "Calculating..."
+                : "Calculate Stoichiometry"}
             </Button>
           </Box>
         )}
@@ -228,13 +226,57 @@ function StandaloneDialogInner({
                   Actual Moles, or Notes. Yield/Excess values are calculated
                   automatically, as are each pairing of moles and mass.
                 </Typography>
-                <StoichiometryTable
-                  ref={tableRef}
-                  editable
-                  onChangesUpdate={setHasTableChanges}
-                  stoichiometryId={stoichiometryId}
-                  stoichiometryRevision={stoichiometryRevision}
-                />
+                <React.Suspense
+                  fallback={
+                    <Box
+                      display="flex"
+                      flexDirection="column"
+                      justifyContent="center"
+                      alignItems="center"
+                      minHeight={100}
+                      my={2}
+                      gap={1}
+                    >
+                      <CircularProgress
+                        size={24}
+                        aria-label="Loading stoichiometry table"
+                      />
+                      <Typography variant="body2" color="textSecondary">
+                        Loading stoichiometry table...
+                      </Typography>
+                    </Box>
+                  }
+                >
+                  <StoichiometryTable
+                    editable
+                    onChangesUpdate={setHasTableChanges}
+                    stoichiometryId={stoichiometryId}
+                    stoichiometryRevision={stoichiometryRevision}
+                    saveRequestId={saveRequestId}
+                    deleteRequestId={deleteRequestId}
+                    onSaveSuccess={(revision) => {
+                      if (stoichiometryId === undefined) {
+                        setSaving(false);
+                        return;
+                      }
+                      onSave?.(stoichiometryId, revision);
+                      setSaving(false);
+                      console.log("Stoichiometry data saved successfully");
+                    }}
+                    onSaveError={(error) => {
+                      console.error("Save failed", error);
+                      setSaving(false);
+                    }}
+                    onDeleteSuccess={() => {
+                      onDelete?.();
+                      setShowTable(false);
+                      setHasTableChanges(false);
+                    }}
+                    onDeleteError={(error) => {
+                      console.error("Delete failed", error);
+                    }}
+                  />
+                </React.Suspense>
               </Box>
             </Stack>
           )}
@@ -251,9 +293,8 @@ function StandaloneDialogInner({
         )}
         {showTable && (
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
-          <Button onClick={handleDelete} variant="outlined" color="error">
-            Delete
-          </Button>
+          (<Button onClick={handleDelete} variant="outlined" color="error">Delete
+                      </Button>)
         )}
         <Button
           onClick={() => {
@@ -271,10 +312,12 @@ export default function StoichiometryDialog(
   props: React.ComponentProps<typeof StandaloneDialogInner>,
 ): React.ReactNode {
   return (
-    <DialogBoundary>
-      <ConfirmProvider>
-        <StandaloneDialogInner {...props} />
-      </ConfirmProvider>
-    </DialogBoundary>
+    <QueryClientProvider client={queryClient}>
+      <DialogBoundary>
+        <ConfirmProvider>
+          <StandaloneDialogInner {...props} />
+        </ConfirmProvider>
+      </DialogBoundary>
+    </QueryClientProvider>
   );
 }

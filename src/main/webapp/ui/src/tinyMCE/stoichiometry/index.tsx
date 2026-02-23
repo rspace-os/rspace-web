@@ -9,6 +9,7 @@ import StoichiometryDialog from "./StoichiometryDialog";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import CssBaseline from "@mui/material/CssBaseline";
+import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
 
 // Define types for external interfaces
 type ButtonConfig = {
@@ -52,6 +53,8 @@ declare const tinymce: {
 
 class StoichiometryPlugin {
   constructor(editor: Editor) {
+    const theme = createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR));
+
     function* renderDialog(
       domContainer: HTMLElement,
     ): Generator<
@@ -79,7 +82,7 @@ class StoichiometryPlugin {
         root.render(
           <StyledEngineProvider injectFirst>
             <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+            <ThemeProvider theme={theme}>
               <Analytics>
                 <ErrorBoundary>
                   <Alerts>

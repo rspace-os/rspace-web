@@ -408,7 +408,7 @@ export default function IgsnTable({
         setSearchTerm,
       },
       panel: {
-        anchorEl: columnsMenuAnchorEl,
+        target: columnsMenuAnchorEl,
       },
     },
     localeText: {

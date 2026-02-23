@@ -1,3 +1,4 @@
+import { produce } from "immer";
 import type { EditableMolecule } from "./types";
 
 export function calculateMoles(
@@ -8,6 +9,18 @@ export function calculateMoles(
     return null;
   }
   return mass / molecularWeight;
+}
+
+export function hasDuplicateInventoryLink(
+  molecules: ReadonlyArray<EditableMolecule>,
+  moleculeId: number,
+  inventoryItemGlobalId: string,
+): boolean {
+  return molecules.some(
+    (molecule) =>
+      molecule.id !== moleculeId &&
+      molecule.inventoryLink?.inventoryItemGlobalId === inventoryItemGlobalId,
+  );
 }
 
 function calculateActualYieldOrExcess(
@@ -60,16 +73,13 @@ function updateYieldAndExcess(
     return molecules;
   }
 
-  return molecules.map((molecule) => {
-    const actualYield = calculateActualYieldOrExcess(
-      molecule,
-      limitingReagentMoles,
-    );
-
-    return {
-      ...molecule,
-      actualYield,
-    };
+  return produce(molecules, (draftMolecules) => {
+    for (const molecule of draftMolecules) {
+      molecule.actualYield = calculateActualYieldOrExcess(
+        molecule,
+        limitingReagentMoles,
+      );
+    }
   });
 }
 
@@ -79,10 +89,26 @@ function normaliseCoefficients(
 ): ReadonlyArray<EditableMolecule> {
   const limitingCoefficient = limitingReagent.coefficient;
 
-  return molecules.map((molecule) => ({
-    ...molecule,
-    coefficient: molecule.coefficient / limitingCoefficient,
-  }));
+  return produce(molecules, (draftMolecules) => {
+    for (const molecule of draftMolecules) {
+      molecule.coefficient = molecule.coefficient / limitingCoefficient;
+    }
+  });
+}
+
+function applyMassByRatio(
+  molecules: ReadonlyArray<EditableMolecule>,
+  ratio: number | null,
+) {
+  if (ratio === null) {
+    return molecules;
+  }
+
+  return produce(molecules, (draftMolecules) => {
+    for (const molecule of draftMolecules) {
+      molecule.mass = molecule.coefficient * ratio * molecule.molecularWeight;
+    }
+  });
 }
 
 /**
@@ -119,15 +145,19 @@ export function calculateUpdatedMolecules(
     newProperties: Partial<EditableMolecule>,
     molecules = allMolecules,
   ) {
-    return molecules.map((molecule) =>
-      molecule.id === editedRow.id
-        ? { ...molecule, ...newProperties }
-        : molecule,
-    );
+    return produce(molecules, (draftMolecules) => {
+      const editedMolecule = draftMolecules.find((m) => m.id === editedRow.id);
+      if (!editedMolecule) {
+        return;
+      }
+      Object.assign(editedMolecule, newProperties);
+    });
   }
 
-  const beforeMolecule =
-    allMolecules[allMolecules.findIndex((m) => m.id === editedRow.id)];
+  const beforeMolecule = allMolecules.find((m) => m.id === editedRow.id);
+  if (!beforeMolecule) {
+    throw new Error("Edited molecule not found");
+  }
 
   if (beforeMolecule.id !== editedRow.id)
     throw new Error(
@@ -182,14 +212,7 @@ export function calculateUpdatedMolecules(
           {
             mass: editedRow.mass,
           },
-          allMolecules.map((m) => ({
-            ...m,
-            ...(ratio === null
-              ? {}
-              : {
-                  mass: m.coefficient * ratio * m.molecularWeight,
-                }),
-          })),
+          applyMassByRatio(allMolecules, ratio),
         ),
       );
     } else {
@@ -215,14 +238,7 @@ export function calculateUpdatedMolecules(
           {
             mass: editedRow.moles * beforeMolecule.molecularWeight,
           },
-          allMolecules.map((m) => ({
-            ...m,
-            ...(ratio === null
-              ? {}
-              : {
-                  mass: m.coefficient * ratio * m.molecularWeight,
-                }),
-          })),
+          applyMassByRatio(allMolecules, ratio),
         ),
       );
     } else {
@@ -258,7 +274,11 @@ export function calculateUpdatedMolecules(
       {
         limitingReagent: editedRow.limitingReagent,
       },
-      allMolecules.map((m) => ({ ...m, limitingReagent: false })),
+      produce(allMolecules, (draftMolecules) => {
+        for (const molecule of draftMolecules) {
+          molecule.limitingReagent = false;
+        }
+      }),
     );
     const newLimitingReagent = updatedMolecules.find((m) => m.limitingReagent);
     if (!newLimitingReagent) {

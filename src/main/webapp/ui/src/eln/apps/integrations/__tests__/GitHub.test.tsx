@@ -20,7 +20,7 @@ import "../../../../../__mocks__/matchMedia";
 const broadcastHandlers: Array<
   (e: MessageEvent<GitHubConnectedMessage>) => void
 > = [];
-vi.mock("use-broadcast-channel", () => ({
+vi.mock("@/modules/common/hooks/broadcast", () => ({
   useBroadcastChannel: (
     _channel: string,
     handler: (e: MessageEvent<GitHubConnectedMessage>) => void

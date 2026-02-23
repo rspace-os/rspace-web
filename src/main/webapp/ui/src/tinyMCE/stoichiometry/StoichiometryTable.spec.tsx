@@ -115,6 +115,12 @@ const feature = test.extend<{
     "the user adds the manual reagent": () => Promise<void>;
     "the user selects the first chemistry file from Gallery": () => Promise<void>;
     "the user adds the selected files from Gallery": () => Promise<void>;
+    "the user opens inventory picker for {molecule}": ({
+      molecule,
+    }: {
+      molecule: string;
+    }) => Promise<void>;
+    "the user closes the inventory picker": () => Promise<void>;
     "the user edits mass in row {row} to {value}": ({
       row,
       value,
@@ -156,6 +162,7 @@ const feature = test.extend<{
     "the table displays molecule data": () => Promise<void>;
     "there shouldn't be any axe violations": () => Promise<void>;
     "the default columns should be visible": () => Promise<void>;
+    "inventory link controls should be visible for linked and unlinked molecules": () => Promise<void>;
     "the first reactant should be selected as the default limiting reagent": () => Promise<void>;
     "there should be a menu for exporting the stoichiometry table to CSV": () => Promise<void>;
     "the first row should NOT have a yield value": () => Promise<void>;
@@ -198,6 +205,12 @@ const feature = test.extend<{
     "the loading dialog should be visible": () => Promise<void>;
 
     "the loading dialog should not be visible": () => Promise<void>;
+    "inventory picker should be visible for {molecule}": ({
+      molecule,
+    }: {
+      molecule: string;
+    }) => Promise<void>;
+    "inventory picker should not be visible": () => Promise<void>;
     "Compound {name} has {column} of {value}": ({
       name,
       column,
@@ -309,32 +322,40 @@ const feature = test.extend<{
       "the user adds the selected files from Gallery": async () => {
         await page.getByRole("button", { name: /add/i }).click();
       },
+      "the user opens inventory picker for {molecule}": async ({ molecule }) => {
+        await page
+          .getByLabel(`Add inventory link for ${molecule}`)
+          .click();
+      },
+      "the user closes the inventory picker": async () => {
+        await page.getByRole("button", { name: "Cancel" }).click();
+      },
       "the user edits mass in row {row} to {value}": async ({ row, value }) => {
-        await editNumericCell({ page, row, column: 5, value });
+        await editNumericCell({ page, row, column: 6, value });
       },
       "the user edits moles in row {row} to {value}": async ({
         row,
         value,
       }) => {
-        await editNumericCell({ page, row, column: 6, value });
+        await editNumericCell({ page, row, column: 7, value });
       },
       "the user edits actual mass in row {row} to {value}": async ({
         row,
         value,
       }) => {
-        await editNumericCell({ page, row, column: 7, value });
+        await editNumericCell({ page, row, column: 8, value });
       },
       "the user edits actual moles in row {row} to {value}": async ({
         row,
         value,
       }) => {
-        await editNumericCell({ page, row, column: 8, value });
+        await editNumericCell({ page, row, column: 9, value });
       },
       "the user edits equivalent in row {row} to {value}": async ({
         row,
         value,
       }) => {
-        await editNumericCell({ page, row, column: 3, value });
+        await editNumericCell({ page, row, column: 4, value });
       },
     });
   },
@@ -382,6 +403,7 @@ const feature = test.extend<{
       "the default columns should be visible": async () => {
         const headers = await page.getByRole("columnheader").allTextContents();
         expect(headers).toContain("Name");
+        expect(headers).toContain("Inventory Link");
         expect(headers).toContain("Role");
         expect(headers).toContain("Limiting Reagent");
         expect(headers).toContain("Equivalent");
@@ -390,6 +412,15 @@ const feature = test.extend<{
         expect(headers).toContain("Moles (mol)");
         expect(headers).toContain("Notes");
       },
+      "inventory link controls should be visible for linked and unlinked molecules":
+        async () => {
+          await expect(
+            page.getByLabel("Remove inventory link for Cyclopentadiene"),
+          ).toBeVisible();
+          await expect(
+            page.getByLabel("Add inventory link for Benzene"),
+          ).toBeVisible();
+        },
       "the first reactant should be selected as the default limiting reagent":
         async () => {
           // Find all rows with reactant role
@@ -437,10 +468,10 @@ const feature = test.extend<{
           .filter({ hasNot: page.getByRole("columnheader") });
 
         const firstRow = dataRows.first();
-        // Get all cells in first row and find yield column (should be index 9 based on headers)
+        // Get all cells in first row and find yield column (should be index 10 based on headers)
         const cells = firstRow.getByRole("gridcell");
 
-        const yieldCell = cells.nth(9); // Yield/Excess column is typically the 10th column (0-indexed = 9)
+        const yieldCell = cells.nth(10); // Yield/Excess column is typically the 11th column (0-indexed = 10)
         // Check that the yield cell contains dash (—) indicating no yield value
         await expect(yieldCell).toContainText("—");
       },
@@ -454,7 +485,7 @@ const feature = test.extend<{
         // Get all cells in second row and find yield column
         const cells = secondRow.getByRole("gridcell");
 
-        const yieldCell = cells.nth(9); // Yield/Excess column
+        const yieldCell = cells.nth(10); // Yield/Excess column
         // Check that the yield cell contains a percentage or dash (since mock data has no actualAmount)
         const cellContent = await yieldCell.textContent();
         // Since mock data has no actualAmount, it should show dash, but structure should be there for yield
@@ -470,7 +501,7 @@ const feature = test.extend<{
         // Get all cells in first row and find yield column
         const cells = firstRow.getByRole("gridcell");
 
-        const yieldCell = cells.nth(9); // Yield/Excess column
+        const yieldCell = cells.nth(10); // Yield/Excess column
         // Check that the yield cell contains a percentage or dash (since mock data has no actualAmount)
         const cellContent = await yieldCell.textContent();
         expect(cellContent).toMatch(/—|\d+%/);
@@ -485,7 +516,7 @@ const feature = test.extend<{
         // Get all cells in second row and find yield column
         const cells = secondRow.getByRole("gridcell");
 
-        const yieldCell = cells.nth(9); // Yield/Excess column
+        const yieldCell = cells.nth(10); // Yield/Excess column
         // Check that the yield cell contains dash (—) indicating no yield value
         await expect(yieldCell).toContainText("—");
       },
@@ -556,6 +587,22 @@ const feature = test.extend<{
           page.getByText("Loading molecule information..."),
         ).not.toBeVisible();
       },
+      "inventory picker should be visible for {molecule}": async ({
+        molecule,
+      }) => {
+        await expect(
+          page.getByRole("dialog", {
+            name: `Pick inventory item for ${molecule}`,
+          }),
+        ).toBeVisible();
+      },
+      "inventory picker should not be visible": async () => {
+        await expect(
+          page.getByRole("dialog", {
+            name: /Pick inventory item for/i,
+          }),
+        ).not.toBeVisible();
+      },
       "Compound {name} has {column} of {value}": async ({
         name,
         column,
@@ -623,11 +670,11 @@ feature.beforeEach(async ({ router }) => {
           formula: "C6 H6",
           name: "Benzene",
           smiles: "C1=CC=CC=C1",
+          inventoryLink: null,
           coefficient: 1.0,
           molecularWeight: 1.0, // From CSV
           mass: 10.0, // From CSV
           moles: 10.0, // From CSV
-          expectedAmount: null,
           actualAmount: 2.0, // From CSV actual mass
           actualYield: 2.0, // From CSV actual moles
           limitingReagent: true, // From CSV
@@ -654,11 +701,19 @@ feature.beforeEach(async ({ router }) => {
           formula: "C5 H6",
           name: "Cyclopentadiene",
           smiles: "C1C=CC=C1",
+          inventoryLink: {
+            id: 501,
+            inventoryItemGlobalId: "SA123",
+            stoichiometryMoleculeId: 5,
+            quantity: {
+              numericValue: 10,
+              unitId: 20,
+            },
+          },
           coefficient: 2.0, // From CSV equivalent
           molecularWeight: 1.0, // From CSV
           mass: 10.0, // From CSV
           moles: 10.0, // From CSV
-          expectedAmount: null,
           actualAmount: 5.0, // From CSV actual mass
           actualYield: 5.0, // From CSV actual moles
           limitingReagent: false, // From CSV
@@ -685,11 +740,11 @@ feature.beforeEach(async ({ router }) => {
           formula: "C6 H12",
           name: "Cyclopentane", // From CSV
           smiles: "C1CCCCC1",
+          inventoryLink: null,
           coefficient: 3.0, // From CSV equivalent
           molecularWeight: 1.0, // From CSV
           mass: 10.0, // From CSV
           moles: 10.0, // From CSV
-          expectedAmount: null,
           actualAmount: 5.0, // From CSV actual mass
           actualYield: 5.0, // From CSV actual moles
           limitingReagent: false, // From CSV
@@ -716,11 +771,11 @@ feature.beforeEach(async ({ router }) => {
           formula: "C2 H6 O",
           name: "Ethanol",
           smiles: "CCO",
+          inventoryLink: null,
           coefficient: 1.0,
           molecularWeight: 46.07,
           mass: 5.0,
           moles: 0.109,
-          expectedAmount: null,
           actualAmount: null,
           actualYield: null,
           limitingReagent: false,
@@ -746,9 +801,14 @@ feature.beforeEach(async ({ router }) => {
 
   });
   await router.route("/api/v1/stoichiometry/molecule/info", (route) => {
-    const requestBody = route.request().postDataJSON();
+    const requestBody = route.request().postDataJSON() as unknown;
+    const smiles =
+      typeof requestBody === "object" &&
+      requestBody !== null &&
+      "chemical" in requestBody
+        ? (requestBody as { chemical?: string }).chemical
+        : undefined;
 
-    const smiles = requestBody?.chemical;
     let mockInfo;
     switch (smiles) {
       case "CN1C=NC2=C1C(=O)N(C(=O)N2C)C": // Caffeine
@@ -825,7 +885,7 @@ test.describe("Stoichiometry Table", () => {
   feature(
     "supports high-contrast mode",
     async ({ Given, Then, Once, page }) => {
-      page.emulateMedia({ contrast: "more" });
+      await page.emulateMedia({ contrast: "more" });
       await Given["the table is loaded with data"]();
       await Once["the table has loaded"]();
       await Then["there shouldn't be any axe violations"]();
@@ -848,6 +908,31 @@ test.describe("Stoichiometry Table", () => {
     await Then["the default columns should be visible"]();
 
   });
+  feature(
+    "Shows inventory link controls for both linked and unlinked molecules",
+    async ({ Given, Once, Then }) => {
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      await Then[
+        "inventory link controls should be visible for linked and unlinked molecules"
+      ]();
+    },
+  );
+  feature(
+    "Opens and closes the inventory picker from an unlinked molecule",
+    async ({ Given, Once, When, Then }) => {
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      await When["the user opens inventory picker for {molecule}"]({
+        molecule: "Benzene",
+      });
+      await Then["inventory picker should be visible for {molecule}"]({
+        molecule: "Benzene",
+      });
+      await When["the user closes the inventory picker"]();
+      await Then["inventory picker should not be visible"]();
+    },
+  );
   feature(
     "Sets first reactant as default limiting reagent when none is selected",
     async ({ Given, Once, Then }) => {
@@ -1236,7 +1321,7 @@ test.describe("Stoichiometry Table", () => {
           .filter({ hasNot: page.getByRole("columnheader") });
         // Try editing mass of Benzene (should work - it's limiting reagent)
         const benzeneRow = dataRows.nth(0);
-        const benzeneMassCell = benzeneRow.getByRole("gridcell").nth(5);
+        const benzeneMassCell = benzeneRow.getByRole("gridcell").nth(6);
 
         await benzeneMassCell.dblclick();
         let input = page.locator('input[type="number"]');
