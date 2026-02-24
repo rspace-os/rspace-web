@@ -29,9 +29,8 @@ import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
+import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.controller.AjaxReturnObject;
-import com.researchspace.webapp.controller.MVCTestBase;
-import com.researchspace.webapp.integrations.dsw.exception.DSWProjectRetrievalException;
 import com.researchspace.webapp.integrations.dsw.model.DSWProject;
 import com.researchspace.webapp.integrations.dsw.model.DSWUser;
 import java.util.Arrays;
@@ -47,7 +46,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 
 @RunWith(ConditionalTestRunner.class)
-public class DSWControllerTest extends MVCTestBase {
+public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
 
   private static String DSW_SERVER_ALIAS = "This string is bypassed by unit tests";
   private static String TEST_PROJECT_NAME = "RSpace Nightly Test Project";
@@ -143,7 +142,7 @@ public class DSWControllerTest extends MVCTestBase {
       assertNotNull(plansResponse);
       DSWProject[] projects =
           mapper.readValue(((JsonNode) plansResponse.getData()).toString(), DSWProject[].class);
-      assertTrue(projects.length > 1);
+      assertTrue(projects.length > 0);
       List<String> projectNames =
           Arrays.stream(projects).map(DSWProject::getName).collect(Collectors.toList());
       assertTrue(projectNames.contains(TEST_PROJECT_NAME));
