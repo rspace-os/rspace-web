@@ -1,0 +1,15 @@
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2026-02-23" context="run" author="nico">
+    <comment>Change RAiD Capitalisation</comment>
+    <update tableName="App">
+      <column name="label" value="RAiD" />
+      <where>name = 'app.raid'</where>
+    </update>
+  </changeSet>
+
+</databaseChangeLog>

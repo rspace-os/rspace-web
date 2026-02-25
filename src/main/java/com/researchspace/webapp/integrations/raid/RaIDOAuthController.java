@@ -51,11 +51,11 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
       raidServiceClientAdapter.performCreateAccessToken(
           principal.getName(), serverAlias, params.get("code"));
 
-      log.info("Connected to {} RaID server for user {}", serverAlias, principal.getName());
+      log.info("Connected to {} RAiD server for user {}", serverAlias, principal.getName());
       model.addAttribute("serverAlias", serverAlias);
       redirectResult = "connect/raid/connected";
     } catch (Exception ex) {
-      log.error("Couldn't complete the token request on RaID", ex);
+      log.error("Couldn't complete the token request on RAiD", ex);
       error.errorMsg("Error during token creation: " + ex.getMessage());
       error.errorDetails(ex.getMessage());
       model.addAttribute("error", error.build());
@@ -70,7 +70,7 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
     int deletedConnCount =
         userConnectionManager.deleteByUserAndProvider(
             principal.getName(), RAID_APP_NAME, serverAlias);
-    log.info("Deleted {} RaID connection(s) for user {}", deletedConnCount, principal.getName());
+    log.info("Deleted {} RAiD connection(s) for user {}", deletedConnCount, principal.getName());
   }
 
   @PostMapping("/test_connection/{serverAlias}")
@@ -81,7 +81,7 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
           raidServiceClientAdapter.isRaidConnectionAlive(principal.getName(), serverAlias);
     } catch (Exception e) {
       log.error(
-          "Couldn't perform test connection action on RaID. "
+          "Couldn't perform test connection action on RAiD. "
               + "The connection will be flagged as NOT ALIVE",
           e);
       isConnectionAlive = Boolean.FALSE;
@@ -97,7 +97,7 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
       raidServiceClientAdapter.performRefreshToken(principal.getName(), serverAlias);
       redirectResult = "connect/raid/connected";
     } catch (Exception e) {
-      log.error("Error while refreshing token on RaID: {}", e.getMessage());
+      log.error("Error while refreshing token on RAiD: {}", e.getMessage());
       error.errorMsg("Error during token refresh" + e.getMessage());
       error.errorDetails(e.getMessage());
       model.addAttribute("error", error.build());

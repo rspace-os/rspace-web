@@ -61,7 +61,7 @@ public class RaIDController extends BaseOAuth2Controller {
    * Gets the list of the available raids to be associated
    *
    * @param principal
-   * @return the list of RaID created by the user without the ones that have been already associated
+   * @return the list of RAiD created by the user without the ones that have been already associated
    */
   @GetMapping()
   @ResponseBody
@@ -99,11 +99,11 @@ public class RaIDController extends BaseOAuth2Controller {
       result =
           raidServiceManager.getAssociatedRaidByAliasAndProjectId(raidServerAlias, projectGroupId);
     } catch (Exception e) {
-      log.error("Not able to get RaID list for the user \"{}\":", principal.getName(), e);
+      log.error("Not able to get RAiD list for the user \"{}\":", principal.getName(), e);
       errors.reject(
           "raidList",
           null,
-          "Not able to get RaID list for the user \"" + principal.getName() + "\"");
+          "Not able to get RAiD list for the user \"" + principal.getName() + "\"");
     }
     if (errors.hasErrors()) {
       ErrorList el = inputValidator.populateErrorList(errors, new ErrorList());
@@ -113,11 +113,11 @@ public class RaIDController extends BaseOAuth2Controller {
   }
 
   /***
-   * Returns the RaID associated to the project group with shared folder {@param sharedFolderId}
+   * Returns the RAiD associated to the project group with shared folder {@param sharedFolderId}
    *
    * @param sharedFolderId the folder ID of the ProjectGroup shared folder
    * @param principal logged user
-   * @return the RaID associated or empty
+   * @return the RAiD associated or empty
    */
   @GetMapping("/byFolder/{sharedFolderId}")
   @ResponseBody
@@ -135,7 +135,7 @@ public class RaIDController extends BaseOAuth2Controller {
       result = Optional.empty();
       errorMsg =
           String.format(
-              "Not able to get RaID associated to the project group with folder ID '%d' for the"
+              "Not able to get RAiD associated to the project group with folder ID '%d' for the"
                   + " user '%s' cause that is not a Project Group shared folder",
               sharedFolderId, principal.getName());
       log.error(errorMsg, fnse);
@@ -144,7 +144,7 @@ public class RaIDController extends BaseOAuth2Controller {
       result = Optional.empty();
       errorMsg =
           String.format(
-              "Not able to get RaID associated to the project group with"
+              "Not able to get RAiD associated to the project group with"
                   + " folder ID '%d' for the user '%s'",
               sharedFolderId, principal.getName());
       log.error(errorMsg, e);
@@ -177,7 +177,7 @@ public class RaIDController extends BaseOAuth2Controller {
       log.info(
           "ProjectGroupId \""
               + group.getId()
-              + "\" has been associated to the RaID identifier"
+              + "\" has been associated to the RAiD identifier"
               + " \""
               + raidGroupAssociation.getRaid().getRaidIdentifier()
               + "\" of the \""
@@ -185,8 +185,8 @@ public class RaIDController extends BaseOAuth2Controller {
               + "\" server");
     } catch (Exception e) {
       errors.reject(
-          "raidGroupAssociation", null, "Not able to associate RaID to group: " + e.getMessage());
-      log.error("Not able to associate RaID to group: " + e.getMessage());
+          "raidGroupAssociation", null, "Not able to associate RAiD to group: " + e.getMessage());
+      log.error("Not able to associate RAiD to group: " + e.getMessage());
     }
 
     ErrorList el = null;
@@ -209,11 +209,11 @@ public class RaIDController extends BaseOAuth2Controller {
       group = groupManager.getGroup(projectGroupId);
       Validate.isTrue(
           group.getGroupType().equals(GroupType.PROJECT_GROUP),
-          "Only Project Group can be disassociated to RaID");
+          "Only Project Group can be disassociated to RAiD");
 
       if (group.getRaid() != null) {
         raidServiceManager.unbindRaidFromGroupAndSave(user, projectGroupId);
-        log.info("ProjectGroupId \"" + projectGroupId + "\" has not more RaID associated");
+        log.info("ProjectGroupId \"" + projectGroupId + "\" has not more RAiD associated");
       } else {
         errors.rejectValue(
             "projectGroupId",
@@ -229,8 +229,8 @@ public class RaIDController extends BaseOAuth2Controller {
     } catch (Exception e) {
       errors.reject(
           "disassociateRaidFromGroup",
-          "Not able to disassociate RaID from group: " + e.getMessage());
-      log.error("Not able to disassociate RaID from group: " + e.getMessage());
+          "Not able to disassociate RAiD from group: " + e.getMessage());
+      log.error("Not able to disassociate RAiD from group: " + e.getMessage());
     }
     ErrorList el = null;
     if (errors.hasErrors()) {
@@ -250,7 +250,7 @@ public class RaIDController extends BaseOAuth2Controller {
       Map<String, RaIDServerConfigurationDTO> serverByAlias =
           raidServiceClientAdapter.getServerMapByAlias();
       Set<RaIDReferenceDTO> externalRaIDList = null;
-      // for each server get the list of RaID
+      // for each server get the list of RAiD
       for (String currentServerAlias : serverByAlias.keySet()) {
         try {
           Optional<UserConnection> serverAliasConnection =
@@ -263,7 +263,7 @@ public class RaIDController extends BaseOAuth2Controller {
             externalRaIDList =
                 raidServiceClientAdapter.getRaIDList(principal.getName(), currentServerAlias);
             if (externalRaIDList != null && !externalRaIDList.isEmpty()) {
-              // remove from the external list the RaID that have already been associated
+              // remove from the external list the RAiD that have already been associated
               // by this user
               Set<RaIDReferenceDTO> raidsAlreadyAssociated =
                   raidServiceManager.getAssociatedRaidsByAlias(currentServerAlias).stream()
@@ -275,22 +275,22 @@ public class RaIDController extends BaseOAuth2Controller {
             }
           }
         } catch (HttpClientErrorException e) {
-          log.warn("error connecting to RaID for server alias \"{}\":", currentServerAlias, e);
+          log.warn("error connecting to RAiD for server alias \"{}\":", currentServerAlias, e);
           if (errors != null) {
             errors.rejectValue(
                 "raidServerAlias",
                 "connectionError",
-                "no connection to RaID for server alias \"" + currentServerAlias + "\"");
+                "no connection to RAiD for server alias \"" + currentServerAlias + "\"");
           }
         }
       }
     } catch (Exception ex) {
-      log.error("Not able to get RaID list for the user \"{}\":", principal.getName(), ex);
+      log.error("Not able to get RAiD list for the user \"{}\":", principal.getName(), ex);
       if (errors != null) {
         errors.reject(
             "raidList",
             null,
-            "Not able to get RaID list for the user \"" + principal.getName() + "\"");
+            "Not able to get RAiD list for the user \"" + principal.getName() + "\"");
       }
     }
     return result;
@@ -310,17 +310,17 @@ public class RaIDController extends BaseOAuth2Controller {
       RaIDReferenceDTO raidReference, Group group, Principal principal) {
     Validate.isTrue(
         group.getGroupType().equals(GroupType.PROJECT_GROUP),
-        "Only Project Group can be associated to RaID");
+        "Only Project Group can be associated to RAiD");
     Validate.isTrue(
         group.getRaid() == null,
         "The group with projectGroupId"
             + group.getId()
-            + " is already associated to a RaID. Please remove it first before to associate"
-            + " another RaID");
+            + " is already associated to a RAiD. Please remove it first before to associate"
+            + " another RAiD");
     Set<RaIDReferenceDTO> availableRaids = getAvailableRaids(principal);
     Validate.isTrue(
         availableRaids.contains(raidReference),
-        "The RaID \""
+        "The RAiD \""
             + raidReference.getRaidIdentifier()
             + "\" is not currently available on the system to be associated");
     availableRaids.retainAll(Set.of(raidReference));

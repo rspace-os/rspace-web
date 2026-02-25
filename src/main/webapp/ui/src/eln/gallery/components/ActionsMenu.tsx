@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import Button from "@mui/material/Button";
 import { type GallerySection } from "../common";
@@ -756,36 +756,38 @@ function ActionsMenu({
             disabled={exportAllowed.get().isError}
           />
           <EventBoundary>
-            {Result.all(
-              ...selection
-                .asSet()
-                .toArray()
-                .map(({ id }) => idToString(id)),
-            )
-              .map((exportIds) => (
-                <ExportDialog
-                  key={exportIds.join(",")}
-                  open={exportOpen}
-                  onClose={() => {
-                    setExportOpen(false);
-                    setActionsMenuAnchorEl(null);
-                  }}
-                  exportSelection={{
-                    type: "selection",
-                    exportTypes: selection
-                      .asSet()
-                      .toArray()
-                      .map((f) => (f.isFolder ? "FOLDER" : "MEDIA_FILE")),
-                    exportNames: selection
-                      .asSet()
-                      .toArray()
-                      .map(({ name }) => name),
-                    exportIds,
-                  }}
-                  allowFileStores={false}
-                />
-              ))
-              .orElse(null)}
+            <Suspense fallback={null}>
+              {Result.all(
+                ...selection
+                  .asSet()
+                  .toArray()
+                  .map(({ id }) => idToString(id)),
+              )
+                .map((exportIds) => (
+                  <ExportDialog
+                    key={exportIds.join(",")}
+                    open={exportOpen}
+                    onClose={() => {
+                      setExportOpen(false);
+                      setActionsMenuAnchorEl(null);
+                    }}
+                    exportSelection={{
+                      type: "selection",
+                      exportTypes: selection
+                        .asSet()
+                        .toArray()
+                        .map((f) => (f.isFolder ? "FOLDER" : "MEDIA_FILE")),
+                      exportNames: selection
+                        .asSet()
+                        .toArray()
+                        .map(({ name }) => name),
+                      exportIds,
+                    }}
+                    allowFileStores={false}
+                  />
+                ))
+                .orElse(null)}
+            </Suspense>
           </EventBoundary>
           <AccentMenuItem
             title="Move to iRODS"

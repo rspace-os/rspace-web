@@ -27,6 +27,7 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.DiskSpaceLimitException;
+import com.researchspace.service.RoRService;
 import com.researchspace.service.archive.ArchiveExportServiceManager;
 import com.researchspace.service.archive.ExportImport;
 import edu.kit.datamanager.ro_crate.RoCrate;
@@ -59,12 +60,13 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
   private @Autowired ArchiveNamingStrategy archiveNamingStrategy;
   private @Autowired BeanFactory beanFactory;
   private @Autowired ArchiveExportPlanner archivePlanner;
+  private @Autowired RoRService rorService;
 
   @Override
   public ArchiveResult exportArchive(
       ArchiveManifest manifest, ImmutableExportRecordList exportList, IArchiveExportConfig aconfig)
       throws Exception {
-
+    RoCrateHandler.setRorService(rorService);
     setItemsFromConfig(aconfig, manifest);
     ExportObjectGenerator exportObjectGenerator = beanFactory.getBean(ExportObjectGenerator.class);
     ExportContext exportContext = preArchive(manifest, aconfig, exportObjectGenerator, exportList);
@@ -143,11 +145,12 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
         File recordFolder = new File(context.getArchiveAssmblyFlder(), uniqueExportName);
         forceMkdir(recordFolder);
         DataSetEntity.DataSetBuilder dsb = null;
+        String datasetId = "./" + recordFolder.getName() + "/";
         if (roCrate != null) {
           dsb = new DataSetEntity.DataSetBuilder();
-          dsb.setId("./" + recordFolder.getName());
+          dsb.setId(datasetId);
           DataSetEntity out = dsb.build();
-          roCrate.addDataEntity(out, true);
+          roCrate.addDataEntity(out);
           List<String> listIsPartOf = new LinkedList<>();
           if (aconfig.hasRaidAssociation()) {
             listIsPartOf.add(aconfig.getRaidGroupAssociated().getRoCrateId());
@@ -176,7 +179,7 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
         }
         RoCrateHandler roCrateHandler = null;
         if (roCrate != null) {
-          roCrateHandler = new RoCrateHandler(roCrate, dsb);
+          roCrateHandler = new RoCrateHandler(roCrate, dsb, datasetId);
         }
         if (recordToExport.isStructuredDocument()) {
           exportObjecGen.makeRecordExport(

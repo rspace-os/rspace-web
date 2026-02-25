@@ -216,7 +216,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
 
   @Test
   public void testGetAssociateRaid() throws Exception {
-    // GIVEN a RaID already associated to a project group
+    // GIVEN a RAiD already associated to a project group
     MvcResult result =
         mockMvc
             .perform(
@@ -245,7 +245,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
 
   @Test
   public void testGetRaidByFolderId() throws Exception {
-    // GIVEN a RaID already associated to a project group
+    // GIVEN a RAiD already associated to a project group
     MvcResult result =
         mockMvc
             .perform(
@@ -271,7 +271,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     RaidGroupAssociationDTO actualResult =
         extractRaid(projectGroupCreationWithRaid.getGroupName(), result);
 
-    // THEN a RaID is returned
+    // THEN a RAiD is returned
     assertNotNull(actualResult);
     assertEquals(newProjectGroupId, actualResult.getProjectGroupId());
     assertEquals(EXPECTED_RAID_ASSOCIATED_1, actualResult.getRaid());
@@ -285,12 +285,12 @@ public class RaIDControllerMCVIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
 
-    // THEN no RaID is returned
+    // THEN no RAiD is returned
     assertTrue(
         result
             .getResponse()
             .getContentAsString()
-            .contains("Not able to get RaID associated to the project group with folder ID"));
+            .contains("Not able to get RAiD associated to the project group with folder ID"));
   }
 
   @Test
@@ -400,8 +400,8 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     assertTrue(
         extractErrorMessage(result)
             .contains(
-                "Not able to associate RaID to group: "
-                    + "The RaID \""
+                "Not able to associate RAiD to group: "
+                    + "The RAiD \""
                     + IDENTIFIER_ASSOCIATED_2
                     + "\" is not currently available "
                     + "on the system to be associated"));

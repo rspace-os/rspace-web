@@ -217,10 +217,10 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
   @Test
   public void testUpdateRaIDRelatedObject() throws Exception {
     // GIVEN
-    when(mockedRaidClient.updateRaIDRelatedObject(
+    when(mockedRaidClient.addRaIDRelatedObject(
             eq(API_BASE_URL), eq(OLD_ACCESS_TOKEN), eq(RAID_PREFIX), eq(RAID_SUFFIX), any()))
         .thenReturn(expectedRaid);
-    when(mockedRaidClient.updateRaIDRelatedObject(
+    when(mockedRaidClient.addRaIDRelatedObject(
             eq(API_BASE_URL), eq(OLD_ACCESS_TOKEN), eq(RAID_PREFIX), eq(RAID_SUFFIX), eq(DOI_LINK)))
         .thenReturn(expectedRaidWithRelatedObject);
 
@@ -233,12 +233,11 @@ public class RaIDServiceClientAdapterTest extends SpringTransactionalTest {
     raidServiceClientAdapter.performCreateAccessToken(user.getUsername(), SERVER_ALIAS, AUTH_CODE);
 
     assertFalse(
-        raidServiceClientAdapter.updateRaIDRelatedObject(
+        raidServiceClientAdapter.addRaIDRelatedObject(
             user.getUsername(), raidReference, DOI_LINK + "ANOTHER_LINK"));
 
     assertTrue(
-        raidServiceClientAdapter.updateRaIDRelatedObject(
-            user.getUsername(), raidReference, DOI_LINK));
+        raidServiceClientAdapter.addRaIDRelatedObject(user.getUsername(), raidReference, DOI_LINK));
   }
 
   @Test

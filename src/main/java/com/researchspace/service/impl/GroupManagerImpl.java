@@ -799,7 +799,7 @@ public class GroupManagerImpl implements GroupManager {
       groupMembershipEventDao.remove(event.getId());
     }
 
-    // remove associated RaID
+    // remove associated RAiD
     if (group.isProjectGroup() && group.getRaid() != null) {
       raidDao.remove(group.getRaid().getId());
     }

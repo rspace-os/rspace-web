@@ -6,6 +6,8 @@ import static org.apache.commons.io.FilenameUtils.getBaseName;
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalField;
 import com.researchspace.archive.ArchivalGalleryMetadata;
+import com.researchspace.archive.ArchiveExternalWorkFlow;
+import com.researchspace.archive.ArchiveExternalWorkFlowInvocation;
 import com.researchspace.archive.ArchiveFolder;
 import com.researchspace.archive.ImmutableExportRecordList;
 import com.researchspace.archive.model.ArchiveModelFactory;
@@ -64,6 +66,35 @@ import org.springframework.web.util.UriComponentsBuilder;
  * state as one instance is created per service thread.
  */
 public class ExportObjectGenerator {
+
+  public static Set<ArchiveExternalWorkFlow> getExternalWorkFlowsForDocument(
+      ArchivalDocument archiveDoc) {
+    Set<ArchiveExternalWorkFlow> externalWorkFlows = new HashSet<>();
+    for (ArchivalField af : archiveDoc.getListFields()) {
+      for (ArchiveExternalWorkFlowInvocation afi : af.getExternalWorkFlowInvocations()) {
+        externalWorkFlows.add(afi.getWorkFlowMetaData());
+      }
+    }
+    return externalWorkFlows;
+  }
+
+  public static String getExtWFURLPrefix(String serviceName) {
+    switch (serviceName) {
+      case "GALAXY":
+        return "/api/workflows/";
+      default:
+        return "";
+    }
+  }
+
+  public static String getExtWFURLSuffix(String serviceName) {
+    switch (serviceName) {
+      case "GALAXY":
+        return "?instance=true";
+      default:
+        return "";
+    }
+  }
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -195,6 +226,28 @@ public class ExportObjectGenerator {
       Sha256Hash hashForForm =
           new Sha256Hash(new File(recordFolder, documentFileName + "_form.xml"));
       roCrateHandler.buildXmlFileEntity(recordFolder, exportFileName, strucDoc, true, hash.toHex());
+      File externalWorkFlow = new File(recordFolder, documentFileName + "_externalWorkflows.xml");
+      if (externalWorkFlow.exists()) {
+        Set<ArchiveExternalWorkFlow> externalWorkFlows =
+            getExternalWorkFlowsForDocument(archiveDoc);
+        for (ArchiveExternalWorkFlow anArchiveExternalWorkFlow : externalWorkFlows) {
+          String extService = anArchiveExternalWorkFlow.getExternalService();
+          String urlPrefix = getExtWFURLPrefix(extService);
+          roCrateHandler.buildExtWorkFlowEntity(
+              anArchiveExternalWorkFlow.getName(),
+              anArchiveExternalWorkFlow.getBaseUrl()
+                  + urlPrefix
+                  + anArchiveExternalWorkFlow.getExtId()
+                  + getExtWFURLSuffix(extService));
+        }
+        Sha256Hash hashForExtWF = new Sha256Hash(externalWorkFlow);
+        roCrateHandler.buildXmlFileEntity(
+            recordFolder,
+            documentFileName + "_externalWorkflows.xml",
+            null,
+            false,
+            hashForExtWF.toHex());
+      }
       roCrateHandler.buildXmlFileEntity(
           recordFolder, documentFileName + "_form.xml", strucDoc, false, hashForForm.toHex());
     }
