@@ -4,7 +4,9 @@ import {
   DocumentThatHasBeenSharedIntoANotebook,
   MultipleDocuments,
   NoPreviousShares,
+  SharedWithAControlledOpenState,
   SharedWithAGroup,
+  SharedWithAnalyticsCapture,
   SharedWithAnotherUser,
 } from "./ShareDialog.story";
 import { type emptyObject } from "../util/types";
@@ -965,6 +967,97 @@ test.describe("ShareDialog", () => {
         Then[
           "a POST request should have been made to move the document to the new folder"
         ]();
+      },
+    );
+  });
+
+  test.describe("Dialog lifecycle and analytics", () => {
+    feature(
+      "Closing and reopening should reset transient dialog state",
+      async ({ mount, page }) => {
+        await mount(<SharedWithAControlledOpenState />);
+
+        const dialog = page.getByRole("dialog", {
+          name: /Share Sample Document 1/i,
+        });
+        const recipientDropdown = dialog.getByRole("combobox", {
+          name: /Add RSpace users or groups/i,
+        });
+
+        await recipientDropdown.click();
+        await page.getByRole("option", { name: /^Bob/ }).click();
+        await expect(dialog.getByRole("table")).toBeVisible();
+
+        await page.keyboard.press("Escape");
+        await expect(dialog).not.toBeVisible();
+
+        await page.getByRole("button", { name: /Open share dialog/i }).click();
+        await expect(dialog).toBeVisible();
+        await expect(
+          dialog.getByText("This document is not directly shared with anyone."),
+        ).toBeVisible();
+        await expect(dialog.getByRole("table")).toHaveCount(0);
+        await expect(recipientDropdown).toHaveValue("");
+      },
+    );
+
+    feature(
+      "Saving outside workspace should still close and show success alert",
+      async ({ mount, page }) => {
+        await page.evaluate(() => {
+          delete (window as Window & { getAndDisplayWorkspaceResults?: unknown })
+            .getAndDisplayWorkspaceResults;
+          delete (window as Window & { workspaceSettings?: unknown })
+            .workspaceSettings;
+        });
+        await mount(<SharedWithAControlledOpenState />);
+
+        const dialog = page.getByRole("dialog", {
+          name: /Share Sample Document 1/i,
+        });
+        const recipientDropdown = dialog.getByRole("combobox", {
+          name: /Add RSpace users or groups/i,
+        });
+        await recipientDropdown.click();
+        await page.getByRole("option", { name: /^Bob/ }).click();
+        await dialog.getByRole("button", { name: /Save/i }).click();
+
+        await expect(dialog).not.toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("alert")).toContainText(
+          /Shares updated successfully\./i,
+        );
+      },
+    );
+
+    feature(
+      "Saving with no changes should track the close event with the expected name",
+      async ({ mount, page }) => {
+        await page.evaluate(() => {
+          (window as Window & { __trackedEvents?: string[] }).__trackedEvents =
+            [];
+        });
+        await mount(<SharedWithAnalyticsCapture />);
+
+        const dialog = page.getByRole("dialog", {
+          name: /Share Sample Document 1/i,
+        });
+        const saveButton = dialog.getByRole("button", { name: /Save/i });
+        const doneButton = dialog.getByRole("button", { name: /Done/i });
+        if (await saveButton.isVisible()) {
+          await saveButton.click();
+        } else if (await doneButton.isVisible()) {
+          await doneButton.click();
+        } else {
+          throw new Error("Neither Save nor Done button is visible in share dialog");
+        }
+        await expect(dialog).not.toBeVisible();
+
+        const trackedEvents = await page.evaluate(
+          () =>
+            (window as Window & { __trackedEvents?: string[] }).__trackedEvents ??
+            [],
+        );
+        expect(trackedEvents).toContain("user:close:share_dialog:workspace");
       },
     );
   });

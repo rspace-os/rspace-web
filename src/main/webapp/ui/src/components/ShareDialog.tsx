@@ -57,6 +57,10 @@ type DocumentGlobalId = string;
 type DocumentName = string;
 type ShareId = string;
 type Permission = "READ" | "EDIT" | "UNSHARE";
+type ShareSaveSummary = {
+  hasNewShares: boolean;
+  hasUpdates: boolean;
+};
 
 // Extended type with sharing state
 type ShareOptionWithState = ShareOption & {
@@ -71,7 +75,7 @@ export default function Wrapper(): React.ReactNode {
           <Portal>
             <Alerts>
               <DialogBoundary>
-                <ShareDialog shareDialogConfig="FromGlobalEvent" />
+                <ShareDialogFromGlobalEvent />
               </DialogBoundary>
             </Alerts>
           </Portal>
@@ -81,7 +85,7 @@ export default function Wrapper(): React.ReactNode {
   );
 }
 
-type ShareDialogConfig = {
+export type ShareDialogProps = {
   globalIds: ReadonlyArray<DocumentGlobalId>;
   open: boolean;
   onClose: () => void;
@@ -97,7 +101,7 @@ type ShareDialogConfig = {
  * The rest of the code in this module assumes that the OPEN_SHARE_DIALOG
  * event will not be dispatched again whilst the dialog is open.
  */
-function useSetup(): ShareDialogConfig {
+function useSetup(): ShareDialogProps {
   const [open, setOpen] = React.useState(false);
   const [globalIds, setGlobalIds] = React.useState<
     ReadonlyArray<DocumentGlobalId>
@@ -133,16 +137,24 @@ function useSetup(): ShareDialogConfig {
   };
 }
 
+function ShareDialogFromGlobalEvent(): React.ReactNode {
+  const { open, onClose, globalIds, names } = useSetup();
+  return (
+    <ShareDialog
+      open={open}
+      onClose={onClose}
+      globalIds={globalIds}
+      names={names}
+    />
+  );
+}
+
 export function ShareDialog({
-  shareDialogConfig,
-}: {
-  shareDialogConfig: ShareDialogConfig | "FromGlobalEvent";
-}) {
-  const shareDialogConfigFromHook = useSetup();
-  const { open, onClose, globalIds, names } =
-    shareDialogConfig === "FromGlobalEvent"
-      ? shareDialogConfigFromHook
-      : shareDialogConfig;
+  open,
+  onClose,
+  globalIds,
+  names,
+}: ShareDialogProps) {
   const [shareData, setShareData] = React.useState<
     Map<
       DocumentGlobalId,
@@ -189,6 +201,26 @@ export function ShareDialog({
   const currentUser = useWhoAmI();
   const [autocompleteInput, setAutocompleteInput] = React.useState("");
   const { addAlert } = React.useContext(AlertsContext);
+
+  const resetDialogState = React.useCallback(() => {
+    setShareData(new Map());
+    setLoading(false);
+    setShareOptions([]);
+    setOptionsLoading(false);
+    setPermissionChanges(new Map());
+    setNewShares(new Map());
+    setGroupFolderNames(new Map());
+    setFolderSelectionOpen(false);
+    setSelectedShareForFolderChange(null);
+    setShareFolderChanges(new Map());
+    setAutocompleteInput("");
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) {
+      resetDialogState();
+    }
+  }, [open, resetDialogState]);
 
   React.useEffect(() => {
     if (open && globalIds.length > 0) {
@@ -429,16 +461,7 @@ export function ShareDialog({
 
   function handleClose() {
     onClose();
-    setShareData(new Map());
-    setLoading(false);
-    setShareOptions([]);
-    setOptionsLoading(false);
-    setPermissionChanges(new Map());
-    setNewShares(new Map());
-    setGroupFolderNames(new Map());
-    setFolderSelectionOpen(false);
-    setSelectedShareForFolderChange(null);
-    setShareFolderChanges(new Map());
+    resetDialogState();
   }
 
   function handleCancel() {
@@ -461,7 +484,7 @@ export function ShareDialog({
    */
   async function handleSave() {
     if (!hasChanges) {
-      trackEvent("user:closes:share_dialog:workspace");
+      trackEvent("user:close:share_dialog:workspace");
       handleClose();
       return;
     }
@@ -575,9 +598,14 @@ export function ShareDialog({
       }
 
       handleClose();
-      // @ts-expect-error global function
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
+      try {
+        // This only exists in workspace, not Gallery. Since ShareDialog can be used
+        // outside of the workspace, we let this fail silently if the function doesn't exist
+        // TODO: Remove this when old Workspace is removed
+        // @ts-expect-error See above
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+        getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
+      } catch {}
       addAlert(
         mkAlert({
           message: "Shares updated successfully.",

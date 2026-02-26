@@ -9,7 +9,9 @@ import {
   ActionsMenuWithFolder,
   ActionsMenuWithMultipleFiles,
   ActionsMenuWithSnippet,
-
+  ActionsMenuWithMixedSelection,
+  ActionsMenuWithMultipleSnippets,
+  ActionsMenuWithSnippetMissingGlobalId,
 } from "./ActionsMenu.story";
 
 test.skip(
@@ -23,18 +25,34 @@ const feature = test.extend<{
     "the actions menu with a folder is mounted": () => Promise<void>;
     "the actions menu with multiple files is mounted": () => Promise<void>;
     "the actions menu with a snippet is mounted": () => Promise<void>;
+    "the actions menu with mixed selection is mounted": () => Promise<void>;
+    "the actions menu with multiple snippets is mounted": () => Promise<void>;
+    "the actions menu with a snippet missing global ID is mounted": () => Promise<void>;
   };
   When: {
     "the user clicks the actions menu button": () => Promise<void>;
     "the user selects 'Export' from the menu": () => Promise<void>;
+    "the user selects 'Share' from the menu": () => Promise<void>;
+    "the user selects Bob from share recipient dropdown": () => Promise<void>;
+    "the user saves the share dialog": () => Promise<void>;
   };
   Then: {
     "the actions menu should be visible": () => Promise<void>;
     "the Open option should not be visible": () => Promise<void>;
     "the Open option should be visible": () => Promise<void>;
     "the Download option should be disabled": () => Promise<void>;
+    "the Share option should be visible": () => Promise<void>;
+    "the Share option should be disabled": () => Promise<void>;
+    "the Share option should be enabled": () => Promise<void>;
+    "the share dialog for the selected snippet should be visible": () => Promise<void>;
+    "the share dialog for two items should be visible": () => Promise<void>;
+    "share info should be requested for both selected snippets": () => void;
+    "the Share disabled reason for missing global IDs should be visible": () => Promise<void>;
+    "a share success alert should be visible": () => Promise<void>;
+    "the share dialog should close": () => Promise<void>;
     "there shouldn't be any axe violations": () => Promise<void>;
   };
+  networkRequests: Array<URL>;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -50,6 +68,16 @@ const feature = test.extend<{
       "the actions menu with a snippet is mounted": async () => {
         await mount(<ActionsMenuWithSnippet />);
       },
+      "the actions menu with mixed selection is mounted": async () => {
+        await mount(<ActionsMenuWithMixedSelection />);
+      },
+      "the actions menu with multiple snippets is mounted": async () => {
+        await mount(<ActionsMenuWithMultipleSnippets />);
+      },
+      "the actions menu with a snippet missing global ID is mounted":
+        async () => {
+          await mount(<ActionsMenuWithSnippetMissingGlobalId />);
+        },
     });
   },
   When: async ({ page }, use) => {
@@ -60,9 +88,23 @@ const feature = test.extend<{
       "the user selects 'Export' from the menu": async () => {
         await page.getByRole("menuitem", { name: /export/i }).click();
       },
+      "the user selects 'Share' from the menu": async () => {
+        await page.getByRole("menuitem", { name: /share/i }).click();
+      },
+      "the user selects Bob from share recipient dropdown": async () => {
+        const shareDialog = page.getByRole("dialog");
+        const recipientDropdown = shareDialog.getByRole("combobox", {
+          name: /Add RSpace users or groups/i,
+        });
+        await recipientDropdown.click();
+        await page.getByRole("option", { name: /^Bob/ }).click();
+      },
+      "the user saves the share dialog": async () => {
+        await page.getByRole("dialog").getByRole("button", { name: /Save/i }).click();
+      },
     });
   },
-  Then: async ({ page }, use) => {
+  Then: async ({ page, networkRequests }, use) => {
     await use({
       "the actions menu should be visible": async () => {
         await expect(
@@ -83,6 +125,63 @@ const feature = test.extend<{
         await expect(
           page.getByRole("menuitem", { name: /download/i }),
         ).toBeDisabled({ timeout: 5000 });
+      },
+      "the Share option should be visible": async () => {
+        await expect(page.getByRole("menuitem", { name: /share/i })).toBeVisible(
+          { timeout: 5000 },
+        );
+      },
+      "the Share option should be disabled": async () => {
+        await expect(page.getByRole("menuitem", { name: /share/i })).toBeDisabled(
+          {
+            timeout: 5000,
+          },
+        );
+      },
+      "the Share option should be enabled": async () => {
+        await expect(page.getByRole("menuitem", { name: /share/i })).toBeEnabled(
+          {
+            timeout: 5000,
+          },
+        );
+      },
+      "the share dialog for the selected snippet should be visible": async () => {
+        await expect(
+          page.getByRole("dialog", { name: /Share My Snippet/i }),
+        ).toBeVisible({ timeout: 5000 });
+      },
+      "the share dialog for two items should be visible": async () => {
+        await expect(page.getByRole("dialog", { name: /Share 2 items/i })).toBeVisible(
+          { timeout: 5000 },
+        );
+      },
+      "share info should be requested for both selected snippets": () => {
+        const requestedPaths = networkRequests.map((url) => url.pathname);
+        expect(requestedPaths).toContain("/api/v1/share/document/3");
+        expect(requestedPaths).toContain("/api/v1/share/document/5");
+      },
+      "the Share disabled reason for missing global IDs should be visible":
+        async () => {
+          const shareMenuItem = page.getByRole("menuitem", { name: /share/i });
+          await expect(shareMenuItem).toContainText(
+            /Cannot share snippets that are missing global IDs\./i,
+            { timeout: 5000 },
+          );
+        },
+      "a share success alert should be visible": async () => {
+        await expect(
+          page.getByRole("alert").filter({
+            hasText: /Shares updated successfully\./i,
+          }),
+        ).toContainText(
+          /Shares updated successfully\./i,
+          { timeout: 5000 },
+        );
+      },
+      "the share dialog should close": async () => {
+        await expect(page.getByRole("dialog", { name: /Share/i })).not.toBeVisible({
+          timeout: 5000,
+        });
       },
       "there shouldn't be any axe violations": async () => {
         const accessibilityScanResults = await new AxeBuilder({
@@ -112,9 +211,15 @@ const feature = test.extend<{
       },
     });
   },
+  networkRequests: async ({}, use) => {
+    await use([]);
+  },
 
 });
-feature.beforeEach(async ({ router }) => {
+feature.beforeEach(async ({ router, page, networkRequests }) => {
+  page.on("request", (request) => {
+    networkRequests.push(new URL(request.url()));
+  });
   await router.route("/session/ajax/analyticsProperties", (route) => {
     return route.fulfill({
       status: 200,
@@ -187,7 +292,7 @@ feature.beforeEach(async ({ router }) => {
     });
 
   });
-  await router.route("/gallery/getUploadedFiles", (route) => {
+  await router.route("/gallery/getUploadedFiles*", (route) => {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -226,7 +331,160 @@ feature.beforeEach(async ({ router }) => {
       }),
     });
   });
+  await router.route("/api/v1/userDetails/whoami", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 1,
+        username: "testuser",
+        email: "test@example.com",
+        firstName: "Test",
+        lastName: "User",
+        hasPiRole: false,
+        hasSysAdminRole: false,
+        workbenchId: 1,
+      }),
+    });
+  });
+  await router.route("/api/v1/share/document/3", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        sharedDocId: 3,
+        sharedDocName: "My Snippet",
+        directShares: [],
+        notebookShares: [],
+      }),
+    });
+  });
+  await router.route("/api/v1/share/document/5", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        sharedDocId: 5,
+        sharedDocName: "My Second Snippet",
+        directShares: [],
+        notebookShares: [],
+      }),
+    });
+  });
+  await router.route("/api/v1/groups", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          id: 1,
+          globalId: "GP1",
+          name: "Alice and Bob's Group",
+          type: "LAB_GROUP",
+          sharedFolderId: 1,
+          members: [
+            {
+              id: 1,
+              username: "alice",
+              role: "PI",
+            },
+            {
+              id: 2,
+              username: "bob",
+              role: "USER",
+            },
+          ],
+          uniqueName: "aliceAndBobGroup",
+          _links: [],
+        },
+      ]),
+    });
+  });
+  await router.route("/api/v1/userDetails/groupMembers", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          id: 2,
+          username: "bob",
+          email: "bob@example.com",
+          firstName: "Bob",
+          lastName: "",
+          homeFolderId: 2,
+          workbenchId: 1,
+          hasPiRole: false,
+          hasSysAdminRole: false,
+          _links: [],
+        },
+      ]),
+    });
+  });
+  await router.route("/api/v1/folders/1*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 1,
+        globalId: "FL1",
+        name: "alice-bob",
+        created: "2025-09-09T12:05:14.109Z",
+        lastModified: "2025-09-09T12:05:14.109Z",
+        parentFolderId: 124,
+        notebook: false,
+        mediaType: null,
+        pathToRootFolder: [],
+        _links: [],
+      }),
+    });
+  });
+  await router.route("/api/v1/share", async (route) => {
+    const request = route.request();
+    if (request.method() === "POST") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          shareInfos: [],
+          failedShares: [],
+          _links: [],
+        }),
+      });
+      return;
+    }
+    if (request.method() === "PUT") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          shareInfo: {
+            id: 1,
+            sharedItemId: 3,
+            shareItemName: "My Snippet",
+            sharedTargetType: "USER",
+            permission: "READ",
+            _links: [],
+          },
+          _links: [],
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 204,
+      body: "",
+    });
+  });
+  await router.route("/api/v1/share/*", async (route) => {
+    await route.fulfill({
+      status: 204,
+      body: "",
+    });
+  });
 
+});
+feature.afterEach(({ networkRequests }) => {
+  networkRequests.splice(0, networkRequests.length);
 });
 test.describe("ActionsMenu", () => {
   test.describe("Should have no axe violations", () => {
@@ -261,6 +519,68 @@ test.describe("ActionsMenu", () => {
         await Given["the actions menu with a snippet is mounted"]();
         await When["the user clicks the actions menu button"]();
         await Then["the Download option should be disabled"]();
+      },
+    );
+    feature(
+      "Share should always be visible and enabled when only snippets are selected",
+      async ({ Given, When, Then }) => {
+        await Given["the actions menu with a snippet is mounted"]();
+        await When["the user clicks the actions menu button"]();
+        await Then["the Share option should be visible"]();
+        await Then["the Share option should be enabled"]();
+      },
+    );
+    feature(
+      "Share should be disabled when snippets and non-snippets are selected together",
+      async ({ Given, When, Then }) => {
+        await Given["the actions menu with mixed selection is mounted"]();
+        await When["the user clicks the actions menu button"]();
+        await Then["the Share option should be visible"]();
+        await Then["the Share option should be disabled"]();
+      },
+    );
+    feature(
+      "Share should open dialog for a single snippet",
+      async ({ Given, When, Then }) => {
+        await Given["the actions menu with a snippet is mounted"]();
+        await When["the user clicks the actions menu button"]();
+        await When["the user selects 'Share' from the menu"]();
+        await Then["the share dialog for the selected snippet should be visible"]();
+      },
+    );
+    feature(
+      "Share should pass all selected snippets to the dialog",
+      async ({ Given, When, Then }) => {
+        await Given["the actions menu with multiple snippets is mounted"]();
+        await When["the user clicks the actions menu button"]();
+        await When["the user selects 'Share' from the menu"]();
+        await Then["the share dialog for two items should be visible"]();
+        await Then["share info should be requested for both selected snippets"]();
+      },
+    );
+    feature(
+      "Share should be disabled when snippet global ID is missing",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the actions menu with a snippet missing global ID is mounted"
+        ]();
+        await When["the user clicks the actions menu button"]();
+        await Then["the Share option should be disabled"]();
+        await Then[
+          "the Share disabled reason for missing global IDs should be visible"
+        ]();
+      },
+    );
+    feature(
+      "Saving a gallery share should show success alert and close dialog",
+      async ({ Given, When, Then }) => {
+        await Given["the actions menu with a snippet is mounted"]();
+        await When["the user clicks the actions menu button"]();
+        await When["the user selects 'Share' from the menu"]();
+        await When["the user selects Bob from share recipient dropdown"]();
+        await When["the user saves the share dialog"]();
+        await Then["a share success alert should be visible"]();
+        await Then["the share dialog should close"]();
       },
     );
   });

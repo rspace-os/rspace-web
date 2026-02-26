@@ -514,4 +514,188 @@ test.describe("Gallery", () => {
       },
     );
   });
+
+  feature.describe("Sharing integration", () => {
+    feature(
+      "Saving a snippet share from Gallery should surface the success alert",
+      async ({ Given, page, router }) => {
+        await router.route("/gallery/getUploadedFiles*", (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              data: {
+                parentId: 1,
+                items: {
+                  totalHits: 1,
+                  totalPages: 1,
+                  results: [
+                    {
+                      id: 3,
+                      oid: { idString: "SD3" },
+                      name: "My Snippet",
+                      ownerName: "user1",
+                      description: null,
+                      creationDate: 1672531200,
+                      modificationDate: 1672531200,
+                      type: "Snippet",
+                      extension: "txt",
+                      thumbnailId: null,
+                      size: 512,
+                      version: 1,
+                      originalImageOid: { idString: "SD3" },
+                    },
+                  ],
+                },
+              },
+              error: null,
+              success: true,
+              errorMsg: null,
+            }),
+          }),
+        );
+        await router.route("/gallery/ajax/getLinkedDocuments/*", (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              data: [],
+              error: null,
+              success: true,
+              errorMsg: null,
+            }),
+          }),
+        );
+        await router.route("/api/v1/userDetails/whoami", async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              id: 1,
+              username: "testuser",
+              email: "test@example.com",
+              firstName: "Test",
+              lastName: "User",
+              hasPiRole: false,
+              hasSysAdminRole: false,
+              workbenchId: 1,
+            }),
+          });
+        });
+        await router.route("/api/v1/share/document/3", async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              sharedDocId: 3,
+              sharedDocName: "My Snippet",
+              directShares: [],
+              notebookShares: [],
+            }),
+          });
+        });
+        await router.route("/api/v1/groups", async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify([
+              {
+                id: 1,
+                globalId: "GP1",
+                name: "Alice and Bob's Group",
+                type: "LAB_GROUP",
+                sharedFolderId: 1,
+                members: [
+                  { id: 1, username: "alice", role: "PI" },
+                  { id: 2, username: "bob", role: "USER" },
+                ],
+                uniqueName: "aliceAndBobGroup",
+                _links: [],
+              },
+            ]),
+          });
+        });
+        await router.route("/api/v1/userDetails/groupMembers", async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify([
+              {
+                id: 2,
+                username: "bob",
+                email: "bob@example.com",
+                firstName: "Bob",
+                lastName: "",
+                homeFolderId: 2,
+                workbenchId: 1,
+                hasPiRole: false,
+                hasSysAdminRole: false,
+                _links: [],
+              },
+            ]),
+          });
+        });
+        await router.route("/api/v1/folders/1*", async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              id: 1,
+              globalId: "FL1",
+              name: "alice-bob",
+              created: "2025-09-09T12:05:14.109Z",
+              lastModified: "2025-09-09T12:05:14.109Z",
+              parentFolderId: 124,
+              notebook: false,
+              mediaType: null,
+              pathToRootFolder: [],
+              _links: [],
+            }),
+          });
+        });
+        await router.route("/api/v1/share", async (route) => {
+          const request = route.request();
+          if (request.method() === "POST") {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                shareInfos: [],
+                failedShares: [],
+                _links: [],
+              }),
+            });
+            return;
+          }
+          await route.fulfill({
+            status: 204,
+            body: "",
+          });
+        });
+        await router.route("/api/v1/share/*", async (route) => {
+          await route.fulfill({
+            status: 204,
+            body: "",
+          });
+        });
+
+        await Given["the Gallery is mounted"]({ url: "?mediaType=Images" });
+
+        await page.getByRole("gridcell", { name: "My Snippet" }).click();
+        await page.getByRole("button", { name: /actions/i }).click();
+        await page.getByRole("menuitem", { name: /share/i }).click();
+
+        const shareDialog = page.getByRole("dialog", { name: /Share My Snippet/i });
+        await shareDialog
+          .getByRole("combobox", { name: /Add RSpace users or groups/i })
+          .click();
+        await page.getByRole("option", { name: /^Bob/ }).click();
+        await shareDialog.getByRole("button", { name: /Save/i }).click();
+
+        await expect(page.getByRole("alert")).toContainText(
+          /Shares updated successfully\./i,
+        );
+      },
+    );
+  });
 });

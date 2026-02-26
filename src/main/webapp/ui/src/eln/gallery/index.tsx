@@ -502,22 +502,22 @@ const queryClient = new QueryClient();
 
 export function Gallery() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Analytics>
-        <LandmarksProvider>
-          <ErrorBoundary>
-            <SkipToContentMenu />
-            <GoogleLoginProvider />
-            <StyledEngineProvider injectFirst>
-              <CssBaseline />
-              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-                <UiPreferences>
-                  <DisableDragAndDropByDefault>
-                    <Routes>
-                      <Route
-                        path="/gallery"
-                        element={
-                          <Alerts>
+    <Alerts>
+      <QueryClientProvider client={queryClient}>
+        <Analytics>
+          <LandmarksProvider>
+            <ErrorBoundary>
+              <SkipToContentMenu />
+              <GoogleLoginProvider />
+              <StyledEngineProvider injectFirst>
+                <CssBaseline />
+                <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+                  <UiPreferences>
+                    <DisableDragAndDropByDefault>
+                      <Routes>
+                        <Route
+                          path="/gallery"
+                          element={
                             <RouterNavigationProvider>
                               <GallerySelection>
                                 <FilestoreLoginProvider>
@@ -525,50 +525,46 @@ export function Gallery() {
                                 </FilestoreLoginProvider>
                               </GallerySelection>
                             </RouterNavigationProvider>
-                          </Alerts>
-                        }
-                      />
-                      <Route
-                        path="gallery/:folderId"
-                        element={
-                          <Alerts>
-                            <RouterNavigationProvider>
-                              <GallerySelection>
-                                <FilestoreLoginProvider>
-                                  <GalleryFolder />
-                                </FilestoreLoginProvider>
-                              </GallerySelection>
-                            </RouterNavigationProvider>
-                          </Alerts>
-                        }
-                      />
-                      <Route
-                        path="gallery/item/:fileId"
-                        element={
-                          <Alerts>
-                            <RouterNavigationProvider>
-                              <GallerySelection>
-                                <FilestoreLoginProvider>
-                                  <GalleryFileInFolder />
-                                </FilestoreLoginProvider>
-                              </GallerySelection>
-                            </RouterNavigationProvider>
-                          </Alerts>
-                        }
-                      />
-                      <Route
-                        path="*"
-                        element={<Navigate to="/gallery" replace />}
-                      />
-                    </Routes>
-                  </DisableDragAndDropByDefault>
-                </UiPreferences>
-              </ThemeProvider>
-            </StyledEngineProvider>
-          </ErrorBoundary>
-        </LandmarksProvider>
-      </Analytics>
-    </QueryClientProvider>
+                          }
+                        />
+                        <Route
+                          path="gallery/:folderId"
+                          element={
+                              <RouterNavigationProvider>
+                                <GallerySelection>
+                                  <FilestoreLoginProvider>
+                                    <GalleryFolder />
+                                  </FilestoreLoginProvider>
+                                </GallerySelection>
+                              </RouterNavigationProvider>
+                          }
+                        />
+                        <Route
+                          path="gallery/item/:fileId"
+                          element={
+                              <RouterNavigationProvider>
+                                <GallerySelection>
+                                  <FilestoreLoginProvider>
+                                    <GalleryFileInFolder />
+                                  </FilestoreLoginProvider>
+                                </GallerySelection>
+                              </RouterNavigationProvider>
+                          }
+                        />
+                        <Route
+                          path="*"
+                          element={<Navigate to="/gallery" replace />}
+                        />
+                      </Routes>
+                    </DisableDragAndDropByDefault>
+                  </UiPreferences>
+                </ThemeProvider>
+              </StyledEngineProvider>
+            </ErrorBoundary>
+          </LandmarksProvider>
+        </Analytics>
+      </QueryClientProvider>
+    </Alerts>
   );
 }
 
