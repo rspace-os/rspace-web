@@ -530,25 +530,25 @@ export function Gallery() {
                         <Route
                           path="gallery/:folderId"
                           element={
-                              <RouterNavigationProvider>
-                                <GallerySelection>
-                                  <FilestoreLoginProvider>
-                                    <GalleryFolder />
-                                  </FilestoreLoginProvider>
-                                </GallerySelection>
-                              </RouterNavigationProvider>
+                            <RouterNavigationProvider>
+                              <GallerySelection>
+                                <FilestoreLoginProvider>
+                                  <GalleryFolder />
+                                </FilestoreLoginProvider>
+                              </GallerySelection>
+                            </RouterNavigationProvider>
                           }
                         />
                         <Route
                           path="gallery/item/:fileId"
                           element={
-                              <RouterNavigationProvider>
-                                <GallerySelection>
-                                  <FilestoreLoginProvider>
-                                    <GalleryFileInFolder />
-                                  </FilestoreLoginProvider>
-                                </GallerySelection>
-                              </RouterNavigationProvider>
+                            <RouterNavigationProvider>
+                              <GallerySelection>
+                                <FilestoreLoginProvider>
+                                  <GalleryFileInFolder />
+                                </FilestoreLoginProvider>
+                              </GallerySelection>
+                            </RouterNavigationProvider>
                           }
                         />
                         <Route
