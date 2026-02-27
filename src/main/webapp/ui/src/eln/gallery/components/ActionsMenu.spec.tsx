@@ -45,7 +45,7 @@ const feature = test.extend<{
     "the Share option should be disabled": () => Promise<void>;
     "the Share option should be enabled": () => Promise<void>;
     "the share dialog for the selected snippet should be visible": () => Promise<void>;
-    "the share dialog for two items should be visible": () => Promise<void>;
+    "the share dialog for two snippets should be visible": () => Promise<void>;
     "share info should be requested for both selected snippets": () => void;
     "the Share disabled reason for missing global IDs should be visible": () => Promise<void>;
     "a share success alert should be visible": () => Promise<void>;
@@ -150,10 +150,10 @@ const feature = test.extend<{
           page.getByRole("dialog", { name: /Share My Snippet/i }),
         ).toBeVisible({ timeout: 5000 });
       },
-      "the share dialog for two items should be visible": async () => {
-        await expect(page.getByRole("dialog", { name: /Share 2 items/i })).toBeVisible(
-          { timeout: 5000 },
-        );
+      "the share dialog for two snippets should be visible": async () => {
+        await expect(
+          page.getByRole("dialog", { name: /Share 2 snippets/i }),
+        ).toBeVisible({ timeout: 5000 });
       },
       "share info should be requested for both selected snippets": () => {
         const requestedPaths = networkRequests.map((url) => url.pathname);
@@ -554,7 +554,7 @@ test.describe("ActionsMenu", () => {
         await Given["the actions menu with multiple snippets is mounted"]();
         await When["the user clicks the actions menu button"]();
         await When["the user selects 'Share' from the menu"]();
-        await Then["the share dialog for two items should be visible"]();
+        await Then["the share dialog for two snippets should be visible"]();
         await Then["share info should be requested for both selected snippets"]();
       },
     );

@@ -249,7 +249,7 @@ const feature = test.extend<{
         },
       "no table should be visible": async () => {
         const dialog = page.getByRole("dialog", {
-          name: /Share \d+ items/i,
+          name: /Share \d+ documents/i,
         });
         await expect(dialog).toBeVisible();
         const table = dialog.getByRole("table");

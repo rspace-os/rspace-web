@@ -90,6 +90,8 @@ export type ShareDialogProps = {
   open: boolean;
   onClose: () => void;
   names: ReadonlyArray<DocumentName>;
+  singularName?: string;
+  pluralName?: string;
 };
 
 /**
@@ -154,6 +156,8 @@ export function ShareDialog({
   onClose,
   globalIds,
   names,
+  singularName = "document",
+  pluralName = "documents",
 }: ShareDialogProps) {
   const [shareData, setShareData] = React.useState<
     Map<
@@ -638,7 +642,7 @@ export function ShareDialog({
             Share <strong>{names[0]}</strong>
           </>
         ) : (
-          `Share ${names.length} items`
+          `Share ${names.length} ${pluralName}`
         )}
       </DialogTitle>
       <DialogContent>
@@ -783,7 +787,7 @@ export function ShareDialog({
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {option.isDisabled
-                      ? `All of the documents have already been shared with ${
+                      ? `All of the ${pluralName} have already been shared with ${
                           option.optionType === "GROUP"
                             ? option.name
                             : `${option.firstName} ${option.lastName}`
@@ -836,7 +840,7 @@ export function ShareDialog({
                 <Stack spacing={3}>
                   {(() => {
                     const globalId = globalIds[0];
-                    const docName = names[0] || "this document";
+                    const docName = names[0] || `this ${singularName}`;
                     const directShares =
                       shareData.get(globalId)?.directShares ?? [];
                     const notebookShares =
@@ -852,7 +856,8 @@ export function ShareDialog({
                               color="text.secondary"
                               style={{ fontStyle: "italic" }}
                             >
-                              This document is not directly shared with anyone.
+                              This {singularName} is not directly shared with
+                              anyone.
                             </Typography>
                           ) : (
                             <TableContainer
@@ -1242,7 +1247,7 @@ export function ShareDialog({
             ) : (
               <>
                 <Typography variant="h3" gutterBottom>
-                  Adding shares to {globalIds.length} documents
+                  Adding shares to {globalIds.length} {pluralName}
                 </Typography>
                 <Typography
                   variant="body2"
@@ -1250,8 +1255,10 @@ export function ShareDialog({
                   sx={{ mb: 2 }}
                 >
                   Use the field above to add new shares. The share status of
-                  multiple documents can be edited on the{" "}
-                  <Link href="/record/share/manage">shared documents page</Link>
+                  multiple {pluralName} can be edited on the{" "}
+                  <Link href="/record/share/manage">
+                    shared {pluralName} page
+                  </Link>
                   .
                 </Typography>
                 {newShares.size > 0 && (
@@ -1309,8 +1316,8 @@ export function ShareDialog({
                                   color="text.secondary"
                                 >
                                   {documentCount === globalIds.length
-                                    ? `All ${globalIds.length} documents`
-                                    : `${documentCount} of ${globalIds.length} documents`}
+                                    ? `All ${globalIds.length} ${pluralName}`
+                                    : `${documentCount} of ${globalIds.length} ${pluralName}`}
                                 </Typography>
                                 {share.recipientType === "GROUP" && (
                                   <Typography

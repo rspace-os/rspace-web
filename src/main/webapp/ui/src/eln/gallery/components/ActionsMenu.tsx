@@ -800,6 +800,8 @@ function ActionsMenu({
                   }}
                   globalIds={globalIds}
                   names={names}
+                  singularName="snippet"
+                  pluralName="snippets"
                 />
               ))
               .orElse(null)}
