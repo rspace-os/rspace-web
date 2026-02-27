@@ -6,6 +6,7 @@ import {
   NoPreviousShares,
   SharedWithAControlledOpenState,
   SharedWithAGroup,
+  SharedWithAGroupWithoutLocationsDialog,
   SharedWithAnalyticsCapture,
   SharedWithAnotherUser,
 } from "./ShareDialog.story";
@@ -20,6 +21,7 @@ const feature = test.extend<{
     "the dialog is displayed with a document with a previous share with Alice and Bob's group": () => Promise<void>;
     "the dialog is displayed with multiple documents": () => Promise<void>;
     "the dialog is displayed with a document that has been shared into a notebook": () => Promise<void>;
+    "the dialog is displayed with a document with a previous group share and locations dialog hidden": () => Promise<void>;
   };
   Once: emptyObject;
   When: {
@@ -52,6 +54,7 @@ const feature = test.extend<{
       newPermission: "EDIT" | "READ";
     }) => void;
     "a POST request should have been made to move the document to the new folder": () => void;
+    "location controls should not be visible": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null; method: string }>;
 }>({
@@ -75,6 +78,10 @@ const feature = test.extend<{
       "the dialog is displayed with a document that has been shared into a notebook":
         async () => {
           await mount(<DocumentThatHasBeenSharedIntoANotebook />);
+        },
+      "the dialog is displayed with a document with a previous group share and locations dialog hidden":
+        async () => {
+          await mount(<SharedWithAGroupWithoutLocationsDialog />);
         },
     });
   },
@@ -422,6 +429,18 @@ const feature = test.extend<{
             );
           }
         },
+      "location controls should not be visible": async () => {
+        const dialog = page.getByRole("dialog", {
+          name: /Share Another shared document/i,
+        });
+        await expect(dialog).toBeVisible();
+        await expect(
+          dialog.getByRole("columnheader", { name: /Location/i }),
+        ).toHaveCount(0);
+        await expect(
+          dialog.getByRole("button", { name: /Change/i }),
+        ).toHaveCount(0);
+      },
     });
   },
   networkRequests: async ({}, use) => {
@@ -846,6 +865,15 @@ test.describe("ShareDialog", () => {
           "two tables listing the shared notebook's implicit and explicit shares should be visible"
         ]();
         await Then["there shouldn't be any axe violations"]();
+      },
+    );
+    feature(
+      "When locations dialog is hidden, location column and controls are not shown",
+      async ({ Given, Then }) => {
+        await Given[
+          "the dialog is displayed with a document with a previous group share and locations dialog hidden"
+        ]();
+        await Then["location controls should not be visible"]();
       },
     );
 

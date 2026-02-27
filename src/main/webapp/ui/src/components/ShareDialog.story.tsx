@@ -65,6 +65,26 @@ export function SharedWithAGroup() {
   );
 }
 
+export function SharedWithAGroupWithoutLocationsDialog() {
+  return (
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <Portal>
+        <Alerts>
+          <DialogBoundary>
+            <ShareDialog
+              open
+              onClose={() => {}}
+              globalIds={["SD3"]}
+              names={["Another shared document"]}
+              showLocationsDialog={false}
+            />
+          </DialogBoundary>
+        </Alerts>
+      </Portal>
+    </ThemeProvider>
+  );
+}
+
 export function MultipleDocuments() {
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>

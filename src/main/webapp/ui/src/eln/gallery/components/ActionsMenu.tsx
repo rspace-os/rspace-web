@@ -802,6 +802,7 @@ function ActionsMenu({
                   names={names}
                   singularName="snippet"
                   pluralName="snippets"
+                  showLocationsDialog={!selection.asSet().some((f) => f.isSnippet)}
                 />
               ))
               .orElse(null)}
