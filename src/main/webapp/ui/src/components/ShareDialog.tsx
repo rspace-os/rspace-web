@@ -1247,7 +1247,8 @@ export function ShareDialog({
             ) : (
               <>
                 <Typography variant="h3" gutterBottom>
-                  Adding shares to {globalIds.length} {pluralName}
+                  Adding shares to {globalIds.length}{" "}
+                  {globalIds.length === 1 ? singularName : pluralName}
                 </Typography>
                 <Typography
                   variant="body2"
@@ -1317,7 +1318,7 @@ export function ShareDialog({
                                 >
                                   {documentCount === globalIds.length
                                     ? `All ${globalIds.length} ${pluralName}`
-                                    : `${documentCount} of ${globalIds.length} ${pluralName}`}
+                                    : `${documentCount} of ${globalIds.length} ${globalIds.length === 1 ? singularName : pluralName}`}
                                 </Typography>
                                 {share.recipientType === "GROUP" && (
                                   <Typography
