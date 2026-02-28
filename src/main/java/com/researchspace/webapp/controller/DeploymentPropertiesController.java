@@ -42,9 +42,6 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${pyrat.server.config}")
   private String pyratServerConfig;
 
-  @Value("${dsw.server.config}")
-  private String dswServerConfig;
-
   @Value("${raid.server.config}")
   private String raidServerConfig;
 
@@ -157,8 +154,6 @@ public class DeploymentPropertiesController extends BaseController {
         return egnyteClientId;
       case "pyrat.server.config":
         return pyratServerConfig;
-      case "dsw.server.config":
-        return dswServerConfig;
       case "raid.server.config":
         return raidServerConfig;
       case "owncloud.url":
@@ -263,7 +258,6 @@ public class DeploymentPropertiesController extends BaseController {
 
     properties.put("pyrat.server.config", pyratServerConfig);
     properties.put("raid.server.config", raidServerConfig);
-    properties.put("dsw.server.config", dswServerConfig);
 
     properties.put("googledrive.developer.key", googleDriveDevKey);
     properties.put("googledrive.client.id", googleDriveClientId);
