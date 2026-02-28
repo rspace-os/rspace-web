@@ -8,6 +8,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -488,9 +489,24 @@ public class StoichiometryManagerImplTest {
     when(rsChemElementManager.save(any(RSChemElement.class), any(User.class)))
         .thenReturn(newMolecule);
 
+    when(stoichiometryDao.save(any(Stoichiometry.class)))
+        .thenAnswer(
+            invocation -> {
+              Stoichiometry s = invocation.getArgument(0);
+              if (s.getMolecules() != null) {
+                long idCounter = 100L;
+                for (StoichiometryMolecule m : s.getMolecules()) {
+                  if (m.getId() == null) {
+                    m.setId(idCounter++);
+                  }
+                }
+              }
+              return s;
+            });
+
     stoichiometryManager.copy(sourceParentReactionId, targetParentReaction, user);
 
-    verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
+    verify(stoichiometryDao, times(4)).save(stoichiometryCaptor.capture());
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
 
     Stoichiometry finalSave = savedStoichiometries.get(savedStoichiometries.size() - 1);
@@ -543,20 +559,31 @@ public class StoichiometryManagerImplTest {
     when(rsChemElementManager.save(any(RSChemElement.class), any(User.class)))
         .thenReturn(createRSChemElement(999L));
 
+    when(stoichiometryDao.save(any(Stoichiometry.class)))
+        .thenAnswer(
+            invocation -> {
+              Stoichiometry s = invocation.getArgument(0);
+              if (s.getMolecules() != null) {
+                long idCounter = 1000L;
+                for (StoichiometryMolecule m : s.getMolecules()) {
+                  if (m.getId() == null) {
+                    m.setId(idCounter++);
+                  }
+                }
+              }
+              return s;
+            });
+
     stoichiometryManager.copy(sourceParentReactionId, targetParentReaction, user);
 
     // Verify link created for mol1 copy
     ArgumentCaptor<StoichiometryInventoryLinkRequest> linkReqCaptor =
         ArgumentCaptor.forClass(StoichiometryInventoryLinkRequest.class);
     verify(stoichiometryInventoryLinkManager, times(1))
-        .createLink(linkReqCaptor.capture(), any(User.class));
+        .createLink(anyLong(), linkReqCaptor.capture(), any(User.class));
 
-    List<StoichiometryInventoryLinkRequest> reqs = linkReqCaptor.getAllValues();
-    assertEquals(1, reqs.size());
-    StoichiometryInventoryLinkRequest newLink = reqs.get(0);
+    StoichiometryInventoryLinkRequest newLink = linkReqCaptor.getValue();
     assertEquals("SA" + sample.getId(), newLink.getInventoryItemGlobalId());
-    assertEquals(mol1.getInventoryLink().getQuantity().getNumericValue(), newLink.getQuantity());
-    assertEquals(RSUnitDef.MILLI_LITRE.getId(), newLink.getUnitId());
   }
 
   @Test

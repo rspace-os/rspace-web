@@ -12,13 +12,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.stoichiometry.StockDeductionResult;
-import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.IPermissionUtils;
@@ -76,10 +75,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
   @Test
   public void createLinkSuccess() {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setStoichiometryMoleculeId(10L);
     req.setInventoryItemGlobalId("SA200");
-    req.setQuantity(BigDecimal.valueOf(2.5));
-    req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
@@ -90,20 +86,15 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(linkDao.save(any(StoichiometryInventoryLink.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    StoichiometryInventoryLinkDTO dto = manager.createLink(req, user);
-    assertEquals(Long.valueOf(10L), dto.getStoichiometryMoleculeId());
-    assertEquals("SA200", dto.getInventoryItemGlobalId());
-    assertEquals(BigDecimal.valueOf(2.5), dto.getQuantity().getNumericValue());
-    assertEquals(RSUnitDef.MILLI_LITRE.getId(), dto.getQuantity().getUnitId());
+    StoichiometryInventoryLink dto = manager.createLink(10L, req, user);
+    assertEquals(Long.valueOf(10L), dto.getStoichiometryMolecule().getId());
+    assertEquals("SA200", dto.getInventoryRecord().getOid().getIdString());
   }
 
   @Test
   public void createLinkWhenMoleculeAlreadyHasLinkThrows() {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setStoichiometryMoleculeId(10L);
     req.setInventoryItemGlobalId("SA200");
-    req.setQuantity(BigDecimal.valueOf(1));
-    req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
 
     // molecule already linked
     molecule.setInventoryLink(new StoichiometryInventoryLink());
@@ -113,17 +104,14 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
 
     IllegalArgumentException ex =
-        assertThrows(IllegalArgumentException.class, () -> manager.createLink(req, user));
+        assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user));
     assertEquals("Stoichiometry molecule already has an inventory link", ex.getMessage());
   }
 
   @Test
   public void createLinkWhenInventoryRecordIsSampleTemplateThrows() {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setStoichiometryMoleculeId(10L);
     req.setInventoryItemGlobalId("IT200");
-    req.setQuantity(BigDecimal.valueOf(1));
-    req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
 
     invSample.setTemplate(true);
 
@@ -134,7 +122,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
         .thenReturn(invSample);
 
     IllegalArgumentException ex =
-        assertThrows(IllegalArgumentException.class, () -> manager.createLink(req, user));
+        assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user));
     assertEquals(
         "IT200 is a sample template. Only Containers, Samples and Subsamples are valid for"
             + " linking.",
@@ -144,39 +132,13 @@ public class StoichiometryInventoryLinkManagerImplTest {
   @Test
   public void createLinkDeniedOnElnPermissions() {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setStoichiometryMoleculeId(10L);
     req.setInventoryItemGlobalId("SA200");
-    req.setQuantity(BigDecimal.valueOf(1.0));
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(false);
 
-    assertThrows(NotFoundException.class, () -> manager.createLink(req, user));
-  }
-
-  @Test
-  public void updateQuantitySuccess() {
-    StoichiometryInventoryLink original = new StoichiometryInventoryLink();
-    original.setId(123L);
-    original.setStoichiometryMolecule(molecule);
-    original.setSample(invSample);
-    original.setQuantity(new QuantityInfo(BigDecimal.valueOf(1), RSUnitDef.MILLI_LITRE.getId()));
-
-    when(linkDao.getSafeNull(123L)).thenReturn(java.util.Optional.of(original));
-    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
-    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
-    doNothing()
-        .when(invPerms)
-        .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
-    when(linkDao.save(any(StoichiometryInventoryLink.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
-
-    StoichiometryInventoryLinkDTO updated =
-        manager.updateQuantity(
-            123L, new ApiQuantityInfo(BigDecimal.valueOf(5), RSUnitDef.MILLI_LITRE.getId()), user);
-    assertEquals(Long.valueOf(123L), updated.getId());
-    assertEquals(BigDecimal.valueOf(5), updated.getQuantity().getNumericValue());
+    assertThrows(NotFoundException.class, () -> manager.createLink(10L, req, user));
   }
 
   @Test
@@ -184,7 +146,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     StoichiometryInventoryLink existing = new StoichiometryInventoryLink();
     existing.setId(123L);
     existing.setStoichiometryMolecule(molecule);
-    existing.setSample(invSample);
+    existing.setInventoryRecord(invSample);
 
     when(linkDao.getSafeNull(123L)).thenReturn(java.util.Optional.of(existing));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
@@ -229,10 +191,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
   @Test
   public void createLinkNotReducingStockDoesntRegisterUsage() {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setStoichiometryMoleculeId(10L);
     req.setInventoryItemGlobalId("SS300");
-    req.setQuantity(BigDecimal.valueOf(2));
-    req.setUnitId(RSUnitDef.GRAM.getId());
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
@@ -241,7 +200,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
         .thenReturn(invSubSample);
     when(linkDao.save(any(StoichiometryInventoryLink.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    manager.createLink(req, user);
+    manager.createLink(10L, req, user);
     verify(subSampleMgr, never())
         .registerApiSubSampleUsage(any(Long.class), any(QuantityInfo.class), eq(user));
   }
@@ -251,7 +210,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     StoichiometryInventoryLink existing = new StoichiometryInventoryLink();
     existing.setId(123L);
     existing.setStoichiometryMolecule(molecule);
-    existing.setSample(invSample);
+    existing.setInventoryRecord(invSample);
     when(linkDao.getSafeNull(123L)).thenReturn(java.util.Optional.of(existing));
     assertThrows(NotFoundException.class, () -> manager.deleteLink(existing.getId(), user));
   }
@@ -266,12 +225,11 @@ public class StoichiometryInventoryLinkManagerImplTest {
   public void deductStockSuccess() {
     StoichiometryInventoryLink original = new StoichiometryInventoryLink();
     original.setId(321L);
+    molecule.setActualAmount(10.0);
     original.setStoichiometryMolecule(molecule);
-    original.setSubSample(invSubSample);
-    original.setQuantity(new QuantityInfo(new BigDecimal("10"), RSUnitDef.MILLI_GRAM.getId()));
+    original.setInventoryRecord(invSubSample);
 
-    invSubSample.setQuantity(
-        new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.MILLI_GRAM.getId()));
+    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
 
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
@@ -292,13 +250,12 @@ public class StoichiometryInventoryLinkManagerImplTest {
   public void deductStockWithInsufficientStockReturnsErrorResult() {
     StoichiometryInventoryLink original = new StoichiometryInventoryLink();
     original.setId(321L);
+    molecule.setActualAmount(20.0);
     original.setStoichiometryMolecule(molecule);
-    original.setSubSample(invSubSample);
-    // current link uses 10 mg
-    original.setQuantity(new QuantityInfo(new BigDecimal("20"), RSUnitDef.MILLI_GRAM.getId()));
+    original.setInventoryRecord(invSubSample);
 
-    // SubSample has only 5 mg stock
-    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(5), RSUnitDef.MILLI_GRAM.getId()));
+    // SubSample has only 5 g stock
+    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(5), RSUnitDef.GRAM.getId()));
 
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
@@ -312,7 +269,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     assertEquals(1, result.getResults().size());
     assertTrue(!result.getResults().get(0).isSuccess());
     assertEquals(
-        "Insufficient stock to perform this action. Attempting to use 20 mg of stock amount 5 mg"
+        "Insufficient stock to perform this action. Attempting to use 20 g of stock amount 5 g"
             + " for SS300",
         result.getResults().get(0).getErrorMessage());
   }
@@ -324,8 +281,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setId(linkId);
     link.setStoichiometryMolecule(mol);
-    link.setSubSample(sub);
-    link.setQuantity(new QuantityInfo(new BigDecimal("10"), RSUnitDef.MILLI_GRAM.getId()));
+    link.setInventoryRecord(sub);
     return link;
   }
 
@@ -334,7 +290,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     // NotFoundException should return exception message in result
     StoichiometryMolecule mol1 = mock(StoichiometryMolecule.class);
     StoichiometryInventoryLink link1 = createMoleculeAndLink(101L, 1001L, mol1);
-    SubSample ss1 = (SubSample) link1.getInventoryRecord();
+    InventoryRecord ss1 = link1.getInventoryRecord();
     when(linkDao.getSafeNull(101L)).thenReturn(java.util.Optional.of(link1));
     when(moleculeManager.getDocContainingMolecule(mol1)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
@@ -345,7 +301,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     // IllegalArgumentException should return exception message in result
     StoichiometryMolecule mol2 = mock(StoichiometryMolecule.class);
     StoichiometryInventoryLink link2 = createMoleculeAndLink(102L, 1002L, mol2);
-    SubSample ss2 = (SubSample) link2.getInventoryRecord();
+    InventoryRecord ss2 = link2.getInventoryRecord();
     when(linkDao.getSafeNull(102L)).thenReturn(java.util.Optional.of(link2));
     when(moleculeManager.getDocContainingMolecule(mol2)).thenReturn(owningRecord);
     doThrow(new IllegalArgumentException("Molecule 2 Insufficient Stock"))
@@ -355,7 +311,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     // Other exceptions should return generic error message in result
     StoichiometryMolecule mol3 = mock(StoichiometryMolecule.class);
     StoichiometryInventoryLink link3 = createMoleculeAndLink(103L, 1003L, mol3);
-    SubSample ss3 = (SubSample) link3.getInventoryRecord();
+    InventoryRecord ss3 = link3.getInventoryRecord();
     when(linkDao.getSafeNull(103L)).thenReturn(java.util.Optional.of(link3));
     when(moleculeManager.getDocContainingMolecule(mol3)).thenReturn(owningRecord);
     doThrow(new RuntimeException("Internal error not returned to user"))

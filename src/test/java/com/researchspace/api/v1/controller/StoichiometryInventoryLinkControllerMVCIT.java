@@ -1,33 +1,34 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.stoichiometry.StockDeductionResult;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
-import com.researchspace.api.v1.model.stoichiometry.StoichiometryLinkQuantityUpdateRequest;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.DeltaType;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
-import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.StoichiometryManager;
-import java.math.BigDecimal;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,27 +59,32 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
 
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setStoichiometryMoleculeId(molecule.getId());
     req.setInventoryItemGlobalId(sample.getGlobalId());
-    req.setQuantity(BigDecimal.valueOf(1.23));
-    req.setUnitId(RSUnitDef.MILLI_GRAM.getId());
 
     // creation should create a new Stoichiometry revision
     long revisionBeforeCreateLink = getLatestStoichiometryRevisionId(molecule);
 
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(molecule.getStoichiometry().getId());
+    StoichiometryMoleculeUpdateDTO molUpdate =
+        com.researchspace.model.dtos.chemistry.StoichiometryMapper.toUpdateDTO(
+            com.researchspace.model.dtos.chemistry.StoichiometryMapper.moleculeToDTO(molecule));
+    molUpdate.setInventoryLink(req);
+    updateDTO.setMolecules(List.of(molUpdate));
+
     MvcResult createResult =
         mockMvc
             .perform(
-                createBuilderForPost(API_VERSION.ONE, apiKey, "/stoichiometry/link", user)
+                createBuilderForPut(API_VERSION.ONE, apiKey, "/stoichiometry", user)
+                    .param("stoichiometryId", molecule.getStoichiometry().getId().toString())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(mapper.writeValueAsBytes(req)))
-            .andExpect(status().isCreated())
+                    .content(mapper.writeValueAsBytes(updateDTO)))
+            .andExpect(status().isOk())
             .andReturn();
 
-    StoichiometryInventoryLinkDTO created =
-        getFromJsonResponseBody(createResult, StoichiometryInventoryLinkDTO.class);
-    assertEquals(molecule.getId(), created.getStoichiometryMoleculeId());
-    assertEquals(java.math.BigDecimal.valueOf(1.23), created.getQuantity().getNumericValue());
+    StoichiometryDTO stoich = getFromJsonResponseBody(createResult, StoichiometryDTO.class);
+    StoichiometryInventoryLinkDTO created = stoich.getMolecules().get(0).getInventoryLink();
+    assertNotNull(created);
 
     long latestRevision = getLatestStoichiometryRevisionId(molecule);
     assertTrue(latestRevision > revisionBeforeCreateLink);
@@ -96,150 +102,155 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
     StoichiometryMolecule molecule = createSingleMoleculeStoichiometry(user, "stoich get");
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
 
-    StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setStoichiometryMoleculeId(molecule.getId());
-    req.setInventoryItemGlobalId(sample.getGlobalId());
-    req.setQuantity(BigDecimal.valueOf(2.0));
-    req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
-
-    MvcResult createResult =
-        mockMvc
-            .perform(
-                createBuilderForPost(API_VERSION.ONE, apiKey, "/stoichiometry/link", user)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(mapper.writeValueAsBytes(req)))
-            .andExpect(status().isCreated())
-            .andReturn();
-
-    StoichiometryInventoryLinkDTO created =
-        getFromJsonResponseBody(createResult, StoichiometryInventoryLinkDTO.class);
+    StoichiometryInventoryLinkDTO created = createLink(user, apiKey, molecule, sample);
 
     MvcResult getResult =
         mockMvc
             .perform(
-                createBuilderForGet(
-                    API_VERSION.ONE, apiKey, "/stoichiometry/link/{id}", user, created.getId()))
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/stoichiometry", user)
+                    .param("stoichiometryId", molecule.getStoichiometry().getId().toString()))
             .andExpect(status().isOk())
             .andReturn();
+    StoichiometryDTO retrievedStoich = getFromJsonResponseBody(getResult, StoichiometryDTO.class);
     StoichiometryInventoryLinkDTO retrieved =
-        getFromJsonResponseBody(getResult, StoichiometryInventoryLinkDTO.class);
+        retrievedStoich.getMolecules().stream()
+            .filter(m -> m.getId().equals(molecule.getId()))
+            .findFirst()
+            .get()
+            .getInventoryLink();
+
     assertEquals(created.getId(), retrieved.getId());
-    assertEquals(
-        created.getQuantity().getNumericValue(), retrieved.getQuantity().getNumericValue());
-    assertEquals(created.getStoichiometryMoleculeId(), retrieved.getStoichiometryMoleculeId());
   }
 
   @Test
-  public void getNonExistentLinkThrows404() throws Exception {
+  public void getNonExistentStoichiometryThrows404() throws Exception {
     MvcResult res =
         mockMvc
             .perform(
-                createBuilderForGet(
-                    API_VERSION.ONE, apiKey, "/stoichiometry/link/{id}", user, 987654321L))
-            .andExpect(status().isNotFound())
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/stoichiometry", user)
+                    .param("stoichiometryId", "987654321"))
+            .andExpect(status().isInternalServerError())
             .andReturn();
-    String body = res.getResponse().getContentAsString();
-    assertTrue(body.contains("not found"));
   }
 
   @Test
-  public void updateQuantityUsedSuccess() throws Exception {
+  public void updateLinkTargetSuccess() throws Exception {
     StoichiometryMolecule molecule = createSingleMoleculeStoichiometry(user, "stoich update");
-    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    ApiSampleWithFullSubSamples sample1 = createBasicSampleForUser(user);
+    StoichiometryInventoryLinkDTO created = createLink(user, apiKey, molecule, sample1);
 
+    ApiSampleWithFullSubSamples sample2 = createBasicSampleForUser(user);
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setStoichiometryMoleculeId(molecule.getId());
-    req.setInventoryItemGlobalId(sample.getGlobalId());
-    req.setQuantity(BigDecimal.valueOf(1.0));
-    req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
+    req.setInventoryItemGlobalId(sample2.getGlobalId());
 
-    MvcResult createResult =
-        mockMvc
-            .perform(
-                createBuilderForPost(API_VERSION.ONE, apiKey, "/stoichiometry/link", user)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(mapper.writeValueAsBytes(req)))
-            .andExpect(status().isCreated())
-            .andReturn();
-    StoichiometryInventoryLinkDTO created =
-        getFromJsonResponseBody(createResult, StoichiometryInventoryLinkDTO.class);
-
-    StoichiometryLinkQuantityUpdateRequest upd = new StoichiometryLinkQuantityUpdateRequest();
-    upd.setStoichiometryLinkId(created.getId());
-    upd.setNewQuantity(new ApiQuantityInfo(BigDecimal.valueOf(9.5), RSUnitDef.MILLI_LITRE.getId()));
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(molecule.getStoichiometry().getId());
+    StoichiometryMoleculeUpdateDTO molUpdate =
+        com.researchspace.model.dtos.chemistry.StoichiometryMapper.toUpdateDTO(
+            com.researchspace.model.dtos.chemistry.StoichiometryMapper.moleculeToDTO(molecule));
+    molUpdate.setInventoryLink(req);
+    updateDTO.setMolecules(List.of(molUpdate));
 
     MvcResult updateResult =
         mockMvc
             .perform(
-                createBuilderForPut(API_VERSION.ONE, apiKey, "/stoichiometry/link", user)
+                createBuilderForPut(API_VERSION.ONE, apiKey, "/stoichiometry", user)
+                    .param("stoichiometryId", molecule.getStoichiometry().getId().toString())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(mapper.writeValueAsBytes(upd)))
+                    .content(mapper.writeValueAsBytes(updateDTO)))
             .andExpect(status().isOk())
             .andReturn();
-    StoichiometryInventoryLinkDTO updated =
-        getFromJsonResponseBody(updateResult, StoichiometryInventoryLinkDTO.class);
-    assertEquals(BigDecimal.valueOf(9.5), updated.getQuantity().getNumericValue());
+    StoichiometryDTO updatedStoich = getFromJsonResponseBody(updateResult, StoichiometryDTO.class);
+    StoichiometryInventoryLinkDTO updated = updatedStoich.getMolecules().get(0).getInventoryLink();
+    assertEquals(sample2.getGlobalId(), updated.getInventoryItemGlobalId());
   }
 
   @Test
-  public void updateQuantityUsedWithoutWritePermissionsThrows401() throws Exception {
+  public void updateLinkWithoutWritePermissionsThrows401() throws Exception {
     StoichiometryMolecule molecule = createSingleMoleculeStoichiometry(user, "stoich update 401");
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
-    StoichiometryInventoryLinkDTO created = createLink(user, apiKey, molecule, sample, 1.0);
+    StoichiometryInventoryLinkDTO created = createLink(user, apiKey, molecule, sample);
 
     User otherUser = createInitAndLoginAnyUser();
     String otherUserKey = createNewApiKeyForUser(otherUser);
 
-    StoichiometryLinkQuantityUpdateRequest upd = new StoichiometryLinkQuantityUpdateRequest();
-    upd.setStoichiometryLinkId(created.getId());
-    upd.setNewQuantity(new ApiQuantityInfo(BigDecimal.valueOf(2.0), 2));
+    StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
+    req.setInventoryItemGlobalId(sample.getGlobalId());
+
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(molecule.getStoichiometry().getId());
+    StoichiometryMoleculeUpdateDTO molUpdate =
+        com.researchspace.model.dtos.chemistry.StoichiometryMapper.toUpdateDTO(
+            com.researchspace.model.dtos.chemistry.StoichiometryMapper.moleculeToDTO(molecule));
+    molUpdate.setInventoryLink(req);
+    updateDTO.setMolecules(List.of(molUpdate));
 
     mockMvc
         .perform(
-            createBuilderForPut(API_VERSION.ONE, otherUserKey, "/stoichiometry/link", otherUser)
+            createBuilderForPut(API_VERSION.ONE, otherUserKey, "/stoichiometry", otherUser)
+                .param("stoichiometryId", molecule.getStoichiometry().getId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsBytes(upd)))
-        .andExpect(status().isNotFound());
-
-    mockMvc
-        .perform(createBuilderForDelete(apiKey, "/stoichiometry/link/{id}", user, created.getId()))
-        .andExpect(status().isOk());
+                .content(mapper.writeValueAsBytes(updateDTO)))
+        .andExpect(status().isUnauthorized());
   }
 
   @Test
   public void deleteSuccess() throws Exception {
     StoichiometryMolecule molecule = createSingleMoleculeStoichiometry(user, "stoich delete");
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
-    StoichiometryInventoryLinkDTO created = createLink(user, apiKey, molecule, sample, 4.0);
+    StoichiometryInventoryLinkDTO created = createLink(user, apiKey, molecule, sample);
+
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(molecule.getStoichiometry().getId());
+    StoichiometryMoleculeUpdateDTO molUpdate =
+        com.researchspace.model.dtos.chemistry.StoichiometryMapper.toUpdateDTO(
+            com.researchspace.model.dtos.chemistry.StoichiometryMapper.moleculeToDTO(molecule));
+    molUpdate.setInventoryLink(null);
+    updateDTO.setMolecules(List.of(molUpdate));
 
     mockMvc
-        .perform(createBuilderForDelete(apiKey, "/stoichiometry/link/{id}", user, created.getId()))
+        .perform(
+            createBuilderForPut(API_VERSION.ONE, apiKey, "/stoichiometry", user)
+                .param("stoichiometryId", molecule.getStoichiometry().getId().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsBytes(updateDTO)))
         .andExpect(status().isOk());
 
     MvcResult afterDelete =
         mockMvc
             .perform(
-                createBuilderForGet(
-                    API_VERSION.ONE, apiKey, "/stoichiometry/link/{id}", user, created.getId()))
-            .andExpect(status().isNotFound())
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/stoichiometry", user)
+                    .param("stoichiometryId", molecule.getStoichiometry().getId().toString()))
+            .andExpect(status().isOk())
             .andReturn();
-    assertTrue(afterDelete.getResponse().getContentAsString().contains("not found"));
+    StoichiometryDTO retrievedStoich = getFromJsonResponseBody(afterDelete, StoichiometryDTO.class);
+    assertNull(retrievedStoich.getMolecules().get(0).getInventoryLink());
   }
 
   @Test
   public void deleteWithoutWritePermissionsThrows401() throws Exception {
     StoichiometryMolecule molecule = createSingleMoleculeStoichiometry(user, "stoich delete 401");
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
-    StoichiometryInventoryLinkDTO created = createLink(user, apiKey, molecule, sample, 1.0);
+    StoichiometryInventoryLinkDTO created = createLink(user, apiKey, molecule, sample);
 
     User attacker = createInitAndLoginAnyUser();
     String attackerKey = createNewApiKeyForUser(attacker);
 
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(molecule.getStoichiometry().getId());
+    StoichiometryMoleculeUpdateDTO molUpdate =
+        com.researchspace.model.dtos.chemistry.StoichiometryMapper.toUpdateDTO(
+            com.researchspace.model.dtos.chemistry.StoichiometryMapper.moleculeToDTO(molecule));
+    molUpdate.setInventoryLink(null);
+    updateDTO.setMolecules(List.of(molUpdate));
+
     mockMvc
         .perform(
-            createBuilderForDelete(
-                attackerKey, "/stoichiometry/link/{id}", attacker, created.getId()))
-        .andExpect(status().isNotFound());
+            createBuilderForPut(API_VERSION.ONE, attackerKey, "/stoichiometry", attacker)
+                .param("stoichiometryId", molecule.getStoichiometry().getId().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsBytes(updateDTO)))
+        .andExpect(status().isUnauthorized());
   }
 
   private ElementalAnalysisDTO createSimpleAnalysis() {
@@ -297,31 +308,43 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
       User owner,
       String ownerApiKey,
       StoichiometryMolecule molecule,
-      ApiSampleWithFullSubSamples sample,
-      double quantity)
+      ApiSampleWithFullSubSamples sample)
       throws Exception {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setStoichiometryMoleculeId(molecule.getId());
     req.setInventoryItemGlobalId(sample.getGlobalId());
-    req.setQuantity(BigDecimal.valueOf(quantity));
-    req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
+
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(molecule.getStoichiometry().getId());
+    StoichiometryMoleculeUpdateDTO molUpdate =
+        com.researchspace.model.dtos.chemistry.StoichiometryMapper.toUpdateDTO(
+            com.researchspace.model.dtos.chemistry.StoichiometryMapper.moleculeToDTO(molecule));
+    molUpdate.setInventoryLink(req);
+    updateDTO.setMolecules(List.of(molUpdate));
 
     MvcResult createResult =
         mockMvc
             .perform(
-                createBuilderForPost(API_VERSION.ONE, ownerApiKey, "/stoichiometry/link", owner)
+                createBuilderForPut(API_VERSION.ONE, ownerApiKey, "/stoichiometry", owner)
+                    .param("stoichiometryId", molecule.getStoichiometry().getId().toString())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(mapper.writeValueAsBytes(req)))
-            .andExpect(status().isCreated())
+                    .content(mapper.writeValueAsBytes(updateDTO)))
+            .andExpect(status().isOk())
             .andReturn();
-    return getFromJsonResponseBody(createResult, StoichiometryInventoryLinkDTO.class);
+    StoichiometryDTO stoich = getFromJsonResponseBody(createResult, StoichiometryDTO.class);
+    return stoich.getMolecules().stream()
+        .filter(m -> m.getId().equals(molecule.getId()))
+        .findFirst()
+        .get()
+        .getInventoryLink();
   }
 
   @Test
   public void deductStockSuccess() throws Exception {
     StoichiometryMolecule molecule = createSingleMoleculeStoichiometry(user, "stoich deduct");
+    molecule.setActualAmount(1.0);
+    stoichiometryManager.save(molecule.getStoichiometry());
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
-    StoichiometryInventoryLinkDTO link = createLink(user, apiKey, molecule, sample, 1.0);
+    StoichiometryInventoryLinkDTO link = createLink(user, apiKey, molecule, sample);
 
     MvcResult result =
         mockMvc
@@ -342,20 +365,23 @@ public class StoichiometryInventoryLinkControllerMVCIT extends API_MVC_TestBase 
     MvcResult getResult =
         mockMvc
             .perform(
-                createBuilderForGet(
-                    API_VERSION.ONE, apiKey, "/stoichiometry/link/{id}", user, link.getId()))
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/stoichiometry", user)
+                    .param("stoichiometryId", molecule.getStoichiometry().getId().toString()))
             .andExpect(status().isOk())
             .andReturn();
+    StoichiometryDTO retrievedStoich = getFromJsonResponseBody(getResult, StoichiometryDTO.class);
     StoichiometryInventoryLinkDTO retrieved =
-        getFromJsonResponseBody(getResult, StoichiometryInventoryLinkDTO.class);
+        retrievedStoich.getMolecules().get(0).getInventoryLink();
     assertTrue(retrieved.isStockDeducted());
   }
 
   @Test
   public void deductStockPartialSuccess() throws Exception {
     StoichiometryMolecule molecule = createSingleMoleculeStoichiometry(user, "stoich partial");
+    molecule.setActualAmount(1.0);
+    stoichiometryManager.save(molecule.getStoichiometry());
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
-    StoichiometryInventoryLinkDTO link = createLink(user, apiKey, molecule, sample, 1.0);
+    StoichiometryInventoryLinkDTO link = createLink(user, apiKey, molecule, sample);
 
     MvcResult result =
         mockMvc

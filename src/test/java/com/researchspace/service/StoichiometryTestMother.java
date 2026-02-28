@@ -8,8 +8,6 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
-import com.researchspace.model.units.RSUnitDef;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,12 +39,9 @@ public class StoichiometryTestMother {
   }
 
   public static StoichiometryInventoryLinkRequest createStoichiometryInventoryLinkRequest(
-      Long stoichiometryMoleculeID, String sampleGlobalId) {
+      String sampleGlobalId) {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setStoichiometryMoleculeId(stoichiometryMoleculeID);
     req.setInventoryItemGlobalId(sampleGlobalId);
-    req.setQuantity(BigDecimal.valueOf(2.5));
-    req.setUnitId(RSUnitDef.MILLI_LITRE.getId());
     return req;
   }
 

@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos.chemistry;
 
+import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,4 +24,5 @@ public class StoichiometryMoleculeUpdateDTO {
   private Double actualYield;
   private Boolean limitingReagent;
   private String notes;
+  private StoichiometryInventoryLinkRequest inventoryLink;
 }

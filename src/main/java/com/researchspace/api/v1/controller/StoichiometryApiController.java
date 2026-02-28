@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.StoichiometryApi;
+import com.researchspace.api.v1.model.stoichiometry.StockDeductionResult;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
@@ -9,8 +10,10 @@ import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.chemistry.StoichiometryException;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @ApiController
@@ -18,12 +21,16 @@ public class StoichiometryApiController extends BaseApiController implements Sto
 
   private final StoichiometryService stoichiometryService;
   private final AuditManager auditManager;
+  private final StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager;
 
   @Autowired
   public StoichiometryApiController(
-      StoichiometryService stoichiometryService, AuditManager auditManager) {
+      StoichiometryService stoichiometryService,
+      AuditManager auditManager,
+      StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager) {
     this.stoichiometryService = stoichiometryService;
     this.auditManager = auditManager;
+    this.stoichiometryInventoryLinkManager = stoichiometryInventoryLinkManager;
   }
 
   @Override
@@ -72,5 +79,10 @@ public class StoichiometryApiController extends BaseApiController implements Sto
   public Boolean deleteStoichiometry(long stoichiometryId, User user) {
     stoichiometryService.delete(stoichiometryId, user);
     return Boolean.TRUE;
+  }
+
+  @Override
+  public StockDeductionResult deductStock(List<Long> linkIds, User user) {
+    return stoichiometryInventoryLinkManager.deductStock(linkIds, user);
   }
 }

@@ -2872,10 +2872,6 @@ paths:
           type: integer
           format: int64
           description: The ID of the chemical reaction. If provided, the stoichiometry will be initialized from this reaction.
-        - name: revision
-          in: query
-          required: false
-          type: integer
       responses:
         '200':
           description: Stoichiometry
@@ -2952,7 +2948,15 @@ paths:
                 example: "Error retrieving stoichiometry."
     put:
       summary: Update stoichiometry.
-      description: Values shown in the model are updatable. Note that inventory links are managed separately and should be updated using the /stoichiometry/link endpoint.
+      description: >
+        Update stoichiometry molecules and inventory links.<br><br>
+        <b>Molecules</b><br>
+        To create a molecule, include it in the `molecules` list without an `id`.<br>
+        To update a molecule, include its `id` and all original and updated fields. Omission of fields will set them to null.<br>
+        To delete a molecule, omit it from the `molecules` list.<br><br>
+        <b>Inventory links</b><br>
+        To create an inventory link for a molecule include the link object `"inventoryLink": {"inventoryItemGlobalId": "SS123"}` <br>
+        To delete an inventory link, set `inventoryLink` to `null`.
       tags:
         - Chemistry
       parameters:
@@ -3056,97 +3060,6 @@ paths:
                 type: string
                 example: "Couldn't retrieve molecule info for provided structure"
 
-  /stoichiometry/link:
-    post:
-      summary: Create a link between a stoichiometry molecule and an Inventory Container, Sample or Subsample
-      tags:
-        - Chemistry
-      description: |
-        Creates a link between a stoichiometry molecule and an Inventory item.
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: '#/definitions/StoichiometryInventoryLinkRequest'
-      responses:
-        '201':
-          description: Created link
-          schema:
-            $ref: '#/definitions/StoichiometryInventoryLinkDTO'
-        '401':
-          description: Authentication error or insufficient permissions
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "User does not have write permissions on document containing stoichiometry"
-        '404':
-          description: Stoichiometry molecule or inventory item not found
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Stoichiometry molecule or inventory item not found"
-        '422':
-          description: Unprocessable request. Examples include linking a molecule that already has a link, attempting to link to a Sample Template, or missing required quantity/unit values.
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Stoichiometry molecule already has an inventory link"
-        '500':
-          description: An unexpected error occurred while creating the link
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Error creating link"
-    put:
-      summary: Update quantity used for a stoichiometry-inventory link
-      tags:
-        - Chemistry
-      description: |
-        Updates the quantity used on a stoichiometry–inventory link.
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            $ref: '#/definitions/StoichiometryLinkQuantityUpdateRequest'
-      responses:
-        '200':
-          description: Updated link
-          schema:
-            $ref: '#/definitions/StoichiometryInventoryLinkDTO'
-        '401':
-          description: Authentication error or insufficient permissions
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "User does not have write permissions on document containing stoichiometry"
-        '404':
-          description: Link not found
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Link not found"
-        '500':
-          description: An unexpected error occurred while updating the link
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Error updating link"
   /stoichiometry/link/deductStock:
     post:
       summary: Batch deduct stock for a list of stoichiometry-inventory links
@@ -3154,7 +3067,7 @@ paths:
         - Chemistry
       description: |
         Attempts to deduct stock for each stoichiometry-inventory link ID provided. This is a batch operation that can partially succeed.
-        For each link, if it points to a SubSample and has not been fully deducted, the specified quantity is subtracted from the SubSample stock.
+        For each link, if it points to a SubSample and has not been fully deducted, the SubSample stock is reduced according to the molecule amount in the stoichiometry.
       parameters:
         - in: body
           name: linkIds
@@ -3186,89 +3099,6 @@ paths:
               message:
                 type: string
                 example: "An unexpected error occurred"
-
-  /stoichiometry/link/{id}:
-    get:
-      summary: Get a stoichiometry-inventory link by id
-      tags:
-        - Chemistry
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-          format: int64
-      responses:
-        '200':
-          description: The link
-          schema:
-            $ref: '#/definitions/StoichiometryInventoryLinkDTO'
-        '401':
-          description: Authentication error or insufficient permissions
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "User does not have read permissions on document containing stoichiometry"
-        '404':
-          description: Link not found
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Link not found"
-        '500':
-          description: An unexpected error occurred while retrieving the link
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Error retrieving link"
-    delete:
-      summary: Delete a stoichiometry-inventory link
-      tags:
-        - Chemistry
-      description: |
-        Deletes the link. If stock was deducted earlier (when `stockDeducted=true`), deleting the link does not
-        replenish stock.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-          format: int64
-      responses:
-        '200':
-          description: Deletion succeeded
-          schema:
-            type: boolean
-        '401':
-          description: Authentication error or insufficient permissions
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "User does not have write permissions on document containing stoichiometry"
-        '404':
-          description: Link not found
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Link not found"
-        '500':
-          description: An unexpected error occurred while deleting the link
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "Error deleting link"
 
   /status:
     get:
@@ -3609,12 +3439,6 @@ definitions:
         type: string
         description: Global identifier of the inventory item (e.g. SA123, SS456, IC789)
         example: 'SS456'
-      stoichiometryMoleculeId:
-        type: integer
-        format: int64
-        example: 567
-      quantity:
-        $ref: '#/definitions/QuantityInfo'
       stockDeducted:
         type: boolean
         description: |-
@@ -3624,10 +3448,6 @@ definitions:
     example:
       id: 1234
       inventoryItemGlobalId: 'SS456'
-      stoichiometryMoleculeId: 567
-      quantity:
-        numericValue: 10.5
-        unitId: 6
       stockDeducted: false
   StoichiometryInventoryLinkRequest:
     description: >-
@@ -3635,51 +3455,14 @@ definitions:
       Allowed inventory targets are Containers, Samples and Subsamples. Linking to Sample Templates is not permitted.
     required:
       - inventoryItemGlobalId
-      - stoichiometryMoleculeId
-      - quantity
-      - unitId
     properties:
       inventoryItemGlobalId:
         type: string
         description: >-
           Global identifier of the target inventory item (allowed prefixes: IC for Containers, SA for Samples, SS for Subsamples; e.g. IC789, SA123, SS456). Sample Templates are not allowed.
         example: 'SS456'
-      stoichiometryMoleculeId:
-        type: integer
-        format: int64
-        example: 567
-      quantity:
-        type: number
-        format: double
-        description: Numeric value of the quantity used
-        example: 10.5
-      unitId:
-        type: integer
-        format: int32
-        description: Unit identifier. Options can be retrieved from /units endpoint.
-        example: 6
     example:
       inventoryItemGlobalId: 'SS456'
-      stoichiometryMoleculeId: 567
-      quantity: 10.5
-      unitId: 6
-  StoichiometryLinkQuantityUpdateRequest:
-    description: Request to update quantity used for a stoichiometry-inventory link
-    required:
-      - stoichiometryLinkId
-      - newQuantity
-    properties:
-      stoichiometryLinkId:
-        type: integer
-        format: int64
-        example: 1234
-      newQuantity:
-        $ref: '#/definitions/QuantityInfo'
-    example:
-      stoichiometryLinkId: 1234
-      newQuantity:
-        numericValue: 15.0
-        unitId: 6
   StockDeductionResult:
     description: Result of a batch stock deduction operation
     properties:
@@ -4961,6 +4744,11 @@ definitions:
       actualYield: 95.0
       limitingReagent: true
       notes: 'Pure glacial acetic acid'
+      inventoryLink:
+        id: 1234
+        inventoryItemGlobalId: 'SS456'
+        stoichiometryMoleculeId: 567
+        stockDeducted: false
   StoichiometryDTO:
     description: Stoichiometry data for a reaction or record
     properties:
@@ -4995,15 +4783,32 @@ definitions:
         - id: 567
           role: REACTANT
           name: 'Acetic Acid'
+          formula: 'C2H4O2'
           smiles: 'CC(=O)O'
           molecularWeight: 60.05
           coefficient: 1.0
+          mass: 6.005
+          actualAmount: 0.1
+          actualYield: 95.0
+          limitingReagent: true
+          notes: 'Pure glacial acetic acid'
+          inventoryLink:
+            id: 1234
+            inventoryItemGlobalId: 'SS456'
+            stockDeducted: false
         - id: 568
           role: PRODUCT
           name: 'Ethyl Acetate'
+          formula: 'C4H8O2'
           smiles: 'CC(=O)OCC'
           molecularWeight: 88.11
           coefficient: 1.0
+          mass: 8.811
+          actualAmount: 0.1
+          actualYield: 95.0
+          limitingReagent: false
+          notes: 'Main product'
+          inventoryLink: null
   StoichiometryMoleculeUpdateDTO:
     description: Update payload for a molecule within stoichiometry
     properties:
@@ -5045,12 +4850,16 @@ definitions:
       notes:
         type: string
         example: 'Updated amount'
+      inventoryLink:
+        $ref: '#/definitions/StoichiometryInventoryLinkRequest'
     example:
       id: 567
       coefficient: 2.0
       smiles: 'CC(=O)O'
       name: 'Acetic Acid'
       role: REACTANT
+      inventoryLink:
+        inventoryItemGlobalId: 'SA123'
   StoichiometryUpdateDTO:
     description: Update payload for stoichiometry
     properties:
@@ -5066,9 +4875,22 @@ definitions:
       id: 234
       molecules:
         - id: 567
-          coefficient: 2.0
+          coefficient: 1.5
+          limitingReagent: true
+          notes: 'Increased reagent amount'
+          inventoryLink:
+            inventoryItemGlobalId: 'SA123'
         - id: 568
-          coefficient: 2.0
+          coefficient: 1.0
+          actualYield: 92.5
+          notes: 'Updated yield after experiment'
+          inventoryLink: null
+        - name: 'New Reactant'
+          role: REACTANT
+          smiles: 'C1=CC=CC=C1'
+          coefficient: 1.0
+          inventoryLink:
+            inventoryItemGlobalId: 'SS789'
 
   MoveRequest:
     description: Request to move a document or notebook to a target folder
