@@ -67,7 +67,7 @@ public class S3UtilitiesITTest {
 
   @After
   public void tearDown() {
-    // Clean up test uploads after every test
+    // Close S3 client and presigner resources created for these tests
     testS3Client.close();
     testS3Presigner.close();
   }
