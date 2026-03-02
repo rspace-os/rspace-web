@@ -2956,6 +2956,7 @@ paths:
         To delete a molecule, omit it from the `molecules` list.<br><br>
         <b>Inventory links</b><br>
         To create an inventory link for a molecule include the link object `"inventoryLink": {"inventoryItemGlobalId": "SS123"}` <br>
+        To replace a link, use a different global id (this will reset the stockDeducted status): `"inventoryLink": {"inventoryItemGlobalId": "SS456"}` <br>
         To delete an inventory link, set `inventoryLink` to `null`.
       tags:
         - Chemistry
