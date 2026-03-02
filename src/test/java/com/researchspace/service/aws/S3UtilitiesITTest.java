@@ -47,10 +47,6 @@ public class S3UtilitiesITTest {
 
   private File archiveToExport;
 
-  private S3Client testS3Client;
-
-  private S3Presigner testS3Presigner;
-
   @Before
   public void setup() {
     s3Utilities = new S3UtilitiesImpl();
@@ -61,15 +57,6 @@ public class S3UtilitiesITTest {
     s3Utilities.init();
 
     archiveToExport = RSpaceTestUtils.getResource("archives/demo-export2.zip");
-    testS3Client = S3Client.builder().region(Region.of(REGION)).build();
-    testS3Presigner = S3Presigner.builder().region(Region.of(REGION)).build();
-  }
-
-  @After
-  public void tearDown() {
-    // Close S3 client and presigner resources created for these tests
-    testS3Client.close();
-    testS3Presigner.close();
   }
 
   @Test
