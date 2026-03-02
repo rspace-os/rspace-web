@@ -40,7 +40,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Slf4j
 public class DSWClient {
 
-  public static final String DSW_CONFIGURED_SERVERS = "DSW_CONFIGURED_SERVERS";
   public static final String DSW_URL = "DSW_URL";
   public static final String DSW_APIKEY = "DSW_APIKEY";
   public static final String DSW_ALIAS = "DSW_ALIAS";
