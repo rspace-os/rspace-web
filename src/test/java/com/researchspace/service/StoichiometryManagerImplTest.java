@@ -744,7 +744,7 @@ public class StoichiometryManagerImplTest {
   }
 
   @Test
-  public void whenUpdateWithDifferentInventoryLinkTarget_thenReplacesLink() {
+  public void whenUpdateWithDifferentInventoryLinkTarget_thenThrowsException() {
     Long stoichiometryId = 1L;
     Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L, record);
     StoichiometryMolecule mol = existingStoichiometry.getMolecules().get(0);
@@ -768,12 +768,8 @@ public class StoichiometryManagerImplTest {
     updateDTO.setMolecules(List.of(molUpdate));
 
     when(stoichiometryDao.get(stoichiometryId)).thenReturn(existingStoichiometry);
-    when(stoichiometryInventoryLinkManager.createLink(eq(mol.getId()), eq(linkReq), eq(user)))
-        .thenReturn(new StoichiometryInventoryLink());
 
-    Stoichiometry updated = stoichiometryManager.update(updateDTO, user);
-
-    verify(stoichiometryInventoryLinkManager).createLink(mol.getId(), linkReq, user);
-    assertEquals(updatedId, updated.getMolecules().get(0).getInventoryLink().getInventoryRecord().getGlobalIdentifier());
+    assertThrows(
+        StoichiometryException.class, () -> stoichiometryManager.update(updateDTO, user));
   }
 }
