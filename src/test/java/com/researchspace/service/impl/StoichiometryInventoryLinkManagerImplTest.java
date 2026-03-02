@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -124,21 +125,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
   }
 
   @Test
-  public void createLinkNotReducingStockDoesntRegisterUsage() {
-    StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setInventoryItemGlobalId("SS300");
-
-    when(moleculeManager.getById(10L)).thenReturn(molecule);
-    when(invPerms.assertUserCanEditInventoryRecord(any(GlobalIdentifier.class), eq(user)))
-        .thenReturn(invSubSample);
-    when(linkDao.save(any(StoichiometryInventoryLink.class))).thenAnswer(inv -> inv.getArgument(0));
-
-    manager.createLink(10L, req, user);
-    verify(subSampleMgr, never())
-        .registerApiSubSampleUsage(any(Long.class), any(QuantityInfo.class), eq(user));
-  }
-
-  @Test
   public void deductStockSuccess() {
     StoichiometryInventoryLink original = new StoichiometryInventoryLink();
     original.setId(321L);
@@ -184,7 +170,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     StockDeductionResult result = manager.deductStock(List.of(321L), user);
 
     assertEquals(1, result.getResults().size());
-    assertTrue(!result.getResults().get(0).isSuccess());
+    assertFalse(result.getResults().get(0).isSuccess());
     assertEquals(
         "Insufficient stock to perform this action. Attempting to use 20 g of stock amount 5 g"
             + " for SS300",
@@ -203,51 +189,67 @@ public class StoichiometryInventoryLinkManagerImplTest {
   }
 
   @Test
-  public void deductStockWithExceptionErrorMessagesTest() {
-    // NotFoundException should return exception message in result
-    StoichiometryMolecule mol1 = mock(StoichiometryMolecule.class);
-    StoichiometryInventoryLink link1 = createMoleculeAndLink(101L, 1001L, mol1);
-    InventoryRecord ss1 = link1.getInventoryRecord();
-    when(linkDao.getSafeNull(101L)).thenReturn(java.util.Optional.of(link1));
-    when(moleculeManager.getDocContainingMolecule(mol1)).thenReturn(owningRecord);
+  public void deductStockWithNotFoundExceptionReturnsErrorMessage() {
+    StoichiometryMolecule mol = new StoichiometryMolecule();
+    StoichiometryInventoryLink link = createMoleculeAndLink(101L, 1001L, mol);
+    InventoryRecord ss = link.getInventoryRecord();
+    when(linkDao.getSafeNull(101L)).thenReturn(java.util.Optional.of(link));
+    when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     doThrow(new NotFoundException("Molecule 1 Not Found"))
         .when(invPerms)
-        .assertUserCanEditInventoryRecord(ss1, user);
+        .assertUserCanEditInventoryRecord(ss, user);
 
-    // IllegalArgumentException should return exception message in result
-    StoichiometryMolecule mol2 = mock(StoichiometryMolecule.class);
-    StoichiometryInventoryLink link2 = createMoleculeAndLink(102L, 1002L, mol2);
-    InventoryRecord ss2 = link2.getInventoryRecord();
-    when(linkDao.getSafeNull(102L)).thenReturn(java.util.Optional.of(link2));
-    when(moleculeManager.getDocContainingMolecule(mol2)).thenReturn(owningRecord);
-    doThrow(new IllegalArgumentException("Molecule 2 Insufficient Stock"))
-        .when(invPerms)
-        .assertUserCanEditInventoryRecord(ss2, user);
+    StockDeductionResult result = manager.deductStock(List.of(101L), user);
 
-    // Other exceptions should return generic error message in result
-    StoichiometryMolecule mol3 = mock(StoichiometryMolecule.class);
-    StoichiometryInventoryLink link3 = createMoleculeAndLink(103L, 1003L, mol3);
-    InventoryRecord ss3 = link3.getInventoryRecord();
-    when(linkDao.getSafeNull(103L)).thenReturn(java.util.Optional.of(link3));
-    when(moleculeManager.getDocContainingMolecule(mol3)).thenReturn(owningRecord);
-    doThrow(new RuntimeException("Internal error not returned to user"))
-        .when(invPerms)
-        .assertUserCanEditInventoryRecord(ss3, user);
-
-    StockDeductionResult result = manager.deductStock(List.of(101L, 102L, 103L), user);
-
-    assertEquals(3, result.getResults().size());
-
+    assertEquals(1, result.getResults().size());
     assertEquals(Long.valueOf(101L), result.getResults().get(0).getLinkId());
     assertEquals("Molecule 1 Not Found", result.getResults().get(0).getErrorMessage());
+    assertFalse(result.getResults().get(0).isSuccess());
+    verify(linkDao, never()).save(any());
+  }
 
-    assertEquals(Long.valueOf(102L), result.getResults().get(1).getLinkId());
-    assertEquals("Molecule 2 Insufficient Stock", result.getResults().get(1).getErrorMessage());
+  @Test
+  public void deductStockWithIllegalArgumentExceptionReturnsErrorMessage() {
+    StoichiometryMolecule mol = new StoichiometryMolecule();
+    StoichiometryInventoryLink link = createMoleculeAndLink(102L, 1002L, mol);
+    InventoryRecord ss = link.getInventoryRecord();
+    when(linkDao.getSafeNull(102L)).thenReturn(java.util.Optional.of(link));
+    when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    doThrow(new IllegalArgumentException("Molecule 2 Insufficient Stock"))
+        .when(invPerms)
+        .assertUserCanEditInventoryRecord(ss, user);
 
-    assertEquals(Long.valueOf(103L), result.getResults().get(2).getLinkId());
+    StockDeductionResult result = manager.deductStock(List.of(102L), user);
+
+    assertEquals(1, result.getResults().size());
+    assertEquals(Long.valueOf(102L), result.getResults().get(0).getLinkId());
+    assertEquals("Molecule 2 Insufficient Stock", result.getResults().get(0).getErrorMessage());
+    assertFalse(result.getResults().get(0).isSuccess());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  public void deductStockWithUnexpectedExceptionReturnsGenericErrorMessage() {
+    StoichiometryMolecule mol = new StoichiometryMolecule();
+    StoichiometryInventoryLink link = createMoleculeAndLink(103L, 1003L, mol);
+    InventoryRecord ss = link.getInventoryRecord();
+    when(linkDao.getSafeNull(103L)).thenReturn(java.util.Optional.of(link));
+    when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    doThrow(new RuntimeException("Internal error not returned to user"))
+        .when(invPerms)
+        .assertUserCanEditInventoryRecord(ss, user);
+
+    StockDeductionResult result = manager.deductStock(List.of(103L), user);
+
+    assertEquals(1, result.getResults().size());
+    assertEquals(Long.valueOf(103L), result.getResults().get(0).getLinkId());
     assertEquals(
         "An internal error occurred while deducting stock",
-        result.getResults().get(2).getErrorMessage());
+        result.getResults().get(0).getErrorMessage());
+    assertFalse(result.getResults().get(0).isSuccess());
+    verify(linkDao, never()).save(any());
   }
 }

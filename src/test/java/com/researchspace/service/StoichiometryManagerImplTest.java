@@ -72,7 +72,19 @@ public class StoichiometryManagerImplTest {
     user = TestFactory.createAnyUser("testUser");
     record = TestFactory.createAnyRecord(user);
     when(stoichiometryDao.save(stoichiometryCaptor.capture()))
-        .thenAnswer(invocation -> invocation.getArgument(0, Stoichiometry.class));
+        .thenAnswer(
+            invocation -> {
+              Stoichiometry s = invocation.getArgument(0, Stoichiometry.class);
+              if (s.getMolecules() != null) {
+                long idCounter = 100L;
+                for (StoichiometryMolecule m : s.getMolecules()) {
+                  if (m.getId() == null) {
+                    m.setId(idCounter++);
+                  }
+                }
+              }
+              return s;
+            });
   }
 
   @Test
@@ -487,21 +499,6 @@ public class StoichiometryManagerImplTest {
     when(rsChemElementManager.save(any(RSChemElement.class), any(User.class)))
         .thenReturn(newMolecule);
 
-    when(stoichiometryDao.save(any(Stoichiometry.class)))
-        .thenAnswer(
-            invocation -> {
-              Stoichiometry s = invocation.getArgument(0);
-              if (s.getMolecules() != null) {
-                long idCounter = 100L;
-                for (StoichiometryMolecule m : s.getMolecules()) {
-                  if (m.getId() == null) {
-                    m.setId(idCounter++);
-                  }
-                }
-              }
-              return s;
-            });
-
     stoichiometryManager.copy(sourceParentReactionId, targetParentReaction, user);
 
     verify(stoichiometryDao, times(4)).save(stoichiometryCaptor.capture());
@@ -555,21 +552,6 @@ public class StoichiometryManagerImplTest {
 
     when(rsChemElementManager.save(any(RSChemElement.class), any(User.class)))
         .thenReturn(createRSChemElement(999L));
-
-    when(stoichiometryDao.save(any(Stoichiometry.class)))
-        .thenAnswer(
-            invocation -> {
-              Stoichiometry s = invocation.getArgument(0);
-              if (s.getMolecules() != null) {
-                long idCounter = 1000L;
-                for (StoichiometryMolecule m : s.getMolecules()) {
-                  if (m.getId() == null) {
-                    m.setId(idCounter++);
-                  }
-                }
-              }
-              return s;
-            });
 
     stoichiometryManager.copy(sourceParentReactionId, targetParentReaction, user);
 
@@ -706,11 +688,10 @@ public class StoichiometryManagerImplTest {
             .notes("Test notes")
             .build();
 
-    StoichiometryUpdateDTO result = StoichiometryUpdateDTO.builder()
+    return StoichiometryUpdateDTO.builder()
         .id(id)
         .molecules(Collections.singletonList(molecule))
         .build();
-    return result;
   }
 
   @Test
@@ -763,7 +744,7 @@ public class StoichiometryManagerImplTest {
   }
 
   @Test
-  public void whenUpdateWithDifferentInventoryLinkTarget_thenThrowsException() {
+  public void whenUpdateWithDifferentInventoryLinkTarget_thenReplacesLink() {
     Long stoichiometryId = 1L;
     Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L, record);
     StoichiometryMolecule mol = existingStoichiometry.getMolecules().get(0);
@@ -778,7 +759,8 @@ public class StoichiometryManagerImplTest {
     updateDTO.setId(stoichiometryId);
 
     StoichiometryInventoryLinkRequest linkReq = new StoichiometryInventoryLinkRequest();
-    linkReq.setInventoryItemGlobalId("SA200"); // Different target
+    String updatedId = "SA200";
+    linkReq.setInventoryItemGlobalId(updatedId);
 
     StoichiometryMoleculeUpdateDTO molUpdate = new StoichiometryMoleculeUpdateDTO();
     molUpdate.setId(mol.getId());
@@ -786,7 +768,12 @@ public class StoichiometryManagerImplTest {
     updateDTO.setMolecules(List.of(molUpdate));
 
     when(stoichiometryDao.get(stoichiometryId)).thenReturn(existingStoichiometry);
+    when(stoichiometryInventoryLinkManager.createLink(eq(mol.getId()), eq(linkReq), eq(user)))
+        .thenReturn(new StoichiometryInventoryLink());
 
-    assertThrows(StoichiometryException.class, () -> stoichiometryManager.update(updateDTO, user));
+    Stoichiometry updated = stoichiometryManager.update(updateDTO, user);
+
+    verify(stoichiometryInventoryLinkManager).createLink(mol.getId(), linkReq, user);
+    assertEquals(updatedId, updated.getMolecules().get(0).getInventoryLink().getInventoryRecord().getGlobalIdentifier());
   }
 }

@@ -353,10 +353,12 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
           .getInventoryLink()
           .getConnectedRecordGlobalIdentifier()
           .equals(linkRequest.getInventoryItemGlobalId())) {
-        // disallow update to maintain stockDeducted flag logic
-        throw new StoichiometryException(
-            "Updating the inventory link target is not supported. Please remove the existing link"
-                + " first.");
+        // If the target is different, replace the existing link.
+        // By setting the link to null, the orphanRemoval = true property on
+        // StoichiometryMolecule's inventoryLink will delete the old link.
+        molecule.setInventoryLink(null);
+        molecule.setInventoryLink(
+            stoichiometryInventoryLinkManager.createLink(molecule.getId(), linkRequest, user));
       }
     }
   }

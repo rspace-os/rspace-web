@@ -2,7 +2,6 @@ package com.researchspace.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
 
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
@@ -24,7 +23,6 @@ import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import javax.ws.rs.NotFoundException;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

@@ -3451,8 +3451,9 @@ definitions:
       stockDeducted: false
   StoichiometryInventoryLinkRequest:
     description: >-
-      Request to create a link between a stoichiometry molecule and an Inventory item.
+      Request to create or replace a link between a stoichiometry molecule and an Inventory item.
       Allowed inventory targets are Containers, Samples and Subsamples. Linking to Sample Templates is not permitted.
+      If the molecule is already linked to a different item, providing a new inventoryItemGlobalId will replace the existing link and reset its stockDeducted status.
     required:
       - inventoryItemGlobalId
     properties:
