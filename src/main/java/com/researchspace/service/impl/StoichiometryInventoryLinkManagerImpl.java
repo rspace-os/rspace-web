@@ -59,7 +59,6 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     StoichiometryMolecule stoichiometryMolecule =
         stoichiometryMoleculeManager.getById(stoichiometryMoleculeId);
 
-    verifyStoichiometryPermissions(stoichiometryMolecule, PermissionType.WRITE, user);
     if (stoichiometryMolecule.getInventoryLink() != null) {
       throw new IllegalArgumentException("Stoichiometry molecule already has an inventory link");
     }
@@ -82,9 +81,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     link.setStoichiometryMolecule(stoichiometryMolecule);
     link.setInventoryRecord(inventoryRecord);
 
-    link = linkDao.save(link);
-    generateNewStoichiometryRevision(stoichiometryMolecule);
-    return link;
+    return linkDao.save(link);
   }
 
   @Override
@@ -154,23 +151,6 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   private void generateNewStoichiometryRevision(StoichiometryMolecule stoichiometryMolecule) {
     Stoichiometry parent = stoichiometryMolecule.getStoichiometry();
     parent.touchForAudit();
-  }
-
-  @Override
-  public StoichiometryInventoryLink getById(long linkId, User user) {
-    StoichiometryInventoryLink entity = getLinkOrThrowNotFound(linkId);
-    verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.READ, user);
-    invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
-    return entity;
-  }
-
-  @Override
-  public void deleteLink(long linkId, User user) {
-    StoichiometryInventoryLink entity = getLinkOrThrowNotFound(linkId);
-    verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.WRITE, user);
-    invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
-    linkDao.remove(linkId);
-    generateNewStoichiometryRevision(entity.getStoichiometryMolecule());
   }
 
   private void verifyStoichiometryPermissions(

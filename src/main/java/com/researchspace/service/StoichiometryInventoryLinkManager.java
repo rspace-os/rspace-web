@@ -11,9 +11,5 @@ public interface StoichiometryInventoryLinkManager {
   StoichiometryInventoryLink createLink(
       Long stoichiometryMoleculeId, StoichiometryInventoryLinkRequest req, User user);
 
-  StoichiometryInventoryLink getById(long linkId, User user);
-
-  void deleteLink(long linkId, User user);
-
   StockDeductionResult deductStock(List<Long> linkIds, User user);
 }

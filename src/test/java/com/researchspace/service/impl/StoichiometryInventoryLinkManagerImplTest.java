@@ -78,8 +78,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     req.setInventoryItemGlobalId("SA200");
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
-    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
-    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     when(invPerms.assertUserCanEditInventoryRecord(any(GlobalIdentifier.class), eq(user)))
         .thenReturn(invSample);
 
@@ -100,8 +98,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     molecule.setInventoryLink(new StoichiometryInventoryLink());
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
-    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
-    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
 
     IllegalArgumentException ex =
         assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user));
@@ -116,8 +112,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     invSample.setTemplate(true);
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
-    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
-    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     when(invPerms.assertUserCanEditInventoryRecord(any(GlobalIdentifier.class), eq(user)))
         .thenReturn(invSample);
 
@@ -130,72 +124,11 @@ public class StoichiometryInventoryLinkManagerImplTest {
   }
 
   @Test
-  public void createLinkDeniedOnElnPermissions() {
-    StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setInventoryItemGlobalId("SA200");
-
-    when(moleculeManager.getById(10L)).thenReturn(molecule);
-    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
-    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(false);
-
-    assertThrows(NotFoundException.class, () -> manager.createLink(10L, req, user));
-  }
-
-  @Test
-  public void getByIdDeniedOnInventoryPermissions() {
-    StoichiometryInventoryLink existing = new StoichiometryInventoryLink();
-    existing.setId(123L);
-    existing.setStoichiometryMolecule(molecule);
-    existing.setInventoryRecord(invSample);
-
-    when(linkDao.getSafeNull(123L)).thenReturn(java.util.Optional.of(existing));
-    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
-    when(elnPerms.isPermitted(owningRecord, PermissionType.READ, user)).thenReturn(true);
-    doThrow(new NotFoundException())
-        .when(invPerms)
-        .assertUserCanEditInventoryRecord(invSample, user);
-
-    assertThrows(NotFoundException.class, () -> manager.getById(123L, user));
-  }
-
-  @Test
-  public void deleteSuccess() {
-    StoichiometryInventoryLink existing = new StoichiometryInventoryLink();
-    existing.setId(123L);
-    existing.setStoichiometryMolecule(molecule);
-    existing.setSample(invSample);
-    when(linkDao.getSafeNull(123L)).thenReturn(java.util.Optional.of(existing));
-    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
-
-    doNothing().when(invPerms).assertUserCanEditInventoryRecord(invSample, user);
-    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
-    manager.deleteLink(existing.getId(), user);
-    verify(linkDao).remove(123L);
-  }
-
-  @Test
-  public void deleteDeniedOnInventoryPermissions() {
-    StoichiometryInventoryLink existing = new StoichiometryInventoryLink();
-    existing.setId(123L);
-    existing.setStoichiometryMolecule(molecule);
-    existing.setSample(invSample);
-    when(linkDao.getSafeNull(123L)).thenReturn(java.util.Optional.of(existing));
-    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
-    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
-    doThrow(new NotFoundException())
-        .when(invPerms)
-        .assertUserCanEditInventoryRecord(invSample, user);
-    assertThrows(NotFoundException.class, () -> manager.deleteLink(existing.getId(), user));
-  }
-
-  @Test
   public void createLinkNotReducingStockDoesntRegisterUsage() {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
     req.setInventoryItemGlobalId("SS300");
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
-    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
-    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     when(invPerms.assertUserCanEditInventoryRecord(any(GlobalIdentifier.class), eq(user)))
         .thenReturn(invSubSample);
     when(linkDao.save(any(StoichiometryInventoryLink.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -203,22 +136,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     manager.createLink(10L, req, user);
     verify(subSampleMgr, never())
         .registerApiSubSampleUsage(any(Long.class), any(QuantityInfo.class), eq(user));
-  }
-
-  @Test
-  public void deleteDeniedOnElnPermissions() {
-    StoichiometryInventoryLink existing = new StoichiometryInventoryLink();
-    existing.setId(123L);
-    existing.setStoichiometryMolecule(molecule);
-    existing.setInventoryRecord(invSample);
-    when(linkDao.getSafeNull(123L)).thenReturn(java.util.Optional.of(existing));
-    assertThrows(NotFoundException.class, () -> manager.deleteLink(existing.getId(), user));
-  }
-
-  @Test
-  public void getByIdMissingEntityThrowsNotFound() {
-    when(linkDao.getSafeNull(999L)).thenReturn(java.util.Optional.empty());
-    assertThrows(NotFoundException.class, () -> manager.getById(999L, user));
   }
 
   @Test

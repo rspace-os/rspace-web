@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 public class StoichiometryInventoryLinkDTO {
   private Long id;
   private String inventoryItemGlobalId;
-
   private boolean stockDeducted;
 
   public StoichiometryInventoryLinkDTO(StoichiometryInventoryLink entity) {

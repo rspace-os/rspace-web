@@ -36,7 +36,7 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
   @Autowired private SubSampleApiManager subSampleApiMgr;
 
   @Test
-  public void createDeleteLink() throws Exception {
+  public void createLinkTest() throws Exception {
     User user = createInitAndLoginAnyUser();
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "some text");
     Field field = doc.getFields().get(0);
@@ -56,17 +56,6 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     assertNotNull(createdLink.getId());
     assertEquals(molecule.getId(), createdLink.getStoichiometryMolecule().getId());
     assertEquals(sample.getGlobalId(), createdLink.getInventoryRecord().getOid().getIdString());
-
-    // Retrieve
-    StoichiometryInventoryLink retrieved = linkManager.getById(createdLink.getId(), user);
-    assertEquals(createdLink.getId(), retrieved.getId());
-    assertEquals(molecule.getId(), retrieved.getStoichiometryMolecule().getId());
-    assertEquals(sample.getGlobalId(), retrieved.getInventoryRecord().getOid().getIdString());
-
-    // Delete
-    linkManager.deleteLink(createdLink.getId(), user);
-    Long id = createdLink.getId();
-    assertThrows(NotFoundException.class, () -> linkManager.getById(id, user));
   }
 
   @Test
