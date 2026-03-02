@@ -15,6 +15,7 @@ import com.researchspace.core.testutil.JavaxValidatorTest;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.field.FieldForm;
+import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
@@ -137,12 +138,23 @@ public class FormTemplatesCommonTest extends JavaxValidatorTest {
     assertNErrors(radioFF, 0, true);
     radioFF.setDefaultOption("a");
     assertNErrors(radioFF, 0, true);
+    radioFF.setShowAsPickList(true);
+    assertNErrors(radioFF, 0, true);
     radioFF.setDefaultOption("NOT_AN_OPTION");
     assertNErrors(radioFF, 1, true);
     // - RSPAC1488, require Validator 6 /javax.el 3 which in turn requires TOmcat8
     //		radioFF.setOptions(Arrays.asList(new String[] { "", "b", null, "d" }));
     //		radioFF.setDefaultOption("b");
     //		assertNErrors(radioFF, 2, true); // 2 blank fields
+  }
+
+  @Test
+  public void radioFieldFormShowAsPickList() {
+    FormTemplatesCommon.RadioFieldPost radioFF = new FormTemplatesCommon.RadioFieldPost();
+    radioFF.setOptions(Arrays.asList(new String[] {"a", "b", "c", "d"}));
+    radioFF.setShowAsPickList(true);
+    RadioFieldForm rff = radioFF.createFieldForm();
+    assertTrue(rff.isShowAsPickList());
   }
 
   @Test

@@ -833,6 +833,7 @@ paths:
 
           - `options` A list  of options. There must be at least  1 option.
           - `defaultOption` If not empty, must be an item in the `options` list.
+          - `showAsPickList` this defaults to false. If true, then the radio buttons will be presented as a pick list.
 
         `{"name":"Antibodies",
         "type":"Radio","options":["gp41","gp120","gp232"],"defaultOption":"gp41"}`
@@ -4096,6 +4097,7 @@ definitions:
             - antibody2
             - antibody3
           defaultOption: antibody2
+          showAsPickList: true
         - name: date FormField Example
           type: Date
           defaultValue: '2018-03-21'
