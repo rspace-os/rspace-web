@@ -355,8 +355,8 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
           .equals(linkRequest.getInventoryItemGlobalId())) {
         // Throw exception if attempting to update an existing link's target
         throw new StoichiometryException(
-            "Directly updating an inventory link target is not supported. "
-                + "To change the target, first set the inventoryLink to null to remove the existing link.");
+            "Directly updating an inventory link target is not supported. To change the target,"
+                + " first set the inventoryLink to null to remove the existing link.");
       }
     }
   }

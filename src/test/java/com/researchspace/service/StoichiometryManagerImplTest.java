@@ -769,7 +769,6 @@ public class StoichiometryManagerImplTest {
 
     when(stoichiometryDao.get(stoichiometryId)).thenReturn(existingStoichiometry);
 
-    assertThrows(
-        StoichiometryException.class, () -> stoichiometryManager.update(updateDTO, user));
+    assertThrows(StoichiometryException.class, () -> stoichiometryManager.update(updateDTO, user));
   }
 }
