@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.service.aws.impl.S3UtilitiesImpl;
 import com.researchspace.service.impl.ConditionalTestRunnerNotSpring;
+import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
 import java.net.URL;
@@ -72,27 +73,27 @@ public class S3UtilitiesITTest {
   }
 
   @Test
-  // @RunIfSystemPropertyDefined(value = "nightly")
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testFileNotInS3() {
     assertFalse(s3Utilities.isArchiveInS3("fileNotInS3.zip"));
   }
 
   @Test(expected = SdkClientException.class)
-  //  @RunIfSystemPropertyDefined(value = "nightly")
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testIsArchiveInS3BucketNameNull() {
     ReflectionTestUtils.setField(s3Utilities, "s3BucketName", null);
     s3Utilities.isArchiveInS3(TEST_FILE_NAME);
   }
 
   @Test
-  // @RunIfSystemPropertyDefined(value = "nightly")
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testUpload() throws Exception {
     s3Utilities.getS3Uploader(archiveToExport).apply(archiveToExport);
     assertTrue(s3Utilities.isArchiveInS3(TEST_FILE_NAME));
   }
 
   @Test
-  // @RunIfSystemPropertyDefined(value = "nightly")
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testPresignedURL() throws Exception {
     s3Utilities.getS3Uploader(archiveToExport).apply(archiveToExport);
     URL url = s3Utilities.getPresignedUrlForArchiveDownload(TEST_FILE_NAME);
@@ -100,7 +101,7 @@ public class S3UtilitiesITTest {
   }
 
   @Test
-  // @RunIfSystemPropertyDefined(value = "nightly")
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testPresignedURLFileDoesNotExist() {
     assertNull(s3Utilities.getPresignedUrlForArchiveDownload("doesNotExist.zip"));
   }
