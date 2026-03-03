@@ -74,6 +74,7 @@
         <div id="dryad.available.description"><spring:message code="system.property.description.dryad.available" /></div>
         <div id="dmponline.available.description"><spring:message code="system.property.description.dmponline.available" /></div>
         <div id="dmptool.available.description"><spring:message code="system.property.description.dmptool.available" /></div>
+        <div id="dsw.available.description"><spring:message code="system.property.description.dsw.available" /></div>
         <div id="argos.available.description"><spring:message code="system.property.description.argos.available" /></div>
         <div id="zenodo.available.description"><spring:message code="system.property.description.zenodo.available" /></div>
         <div id="digitalCommonsData.available.description"><spring:message code="system.property.description.digitalCommonsData.available" /></div>
