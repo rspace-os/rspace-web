@@ -1,5 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 <!-- Loading TinyMCE -->
+<script src="<c:url value='/scripts/tinymce/tinymce5109/dompurify.min.js'/>"></script>
 <script src="<c:url value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
 <script src="<c:url value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/form.js'/>"></script>
