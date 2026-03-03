@@ -2750,7 +2750,7 @@
     <npm.dependencies.collection.arg>install --force</npm.dependencies.collection.arg>
 
     <!--Sonar properties-->
-    <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce516/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>
+    <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce5109/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>
     <sonar.projectKey>ResearchSpace-ELN_rspace-web</sonar.projectKey>
   </properties>
 

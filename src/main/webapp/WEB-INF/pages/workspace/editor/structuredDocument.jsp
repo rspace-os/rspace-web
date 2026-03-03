@@ -3,8 +3,8 @@
 <script src="<c:url value='/scripts/tinymceDialogUtils.js'/>"></script>
 
 <!-- Loading jQuery TinyMCE -->
-<script src="<c:url value='/scripts/tinymce/tinymce516/jquery.tinymce.min.js'/>"></script>
-<script src="<c:url value='/scripts/tinymce/tinymce516/tinymce.min.js'/>"></script>
+<script src="<c:url value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
+<script src="<c:url value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymce5_configuration.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_pasteHandler.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_scrollHandler.js'/>"></script>

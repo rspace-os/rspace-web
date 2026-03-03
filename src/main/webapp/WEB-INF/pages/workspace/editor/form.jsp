@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 <!-- Loading TinyMCE -->
-<script src="<c:url value='/scripts/tinymce/tinymce516/jquery.tinymce.min.js'/>"></script>
-<script src="<c:url value='/scripts/tinymce/tinymce516/tinymce.min.js'/>"></script>
+<script src="<c:url value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
+<script src="<c:url value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/form.js'/>"></script>
 <script src="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 <link rel="stylesheet" href="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
