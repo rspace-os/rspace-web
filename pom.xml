@@ -1574,6 +1574,11 @@
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
+      <artifactId>rda-dmp-common-standard</artifactId>
+      <version>0.1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-digital-commons-data-adapter</artifactId>
       <version>0.0.5</version>
       <exclusions>
@@ -1645,6 +1650,12 @@
       <groupId>com.github.rspace-os</groupId>
       <artifactId>dmptool-java-client</artifactId>
       <version>0.4.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rda-dmp-common-standard</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>

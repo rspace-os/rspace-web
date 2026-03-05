@@ -12,26 +12,11 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
 import java.net.URL;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.core.exception.SdkClientException;
-import software.amazon.awssdk.core.waiters.WaiterResponse;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
-import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
-import software.amazon.awssdk.services.s3.model.HeadBucketResponse;
-import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
-import software.amazon.awssdk.services.s3.model.S3Exception;
-import software.amazon.awssdk.services.s3.model.S3Object;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.waiters.S3Waiter;
 
 /** These tests are running with a real connection to aws S3 */
 @RunWith(ConditionalTestRunnerNotSpring.class)
