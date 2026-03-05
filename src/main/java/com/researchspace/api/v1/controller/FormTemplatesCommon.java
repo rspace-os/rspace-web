@@ -179,6 +179,8 @@ public class FormTemplatesCommon {
     @Size(min = 1, message = "Please provide at least one option")
     private List<String> options = new ArrayList<>();
 
+    private boolean showAsPickList;
+
     @Size(min = 1)
     private String defaultOption;
 
@@ -190,6 +192,7 @@ public class FormTemplatesCommon {
     @Override
     public RadioFieldForm createFieldForm() {
       RadioFieldForm formField = new RadioFieldForm(name);
+      formField.setShowAsPickList(showAsPickList);
       setValues(formField);
       return formField;
     }
@@ -199,6 +202,7 @@ public class FormTemplatesCommon {
       String optionsStr = getOptionsStringFromList(options);
       formField.setRadioOption(optionsStr);
       formField.setDefaultRadioOption(defaultOption);
+      formField.setShowAsPickList(showAsPickList);
     }
   }
 

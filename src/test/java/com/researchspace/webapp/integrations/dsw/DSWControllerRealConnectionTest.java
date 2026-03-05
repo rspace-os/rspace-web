@@ -101,7 +101,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     AppConfigElementDescriptor acedAlias = new AppConfigElementDescriptor(descAlias);
     AppConfigElementDescriptor acedUrl = new AppConfigElementDescriptor(descUrl);
 
-    AppConfigElement aceAlias = new AppConfigElement(acedAlias, DSW_SERVER_ALIAS_ACTUAL);
+    AppConfigElement aceAlias = new AppConfigElement(acedAlias, "Actual DSW URL");
     AppConfigElement aceUrl = new AppConfigElement(acedUrl, url);
 
     AppConfigElementSet aces = new AppConfigElementSet();
@@ -121,7 +121,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     when(userAppConfigMgr.findByAppConfigElementSetId(null)).thenReturn(Optional.of(aces));
     when(source.findByUserNameProviderName(anyString(), anyString(), anyString()))
         .thenReturn(Optional.of(connection));
-    when(mediaManager.saveNewDMP(anyString(), any(), any(), any()))
+    when(mediaManager.saveNewDMPWithDescription(anyString(), any(), any(), any(), anyString()))
         .thenReturn(new EcatDocumentFile());
   }
 
@@ -210,7 +210,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   @RunIfSystemPropertyDefined("nightly")
   public void testImportPlanNullFileWhenSaving() {
     try {
-      when(mediaManager.saveNewDMP(anyString(), any(), any(), any()))
+      when(mediaManager.saveNewDMPWithDescription(anyString(), any(), any(), any(), anyString()))
           .thenReturn(null);
 
       AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS_UNUSED);

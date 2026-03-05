@@ -130,7 +130,7 @@ steps to take care of.
           addToMenuIfNotPresent(localTinymcesetup, " | optNewPlugin");
         }
         ```
-  3. A simple SVG needs to be added to [/src/main/webapp/scripts/tinymce/tinymce516/icons/custom_icons/icons.js](/src/main/webapp/scripts/tinymce/tinymce516/icons/custom_icons/icons.js).
+  3. A simple SVG needs to be added to [/src/main/webapp/scripts/tinymce/tinymce5109/icons/custom_icons/icons.js](/src/main/webapp/scripts/tinymce/tinymce5109/icons/custom_icons/icons.js).
 
 ### Step 2.2: Rendering a react component
 The three `onAction` handlers should render a react component. Whilst the

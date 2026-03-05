@@ -204,9 +204,13 @@ public class RoCrateHandler {
         exporterBuilder.setId("https://orcid.org/" + orcidDetails.getId());
         exporterBuilder.addProperty(
             "alternateName",
-            orcidDetails.getProperty("givenName").asText()
+            (orcidDetails.getProperty("givenName") != null
+                    ? orcidDetails.getProperty("givenName").asText()
+                    : "")
                 + " "
-                + orcidDetails.getProperty("familyName").asText());
+                + (orcidDetails.getProperty("familyName") != null
+                    ? orcidDetails.getProperty("familyName").asText()
+                    : ""));
       } else {
         exporterBuilder.setId(manifest.getKeyToValue().get("Exported by"));
       }
