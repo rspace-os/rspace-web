@@ -51,10 +51,9 @@ import org.springframework.http.ResponseEntity;
 @RunWith(ConditionalTestRunner.class)
 public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
 
-  private static String DSW_SERVER_ALIAS_UNUSED = "This string is bypassed by unit tests";
   private static String TEST_PROJECT_NAME = "RSpace Nightly Test Project";
   private static String TEST_PROJECT_DESCRIPTION = "Project for confirming endpoint functionality";
-  private static String DSW_SERVER_ALIAS_ACTUAL = "TestAlias";
+  private static String DSW_SERVER_ALIAS = "TestAlias";
 
   @Autowired protected SystemPropertyManager sysPropMgr;
 
@@ -101,7 +100,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     AppConfigElementDescriptor acedAlias = new AppConfigElementDescriptor(descAlias);
     AppConfigElementDescriptor acedUrl = new AppConfigElementDescriptor(descUrl);
 
-    AppConfigElement aceAlias = new AppConfigElement(acedAlias, "Actual DSW URL");
+    AppConfigElement aceAlias = new AppConfigElement(acedAlias, DSW_SERVER_ALIAS);
     AppConfigElement aceUrl = new AppConfigElement(acedUrl, url);
 
     AppConfigElementSet aces = new AppConfigElementSet();
@@ -129,7 +128,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   @RunIfSystemPropertyDefined("nightly")
   public void testCurrentUserDetails() {
     try {
-      ResponseEntity usersResponse = dswController.currentUsers(DSW_SERVER_ALIAS_UNUSED);
+      ResponseEntity usersResponse = dswController.currentUsers(DSW_SERVER_ALIAS);
       assertNotNull(usersResponse);
       DSWUser dswUser = mapper.readValue(usersResponse.getBody().toString(), DSWUser.class);
       assertNotNull(dswUser.getLastName());
@@ -142,7 +141,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   @RunIfSystemPropertyDefined("nightly")
   public void testPlans() {
     try {
-      AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS_UNUSED);
+      AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS);
       assertNotNull(plansResponse);
       DSWProject[] projects =
           mapper.readValue(((JsonNode) plansResponse.getData()).toString(), DSWProject[].class);
@@ -159,7 +158,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   @RunIfSystemPropertyDefined("nightly")
   public void testImportPlan() {
     try {
-      AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS_UNUSED);
+      AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS);
       assertNotNull(plansResponse);
       DSWProject[] projects =
           mapper.readValue(((JsonNode) plansResponse.getData()).toString(), DSWProject[].class);
@@ -176,7 +175,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       assertEquals(TEST_PROJECT_DESCRIPTION, projectForRetrieval.getDescription());
 
       AjaxReturnObject<JsonNode> project =
-          dswController.importPlan(DSW_SERVER_ALIAS_UNUSED, projectForRetrieval.getUuid());
+          dswController.importPlan(DSW_SERVER_ALIAS, projectForRetrieval.getUuid());
 
       assertNotNull(project);
       assertNotNull(project.getData());
@@ -194,7 +193,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     try {
       String invalidUuid = "Not-a-valid-uuid";
       AjaxReturnObject<JsonNode> project =
-          dswController.importPlan(DSW_SERVER_ALIAS_UNUSED, invalidUuid);
+          dswController.importPlan(DSW_SERVER_ALIAS, invalidUuid);
 
       assertNotNull(project);
       assertNull(project.getData());
@@ -213,7 +212,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       when(mediaManager.saveNewDMPWithDescription(anyString(), any(), any(), any(), anyString()))
           .thenReturn(null);
 
-      AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS_UNUSED);
+      AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS);
       assertNotNull(plansResponse);
       DSWProject[] projects =
           mapper.readValue(((JsonNode) plansResponse.getData()).toString(), DSWProject[].class);
@@ -230,7 +229,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       assertEquals(TEST_PROJECT_DESCRIPTION, projectForRetrieval.getDescription());
 
       AjaxReturnObject<JsonNode> project =
-          dswController.importPlan(DSW_SERVER_ALIAS_UNUSED, projectForRetrieval.getUuid());
+          dswController.importPlan(DSW_SERVER_ALIAS, projectForRetrieval.getUuid());
 
       assertNotNull(project);
       assertNull(project.getData());
@@ -245,7 +244,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   @Test
   public void testConfigsConfigFound() {
     try {
-      AppConfigElementSet cfg = dswController.getConfigForServer(u, DSW_SERVER_ALIAS_ACTUAL);
+      AppConfigElementSet cfg = dswController.getConfigForServer(u, DSW_SERVER_ALIAS);
       assertNotNull(cfg);
       assertFalse(cfg.getConfigElements().isEmpty());
     } catch (Exception e) {
