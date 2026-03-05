@@ -585,6 +585,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else if (RAID_APP_NAME.equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
           user, appName, RAID_ALIAS, configSetBeforeRemoval);
+    } else if (DSW_APP_NAME.equals(appName)) {
+      deleteConfigOptionsForAppsWithMultipleOptionSet(
+          user, appName, DSW_ALIAS, configSetBeforeRemoval);
     }
   }
 

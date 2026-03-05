@@ -39,6 +39,7 @@ import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import RaidIntegrationCard from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
+import DSW from "@/eln/apps/integrations/DSW";
 
 type CardListingArgs = {
   /*
@@ -161,6 +162,15 @@ function CardListing({
       });
     },
     [update, integrationStates.DRYAD],
+  );
+
+  const dswUpdate = React.useCallback(
+      (newState: IntegrationStates["DSW"]) => {
+        void runInAction(async () => {
+          integrationStates.DSW = await update("DSW", newState);
+        });
+      },
+      [update, integrationStates.DSW],
   );
 
   const egnyteUpdate = React.useCallback(
@@ -413,6 +423,12 @@ function CardListing({
           integrationState={integrationStates.DRYAD}
           update={dryadUpdate}
         />
+      )}
+      {integrationStates.DSW.mode === mode && (
+          <DSW
+              integrationState={integrationStates.DSW}
+              update={dswUpdate}
+          />
       )}
       {integrationStates.EGNYTE.mode === mode && (
         <Egnyte
