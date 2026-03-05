@@ -8,9 +8,7 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
-import com.researchspace.model.units.QuantityInfo;
 import org.junit.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 public class StoichiometryTableDataTest {
 
@@ -102,9 +100,7 @@ public class StoichiometryTableDataTest {
   private static StoichiometryMoleculeDTO createStoichiometryMoleculeDTOWithDefaultsPopulated() {
     Sample sample = new Sample();
     sample.setId(11L);
-    QuantityInfo qi = QuantityInfo.of("1");
     StoichiometryInventoryLink invL = new StoichiometryInventoryLink();
-    ReflectionTestUtils.setField(invL, "quantity", qi);
     invL.setSample(sample);
     StoichiometryMolecule mol = new StoichiometryMolecule();
     invL.setStoichiometryMolecule(mol);

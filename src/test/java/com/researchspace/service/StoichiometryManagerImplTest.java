@@ -8,7 +8,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,13 +34,10 @@ import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
-import com.researchspace.model.units.QuantityInfo;
-import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.chemistry.StoichiometryException;
 import com.researchspace.service.impl.StoichiometryManagerImpl;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -73,7 +72,19 @@ public class StoichiometryManagerImplTest {
     user = TestFactory.createAnyUser("testUser");
     record = TestFactory.createAnyRecord(user);
     when(stoichiometryDao.save(stoichiometryCaptor.capture()))
-        .thenAnswer(invocation -> invocation.getArgument(0, Stoichiometry.class));
+        .thenAnswer(
+            invocation -> {
+              Stoichiometry s = invocation.getArgument(0, Stoichiometry.class);
+              if (s.getMolecules() != null) {
+                long idCounter = 100L;
+                for (StoichiometryMolecule m : s.getMolecules()) {
+                  if (m.getId() == null) {
+                    m.setId(idCounter++);
+                  }
+                }
+              }
+              return s;
+            });
   }
 
   @Test
@@ -490,7 +501,7 @@ public class StoichiometryManagerImplTest {
 
     stoichiometryManager.copy(sourceParentReactionId, targetParentReaction, user);
 
-    verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
+    verify(stoichiometryDao, times(4)).save(stoichiometryCaptor.capture());
     List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
 
     Stoichiometry finalSave = savedStoichiometries.get(savedStoichiometries.size() - 1);
@@ -529,7 +540,6 @@ public class StoichiometryManagerImplTest {
     Sample sample = new Sample();
     sample.setId(10L);
     link1.setSample(sample);
-    link1.setQuantity(new QuantityInfo(BigDecimal.valueOf(1.5), RSUnitDef.MILLI_LITRE.getId()));
     link1.setStoichiometryMolecule(mol1);
 
     mol1.setInventoryLink(link1);
@@ -549,17 +559,10 @@ public class StoichiometryManagerImplTest {
     ArgumentCaptor<StoichiometryInventoryLinkRequest> linkReqCaptor =
         ArgumentCaptor.forClass(StoichiometryInventoryLinkRequest.class);
     verify(stoichiometryInventoryLinkManager, times(1))
-        .createLink(linkReqCaptor.capture(), any(User.class));
+        .createLink(anyLong(), linkReqCaptor.capture(), any(User.class));
 
-    List<StoichiometryInventoryLinkRequest> reqs = linkReqCaptor.getAllValues();
-    assertEquals(1, reqs.size());
-    StoichiometryInventoryLinkRequest newLink = reqs.get(0);
+    StoichiometryInventoryLinkRequest newLink = linkReqCaptor.getValue();
     assertEquals("SA" + sample.getId(), newLink.getInventoryItemGlobalId());
-    assertEquals(mol1.getInventoryLink().getQuantity().getNumericValue(), newLink.getQuantity());
-    assertEquals(RSUnitDef.MILLI_LITRE.getId(), newLink.getUnitId());
-
-    // the default for copied docs is not to reduce stock
-    assertFalse(newLink.reducesStock());
   }
 
   @Test
@@ -689,5 +692,83 @@ public class StoichiometryManagerImplTest {
         .id(id)
         .molecules(Collections.singletonList(molecule))
         .build();
+  }
+
+  @Test
+  public void whenUpdateWithInventoryLink_thenCreatesLink() {
+    Long stoichiometryId = 1L;
+    Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L, record);
+    StoichiometryMolecule mol = existingStoichiometry.getMolecules().get(0);
+    Long moleculeId = mol.getId();
+
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(stoichiometryId);
+
+    StoichiometryInventoryLinkRequest linkReq = new StoichiometryInventoryLinkRequest();
+    linkReq.setInventoryItemGlobalId("SA100");
+
+    StoichiometryMoleculeUpdateDTO molUpdate = new StoichiometryMoleculeUpdateDTO();
+    molUpdate.setId(moleculeId);
+    molUpdate.setInventoryLink(linkReq);
+    updateDTO.setMolecules(List.of(molUpdate));
+
+    when(stoichiometryDao.get(stoichiometryId)).thenReturn(existingStoichiometry);
+    when(stoichiometryInventoryLinkManager.createLink(eq(moleculeId), eq(linkReq), eq(user)))
+        .thenReturn(new StoichiometryInventoryLink());
+
+    stoichiometryManager.update(updateDTO, user);
+
+    verify(stoichiometryInventoryLinkManager).createLink(moleculeId, linkReq, user);
+  }
+
+  @Test
+  public void whenUpdateWithNullInventoryLink_thenRemovesLink() {
+    Long stoichiometryId = 1L;
+    Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L, record);
+    StoichiometryMolecule mol = existingStoichiometry.getMolecules().get(0);
+    mol.setInventoryLink(new StoichiometryInventoryLink());
+
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(stoichiometryId);
+
+    StoichiometryMoleculeUpdateDTO molUpdate = new StoichiometryMoleculeUpdateDTO();
+    molUpdate.setId(mol.getId());
+    molUpdate.setInventoryLink(null);
+    updateDTO.setMolecules(List.of(molUpdate));
+
+    when(stoichiometryDao.get(stoichiometryId)).thenReturn(existingStoichiometry);
+
+    stoichiometryManager.update(updateDTO, user);
+
+    assertNull(mol.getInventoryLink());
+  }
+
+  @Test
+  public void whenUpdateWithDifferentInventoryLinkTarget_thenThrowsException() {
+    Long stoichiometryId = 1L;
+    Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L, record);
+    StoichiometryMolecule mol = existingStoichiometry.getMolecules().get(0);
+
+    StoichiometryInventoryLink existingLink = new StoichiometryInventoryLink();
+    Sample sample = new Sample();
+    sample.setId(100L);
+    existingLink.setSample(sample);
+    mol.setInventoryLink(existingLink);
+
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(stoichiometryId);
+
+    StoichiometryInventoryLinkRequest linkReq = new StoichiometryInventoryLinkRequest();
+    String updatedId = "SA200";
+    linkReq.setInventoryItemGlobalId(updatedId);
+
+    StoichiometryMoleculeUpdateDTO molUpdate = new StoichiometryMoleculeUpdateDTO();
+    molUpdate.setId(mol.getId());
+    molUpdate.setInventoryLink(linkReq);
+    updateDTO.setMolecules(List.of(molUpdate));
+
+    when(stoichiometryDao.get(stoichiometryId)).thenReturn(existingStoichiometry);
+
+    assertThrows(StoichiometryException.class, () -> stoichiometryManager.update(updateDTO, user));
   }
 }
