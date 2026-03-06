@@ -1097,6 +1097,45 @@ const encodeIntegrationState = <I extends Integration>(
       },
     };
   }
+  if (integration === "DSW") {
+    // @ts-expect-error Looks like this is a bug in TypeScript
+    const creds: IntegrationStates["DSW"]["credentials"] =
+        data.credentials;
+    return {
+      name: "DSW",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      options: Object.fromEntries(
+          ArrayUtils.mapOptional<
+              Optional<{
+                DSW_APIKEY: string;
+                DSW_URL: string;
+                DSW_ALIAS: string;
+                optionsId: OptionsId;
+              }>,
+              [
+                OptionsId,
+                {
+                  DSW_APIKEY: string;
+                  DSW_URL: string;
+                  DSW_ALIAS: string;
+                }
+              ]
+          >(
+              (config) =>
+                  config.map((c) => [
+                    c.optionsId,
+                    {
+                      DSW_ALIAS: c.DSW_ALIAS,
+                      DSW_URL: c.DSW_URL,
+                      DSW_APIKEY: c.DSW_APIKEY
+                    },
+                  ]),
+              creds
+          )
+      ),
+    };
+  }
   if (integration === "EGNYTE") {
     // @ts-expect-error Looks like this is a bug in TypeScript?
     const creds: IntegrationStates["EGNYTE"]["credentials"] = data.credentials;
