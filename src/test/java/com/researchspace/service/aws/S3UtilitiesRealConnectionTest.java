@@ -6,27 +6,38 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.service.aws.impl.S3UtilitiesImpl;
-import com.researchspace.service.impl.ConditionalTestRunnerNotSpring;
+import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
+import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.File;
 import java.net.URL;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.core.exception.SdkClientException;
 
-/** These tests are running with a real connection to aws S3 */
-@RunWith(ConditionalTestRunnerNotSpring.class)
+/**
+ * The tests running a real connection to AWS S3 bucket.
+ *
+ * The test bucket to use is configured through deployment properties, and must be accessible by
+ * user who runs the test (e.g. through access key, and secret, added to '~/.aws/config' file).
+ */
+@RunWith(ConditionalTestRunner.class)
 @Slf4j
-public class S3UtilitiesITTest {
+public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
-  private static final String TEST_FILE_NAME = "demo-export2.zip";
-  private static final String REGION = "eu-west-1";
-  private static final String BUCKET_NAME = "test-dhjsakhfuidshfis";
+  /* bucket must be accessible by user who runs the test (e.g. by access key in '~/.aws/config' file) */
+  @Value("${s3.realConnectionTest.region}")
+  private String s3region;
+  @Value("${s3.realConnectionTest.bucketName}")
+  private String s3bucketName;
+
   private static final String S3_OBJECT_KEY = "aws-export-test";
+  private static final String TEST_FILE_NAME = "demo-export2.zip";
 
   private S3UtilitiesImpl s3Utilities;
 
@@ -35,8 +46,8 @@ public class S3UtilitiesITTest {
   @Before
   public void setup() {
     s3Utilities = new S3UtilitiesImpl();
-    ReflectionTestUtils.setField(s3Utilities, "region", REGION);
-    ReflectionTestUtils.setField(s3Utilities, "s3BucketName", BUCKET_NAME);
+    ReflectionTestUtils.setField(s3Utilities, "region", s3region);
+    ReflectionTestUtils.setField(s3Utilities, "s3BucketName", s3bucketName);
     ReflectionTestUtils.setField(s3Utilities, "s3ArchivePath", S3_OBJECT_KEY);
     ReflectionTestUtils.setField(s3Utilities, "archiveFolderStorageTime", 1);
     s3Utilities.init();
