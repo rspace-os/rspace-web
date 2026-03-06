@@ -19,7 +19,7 @@ import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { useDSWTestEndpoint } from "../useDSWTestEndpoint";
 import RsSet from "../../../util/set";
-import DMPToolIcon from "../../../assets/branding/dmptool/logo.svg";
+import DSWIcon from "../../../assets/branding/dsw/logo.svg";
 import Typography from "@mui/material/Typography";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { LOGO_COLOR } from "../../../assets/branding/dsw";
@@ -507,10 +507,10 @@ function DSW({
   return (
       <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
         <IntegrationCard
-            name="DSW"
+            name="DSW / FAIR Wizard"
             integrationState={integrationState}
-            explanatoryText="Integrate Data Management Plans from your Data Stewardship Wizard account.  Or FAIR Wizard."
-            image={DMPToolIcon}
+            explanatoryText="Import Data Management Plans from Data Stewardship Wizard or FAIR Wizard."
+            image={DSWIcon}
             color={LOGO_COLOR}
             update={(newMode) =>
                 update({ mode: newMode, credentials: integrationState.credentials })
@@ -518,7 +518,7 @@ function DSW({
             helpLinkText="DSW integration docs"
             website="researchers.dsw.elixir-europe.org"
             docLink="dmptool"
-            usageText="You can import projects from DS Wizard into RSpace, and associate them as DMPs with repository exports."
+            usageText="You can import projects from Data Stewardship Wizard or FAIR Wizard into RSpace, and associate them as Data Management Plans with repository exports."
             setupSection={
               <>
                 <Typography variant="body2">
@@ -529,7 +529,7 @@ function DSW({
                   <li>Click on Test to ensure your credentials are correct.</li>
                   <li>Enable the integration.</li>
                   <li>
-                    DSW will now be available as an option in the export
+                    DSW or FAIR Wizard will now be available as an option in the export
                     dialog.
                   </li>
                 </ol>

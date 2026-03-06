@@ -92,6 +92,16 @@ export type IntegrationStates = {
   DRYAD: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
+  DSW: IntegrationState<
+      Array<
+          Optional<{
+            DSW_APIKEY: string;
+            DSW_URL: string;
+            DSW_ALIAS: string;
+            optionsId: OptionsId;
+          }>
+      >
+  >;
   EGNYTE: IntegrationState<{
     EGNYTE_DOMAIN: Optional<string>;
   }>;
@@ -380,6 +390,47 @@ function decodeDryad(data: FetchedState): IntegrationStates["DRYAD"] {
     credentials: {
       ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
     },
+  };
+}
+
+function decodeDsw(data: FetchedState): IntegrationStates["DSW"] {
+  function isValidConfig(config: unknown): config is {
+    DSW_APIKEY: string;
+    DSW_URL: string;
+    DSW_ALIAS: string;
+  } {
+    return Parsers.isObject(config)
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.isRecord)
+        .map<boolean>((configRecord: Record<string, unknown>) => {
+          return (
+              typeof configRecord.DSW_APIKEY === "string" &&
+              typeof configRecord.DSW_URL === "string" &&
+              typeof configRecord.DSW_ALIAS === "string" // &&
+              //typeof configRecord._label === "string"
+          );
+        })
+        .orElse(false);
+  }
+
+  console.log("uIEdDSW for DSW, data: ", data);
+
+  return {
+    mode: parseState(data),
+    credentials:
+        Object.entries(data.options).length > 0
+            ? Object.entries(data.options).map(([optionsId, config]) =>
+                isValidConfig(config)
+                    ? Optional.present({
+                      DSW_APIKEY: config.DSW_APIKEY,
+                      DSW_URL: config.DSW_URL,
+                      DSW_ALIAS: config.DSW_ALIAS,
+                      //_label: config._label,
+                      optionsId,
+                    })
+                    : Optional.empty()
+            )
+            : [],
   };
 }
 
@@ -860,6 +911,7 @@ function decodeIntegrationStates(data: {
     DMPTOOL: decodeDmpTool(data.DMPTOOL),
     DROPBOX: decodeDropbox(data.DROPBOX),
     DRYAD: decodeDryad(data.DRYAD),
+    DSW: decodeDsw(data.DSW),
     EGNYTE: decodeEgnyte(data.EGNYTE),
     EVERNOTE: decodeEvernote(data.EVERNOTE),
     FIELDMARK: decodeFieldmark(data.FIELDMARK),
@@ -1475,6 +1527,8 @@ export function useIntegrationsEndpoint(): {
                 return decodeDropbox(responseData.data) as IntegrationStates[I];
               case "DRYAD":
                 return decodeDryad(responseData.data) as IntegrationStates[I];
+              case "DSW":
+                return decodeDsw(responseData.data) as IntegrationStates[I];
               case "EGNYTE":
                 return decodeEgnyte(responseData.data) as IntegrationStates[I];
               case "EVERNOTE":

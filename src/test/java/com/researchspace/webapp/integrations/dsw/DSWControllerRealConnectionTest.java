@@ -189,8 +189,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   public void testImportPlanIncorrectUuid() {
     try {
       String invalidUuid = "Not-a-valid-uuid";
-      AjaxReturnObject<JsonNode> project =
-          dswController.importPlan(DSW_SERVER_ALIAS, invalidUuid);
+      AjaxReturnObject<JsonNode> project = dswController.importPlan(DSW_SERVER_ALIAS, invalidUuid);
 
       assertNotNull(project);
       assertNull(project.getData());
@@ -206,8 +205,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   @RunIfSystemPropertyDefined("nightly")
   public void testImportPlanNullFileWhenSaving() {
     try {
-      when(mediaManager.saveNewDMP(anyString(), any(), any(), any()))
-          .thenReturn(null);
+      when(mediaManager.saveNewDMP(anyString(), any(), any(), any())).thenReturn(null);
 
       AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS);
       assertNotNull(plansResponse);
@@ -231,12 +229,11 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       assertNotNull(project);
       assertNull(project.getData());
       assertEquals(project.getError().getErrorMessages().size(), 1);
-      assertTrue(project.getError().getErrorMessages().get(0).contains(projectForRetrieval.getUuid()));
+      assertTrue(
+          project.getError().getErrorMessages().get(0).contains(projectForRetrieval.getUuid()));
 
     } catch (Exception e) {
       fail(e.getMessage());
     }
   }
-
-
 }
