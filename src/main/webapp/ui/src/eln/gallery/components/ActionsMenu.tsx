@@ -544,14 +544,16 @@ function ActionsMenu({
           open={Boolean(actionsMenuAnchorEl)}
           anchorEl={actionsMenuAnchorEl}
           onClose={() => setActionsMenuAnchorEl(null)}
-          PaperProps={{
-            sx: {
-              minWidth: "212px",
-              ...(actionsMenuAnchorEl
-                ? {
-                    transform: "translate(0px, 4px) !important",
-                  }
-                : {}),
+          slotProps={{
+            paper: {
+              sx: {
+                minWidth: "212px",
+                ...(actionsMenuAnchorEl
+                  ? {
+                      transform: "translate(0px, 4px) !important",
+                    }
+                  : {}),
+              },
             },
           }}
           MenuListProps={{
