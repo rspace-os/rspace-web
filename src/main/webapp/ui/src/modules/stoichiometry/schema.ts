@@ -1,11 +1,17 @@
 import * as v from "valibot";
 
-export const StoichiometryRoleSchema = v.picklist([
-  "REACTANT",
-  "PRODUCT",
-  "AGENT",
-]);
-export type StoichiometryRole = v.InferOutput<typeof StoichiometryRoleSchema>;
+export const STOICHIOMETRY_ROLES = {
+  REACTANT: "REACTANT",
+  PRODUCT: "PRODUCT",
+  AGENT: "AGENT",
+} as const;
+
+export type StoichiometryRole =
+  (typeof STOICHIOMETRY_ROLES)[keyof typeof STOICHIOMETRY_ROLES];
+
+export const StoichiometryRoleSchema = v.picklist(
+  Object.values(STOICHIOMETRY_ROLES),
+);
 
 export const RsChemElementSchema = v.objectWithRest(
   {
@@ -27,46 +33,43 @@ export const RsChemElementSchema = v.objectWithRest(
 );
 export type RsChemElement = v.InferOutput<typeof RsChemElementSchema>;
 
-export const InventoryLinkQuantitySchema = v.object({
-  numericValue: v.number(),
-  unitId: v.number(),
-});
-export type InventoryLinkQuantity = v.InferOutput<
-  typeof InventoryLinkQuantitySchema
->;
-
 export const InventoryLinkSchema = v.objectWithRest(
   {
     id: v.number(),
     inventoryItemGlobalId: v.string(),
-    stoichiometryMoleculeId: v.number(),
-    quantity: InventoryLinkQuantitySchema,
-    reducesStock: v.optional(v.boolean()),
+    stockDeducted: v.optional(v.boolean()),
   },
   v.unknown(),
 );
 export type InventoryLink = v.InferOutput<typeof InventoryLinkSchema>;
 
-export const StoichiometryMoleculeSchema = v.array(
-  v.object({
-    id: v.number(),
-    rsChemElement: v.optional(v.nullable(RsChemElementSchema)),
-    rsChemElementId: v.optional(v.number()),
-    inventoryLink: v.optional(v.nullable(InventoryLinkSchema)),
-    role: StoichiometryRoleSchema,
-    formula: v.nullable(v.string()),
-    name: v.nullable(v.string()),
-    smiles: v.string(),
-    coefficient: v.nullable(v.number()),
-    molecularWeight: v.nullable(v.number()),
-    mass: v.nullable(v.number()),
-    moles: v.optional(v.nullable(v.number())),
-    actualAmount: v.nullable(v.number()),
-    actualYield: v.nullable(v.number()),
-    limitingReagent: v.nullable(v.boolean()),
-    notes: v.nullable(v.string()),
-  }),
+export const InventoryLinkRequestSchema = v.objectWithRest(
+  {
+    inventoryItemGlobalId: v.string(),
+  },
+  v.unknown(),
 );
+export type InventoryLinkRequest = v.InferOutput<typeof InventoryLinkRequestSchema>;
+
+export const StoichiometryMoleculeSchema = v.object({
+  id: v.number(),
+  rsChemElement: v.optional(v.nullable(RsChemElementSchema)),
+  rsChemElementId: v.optional(v.nullable(v.number())),
+  inventoryLink: v.optional(v.nullable(InventoryLinkSchema)),
+  role: StoichiometryRoleSchema,
+  formula: v.nullable(v.string()),
+  name: v.nullable(v.string()),
+  smiles: v.string(),
+  coefficient: v.nullable(v.number()),
+  molecularWeight: v.nullable(v.number()),
+  mass: v.nullable(v.number()),
+  moles: v.optional(v.nullable(v.number())),
+  actualAmount: v.nullable(v.number()),
+  actualYield: v.nullable(v.number()),
+  limitingReagent: v.nullable(v.boolean()),
+  notes: v.nullable(v.string()),
+});
+
 export type StoichiometryMolecule = v.InferOutput<
   typeof StoichiometryMoleculeSchema
 >;
@@ -97,7 +100,7 @@ export const StoichiometryResponseSchema = v.objectWithRest(
     revision: v.number(),
     parentReaction: v.optional(v.nullable(ParentReactionSchema)),
     parentReactionId: v.optional(v.nullable(v.number())),
-    recordId: v.optional(v.number()),
+    recordId: v.optional(v.nullable(v.number())),
     molecules: v.array(StoichiometryMoleculeSchema),
   },
   v.unknown(),
@@ -120,7 +123,7 @@ export const ExistingMoleculeUpdateSchema = v.objectWithRest(
     actualYield: v.optional(v.nullable(v.number())),
     limitingReagent: v.optional(v.boolean()),
     notes: v.optional(v.nullable(v.string())),
-    inventoryLink: v.optional(v.nullable(InventoryLinkSchema)),
+    inventoryLink: v.optional(v.nullable(InventoryLinkRequestSchema)),
   },
   v.unknown(),
 );
@@ -128,19 +131,32 @@ export type ExistingMoleculeUpdate = v.InferOutput<
   typeof ExistingMoleculeUpdateSchema
 >;
 
-export const NewReagentSchema = v.objectWithRest(
+export const NewMoleculeSchema = v.objectWithRest(
   {
-    role: v.literal("AGENT"),
+    role: StoichiometryRoleSchema,
     smiles: v.string(),
-    name: v.string(),
+    name: v.optional(v.nullable(v.string())),
+    formula: v.optional(v.string()),
+    molecularWeight: v.optional(v.number()),
+    coefficient: v.optional(v.number()),
+    mass: v.optional(v.nullable(v.number())),
+    actualAmount: v.optional(v.nullable(v.number())),
+    actualYield: v.optional(v.nullable(v.number())),
+    limitingReagent: v.optional(v.boolean()),
+    notes: v.optional(v.nullable(v.string())),
+    inventoryLink: v.optional(v.nullable(InventoryLinkRequestSchema)),
   },
   v.unknown(),
 );
-export type NewReagent = v.InferOutput<typeof NewReagentSchema>;
+export type NewMolecule = v.InferOutput<typeof NewMoleculeSchema>;
+
+// Backward-compatible alias while call sites migrate from "reagent" terminology.
+export const NewReagentSchema = NewMoleculeSchema;
+export type NewReagent = NewMolecule;
 
 export const StoichiometryRequestSchema = v.object({
   id: v.number(),
-  molecules: v.array(v.union([ExistingMoleculeUpdateSchema, NewReagentSchema])),
+  molecules: v.array(v.union([ExistingMoleculeUpdateSchema, NewMoleculeSchema])),
 });
 export type StoichiometryRequest = v.InferOutput<
   typeof StoichiometryRequestSchema

@@ -13,16 +13,12 @@ import {
   hasDuplicateInventoryLink,
 } from "./utils";
 import useOauthToken from "@/hooks/auth/useOauthToken";
-import {
-  useDeleteStoichiometryMutation,
-  useGetMoleculeInfoMutation,
-  useUpdateStoichiometryMutation,
-} from "@/modules/stoichiometry/mutations";
 import { useGetStoichiometryQuery } from "@/modules/stoichiometry/queries";
 import type {
   RsChemElement,
   ExistingMoleculeUpdate,
   NewReagent,
+  MoleculeInfo,
   StoichiometryRequest,
   StoichiometryResponse,
 } from "@/modules/stoichiometry/schema";
@@ -75,12 +71,28 @@ type StoichiometryTableProps = {
   stoichiometryRevision: number;
   editable?: boolean;
   onChangesUpdate?: (hasChanges: boolean) => void;
-  saveRequestId?: number;
-  deleteRequestId?: number;
   onSaveSuccess?: (revision: number) => void;
   onSaveError?: (error: Error) => void;
   onDeleteSuccess?: () => void;
   onDeleteError?: (error: Error) => void;
+  onRequestStateChange?: (state: {
+    isSaving: boolean;
+    isDeleting: boolean;
+    isBusy: boolean;
+  }) => void;
+  onActionsReady?: (actions: {
+    save: () => Promise<void>;
+    deleteTable: () => Promise<void>;
+  }) => void;
+  onUpdateStoichiometry: (params: {
+    stoichiometryId: number;
+    stoichiometryData: StoichiometryRequest;
+  }) => Promise<StoichiometryResponse>;
+  onDeleteStoichiometry: (params: { stoichiometryId: number }) => Promise<unknown>;
+  onGetMoleculeInfo: (params: { smiles: string }) => Promise<MoleculeInfo>;
+  isUpdatingStoichiometry?: boolean;
+  isDeletingStoichiometry?: boolean;
+  isGettingMoleculeInfo?: boolean;
 };
 
 function StoichiometryTable({
@@ -88,12 +100,18 @@ function StoichiometryTable({
   onChangesUpdate,
   stoichiometryId,
   stoichiometryRevision,
-  saveRequestId,
-  deleteRequestId,
   onSaveSuccess,
   onSaveError,
   onDeleteSuccess,
   onDeleteError,
+  onRequestStateChange,
+  onActionsReady,
+  onUpdateStoichiometry,
+  onDeleteStoichiometry,
+  onGetMoleculeInfo,
+  isUpdatingStoichiometry = false,
+  isDeletingStoichiometry = false,
+  isGettingMoleculeInfo = false,
 }: StoichiometryTableProps) {
   const { getToken } = useOauthToken();
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -103,26 +121,19 @@ function StoichiometryTable({
   const [allMolecules, setAllMolecules] = React.useState<
     ReadonlyArray<EditableMolecule>
   >([]);
-  const [lastHandledSaveRequestId, setLastHandledSaveRequestId] =
-    React.useState<number | undefined>(undefined);
-  const [lastHandledDeleteRequestId, setLastHandledDeleteRequestId] =
-    React.useState<number | undefined>(undefined);
-  const updateStoichiometryMutation = useUpdateStoichiometryMutation({
-    getToken,
-  });
-  const deleteStoichiometryMutation = useDeleteStoichiometryMutation({
-    getToken,
-  });
-  const getMoleculeInfoMutation = useGetMoleculeInfoMutation({
-    getToken,
-  });
-
-  const { data: queriedStoichiometry } = useGetStoichiometryQuery({
+  const { data: queriedStoichiometry, isFetching } = useGetStoichiometryQuery({
     stoichiometryId,
     revision: stoichiometryRevision,
     getToken,
   });
   const data = localData ?? queriedStoichiometry;
+  const isSaving = isUpdatingStoichiometry;
+  const isDeleting = isDeletingStoichiometry;
+  const isBusy = isSaving || isDeleting || isGettingMoleculeInfo || isFetching;
+
+  React.useEffect(() => {
+    onRequestStateChange?.({ isSaving, isDeleting, isBusy });
+  }, [isBusy, isDeleting, isSaving, onRequestStateChange]);
 
   React.useEffect(() => {
     setLocalData((currentData) => {
@@ -157,14 +168,14 @@ function StoichiometryTable({
             id: m.id,
             role: m.role,
             smiles: m.smiles,
-            name: m.name,
-            formula: m.formula,
-            molecularWeight: m.molecularWeight,
-            coefficient: m.coefficient,
+            name: m.name ?? undefined,
+            formula: m.formula ?? undefined,
+            molecularWeight: m.molecularWeight ?? undefined,
+            coefficient: m.coefficient ?? undefined,
             mass: m.mass,
             actualAmount: m.actualAmount,
             actualYield: m.actualYield,
-            limitingReagent: m.limitingReagent,
+            limitingReagent: m.limitingReagent ?? undefined,
             notes: m.notes,
             inventoryLink: m.inventoryLink ?? null,
           };
@@ -190,7 +201,7 @@ function StoichiometryTable({
       }),
     };
 
-    const updatedStoichiometry = await updateStoichiometryMutation.mutateAsync({
+    const updatedStoichiometry = await onUpdateStoichiometry({
       stoichiometryId: data.id,
       stoichiometryData: updatedData,
     });
@@ -199,78 +210,73 @@ function StoichiometryTable({
     setAllMolecules(toEditableMolecules(updatedStoichiometry));
     onChangesUpdate?.(false);
     return updatedStoichiometry.revision;
-  }, [allMolecules, data, onChangesUpdate, updateStoichiometryMutation]);
+  }, [allMolecules, data, onChangesUpdate, onUpdateStoichiometry]);
 
   const deleteTable = useCallback(async () => {
     if (!data || !data.id) {
       return;
     }
 
-    await deleteStoichiometryMutation.mutateAsync({
+    await onDeleteStoichiometry({
       stoichiometryId: data.id,
     });
     setLocalData(null);
     setAllMolecules([]);
     onChangesUpdate?.(false);
-  }, [data, deleteStoichiometryMutation, onChangesUpdate]);
+  }, [data, onChangesUpdate, onDeleteStoichiometry]);
 
-  React.useEffect(() => {
-    if (
-      saveRequestId === undefined ||
-      saveRequestId === lastHandledSaveRequestId
-    ) {
+  const executeSave = useCallback(async () => {
+    if (isSaving || isDeleting) {
       return;
     }
 
-    setLastHandledSaveRequestId(saveRequestId);
-    void (async () => {
-      try {
-        const revision = await saveTable();
-        onSaveSuccess?.(revision);
-      } catch (error) {
-        onSaveError?.(
-          error instanceof Error
-            ? error
-            : new Error("Failed to save stoichiometry table"),
-        );
-      }
-    })();
+    try {
+      const revision = await saveTable();
+      onSaveSuccess?.(revision);
+    } catch (error) {
+      onSaveError?.(
+        error instanceof Error
+          ? error
+          : new Error("Failed to save stoichiometry table"),
+      );
+    }
   }, [
-    lastHandledSaveRequestId,
+    isDeleting,
+    isSaving,
     onSaveError,
     onSaveSuccess,
-    saveRequestId,
     saveTable,
   ]);
 
-  React.useEffect(() => {
-    if (
-      deleteRequestId === undefined ||
-      deleteRequestId === lastHandledDeleteRequestId
-    ) {
+  const executeDelete = useCallback(async () => {
+    if (isSaving || isDeleting) {
       return;
     }
 
-    setLastHandledDeleteRequestId(deleteRequestId);
-    void (async () => {
-      try {
-        await deleteTable();
-        onDeleteSuccess?.();
-      } catch (error) {
-        onDeleteError?.(
-          error instanceof Error
-            ? error
-            : new Error("Failed to delete stoichiometry table"),
-        );
-      }
-    })();
+    try {
+      await deleteTable();
+      onDeleteSuccess?.();
+    } catch (error) {
+      onDeleteError?.(
+        error instanceof Error
+          ? error
+          : new Error("Failed to delete stoichiometry table"),
+      );
+    }
   }, [
-    deleteRequestId,
     deleteTable,
-    lastHandledDeleteRequestId,
+    isDeleting,
+    isSaving,
     onDeleteError,
     onDeleteSuccess,
   ]);
+
+  React.useEffect(() => {
+    onActionsReady?.({
+      save: executeSave,
+      deleteTable: executeDelete,
+    });
+  }, [executeDelete, executeSave, onActionsReady]);
 
   const handleAddReagent = useCallback(
     async (smilesString: string, name: string, source: string) => {
@@ -279,14 +285,14 @@ function StoichiometryTable({
       });
 
       // Prevent concurrent requests
-      if (getMoleculeInfoMutation.isPending) {
+      if (isGettingMoleculeInfo) {
         throw new Error(
           "Please wait for the current reagent to be processed before adding another.",
         );
       }
 
       try {
-        const moleculeInfo = await getMoleculeInfoMutation.mutateAsync({
+        const moleculeInfo = await onGetMoleculeInfo({
           smiles: smilesString,
         });
 
@@ -357,7 +363,8 @@ function StoichiometryTable({
     },
     [
       allMolecules,
-      getMoleculeInfoMutation,
+      onGetMoleculeInfo,
+      isGettingMoleculeInfo,
       onChangesUpdate,
       trackEvent,
     ],
@@ -774,7 +781,7 @@ function StoichiometryTable({
         />
       </Box>
       <StoichiometryTableLoadingDialog
-        open={getMoleculeInfoMutation.isPending}
+        open={isGettingMoleculeInfo}
       />
     </>
   );

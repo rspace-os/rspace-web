@@ -30,13 +30,11 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import {
   DataGrid,
-  GridToolbarContainer,
   GridToolbarColumnsButton,
   GridToolbarExportContainer,
   useGridApiContext,
   GridColumnVisibilityModel,
   GridRowSelectionModel,
-  GridSortItem,
   GridSortModel,
 } from "@mui/x-data-grid";
 import TextField from "@mui/material/TextField";
@@ -1288,12 +1286,10 @@ const ExportMenuItem = ({
 
 const Toolbar = ({
   userListing,
-  setColumnsMenuAnchorEl,
-  rowSelectionModel,
+  selectedCount,
 }: {
   userListing: FetchingData.Fetched<UserListing>;
-  setColumnsMenuAnchorEl: (anchorEl: HTMLElement) => void;
-  rowSelectionModel: ReadonlyArray<UserId>;
+  selectedCount: number;
 }) => {
   const [filterAnchorEl, setFilterAnchorEl] =
     React.useState<HTMLElement | null>(null);
@@ -1301,20 +1297,6 @@ const Toolbar = ({
     React.useState<HTMLElement | null>(null);
   const [tagsChecked, setTagsChecked] = React.useState(false);
   const [tags, setTags] = React.useState<Array<string>>([]);
-
-  /**
-   * The columns menu can be opened by either tapping the "Columns" toolbar
-   * button or by tapping the "Manage columns" menu item in each column's menu,
-   * logic that is handled my MUI. We provide a custom `anchorEl` so that the
-   * menu is positioned beneath the "Columns" toolbar button to be consistent
-   * with the other toolbar menus, otherwise is appears far to the left. Rather
-   * than having to hook into the logic that triggers the opening of the
-   * columns menu in both places, we just set the `anchorEl` pre-emptively.
-   */
-  const columnMenuRef = React.useRef<HTMLButtonElement>();
-  React.useEffect(() => {
-    if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
-  }, [setColumnsMenuAnchorEl]);
 
   const apiRef = useGridApiContext();
 
@@ -1352,7 +1334,17 @@ const Toolbar = ({
   };
 
   return (
-    <GridToolbarContainer sx={{ width: "100%" }}>
+    <Box
+      role="toolbar"
+      aria-label="Users table actions"
+      sx={{
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        flexWrap: "wrap",
+      }}
+    >
       <SearchBox userListing={userListing} />
       <Badge badgeContent={tagsChecked ? tags.length : null} color="primary">
         <Button
@@ -1466,11 +1458,7 @@ const Toolbar = ({
         </Card>
       </Panel>
       <Box flexGrow={1}></Box>
-      <GridToolbarColumnsButton
-        ref={(node) => {
-          if (node) columnMenuRef.current = node;
-        }}
-      />
+      <GridToolbarColumnsButton />
       <GridToolbarExportContainer /*variant="outlined"*/>
         <ExportMenuItem onClick={() => exportAllRows()}>
           Export all rows to CSV
@@ -1481,11 +1469,11 @@ const Toolbar = ({
             return Promise.resolve();
           }}
         >
-          Export {rowSelectionModel.length > 0 ? "selected" : "this page of"}{" "}
+          Export {selectedCount > 0 ? "selected" : "this page of"}{" "}
           rows to CSV
         </ExportMenuItem>
       </GridToolbarExportContainer>
-    </GridToolbarContainer>
+    </Box>
   );
 };
 
@@ -1494,10 +1482,10 @@ export const UsersPage = (): React.ReactNode => {
 
   const [rowSelectionModel, setRowSelectionModel] =
     React.useState<GridRowSelectionModel>({
-      type: 'include',
-      ids: new Set([]),
+      type: "include",
+      ids: new Set(),
     });
-  const [sortModel, setSortModel] = React.useState<Array<GridSortItem>>([]);
+  const [sortModel, setSortModel] = React.useState<GridSortModel>([]);
   const [groupsAnchorEl, setGroupsAnchorEl] =
     React.useState<HTMLElement | null>(null);
   const [groupsList, setGroupsList] = React.useState<Array<string>>([]);
@@ -1505,8 +1493,6 @@ export const UsersPage = (): React.ReactNode => {
     null,
   );
   const [tagsList, setTagsList] = React.useState<Array<string>>([]);
-  const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
-    React.useState<HTMLElement | null>(null);
   const [columnVisibility, setColumnVisibility] = useUiPreference(
     PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS,
     {
@@ -1521,6 +1507,11 @@ export const UsersPage = (): React.ReactNode => {
         usernameAlias: false,
       } as GridColumnVisibilityModel,
     },
+  );
+
+  const selectedIds = React.useMemo(
+    () => (rowSelectionModel.type === "include" ? [...rowSelectionModel.ids] : []),
+    [rowSelectionModel],
   );
 
   const columns = [
@@ -1863,7 +1854,7 @@ export const UsersPage = (): React.ReactNode => {
                       success: () => <></>,
                     })}
                     <SelectionActions
-                      selectedIds={rowSelectionModel as ReadonlyArray<UserId>}
+                      selectedIds={selectedIds as ReadonlyArray<UserId>}
                       fetchedListing={userListing}
                     />
                     <div style={{ width: "100%" }}>
@@ -1882,6 +1873,7 @@ export const UsersPage = (): React.ReactNode => {
                         getRowId={(row: User) => row.id}
                         hideFooterSelectedRowCount
                         checkboxSelection
+                        disableRowSelectionExcludeModel
                         rowSelectionModel={rowSelectionModel}
                         onRowSelectionModelChange={(
                           newRowSelectionModel: GridRowSelectionModel,
@@ -1992,25 +1984,7 @@ export const UsersPage = (): React.ReactNode => {
                           toolbar: {
                             // @ts-expect-error Needed by <Toolbar>
                             userListing,
-                            setColumnsMenuAnchorEl,
-                            rowSelectionModel,
-                          },
-                          panel: {
-                            target: columnsMenuAnchorEl,
-                          },
-                          basePopper: {
-                            // this has to be here because the panel isn't a
-                            // descendent of .MuiDataGrid as it is rendered
-                            // inside a Portal
-                            material: {
-                              sx: {
-                                "& .MuiPaper-root": {
-                                  boxShadow:
-                                    // this is copied from the other menus
-                                    "0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12)",
-                                },
-                              },
-                            },
+                            selectedCount: selectedIds.length,
                           },
                         }}
                         loading={FetchingData.match(userListing, {

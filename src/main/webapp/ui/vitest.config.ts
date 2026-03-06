@@ -35,6 +35,7 @@ export default defineConfig({
         ),
       },
     ],
+    externalConditions: ["require"],
   },
   ssr: {
     resolve: {

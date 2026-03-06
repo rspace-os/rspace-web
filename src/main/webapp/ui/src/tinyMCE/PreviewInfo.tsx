@@ -97,8 +97,8 @@ export default function PreviewInfo({ item }: PreviewInfoProps) {
                             </Box>
                           ),
                           success: (isEnabled) => {
-                            let stoichiometryId: number | undefined;
-                            let stoichiometryVersion: number | undefined;
+                            let stoichiometryId: string | undefined;
+                            let stoichiometryVersion: string | undefined;
                             const stoichiometryRaw =
                               item["data-stoichiometry-table"];
                             if (typeof stoichiometryRaw === "string") {
@@ -106,51 +106,27 @@ export default function PreviewInfo({ item }: PreviewInfoProps) {
                                 const { id, revision } = JSON.parse(
                                   stoichiometryRaw,
                                 ) as {
-                                  id?: number | string;
-                                  revision?: number | string;
+                                  id?: string;
+                                  revision?: string;
                                 };
-                                const parsedId = Number(id);
-                                const parsedRevision = Number(revision);
-                                if (
-                                  Number.isFinite(parsedId) &&
-                                  Number.isFinite(parsedRevision)
-                                ) {
-                                  stoichiometryId = parsedId;
-                                  stoichiometryVersion = parsedRevision;
-                                }
+                                stoichiometryId = id;
+                                stoichiometryVersion = revision;
                               } catch {}
                             }
 
-                            if (!isEnabled) {
-                              return (
-                                <Box p={2}>
-                                  <Alert severity="warning">
-                                    Chemistry integration is not enabled. Please
-                                    contact your administrator to enable it.
-                                  </Alert>
-                                </Box>
-                              );
-                            }
-
-                            if (
-                              stoichiometryId === undefined ||
-                              stoichiometryVersion === undefined
-                            ) {
-                              return (
-                                <Box p={2}>
-                                  <Alert severity="error">
-                                    Invalid stoichiometry metadata provided.
-                                  </Alert>
-                                </Box>
-                              );
-                            }
-
-                            return (
+                            return isEnabled ? (
                               <StoichiometryTable
                                 chemId={item.id}
                                 stoichiometryId={stoichiometryId}
                                 stoichiometryRevision={stoichiometryVersion}
                               />
+                            ) : (
+                              <Box p={2}>
+                                <Alert severity="warning">
+                                  Chemistry integration is not enabled. Please
+                                  contact your administrator to enable it.
+                                </Alert>
+                              </Box>
                             );
                           },
                         })}
@@ -229,3 +205,4 @@ document.addEventListener(
     });
   },
 );
+

@@ -95,7 +95,7 @@ const feature = test.extend<{
   When: {
     "a CSV export is downloaded": () => Promise<Download>;
     "the user taps the limiting reagent cell of the second row": () => Promise<void>;
-    "the user clicks Add Reagent": () => Promise<void>;
+    "the user clicks Add Chemical": () => Promise<void>;
     "the user selects PubChem from the menu": () => Promise<void>;
     "the user selects Gallery from the menu": () => Promise<void>;
     "the user selects Manual entry from the menu": () => Promise<void>;
@@ -176,7 +176,7 @@ const feature = test.extend<{
       csv: Download;
       count: number;
     }) => Promise<void>;
-    "the Add Reagent menu should be visible": () => Promise<void>;
+    "the Add Chemical menu should be visible": () => Promise<void>;
     "the PubChem dialog should open": () => Promise<void>;
     "the Gallery dialog should open": () => Promise<void>;
     "the manual SMILES dialog should open": () => Promise<void>;
@@ -274,8 +274,8 @@ const feature = test.extend<{
         });
         await cyclopentadieneRadio.click();
       },
-      "the user clicks Add Reagent": async () => {
-        await page.getByRole("button", { name: "Add Reagent" }).click();
+      "the user clicks Add Chemical": async () => {
+        await page.getByRole("button", { name: "Add Chemical" }).click();
       },
       "the user selects PubChem from the menu": async () => {
         await page
@@ -313,7 +313,7 @@ const feature = test.extend<{
         await page.getByRole("textbox", { name: /smiles/i }).fill(smiles);
       },
       "the user adds the manual reagent": async () => {
-        await page.getByRole("button", { name: /add reagent/i }).click();
+        await page.getByRole("button", { name: /add chemical/i }).click();
       },
       "the user selects the first chemistry file from Gallery": async () => {
         // Wait for Gallery to load files and select the first chemistry file (ethanol.mol)
@@ -520,7 +520,7 @@ const feature = test.extend<{
         // Check that the yield cell contains dash (—) indicating no yield value
         await expect(yieldCell).toContainText("—");
       },
-      "the Add Reagent menu should be visible": async () => {
+      "the Add Chemical menu should be visible": async () => {
         await expect(
           page.getByRole("menuitem", {
             name: /PubChem.*Import compound from PubChem/i,
@@ -549,7 +549,7 @@ const feature = test.extend<{
       },
       "the manual SMILES dialog should open": async () => {
         await expect(
-          page.getByRole("dialog", { name: /Add New Reagent/i }),
+          page.getByRole("dialog", { name: /Add New Chemical/i }),
         ).toBeVisible();
       },
       "PubChem search results should be displayed": async () => {
@@ -1005,12 +1005,12 @@ test.describe("Stoichiometry Table", () => {
   );
   test.describe("Adding reagants", () => {
     feature(
-      "User can access the Add Reagent menu",
+      "User can access the Add Chemical menu",
       async ({ Given, Once, When, Then }) => {
         await Given["the table is loaded with data"]();
         await Once["the table has loaded"]();
-        await When["the user clicks Add Reagent"]();
-        await Then["the Add Reagent menu should be visible"]();
+        await When["the user clicks Add Chemical"]();
+        await Then["the Add Chemical menu should be visible"]();
       },
 
     );
@@ -1020,7 +1020,7 @@ test.describe("Stoichiometry Table", () => {
         await Given["the table is loaded with data"]();
 
         await Once["the table has loaded"]();
-        await When["the user clicks Add Reagent"]();
+        await When["the user clicks Add Chemical"]();
         await When["the user selects PubChem from the menu"]();
 
         await Then["the PubChem dialog should open"]();
@@ -1050,7 +1050,7 @@ test.describe("Stoichiometry Table", () => {
         await Given["the table is loaded with data"]();
 
         await Once["the table has loaded"]();
-        await When["the user clicks Add Reagent"]();
+        await When["the user clicks Add Chemical"]();
         await When["the user selects Manual entry from the menu"]();
 
         await Then["the manual SMILES dialog should open"]();
@@ -1081,7 +1081,7 @@ test.describe("Stoichiometry Table", () => {
 
         await Once["the table has loaded"]();
         // Open Gallery dialog
-        await When["the user clicks Add Reagent"]();
+        await When["the user clicks Add Chemical"]();
         await When["the user selects Gallery from the menu"]();
 
         await Then["the Gallery dialog should open"]();
@@ -1112,7 +1112,7 @@ test.describe("Stoichiometry Table", () => {
 
         await Once["the table has loaded"]();
         // Add first reagent (Ethanol)
-        await When["the user clicks Add Reagent"]();
+        await When["the user clicks Add Chemical"]();
         await When["the user selects Manual entry from the menu"]();
         await When["the user enters SMILES {smiles} with name {name}"]({
           smiles: "CCO",
@@ -1123,7 +1123,7 @@ test.describe("Stoichiometry Table", () => {
 
         await Then["there should be {count} molecules in total"]({ count: 5 });
         // Add second reagent (Caffeine via PubChem)
-        await When["the user clicks Add Reagent"]();
+        await When["the user clicks Add Chemical"]();
         await When["the user selects PubChem from the menu"]();
         await When["the user searches for {compound} in PubChem"]({
           compound: "caffeine",

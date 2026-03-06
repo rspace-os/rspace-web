@@ -62,6 +62,26 @@ const mockStoichiometryResponse: StoichiometryResponse = {
       limitingReagent: false,
       notes: null,
     },
+    {
+      id: 5,
+      rsChemElement: null,
+      inventoryLink: {
+        id: 501,
+        inventoryItemGlobalId: "SA123",
+        stockDeducted: false,
+      },
+      role: "AGENT",
+      formula: null,
+      name: "Acetate",
+      smiles: "CC(=O)O",
+      coefficient: 1,
+      molecularWeight: null,
+      mass: null,
+      actualAmount: null,
+      actualYield: null,
+      limitingReagent: null,
+      notes: null,
+    },
   ],
 };
 
@@ -73,13 +93,7 @@ const mockStoichiometryRequest: StoichiometryRequest = {
       coefficient: 2,
       role: "REACTANT",
       inventoryLink: {
-        id: 501,
         inventoryItemGlobalId: "SA123",
-        stoichiometryMoleculeId: 4,
-        quantity: {
-          numericValue: 1,
-          unitId: 1,
-        },
       },
     },
     {
@@ -160,6 +174,24 @@ describe("updateStoichiometry", () => {
     expect(JSON.parse(callArgs[1]?.body as string)).toEqual(
       mockStoichiometryRequest,
     );
+  });
+
+  it("parses inventory links using stockDeducted shape", async () => {
+    fetchMock.mockResponseOnce(JSON.stringify(mockStoichiometryResponse));
+
+    const result = await updateStoichiometry(
+      {
+        stoichiometryId: 3,
+        stoichiometryData: mockStoichiometryRequest,
+      },
+      token,
+    );
+
+    expect(result.molecules[1]?.inventoryLink).toEqual({
+      id: 501,
+      inventoryItemGlobalId: "SA123",
+      stockDeducted: false,
+    });
   });
 });
 

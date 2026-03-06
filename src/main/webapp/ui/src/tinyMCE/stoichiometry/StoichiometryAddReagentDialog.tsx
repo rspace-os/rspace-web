@@ -51,7 +51,7 @@ const StoichiometryAddReagentDialog = ({
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <form onSubmit={onSubmitHandler}>
-        <DialogTitle>Add New Reagent</DialogTitle>
+        <DialogTitle>Add New Chemical</DialogTitle>
         <DialogContent>
           <FormControl component="fieldset" sx={{ width: "100%", mt: 1 }}>
             <Stack spacing={2}>
@@ -86,7 +86,7 @@ const StoichiometryAddReagentDialog = ({
             validationResult={validate()}
             loading={false}
           >
-            Add Reagent
+            Add Chemical
           </ValidatingSubmitButton>
         </DialogActions>
       </form>

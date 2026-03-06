@@ -66,13 +66,13 @@ function StoichiometryTableToolbar({
         {editable && (
           <>
             <Button
-              aria-label="Add Reagent"
+              aria-label="Add Chemical"
               startIcon={<AddIcon />}
               onClick={(e) => setAddReagentMenuAnchorEl(e.currentTarget)}
               size="small"
               sx={{ mr: 1 }}
             >
-              Add Reagent
+              Add Chemical
             </Button>
             <Menu
               open={Boolean(addReagantMenuAnchorEl)}
@@ -89,7 +89,7 @@ function StoichiometryTableToolbar({
               }
               MenuListProps={{
                 disablePadding: true,
-                "aria-label": "add reagent menu",
+                "aria-label": "add chemical menu",
               }}
             >
               <AccentMenuItem

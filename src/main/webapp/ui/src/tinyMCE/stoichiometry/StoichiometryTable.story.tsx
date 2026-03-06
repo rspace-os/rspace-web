@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/chemistry";
 import Alerts from "../../components/Alerts/Alerts";
+import useOauthToken from "@/hooks/auth/useOauthToken";
+import { useGetStoichiometryQuery } from "@/modules/stoichiometry/queries";
 import StoichiometryTable from "@/tinyMCE/stoichiometry/StoichiometryTable";
 import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
 
@@ -16,6 +18,30 @@ const queryClient = new QueryClient({
     mutations: { retry: false },
   },
 });
+
+function StoichiometryTableWithQueryData(): React.ReactNode {
+  const { getToken } = useOauthToken();
+  const { data, isFetching } = useGetStoichiometryQuery({
+    stoichiometryId: 1,
+    revision: 1,
+    getToken,
+  });
+
+  return (
+    <StoichiometryTable
+      stoichiometryId={data.id}
+      stoichiometryRevision={data.revision}
+      isFetching={isFetching}
+      onUpdateStoichiometry={async () => data}
+      onDeleteStoichiometry={async () => true}
+      onGetMoleculeInfo={async () => ({
+        formula: "",
+        molecularWeight: 0,
+      })}
+      editable
+    />
+  );
+}
 
 export function StoichiometryTableWithDataStory(): React.ReactNode {
   return (
@@ -46,11 +72,7 @@ export function StoichiometryTableWithDataStory(): React.ReactNode {
                 </Box>
               }
             >
-              <StoichiometryTable
-                stoichiometryId={1}
-                stoichiometryRevision={1}
-                editable
-              />
+              <StoichiometryTableWithQueryData />
             </React.Suspense>
           </Alerts>
         </QueryClientProvider>

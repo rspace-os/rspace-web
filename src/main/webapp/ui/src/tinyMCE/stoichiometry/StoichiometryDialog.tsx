@@ -20,7 +20,12 @@ import { useConfirm } from "../../components/ConfirmProvider";
 import ConfirmProvider from "../../components/ConfirmProvider";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import useOauthToken from "@/hooks/auth/useOauthToken";
-import { useCalculateStoichiometryMutation } from "@/modules/stoichiometry/mutations";
+import {
+  useCalculateStoichiometryMutation,
+  useDeleteStoichiometryMutation,
+  useGetMoleculeInfoMutation,
+  useUpdateStoichiometryMutation,
+} from "@/modules/stoichiometry/mutations";
 import StoichiometryTable from "@/tinyMCE/stoichiometry/StoichiometryTable";
 
 const queryClient = new QueryClient({
@@ -56,22 +61,35 @@ function StandaloneDialogInner({
   const calculateStoichiometryMutation = useCalculateStoichiometryMutation({
     getToken,
   });
+  const updateStoichiometryMutation = useUpdateStoichiometryMutation({
+    getToken,
+  });
+  const deleteStoichiometryMutation = useDeleteStoichiometryMutation({
+    getToken,
+  });
+  const getMoleculeInfoMutation = useGetMoleculeInfoMutation({
+    getToken,
+  });
   const { addAlert } = React.useContext(AlertContext);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const confirm = useConfirm();
   const [showTable, setShowTable] = React.useState(
     stoichiometryId !== undefined,
   );
-  const [saving, setSaving] = React.useState(false);
   const [hasTableChanges, setHasTableChanges] = React.useState(false);
   const [actuallyOpen, setActuallyOpen] = React.useState(false);
-  const [saveRequestId, setSaveRequestId] = React.useState<number | undefined>(
-    undefined,
-  );
-  const [deleteRequestId, setDeleteRequestId] = React.useState<
-    number | undefined
-  >(undefined);
+  const [tableRequestState, setTableRequestState] = React.useState({
+    isSaving: false,
+    isDeleting: false,
+    isBusy: false,
+  });
+  const [tableActions, setTableActions] = React.useState<{
+    save: () => Promise<void>;
+    deleteTable: () => Promise<void>;
+  } | null>(null);
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
+  const isRequestInFlight =
+    calculateStoichiometryMutation.isPending || tableRequestState.isBusy;
 
   React.useEffect(() => {
     if (open) {
@@ -115,6 +133,9 @@ function StandaloneDialogInner({
   }, [open, stoichiometryId, chemistryStatus]);
 
   const handleCalculate = () => {
+    if (isRequestInFlight) {
+      return;
+    }
     trackEvent("user:create:stoichiometry_table:document_editor");
     void (async () => {
       try {
@@ -134,15 +155,17 @@ function StandaloneDialogInner({
   };
 
   const handleSave = () => {
+    if (isRequestInFlight) {
+      return;
+    }
     trackEvent("user:save:stoichiometry_table:document_editor");
     if (!stoichiometryId)
       throw new Error("stoichiometryId is required to save");
-    setSaving(true);
-    setSaveRequestId((currentId) => (currentId ?? 0) + 1);
+    void tableActions?.save();
   };
 
   const handleDelete = async () => {
-    if (!chemId) return;
+    if (!chemId || isRequestInFlight) return;
 
     const shouldDelete = await confirm(
       "Delete Stoichiometry Table",
@@ -153,11 +176,14 @@ function StandaloneDialogInner({
 
     if (shouldDelete) {
       trackEvent("user:delete:stoichiometry_table:document_editor");
-      setDeleteRequestId((currentId) => (currentId ?? 0) + 1);
+      void tableActions?.deleteTable();
     }
   };
 
   async function handleClose() {
+    if (isRequestInFlight) {
+      return;
+    }
     if (
       hasTableChanges &&
       !(await confirm(
@@ -174,7 +200,11 @@ function StandaloneDialogInner({
   return (
     <Dialog
       open={actuallyOpen}
-      onClose={() => {
+      disableEscapeKeyDown={isRequestInFlight}
+      onClose={(_event, _reason) => {
+        if (isRequestInFlight) {
+          return;
+        }
         void handleClose();
       }}
       aria-labelledby={titleId}
@@ -208,7 +238,7 @@ function StandaloneDialogInner({
               variant="contained"
               color="primary"
               onClick={handleCalculate}
-              disabled={calculateStoichiometryMutation.isPending}
+              disabled={isRequestInFlight}
             >
               {calculateStoichiometryMutation.isPending
                 ? "Calculating..."
@@ -252,20 +282,29 @@ function StandaloneDialogInner({
                     onChangesUpdate={setHasTableChanges}
                     stoichiometryId={stoichiometryId}
                     stoichiometryRevision={stoichiometryRevision}
-                    saveRequestId={saveRequestId}
-                    deleteRequestId={deleteRequestId}
+                    onRequestStateChange={setTableRequestState}
+                    onActionsReady={setTableActions}
+                    onUpdateStoichiometry={(params) =>
+                      updateStoichiometryMutation.mutateAsync(params)
+                    }
+                    onDeleteStoichiometry={(params) =>
+                      deleteStoichiometryMutation.mutateAsync(params)
+                    }
+                    onGetMoleculeInfo={(params) =>
+                      getMoleculeInfoMutation.mutateAsync(params)
+                    }
+                    isUpdatingStoichiometry={updateStoichiometryMutation.isPending}
+                    isDeletingStoichiometry={deleteStoichiometryMutation.isPending}
+                    isGettingMoleculeInfo={getMoleculeInfoMutation.isPending}
                     onSaveSuccess={(revision) => {
                       if (stoichiometryId === undefined) {
-                        setSaving(false);
                         return;
                       }
                       onSave?.(stoichiometryId, revision);
-                      setSaving(false);
                       console.log("Stoichiometry data saved successfully");
                     }}
                     onSaveError={(error) => {
                       console.error("Save failed", error);
-                      setSaving(false);
                     }}
                     onDeleteSuccess={() => {
                       onDelete?.();
@@ -285,18 +324,26 @@ function StandaloneDialogInner({
         {showTable && hasTableChanges && (
           <ValidatingSubmitButton
             onClick={handleSave}
-            loading={saving}
+            loading={tableRequestState.isSaving}
             validationResult={IsValid()}
           >
             Save Changes
           </ValidatingSubmitButton>
         )}
         {showTable && (
-          // eslint-disable-next-line @typescript-eslint/no-misused-promises
-          (<Button onClick={handleDelete} variant="outlined" color="error">Delete
-                      </Button>)
+          <Button
+            onClick={() => {
+              void handleDelete();
+            }}
+            variant="outlined"
+            color="error"
+            disabled={isRequestInFlight}
+          >
+            Delete
+          </Button>
         )}
         <Button
+          disabled={isRequestInFlight}
           onClick={() => {
             void handleClose();
           }}
@@ -321,3 +368,4 @@ export default function StoichiometryDialog(
     </QueryClientProvider>
   );
 }
+

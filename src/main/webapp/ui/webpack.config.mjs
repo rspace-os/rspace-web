@@ -118,6 +118,7 @@ const config = {
     fallback: {
       url: import.meta.resolve("url/"),
     },
+    conditionNames: ["require", "..."],
   },
   module: {
     rules: [

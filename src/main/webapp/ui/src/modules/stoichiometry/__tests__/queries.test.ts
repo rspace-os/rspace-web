@@ -53,6 +53,26 @@ const mockStoichiometryResponse: StoichiometryResponse = {
       limitingReagent: false,
       notes: null,
     },
+    {
+      id: 5,
+      rsChemElement: null,
+      inventoryLink: {
+        id: 901,
+        inventoryItemGlobalId: "SS456",
+        stockDeducted: true,
+      },
+      role: "PRODUCT",
+      formula: "C6H6",
+      name: "Cyclohexene",
+      smiles: "C1=CCCCC1",
+      coefficient: 1,
+      molecularWeight: 82.15,
+      mass: null,
+      actualAmount: null,
+      actualYield: null,
+      limitingReagent: false,
+      notes: null,
+    },
   ],
 };
 
@@ -75,6 +95,7 @@ describe("getStoichiometry", () => {
     });
 
     expect(result).toEqual(mockStoichiometryResponse);
+    expect(result.molecules[1]?.inventoryLink?.stockDeducted).toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
       `${API_BASE_URL}/stoichiometry?stoichiometryId=3&revision=1`,
       expect.objectContaining({
