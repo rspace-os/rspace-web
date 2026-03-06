@@ -8,6 +8,7 @@ import Result from "../../../util/result";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Alerts from "@/components/Alerts/Alerts";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -145,11 +146,13 @@ function renderWithProviders(files: Array<GalleryFile>) {
     <QueryClientProvider client={queryClient}>
       <React.Suspense fallback={null}>
         <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-          <LandmarksProvider>
-            <GallerySelection>
-              <ActionsMenuWrapper files={files} />
-            </GallerySelection>
-          </LandmarksProvider>
+          <Alerts>
+            <LandmarksProvider>
+              <GallerySelection>
+                <ActionsMenuWrapper files={files} />
+              </GallerySelection>
+            </LandmarksProvider>
+          </Alerts>
         </ThemeProvider>
       </React.Suspense>
     </QueryClientProvider>
@@ -190,4 +193,33 @@ export function ActionsMenuWithMultipleFiles() {
 
 export function ActionsMenuWithSnippet() {
   return renderWithProviders([snippetFile]);
+}
+
+export function ActionsMenuWithMixedSelection() {
+  return renderWithProviders([snippetFile, nonFolderFile]);
+}
+
+export function ActionsMenuWithMultipleSnippets() {
+  return renderWithProviders([
+    snippetFile,
+    {
+      ...snippetFile,
+      globalId: "GF5",
+      key: "GF5",
+      id: dummyId(),
+      name: "My Second Snippet",
+    },
+  ]);
+}
+
+export function ActionsMenuWithSnippetMissingGlobalId() {
+  return renderWithProviders([
+    {
+      ...snippetFile,
+      globalId: undefined,
+      key: "GF_MISSING",
+      id: dummyId(),
+      name: "Snippet Missing Global ID",
+    },
+  ]);
 }

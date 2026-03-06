@@ -24,6 +24,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
+import Alert from "@mui/material/Alert";
 import Analytics from "./Analytics";
 import AnalyticsContext from "../stores/contexts/Analytics";
 import ValidatingSubmitButton from "./ValidatingSubmitButton";
@@ -57,6 +58,10 @@ type DocumentGlobalId = string;
 type DocumentName = string;
 type ShareId = string;
 type Permission = "READ" | "EDIT" | "UNSHARE";
+type ShareSaveSummary = {
+  hasNewShares: boolean;
+  hasUpdates: boolean;
+};
 
 // Extended type with sharing state
 type ShareOptionWithState = ShareOption & {
@@ -71,7 +76,7 @@ export default function Wrapper(): React.ReactNode {
           <Portal>
             <Alerts>
               <DialogBoundary>
-                <ShareDialog shareDialogConfig="FromGlobalEvent" />
+                <ShareDialogFromGlobalEvent />
               </DialogBoundary>
             </Alerts>
           </Portal>
@@ -81,11 +86,15 @@ export default function Wrapper(): React.ReactNode {
   );
 }
 
-type ShareDialogConfig = {
+export type ShareDialogProps = {
   globalIds: ReadonlyArray<DocumentGlobalId>;
   open: boolean;
   onClose: () => void;
   names: ReadonlyArray<DocumentName>;
+  singularName?: string;
+  pluralName?: string;
+  showLocationsDialog?: boolean;
+  showSnippetSharedInfoAlert?: boolean;
 };
 
 /**
@@ -97,7 +106,7 @@ type ShareDialogConfig = {
  * The rest of the code in this module assumes that the OPEN_SHARE_DIALOG
  * event will not be dispatched again whilst the dialog is open.
  */
-function useSetup(): ShareDialogConfig {
+function useSetup(): ShareDialogProps {
   const [open, setOpen] = React.useState(false);
   const [globalIds, setGlobalIds] = React.useState<
     ReadonlyArray<DocumentGlobalId>
@@ -133,16 +142,28 @@ function useSetup(): ShareDialogConfig {
   };
 }
 
+function ShareDialogFromGlobalEvent(): React.ReactNode {
+  const { open, onClose, globalIds, names } = useSetup();
+  return (
+    <ShareDialog
+      open={open}
+      onClose={onClose}
+      globalIds={globalIds}
+      names={names}
+    />
+  );
+}
+
 export function ShareDialog({
-  shareDialogConfig,
-}: {
-  shareDialogConfig: ShareDialogConfig | "FromGlobalEvent";
-}) {
-  const shareDialogConfigFromHook = useSetup();
-  const { open, onClose, globalIds, names } =
-    shareDialogConfig === "FromGlobalEvent"
-      ? shareDialogConfigFromHook
-      : shareDialogConfig;
+  open,
+  onClose,
+  globalIds,
+  names,
+  singularName = "document",
+  pluralName = "documents",
+  showLocationsDialog = true,
+  showSnippetSharedInfoAlert = false,
+}: ShareDialogProps) {
   const [shareData, setShareData] = React.useState<
     Map<
       DocumentGlobalId,
@@ -189,6 +210,26 @@ export function ShareDialog({
   const currentUser = useWhoAmI();
   const [autocompleteInput, setAutocompleteInput] = React.useState("");
   const { addAlert } = React.useContext(AlertsContext);
+
+  const resetDialogState = React.useCallback(() => {
+    setShareData(new Map());
+    setLoading(false);
+    setShareOptions([]);
+    setOptionsLoading(false);
+    setPermissionChanges(new Map());
+    setNewShares(new Map());
+    setGroupFolderNames(new Map());
+    setFolderSelectionOpen(false);
+    setSelectedShareForFolderChange(null);
+    setShareFolderChanges(new Map());
+    setAutocompleteInput("");
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) {
+      resetDialogState();
+    }
+  }, [open, resetDialogState]);
 
   React.useEffect(() => {
     if (open && globalIds.length > 0) {
@@ -429,16 +470,7 @@ export function ShareDialog({
 
   function handleClose() {
     onClose();
-    setShareData(new Map());
-    setLoading(false);
-    setShareOptions([]);
-    setOptionsLoading(false);
-    setPermissionChanges(new Map());
-    setNewShares(new Map());
-    setGroupFolderNames(new Map());
-    setFolderSelectionOpen(false);
-    setSelectedShareForFolderChange(null);
-    setShareFolderChanges(new Map());
+    resetDialogState();
   }
 
   function handleCancel() {
@@ -461,7 +493,7 @@ export function ShareDialog({
    */
   async function handleSave() {
     if (!hasChanges) {
-      trackEvent("user:closes:share_dialog:workspace");
+      trackEvent("user:close:share_dialog:workspace");
       handleClose();
       return;
     }
@@ -575,9 +607,14 @@ export function ShareDialog({
       }
 
       handleClose();
-      // @ts-expect-error global function
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
+      try {
+        // This only exists in workspace, not Gallery. Since ShareDialog can be used
+        // outside of the workspace, we let this fail silently if the function doesn't exist
+        // TODO: Remove this when old Workspace is removed
+        // @ts-expect-error See above
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+        getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
+      } catch {}
       addAlert(
         mkAlert({
           message: "Shares updated successfully.",
@@ -610,7 +647,7 @@ export function ShareDialog({
             Share <strong>{names[0]}</strong>
           </>
         ) : (
-          `Share ${names.length} items`
+          `Share ${names.length} ${pluralName}`
         )}
       </DialogTitle>
       <DialogContent>
@@ -755,7 +792,7 @@ export function ShareDialog({
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {option.isDisabled
-                      ? `All of the documents have already been shared with ${
+                      ? `All of the ${pluralName} have already been shared with ${
                           option.optionType === "GROUP"
                             ? option.name
                             : `${option.firstName} ${option.lastName}`
@@ -792,6 +829,13 @@ export function ShareDialog({
           />
         </Box>
 
+        {showSnippetSharedInfoAlert && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Shared snippets can be found in the <strong>SNIPPETS_Shared</strong>{" "}
+            folder, inside the Snippets section of the Gallery.
+          </Alert>
+        )}
+
         {loading ? (
           <Box
             display="flex"
@@ -808,7 +852,7 @@ export function ShareDialog({
                 <Stack spacing={3}>
                   {(() => {
                     const globalId = globalIds[0];
-                    const docName = names[0] || "this document";
+                    const docName = names[0] || `this ${singularName}`;
                     const directShares =
                       shareData.get(globalId)?.directShares ?? [];
                     const notebookShares =
@@ -824,7 +868,8 @@ export function ShareDialog({
                               color="text.secondary"
                               style={{ fontStyle: "italic" }}
                             >
-                              This document is not directly shared with anyone.
+                              This {singularName} is not directly shared with
+                              anyone.
                             </Typography>
                           ) : (
                             <TableContainer
@@ -837,7 +882,9 @@ export function ShareDialog({
                                     <TableCell>Shared With</TableCell>
                                     <TableCell>Type</TableCell>
                                     <TableCell>Permission</TableCell>
-                                    <TableCell>Location</TableCell>
+                                    {showLocationsDialog && (
+                                      <TableCell>Location</TableCell>
+                                    )}
                                   </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -915,53 +962,58 @@ export function ShareDialog({
                                           </Select>
                                         </FormControl>
                                       </TableCell>
-                                      <TableCell>
-                                        {share.recipientType === "USER" ? (
-                                          <>&mdash;</>
-                                        ) : (
-                                          <>
-                                            {shareFolderChanges.get(
-                                              share.shareId.toString(),
-                                            )?.name ||
-                                              getParentFolderName(share)}
-                                            <Button
-                                              size="small"
-                                              sx={{ ml: 1 }}
-                                              onClick={() => {
-                                                const groups =
-                                                  shareOptions.filter(
-                                                    (opt) =>
-                                                      opt.optionType ===
-                                                      "GROUP",
+                                      {showLocationsDialog && (
+                                        <TableCell>
+                                          {share.recipientType === "USER" ? (
+                                            <>&mdash;</>
+                                          ) : (
+                                            <>
+                                              {shareFolderChanges.get(
+                                                share.shareId.toString(),
+                                              )?.name ||
+                                                getParentFolderName(share)}
+                                              <Button
+                                                size="small"
+                                                sx={{ ml: 1 }}
+                                                onClick={() => {
+                                                  const groups =
+                                                    shareOptions.filter(
+                                                      (opt) =>
+                                                        opt.optionType ===
+                                                        "GROUP",
+                                                    );
+                                                  const group = groups.find(
+                                                    (g) =>
+                                                      g.id ===
+                                                      share.recipientId,
                                                   );
-                                                const group = groups.find(
-                                                  (g) =>
-                                                    g.id === share.recipientId,
-                                                );
-                                                if (
-                                                  group &&
-                                                  "sharedFolderId" in group
-                                                ) {
-                                                  setSelectedShareForFolderChange(
-                                                    {
-                                                      shareId:
-                                                        share.shareId.toString(),
-                                                      groupId:
-                                                        share.recipientId,
-                                                      globalId,
-                                                      sharedFolderId:
-                                                        group.sharedFolderId,
-                                                    },
-                                                  );
-                                                  setFolderSelectionOpen(true);
-                                                }
-                                              }}
-                                            >
-                                              Change
-                                            </Button>
-                                          </>
-                                        )}
-                                      </TableCell>
+                                                  if (
+                                                    group &&
+                                                    "sharedFolderId" in group
+                                                  ) {
+                                                    setSelectedShareForFolderChange(
+                                                      {
+                                                        shareId:
+                                                          share.shareId.toString(),
+                                                        groupId:
+                                                          share.recipientId,
+                                                        globalId,
+                                                        sharedFolderId:
+                                                          group.sharedFolderId,
+                                                      },
+                                                    );
+                                                    setFolderSelectionOpen(
+                                                      true,
+                                                    );
+                                                  }
+                                                }}
+                                              >
+                                                Change
+                                              </Button>
+                                            </>
+                                          )}
+                                        </TableCell>
+                                      )}
                                     </TableRow>
                                   ))}
                                   {/* New shares */}
@@ -1051,55 +1103,59 @@ export function ShareDialog({
                                           </Select>
                                         </FormControl>
                                       </TableCell>
-                                      <TableCell>
-                                        {newShare.recipientType === "USER" ? (
-                                          <>&mdash;</>
-                                        ) : (
-                                          <>
-                                            <Typography
-                                              variant="body2"
-                                              color="text.secondary"
-                                            >
-                                              {newShare.locationName || "/"}
-                                            </Typography>
-                                            <Button
-                                              size="small"
-                                              sx={{ ml: 1 }}
-                                              onClick={() => {
-                                                const groups =
-                                                  shareOptions.filter(
-                                                    (opt) =>
-                                                      opt.optionType ===
-                                                      "GROUP",
+                                      {showLocationsDialog && (
+                                        <TableCell>
+                                          {newShare.recipientType === "USER" ? (
+                                            <>&mdash;</>
+                                          ) : (
+                                            <>
+                                              <Typography
+                                                variant="body2"
+                                                color="text.secondary"
+                                              >
+                                                {newShare.locationName || "/"}
+                                              </Typography>
+                                              <Button
+                                                size="small"
+                                                sx={{ ml: 1 }}
+                                                onClick={() => {
+                                                  const groups =
+                                                    shareOptions.filter(
+                                                      (opt) =>
+                                                        opt.optionType ===
+                                                        "GROUP",
+                                                    );
+                                                  const group = groups.find(
+                                                    (g) =>
+                                                      g.id ===
+                                                      newShare.recipientId,
                                                   );
-                                                const group = groups.find(
-                                                  (g) =>
-                                                    g.id ===
-                                                    newShare.recipientId,
-                                                );
-                                                if (
-                                                  group &&
-                                                  "sharedFolderId" in group
-                                                ) {
-                                                  setSelectedShareForFolderChange(
-                                                    {
-                                                      shareId: newShare.id,
-                                                      groupId:
-                                                        newShare.recipientId,
-                                                      globalId,
-                                                      sharedFolderId:
-                                                        group.sharedFolderId,
-                                                    },
-                                                  );
-                                                  setFolderSelectionOpen(true);
-                                                }
-                                              }}
-                                            >
-                                              Change
-                                            </Button>
-                                          </>
-                                        )}
-                                      </TableCell>
+                                                  if (
+                                                    group &&
+                                                    "sharedFolderId" in group
+                                                  ) {
+                                                    setSelectedShareForFolderChange(
+                                                      {
+                                                        shareId: newShare.id,
+                                                        groupId:
+                                                          newShare.recipientId,
+                                                        globalId,
+                                                        sharedFolderId:
+                                                          group.sharedFolderId,
+                                                      },
+                                                    );
+                                                    setFolderSelectionOpen(
+                                                      true,
+                                                    );
+                                                  }
+                                                }}
+                                              >
+                                                Change
+                                              </Button>
+                                            </>
+                                          )}
+                                        </TableCell>
+                                      )}
                                     </TableRow>
                                   ))}
                                 </TableBody>
@@ -1214,7 +1270,8 @@ export function ShareDialog({
             ) : (
               <>
                 <Typography variant="h3" gutterBottom>
-                  Adding shares to {globalIds.length} documents
+                  Adding shares to {globalIds.length}{" "}
+                  {globalIds.length === 1 ? singularName : pluralName}
                 </Typography>
                 <Typography
                   variant="body2"
@@ -1222,8 +1279,10 @@ export function ShareDialog({
                   sx={{ mb: 2 }}
                 >
                   Use the field above to add new shares. The share status of
-                  multiple documents can be edited on the{" "}
-                  <Link href="/record/share/manage">shared documents page</Link>
+                  multiple {pluralName} can be edited on the{" "}
+                  <Link href="/record/share/manage">
+                    shared {pluralName} page
+                  </Link>
                   .
                 </Typography>
                 {newShares.size > 0 && (
@@ -1281,18 +1340,19 @@ export function ShareDialog({
                                   color="text.secondary"
                                 >
                                   {documentCount === globalIds.length
-                                    ? `All ${globalIds.length} documents`
-                                    : `${documentCount} of ${globalIds.length} documents`}
+                                    ? `All ${globalIds.length} ${pluralName}`
+                                    : `${documentCount} of ${globalIds.length} ${globalIds.length === 1 ? singularName : pluralName}`}
                                 </Typography>
-                                {share.recipientType === "GROUP" && (
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{ display: "block" }}
-                                  >
-                                    Location: {share.locationName || "/"}
-                                  </Typography>
-                                )}
+                                {showLocationsDialog &&
+                                  share.recipientType === "GROUP" && (
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      sx={{ display: "block" }}
+                                    >
+                                      Location: {share.locationName || "/"}
+                                    </Typography>
+                                  )}
                               </Box>
 
                               <Chip
@@ -1383,31 +1443,32 @@ export function ShareDialog({
                                 </Select>
                               </FormControl>
 
-                              {share.recipientType === "GROUP" && (
-                                <Button
-                                  size="small"
-                                  onClick={() => {
-                                    const groups = shareOptions.filter(
-                                      (opt) => opt.optionType === "GROUP",
-                                    );
-                                    const group = groups.find(
-                                      (g) => g.id === share.recipientId,
-                                    );
-                                    if (group && "sharedFolderId" in group) {
-                                      // Use the first globalId as a placeholder
-                                      setSelectedShareForFolderChange({
-                                        shareId: share.id,
-                                        groupId: share.recipientId,
-                                        globalId: globalIds[0],
-                                        sharedFolderId: group.sharedFolderId,
-                                      });
-                                      setFolderSelectionOpen(true);
-                                    }
-                                  }}
-                                >
-                                  Change Folder
-                                </Button>
-                              )}
+                              {showLocationsDialog &&
+                                share.recipientType === "GROUP" && (
+                                  <Button
+                                    size="small"
+                                    onClick={() => {
+                                      const groups = shareOptions.filter(
+                                        (opt) => opt.optionType === "GROUP",
+                                      );
+                                      const group = groups.find(
+                                        (g) => g.id === share.recipientId,
+                                      );
+                                      if (group && "sharedFolderId" in group) {
+                                        // Use the first globalId as a placeholder
+                                        setSelectedShareForFolderChange({
+                                          shareId: share.id,
+                                          groupId: share.recipientId,
+                                          globalId: globalIds[0],
+                                          sharedFolderId: group.sharedFolderId,
+                                        });
+                                        setFolderSelectionOpen(true);
+                                      }
+                                    }}
+                                  >
+                                    Change Folder
+                                  </Button>
+                                )}
                             </Box>
                           ),
                         );
@@ -1421,73 +1482,76 @@ export function ShareDialog({
         )}
       </DialogContent>
       {hasChanges && <WarningBar />}
-      <FolderSelectionDialog
-        open={folderSelectionOpen}
-        onClose={() => {
-          setFolderSelectionOpen(false);
-          setSelectedShareForFolderChange(null);
-        }}
-        onFolderSelect={(folder: FolderTreeNode) => {
-          if (!selectedShareForFolderChange) return;
+      {showLocationsDialog && (
+        <FolderSelectionDialog
+          open={folderSelectionOpen}
+          onClose={() => {
+            setFolderSelectionOpen(false);
+            setSelectedShareForFolderChange(null);
+          }}
+          onFolderSelect={(folder: FolderTreeNode) => {
+            if (!selectedShareForFolderChange) return;
 
-          const { shareId, groupId } = selectedShareForFolderChange;
+            const { shareId, groupId } = selectedShareForFolderChange;
 
-          // For multiple documents, update all shares for this group across all documents
-          if (globalIds.length > 1) {
-            const updatedNewShares = new Map(newShares);
-            globalIds.forEach((globalId) => {
-              const docShares = updatedNewShares.get(globalId) || [];
-              const updatedDocShares = docShares.map((share) =>
-                share.recipientType === "GROUP" && share.recipientId === groupId
-                  ? {
-                      ...share,
-                      locationName: folder.name,
-                      locationId: folder.id,
-                    }
-                  : share,
-              );
-              updatedNewShares.set(globalId, updatedDocShares);
-            });
-            setNewShares(updatedNewShares);
-          } else {
-            // Single document logic (existing)
-            const { globalId } = selectedShareForFolderChange;
-            const updatedNewShares = new Map(newShares);
-            const docNewShares = updatedNewShares.get(globalId) || [];
-            const isNewShare = docNewShares.some(
-              (share) => share.id === shareId,
-            );
-
-            if (isNewShare) {
-              // Handle new shares
-              const updatedDocNewShares = docNewShares.map((share) =>
-                share.id === shareId
-                  ? {
-                      ...share,
-                      locationName: folder.name,
-                      locationId: folder.id,
-                    }
-                  : share,
-              );
-              updatedNewShares.set(globalId, updatedDocNewShares);
+            // For multiple documents, update all shares for this group across all documents
+            if (globalIds.length > 1) {
+              const updatedNewShares = new Map(newShares);
+              globalIds.forEach((globalId) => {
+                const docShares = updatedNewShares.get(globalId) || [];
+                const updatedDocShares = docShares.map((share) =>
+                  share.recipientType === "GROUP" &&
+                  share.recipientId === groupId
+                    ? {
+                        ...share,
+                        locationName: folder.name,
+                        locationId: folder.id,
+                      }
+                    : share,
+                );
+                updatedNewShares.set(globalId, updatedDocShares);
+              });
               setNewShares(updatedNewShares);
             } else {
-              // Handle existing shares - track folder changes
-              const updatedFolderChanges = new Map(shareFolderChanges);
-              updatedFolderChanges.set(shareId, {
-                id: folder.id,
-                name: folder.name,
-              });
-              setShareFolderChanges(updatedFolderChanges);
-            }
-          }
+              // Single document logic (existing)
+              const { globalId } = selectedShareForFolderChange;
+              const updatedNewShares = new Map(newShares);
+              const docNewShares = updatedNewShares.get(globalId) || [];
+              const isNewShare = docNewShares.some(
+                (share) => share.id === shareId,
+              );
 
-          setFolderSelectionOpen(false);
-          setSelectedShareForFolderChange(null);
-        }}
-        rootFolderId={selectedShareForFolderChange?.sharedFolderId}
-        title="Select Shared Folder Location"
-      />
+              if (isNewShare) {
+                // Handle new shares
+                const updatedDocNewShares = docNewShares.map((share) =>
+                  share.id === shareId
+                    ? {
+                        ...share,
+                        locationName: folder.name,
+                        locationId: folder.id,
+                      }
+                    : share,
+                );
+                updatedNewShares.set(globalId, updatedDocNewShares);
+                setNewShares(updatedNewShares);
+              } else {
+                // Handle existing shares - track folder changes
+                const updatedFolderChanges = new Map(shareFolderChanges);
+                updatedFolderChanges.set(shareId, {
+                  id: folder.id,
+                  name: folder.name,
+                });
+                setShareFolderChanges(updatedFolderChanges);
+              }
+            }
+
+            setFolderSelectionOpen(false);
+            setSelectedShareForFolderChange(null);
+          }}
+          rootFolderId={selectedShareForFolderChange?.sharedFolderId}
+          title="Select Shared Folder Location"
+        />
+      )}
       <DialogActions>
         {hasChanges && <Button onClick={handleCancel}>Cancel</Button>}
         <ValidatingSubmitButton
