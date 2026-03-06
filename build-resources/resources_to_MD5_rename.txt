@@ -140,7 +140,7 @@ ui/dist/myLabGroups.js
 ui/dist/newLabGroup.js
 ui/dist/notebookToolbar.js
 ui/dist/oAuth.js
-ui/dist/previewInfo.js
+ui/dist/PreviewInfo.js
 ui/dist/rorIntegration.js
 ui/dist/runtime.js
 ui/dist/snapGeneDialog.js

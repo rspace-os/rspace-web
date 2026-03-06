@@ -25,11 +25,13 @@ vi.mock("@/eln/apps/useIntegrationsEndpoint", () => ({
 
 }));
 const broadcastHandlers: Array<(e: MessageEvent<RaidConnectedMessage>) => void> = [];
-vi.mock("use-broadcast-channel", () => ({
-  useBroadcastChannel: (_channel: string, handler: (e: MessageEvent<RaidConnectedMessage>) => void) => {
+vi.mock("@/modules/common/hooks/broadcast", () => ({
+  useBroadcastChannel: (
+    _channel: string,
+    handler: (e: MessageEvent<RaidConnectedMessage>) => void,
+  ) => {
     broadcastHandlers.push(handler);
   },
-
 }));
 const renderWithProviders = (
   integrationState: IntegrationStates["RAID"],

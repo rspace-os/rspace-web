@@ -35,6 +35,12 @@ export default defineConfig({
         ),
       },
     ],
+    externalConditions: ["require"],
+  },
+  ssr: {
+    resolve: {
+      externalConditions: ["require"],
+    },
   },
   test: {
     environment: "jsdom",

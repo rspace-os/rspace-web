@@ -548,7 +548,7 @@ export default function FieldmarkImportDialog({
                     setColumnsMenuAnchorEl,
                   },
                   panel: {
-                    anchorEl: columnsMenuAnchorEl,
+                    target: columnsMenuAnchorEl,
                   },
                 }}
                 getRowId={(row) => row.metadata.project_id}

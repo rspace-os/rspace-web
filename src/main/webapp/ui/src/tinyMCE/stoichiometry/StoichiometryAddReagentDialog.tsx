@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
-import FormHelperText from "@mui/material/FormHelperText";
 import TextField from "@mui/material/TextField";
 import ValidatingSubmitButton, {
   IsInvalid,
@@ -20,7 +19,7 @@ export type AddReagentDialogArgs = {
   onAddReagent: (smilesString: string, name: string) => void;
 };
 
-const AddReagentDialog = ({
+const StoichiometryAddReagentDialog = ({
   open,
   onClose,
   onAddReagent,
@@ -52,7 +51,7 @@ const AddReagentDialog = ({
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <form onSubmit={onSubmitHandler}>
-        <DialogTitle>Add New Reagent</DialogTitle>
+        <DialogTitle>Add New Chemical</DialogTitle>
         <DialogContent>
           <FormControl component="fieldset" sx={{ width: "100%", mt: 1 }}>
             <Stack spacing={2}>
@@ -87,7 +86,7 @@ const AddReagentDialog = ({
             validationResult={validate()}
             loading={false}
           >
-            Add Reagent
+            Add Chemical
           </ValidatingSubmitButton>
         </DialogActions>
       </form>
@@ -95,4 +94,4 @@ const AddReagentDialog = ({
   );
 };
 
-export default AddReagentDialog;
+export default StoichiometryAddReagentDialog;
