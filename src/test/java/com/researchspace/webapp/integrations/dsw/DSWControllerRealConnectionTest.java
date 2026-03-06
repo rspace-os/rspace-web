@@ -117,7 +117,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     when(userAppConfigMgr.findByAppConfigElementSetId(null)).thenReturn(Optional.of(aces));
     when(source.findByUserNameProviderName(anyString(), anyString(), anyString()))
         .thenReturn(Optional.of(connection));
-    when(mediaManager.saveNewDMP(anyString(), any(), any(), any()))
+    when(mediaManager.saveNewDMPWithDescription(anyString(), any(), any(), any(), anyString()))
         .thenReturn(new EcatDocumentFile());
   }
 
@@ -205,7 +205,8 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   @RunIfSystemPropertyDefined("nightly")
   public void testImportPlanNullFileWhenSaving() {
     try {
-      when(mediaManager.saveNewDMP(anyString(), any(), any(), any())).thenReturn(null);
+      when(mediaManager.saveNewDMPWithDescription(anyString(), any(), any(), any(), anyString()))
+          .thenReturn(null);
 
       AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS);
       assertNotNull(plansResponse);

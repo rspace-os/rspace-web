@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="<c:url value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
     <link rel="stylesheet" href="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
     <link rel="stylesheet" href="<c:url value='/scripts/bower_components/font-awesome/css/font-awesome.min.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/scripts/tinymce/tinymce516/plugins/codesample/css/prism.css'/>" />
+    <link rel="stylesheet" href="<c:url value='/scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css'/>" />
 
     <link rel="stylesheet" href="<c:url value='/styles/journal.css'/>" />
     <link rel="stylesheet" href="<c:url value='/styles/messages.css'/>" />
@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="<c:url value='/styles/rs-widgets.css'/>" />
     <script src="<c:url value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
     <script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-    <script src="<c:url value='/scripts/tinymce/tinymce516/plugins/codesample/js/prism.js'/>"></script>
+    <script src="<c:url value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>
     <script src="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
     <script	src="<c:url value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
     <script type="text/javascript">

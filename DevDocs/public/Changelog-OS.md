@@ -4,6 +4,19 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.20.0 2026-03-05
+
+### ELN Features
+
+- RSDEV-747 RAiD integration
+- RSDEV-202 .ELN export updated to match latest .ELN standard specification
+- RSDEV-1035 public API `/forms` endpoint now handles 'showAsPickList' option for creating form fields
+- RSDEV-1036 text editor 'Insert Equation' plugin now supports mhchem syntax
+
+### ELN Bugfix
+
+- RSDEV-1020 fix problem with indexing pdf content embedded inside MSOffice docs
+
 # 2.19.0 2026-02-06
 
 ### ELN Features

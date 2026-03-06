@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>researchspace</artifactId>
   <packaging>war</packaging>
-  <version>2.20.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
+  <version>2.21.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
   <name>ResearchSpace</name>
   <url>https://www.researchspace.com</url>
 
@@ -1564,7 +1564,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-zenodo-adapter</artifactId>
-      <version>0.3.4</version>
+      <version>0.3.5</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1574,8 +1574,13 @@
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
+      <artifactId>rda-dmp-common-standard</artifactId>
+      <version>0.1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-digital-commons-data-adapter</artifactId>
-      <version>0.0.5</version>
+      <version>0.0.6</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1644,7 +1649,13 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>dmptool-java-client</artifactId>
-      <version>0.4.0</version>
+      <version>0.4.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rda-dmp-common-standard</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -2750,7 +2761,7 @@
     <npm.dependencies.collection.arg>install --force</npm.dependencies.collection.arg>
 
     <!--Sonar properties-->
-    <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce516/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>
+    <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce5109/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>
     <sonar.projectKey>ResearchSpace-ELN_rspace-web</sonar.projectKey>
   </properties>
 

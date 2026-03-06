@@ -28,24 +28,9 @@
 
   b) Change the label of the "Insert table" in the context menu to "Insert Advanced Table". 
   c) Change the label "Table" to "Insert Table" 
-2. 'codesample' plugin. 
-
- a) Replaced part of codesample plugin.js with /scripts/prism/prism.js library. That's because 
-    tinyMCE version supports only default subset of languages, while we've added some more 
-    (see RSPAC-1231).
-    
-    That seems quite safe, because tinyMCE plugin itselfs just wraps a prism.js file.
-    The replaced part starts after line 116:
-    // ------------------ Start wrap
-    
-    And ends at line 1402:
-    // ------------------ End wrap
-    
-    FIXME: that was skipped during 4.7.9 upgrade, as the format of the plugin changed and it's 
-    not obvious how to make a replacement. That means for additional languages the code 
-    highlighting doesn't work inside tinyMCE (but seems to work in document view mode).
-    
- b) re-title codesample plugin toolbar button so it says 'Insert code sample'.
+2. 'codesample' plugin. re-title codesample plugin toolbar button so it says 'Insert code sample'. (We used to
+manually replace the bundled Prism.js, but we now enable `codesample_global_prismjs` in TinyMCE settings so it uses
+the Prism.js we bundle instead.
     
 3. 'link' plugin has menu/button texts changed to 'External Link'/'Insert external link'.
 
