@@ -189,10 +189,8 @@ const feature = test.extend<{
           });
 
           await expect(folderDialog).toBeVisible();
-          // Wait for the folder tree to load
 
-          await page.waitForTimeout(1000);
-          // Click on the existing tree item (alice-bob)
+          // Wait for folder record to appear instead of using a fixed timeout.
           const treeItem = folderDialog.getByText("alice-bob").first();
           await expect(treeItem).toBeVisible();
 
@@ -200,9 +198,8 @@ const feature = test.extend<{
           const selectButton = folderDialog.getByRole("button", {
             name: /Select/i,
           });
-
+          await expect(selectButton).toBeEnabled();
           await selectButton.click();
-          // Wait for the folder dialog to close
           await expect(folderDialog).not.toBeVisible();
         },
     });
@@ -616,7 +613,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       ]),
     });
   });
-  await router.route("api/v1/userDetails/groupMembers", async (route) => {
+  await router.route(/\/?api\/v1\/userDetails\/groupMembers.*/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -745,14 +742,18 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
       return;
     }
+
+    await route.fulfill({ status: 405 });
   });
   await router.route("/api/v1/share", async (route) => {
     const request = route.request();
     if (request.method() === "POST") {
-      const body: any = (await request.postDataJSON());
-      const itemId = body.itemsToShare[0] as number;
-
-      const permission = body.users[0]?.permission as string;
+      const body = (await request.postDataJSON()) as {
+        itemsToShare?: number[];
+        users?: Array<{ permission?: string }>;
+      };
+      const itemId = body.itemsToShare?.[0] ?? 0;
+      const permission = body.users?.[0]?.permission ?? "READ";
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -763,7 +764,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
               sharedItemId: itemId,
               shareItemName: "Untitled document",
               sharedTargetType: "USER",
-              permission: permission,
+              permission,
               _links: [],
             },
           ],
@@ -774,9 +775,12 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       return;
     }
     if (request.method() === "PUT") {
-      const body: any = (await request.postDataJSON());
-      const shareId = body.shareId as number;
-      const permission = body.permission as string;
+      const body = (await request.postDataJSON()) as {
+        shareId?: number;
+        permission?: string;
+      };
+      const shareId = body.shareId ?? 0;
+      const permission = body.permission ?? "READ";
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -786,7 +790,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
             sharedItemId: 2,
             shareItemName: "A shared document",
             sharedTargetType: "USER",
-            permission: permission,
+            permission,
             _links: [],
           },
           _links: [],
@@ -794,12 +798,14 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
       return;
     }
-    if (request.method() !== "DELETE") {
+    if (request.method() === "DELETE") {
       await route.fulfill({
         status: 204,
       });
       return;
     }
+
+    await route.fulfill({ status: 405 });
   });
 
 });
