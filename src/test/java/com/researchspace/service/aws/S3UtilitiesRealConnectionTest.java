@@ -30,7 +30,6 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 @Slf4j
 public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
-  /* bucket must be accessible by user who runs the test (e.g. by access key in '~/.aws/config' file) */
   @Value("${s3.realConnectionTest.region}")
   private String s3region;
   @Value("${s3.realConnectionTest.bucketName}")
