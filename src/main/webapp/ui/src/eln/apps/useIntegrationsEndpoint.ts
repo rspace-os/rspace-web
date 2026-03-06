@@ -1640,6 +1640,8 @@ export function useIntegrationsEndpoint(): {
           return decodeDropbox(response.data.data) as IntegrationStates[I];
         case "DRYAD":
           return decodeDryad(response.data.data) as IntegrationStates[I];
+        case "DSW":
+          return decodeDsw(response.data.data) as IntegrationStates[I];
         case "EGNYTE":
           return decodeEgnyte(response.data.data) as IntegrationStates[I];
         case "EVERNOTE":
