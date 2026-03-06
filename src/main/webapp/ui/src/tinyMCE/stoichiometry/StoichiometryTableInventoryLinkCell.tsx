@@ -14,6 +14,7 @@ import Search from "@/stores/models/Search";
 import MemoisedFactory from "@/stores/models/Factory/MemoisedFactory";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import { observer } from "mobx-react";
+import { runInAction } from "mobx";
 
 const INVENTORY_PICKER_SEARCH_PARAMS = {
   query: "",
@@ -80,9 +81,11 @@ const StoichiometryTableInventoryLinkCell = ({
   };
 
   useEffect(() => {
-    pickerSearch.alwaysFilterOut = (result) =>
-      typeof result.globalId === "string" &&
-      linkedInventoryItemGlobalIdSet.has(result.globalId);
+    runInAction(() => {
+      pickerSearch.alwaysFilterOut = (result) =>
+        typeof result.globalId === "string" &&
+        linkedInventoryItemGlobalIdSet.has(result.globalId);
+    });
   }, [linkedInventoryItemGlobalIdSet, pickerSearch]);
 
   useEffect(() => {
@@ -125,18 +128,19 @@ const StoichiometryTableInventoryLinkCell = ({
             fontWeight: 500,
           }}
         />
-        <Tooltip title="Remove inventory link">
-          <span>
-            <IconButton
-              size="small"
-              aria-label={`Remove inventory link for ${moleculeLabel}`}
-              disabled={!editable}
-              onClick={onRemoveInventoryLink}
-            >
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
+        {editable && (
+          <Tooltip title="Remove inventory link">
+            <span>
+              <IconButton
+                size="small"
+                aria-label={`Remove inventory link for ${moleculeLabel}`}
+                onClick={onRemoveInventoryLink}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
       </Stack>
     );
   }

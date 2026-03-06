@@ -73,9 +73,15 @@ function StandaloneDialogInner({
   const { addAlert } = React.useContext(AlertContext);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const confirm = useConfirm();
-  const [showTable, setShowTable] = React.useState(
-    stoichiometryId !== undefined,
+  const [currentStoichiometry, setCurrentStoichiometry] = React.useState<{
+    id: number;
+    revision: number;
+  } | null>(
+    stoichiometryId !== undefined && stoichiometryRevision !== undefined
+      ? { id: stoichiometryId, revision: stoichiometryRevision }
+      : null,
   );
+  const showTable = currentStoichiometry !== null;
   const [hasTableChanges, setHasTableChanges] = React.useState(false);
   const [actuallyOpen, setActuallyOpen] = React.useState(false);
   const [tableRequestState, setTableRequestState] = React.useState({
@@ -92,45 +98,59 @@ function StandaloneDialogInner({
     calculateStoichiometryMutation.isPending || tableRequestState.isBusy;
 
   React.useEffect(() => {
-    if (open) {
-      // Check chemistry integration when dialog is requested to open
-      FetchingData.match(chemistryStatus, {
-        loading: () => {
-          // Don't open dialog while loading
-          setActuallyOpen(false);
-        },
-        error: (error) => {
+    if (!open) {
+      setActuallyOpen(false);
+      return;
+    }
+
+    const syncedStoichiometry =
+      stoichiometryId !== undefined && stoichiometryRevision !== undefined
+        ? { id: stoichiometryId, revision: stoichiometryRevision }
+        : null;
+
+    // Only sync external stoichiometry props while dialog is open.
+    setCurrentStoichiometry(syncedStoichiometry);
+
+    // Check chemistry integration when dialog is requested to open
+    FetchingData.match(chemistryStatus, {
+      loading: () => {
+        // Don't open dialog while loading
+        setActuallyOpen(false);
+      },
+      error: (error) => {
+        setActuallyOpen(false);
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Error Checking Chemistry Integration",
+            message: `Unable to verify chemistry integration status: ${error}. Please try again later.`,
+          }),
+        );
+      },
+      success: (isEnabled) => {
+        if (isEnabled) {
+          setActuallyOpen(true);
+          setHasTableChanges(false);
+        } else {
           setActuallyOpen(false);
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Error Checking Chemistry Integration",
-              message: `Unable to verify chemistry integration status: ${error}. Please try again later.`,
+              title: "Chemistry Integration Disabled",
+              message:
+                "The chemistry integration is not enabled. Please contact your administrator to enable it.",
             }),
           );
-        },
-        success: (isEnabled) => {
-          if (isEnabled) {
-            setActuallyOpen(true);
-            setShowTable(stoichiometryId !== undefined);
-            setHasTableChanges(false);
-          } else {
-            setActuallyOpen(false);
-            addAlert(
-              mkAlert({
-                variant: "error",
-                title: "Chemistry Integration Disabled",
-                message:
-                  "The chemistry integration is not enabled. Please contact your administrator to enable it.",
-              }),
-            );
-          }
-        },
-      });
-    } else {
-      setActuallyOpen(false);
-    }
-  }, [open, stoichiometryId, chemistryStatus]);
+        }
+      },
+    });
+  }, [
+    open,
+    stoichiometryId,
+    stoichiometryRevision,
+    chemistryStatus,
+    addAlert,
+  ]);
 
   const handleCalculate = () => {
     if (isRequestInFlight) {
@@ -146,7 +166,7 @@ function StandaloneDialogInner({
             recordId,
           },
         );
-        setShowTable(true);
+        setCurrentStoichiometry({ id, revision });
         onTableCreated?.(id, revision);
       } catch (e) {
         console.error("Calculation failed", e);
@@ -159,7 +179,7 @@ function StandaloneDialogInner({
       return;
     }
     trackEvent("user:save:stoichiometry_table:document_editor");
-    if (!stoichiometryId)
+    if (!currentStoichiometry)
       throw new Error("stoichiometryId is required to save");
     void tableActions?.save();
   };
@@ -222,7 +242,7 @@ function StandaloneDialogInner({
         Reaction Table
       </DialogTitle>
       <DialogContent>
-        {actuallyOpen && stoichiometryId === undefined && (
+        {actuallyOpen && currentStoichiometry === null && (
           <Box
             display="flex"
             flexDirection="column"
@@ -246,9 +266,7 @@ function StandaloneDialogInner({
             </Button>
           </Box>
         )}
-        {actuallyOpen &&
-          stoichiometryId !== undefined &&
-          stoichiometryRevision !== undefined && (
+        {actuallyOpen && currentStoichiometry !== null && (
             <Stack spacing={2} flexWrap="nowrap">
               <Box>
                 <Typography variant="body2">
@@ -280,8 +298,8 @@ function StandaloneDialogInner({
                   <StoichiometryTable
                     editable
                     onChangesUpdate={setHasTableChanges}
-                    stoichiometryId={stoichiometryId}
-                    stoichiometryRevision={stoichiometryRevision}
+                    stoichiometryId={currentStoichiometry.id}
+                    stoichiometryRevision={currentStoichiometry.revision}
                     onRequestStateChange={setTableRequestState}
                     onActionsReady={setTableActions}
                     onUpdateStoichiometry={(params) =>
@@ -297,10 +315,12 @@ function StandaloneDialogInner({
                     isDeletingStoichiometry={deleteStoichiometryMutation.isPending}
                     isGettingMoleculeInfo={getMoleculeInfoMutation.isPending}
                     onSaveSuccess={(revision) => {
-                      if (stoichiometryId === undefined) {
-                        return;
-                      }
-                      onSave?.(stoichiometryId, revision);
+                      const updatedStoichiometry = {
+                        id: currentStoichiometry.id,
+                        revision,
+                      };
+                      setCurrentStoichiometry(updatedStoichiometry);
+                      onSave?.(updatedStoichiometry.id, updatedStoichiometry.revision);
                       console.log("Stoichiometry data saved successfully");
                     }}
                     onSaveError={(error) => {
@@ -308,7 +328,7 @@ function StandaloneDialogInner({
                     }}
                     onDeleteSuccess={() => {
                       onDelete?.();
-                      setShowTable(false);
+                      setCurrentStoichiometry(null);
                       setHasTableChanges(false);
                     }}
                     onDeleteError={(error) => {

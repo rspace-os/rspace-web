@@ -109,28 +109,33 @@ const feature = test.extend<{
         await button.click();
       },
       "the user edits a cell in the table": async () => {
-
         const table = page.getByRole("grid");
-        const indexOfNotesColumn = await Promise.all(
+        await expect(table).toBeVisible();
+
+        const indexOfMassColumn = await Promise.all(
           (await table.getByRole("columnheader").all()).map((cell) =>
             cell.textContent(),
           ),
         ).then((textOfCells) =>
-          textOfCells.findIndex((text) => /notes/i.test(text ?? "")),
-
+          textOfCells.findIndex((text) => /mass \(g\)/i.test(text ?? "")),
         );
-        await table
+
+        if (indexOfMassColumn < 0) {
+          throw new Error("Mass column not found");
+        }
+
+        const massCell = table
           .getByRole("row")
           .nth(1)
           .getByRole("gridcell")
-          .nth(indexOfNotesColumn)
+          .nth(indexOfMassColumn);
 
-          .dblclick();
-        // Wait for input to appear and be focused
-        const input = page.locator('input[type="text"]');
-        await input.waitFor({ state: "visible" });
-        await input.fill("Test note");
-        await input.press("Enter");
+        await massCell.click();
+        await massCell.press("Enter");
+
+        // Edit using keyboard only; avoids brittle input-selector waits.
+        await page.keyboard.type("1");
+        await page.keyboard.press("Enter");
       },
       "the user changes the limiting reagent": async () => {
         const cyclopentadieneRadio = page.getByRole("radio", {
