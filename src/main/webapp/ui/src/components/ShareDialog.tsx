@@ -24,6 +24,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
+import Alert from "@mui/material/Alert";
 import Analytics from "./Analytics";
 import AnalyticsContext from "../stores/contexts/Analytics";
 import ValidatingSubmitButton from "./ValidatingSubmitButton";
@@ -93,6 +94,7 @@ export type ShareDialogProps = {
   singularName?: string;
   pluralName?: string;
   showLocationsDialog?: boolean;
+  showSnippetSharedInfoAlert?: boolean;
 };
 
 /**
@@ -160,6 +162,7 @@ export function ShareDialog({
   singularName = "document",
   pluralName = "documents",
   showLocationsDialog = true,
+  showSnippetSharedInfoAlert = false,
 }: ShareDialogProps) {
   const [shareData, setShareData] = React.useState<
     Map<
@@ -826,6 +829,13 @@ export function ShareDialog({
           />
         </Box>
 
+        {showSnippetSharedInfoAlert && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Shared snippets can be found in the <strong>SNIPPETS_Shared</strong>{" "}
+            folder, inside the Snippets section of the Gallery.
+          </Alert>
+        )}
+
         {loading ? (
           <Box
             display="flex"
@@ -1335,13 +1345,13 @@ export function ShareDialog({
                                 </Typography>
                                 {showLocationsDialog &&
                                   share.recipientType === "GROUP" && (
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{ display: "block" }}
-                                  >
-                                    Location: {share.locationName || "/"}
-                                  </Typography>
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      sx={{ display: "block" }}
+                                    >
+                                      Location: {share.locationName || "/"}
+                                    </Typography>
                                   )}
                               </Box>
 
@@ -1435,29 +1445,29 @@ export function ShareDialog({
 
                               {showLocationsDialog &&
                                 share.recipientType === "GROUP" && (
-                                <Button
-                                  size="small"
-                                  onClick={() => {
-                                    const groups = shareOptions.filter(
-                                      (opt) => opt.optionType === "GROUP",
-                                    );
-                                    const group = groups.find(
-                                      (g) => g.id === share.recipientId,
-                                    );
-                                    if (group && "sharedFolderId" in group) {
-                                      // Use the first globalId as a placeholder
-                                      setSelectedShareForFolderChange({
-                                        shareId: share.id,
-                                        groupId: share.recipientId,
-                                        globalId: globalIds[0],
-                                        sharedFolderId: group.sharedFolderId,
-                                      });
-                                      setFolderSelectionOpen(true);
-                                    }
-                                  }}
-                                >
-                                  Change Folder
-                                </Button>
+                                  <Button
+                                    size="small"
+                                    onClick={() => {
+                                      const groups = shareOptions.filter(
+                                        (opt) => opt.optionType === "GROUP",
+                                      );
+                                      const group = groups.find(
+                                        (g) => g.id === share.recipientId,
+                                      );
+                                      if (group && "sharedFolderId" in group) {
+                                        // Use the first globalId as a placeholder
+                                        setSelectedShareForFolderChange({
+                                          shareId: share.id,
+                                          groupId: share.recipientId,
+                                          globalId: globalIds[0],
+                                          sharedFolderId: group.sharedFolderId,
+                                        });
+                                        setFolderSelectionOpen(true);
+                                      }
+                                    }}
+                                  >
+                                    Change Folder
+                                  </Button>
                                 )}
                             </Box>
                           ),

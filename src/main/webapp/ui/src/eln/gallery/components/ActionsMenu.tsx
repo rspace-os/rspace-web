@@ -804,6 +804,9 @@ function ActionsMenu({
                   names={names}
                   singularName="snippet"
                   pluralName="snippets"
+                  showSnippetSharedInfoAlert={selection
+                    .asSet()
+                    .some((f) => f.isSnippet)}
                   showLocationsDialog={!selection.asSet().some((f) => f.isSnippet)}
                 />
               ))
