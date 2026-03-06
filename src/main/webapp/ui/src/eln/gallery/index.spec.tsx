@@ -6,13 +6,12 @@ import fc from "fast-check";
 import { type RouterFixture } from "@playwright/experimental-ct-core";
 import { GallerySection } from "./common";
 
-import { sleep } from "@/util/Util";
 type GivenSteps = {
-  "the Gallery is mounted": ({
-    url,
-  }?: {
-    url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
-  }) => Promise<MountResult>;
+  "the Gallery is mounted": (
+    args?: {
+      url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
+    },
+  ) => Promise<MountResult>;
 
 };
 type WhenSteps = {
@@ -59,12 +58,14 @@ const feature = test.extend<{
         await expect(page).toHaveTitle(title);
       },
       "there should be just one request to the server": async () => {
-        expect(
-          networkRequests
-            .filter((url) => /getUploadedFiles/.test(url.href))
-            .map((url) => new URLSearchParams(url.search).get("mediatype")),
-          // the initial listing, and the one new request
-        ).toEqual(["Images", "Chemistry"]);
+        await expect
+          .poll(() =>
+            networkRequests
+              .filter((url) => /getUploadedFiles/.test(url.href))
+              .map((url) => new URLSearchParams(url.search).get("mediatype")),
+          )
+          // The initial listing and one follow-up request after section change.
+          .toEqual(["Images", "Chemistry"]);
       },
     });
   },
@@ -457,7 +458,6 @@ test.describe("Gallery", () => {
           url: "?mediaType=Images",
         });
         await When["the user taps on the 'Chemistry' section"]();
-        await sleep(1000); // Wait for all the request to be made
         await Then["there should be just one request to the server"]();
       },
     );
@@ -692,7 +692,7 @@ test.describe("Gallery", () => {
         await page.getByRole("option", { name: /^Bob/ }).click();
         await shareDialog.getByRole("button", { name: /Save/i }).click();
 
-        await expect(page.getByRole("alert")).toContainText(
+        await expect(page.locator('[data-test-id="toast-content"]')).toContainText(
           /Shares updated successfully\./i,
         );
       },
