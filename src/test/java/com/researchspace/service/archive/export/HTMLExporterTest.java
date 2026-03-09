@@ -37,11 +37,11 @@ public class HTMLExporterTest extends SpringTransactionalTest {
           + "<div class=\"navigationSection\">\n"
           + "<a href=\"index.html\">Top</a></div>\n"
           + " <h3>Listing of $folderName</h3>\n"
-          + "   <img src=\"./resources/document.png\" width=32 height=32/><a href ="
+          + "<img src=\"./resources/document.png\" width=32 height=32/><a href ="
           + " \"url1\">record1</a><br/>\n"
-          + "    <img src=\"./resources/folder.png\" width=32 height=32/><a href ="
+          + "<img src=\"./resources/folder.png\" width=32 height=32/><a href ="
           + " \"url2\">record2</a><br/>\n"
-          + "  \n"
+          + " \n"
           + "</body>\n"
           + "</html>";
 
@@ -54,8 +54,8 @@ public class HTMLExporterTest extends SpringTransactionalTest {
   public void testIndexGenerator() {
     IndexItem item1 = new HTMLArchiveExporter.IndexItem("url1", "record1", true);
     IndexItem item2 = new HTMLArchiveExporter.IndexItem("url2", "record2", false);
-    List<IndexItem> items = Arrays.asList(new IndexItem[] {item1, item2});
-    Map<String, Object> velocityModel = new HashMap<String, Object>();
+    List<IndexItem> items = Arrays.asList(item1, item2);
+    Map<String, Object> velocityModel = new HashMap<>();
     velocityModel.put("indexItems", items);
 
     String msg =
