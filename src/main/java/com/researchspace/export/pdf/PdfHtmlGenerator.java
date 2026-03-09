@@ -16,6 +16,7 @@ import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.spring.VelocityEngineUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -24,7 +25,6 @@ import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.ui.velocity.VelocityEngineUtils;
 
 /**
  * Creates the HTML output required for conversion of {@link StructuredDocument} to PDF. In addition

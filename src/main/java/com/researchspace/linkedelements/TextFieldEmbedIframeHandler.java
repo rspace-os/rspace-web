@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.spring.VelocityEngineUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attributes;
 import org.jsoup.nodes.Document;
@@ -13,7 +14,6 @@ import org.jsoup.parser.Tag;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.ui.velocity.VelocityEngineUtils;
 
 /**
  * Methods for encoding/decoding known embed code iframes. Currently supports iframes from Youtube

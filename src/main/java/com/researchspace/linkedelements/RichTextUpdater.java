@@ -10,7 +10,15 @@ import static com.researchspace.core.util.FieldParserConstants.EXTERNALLINK_BADG
 import com.researchspace.core.util.FieldParserConstants;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.NumberUtils;
-import com.researchspace.model.*;
+import com.researchspace.model.EcatAudio;
+import com.researchspace.model.EcatChemistryFile;
+import com.researchspace.model.EcatDocumentFile;
+import com.researchspace.model.EcatImage;
+import com.researchspace.model.EcatImageAnnotation;
+import com.researchspace.model.EcatMediaFile;
+import com.researchspace.model.EcatVideo;
+import com.researchspace.model.RSChemElement;
+import com.researchspace.model.Thumbnail;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.Field;
@@ -35,13 +43,13 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.spring.VelocityEngineUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.ui.velocity.VelocityEngineUtils;
 
 /**
  * Updates links and references in to comments and images in a {@link TextField}

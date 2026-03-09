@@ -12,10 +12,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.spring.VelocityEngineUtils;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.ui.velocity.VelocityEngineUtils;
 
 public class HTMLExporterTest extends SpringTransactionalTest {
 

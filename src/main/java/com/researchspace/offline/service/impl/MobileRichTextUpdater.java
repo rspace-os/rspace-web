@@ -3,12 +3,12 @@ package com.researchspace.offline.service.impl;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.spring.VelocityEngineUtils;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.ui.velocity.VelocityEngineUtils;
 
 /**
  * Updates links to images in a {@link TextField} to match the format used by the mobile
