@@ -1,5 +1,4 @@
 import axios from "@/common/axios";
-import { type OptionsId } from "./useIntegrationsEndpoint";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
@@ -21,11 +20,7 @@ export function useDSWTestEndpoint(): {
   });
 
   const test = async (serverAlias: string): Promise<void> => {
-    console.log("uDTEt serverAlias: ", serverAlias);
     const response = await api.get<JSON>("/currentUser?serverAlias=" + serverAlias);
-
-    console.log("uDTEt response: ", response);
-    console.log("uDTEt response data: ", response.data);
 
     if (null == response.data) {
       throw new Error("Response data was empty");

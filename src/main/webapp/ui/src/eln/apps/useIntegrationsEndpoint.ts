@@ -406,14 +406,11 @@ function decodeDsw(data: FetchedState): IntegrationStates["DSW"] {
           return (
               typeof configRecord.DSW_APIKEY === "string" &&
               typeof configRecord.DSW_URL === "string" &&
-              typeof configRecord.DSW_ALIAS === "string" // &&
-              //typeof configRecord._label === "string"
+              typeof configRecord.DSW_ALIAS === "string"
           );
         })
         .orElse(false);
   }
-
-  console.log("uIEdDSW for DSW, data: ", data);
 
   return {
     mode: parseState(data),
@@ -425,7 +422,6 @@ function decodeDsw(data: FetchedState): IntegrationStates["DSW"] {
                       DSW_APIKEY: config.DSW_APIKEY,
                       DSW_URL: config.DSW_URL,
                       DSW_ALIAS: config.DSW_ALIAS,
-                      //_label: config._label,
                       optionsId,
                     })
                     : Optional.empty()

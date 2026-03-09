@@ -168,20 +168,16 @@ const DialogContent = observer(
 
       async function saveNewConfig(config: NewConfig) {
         try {
-          console.log("DSWsNC saving new config: ", config);
           const newState = await saveAppOptions("DSW", Optional.empty(), {
             DSW_ALIAS: config.DSW_ALIAS,
             DSW_URL: config.DSW_URL,
             DSW_APIKEY: config.DSW_APIKEY,
           });
-          console.log("DSWsNC newState: ", newState);
           runInAction(() => {
             integrationState.credentials = newState.credentials;
-            console.log("DSWsNC integrationState: ", integrationState);
             const optionIdsOfExistingConfigs = new RsSet(
                 copyOfState.credentials.map(({ optionsId }) => optionsId)
             );
-            console.log("DSWsNC optionIdsOfExistingConfigs: ", optionIdsOfExistingConfigs);
             try {
               const newlySavedConfig = new RsSet(newState.credentials)
                   .mapOptional((x) => x)
@@ -189,16 +185,13 @@ const DialogContent = observer(
                       ({ optionsId }) => optionsId,
                       optionIdsOfExistingConfigs
                   ).first;
-              console.log("DSWsNC newlySavedConfig: ", newlySavedConfig);
               copyOfState.credentials.push(
                   observable({ ...newlySavedConfig, dirty: false })
               );
             } catch (e) {
-              console.log("DSWsNC error 1: ", e);
               throw new Error("Save completed but cannot show results.");
             }
           });
-          console.log("DSWsNC setting null new config for some reason");
           setNewConfig(null);
           addAlert(
               mkAlert({
@@ -207,7 +200,6 @@ const DialogContent = observer(
               })
           );
         } catch (e) {
-          console.log("DSWsNC error 2: ", e);
           if (e instanceof Error)
             addAlert(
                 mkAlert({
@@ -501,8 +493,6 @@ function DSW({
                      integrationState,
                      update,
                    }: DSWArgs): React.ReactNode {
-
-  console.log("DSW integrationState: ", integrationState);
 
   return (
       <Grid item sm={6} xs={12} sx={{ display: "flex" }}>

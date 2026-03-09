@@ -221,6 +221,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case ASCENSCIA_APP_NAME:
         setSingleUserToken(info, user, ASCENSCIA_APP_NAME, ASCENSCIA_USER_TOKEN);
         return;
+      case DSW_APP_NAME:
+        setMultipleUserTokens(info, user, DSW_APP_NAME, "", DSW_ALIAS, DSW_APIKEY);
+        return;
       default:
     }
   }
