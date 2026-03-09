@@ -1513,7 +1513,7 @@ public class RichTextUpdater {
   /** Generates new src URL for a thumbnail */
   private String thumbnailToSrcRef(Thumbnail thumbnail) {
     Map<String, Object> velocityModel =
-        Map.of(
+        new HashMap<>(Map.of(
             "fieldId",
             thumbnail.getSourceParentId(),
             "itemId",
@@ -1525,7 +1525,7 @@ public class RichTextUpdater {
             "rotation",
             thumbnail.getRotation(),
             "milliseconds",
-            thumbnail.getRevision());
+            thumbnail.getRevision()));
     String msg =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocity, "thumbnailImageSrc.vm", UTF_8, velocityModel);
