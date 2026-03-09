@@ -21,8 +21,7 @@ public class VelocityConfigTest extends SpringTransactionalTest {
   @Test
   public void testCanResolveFileLocation() {
     String text =
-        VelocityEngineUtils.mergeTemplateIntoString(
-            velocity, "test.vm", "UTF-8", new HashMap<String, Object>());
+        VelocityEngineUtils.mergeTemplateIntoString(velocity, "test.vm", "UTF-8", new HashMap<>());
     assertEquals("Test template", text);
   }
 }

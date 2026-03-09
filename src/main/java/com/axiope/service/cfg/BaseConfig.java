@@ -261,6 +261,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import javax.sql.DataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.spring.VelocityEngineFactoryBean;
@@ -391,9 +392,9 @@ public abstract class BaseConfig {
 
   @Bean(name = "velocityEngine")
   public VelocityEngineFactoryBean velocityFactoryBean() {
-    VelocityEngineFactoryBean vEngine = new VelocityEngineFactoryBean();
+    VelocityEngineFactoryBean velocityFactoryBean = new VelocityEngineFactoryBean();
 
-    vEngine.setResourceLoaderPath(
+    velocityFactoryBean.setResourceLoaderPath(
         "classpath:velocityTemplates/,"
             + "classpath:velocityTemplates/textFieldElements,"
             + "classpath:velocityTemplates/messageAndNotificationEmails,"
@@ -405,8 +406,17 @@ public abstract class BaseConfig {
             + "classpath:velocityTemplates/slack,"
             + "file:"
             + velocityExtDir);
+    velocityFactoryBean.setPreferFileSystemAccess(true);
 
-    return vEngine;
+    Properties props = new Properties();
+    props.setProperty("resource.default_encoding", "UTF-8");
+
+    // set macro lib explicitly to avoid quirk NPE on initializing SpringResourceLoader
+    props.setProperty("velocimacro.library", "VM_global_library.vm");
+
+    velocityFactoryBean.setVelocityProperties(props);
+
+    return velocityFactoryBean;
   }
 
   /**

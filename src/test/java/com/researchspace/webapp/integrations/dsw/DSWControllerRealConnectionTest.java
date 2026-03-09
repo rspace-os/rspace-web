@@ -192,8 +192,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   public void testImportPlanIncorrectUuid() {
     try {
       String invalidUuid = "Not-a-valid-uuid";
-      AjaxReturnObject<JsonNode> project =
-          dswController.importPlan(DSW_SERVER_ALIAS, invalidUuid);
+      AjaxReturnObject<JsonNode> project = dswController.importPlan(DSW_SERVER_ALIAS, invalidUuid);
 
       assertNotNull(project);
       assertNull(project.getData());
@@ -234,7 +233,8 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       assertNotNull(project);
       assertNull(project.getData());
       assertEquals(project.getError().getErrorMessages().size(), 1);
-      assertTrue(project.getError().getErrorMessages().get(0).contains(projectForRetrieval.getUuid()));
+      assertTrue(
+          project.getError().getErrorMessages().get(0).contains(projectForRetrieval.getUuid()));
 
     } catch (Exception e) {
       fail(e.getMessage());
@@ -255,11 +255,13 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   @Test
   public void testConfigsConfigNotFound() {
     String TEST_ALIAS = "Invalid alias";
-    Exception e = assertThrows(DSWProjectRetrievalException.class, () -> {
-      dswController.getConfigForServer(u, TEST_ALIAS);
-    });
+    Exception e =
+        assertThrows(
+            DSWProjectRetrievalException.class,
+            () -> {
+              dswController.getConfigForServer(u, TEST_ALIAS);
+            });
     assertTrue(e.getMessage().contains("No instance found"));
     assertTrue(e.getMessage().contains(TEST_ALIAS));
   }
-
 }

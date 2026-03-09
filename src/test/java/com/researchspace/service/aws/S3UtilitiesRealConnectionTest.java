@@ -23,7 +23,7 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 /**
  * The tests running a real connection to AWS S3 bucket.
  *
- * The test bucket to use is configured through deployment properties, and must be accessible by
+ * <p>The test bucket to use is configured through deployment properties, and must be accessible by
  * user who runs the test (e.g. through access key, and secret, added to '~/.aws/config' file).
  */
 @RunWith(ConditionalTestRunner.class)
@@ -32,6 +32,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
   @Value("${s3.realConnectionTest.region}")
   private String s3region;
+
   @Value("${s3.realConnectionTest.bucketName}")
   private String s3bucketName;
 
