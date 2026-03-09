@@ -8,7 +8,6 @@ import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.R
 import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_OAUTH_CONNECTED;
 import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_ALIAS;
 import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_APIKEY;
-import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_CONFIGURED_SERVERS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIAS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
@@ -221,10 +220,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         return;
       case ASCENSCIA_APP_NAME:
         setSingleUserToken(info, user, ASCENSCIA_APP_NAME, ASCENSCIA_USER_TOKEN);
-        return;
-      case DSW_APP_NAME:
-        setMultipleUserTokens(
-            info, user, DSW_APP_NAME, DSW_CONFIGURED_SERVERS, DSW_ALIAS, DSW_APIKEY);
         return;
       default:
     }

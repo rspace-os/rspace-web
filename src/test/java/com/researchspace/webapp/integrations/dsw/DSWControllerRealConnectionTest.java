@@ -1,8 +1,10 @@
 package com.researchspace.webapp.integrations.dsw;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +33,7 @@ import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.integrations.dsw.exception.DSWProjectRetrievalException;
 import com.researchspace.webapp.integrations.dsw.model.DSWProject;
 import com.researchspace.webapp.integrations.dsw.model.DSWUser;
 import java.util.Arrays;
@@ -48,9 +51,9 @@ import org.springframework.http.ResponseEntity;
 @RunWith(ConditionalTestRunner.class)
 public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
 
-  private static String DSW_SERVER_ALIAS = "This string is bypassed by unit tests";
   private static String TEST_PROJECT_NAME = "RSpace Nightly Test Project";
   private static String TEST_PROJECT_DESCRIPTION = "Project for confirming endpoint functionality";
+  private static String DSW_SERVER_ALIAS = "TestAlias";
 
   @Autowired protected SystemPropertyManager sysPropMgr;
 
@@ -97,7 +100,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     AppConfigElementDescriptor acedAlias = new AppConfigElementDescriptor(descAlias);
     AppConfigElementDescriptor acedUrl = new AppConfigElementDescriptor(descUrl);
 
-    AppConfigElement aceAlias = new AppConfigElement(acedAlias, "Actual DSW URL");
+    AppConfigElement aceAlias = new AppConfigElement(acedAlias, DSW_SERVER_ALIAS);
     AppConfigElement aceUrl = new AppConfigElement(acedUrl, url);
 
     AppConfigElementSet aces = new AppConfigElementSet();
@@ -189,7 +192,8 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   public void testImportPlanIncorrectUuid() {
     try {
       String invalidUuid = "Not-a-valid-uuid";
-      AjaxReturnObject<JsonNode> project = dswController.importPlan(DSW_SERVER_ALIAS, invalidUuid);
+      AjaxReturnObject<JsonNode> project =
+          dswController.importPlan(DSW_SERVER_ALIAS, invalidUuid);
 
       assertNotNull(project);
       assertNull(project.getData());
@@ -230,11 +234,32 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       assertNotNull(project);
       assertNull(project.getData());
       assertEquals(project.getError().getErrorMessages().size(), 1);
-      assertTrue(
-          project.getError().getErrorMessages().get(0).contains(projectForRetrieval.getUuid()));
+      assertTrue(project.getError().getErrorMessages().get(0).contains(projectForRetrieval.getUuid()));
 
     } catch (Exception e) {
       fail(e.getMessage());
     }
   }
+
+  @Test
+  public void testConfigsConfigFound() {
+    try {
+      AppConfigElementSet cfg = dswController.getConfigForServer(u, DSW_SERVER_ALIAS);
+      assertNotNull(cfg);
+      assertFalse(cfg.getConfigElements().isEmpty());
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
+  @Test
+  public void testConfigsConfigNotFound() {
+    String TEST_ALIAS = "Invalid alias";
+    Exception e = assertThrows(DSWProjectRetrievalException.class, () -> {
+      dswController.getConfigForServer(u, TEST_ALIAS);
+    });
+    assertTrue(e.getMessage().contains("No instance found"));
+    assertTrue(e.getMessage().contains(TEST_ALIAS));
+  }
+
 }
