@@ -10,11 +10,11 @@ import com.researchspace.model.comms.MessageType;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.spring.VelocityEngineUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.ui.velocity.VelocityEngineUtils;
 
 /** Uses Velocity Templates to generate notification messages */
 @Component
