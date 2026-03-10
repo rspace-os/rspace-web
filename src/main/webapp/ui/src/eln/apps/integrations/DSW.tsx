@@ -222,7 +222,7 @@ const DialogContent = observer(
                               event.preventDefault();
                               void saveExistingConfig(config, i);
                             }}
-                            aria-label={`Configured DSW with connection alias ${config.DSW_ALIAS}`}
+                            aria-label={`Configured DSW with label ${config.DSW_ALIAS}`}
                         >
                           <CardContent>
                             <Grid container direction="column" spacing={2}>
@@ -236,11 +236,11 @@ const DialogContent = observer(
                                         config.dirty = true;
                                       });
                                     }}
-                                    label="DSW Connection Alias"
+                                    label="Label"
                                     error={config.DSW_ALIAS === ""}
                                     helperText={
                                         config.DSW_ALIAS === "" &&
-                                        "Connection alias is required."
+                                        "Label is required."
                                     }
                                 />
                               </Grid>
@@ -380,11 +380,11 @@ const DialogContent = observer(
                                         newConfig.DSW_ALIAS = value;
                                       });
                                     }}
-                                    label="DSW Connection Alias"
+                                    label="Label"
                                     error={newConfig.DSW_ALIAS === ""}
                                     helperText={
                                         newConfig.DSW_ALIAS === "" &&
-                                        "Connection alias is required."
+                                        "Label is required."
                                     }
                                 />
                               </Grid>
