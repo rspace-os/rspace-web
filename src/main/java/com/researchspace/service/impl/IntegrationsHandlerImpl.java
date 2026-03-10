@@ -221,6 +221,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case ASCENSCIA_APP_NAME:
         setSingleUserToken(info, user, ASCENSCIA_APP_NAME, ASCENSCIA_USER_TOKEN);
         return;
+      case DSW_APP_NAME:
+        setMultipleUserTokens(info, user, DSW_APP_NAME, DSW_ALIAS, DSW_APIKEY);
+        return;
       default:
     }
   }
@@ -243,6 +246,11 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
             String.valueOf(StringUtils.isNotBlank(apikeyByAlias.get(aliasToConfigure))));
       }
     }
+  }
+
+  private void setMultipleUserTokens(
+      IntegrationInfo info, User user, String appName, String paramAlias, String paramApiKey) {
+    setMultipleUserTokens(info, user, appName, "", paramAlias, paramApiKey);
   }
 
   private void setMultipleUserTokens(
@@ -580,6 +588,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else if (RAID_APP_NAME.equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(
           user, appName, RAID_ALIAS, configSetBeforeRemoval);
+    } else if (DSW_APP_NAME.equals(appName)) {
+      deleteConfigOptionsForAppsWithMultipleOptionSet(
+          user, appName, DSW_ALIAS, configSetBeforeRemoval);
     }
   }
 
