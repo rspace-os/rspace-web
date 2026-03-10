@@ -502,22 +502,22 @@ const queryClient = new QueryClient();
 
 export function Gallery() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Analytics>
-        <LandmarksProvider>
-          <ErrorBoundary>
-            <SkipToContentMenu />
-            <GoogleLoginProvider />
-            <StyledEngineProvider injectFirst>
-              <CssBaseline />
-              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-                <UiPreferences>
-                  <DisableDragAndDropByDefault>
-                    <Routes>
-                      <Route
-                        path="/gallery"
-                        element={
-                          <Alerts>
+    <Alerts>
+      <QueryClientProvider client={queryClient}>
+        <Analytics>
+          <LandmarksProvider>
+            <ErrorBoundary>
+              <SkipToContentMenu />
+              <GoogleLoginProvider />
+              <StyledEngineProvider injectFirst>
+                <CssBaseline />
+                <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+                  <UiPreferences>
+                    <DisableDragAndDropByDefault>
+                      <Routes>
+                        <Route
+                          path="/gallery"
+                          element={
                             <RouterNavigationProvider>
                               <GallerySelection>
                                 <FilestoreLoginProvider>
@@ -525,13 +525,11 @@ export function Gallery() {
                                 </FilestoreLoginProvider>
                               </GallerySelection>
                             </RouterNavigationProvider>
-                          </Alerts>
-                        }
-                      />
-                      <Route
-                        path="gallery/:folderId"
-                        element={
-                          <Alerts>
+                          }
+                        />
+                        <Route
+                          path="gallery/:folderId"
+                          element={
                             <RouterNavigationProvider>
                               <GallerySelection>
                                 <FilestoreLoginProvider>
@@ -539,13 +537,11 @@ export function Gallery() {
                                 </FilestoreLoginProvider>
                               </GallerySelection>
                             </RouterNavigationProvider>
-                          </Alerts>
-                        }
-                      />
-                      <Route
-                        path="gallery/item/:fileId"
-                        element={
-                          <Alerts>
+                          }
+                        />
+                        <Route
+                          path="gallery/item/:fileId"
+                          element={
                             <RouterNavigationProvider>
                               <GallerySelection>
                                 <FilestoreLoginProvider>
@@ -553,22 +549,22 @@ export function Gallery() {
                                 </FilestoreLoginProvider>
                               </GallerySelection>
                             </RouterNavigationProvider>
-                          </Alerts>
-                        }
-                      />
-                      <Route
-                        path="*"
-                        element={<Navigate to="/gallery" replace />}
-                      />
-                    </Routes>
-                  </DisableDragAndDropByDefault>
-                </UiPreferences>
-              </ThemeProvider>
-            </StyledEngineProvider>
-          </ErrorBoundary>
-        </LandmarksProvider>
-      </Analytics>
-    </QueryClientProvider>
+                          }
+                        />
+                        <Route
+                          path="*"
+                          element={<Navigate to="/gallery" replace />}
+                        />
+                      </Routes>
+                    </DisableDragAndDropByDefault>
+                  </UiPreferences>
+                </ThemeProvider>
+              </StyledEngineProvider>
+            </ErrorBoundary>
+          </LandmarksProvider>
+        </Analytics>
+      </QueryClientProvider>
+    </Alerts>
   );
 }
 
