@@ -90,7 +90,7 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
       fireEvent.input(
-        screen.getByRole("textbox", { name: /dsw name/i }),
+        screen.getByRole("textbox", { name: /dsw connection alias/i }),
         {
           target: { value: "new name" },
         }
@@ -140,7 +140,7 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button"));
       fireEvent.input(
-        screen.getByRole("textbox", { name: /dsw name/i }),
+        screen.getByRole("textbox", { name: /dsw connection alias/i }),
         {
           target: { value: "new name" },
         }
@@ -179,7 +179,7 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
       fireEvent.input(
-        screen.getByRole("textbox", { name: /dsw name/i }),
+        screen.getByRole("textbox", { name: /dsw connection alias/i }),
         {
           target: { value: "new name" },
         }
@@ -258,14 +258,14 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button"));
       fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dsw name/i })[0],
+        screen.getAllByRole("textbox", { name: /dsw connection alias/i })[0],
         {
           target: { value: "new name" },
         }
 
       );
       fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dsw name/i })[1],
+        screen.getAllByRole("textbox", { name: /dsw connection alias/i })[1],
         {
           target: { value: "unsaved new name" },
         }
@@ -276,7 +276,7 @@ describe("DSW", () => {
 
       await screen.findByRole("alert", { name: /Successfully/ });
       expect(
-        screen.getAllByRole("textbox", { name: /dsw name/i })[1]
+        screen.getAllByRole("textbox", { name: /dsw connection alias/i })[1]
       ).toHaveValue("unsaved new name");
 
     });
@@ -322,14 +322,14 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
       fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dsw name/i })[0],
+        screen.getAllByRole("textbox", { name: /dsw connection alias/i })[0],
         {
           target: { value: "new name" },
         }
 
       );
       fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dsw name/i })[1],
+        screen.getAllByRole("textbox", { name: /dsw connection alias/i })[1],
         {
           target: { value: "unsaved new name" },
         }
@@ -340,7 +340,7 @@ describe("DSW", () => {
 
       await screen.findByRole("alert", { name: /Successfully/ });
       expect(
-        screen.getAllByRole("textbox", { name: /dsw name/i })[1]
+        screen.getAllByRole("textbox", { name: /dsw connection alias/i })[1]
       ).toHaveValue("unsaved new name");
 
     });
@@ -386,14 +386,14 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
       fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dsw name/i })[0],
+        screen.getAllByRole("textbox", { name: /dsw connection alias/i })[0],
         {
           target: { value: "unsaved new name" },
         }
 
       );
       fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dsw name/i })[1],
+        screen.getAllByRole("textbox", { name: /dsw connection alias/i })[1],
         {
           target: { value: "new name" },
         }
@@ -416,7 +416,7 @@ describe("DSW", () => {
 
       await screen.findByRole("alert", { name: /Successfully/ });
       expect(
-        screen.getAllByRole("textbox", { name: /dsw name/i })[0]
+        screen.getAllByRole("textbox", { name: /dsw connection alias/i })[0]
       ).toHaveValue("unsaved new name");
     });
   });
@@ -458,7 +458,7 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button"));
       fireEvent.input(
-        screen.getByRole("textbox", { name: /dsw name/i }),
+        screen.getByRole("textbox", { name: /dsw connection alias/i }),
         {
           target: { value: "new name" },
         }
@@ -556,7 +556,7 @@ describe("DSW", () => {
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
       await waitFor(() => {
         expect(
-          screen.queryByRole("textbox", { name: /dsw name/i })
+          screen.queryByRole("textbox", { name: /dsw connection alias/i })
         ).not.toBeInTheDocument();
       });
 
@@ -597,7 +597,7 @@ describe("DSW", () => {
       fireEvent.click(screen.getByRole("button", { name: /delete/i }));
       await waitFor(() => {
         expect(
-          screen.queryByRole("textbox", { name: /dsw name/i })
+          screen.queryByRole("textbox", { name: /dsw connection alias/i })
         ).not.toBeInTheDocument();
 
       });

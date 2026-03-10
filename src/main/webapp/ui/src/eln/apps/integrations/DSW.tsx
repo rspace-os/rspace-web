@@ -50,7 +50,6 @@ type ExistingConfig = {
   DSW_APIKEY: string;
   DSW_URL: string;
   DSW_ALIAS: string;
-//  _label: string;
   optionsId: OptionsId;
   dirty: boolean;
 };
@@ -223,7 +222,7 @@ const DialogContent = observer(
                               event.preventDefault();
                               void saveExistingConfig(config, i);
                             }}
-                            aria-label={`Configured DSW with name ${config.DSW_ALIAS}`}
+                            aria-label={`Configured DSW with connection alias ${config.DSW_ALIAS}`}
                         >
                           <CardContent>
                             <Grid container direction="column" spacing={2}>
@@ -237,11 +236,11 @@ const DialogContent = observer(
                                         config.dirty = true;
                                       });
                                     }}
-                                    label="DSW Name"
+                                    label="DSW Connection Alias"
                                     error={config.DSW_ALIAS === ""}
                                     helperText={
                                         config.DSW_ALIAS === "" &&
-                                        "Name is required."
+                                        "Connection alias is required."
                                     }
                                 />
                               </Grid>
@@ -381,11 +380,11 @@ const DialogContent = observer(
                                         newConfig.DSW_ALIAS = value;
                                       });
                                     }}
-                                    label="DSW Name"
+                                    label="DSW Connection Alias"
                                     error={newConfig.DSW_ALIAS === ""}
                                     helperText={
                                         newConfig.DSW_ALIAS === "" &&
-                                        "Name is required."
+                                        "Connection alias is required."
                                     }
                                 />
                               </Grid>
@@ -519,8 +518,8 @@ function DSW({
                   <li>Click on Test to ensure your credentials are correct.</li>
                   <li>Enable the integration.</li>
                   <li>
-                    DSW or FAIR Wizard will now be available as an option in the export
-                    dialog.
+                    You can now import a DSW or FAIR Wizard project as a DMP when in the
+                    Gallery, and associate that DMP with data when in the export dialog.
                   </li>
                 </ol>
                 {ArrayUtils.all(integrationState.credentials)
