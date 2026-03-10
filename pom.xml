@@ -1099,6 +1099,12 @@
       <artifactId>jsoup</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20240303</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.quartz-scheduler</groupId>
       <artifactId>quartz</artifactId>
       <version>2.3.2</version>
@@ -1511,7 +1517,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>2.20.0</version>
+      <version>rsdev-1022-stoich-link-updates-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>

@@ -1,7 +1,6 @@
 package com.researchspace.service.impl;
 
-import com.researchspace.api.v1.model.ApiQuantityInfo;
-import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
+import com.researchspace.api.v1.model.stoichiometry.StockDeductionResult;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.User;
@@ -17,6 +16,7 @@ import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
@@ -54,12 +54,11 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   }
 
   @Override
-  public StoichiometryInventoryLinkDTO createLink(
-      StoichiometryInventoryLinkRequest req, User user) {
+  public StoichiometryInventoryLink createLink(
+      Long stoichiometryMoleculeId, StoichiometryInventoryLinkRequest req, User user) {
     StoichiometryMolecule stoichiometryMolecule =
-        stoichiometryMoleculeManager.getById(req.getStoichiometryMoleculeId());
+        stoichiometryMoleculeManager.getById(stoichiometryMoleculeId);
 
-    verifyStoichiometryPermissions(stoichiometryMolecule, PermissionType.WRITE, user);
     if (stoichiometryMolecule.getInventoryLink() != null) {
       throw new IllegalArgumentException("Stoichiometry molecule already has an inventory link");
     }
@@ -82,18 +81,46 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     link.setStoichiometryMolecule(stoichiometryMolecule);
     link.setInventoryRecord(inventoryRecord);
 
-    QuantityInfo quantityInfo = makeQuantity(req);
-    link.setQuantity(quantityInfo);
-    link = linkDao.save(link);
-
-    if (req.reducesStock()) {
-      processStockReduction(user, link, quantityInfo, inventoryRecord);
-    }
-    generateNewStoichiometryRevision(stoichiometryMolecule);
-    return new StoichiometryInventoryLinkDTO(link);
+    return linkDao.save(link);
   }
 
-  private void processStockReduction(
+  @Override
+  public StockDeductionResult deductStock(List<Long> linkIds, User user) {
+    StockDeductionResult result = new StockDeductionResult();
+    for (Long id : linkIds) {
+      try {
+        StoichiometryInventoryLink link = getLinkOrThrowNotFound(id);
+        StoichiometryMolecule stoichiometryMolecule = link.getStoichiometryMolecule();
+        verifyStoichiometryPermissions(stoichiometryMolecule, PermissionType.WRITE, user);
+        invPermissionUtils.assertUserCanEditInventoryRecord(link.getInventoryRecord(), user);
+
+        Double actualAmount = stoichiometryMolecule.getActualAmount();
+        if (actualAmount == null) {
+          throw new IllegalArgumentException("Molecule actual amount must be set for deduction");
+        }
+        QuantityInfo quantityInfo =
+            new QuantityInfo(BigDecimal.valueOf(actualAmount), RSUnitDef.GRAM.getId());
+
+        processStockDeduction(user, link, quantityInfo, link.getInventoryRecord());
+        if (!link.isStockDeducted()) {
+          link.setStockDeducted(true);
+          linkDao.save(link);
+          generateNewStoichiometryRevision(stoichiometryMolecule);
+        }
+        result.addResult(new StockDeductionResult.IndividualResult(id, true, null));
+      } catch (NotFoundException | IllegalArgumentException e) {
+        result.addResult(new StockDeductionResult.IndividualResult(id, false, e.getMessage()));
+      } catch (Exception e) {
+        log.error("Unexpected error deducting stock for link {}", id, e);
+        result.addResult(
+            new StockDeductionResult.IndividualResult(
+                id, false, "An internal error occurred while deducting stock"));
+      }
+    }
+    return result;
+  }
+
+  private void processStockDeduction(
       User user,
       StoichiometryInventoryLink link,
       QuantityInfo quantityInfo,
@@ -117,14 +144,6 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     }
   }
 
-  private QuantityInfo makeQuantity(StoichiometryInventoryLinkRequest request) {
-    if (request.getQuantity() != null && request.getUnitId() != null) {
-      return new QuantityInfo(request.getQuantity(), request.getUnitId());
-    } else {
-      throw new IllegalArgumentException("quantityUsed and unitId are required");
-    }
-  }
-
   /**
    * Ensures each change to an inventory link (add new, update quantity, delete) creates a new
    * Stoichiometry revision.
@@ -132,47 +151,6 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   private void generateNewStoichiometryRevision(StoichiometryMolecule stoichiometryMolecule) {
     Stoichiometry parent = stoichiometryMolecule.getStoichiometry();
     parent.touchForAudit();
-  }
-
-  @Override
-  public StoichiometryInventoryLinkDTO getById(long linkId, User user) {
-    StoichiometryInventoryLink entity = getLinkOrThrowNotFound(linkId);
-    verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.READ, user);
-    invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
-    return new StoichiometryInventoryLinkDTO(entity);
-  }
-
-  @Override
-  public StoichiometryInventoryLinkDTO updateQuantity(
-      long linkId, ApiQuantityInfo newQuantity, boolean reducesStock, User user) {
-    if (newQuantity == null
-        || newQuantity.getNumericValue() == null
-        || newQuantity.getUnitId() == null) {
-      throw new IllegalArgumentException("numericValue and unitId are required");
-    }
-
-    StoichiometryInventoryLink entity = getLinkOrThrowNotFound(linkId);
-    verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.WRITE, user);
-    invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
-
-    if (reducesStock) {
-      processStockReduction(
-          user, entity, newQuantity.toQuantityInfo(), entity.getInventoryRecord());
-    }
-
-    entity.setQuantity(newQuantity.toQuantityInfo());
-    entity = linkDao.save(entity);
-    generateNewStoichiometryRevision(entity.getStoichiometryMolecule());
-    return new StoichiometryInventoryLinkDTO(entity);
-  }
-
-  @Override
-  public void deleteLink(long linkId, User user) {
-    StoichiometryInventoryLink entity = getLinkOrThrowNotFound(linkId);
-    verifyStoichiometryPermissions(entity.getStoichiometryMolecule(), PermissionType.WRITE, user);
-    invPermissionUtils.assertUserCanEditInventoryRecord(entity.getInventoryRecord(), user);
-    linkDao.remove(linkId);
-    generateNewStoichiometryRevision(entity.getStoichiometryMolecule());
   }
 
   private void verifyStoichiometryPermissions(
