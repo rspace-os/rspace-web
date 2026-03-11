@@ -1369,7 +1369,8 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dataverse-adapter</artifactId>
-      <version>2.1.4</version>
+<!--      <version>2.1.4</version>-->
+      <version>3.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1871,7 +1872,12 @@
       <version>1.0.0</version>
     </dependency>
     <!-- transitive dependency used by tika, this forces the most up-to-date version  -->
-
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20240303</version>
+      <scope>test</scope>
+  </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
