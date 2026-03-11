@@ -1873,12 +1873,6 @@
     </dependency>
     <!-- transitive dependency used by tika, this forces the most up-to-date version  -->
     <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>20240303</version>
-      <scope>test</scope>
-  </dependency>
-    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
