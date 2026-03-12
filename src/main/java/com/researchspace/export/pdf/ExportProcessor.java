@@ -54,14 +54,14 @@ public interface ExportProcessor {
    * Generates exported representation of an RSpace record in the supplied file
    *
    * @param tempExportFile a writable File to put the export
-   * @param exportInput ExportProcesserInput representation of RSpace document
+   * @param exportInput ExportProcessorInput representation of RSpace document
    * @param rspaceDocument an {@link IRSpaceDoc} to export
    * @param exportConfig A {@link ExportToFileConfig} of user-supplied configuration
    * @throws IOException
    */
   void makeExport(
       File tempExportFile,
-      ExportProcesserInput exportInput,
+      ExportProcessorInput exportInput,
       IRSpaceDoc rspaceDocument,
       ExportToFileConfig exportConfig)
       throws IOException;

@@ -3,7 +3,6 @@ package com.researchspace.service.impl;
 import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrationName;
 
 import com.researchspace.archive.ArchiveResult;
-import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
@@ -27,6 +26,7 @@ import com.researchspace.service.RepositoryFactory;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.webapp.controller.repositories.DigitalCommonsDataUIConnectionConfig;
 import com.researchspace.webapp.controller.repositories.DryadUIConnectionConfig;
 import com.researchspace.webapp.controller.repositories.FigshareUIConnectionConfig;
@@ -80,7 +80,7 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
       RepoDepositConfig archiveConfig,
       Optional<AppConfigElementSet> cfg,
       App app,
-      Future<EcatDocumentFile> document)
+      Future<ExportEcatDocumentResult> document)
       throws IOException, ExecutionException, InterruptedException {
     User subject = userManager.getAuthenticatedUserInSession();
     checkConnectionState(app, subject);

@@ -7,9 +7,10 @@ import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.export.pdf.ExportToFileConfig;
 import com.researchspace.model.ArchivalCheckSum;
-import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ExportSelection;
+import com.researchspace.service.archive.export.ExportEcatDocumentResult;
+import com.researchspace.service.archive.export.ExportFileResult;
 import com.researchspace.service.archive.export.ExportRemovalPolicy;
 import java.io.File;
 import java.io.IOException;
@@ -76,7 +77,7 @@ public interface ExportImport {
    * @throws IOException
    */
   @Async(value = "archiveTaskExecutor")
-  Future<EcatDocumentFile> asyncExportSelectionToPdf(
+  Future<ExportEcatDocumentResult> asyncExportSelectionToPdf(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,
@@ -85,7 +86,7 @@ public interface ExportImport {
       throws IOException;
 
   /** Exports one or more records identified by exportIds to PDF, synchronously. */
-  EcatDocumentFile syncExportSelectionToPdf(
+  ExportEcatDocumentResult syncExportSelectionToPdf(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,
@@ -258,7 +259,7 @@ public interface ExportImport {
    *     export <code>toExport's</code> data.
    */
   @Async(value = "archiveTaskExecutor")
-  public Future<EcatDocumentFile> asyncExportAllUserRecordsToPdf(
+  Future<ExportEcatDocumentResult> asyncExportAllUserRecordsToPdf(
       User toExport, ExportToFileConfig config, User exporter) throws IOException;
 
   /**
@@ -272,11 +273,11 @@ public interface ExportImport {
    *     group.
    */
   @Async(value = "archiveTaskExecutor")
-  public Future<EcatDocumentFile> asyncExportGroupToPdf(
+  Future<ExportEcatDocumentResult> asyncExportGroupToPdf(
       ExportToFileConfig expCfg, User exporter, Long groupId) throws IOException;
 
   @Async(value = "archiveTaskExecutor")
-  Future<File> asyncExportSelectionToPdfForSigning(
+  Future<ExportFileResult> asyncExportSelectionToPdfForSigning(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,

@@ -68,7 +68,7 @@ public class RepoDepositConfigValidationTest extends JavaxValidatorTest {
 
   @Test
   public void testUserAdaptorValidation() {
-    UserDepositorAdapter uda = new UserDepositorAdapter(null, null);
+    UserDepositorAdapter uda = new UserDepositorAdapter();
     assertNErrors(uda, 2);
     uda.setEmail("invalidemail");
     assertNErrors(uda, 2);

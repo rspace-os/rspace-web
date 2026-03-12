@@ -27,7 +27,7 @@ public class PdfHtmlGeneratorTest {
 
   PdfHtmlGenerator pdfHtmlGenerator;
 
-  ExportProcesserInput input;
+  ExportProcessorInput input;
 
   String basicHtmlDoc;
 
@@ -67,8 +67,12 @@ public class PdfHtmlGeneratorTest {
   public void cssPageSizeSetAccordingToConfig(String pageSize) {
     config.setPageSize(pageSize);
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
@@ -82,8 +86,12 @@ public class PdfHtmlGeneratorTest {
     // abbreviated titles end with ellipsis ..., replacing the last 3 chars of the shortened title
     String shortenedTitle = sixtyCharacterTitle.substring(0, MAX_TITLE_WIDTH - 3) + "...";
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
@@ -97,8 +105,12 @@ public class PdfHtmlGeneratorTest {
   public void addsComments() {
     List<CommentAppendix> comments = makeComments();
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, comments, new RevisionInfo(), Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            comments,
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
@@ -112,7 +124,12 @@ public class PdfHtmlGeneratorTest {
   public void addsNfsLinks() {
     List<ArchivalNfsFile> files = makeArchiveFileList();
     input =
-        new ExportProcesserInput(basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), files);
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            files,
+            Collections.emptySet());
     String nfsTableRowSelector = "#nfs > table > tbody > tr";
     ArchivalNfsFile file = files.get(0);
 
@@ -139,8 +156,12 @@ public class PdfHtmlGeneratorTest {
   public void addProvenance() {
     RevisionInfo revisionInfo = makeRevisionInfo();
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), revisionInfo, Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            revisionInfo,
+            Collections.emptyList(),
+            Collections.emptySet());
     String provenanceTableRowSelector = "#provenance-table > tbody > tr";
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
@@ -171,8 +192,12 @@ public class PdfHtmlGeneratorTest {
   public void addsPageBreakBeforeProvenance() {
     RevisionInfo revisionInfo = makeRevisionInfo();
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), revisionInfo, Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            revisionInfo,
+            Collections.emptyList(),
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
@@ -184,8 +209,12 @@ public class PdfHtmlGeneratorTest {
   public void addPageBreakBeforeCommentsWhenNoProvenance() {
     List<CommentAppendix> comments = makeComments();
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, comments, new RevisionInfo(), Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            comments,
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
@@ -197,7 +226,12 @@ public class PdfHtmlGeneratorTest {
   public void addsPageBreakBeforeNfsLinksWhenNoOtherMetaDataAdded() {
     List<ArchivalNfsFile> files = makeArchiveFileList();
     input =
-        new ExportProcesserInput(basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), files);
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            files,
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
@@ -208,8 +242,12 @@ public class PdfHtmlGeneratorTest {
   @Test
   public void addsFooter() {
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
     String todayDate = LocalDate.now().toString();
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
@@ -225,8 +263,12 @@ public class PdfHtmlGeneratorTest {
     RevisionInfo revisionInfo = makeRevisionInfo();
     config.setProvenance(false);
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), revisionInfo, Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            revisionInfo,
+            Collections.emptyList(),
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
@@ -240,8 +282,12 @@ public class PdfHtmlGeneratorTest {
     List<CommentAppendix> comments = makeComments();
     config.setComments(false);
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, comments, new RevisionInfo(), Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            comments,
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
@@ -254,8 +300,12 @@ public class PdfHtmlGeneratorTest {
     config.setIncludeFooterAtEndOnly(false);
 
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
@@ -272,8 +322,12 @@ public class PdfHtmlGeneratorTest {
     config.setIncludeFooterAtEndOnly(true);
 
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
@@ -295,8 +349,12 @@ public class PdfHtmlGeneratorTest {
     config.setDateType("NEW");
 
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
     String createDate = pdfHtmlGenerator.simpleDateFmt.format(doc.getCreationDate());
@@ -311,8 +369,12 @@ public class PdfHtmlGeneratorTest {
     config.setDateType("UPD");
 
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
 
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
@@ -326,8 +388,12 @@ public class PdfHtmlGeneratorTest {
   @Test
   public void htmlCharsEncodingOfDocNameAndOwner() {
     input =
-        new ExportProcesserInput(
-            basicHtmlDoc, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
 
     doc = new StructuredDocument(TestFactory.createAnyForm());
     doc.setName("name with non-ascii &∅∈∌ and html entities &#x3");

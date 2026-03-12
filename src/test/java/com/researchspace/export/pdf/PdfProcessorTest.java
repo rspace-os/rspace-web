@@ -27,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class PdfProcessorTest {
+
   @Mock private UserExternalIdResolver externalIdResolver;
 
   @Mock private HTMLUnicodeFontProcesser htmlUnicodeFontProcesser;
@@ -45,7 +46,7 @@ public class PdfProcessorTest {
 
   ExportToFileConfig config;
 
-  ExportProcesserInput exportProcesserInput;
+  ExportProcessorInput exportProcessorInput;
 
   @BeforeAll
   public static void setup() throws Exception {
@@ -71,16 +72,17 @@ public class PdfProcessorTest {
   @ValueSource(strings = {"一些测试文本", "κάποιο δοκιμαστικό κείμενο", "∑∆∏πφ"})
   public void outputNonAsciiCharactersTest(String nonAscii) throws Exception {
     String htmlWithNonAsciiAlphabet = loadTextResourceFromPdfDir("DocWithNonStandardChars.html");
-    exportProcesserInput =
-        new ExportProcesserInput(
+    exportProcessorInput =
+        new ExportProcessorInput(
             htmlWithNonAsciiAlphabet,
             Collections.emptyList(),
             new RevisionInfo(),
-            Collections.emptyList());
+            Collections.emptyList(),
+            Collections.emptySet());
 
     when(pdfHtmlGenerator.prepareHtml(any(), any(), any())).thenReturn(htmlWithNonAsciiAlphabet);
 
-    pdfProcessor.makeExport(outputFile, exportProcesserInput, document, config);
+    pdfProcessor.makeExport(outputFile, exportProcessorInput, document, config);
     String output = readPdfContent(outputFile);
 
     assertTrue(output.contains(nonAscii));
@@ -96,21 +98,29 @@ public class PdfProcessorTest {
   private String concatTwoDocuments() throws Exception {
     // create 2 pdf docs then concatenate and verify the output doc contains the 2 inputs
     String doc1Html = loadTextResourceFromPdfDir("doc1.html");
-    ExportProcesserInput exportProcesserInput1 =
-        new ExportProcesserInput(
-            doc1Html, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
+    ExportProcessorInput exportProcessorInput1 =
+        new ExportProcessorInput(
+            doc1Html,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
 
     File pdfDoc1 = createTempPdfFile();
     when(pdfHtmlGenerator.prepareHtml(any(), any(), any())).thenReturn(doc1Html);
-    pdfProcessor.makeExport(pdfDoc1, exportProcesserInput1, document, config);
+    pdfProcessor.makeExport(pdfDoc1, exportProcessorInput1, document, config);
 
     String doc2Html = loadTextResourceFromPdfDir("doc2.html");
-    ExportProcesserInput exportProcesserInput2 =
-        new ExportProcesserInput(
-            doc2Html, Collections.emptyList(), new RevisionInfo(), Collections.emptyList());
+    ExportProcessorInput exportProcessorInput2 =
+        new ExportProcessorInput(
+            doc2Html,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
     File pdfDoc2 = createTempPdfFile();
     when(pdfHtmlGenerator.prepareHtml(any(), any(), any())).thenReturn(doc2Html);
-    pdfProcessor.makeExport(pdfDoc2, exportProcesserInput2, document, config);
+    pdfProcessor.makeExport(pdfDoc2, exportProcessorInput2, document, config);
 
     List<File> filesToConcatenate = List.of(pdfDoc1, pdfDoc2);
     pdfProcessor.concatenateExportedFilesIntoOne(outputFile, filesToConcatenate, config);
