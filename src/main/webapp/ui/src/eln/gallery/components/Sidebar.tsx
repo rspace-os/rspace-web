@@ -484,7 +484,12 @@ const DmpMenuSection = ({
         <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />
       )}
       {showDmptool && <DMPToolAccentMenuItem onDialogClose={onDialogClose} />}
-      {showDsw && <DSWAccentMenuItem onDialogClose={onDialogClose} connections={dswConnections}/>}
+      {
+        showDsw && dswConnections &&
+          Object.entries(dswConnections).map(([index, connection]) => {
+            return <DSWAccentMenuItem onDialogClose={onDialogClose} connection={connection} showAlias={dswConnections.length > 1}/>
+          })
+      }
     </>
   );
 };

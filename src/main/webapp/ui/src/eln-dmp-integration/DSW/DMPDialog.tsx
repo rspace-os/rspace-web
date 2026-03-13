@@ -118,112 +118,73 @@ function DMPDialogContent({
       }>(`/apps/dsw/plans?serverAlias=${connection.DSW_ALIAS}`);
       console.log("DDDDCgD plans: ", (r.data.data ? r.data.data : null)); //.data.data.projects);
 
-      // TODO Probably need something here to deal with non-success.  We'll get to it.
+      console.log("DDDDCgD r: ", r);
+      console.log("DDDDCgD success? ", r.data.success);
+      if (r.data.success) {
 
-      Object.entries(r.data.data).map(([x, y]) => {
-        console.log("DDDDCgD x: ", x, " , y: ", y);
-        let projectWithAlias : DswProjectWithOrigin = {
-          createdAt: y.createdAt,
-          description: y.description,
-          id: y.uuid,
-          name: y.name,
-          serverAlias: connection.DSW_ALIAS,
-          sharing: y.sharing,
-          state: y.state,
-          template: y.template,
-          updatedAt: y.updatedAt,
-          uuid: y.uuid,
-          visibility: y.visibility
-        }; //y as DswProjectWithOrigin;
-        console.log("DDDDCgD projectWithAlias: ", projectWithAlias);
-        // let y2 = y;
-        // console.log("DDDDCgD y2: ", y2);
-        // projectWithAlias.serverAlias = connection.DSW_ALIAS;
-        // console.log("DDDDCgD projectWithAlias with alias: ", projectWithAlias);
-        allPlans.push(projectWithAlias);
-      })
-      // console.log("DDDDCgD allPlans: ", allPlans);
-      // console.log("DDDDCgD remaining to get was: ", remainingToGet, " , and is it? ", (remainingToGet? true : false));
-      // remainingToGet = remainingToGet? remainingToGet - 1 : remainingToGet;
-      // console.log("DDDDCgD remaining to get now: ", remainingToGet);
-      // if (0 == remainingToGet) {
-      console.log("DDDDCgD allPlans FINALLY: ", allPlans);
-      setDMPs(allPlans);
+        Object.entries(r.data.data).map(([id, project]) => {
+          console.log("DDDDCgD x: ", id, " , y: ", project);
+          let projectWithAlias: DswProjectWithOrigin = {
+            createdAt: project.createdAt,
+            description: project.description,
+            id: project.uuid,
+            name: project.name,
+            serverAlias: connection.DSW_ALIAS,
+            sharing: project.sharing,
+            state: project.state,
+            template: project.template,
+            updatedAt: project.updatedAt,
+            uuid: project.uuid,
+            visibility: project.visibility
+          }; //y as DswProjectWithOrigin;
+          console.log("DDDDCgD projectWithAlias: ", projectWithAlias);
+          allPlans.push(projectWithAlias);
+        })
+
+        // console.log("DDDDCgD allPlans: ", allPlans);
+        // console.log("DDDDCgD remaining to get was: ", remainingToGet, " , and is it? ", (remainingToGet? true : false));
+        // remainingToGet = remainingToGet? remainingToGet - 1 : remainingToGet;
+        // console.log("DDDDCgD remaining to get now: ", remainingToGet);
+        // if (0 == remainingToGet) {
+        console.log("DDDDCgD allPlans FINALLY: ", allPlans);
+        setDMPs(allPlans);
+
+      } else {
+        setFetching(false);
+        addAlert(
+          mkAlert({
+            title: "Unable to load projects.",
+            message: (
+              <>
+                For more information{" "}
+                <a href={docLinks.dmptoolImportingDmps} rel="noreferrer">
+                  visit our docs
+                </a>
+                .
+              </>
+            ),
+            variant: "error",
+          }),
+        );
+        return;
+      }
       console.log("DDDDCgD Fetching false");
       setFetching(false);
-      // }
     } catch (e) {
-      console.log("DDDDCgD Ooops: ", e);
+      console.error("Could not get DSW plans for reason: ", e);
+      if (e instanceof Error) {
+        addAlert(
+          mkAlert({
+            title: "Fetch failed.",
+            message: `Could not get DMPs: ${e.message}`,
+            variant: "error",
+          }),
+        );
+      }
+      setFetching(false);
     } finally {
+      setFetching(false);
     }
-    //console.log("DDDDCgD FINALLY allPlans: ", allPlans);
-
-    // try {
-    //   const r = await axios.get<{
-    //     success: true;
-    //     data: {
-    //       items: Array<{ dmp: Plan }>;
-    //     };
-    //     error?: { errorMessages: Array<string> };
-    //   }>(`/apps/dmptool/plans`);
-    //   fetchingId.current += 1;
-    //
-    //   if (thisId === fetchingId.current - 1) {
-    //     if (r.data.success) {
-    //       setDMPs(r.data.data.items.map((item) => item.dmp));
-    //     } else {
-    //       if (
-    //         /Unable to load your DMPs. For more information/.test(
-    //           r.data.error?.errorMessages[0] ?? "",
-    //         )
-    //       ) {
-    //         addAlert(
-    //           mkAlert({
-    //             title: "Unable to load DMPs.",
-    //             message: (
-    //               <>
-    //                 For more information{" "}
-    //                 <a href={docLinks.dmptoolImportingDmps} rel="noreferrer">
-    //                   visit our docs
-    //                 </a>
-    //                 .
-    //               </>
-    //             ),
-    //             variant: "error",
-    //           }),
-    //         );
-    //         return;
-    //       }
-    //       addAlert(
-    //         mkAlert({
-    //           title: "Fetch failed.",
-    //           message: r.data?.error?.errorMessages[0] ?? "Could not get DMPs",
-    //           variant: "error",
-    //         }),
-    //       );
-    //     }
-    //   } else {
-    //     console.info(
-    //       "The response from this request is being discarded because a different listing of plans has been requested whilst this network call was in flight.",
-    //     );
-    //   }
-    // } catch (e) {
-    //   console.error("Could not get DMPs for scope", e);
-    //   if (e instanceof Error) {
-    //     addAlert(
-    //       mkAlert({
-    //         title: "Fetch failed.",
-    //         message: `Could not get DMPs: ${e.message}`,
-    //         variant: "error",
-    //       }),
-    //     );
-    //   }
-    //   if (thisId === fetchingId.current) {
-    //     setFetching(false);
-    //   }
-    // } finally {
-    //   setFetching(false);
-    // }
   };
 
   useEffect(() => {
