@@ -1203,8 +1203,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
       Long stoichiometryMolID = stoichiometry.getMolecules().get(0).getId();
       ApiSampleWithFullSubSamples sample = createBasicSampleForUser(u1);
       StoichiometryInventoryLinkRequest invLinkRequest =
-          createStoichiometryInventoryLinkRequest(stoichiometryMolID, sample.getGlobalId());
-      stoichiometryInventoryLinkManager.createLink(invLinkRequest, u1);
+          createStoichiometryInventoryLinkRequest(sample.getGlobalId());
+      stoichiometryInventoryLinkManager.createLink(stoichiometryMolID, invLinkRequest, u1);
       stoichiometryRevision = stoichiometryService.getById(stoichiometryID, null, u1).getRevision();
       stoichiometry = stoichiometryMgr.get(stoichiometryID);
       assertTrue(stoichiometry.getMolecules().get(0).getInventoryLink() != null);
