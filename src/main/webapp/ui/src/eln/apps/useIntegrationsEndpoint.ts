@@ -205,7 +205,7 @@ export type IntegrationStates = {
   }>;
 };
 
-type FetchedState = {
+export type FetchedState = {
   name: string;
   available: boolean;
   enabled: boolean;
@@ -411,6 +411,8 @@ function decodeDsw(data: FetchedState): IntegrationStates["DSW"] {
         })
         .orElse(false);
   }
+
+  console.log("uIEdD data to decode: ", data);
 
   return {
     mode: parseState(data),

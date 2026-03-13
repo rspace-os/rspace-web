@@ -14,7 +14,8 @@ export type DswConfig = {
 
 type DSWAccentMenuItemArgs = {
   onDialogClose: () => void;
-  connections: null | DswConfig[];
+  connection: DswConfig;
+  showAlias: boolean;
 };
 
 /**
@@ -22,15 +23,17 @@ type DSWAccentMenuItemArgs = {
  */
 export default function DSWAccentMenuItem({
   onDialogClose,
-    connections
+    connection,
+    showAlias
 }: DSWAccentMenuItemArgs): React.ReactNode {
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
-  console.log("DAMI connections: ", connections);
+  console.log("DAMI connection: ", connection);
 
   return (
     <>
       <AccentMenuItem
         title="DSW / FAIR Wizard"
+        subheader={showAlias && connection.DSW_ALIAS}
         avatar={<CardMedia image={DSWIcon} />}
         backgroundColor={LOGO_COLOR}
         foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}
@@ -47,7 +50,7 @@ export default function DSWAccentMenuItem({
             setShowDMPDialog(b);
             onDialogClose();
           }}
-          connections={connections}
+          connection={connection}
         />
       </EventBoundary>
     </>

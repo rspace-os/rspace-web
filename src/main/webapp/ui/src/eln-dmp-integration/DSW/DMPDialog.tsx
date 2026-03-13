@@ -73,10 +73,10 @@ export interface DswProjectWithOrigin extends DswProject {
 
 function DMPDialogContent({
   setOpen,
-    connections
+    connection
 }: {
   setOpen: (open: boolean) => void;
-  connections: null | DswConfig[];
+  connection: DswConfig;
 }): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
@@ -105,54 +105,53 @@ function DMPDialogContent({
     const thisId = fetchingId.current;
 
     let allPlans : Array<DswProjectWithOrigin> = [];
-    let remainingToGet = connections?.length;
-    console.log("DDDDCgD Getting projects for this many connections: ", connections?.length);
+    // let remainingToGet = connections?.length;
+    // console.log("DDDDCgD Getting projects for this many connections: ", connections?.length);
+    console.log("DDDDCgD Getting projects for this connection: ", connection);
     try {
-      connections?.map(async (connection) => {
-        console.log("DDDDCgD Getting plans for connection alias: ", connection.DSW_ALIAS);
+      console.log("DDDDCgD Getting plans for connection alias: ", connection.DSW_ALIAS);
 
-        const r = await axios.get<{
-          success: true;
-          data: Array<DswProject>;
-          error?: { errorMessages: Array<string> };
-        }>(`/apps/dsw/plans?serverAlias=${connection.DSW_ALIAS}`);
-        console.log("DDDDCgD plans: ", (r.data.data ? r.data.data : null)); //.data.data.projects);
+      const r = await axios.get<{
+        success: true;
+        data: Array<DswProject>;
+        error?: { errorMessages: Array<string> };
+      }>(`/apps/dsw/plans?serverAlias=${connection.DSW_ALIAS}`);
+      console.log("DDDDCgD plans: ", (r.data.data ? r.data.data : null)); //.data.data.projects);
 
-        // TODO Probably need something here to deal with non-success.  We'll get to it.
+      // TODO Probably need something here to deal with non-success.  We'll get to it.
 
-        Object.entries(r.data.data).map(([x, y]) => {
-          console.log("DDDDCgD x: ", x, " , y: ", y);
-          let projectWithAlias : DswProjectWithOrigin = {
-            createdAt: y.createdAt,
-            description: y.description,
-            id: y.uuid,
-            name: y.name,
-            serverAlias: connection.DSW_ALIAS,
-            sharing: y.sharing,
-            state: y.state,
-            template: y.template,
-            updatedAt: y.updatedAt,
-            uuid: y.uuid,
-            visibility: y.visibility
-          }; //y as DswProjectWithOrigin;
-          console.log("DDDDCgD projectWithAlias: ", projectWithAlias);
-          // let y2 = y;
-          // console.log("DDDDCgD y2: ", y2);
-          // projectWithAlias.serverAlias = connection.DSW_ALIAS;
-          // console.log("DDDDCgD projectWithAlias with alias: ", projectWithAlias);
-          allPlans.push(projectWithAlias);
-        })
-        console.log("DDDDCgD allPlans: ", allPlans);
-        console.log("DDDDCgD remaining to get was: ", remainingToGet, " , and is it? ", (remainingToGet? true : false));
-        remainingToGet = remainingToGet? remainingToGet - 1 : remainingToGet;
-        console.log("DDDDCgD remaining to get now: ", remainingToGet);
-        if (0 == remainingToGet) {
-          console.log("DDDDCgD allPlans FINALLY: ", allPlans);
-          setDMPs(allPlans);
-          console.log("DDDDCgD Fetching false");
-          setFetching(false);
-        }
-      });
+      Object.entries(r.data.data).map(([x, y]) => {
+        console.log("DDDDCgD x: ", x, " , y: ", y);
+        let projectWithAlias : DswProjectWithOrigin = {
+          createdAt: y.createdAt,
+          description: y.description,
+          id: y.uuid,
+          name: y.name,
+          serverAlias: connection.DSW_ALIAS,
+          sharing: y.sharing,
+          state: y.state,
+          template: y.template,
+          updatedAt: y.updatedAt,
+          uuid: y.uuid,
+          visibility: y.visibility
+        }; //y as DswProjectWithOrigin;
+        console.log("DDDDCgD projectWithAlias: ", projectWithAlias);
+        // let y2 = y;
+        // console.log("DDDDCgD y2: ", y2);
+        // projectWithAlias.serverAlias = connection.DSW_ALIAS;
+        // console.log("DDDDCgD projectWithAlias with alias: ", projectWithAlias);
+        allPlans.push(projectWithAlias);
+      })
+      // console.log("DDDDCgD allPlans: ", allPlans);
+      // console.log("DDDDCgD remaining to get was: ", remainingToGet, " , and is it? ", (remainingToGet? true : false));
+      // remainingToGet = remainingToGet? remainingToGet - 1 : remainingToGet;
+      // console.log("DDDDCgD remaining to get now: ", remainingToGet);
+      // if (0 == remainingToGet) {
+      console.log("DDDDCgD allPlans FINALLY: ", allPlans);
+      setDMPs(allPlans);
+      console.log("DDDDCgD Fetching false");
+      setFetching(false);
+      // }
     } catch (e) {
       console.log("DDDDCgD Ooops: ", e);
     } finally {
@@ -439,7 +438,7 @@ function DMPDialogContent({
 type DMPDialogArgs = {
   open: boolean;
   setOpen: (open: boolean) => void;
-  connections: null | DswConfig[];
+  connection: DswConfig;
 };
 
 /*
@@ -450,7 +449,7 @@ type DMPDialogArgs = {
  * custom tabbing behaviour of the Gallery page takes control of the tab key
  * events away from the React+MUI tech stack. See ../../../../scripts/global.js
  */
-function DMPDialog({ open, setOpen, connections }: DMPDialogArgs): React.ReactNode {
+function DMPDialog({ open, setOpen, connection }: DMPDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
 
   /*
@@ -474,7 +473,7 @@ function DMPDialog({ open, setOpen, connections }: DMPDialogArgs): React.ReactNo
             fullWidth
             fullScreen={isViewportSmall}
           >
-            <DMPDialogContent setOpen={setOpen} connections={connections} />
+            <DMPDialogContent setOpen={setOpen} connection={connection} />
           </CustomDialog>
         </DialogBoundary>
       </Portal>
