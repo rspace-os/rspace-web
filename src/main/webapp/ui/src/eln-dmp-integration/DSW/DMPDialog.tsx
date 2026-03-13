@@ -83,7 +83,7 @@ function DMPDialogContent({
 
   const [DMPHost, setDMPHost] = React.useState<string | null>();
   const [DMPs, setDMPs] = React.useState<Array<DswProjectWithOrigin>>([]);
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>();
+  const [selectedPlan, setSelectedPlan] = useState<DswProjectWithOrigin | null>();
 
   const [fetching, setFetching] = useState(false);
   const fetchingId = useRef(0);
@@ -194,20 +194,20 @@ function DMPDialogContent({
   const handleImport = async () => {
     try {
       setImporting(true);
-      const selectedPlanId = Number(selectedPlan?.id);
+      //const selectedPlanId = Number(selectedPlan?.id);
       if (selectedPlan) {
         await axios
           .post<{
             success: true;
             error?: { errorMessages: string[] };
-          }>(`/apps/dmptool/jsonById/${selectedPlanId}`, {})
+          }>(`/apps/dsw/importPlan?serverAlias=${connection.DSW_ALIAS}&planUuid=${selectedPlan.uuid}`, {})
           .then((r) => {
             addAlert(
               mkAlert(
                 r.data.success
                   ? {
                       title: "Success.",
-                      message: `DMP ${selectedPlanId} was successfully imported.`,
+                      message: `DMP ${selectedPlan.name} was successfully imported.`,
                       variant: "success",
                     }
                   : {
@@ -335,7 +335,9 @@ function DMPDialogContent({
               rows={fetching ? [] : DMPs}
               selectedRowId={selectedPlan?.id}
               onSelectionChange={(newSelectionId: GridRowId) => {
-                //setSelectedPlan(DMPs.find((d) => d.id === newSelectionId));
+                console.log("DDC newSelectionId: ", newSelectionId);
+                console.log("DDC Which gives plan: ", DMPs.find((d) => d.id === newSelectionId));
+                setSelectedPlan(DMPs.find((d) => d.id === newSelectionId));
               }}
               selectRadioAriaLabelFunc={(row) => `Select plan: ${row.title}`}
               initialState={{
@@ -362,7 +364,9 @@ function DMPDialogContent({
               getRowHeight={() => "auto"}
               onCellKeyDown={({ id }, e) => {
                 if (e.key === " " || e.key === "Enter") {
-                  //setSelectedPlan(DMPs.find((d) => d.id === id));
+                  console.log("DDC keydown id: ", id);
+                  console.log("DDC Which gives plan: ", DMPs.find((d) => d.id === id));
+                  setSelectedPlan(DMPs.find((d) => d.id === id));
                   e.stopPropagation();
                 }
               }}
