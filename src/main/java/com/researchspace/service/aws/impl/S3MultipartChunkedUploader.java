@@ -148,11 +148,6 @@ public class S3MultipartChunkedUploader extends AbstractS3Uploader
 
     } catch (Exception e) {
       log.error("Aborting:  {}", e.getMessage());
-
-      // whether or not abort failed, the upload still failed. In this catch block, there is no
-      // CompleteMultipartUploadResponse
-      // e generated. We
-
       return abort(abortRequest);
     }
   }

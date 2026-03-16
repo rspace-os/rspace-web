@@ -30,6 +30,11 @@ public interface S3Utilities {
   /**
    * Export a file to S3 using the aws sdk. Note that this is a blocking method, it won't return
    * until the file has been completely uploaded and returned successfully.
+   *
+   * @param file The file to export
+   * @return SdkHttpResponse received from aws
+   * @throws ExportFailureException if an exception occurs during the export
+   *
    */
   SdkHttpResponse uploadToS3(File file);
 

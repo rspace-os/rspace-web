@@ -44,7 +44,7 @@ public class S3PutUploader extends AbstractS3Uploader implements Function<File, 
       }
     } catch (IOException e) {
       log.error("Encountered IO Error for file {} during export to S3", file.getName(), e);
-      return null;
+      throw new ExportFailureException("IO Error for file " + file.getName(), e);
     } catch (Exception e) {
       log.error("Failed to export file to S3: {}", file.getName(), e);
       throw e;
