@@ -71,14 +71,14 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   @Test
   @RunIfSystemPropertyDefined(value = "nightly")
   public void testUpload() throws Exception {
-    s3Utilities.getS3Uploader(archiveToExport).apply(archiveToExport);
+    s3Utilities.uploadToS3(archiveToExport));
     assertTrue(s3Utilities.isArchiveInS3(TEST_FILE_NAME));
   }
 
   @Test
   @RunIfSystemPropertyDefined(value = "nightly")
   public void testPresignedURL() throws Exception {
-    s3Utilities.getS3Uploader(archiveToExport).apply(archiveToExport);
+    s3Utilities.uploadToS3(archiveToExport);
     URL url = s3Utilities.getPresignedUrlForArchiveDownload(TEST_FILE_NAME);
     assertNotNull(url);
   }

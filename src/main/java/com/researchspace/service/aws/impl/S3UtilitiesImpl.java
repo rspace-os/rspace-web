@@ -148,16 +148,17 @@ public class S3UtilitiesImpl implements S3Utilities {
   }
 
   @Override
-  public Function<File, SdkHttpResponse> getS3Uploader(File file) {
-    if (file.length() > AWS_PUT_FILE_LIMIT) {
-      return new S3MultipartChunkedUploader(
-          s3Client, s3BucketName, s3ArchivePath, chunkedUploadMbSize);
-    }
-    if (chunkedUploadMbThreshold * FileUtils.ONE_MB > file.length()) {
-      return new S3PutUploader(s3Client, s3BucketName, s3ArchivePath);
-    } else {
-      return new S3MultipartChunkedUploader(
-          s3Client, s3BucketName, s3ArchivePath, chunkedUploadMbSize);
-    }
+  public SdkHttpResponse uploadToS3(File file) {
+    return getS3Uploader(file).apply(file);
   }
+
+  protected Function<File, SdkHttpResponse> getS3Uploader(File file) {
+    if ((file.length() <= AWS_PUT_FILE_LIMIT) &&
+        (chunkedUploadMbThreshold * FileUtils.ONE_MB > file.length())) {
+      return new S3PutUploader(s3Client, s3BucketName, s3ArchivePath);
+    }
+    return new S3MultipartChunkedUploader(
+        s3Client, s3BucketName, s3ArchivePath, chunkedUploadMbSize);
+  }
+
 }

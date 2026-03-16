@@ -28,14 +28,10 @@ public interface S3Utilities {
   URL getPresignedUrlForArchiveDownload(String fileName);
 
   /**
-   * Gets a function to export a file to S3 using the aws sdk. Note that this is a blocking method,
-   * it won't return until the the file has been completely uploaded and returned successfully.
-   *
-   * @param file The file to export
-   * @return SdkHttpResponse received from aws
-   * @throws ExportFailureException if an exception occurs during the export
+   * Export a file to S3 using the aws sdk. Note that this is a blocking method, it won't return
+   * until the file has been completely uploaded and returned successfully.
    */
-  Function<File, SdkHttpResponse> getS3Uploader(File file);
+  SdkHttpResponse uploadToS3(File file);
 
   /**
    * Deletes an object from s3 using the aws sdk, this is a blocking method and wont return until it
@@ -48,7 +44,7 @@ public interface S3Utilities {
   DeleteObjectResponse deleteArchiveFromS3(String fileName);
 
   /** No-op implementation for when parameter hasS3Access is false. */
-  public static final S3Utilities NOOP_S3Utilities =
+  S3Utilities NOOP_S3Utilities =
       new S3Utilities() {
 
         @Override
@@ -67,8 +63,8 @@ public interface S3Utilities {
         }
 
         @Override
-        public Function<File, SdkHttpResponse> getS3Uploader(File file) {
-          return file2 -> SdkHttpResponse.builder().statusCode(400).build();
+        public SdkHttpResponse uploadToS3(File file) {
+          return SdkHttpResponse.builder().statusCode(400).build();
         }
       };
 }

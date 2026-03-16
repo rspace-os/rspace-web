@@ -30,19 +30,18 @@ public class S3PutUploader extends AbstractS3Uploader implements Function<File, 
       PutObjectResponse putObjectResponse =
           s3Client.putObject(putObjectRequest, file.getAbsoluteFile().toPath());
       // Calculate server side checksum and compare with S3 checksum/etag
-      InputStream is = new FileInputStream(file);
-      String md5HashServerSide = DigestUtils.md5DigestAsHex(is);
-      String md5HashS3 = EntityTag.valueOf(putObjectResponse.eTag()).getValue();
-      if (!md5HashServerSide.equals(md5HashS3)) {
-        log.error(
-            "Hashes do not match file uploaded to S3. Server Side: {} S3: {}",
-            md5HashServerSide,
-            md5HashS3);
-        throw new ExportFailureException("Checksum Mismatch for S3 Export: " + file.getName());
+      try (InputStream is = new FileInputStream(file)) {
+        String md5HashServerSide = DigestUtils.md5DigestAsHex(is);
+        String md5HashS3 = EntityTag.valueOf(putObjectResponse.eTag()).getValue();
+        if (!md5HashServerSide.equals(md5HashS3)) {
+          log.error(
+              "Hashes do not match file uploaded to S3. Server Side: {} S3: {}",
+              md5HashServerSide,
+              md5HashS3);
+          throw new ExportFailureException("Checksum Mismatch for S3 Export: " + file.getName());
+        }
+        return putObjectResponse.sdkHttpResponse();
       }
-
-      return putObjectResponse.sdkHttpResponse();
-
     } catch (IOException e) {
       log.error("Encountered IO Error for file {} during export to S3", file.getName(), e);
       return null;
