@@ -14,7 +14,7 @@ Hello ${user.fullName},
 <p/>
 
 #if (${accountDisabled} == 'true')
-<p> The RSpace system administrator has disabled your user account. For more details, please contact your RSpace administrator (email).
+<p> The RSpace system administrator has disabled your user account. For more details, please contact your RSpace administrator.
 #else 
 <p> The RSpace system administrator has enabled your user account. To login, please visit ${htmlPrefix}/workspace .
 #end

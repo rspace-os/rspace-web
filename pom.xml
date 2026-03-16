@@ -18,16 +18,16 @@
 
   <repositories>
     <repository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-    </repository>
-    <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
       <id>central</id>
       <name>Maven Repository Switchboard</name>
       <url>https://repo1.maven.org/maven2</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
     </repository>
     <repository>
       <id>dice.repository</id>
@@ -1647,7 +1647,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>fieldmark-java-client</artifactId>
-      <version>3.1.0</version>
+      <version>3.2.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
