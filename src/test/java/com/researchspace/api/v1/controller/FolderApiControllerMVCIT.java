@@ -48,6 +48,8 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiFolder createdFolder = getFromJsonResponseBody(result, ApiFolder.class);
     assertFalse(createdFolder.isNotebook());
+    assertFalse(createdFolder.isSystemFolder());
+    assertFalse(createdFolder.isSharedFolder());
     assertNotNull(createdFolder.getId());
     // ... and delete it:
     this.mockMvc
@@ -179,7 +181,13 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertThat(
         listing.getRecords().stream().map(RecordTreeItemInfo::getName).collect(toList()),
         hasItem(Folder.MEDIAROOT));
-
+    RecordTreeItemInfo galleryInfo =
+        listing.getRecords().stream()
+            .filter(item -> item.getName().equals(Folder.MEDIAROOT))
+            .findFirst()
+            .get();
+    assertTrue(galleryInfo.isSystemFolder());
+    assertFalse(galleryInfo.isSharedFolder());
     // ISSUE-521 root folder listing doesn't put folderId in self link
     assertEquals(1, listing.getLinks().size());
     String selfLink = listing.getLinks().get(0).getLink();
@@ -310,6 +318,8 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result = this.mockMvc.perform(folderCreate(u1, apiKey, folderPost)).andReturn();
     ApiFolder created = getFromJsonResponseBody(result, ApiFolder.class);
     assertNotNull(created.getId());
+    assertTrue(created.isSharedFolder());
+    assertFalse(created.isSystemFolder());
 
     // listing of top-level folder works fine for u1 (RSDEV-488)
     ApiRecordTreeItemListing sharedFolderListing =
@@ -318,6 +328,9 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     RecordTreeItemInfo retrievedFolder = sharedFolderListing.getRecords().get(0);
     assertEquals(u1.getUsername(), retrievedFolder.getOwner().getUsername());
     assertEquals(groupSharedFolderId, retrievedFolder.getParentFolderId());
+    assertTrue(retrievedFolder.isSharedFolder());
+    assertFalse(retrievedFolder.isSystemFolder());
+
 
     // ISSUE-521 listing tree for specific folderId puts that id in self link
     assertEquals(1, sharedFolderListing.getLinks().size());

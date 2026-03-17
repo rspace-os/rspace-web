@@ -4052,6 +4052,12 @@ definitions:
       type:
         type: string
         description: An indication of the type of record returned - one of 'DOCUMENT', 'MEDIA', 'NOTEBOOK' or 'FOLDER'
+      systemFolder:
+        type: boolean
+        description: Whether or not this is a system-managed folder (only present for folders).
+      sharedFolder:
+        type: boolean
+        description: Whether or not this folder is shared (only present for folders).
   FormPost:
     description: |
 
@@ -4277,6 +4283,12 @@ definitions:
         type: boolean
         default: false
         description: 'Whether or not this folder is a Notebook, or just a regular folder.'
+      systemFolder:
+        type: boolean
+        description: Whether or not this is a system-managed folder.
+      sharedFolder:
+        type: boolean
+        description: Whether or not this folder is shared.
   Activity:
     description: A single activity from the RSpace audit trail.
     properties:
