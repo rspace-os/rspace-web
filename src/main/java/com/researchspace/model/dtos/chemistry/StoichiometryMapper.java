@@ -1,6 +1,7 @@
 package com.researchspace.model.dtos.chemistry;
 
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkDTO;
+import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import java.util.ArrayList;
@@ -99,6 +100,13 @@ public final class StoichiometryMapper {
     if (dto == null) {
       return null;
     }
+    StoichiometryInventoryLinkRequest inventoryLinkRequest = null;
+    if (dto.getInventoryLink() != null) {
+      inventoryLinkRequest =
+          StoichiometryInventoryLinkRequest.builder()
+              .inventoryItemGlobalId(dto.getInventoryLink().getInventoryItemGlobalId())
+              .build();
+    }
     return StoichiometryMoleculeUpdateDTO.builder()
         .id(dto.getId())
         .role(dto.getRole())
@@ -112,6 +120,7 @@ public final class StoichiometryMapper {
         .actualYield(dto.getActualYield())
         .limitingReagent(dto.getLimitingReagent())
         .notes(dto.getNotes())
+        .inventoryLink(inventoryLinkRequest)
         .build();
   }
 
