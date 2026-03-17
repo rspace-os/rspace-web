@@ -1099,12 +1099,6 @@
       <artifactId>jsoup</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>20240303</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.quartz-scheduler</groupId>
       <artifactId>quartz</artifactId>
       <version>2.3.2</version>
