@@ -1437,6 +1437,8 @@ paths:
               created: '2017-12-05T13:07:57.000Z'
               lastModified: '2017-12-07T13:07:57.000Z'
               notebook: true
+              systemFolder: false
+              sharedFolder: false
               parentFolderId: 456
               mediaType: null
               pathToRootFolder: null

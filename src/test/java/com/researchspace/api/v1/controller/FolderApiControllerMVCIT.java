@@ -330,8 +330,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(groupSharedFolderId, retrievedFolder.getParentFolderId());
     assertTrue(retrievedFolder.isSharedFolder());
     assertFalse(retrievedFolder.isSystemFolder());
-
-
+    
     // ISSUE-521 listing tree for specific folderId puts that id in self link
     assertEquals(1, sharedFolderListing.getLinks().size());
     String selfLink = sharedFolderListing.getLinks().get(0).getLink();
