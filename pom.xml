@@ -1451,7 +1451,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>rsdev-1022-stoich-link-updates-SNAPSHOT</version>
+      <version>2.20.1</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
