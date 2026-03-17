@@ -566,7 +566,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
             sessionFactory
                 .getCurrentSession()
                 .createQuery("from Community where displayName=:displayName")
-                .setString(Group.DEFAULT_ORDERBY_FIELD, string)
+                .setParameter(Group.DEFAULT_ORDERBY_FIELD, string)
                 .uniqueResult();
     commitTransaction();
     return communityMgr.getCommunityWithAdminsAndGroups(c.getId());

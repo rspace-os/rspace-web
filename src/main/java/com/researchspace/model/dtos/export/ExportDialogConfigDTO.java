@@ -1,7 +1,7 @@
 package com.researchspace.model.dtos.export;
 
 import com.researchspace.export.pdf.ExportToFileConfig;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

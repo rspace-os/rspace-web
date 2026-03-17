@@ -10,7 +10,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -82,7 +82,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload("/system/userRegistration/csvUpload")
+                multipart("/system/userRegistration/csvUpload")
                     .file(mf)
                     .principal(sysAdminPrincipal))
             .andExpect(status().is2xxSuccessful())
@@ -185,7 +185,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload("/system/userRegistration/csvUpload")
+                multipart("/system/userRegistration/csvUpload")
                     .file(mf)
                     .principal(sysAdminPrincipal))
             .andExpect(status().is2xxSuccessful())
@@ -366,7 +366,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
             sessionFactory
                 .getCurrentSession()
                 .createQuery("from Community where displayName=:displayName")
-                .setString(Group.DEFAULT_ORDERBY_FIELD, string)
+                .setParameter(Group.DEFAULT_ORDERBY_FIELD, string)
                 .uniqueResult();
     commitTransaction();
     return communityMgr.getCommunityWithAdminsAndGroups(c.getId());
@@ -666,9 +666,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
               "xfile", "usersShort.csv", "csv", getTestResourceFileStream("usersShort.csv"));
       mockMvc
           .perform(
-              fileUpload("/system/userRegistration/csvUpload")
-                  .file(mf)
-                  .principal(sysAdminPrincipal))
+              multipart("/system/userRegistration/csvUpload").file(mf).principal(sysAdminPrincipal))
           .andExpect(exceptionThrown())
           .andReturn();
     } finally {

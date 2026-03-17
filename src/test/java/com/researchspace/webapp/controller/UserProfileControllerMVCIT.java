@@ -15,8 +15,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -227,7 +227,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     long size = mf.getSize();
     mockMvc
         .perform(
-            fileUpload("/userform/profileImage/upload")
+            multipart("/userform/profileImage/upload")
                 .file(mf)
                 .principal(new MockPrincipal(user.getUsername())))
         .andExpect(status().isOk())

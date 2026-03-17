@@ -4,8 +4,8 @@ import static org.junit.Assert.assertEquals;
 
 import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.properties.PropertyHolder;
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.tagext.TagSupport;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.tagext.TagSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

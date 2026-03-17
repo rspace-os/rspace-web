@@ -1,10 +1,10 @@
 package com.researchspace.webapp.filter;
 
 import com.researchspace.model.permissions.SecurityLogger;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

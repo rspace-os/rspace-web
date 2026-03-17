@@ -15,12 +15,6 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.views.TreeViewItem;
 import java.util.List;
 import java.util.Optional;
-import org.hibernate.Criteria;
-import org.hibernate.Session;
-import org.hibernate.criterion.Criterion;
-import org.hibernate.criterion.MatchMode;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.SimpleExpression;
 import org.hibernate.query.Query;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.stereotype.Repository;
@@ -155,11 +149,6 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
         .uniqueResult();
   }
 
-  private Criteria getFolderCriteria() {
-    Session session = getSessionFactory().getCurrentSession();
-    return session.createCriteria(Folder.class);
-  }
-
   public Folder getSharedFolderForGroup(Group group) {
     return get(group.getCommunalGroupFolderId());
   }
@@ -176,36 +165,40 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
     if (docOrNotebook != null && docOrNotebook.isSnippet()) {
       flderName = namingStrgy.getIndividualSharedSnippetsFolderName(sharer, sharee);
     }
-    return (Folder)
-        getFolderCriteria()
-            .add(nameRestriction(flderName))
-            .add(systemFolderRestriction())
-            .add(Restrictions.in("owner", (Object[]) new User[] {sharer, sharee}))
-            .uniqueResult();
+    return getSession()
+        .createQuery(
+            "from Folder f where f.editInfo.name=:name and f.systemFolder=true and f.owner in"
+                + " (:owners)",
+            Folder.class)
+        .setParameter("name", flderName)
+        .setParameterList("owners", List.of(sharer, sharee))
+        .uniqueResult();
   }
 
   @Override
   public Folder getUserSharedFolder(User u) {
-    return (Folder)
-        getFolderCriteria()
-            .add(Restrictions.eq("editInfo.name", Folder.SHARED_FOLDER_NAME))
-            .add(ownerRestriction(u))
-            .add(systemFolderRestriction())
-            .add(
-                Restrictions.not(
-                    Restrictions.ilike("type", RecordType.ROOT_MEDIA.name(), MatchMode.ANYWHERE)))
-            .add(Restrictions.eq("deleted", Boolean.FALSE))
-            .uniqueResult();
+    return getSession()
+        .createQuery(
+            "from Folder f where f.editInfo.name=:name and f.owner=:owner and f.systemFolder=true"
+                + " and f.type not like :rootMedia and f.deleted=false",
+            Folder.class)
+        .setParameter("name", Folder.SHARED_FOLDER_NAME)
+        .setParameter("owner", u)
+        .setParameter("rootMedia", "%" + RecordType.ROOT_MEDIA.name() + "%")
+        .uniqueResult();
   }
 
   @Override
   public Folder getTemplateFolderForUser(User user) {
     List<Folder> folders =
-        getFolderCriteria()
-            .add(nameRestriction(Folder.TEMPLATE_MEDIA_FOLDER_NAME))
-            .add(ownerRestriction(user))
-            .add(systemFolderRestriction())
-            .add(typeLike(RecordType.TEMPLATE.name()))
+        getSession()
+            .createQuery(
+                "from Folder f where f.editInfo.name=:name and f.owner=:owner and"
+                    + " f.systemFolder=true and f.type like :templateType",
+                Folder.class)
+            .setParameter("name", Folder.TEMPLATE_MEDIA_FOLDER_NAME)
+            .setParameter("owner", user)
+            .setParameter("templateType", "%" + RecordType.TEMPLATE.name() + "%")
             .list();
     return folders.isEmpty() ? null : folders.get(0);
   }
@@ -213,29 +206,32 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   @Override
   public Optional<Folder> getApiFolderForContentType(String folderName, User subject) {
     return Optional.ofNullable(
-        (Folder)
-            getFolderCriteria()
-                .add(nameRestriction(Folder.API_INBOX_FOLDER_NAME))
-                .add(ownerRestriction(subject))
-                .add(systemFolderRestriction())
-                .add(typeLike(RecordType.API_INBOX.name()))
-                .createAlias("parents", "parents")
-                .createAlias("parents.folder", "parent")
-                .add(Restrictions.eq("parent.editInfo.name", folderName))
-                .uniqueResult());
+        getSession()
+            .createQuery(
+                "select f from Folder f join f.parents parents join parents.folder parent where"
+                    + " f.editInfo.name=:name and f.owner=:owner and f.systemFolder=true and"
+                    + " f.type like :apiType and parent.editInfo.name=:parentName",
+                Folder.class)
+            .setParameter("name", Folder.API_INBOX_FOLDER_NAME)
+            .setParameter("owner", subject)
+            .setParameter("apiType", "%" + RecordType.API_INBOX.name() + "%")
+            .setParameter("parentName", folderName)
+            .uniqueResult());
   }
 
   @Override
   public Optional<Folder> getApiInboxSubFolderByName(
       Folder apiFolder, String folderName, User subject) {
     List<Folder> folderList =
-        getFolderCriteria()
-            .add(nameRestriction(folderName))
-            .add(ownerRestriction(subject))
-            .add(systemFolderRestriction())
-            .createAlias("parents", "parents")
-            .createAlias("parents.folder", "parent")
-            .add(Restrictions.eq("parent.id", apiFolder.getId()))
+        getSession()
+            .createQuery(
+                "select f from Folder f join f.parents parents join parents.folder parent where"
+                    + " f.editInfo.name=:name and f.owner=:owner and f.systemFolder=true and"
+                    + " parent.id=:parentId",
+                Folder.class)
+            .setParameter("name", folderName)
+            .setParameter("owner", subject)
+            .setParameter("parentId", apiFolder.getId())
             .list();
     return folderList.isEmpty() ? Optional.empty() : Optional.of(folderList.get(0));
   }
@@ -243,28 +239,14 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   @Override
   public Optional<Folder> getImportFolder(User subject) {
     return Optional.ofNullable(
-        (Folder)
-            getFolderCriteria()
-                .add(nameRestriction(Folder.IMPORTS_INBOX_FOLDER_NAME))
-                .add(ownerRestriction(subject))
-                .add(systemFolderRestriction())
-                .add(typeLike(RecordType.IMPORTS.name()))
-                .uniqueResult());
-  }
-
-  private Criterion typeLike(String type) {
-    return Restrictions.ilike("type", "%" + type + "%");
-  }
-
-  private SimpleExpression nameRestriction(String name) {
-    return Restrictions.eq("editInfo.name", name);
-  }
-
-  private SimpleExpression systemFolderRestriction() {
-    return Restrictions.eq("systemFolder", Boolean.TRUE);
-  }
-
-  private SimpleExpression ownerRestriction(User user) {
-    return Restrictions.eq("owner", user);
+        getSession()
+            .createQuery(
+                "from Folder f where f.editInfo.name=:name and f.owner=:owner and"
+                    + " f.systemFolder=true and f.type like :importsType",
+                Folder.class)
+            .setParameter("name", Folder.IMPORTS_INBOX_FOLDER_NAME)
+            .setParameter("owner", subject)
+            .setParameter("importsType", "%" + RecordType.IMPORTS.name() + "%")
+            .uniqueResult());
   }
 }

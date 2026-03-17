@@ -1,7 +1,7 @@
 package com.researchspace.service.archive;
 
-import javax.xml.bind.ValidationEvent;
-import javax.xml.bind.ValidationEventHandler;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.ValidationEventHandler;
 
 /**
  * Converts schema validation errors into a form for presentation in the {@link

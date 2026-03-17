@@ -20,9 +20,9 @@ import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
+import jakarta.validation.ConstraintViolationException;
 import java.math.BigDecimal;
 import java.util.List;
-import javax.validation.ConstraintViolationException;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

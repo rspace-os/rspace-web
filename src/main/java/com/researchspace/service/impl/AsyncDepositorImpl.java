@@ -112,8 +112,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       result = repository.submitDeposit(new UserDepositorAdapter(subject), file, metadata, repoCfg);
     } catch (Exception e) {
       result =
-          new RepositoryOperationResult(
-              false, "Submitting deposit failed:" + e.getMessage(), null, null);
+          new RepositoryOperationResult(false, "Submitting deposit failed:" + e.getMessage(), null);
     }
     return result;
   }
@@ -135,22 +134,29 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       User subject,
       RepoDepositConfig repoDepositConfig) {
     boolean updateSucceed = false;
-    String doiLink = "";
+    String relatedObjectLink = "";
     if (result.isSucceeded()) {
       try { // only supports DATAVERSE and ZENODO
         if (APP_DATAVERSE.equals(repoDepositConfig.getAppName())
             || APP_ZENODO.equals(repoDepositConfig.getAppName())) {
-          doiLink = result.getDoiUrl().toString();
+          URL resultUrl = result.getUrl();
+          if (resultUrl != null) {
+            relatedObjectLink = resultUrl.toString();
+            log.info(
+                "Updating related object link: \""
+                    + relatedObjectLink
+                    + "\" to the RelatedObject section of the RAiD \""
+                    + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
+                    + "\"");
+            updateSucceed =
+                raIDServiceClientAdapter.addRaIDRelatedObject(
+                    subject.getUsername(),
+                    repoDepositConfig.getRaidAssociated().getRaid(),
+                    relatedObjectLink);
+          } else {
+            log.warn("No repository URL available for RaID related object update.");
+          }
         }
-        log.info(
-            "Updating DOI link: \""
-                + doiLink
-                + "\" to the RelatedObject section of the RAiD \""
-                + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
-                + "\"");
-        updateSucceed =
-            raIDServiceClientAdapter.addRaIDRelatedObject(
-                subject.getUsername(), repoDepositConfig.getRaidAssociated().getRaid(), doiLink);
       } catch (Exception e) {
         log.error(
             "Impossible to report the RelatedObject to the RAiD \""
@@ -160,8 +166,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       } finally {
         if (updateSucceed) {
           log.info(
-              "The following DOI link: \""
-                  + doiLink
+              "The following related object link: \""
+                  + relatedObjectLink
                   + "\" has been successfully reported to the RelatedObject section of the RAiD \""
                   + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
                   + "\"");
@@ -170,7 +176,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
               "RelatedObject to the RAiD \""
                   + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
                   + "\" has not been updated correctly.");
-          doiLink = "";
+          relatedObjectLink = "";
         }
       }
     }
@@ -179,7 +185,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         app.getLabel(),
         repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier(),
         repoDepositConfig.getRaidAssociated().getRaid().getRaidAgencyUrl(),
-        doiLink);
+        relatedObjectLink);
   }
 
   /**
@@ -196,8 +202,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       // here to send to DMP
       if (repoDepositConfig.getAppName().equals(App.APP_DRYAD)) {
         RepositoryOperationResult newResultWithPublicLink =
-            new RepositoryOperationResult(
-                true, result.getMessage(), getDryadPublicUrl(result), result.getDoiUrl());
+            new RepositoryOperationResult(true, result.getMessage(), getDryadPublicUrl(result));
         dmpUpdateHandler.updateDMPS(
             newResultWithPublicLink::getUrl, subject, repoDepositConfig.getSelectedDMPs());
       } else {
@@ -280,11 +285,11 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         Files.delete(symbolicLinkPath);
         Files.delete(tempDir);
       } else {
-        repoDepositResult = new RepositoryOperationResult(false, "No file to deposit", null, null);
+        repoDepositResult = new RepositoryOperationResult(false, "No file to deposit", null);
       }
     } catch (IOException | URISyntaxException e) {
       log.error("Submitting deposit failed: {}", e.getMessage());
-      repoDepositResult = new RepositoryOperationResult(false, e.getMessage(), null, null);
+      repoDepositResult = new RepositoryOperationResult(false, e.getMessage(), null);
     }
     postDeposit(repoDepositResult, app, subject, null, repoDepositConfig);
     return new AsyncResult<>(repoDepositResult);
@@ -306,7 +311,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
           doDeposit(subject, repository, repoDepositConfig, repoCfg, archive.get().getExportFile());
     } catch (Exception e) {
       log.error("Submitting deposit failed: {}", e.getMessage());
-      result = new RepositoryOperationResult(false, e.getMessage(), null, null);
+      result = new RepositoryOperationResult(false, e.getMessage(), null);
     }
     postDeposit(result, app, subject, archive.get().getExportFile(), repoDepositConfig);
     return new AsyncResult<>(result);

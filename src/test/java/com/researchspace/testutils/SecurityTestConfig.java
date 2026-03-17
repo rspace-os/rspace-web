@@ -5,12 +5,12 @@ import com.researchspace.auth.ApiRealm;
 import com.researchspace.auth.ApiRealmTestSpy;
 import java.util.ArrayList;
 import java.util.Collection;
+import net.sf.ehcache.CacheManager;
 import org.apache.shiro.cache.ehcache.EhCacheManager;
 import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.spring.LifecycleBeanPostProcessor;
-import org.springframework.cache.ehcache.EhCacheManagerFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -54,14 +54,6 @@ public class SecurityTestConfig extends SecurityBaseConfig {
   }
 
   @Bean
-  public EhCacheManagerFactoryBean ehCacheManagerFactoryBean() {
-    EhCacheManagerFactoryBean rc = new EhCacheManagerFactoryBean();
-    rc.setShared(true);
-    rc.setConfigLocation(new ClassPathResource("ehcache-shiro.xml"));
-    return rc;
-  }
-
-  @Bean
   public LifecycleBeanPostProcessor lifecycleBeanPostProcessor() {
     return new LifecycleBeanPostProcessor();
   }
@@ -69,8 +61,17 @@ public class SecurityTestConfig extends SecurityBaseConfig {
   @Bean
   public EhCacheManager shiroEhCacheManager() {
     EhCacheManager mgr = new EhCacheManager();
-    mgr.setCacheManager(ehCacheManagerFactoryBean().getObject());
+    mgr.setCacheManager(shiroNativeCacheManager());
     return mgr;
+  }
+
+  @Bean(destroyMethod = "shutdown")
+  public CacheManager shiroNativeCacheManager() {
+    try {
+      return CacheManager.newInstance(new ClassPathResource("ehcache-shiro.xml").getURL());
+    } catch (Exception e) {
+      throw new IllegalStateException("Failed to load ehcache-shiro.xml for tests", e);
+    }
   }
   //	 <bean id="ehcache-shiro"
   //		class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean"

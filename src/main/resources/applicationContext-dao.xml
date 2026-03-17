@@ -21,13 +21,12 @@
     	<property name="configLocations" value="classpath:hibernate.cfg.xml" />
     	<property name="hibernateProperties">
     		<value>
-    			hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
-    			hibernate.search.default.directory_provider=filesystem
-    			hibernate.search.default.indexBase=${rs.hibernate.searchIndex.folder}
-                hibernate.search.default.exclusive_index_use=${rs.hibernate.searchIndex.exclusiveIndex}
+    			hibernate.dialect=${hibernate.dialect}
+    			hibernate.search.backend.type=lucene
+    			hibernate.search.backend.directory.root=${rs.hibernate.searchIndex.folder}
+    			hibernate.search.backend.directory.type=local-filesystem
     			hibernate.query.substitutions=true 'Y', false 'N'
     			hibernate.cache.use_second_level_cache=true
-    			hibernate.cache.provider_class=org.hibernate.cache.EhCacheProvider
     		</value>
     		<!-- Turn batching off for better error messages under PostgreSQL -->
     		<!-- hibernate.jdbc.batch_size=0 -->

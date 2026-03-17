@@ -1,6 +1,6 @@
 package com.researchspace.webapp.filter;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 
 /** Gets the EASE username based on HttpHeader information. */

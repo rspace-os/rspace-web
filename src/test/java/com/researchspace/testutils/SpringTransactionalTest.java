@@ -19,7 +19,7 @@ import com.researchspace.service.UserConnectionManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.hibernate.search.Search;
+import org.hibernate.search.mapper.orm.Search;
 import org.junit.After;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestExecutionListeners;
@@ -377,7 +377,7 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   /** Triggers indexing of content for search. */
   protected void flushToSearchIndices() {
     flushDatabaseState();
-    Search.getFullTextSession(sessionFactory.getCurrentSession()).flushToIndexes();
+    Search.session(sessionFactory.getCurrentSession()).indexingPlan().execute();
   }
 
   protected void assertColumnIndicesAreTheSameForFieldsAndFormss(StructuredDocument child) {

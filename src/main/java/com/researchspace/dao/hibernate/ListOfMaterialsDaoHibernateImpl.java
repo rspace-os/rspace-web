@@ -6,7 +6,7 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.elninventory.ListOfMaterials;
 import java.util.List;
-import org.hibernate.type.LongType;
+import org.hibernate.type.StandardBasicTypes;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -53,13 +53,13 @@ public class ListOfMaterialsDaoHibernateImpl extends GenericDaoHibernate<ListOfM
     List<Long> lomIds =
         sessionFactory
             .getCurrentSession()
-            .createSQLQuery(
+            .createNativeQuery(
                 "select distinct parentLom_id from MaterialUsage "
                     + " where "
                     + invRecTypeColumnName
                     + " = :invRecId")
             .setParameter("invRecId", invRecGlobalId.getDbId())
-            .addScalar("parentLom_id", LongType.INSTANCE)
+            .addScalar("parentLom_id", StandardBasicTypes.LONG)
             .list();
 
     return sessionFactory

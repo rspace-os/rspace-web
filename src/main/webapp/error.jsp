@@ -38,7 +38,7 @@
 					 
 				</rst:hasDeploymentProperty>
 
-				<% } else if ((Exception)request.getAttribute("javax.servlet.error.exception") != null) { %>
+			<% } else if ((Exception)request.getAttribute("jakarta.servlet.error.exception") != null) { %>
 				<pre></pre>
 				<% } %>
 			</div>

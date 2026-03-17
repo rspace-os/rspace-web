@@ -37,7 +37,7 @@ public class FormUsageDaoHibernate extends GenericDaoHibernate<FormUsage, Long>
             + " group by t "
             + " order by c desc, lut desc ");
 
-    NativeQuery<?> query = session.createSQLQuery(mysql.toString());
+    NativeQuery<?> query = session.createNativeQuery(mysql.toString());
 
     query.setParameter("user_id", u.getId());
 

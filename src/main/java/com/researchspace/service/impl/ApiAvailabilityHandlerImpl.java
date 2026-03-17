@@ -6,7 +6,7 @@ import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {

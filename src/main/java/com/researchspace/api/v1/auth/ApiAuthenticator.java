@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.auth;
 
 import com.researchspace.model.User;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /** Top-level interface to hide implementation details (OAUTH, key, shiro etc). */
 public interface ApiAuthenticator {

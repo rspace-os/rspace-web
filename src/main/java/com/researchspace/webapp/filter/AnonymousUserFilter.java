@@ -2,17 +2,16 @@ package com.researchspace.webapp.filter;
 
 import com.researchspace.model.User;
 import com.researchspace.session.SessionAttributeUtils;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.session.Session;
-import org.apache.shiro.web.util.WebUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -60,9 +59,9 @@ public class AnonymousUserFilter extends OncePerRequestFilter {
             // its a user who has been locked out of RSpace by using a public doc and then trying to
             // access their workspace
             // this will happen if they were not logged in to RSpace before viewing a public doc
-            String loginUrl = "/login";
+            String loginUrl = response.encodeRedirectURL("/login");
             log.info("ANONYMOUS user redirected to login page from: " + requestUrl);
-            WebUtils.issueRedirect(request, response, loginUrl);
+            response.sendRedirect(loginUrl);
             break;
           }
         }

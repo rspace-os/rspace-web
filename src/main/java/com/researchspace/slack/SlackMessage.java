@@ -2,13 +2,13 @@ package com.researchspace.slack;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.core.util.JacksonUtil;
+import jakarta.annotation.Nullable;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;

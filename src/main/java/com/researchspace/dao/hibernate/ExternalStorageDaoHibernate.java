@@ -20,7 +20,7 @@ public class ExternalStorageDaoHibernate extends GenericDaoHibernate<ExternalSto
         sessionFactory
             .getCurrentSession()
             .createQuery("from ExternalStorageLocation where operationUser_Id=:operationUserId ")
-            .setLong("operationUserId", operationUserId)
+            .setParameter("operationUserId", operationUserId)
             .list();
     return externalStorageLocations;
   }

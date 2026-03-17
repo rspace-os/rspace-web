@@ -3,8 +3,8 @@ package com.axiope.webapp.taglib;
 import com.researchspace.model.permissions.FormPermissionAdapter;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.RSForm;
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.tagext.TagSupport;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.tagext.TagSupport;
 import org.apache.shiro.SecurityUtils;
 
 /** Wraps the argument form as a permissions and includes body text if permission is satisfied. */

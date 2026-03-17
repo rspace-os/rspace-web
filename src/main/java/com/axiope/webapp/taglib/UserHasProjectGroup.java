@@ -2,8 +2,8 @@ package com.axiope.webapp.taglib;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.tagext.TagSupport;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.tagext.TagSupport;
 
 public class UserHasProjectGroup extends TagSupport {
   private User user;

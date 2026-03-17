@@ -357,7 +357,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
               sessionFactory
                   .getCurrentSession()
                   .createQuery("from Group where displayName=:name")
-                  .setString("name", string)
+                  .setParameter("name", string)
                   .uniqueResult();
         });
   }

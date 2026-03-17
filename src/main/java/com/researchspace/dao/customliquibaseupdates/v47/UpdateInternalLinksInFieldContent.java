@@ -9,8 +9,6 @@ import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import java.util.List;
 import liquibase.database.Database;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Restrictions;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
 /**
@@ -79,10 +77,11 @@ public class UpdateInternalLinksInFieldContent extends AbstractCustomLiquibaseUp
   }
 
   protected List<TextField> getAllTextFieldsWithLinks() {
-    Criteria criteria = sessionFactory.getCurrentSession().createCriteria(TextField.class);
-    criteria.add(Restrictions.like("rtfData", "%" + OLD_LINK_MATCHER + "%"));
-    criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-    return criteria.list();
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("from TextField where rtfData like :linkMatcher", TextField.class)
+        .setParameter("linkMatcher", "%" + OLD_LINK_MATCHER + "%")
+        .list();
   }
 
   private void updateLinksInTextField(TextField tf) {

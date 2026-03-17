@@ -9,8 +9,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,7 +43,6 @@ import java.net.URISyntaxException;
 import java.util.List;
 import javax.imageio.ImageIO;
 import org.apache.http.entity.ContentType;
-import org.hibernate.criterion.Order;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -373,7 +372,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             "xfile", "Picture1.png", "png", getTestResourceFileStream("Picture1.png"));
     MvcResult result =
         mockMvc
-            .perform(fileUpload("/gallery/ajax/uploadFile").file(mf).principal(mockPrincipal))
+            .perform(multipart("/gallery/ajax/uploadFile").file(mf).principal(mockPrincipal))
             .andExpect(status().isOk())
             .andReturn();
 
@@ -388,7 +387,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     MvcResult result2 =
         mockMvc
             .perform(
-                fileUpload("/gallery/ajax/uploadFile")
+                multipart("/gallery/ajax/uploadFile")
                     .file(mf2)
                     .param("selectedMediaId", "" + imageInfo.getId())
                     .principal(mockPrincipal))
@@ -436,7 +435,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             getTestResourceFileStream("Amfetamine.mol"));
     MvcResult result =
         mockMvc
-            .perform(fileUpload("/gallery/ajax/uploadFile").file(mf).principal(mockPrincipal))
+            .perform(multipart("/gallery/ajax/uploadFile").file(mf).principal(mockPrincipal))
             .andExpect(status().isOk())
             .andReturn();
 
@@ -458,7 +457,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     MvcResult result2 =
         mockMvc
             .perform(
-                fileUpload("/gallery/ajax/uploadFile")
+                multipart("/gallery/ajax/uploadFile")
                     .file(mf2)
                     .param("selectedMediaId", "" + chemInfo.getId())
                     .principal(mockPrincipal))
@@ -747,8 +746,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             (Snippet)
                 sessionFactory
                     .getCurrentSession()
-                    .createCriteria(Snippet.class)
-                    .addOrder(Order.desc("editInfo.creationDate"))
+                    .createQuery(
+                        "from Snippet s order by s.editInfo.creationDate desc", Snippet.class)
                     .setMaxResults(1)
                     .uniqueResult());
   }

@@ -20,6 +20,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -53,7 +54,7 @@ public class ChemistryClient {
     String url = chemistryServiceUrl + "/chemistry/convert";
     try {
       ResponseEntity<String> response = restTemplate.postForEntity(url, httpEntity, String.class);
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful conversion with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
@@ -89,7 +90,7 @@ public class ChemistryClient {
       return Optional.ofNullable(response.getBody());
     } catch (HttpStatusCodeException e) {
       String errorReason = e.getResponseBodyAsString();
-      HttpStatus status = e.getStatusCode();
+      HttpStatus status = toHttpStatus(e.getStatusCode());
       log.error(
           "Chemistry error response from request to {}. Status: {}, Reason: {}",
           url,
@@ -140,7 +141,7 @@ public class ChemistryClient {
     HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(body, headers);
     try {
       ResponseEntity<byte[]> response = restTemplate.postForEntity(url, httpEntity, byte[].class);
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful image export with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
@@ -171,7 +172,7 @@ public class ChemistryClient {
     String url = chemistryServiceUrl + "/chemistry/save";
     try {
       ResponseEntity<String> response = restTemplate.postForEntity(url, httpEntity, String.class);
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful saving with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
@@ -202,7 +203,7 @@ public class ChemistryClient {
       ResponseEntity<List<String>> response =
           restTemplate.exchange(
               url, HttpMethod.POST, request, new ParameterizedTypeReference<>() {});
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful searching with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
@@ -240,7 +241,7 @@ public class ChemistryClient {
     try {
       ResponseEntity<String> response =
           restTemplate.exchange(url, HttpMethod.DELETE, HttpEntity.EMPTY, String.class);
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful call with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
@@ -261,7 +262,7 @@ public class ChemistryClient {
     try {
       ResponseEntity<String> response =
           restTemplate.exchange(url, HttpMethod.POST, HttpEntity.EMPTY, String.class);
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful call with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
@@ -275,5 +276,10 @@ public class ChemistryClient {
           "Problem with chemistry service  fast search indexing at {}: {} ", url, e.getMessage());
       throw new ChemistryClientException("Chemistry service couldn't clear search indexes.", e);
     }
+  }
+
+  private HttpStatus toHttpStatus(HttpStatusCode statusCode) {
+    HttpStatus status = HttpStatus.resolve(statusCode.value());
+    return status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR;
   }
 }

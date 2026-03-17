@@ -25,6 +25,11 @@ import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
+import jakarta.persistence.EntityGraph;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -40,20 +45,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import javax.persistence.EntityGraph;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.Criteria;
 import org.hibernate.Session;
-import org.hibernate.criterion.Conjunction;
-import org.hibernate.criterion.CriteriaSpecification;
-import org.hibernate.criterion.MatchMode;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.graph.EntityGraphs;
 import org.hibernate.graph.GraphParser;
 import org.hibernate.graph.RootGraph;
@@ -181,22 +175,19 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
 
   @SuppressWarnings("unchecked")
   public List<User> searchUsers(String term) {
-    Criteria criteria = getSession().createCriteria(User.class, "user");
-    criteria.add(
-        Restrictions.disjunction()
-            .add(Restrictions.ilike(FIRST_NAME, term, MatchMode.ANYWHERE))
-            .add(Restrictions.ilike(LAST_NAME, term, MatchMode.ANYWHERE))
-            .add(Restrictions.ilike(EMAIL, term, MatchMode.ANYWHERE))
-            .add(Restrictions.ilike(USERNAME, term, MatchMode.ANYWHERE))
-            .add(Restrictions.ilike(TAGS, term, MatchMode.ANYWHERE)));
-    criteria.addOrder(Order.asc(LAST_NAME));
-    criteria.setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY);
-    return criteria.list();
-  }
-
-  private Long getTotalUserCount(Criteria crit) {
-    crit.setProjection(Projections.count("id"));
-    return (Long) crit.uniqueResult();
+    String likeTerm = "%" + term.toLowerCase() + "%";
+    return getSession()
+        .createQuery(
+            "select distinct u from User u "
+                + "where lower(u.firstName) like :term "
+                + "or lower(u.lastName) like :term "
+                + "or lower(u.email) like :term "
+                + "or lower(u.username) like :term "
+                + "or lower(u.tagsJsonString) like :term "
+                + "order by u.lastName asc",
+            User.class)
+        .setParameter("term", likeTerm)
+        .list();
   }
 
   @Override
@@ -329,112 +320,125 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     }
 
     Session session = getSessionFactory().getCurrentSession();
-    Criteria query = session.createCriteria(User.class);
+    CriteriaBuilder builder = session.getCriteriaBuilder();
 
-    if (pgCrit.getSearchCriteria() != null) {
-      applySearchCriteria(query, pgCrit);
+    CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+    Root<User> countRoot = countQuery.from(User.class);
+    List<Predicate> countPredicates = buildUserPredicates(pgCrit, builder, countRoot);
+    countQuery.select(builder.countDistinct(countRoot.get("id")));
+    if (!countPredicates.isEmpty()) {
+      countQuery.where(countPredicates.toArray(new Predicate[0]));
     }
-    excludeAnonymousUser(query);
-
-    Long count = getTotalUserCount(query);
+    Long count = session.createQuery(countQuery).getSingleResult();
     if (count == 0) {
       return createEmptyResultSet(pgCrit);
     }
 
-    query.setProjection(Projections.distinct(Projections.id()));
-    DatabasePaginationUtils.addPaginationCriteriaToHibernateCriteria(pgCrit, query);
-    List<Long> ids = query.list();
+    CriteriaQuery<Long> idQuery = builder.createQuery(Long.class);
+    Root<User> idRoot = idQuery.from(User.class);
+    List<Predicate> idPredicates = buildUserPredicates(pgCrit, builder, idRoot);
+    idQuery.select(idRoot.get("id")).distinct(true);
+    if (!idPredicates.isEmpty()) {
+      idQuery.where(idPredicates.toArray(new Predicate[0]));
+    }
+    applyUserOrder(pgCrit, builder, idRoot, idQuery);
+    List<Long> ids =
+        session
+            .createQuery(idQuery)
+            .setFirstResult(pgCrit.getFirstResultIndex())
+            .setMaxResults(pgCrit.getResultsPerPage())
+            .list();
     if (ids.isEmpty()) {
-      log.warn("User count was > 0, but no users returned from query {}", query);
+      log.warn("User count was > 0, but no users returned from query");
       return createEmptyResultSet(pgCrit);
     }
 
-    Criteria query2 =
-        session
-            .createCriteria(User.class)
-            .add(Restrictions.in("id", ids))
-            .setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY);
-    if (pgCrit.getOrderBy() != null) {
-      applyOrder(query2, pgCrit);
-    }
-
-    List<User> rc = query2.list();
+    CriteriaQuery<User> fetchQuery = builder.createQuery(User.class);
+    Root<User> fetchRoot = fetchQuery.from(User.class);
+    fetchQuery.select(fetchRoot).distinct(true);
+    fetchQuery.where(fetchRoot.get("id").in(ids));
+    applyUserOrder(pgCrit, builder, fetchRoot, fetchQuery);
+    List<User> rc = session.createQuery(fetchQuery).list();
     return new SearchResultsImpl<>(rc, pgCrit, count);
   }
 
-  private void excludeAnonymousUser(Criteria query) {
-    query.add(Restrictions.not(Restrictions.eq(USERNAME, RecordGroupSharing.ANONYMOUS_USER)));
+  private List<Predicate> buildUserPredicates(
+      PaginationCriteria<User> pgCrit, CriteriaBuilder builder, Root<User> root) {
+    List<Predicate> predicates = new ArrayList<>();
+    predicates.add(builder.notEqual(root.get(USERNAME), RecordGroupSharing.ANONYMOUS_USER));
+    if (pgCrit.getSearchCriteria() != null) {
+      UserSearchCriteria sc = (UserSearchCriteria) pgCrit.getSearchCriteria();
+      try {
+        applySearchTermPredicates(sc, builder, root, predicates);
+      } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+        log.error("Error while applying search criteria: {0}", e);
+      }
+
+      if (sc.isOnlyPublicProfiles()) {
+        predicates.add(builder.notEqual(root.get("privateProfile"), true));
+      }
+      if (sc.isWithoutBackdoorSysadmins()) {
+        predicates.add(builder.notEqual(root.get("signupSource"), SignupSource.SSO_BACKDOOR));
+      }
+    }
+    return predicates;
   }
 
-  private void applySearchCriteria(Criteria query, PaginationCriteria<User> pgCrit) {
-    // Functionality should be maintained with
-    // applySearchRestrictionsToHQL
-    UserSearchCriteria sc = (UserSearchCriteria) pgCrit.getSearchCriteria();
-    try {
-      applySearchTermFields(query, sc);
-    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      log.error("Error while applying search criteria: {0}", e);
-    }
-
-    if (sc.isOnlyPublicProfiles()) {
-      query.add(Restrictions.ne("privateProfile", true));
-    }
-    if (sc.isWithoutBackdoorSysadmins()) {
-      query.add(Restrictions.ne("signupSource", SignupSource.SSO_BACKDOOR));
-    }
-  }
-
-  private void applySearchTermFields(Criteria query, UserSearchCriteria searchCriteria)
+  private void applySearchTermPredicates(
+      UserSearchCriteria searchCriteria,
+      CriteriaBuilder builder,
+      Root<User> root,
+      List<Predicate> predicates)
       throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
     Map<String, Object> key2Value = searchCriteria.getSearchTermField2Values();
     for (Entry<String, Object> entry : key2Value.entrySet()) {
       if ("allFields".equals(entry.getKey())) {
-        String term = entry.getValue().toString();
-        query.add(
-            Restrictions.disjunction()
-                .add(Restrictions.ilike(FIRST_NAME, term, MatchMode.ANYWHERE))
-                .add(Restrictions.ilike(LAST_NAME, term, MatchMode.ANYWHERE))
-                .add(Restrictions.ilike(EMAIL, term, MatchMode.ANYWHERE))
-                .add(Restrictions.ilike(USERNAME, term, MatchMode.ANYWHERE))
-                .add(Restrictions.ilike(TAGS, term, MatchMode.ANYWHERE)));
+        String term = entry.getValue().toString().toLowerCase();
+        Predicate allFieldsPredicate =
+            builder.or(
+                builder.like(builder.lower(root.get(FIRST_NAME)), "%" + term + "%"),
+                builder.like(builder.lower(root.get(LAST_NAME)), "%" + term + "%"),
+                builder.like(builder.lower(root.get(EMAIL)), "%" + term + "%"),
+                builder.like(builder.lower(root.get(USERNAME)), "%" + term + "%"),
+                builder.like(builder.lower(root.get(TAGS)), "%" + term + "%"));
+        predicates.add(allFieldsPredicate);
       }
       if ("tags".equals(entry.getKey())) {
         if (entry.getValue() != null) {
           String[] tags = (String[]) entry.getValue();
           if (tags.length > 0) {
-            Conjunction tagsConjunction = Restrictions.conjunction();
+            List<Predicate> tagPredicates = new ArrayList<>();
             for (String tag : tags) {
-              tagsConjunction.add(Restrictions.ilike(TAGS, "\"" + tag + "\"", MatchMode.ANYWHERE));
+              tagPredicates.add(
+                  builder.like(builder.lower(root.get(TAGS)), "%\"" + tag.toLowerCase() + "\"%"));
             }
-            query.add(tagsConjunction);
+            predicates.add(builder.and(tagPredicates.toArray(new Predicate[0])));
           }
         }
       }
 
       if ("onlyEnabled".equals(entry.getKey())
           && "true".equalsIgnoreCase(entry.getValue().toString())) {
-        query.add(Restrictions.eq(ENABLED, true));
+        predicates.add(builder.equal(root.get(ENABLED), true));
       }
       if ("tempAccountsOnly".equals(entry.getKey())
           && "true".equalsIgnoreCase(entry.getValue().toString())) {
-        query.add(Restrictions.eq("tempAccount", true));
+        predicates.add(builder.equal(root.get("tempAccount"), true));
       }
       if ("creationDateEarlierThan".equals(entry.getKey())) {
-        setupDateRestriction(query, entry, "creationDate");
+        parseDate(entry)
+            .ifPresent(limit -> predicates.add(builder.lessThan(root.get("creationDate"), limit)));
       }
       if ("lastLoginEarlierThan".equals(entry.getKey())) {
         parseDate(entry)
             .ifPresent(
                 limit ->
-                    query.add(
-                        Restrictions.or(
-                            Restrictions.lt(LAST_LOGIN, limit), Restrictions.isNull(LAST_LOGIN))));
+                    predicates.add(
+                        builder.or(
+                            builder.lessThan(root.get(LAST_LOGIN), limit),
+                            builder.isNull(root.get(LAST_LOGIN)))));
       }
     }
-  }
-
-  private void setupDateRestriction(Criteria query, Entry<String, Object> entry, String fieldName) {
-    parseDate(entry).ifPresent(limit -> query.add(Restrictions.lt(fieldName, limit)));
   }
 
   private Optional<Date> parseDate(Entry<String, Object> entry) {
@@ -449,31 +453,41 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     }
   }
 
-  private void applyOrder(Criteria query, PaginationCriteria<User> pgCrit) {
+  private void applyUserOrder(
+      PaginationCriteria<User> pgCrit,
+      CriteriaBuilder builder,
+      Root<User> root,
+      CriteriaQuery<?> query) {
+    if (pgCrit.getOrderBy() == null || !pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
+      return;
+    }
+    List<jakarta.persistence.criteria.Order> orders = new ArrayList<>();
     if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
-      query.addOrder(Order.asc(pgCrit.getOrderBy()));
+      orders.add(builder.asc(root.get(pgCrit.getOrderBy())));
       if (pgCrit.getOrderBy().equalsIgnoreCase(LAST_NAME)) {
-        query.addOrder(Order.asc(LAST_NAME));
+        orders.add(builder.asc(root.get(LAST_NAME)));
       }
     } else {
-      query.addOrder(Order.desc(pgCrit.getOrderBy()));
+      orders.add(builder.desc(root.get(pgCrit.getOrderBy())));
       if (pgCrit.getOrderBy().equalsIgnoreCase(LAST_NAME)) {
-        query.addOrder(Order.desc(LAST_NAME));
+        orders.add(builder.desc(root.get(LAST_NAME)));
       }
     }
+    query.orderBy(orders);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public Set<User> getAllGroupPis(String searchTerm) {
     Session session = getSessionFactory().getCurrentSession();
-    Criteria crit =
+    List<User> pis =
         session
-            .createCriteria(User.class)
-            .createAlias("userGroups", "ug")
-            .add(Restrictions.eq("ug.roleInGroup", RoleInGroup.PI))
-            .add(Restrictions.eq(ENABLED, true));
-    List<User> pis = crit.list();
+            .createQuery(
+                "select distinct u from User u join u.userGroups ug "
+                    + "where ug.roleInGroup = :roleInGroup and u.enabled = true",
+                User.class)
+            .setParameter("roleInGroup", RoleInGroup.PI)
+            .list();
     if (searchTerm != null) {
       List<User> matchingUsers = searchUsers(searchTerm);
       pis.retainAll(matchingUsers);
@@ -538,26 +552,32 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
           Collections.emptyList(), pgCrit.getPageNumber().intValue(), 0L);
     }
 
-    Criteria listQuery =
-        session
-            .createCriteria(User.class)
-            .createCriteria(ROLES)
-            .add(Restrictions.eq("name", role.getName()));
-    DatabasePaginationUtils.addPaginationCriteriaToHibernateCriteria(pgCrit, listQuery);
+    String orderBy = safeOrderBy(pgCrit);
+    Query<User> listQuery =
+        session.createQuery(
+            "select distinct u from User u join u.roles role "
+                + "where role.name=:roleName"
+                + orderBy,
+            User.class);
+    listQuery.setParameter("roleName", role.getName());
+    listQuery.setFirstResult(pgCrit.getFirstResultIndex());
+    listQuery.setMaxResults(pgCrit.getResultsPerPage());
     List<User> listQueryRes = listQuery.list();
 
     return new SearchResultsImpl<>(listQueryRes, pgCrit.getPageNumber().intValue(), count);
   }
 
   private Long countUsersInRole(Role role, Session session, boolean enabledOnly) {
-    Criteria countQuery = session.createCriteria(User.class);
+    StringBuilder hql =
+        new StringBuilder(
+            "select count(distinct u.id) from User u join u.roles role where role.name=:roleName");
     if (enabledOnly) {
-      countQuery.add(Restrictions.eq(ENABLED, true));
+      hql.append(" and u.enabled = true");
     }
-    countQuery.setProjection(Projections.countDistinct("id"));
-    countQuery.createCriteria(ROLES).add(Restrictions.eq("name", role.getName()));
-
-    return (Long) countQuery.uniqueResult();
+    return session
+        .createQuery(hql.toString(), Long.class)
+        .setParameter("roleName", role.getName())
+        .uniqueResult();
   }
 
   @Override
@@ -582,9 +602,9 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   public boolean userExists(String username) {
     // load up id, not whole user graph to check existence
     return getSession()
-            .createCriteria(User.class)
-            .add(Restrictions.eq(USERNAME, username))
-            .setProjection(Projections.id())
+            .createQuery("select u.id from User u where u.username=:username", Long.class)
+            .setParameter(USERNAME, username)
+            .setMaxResults(1)
             .uniqueResult()
         != null;
   }
@@ -592,38 +612,34 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   @Override
   public UserStatistics getUserStats(final int daysToCountAsActive) {
     Session session = getSessionFactory().getCurrentSession();
-    Criteria crit = session.createCriteria(User.class);
-    excludeAnonymousUser(crit);
+    String baseQuery = "from User u where u.username <> :anonUser";
 
-    int total = getTotalUserCount(crit).intValue();
-    Criteria crit2 = session.createCriteria(User.class);
-    excludeAnonymousUser(crit2);
+    int total =
+        session
+            .createQuery("select count(u) " + baseQuery, Long.class)
+            .setParameter("anonUser", RecordGroupSharing.ANONYMOUS_USER)
+            .uniqueResult()
+            .intValue();
     Long enabled =
-        (Long)
-            crit2
-                .add(Restrictions.eq(ENABLED, true))
-                .setProjection(Projections.count("id"))
-                .uniqueResult();
-    Criteria crit3 = session.createCriteria(User.class);
-    excludeAnonymousUser(crit3);
+        session
+            .createQuery("select count(u) " + baseQuery + " and u.enabled = true", Long.class)
+            .setParameter("anonUser", RecordGroupSharing.ANONYMOUS_USER)
+            .uniqueResult();
     Long locked =
-        (Long)
-            crit3
-                .add(Restrictions.eq("accountLocked", true))
-                .setProjection(Projections.count("id"))
-                .uniqueResult();
-    Criteria crit4 = session.createCriteria(User.class);
-    excludeAnonymousUser(crit4);
+        session
+            .createQuery("select count(u) " + baseQuery + " and u.accountLocked = true", Long.class)
+            .setParameter("anonUser", RecordGroupSharing.ANONYMOUS_USER)
+            .uniqueResult();
 
     Calendar cal = Calendar.getInstance();
     cal.add(Calendar.DAY_OF_YEAR, daysToCountAsActive * -1);
     Date from = cal.getTime();
     Long active =
-        (Long)
-            crit4
-                .add(Restrictions.gt(LAST_LOGIN, from))
-                .setProjection(Projections.count("id"))
-                .uniqueResult();
+        session
+            .createQuery("select count(u) " + baseQuery + " and u.lastLogin > :from", Long.class)
+            .setParameter("anonUser", RecordGroupSharing.ANONYMOUS_USER)
+            .setParameter("from", from)
+            .uniqueResult();
 
     UserStatistics stats =
         new UserStatistics(total, enabled.intValue(), locked.intValue(), active.intValue());
@@ -685,27 +701,28 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   private <T> List<T> getCommunityUsers(User subject, Session session, String projectionProperty) {
     List<Community> comms =
         session
-            .createCriteria(Community.class)
-            .createCriteria("admins")
-            .add(Restrictions.idEq(subject.getId()))
+            .createQuery(
+                "select distinct c from Community c join c.admins admin where admin.id=:adminId",
+                Community.class)
+            .setParameter("adminId", subject.getId())
             .list();
     if (comms.isEmpty()) {
       return new ArrayList<>();
     }
     Community comm = comms.get(0);
 
-    Criteria criteria =
-        session
-            .createCriteria(User.class, "user")
-            .createAlias("user.userGroups", "ug")
-            .createAlias("ug.group", "group")
-            .createAlias("group.communities", "comm")
-            .add(Restrictions.eq("comm.id", comm.getId()))
-            .setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY);
-    if (!StringUtils.isBlank(projectionProperty)) {
-      criteria.setProjection(Projections.property(projectionProperty));
-    }
-    return criteria.list();
+    String selectClause =
+        StringUtils.isBlank(projectionProperty)
+            ? "select distinct u"
+            : "select distinct u." + projectionProperty;
+    String hql =
+        selectClause
+            + " from User u join u.userGroups ug join ug.group g join g.communities comm "
+            + "where comm.id = :commId";
+    @SuppressWarnings("unchecked")
+    Query<T> query = (Query<T>) session.createQuery(hql);
+    query.setParameter("commId", comm.getId());
+    return query.list();
   }
 
   @Override

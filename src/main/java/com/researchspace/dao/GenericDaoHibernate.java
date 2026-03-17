@@ -9,15 +9,12 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.criterion.Projections;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
 /**
@@ -76,7 +73,6 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   }
 
   @Autowired
-  @Required
   public void setSessionFactory(SessionFactory sessionFactory) {
     this.sessionFactory = sessionFactory;
   }
@@ -84,15 +80,13 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   /** {@inheritDoc} */
   @SuppressWarnings("unchecked")
   public List<T> getAll() {
-    Criteria criteria = getSession().createCriteria(persistentClass);
-    criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-    return criteria.list();
+    String hql = "select distinct e from " + persistentClass.getName() + " e";
+    return getSession().createQuery(hql, persistentClass).list();
   }
 
   public Long getCount() {
-    Criteria criteria =
-        getSession().createCriteria(persistentClass).setProjection(Projections.count("id"));
-    return (Long) criteria.uniqueResult();
+    String hql = "select count(e.id) from " + persistentClass.getName() + " e";
+    return getSession().createQuery(hql, Long.class).uniqueResult();
   }
 
   /** {@inheritDoc} */

@@ -48,7 +48,7 @@ public class DBDataIntegrityChecker extends AbstractAppInitializor {
     List<Object> results =
         sessionFactory
             .getCurrentSession()
-            .createSQLQuery(
+            .createNativeQuery(
                 " select br.id, count(br.id) as numNotebookParents  from BaseRecord br inner join"
                     + " RecordToFolder rtf on rtf.record_id=br.id inner join BaseRecord parent on"
                     + " parent.id=rtf.folder_id where parent.type like '%notebook%' group by br.id"

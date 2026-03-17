@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotBlank;
 

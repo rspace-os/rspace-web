@@ -5,10 +5,10 @@ import static org.mockito.Mockito.verify;
 
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
+import jakarta.mail.AuthenticationFailedException;
+import jakarta.mail.MessagingException;
+import jakarta.mail.SendFailedException;
 import java.util.Collections;
-import javax.mail.AuthenticationFailedException;
-import javax.mail.MessagingException;
-import javax.mail.SendFailedException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;

@@ -2,11 +2,11 @@ package com.researchspace.webapp.integrations.wopi;
 
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.integrations.wopi.models.xml.XmlWopiDiscovery;
+import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.InputStreamReader;
-import javax.xml.bind.JAXBException;
 
 public class WopiTestUtilities {
 

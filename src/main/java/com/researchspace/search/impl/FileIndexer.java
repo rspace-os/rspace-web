@@ -16,6 +16,8 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
@@ -72,7 +74,6 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
 
     Analyzer analyzer = new StandardAnalyzer();
     IndexWriterConfig writerConfig = new IndexWriterConfig(analyzer);
-    writerConfig.setWriteLockTimeout(MAX_WRITELOCK_WAIT);
     if (deleteIndex) {
       writerConfig.setOpenMode(OpenMode.CREATE);
       writer = new IndexWriter(dir, writerConfig);
@@ -159,7 +160,7 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
         log.info("{} files indexed, {} to go.", indexed, (fileList.size() - indexed));
       }
     }
-    return writer.numDocs();
+    return writer.getDocStats().numDocs;
   }
 
   public void indexFile(File file) throws IOException {
@@ -189,7 +190,7 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
     if (suffix.equals("pdf")) {
       PDDocument pdoc = Loader.loadPDF(fx);
       String content = new PDFTextStripper().getText(pdoc);
-      contentFld = new Field(FIELD_CONTENTS, content, Field.Store.NO, Field.Index.ANALYZED);
+      contentFld = new TextField(FIELD_CONTENTS, content, Field.Store.NO);
       pdoc.close();
     } else {
       try {
@@ -197,19 +198,18 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
         tika.setMaxStringLength(1_000_000);
         String wordText = tika.parseToString(fx);
         log.debug("Parsed string is {}", wordText);
-        contentFld = new Field(FIELD_CONTENTS, wordText, Field.Store.NO, Field.Index.ANALYZED);
+        contentFld = new TextField(FIELD_CONTENTS, wordText, Field.Store.NO);
       } catch (TikaException e) {
         log.warn("Error reading file {} - msg: {}", fx.getName(), e.getMessage());
         contentFld =
-            new Field(
+            new TextField(
                 FIELD_CONTENTS,
                 new InputStreamReader(new FileInputStream(fx), Charset.forName("UTF-8")));
       }
     }
 
-    Field nameFld = new Field(FIELD_NAME, fx.getName(), Field.Store.YES, Field.Index.NOT_ANALYZED);
-    Field pathFld =
-        new Field(FIELD_PATH, fx.getAbsolutePath(), Field.Store.YES, Field.Index.NOT_ANALYZED);
+    Field nameFld = new StringField(FIELD_NAME, fx.getName(), Field.Store.YES);
+    Field pathFld = new StringField(FIELD_PATH, fx.getAbsolutePath(), Field.Store.YES);
     Document dc = new Document();
     dc.add(contentFld);
     dc.add(nameFld);

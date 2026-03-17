@@ -19,8 +19,8 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
-import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 

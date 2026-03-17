@@ -72,7 +72,7 @@ public class AsyncDepositorImplTest {
 
   @Test
   public void testMessageNoLink() {
-    RepositoryOperationResult result = new RepositoryOperationResult(true, "hello", null, null);
+    RepositoryOperationResult result = new RepositoryOperationResult(true, "hello", null);
     underTest.postDeposit(
         result,
         SystemPropertyTestFactory.createAnyApp(),
@@ -92,11 +92,7 @@ public class AsyncDepositorImplTest {
   @Test
   public void testMessageLink() throws MalformedURLException {
     RepositoryOperationResult result =
-        new RepositoryOperationResult(
-            true,
-            "hello",
-            new URL("http://www.bbc.co.uk"),
-            new URL("http://doi.org/10.12384/ACHFAT"));
+        new RepositoryOperationResult(true, "hello", new URL("http://www.bbc.co.uk"));
     underTest.postDeposit(
         result,
         SystemPropertyTestFactory.createAnyApp(),
@@ -125,7 +121,7 @@ public class AsyncDepositorImplTest {
     String repoName = "Dataverse";
     String expectedResultUrl =
         "https://dataverse.org/dataset.xhtml?persistentId=doi:10.70122/FK2/FNGEGH";
-    String expectedDoiLink = "https://doi.org/10.70122/FK2/FNGEGH";
+    String expectedDoiLink = expectedResultUrl;
     String expectedRaidIdentifier = "https://raid.org/10.12345/ERTY88";
     String expectedRaidUrl = "https://demo.app.raid.org.au/raid/10.12345/ERTY88";
     String originalRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
@@ -145,9 +141,7 @@ public class AsyncDepositorImplTest {
         new RaidUpdateResult(
             true, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
     Future<RepositoryOperationResult> futureRepoOperationResult =
-        new AsyncResult<>(
-            new RepositoryOperationResult(
-                true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
+        new AsyncResult<>(new RepositoryOperationResult(true, "", new URL(expectedResultUrl)));
 
     // WHEN
     Future<RaidUpdateResult> futureRaidUpdateResult =
@@ -180,7 +174,7 @@ public class AsyncDepositorImplTest {
     // GIVEN
     String repoName = "Zenodo";
     String expectedResultUrl = "https://zenodo.org/records/18663592";
-    String expectedDoiLink = "https://doi.org/10.70122/FK2/FNGEGH";
+    String expectedDoiLink = expectedResultUrl;
     String expectedRaidIdentifier = "https://raid.org/10.12345/ERTY88";
     String expectedRaidUrl = "https://demo.app.raid.org.au/raid/10.12345/ERTY88";
     String originalRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
@@ -200,9 +194,7 @@ public class AsyncDepositorImplTest {
         new RaidUpdateResult(
             true, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
     Future<RepositoryOperationResult> futureRepoOperationResult =
-        new AsyncResult<>(
-            new RepositoryOperationResult(
-                true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
+        new AsyncResult<>(new RepositoryOperationResult(true, "", new URL(expectedResultUrl)));
 
     // WHEN
     Future<RaidUpdateResult> futureRaidUpdateResult =

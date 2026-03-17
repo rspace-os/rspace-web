@@ -1,9 +1,8 @@
 <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns="http://java.sun.com/xml/ns/javaee"
-    xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
-    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
-    http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" 
-    id="WebApp_ID" version="3.0" metadata-complete="true">
+    xmlns="https://jakarta.ee/xml/ns/jakartaee"
+    xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+    https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
+    id="WebApp_ID" version="5.0" metadata-complete="true">
 
     <absolute-ordering /> 
     <display-name>RSpace</display-name>
@@ -18,14 +17,14 @@
   
     <!-- Define the basename for a resource bundle for I18N -->
     <context-param>
-        <param-name>javax.servlet.jsp.jstl.fmt.localizationContext</param-name>
+        <param-name>jakarta.servlet.jsp.jstl.fmt.localizationContext</param-name>
         <param-value>bundles.ApplicationResources</param-value>
     </context-param>
     
     <!-- Fallback locale if no bundles found for browser's preferred locale -->
-    <!-- Force a single locale using param-name 'javax.servlet.jsp.jstl.fmt.locale' -->
+    <!-- Force a single locale using param-name 'jakarta.servlet.jsp.jstl.fmt.locale' -->
     <context-param>
-        <param-name>javax.servlet.jsp.jstl.fmt.fallbackLocale</param-name>
+        <param-name>jakarta.servlet.jsp.jstl.fmt.fallbackLocale</param-name>
         <param-value>en</param-value>
     </context-param>
     <!-- Context Configuration locations for Spring XML files -->

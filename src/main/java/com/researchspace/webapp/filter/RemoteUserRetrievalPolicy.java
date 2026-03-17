@@ -1,7 +1,7 @@
 package com.researchspace.webapp.filter;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Policy for getting a remote User. Typically, this interface will be used in SSO environments

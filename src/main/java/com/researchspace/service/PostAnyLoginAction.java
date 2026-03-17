@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import com.researchspace.model.User;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Handler that is invoked after each login

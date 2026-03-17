@@ -48,12 +48,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.lucene.search.Query;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.search.FullTextQuery;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
+import org.hibernate.search.engine.search.predicate.SearchPredicate;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.scope.SearchScope;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -261,26 +260,21 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
    */
   @SuppressWarnings("unchecked")
   List<IFieldLinkableElement> getElnHibernateList(LuceneSrchCfg srchConfig) {
-    FullTextSession fssn = getFullTextSession();
-    Query query = queryBuilder.getLuceneQuery(fssn, srchConfig, StructuredDocument.class);
-    if (query == null) {
+    SearchSession searchSession = getSearchSession();
+    List<Class<? extends IFieldLinkableElement>> resultClasses =
+        List.of(StructuredDocument.class, EcatCommentItem.class);
+    SearchScope<IFieldLinkableElement> scope = searchSession.scope(resultClasses);
+    SearchPredicate predicate = queryBuilder.getSearchPredicate(scope, srchConfig);
+    if (predicate == null) {
       log.info("Field is NULL on search");
       return new ArrayList<>();
     }
-    log.debug(query.toString());
-
-    Class<?>[] resultClasses =
-        new Class[] {BaseRecord.class, StructuredDocument.class, EcatCommentItem.class};
-    FullTextQuery hibQuery = fssn.createFullTextQuery(query, resultClasses);
-    hibQuery.setMaxResults(srchConfig.getMaxResults());
-
-    return (List<IFieldLinkableElement>) hibQuery.list();
+    return searchSession.search(scope).where(predicate).fetchHits(srchConfig.getMaxResults());
   }
 
-  /** Returns Full Text Session */
-  private FullTextSession getFullTextSession() {
-    Session ssnx = sessionFactory.getCurrentSession();
-    return Search.getFullTextSession(ssnx);
+  /** Returns Search Session */
+  private SearchSession getSearchSession() {
+    return Search.session(sessionFactory.getCurrentSession());
   }
 
   /**
@@ -307,36 +301,35 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
 
   @SuppressWarnings("unchecked")
   List<InventoryRecord> getLuceneInventoryQueryList(LuceneSrchCfg srchConfig) {
-    FullTextSession fssn = getFullTextSession();
-    Query query = queryBuilder.getLuceneQuery(fssn, srchConfig, Container.class);
-    if (query == null) {
-      log.info("Query is null on search, returning empty result list");
-      return new ArrayList<>();
-    }
-    log.debug(query.toString());
-
-    Class<?>[] resultClasses;
+    SearchSession searchSession = getSearchSession();
+    List<Class<? extends InventoryRecord>> resultClasses;
+    SearchPredicate predicate;
     InventorySearchType searchType = srchConfig.getSearchType();
     switch (searchType) {
       case SAMPLE:
       case TEMPLATE:
-        resultClasses = new Class[] {Sample.class};
+        resultClasses = List.of(Sample.class);
         break;
       case SUBSAMPLE:
-        resultClasses = new Class[] {SubSample.class};
+        resultClasses = List.of(SubSample.class);
         break;
       case CONTAINER:
-        resultClasses = new Class[] {Container.class};
+        resultClasses = List.of(Container.class);
         break;
       case ALL:
-        resultClasses = new Class[] {Sample.class, SubSample.class, Container.class};
+        resultClasses = List.of(Sample.class, SubSample.class, Container.class);
         break;
       default:
         throw new IllegalArgumentException("unknown requested search type: " + searchType);
     }
-    FullTextQuery hibQuery = fssn.createFullTextQuery(query, resultClasses);
-    hibQuery.setMaxResults(srchConfig.getMaxResults());
-    List<InventoryRecord> result = hibQuery.list();
+    SearchScope<InventoryRecord> scope = searchSession.scope(resultClasses);
+    predicate = queryBuilder.getSearchPredicate(scope, srchConfig);
+    if (predicate == null) {
+      log.info("Query is null on search, returning empty result list");
+      return new ArrayList<>();
+    }
+    List<InventoryRecord> result =
+        searchSession.search(scope).where(predicate).fetchHits(srchConfig.getMaxResults());
 
     if (!result.isEmpty()) {
       PaginationCriteria<InventoryRecord> baseRecPgCrit =

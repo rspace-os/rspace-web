@@ -1,7 +1,7 @@
 package com.researchspace.webapp.integrations.wopi.models.xml;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlType;
 import lombok.Getter;
 
 /** POJO for reading the Office Online proof key from the discovery XML */

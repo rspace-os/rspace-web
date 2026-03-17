@@ -28,8 +28,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
-import org.hibernate.criterion.MatchMode;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.query.Query;
 import org.hibernate.transform.AliasToBeanResultTransformer;
 import org.jetbrains.annotations.NotNull;
@@ -158,7 +156,7 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
 
     List<DatabaseUsageByGroupGroupByResult> results =
         session
-            .createSQLQuery(query)
+            .createNativeQuery(query)
             .setMaxResults(pgCrit.getResultsPerPage())
             .setFirstResult(pgCrit.getFirstResultIndex())
             .setResultTransformer(
@@ -209,7 +207,7 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
     String query = querySB.toString();
 
     return getSession()
-        .createSQLQuery(query)
+        .createNativeQuery(query)
         .setResultTransformer(
             new AliasToBeanResultTransformer(DatabaseUsageByGroupGroupByResult.class))
         .list();
@@ -303,14 +301,15 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
 
   @Override
   public FileStoreRoot findByFileStorePath(String fileStorePath) {
-    return (FileStoreRoot)
-        getSession()
-            .createCriteria(FileStoreRoot.class)
-            .add(
-                Restrictions.conjunction()
-                    .add(Restrictions.ilike("fileStoreRoot", fileStorePath, MatchMode.ANYWHERE))
-                    .add(Restrictions.ilike("fileStoreRoot", "file:", MatchMode.START)))
-            .uniqueResult();
+    String likePath = "%" + fileStorePath.toLowerCase() + "%";
+    return getSession()
+        .createQuery(
+            "from FileStoreRoot where lower(fileStoreRoot) like :path "
+                + "and lower(fileStoreRoot) like :prefix",
+            FileStoreRoot.class)
+        .setParameter("path", likePath)
+        .setParameter("prefix", "file:%")
+        .uniqueResult();
   }
 
   public FileStoreRoot saveFileStoreRoot(FileStoreRoot root) {

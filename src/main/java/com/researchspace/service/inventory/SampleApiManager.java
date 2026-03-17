@@ -15,8 +15,8 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
-import javax.ws.rs.NotFoundException;
 
 /** Handles API actions around Inventory Sample. */
 public interface SampleApiManager extends InventoryApiManager {

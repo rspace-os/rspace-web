@@ -1,9 +1,10 @@
 package com.researchspace.webapp.integrations.jove;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -14,7 +15,7 @@ public class JoveExceptionHandler {
 
   public ResponseEntity<String> handle(
       HttpServletRequest request, HttpServletResponse response, HttpStatusCodeException exception) {
-    HttpStatus responseStatus = exception.getStatusCode();
+    HttpStatus responseStatus = toHttpStatus(exception.getStatusCode());
     String userErrorMessage = null;
 
     if (responseStatus == HttpStatus.INTERNAL_SERVER_ERROR) {
@@ -29,6 +30,11 @@ public class JoveExceptionHandler {
       userErrorMessage = makeMessage(exception);
     }
     return new ResponseEntity<>(userErrorMessage, responseStatus);
+  }
+
+  private HttpStatus toHttpStatus(HttpStatusCode statusCode) {
+    HttpStatus status = HttpStatus.resolve(statusCode.value());
+    return status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR;
   }
 
   private String makeMessage(Exception exception) {

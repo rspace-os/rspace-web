@@ -27,7 +27,7 @@ import com.researchspace.api.v1.model.ApiUserGroupInfo;
 import com.researchspace.api.v1.model.ApiUserPost;
 import com.researchspace.archive.ArchiveResult;
 import com.researchspace.auth.WhiteListIPChecker;
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import com.researchspace.core.util.DateUtil;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -73,7 +73,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 
-public class SysadminApiControllerTest extends JavaxValidatorTest {
+public class SysadminApiControllerTest extends JakartaValidatorTest {
 
   @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock UserManager userMgr;

@@ -12,10 +12,10 @@ import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.PermissionsAdaptable;
+import jakarta.servlet.http.HttpSession;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import javax.servlet.http.HttpSession;
 import org.apache.shiro.authz.Permission;
 
 public class PermissionsUtilsStub implements IPermissionUtils {

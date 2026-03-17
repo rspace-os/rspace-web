@@ -7,10 +7,10 @@ import com.researchspace.model.elninventory.MaterialUsage;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.service.inventory.InventoryMaterialUsageHelper;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import javax.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

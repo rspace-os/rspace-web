@@ -5,7 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -255,7 +255,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload(createUrl(API_VERSION.ONE, "/forms/{id}/icon"), apiForm.getId())
+                multipart(createUrl(API_VERSION.ONE, "/forms/{id}/icon"), apiForm.getId())
                     .file(iconFile)
                     .principal(createPrincipal(anyUser))
                     .header("apiKey", apiKey))

@@ -1,7 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.model.ApiQuantityInfo;
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -49,7 +49,7 @@ public class CreateMissingUserFoldersForLabAdminsAndPIs extends AbstractCustomLi
             .scroll(ScrollMode.FORWARD_ONLY);
 
     while (allGroups.next()) {
-      Group group = (Group) allGroups.get(0);
+      Group group = (Group) allGroups.get();
       if (group.isLabGroup()) {
         createMissingUserFoldersForGroup(group);
       }

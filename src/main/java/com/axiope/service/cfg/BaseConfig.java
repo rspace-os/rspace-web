@@ -288,7 +288,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.annotation.SessionScope;
 import org.springframework.web.multipart.MultipartResolver;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
 /**
  * Base class with configuration for all Spring profiles - gradually using this for new beans
@@ -892,19 +892,21 @@ public abstract class BaseConfig {
 
   @Bean
   public MultipartResolver multipartResolver() {
-    CommonsMultipartResolver rc = new CommonsMultipartResolver();
-    Long defaultLimit = 10_000_000l; // 10Mb default default
-    try {
-      long maxSize = Long.parseLong(maxUploadSize);
-      rc.setMaxUploadSize(maxSize);
-    } catch (NumberFormatException nfe) {
-      log.warn(
-          "Couldn't set max file upload size [{}], using default [{}]",
-          maxUploadSize,
-          defaultLimit);
-      rc.setMaxUploadSize(defaultLimit);
+    if (maxUploadSize != null && !maxUploadSize.isBlank()) {
+      try {
+        Long.parseLong(maxUploadSize);
+        log.warn(
+            "files.maxUploadSize is now handled by the servlet container; configure multipart "
+                + "limits in the server instead. Value [{}] will be ignored here.",
+            maxUploadSize);
+      } catch (NumberFormatException nfe) {
+        log.warn(
+            "Couldn't parse files.maxUploadSize [{}]; multipart limits must be configured in "
+                + "the servlet container.",
+            maxUploadSize);
+      }
     }
-    return rc;
+    return new StandardServletMultipartResolver();
   }
 
   @Bean

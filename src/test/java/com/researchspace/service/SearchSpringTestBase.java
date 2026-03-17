@@ -15,8 +15,8 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.junit.After;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -33,8 +33,8 @@ public class SearchSpringTestBase extends SpringTransactionalTest {
     assertEquals(expectedHitCount, results.getHits().intValue());
   }
 
-  protected FullTextSession getFullTextSession() {
-    return Search.getFullTextSession(sessionFactory.getCurrentSession());
+  protected SearchSession getFullTextSession() {
+    return Search.session(sessionFactory.getCurrentSession());
   }
 
   protected void setupRandomPIUser() throws IllegalAddChildOperation {
@@ -50,11 +50,13 @@ public class SearchSpringTestBase extends SpringTransactionalTest {
   @After
   public void tearDown() throws IOException {
     // make sure index is cleared for each test.
-    FullTextSession fts = Search.getFullTextSession(sessionFactory.getCurrentSession());
-    fts.purgeAll(BaseRecord.class);
-    fts.purgeAll(StructuredDocument.class);
-    fts.purgeAll(Sample.class);
-    fts.getSearchFactory().optimize();
+    SearchSession searchSession = Search.session(sessionFactory.getCurrentSession());
+    searchSession.workspace(BaseRecord.class, StructuredDocument.class, Sample.class).purge();
+    searchSession
+        .workspace(BaseRecord.class, StructuredDocument.class, Sample.class)
+        .mergeSegments();
+    searchSession.workspace(BaseRecord.class, StructuredDocument.class, Sample.class).flush();
+    searchSession.workspace(BaseRecord.class, StructuredDocument.class, Sample.class).refresh();
     flushToSearchIndices();
     fileIndexer.close();
   }

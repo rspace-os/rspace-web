@@ -77,6 +77,18 @@ so re-run mvn command with -U option which forces re-download on missing depende
 Eventually you should see the BUILD SUCCESS message, which means maven was able to resolve
 all code dependencies and compile the code.
 
+#### Shiro Jakarta workaround (upgrade branch)
+
+On the Spring 6/Jakarta upgrade branch, Shiro 2.0.6 still ships `javax.servlet` in its web modules.
+If you see `javax.servlet`/`jakarta.servlet` type mismatches, use the provided script to rewrite
+`shiro-web` and `shiro-spring` in your local Maven repo:
+
+```bash
+./scripts/transform-shiro-jakarta.sh
+```
+
+The script downloads the transformer CLI/rules if needed and rewrites the two jars in `~/.m2`.
+
 ### (Optional) Build RSpace application package
 
 The application .war file can be built with the following maven command:  

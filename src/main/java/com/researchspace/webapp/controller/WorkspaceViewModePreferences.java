@@ -4,7 +4,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceSettings.WorkspaceViewMode;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.UserManager;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 

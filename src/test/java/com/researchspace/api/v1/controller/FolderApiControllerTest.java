@@ -56,13 +56,13 @@ import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.FolderTestUtils;
 import com.researchspace.testutils.TestFactory;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Supplier;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;

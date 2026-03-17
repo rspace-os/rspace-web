@@ -9,7 +9,6 @@ import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.DatabaseUsageByUserGroupByResult;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.RecordDao;
-import com.researchspace.model.Community;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -35,14 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.Criteria;
 import org.hibernate.Session;
-import org.hibernate.criterion.CriteriaSpecification;
-import org.hibernate.criterion.DetachedCriteria;
-import org.hibernate.criterion.MatchMode;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.Subqueries;
 import org.hibernate.query.Query;
 import org.hibernate.transform.AliasToBeanResultTransformer;
 import org.springframework.cache.annotation.CachePut;
@@ -280,8 +272,8 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
   @Override
   public Long getCountOfUsersWithRecords() {
     Session session = sessionFactory.getCurrentSession();
-    Query q = session.createSQLQuery("select count(distinct owner_id) from BaseRecord");
-    return ((BigInteger) q.uniqueResult()).longValue();
+    Query<?> q = session.createNativeQuery("select count(distinct owner_id) from BaseRecord");
+    return ((Number) q.getSingleResult()).longValue();
   }
 
   @Override
@@ -330,21 +322,33 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
   private <T extends BaseRecord> Set<BaseRecord> getViewableRecords(
       Set<Long> userIds, String[] limitToTypes, String[] excludeTypes, Class<T> clazz) {
     Session session = sessionFactory.getCurrentSession();
-    Criteria query = session.createCriteria(clazz, "record");
-    query.createAlias("record.owner", OWNER_FIELD).add(Restrictions.in("owner.id", userIds));
-    query.add(Restrictions.eq(DELETED, false));
-    query.add(
-        Restrictions.not(
-            Restrictions.ilike("type", RecordType.ROOT_MEDIA.name(), MatchMode.ANYWHERE)));
-
+    StringBuilder hql =
+        new StringBuilder(
+            "select record from "
+                + clazz.getSimpleName()
+                + " record where record.owner.id in (:userIds) and record.deleted=false"
+                + " and record.type not like :rootMedia");
     if (limitToTypes != null) {
-      for (String type : limitToTypes) {
-        query.add(Restrictions.ilike("type", type, MatchMode.ANYWHERE));
+      for (int i = 0; i < limitToTypes.length; i++) {
+        hql.append(" and record.type like :limitType").append(i);
       }
     }
     if (excludeTypes != null) {
-      for (String type : excludeTypes) {
-        query.add(Restrictions.not(Restrictions.ilike("type", type, MatchMode.ANYWHERE)));
+      for (int i = 0; i < excludeTypes.length; i++) {
+        hql.append(" and record.type not like :excludeType").append(i);
+      }
+    }
+    Query<T> query = session.createQuery(hql.toString(), clazz);
+    query.setParameterList("userIds", userIds);
+    query.setParameter("rootMedia", "%" + RecordType.ROOT_MEDIA.name() + "%");
+    if (limitToTypes != null) {
+      for (int i = 0; i < limitToTypes.length; i++) {
+        query.setParameter("limitType" + i, "%" + limitToTypes[i] + "%");
+      }
+    }
+    if (excludeTypes != null) {
+      for (int i = 0; i < excludeTypes.length; i++) {
+        query.setParameter("excludeType" + i, "%" + excludeTypes[i] + "%");
       }
     }
     return new HashSet<>(query.list());
@@ -362,26 +366,36 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
   @Override
   public List<String> getTagsMetaDataForRecordsVisibleByUserOrPi(User userOrPi, String tagSearch) {
     Set<User> users = getUserTargets(userOrPi);
-    Criteria sdCriteria = getSession().createCriteria(StructuredDocument.class);
-    addCriteriaForOwnedByAndTagsMetaDataProjection(tagSearch, users, sdCriteria);
-    List<String> docTags = sdCriteria.list();
-
-    Criteria folderCriteria = getSession().createCriteria(Folder.class);
-    addCriteriaForOwnedByAndTagsMetaDataProjection(tagSearch, users, folderCriteria);
-    List<String> folderAndNotebookTags = folderCriteria.list();
+    List<String> docTags =
+        getTagMetaDataForOwners(users, tagSearch, StructuredDocument.class, true);
+    List<String> folderAndNotebookTags =
+        getTagMetaDataForOwners(users, tagSearch, Folder.class, true);
 
     List<String> result = new ArrayList<>(docTags);
     result.addAll(folderAndNotebookTags);
     return result;
   }
 
-  private void addCriteriaForOwnedByAndTagsMetaDataProjection(
-      String tagSearch, Set<User> users, Criteria q) {
-    q.createAlias(OWNER_FIELD, OWNER_FIELD);
-    q.add(Restrictions.in(OWNER_FIELD, users));
-    addTagFilterRestriction(tagSearch, q);
-    addDocTagMetaProjection(q);
-    q.add(Restrictions.eq("deleted", Boolean.FALSE));
+  private List<String> getTagMetaDataForOwners(
+      Set<User> owners,
+      String tagSearch,
+      Class<? extends BaseRecord> entityClass,
+      boolean filterDeleted) {
+    StringBuilder hql =
+        new StringBuilder(
+            "select distinct br."
+                + DOC_TAG_META_FIELD
+                + " from "
+                + entityClass.getSimpleName()
+                + " br where br.owner in (:owners)");
+    if (filterDeleted) {
+      hql.append(" and br.deleted=false");
+    }
+    appendTagFilterClause(hql, tagSearch);
+    Query<String> query = getSession().createQuery(hql.toString(), String.class);
+    query.setParameterList("owners", owners);
+    applyTagFilterParameter(query, tagSearch);
+    return query.list();
   }
 
   @Override
@@ -462,56 +476,25 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     return q.list();
   }
 
-  private void addTagFilterRestriction(String tagSearch, Criteria q) {
-    if (!StringUtils.isBlank(tagSearch)) {
-      q.add(Restrictions.ilike(DOC_TAG_FIELD, tagSearch, MatchMode.ANYWHERE));
-    } else {
-      q.add(Restrictions.isNotNull(DOC_TAG_FIELD));
-    }
-  }
-
   @Override
   public List<String> getTagsMetaDataForRecordsVisibleByCommunityAdmin(
       User admin, String tagSearch) {
-    DetachedCriteria communityForAdmin =
-        DetachedCriteria.forClass(Community.class, "comm")
-            .createCriteria("admins")
-            .add(Restrictions.idEq(admin.getId()))
-            .setProjection(Projections.property("comm.id"));
-    DetachedCriteria usersInCommunity =
-        DetachedCriteria.forClass(User.class, "user")
-            .createAlias("user.userGroups", "ug")
-            .createAlias("ug.group", "group")
-            .createAlias("group.communities", "comm")
-            .add(Subqueries.propertyIn("comm.id", communityForAdmin))
-            .setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY);
-    usersInCommunity.setProjection(Projections.id());
-
-    Criteria tagsInUserDocs = getSession().createCriteria(StructuredDocument.class);
-    tagsInUserDocs.add(Subqueries.propertyIn("owner.id", usersInCommunity));
-    addTagFilterRestriction(tagSearch, tagsInUserDocs);
-    addDocTagMetaProjection(tagsInUserDocs);
-    List<String> docTags = tagsInUserDocs.list();
-
-    Criteria tagsInUserFoldersAndNotebooks = getSession().createCriteria(Folder.class);
-    tagsInUserFoldersAndNotebooks.add(Subqueries.propertyIn("owner.id", usersInCommunity));
-    addTagFilterRestriction(tagSearch, tagsInUserFoldersAndNotebooks);
-    addDocTagMetaProjection(tagsInUserFoldersAndNotebooks);
-    List<String> folderAndNotebookTags = tagsInUserFoldersAndNotebooks.list();
+    String usersInCommunitySubquery =
+        "select distinct u.id from User u"
+            + " join u.userGroups ug"
+            + " join ug.group g"
+            + " join g.communities comm"
+            + " where comm.id in (select comm2.id from Community comm2 join comm2.admins admin"
+            + " where admin.id = :adminId)";
+    List<String> docTags =
+        getTagMetaDataForOwnersById(
+            usersInCommunitySubquery, admin, tagSearch, StructuredDocument.class);
+    List<String> folderAndNotebookTags =
+        getTagMetaDataForOwnersById(usersInCommunitySubquery, admin, tagSearch, Folder.class);
 
     List<String> result = new ArrayList<>(docTags);
     result.addAll(folderAndNotebookTags);
     return result;
-  }
-
-  private void addDocTagProjection(Criteria tagsInUserDocs) {
-    tagsInUserDocs.setReadOnly(true);
-    tagsInUserDocs.setProjection(Projections.distinct(Projections.property(DOC_TAG_FIELD)));
-  }
-
-  private void addDocTagMetaProjection(Criteria tagsInUserDocs) {
-    tagsInUserDocs.setReadOnly(true);
-    tagsInUserDocs.setProjection(Projections.distinct(Projections.property(DOC_TAG_META_FIELD)));
   }
 
   private Set<User> getUserTargets(User userOrPi) {
@@ -523,15 +506,8 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
   @Override
   public List<String> getTagsMetaDataForRecordsVisibleBySystemAdmin(
       User subject, String tagFilter) {
-    Criteria allDocTags = getSession().createCriteria(StructuredDocument.class);
-    addTagFilterRestriction(tagFilter, allDocTags);
-    addDocTagMetaProjection(allDocTags);
-    List<String> docTags = allDocTags.list();
-
-    Criteria allFolderNotebookTags = getSession().createCriteria(Folder.class);
-    addTagFilterRestriction(tagFilter, allFolderNotebookTags);
-    addDocTagMetaProjection(allFolderNotebookTags);
-    List<String> folderAndNotebookTags = allDocTags.list();
+    List<String> docTags = getTagMetaDataForAllRecords(tagFilter, StructuredDocument.class);
+    List<String> folderAndNotebookTags = getTagMetaDataForAllRecords(tagFilter, Folder.class);
 
     List<String> result = new ArrayList<>(docTags);
     result.addAll(folderAndNotebookTags);
@@ -545,11 +521,61 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
   @Override
   public boolean exists(Long id) {
     return getSession()
-            .createCriteria(Record.class)
-            .add(Restrictions.idEq(id))
-            .setProjection(Projections.id())
+            .createQuery("select 1 from Record where id = :id")
+            .setParameter("id", id)
+            .setMaxResults(1)
             .uniqueResult()
         != null;
+  }
+
+  private void appendTagFilterClause(StringBuilder hql, String tagSearch) {
+    if (!StringUtils.isBlank(tagSearch)) {
+      hql.append(" and lower(br.").append(DOC_TAG_FIELD).append(") like :tagSearch");
+    } else {
+      hql.append(" and br.").append(DOC_TAG_FIELD).append(" is not null");
+    }
+  }
+
+  private void applyTagFilterParameter(Query<?> query, String tagSearch) {
+    if (!StringUtils.isBlank(tagSearch)) {
+      query.setParameter("tagSearch", "%" + tagSearch.toLowerCase() + "%");
+    }
+  }
+
+  private List<String> getTagMetaDataForOwnersById(
+      String ownersSubquery,
+      User admin,
+      String tagSearch,
+      Class<? extends BaseRecord> entityClass) {
+    StringBuilder hql =
+        new StringBuilder(
+            "select distinct br."
+                + DOC_TAG_META_FIELD
+                + " from "
+                + entityClass.getSimpleName()
+                + " br where br.owner.id in ("
+                + ownersSubquery
+                + ")");
+    appendTagFilterClause(hql, tagSearch);
+    Query<String> query = getSession().createQuery(hql.toString(), String.class);
+    query.setParameter("adminId", admin.getId());
+    applyTagFilterParameter(query, tagSearch);
+    return query.list();
+  }
+
+  private List<String> getTagMetaDataForAllRecords(
+      String tagSearch, Class<? extends BaseRecord> entityClass) {
+    StringBuilder hql =
+        new StringBuilder(
+            "select distinct br."
+                + DOC_TAG_META_FIELD
+                + " from "
+                + entityClass.getSimpleName()
+                + " br where 1=1");
+    appendTagFilterClause(hql, tagSearch);
+    Query<String> query = getSession().createQuery(hql.toString(), String.class);
+    applyTagFilterParameter(query, tagSearch);
+    return query.list();
   }
 
   private static final String LINKED_DOCS_QUERY =

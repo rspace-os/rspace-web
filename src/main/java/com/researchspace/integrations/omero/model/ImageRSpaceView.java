@@ -1,6 +1,8 @@
 package com.researchspace.integrations.omero.model;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DateFormat;
@@ -9,8 +11,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.springframework.util.StringUtils;

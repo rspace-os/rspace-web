@@ -1,12 +1,12 @@
 package com.researchspace.service.aws.impl;
 
 import com.researchspace.service.archive.export.ExportFailureException;
+import jakarta.ws.rs.core.EntityTag;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.function.Function;
-import javax.ws.rs.core.EntityTag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.DigestUtils;
 import software.amazon.awssdk.http.SdkHttpResponse;

@@ -327,6 +327,11 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     public MockPrincipal(String name) {
       this.name = name;
     }
+
+    @Override
+    public String getName() {
+      return name;
+    }
   }
 
   /**
@@ -1605,6 +1610,10 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
       super();
       this.admin = admin;
       this.groups = groups;
+    }
+
+    public void setCommunity(Community community) {
+      this.community = community;
     }
   }
 

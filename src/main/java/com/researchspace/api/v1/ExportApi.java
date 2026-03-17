@@ -5,7 +5,7 @@ import com.researchspace.api.v1.controller.ExportApiController.ExportRetrievalCo
 import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.model.User;
 import com.researchspace.service.archive.export.ExportFailureException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;

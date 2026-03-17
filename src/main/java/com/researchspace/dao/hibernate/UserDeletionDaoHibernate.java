@@ -142,7 +142,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
   private void deleteFileStoreContents(String username, Session session) {
     deleteThumbnails(username, session);
     String queryStr = "delete from FileProperty where fileOwner = :uname";
-    Query<?> query = session.createSQLQuery(queryStr);
+    Query<?> query = session.createNativeQuery(queryStr);
     query.setParameter("uname", username);
     query.executeUpdate();
     session.flush();
@@ -154,7 +154,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     String queryStr =
         "delete from Thumbnail where thumbnailFP_id in (select id from FileProperty where fileOwner"
             + " = :uname);";
-    Query<?> query = session.createSQLQuery(queryStr);
+    Query<?> query = session.createNativeQuery(queryStr);
     query.setParameter("uname", username);
     query.executeUpdate();
     session.flush();
@@ -522,7 +522,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
   private void deleteSimpleTables(Long userId, Session session) {
     for (Entry<String, String> entry : table2UserIdColumn.entrySet()) {
       session
-          .createSQLQuery(
+          .createNativeQuery(
               "delete from " + entry.getKey() + " where " + entry.getValue() + " = :userId")
           .setParameter("userId", userId)
           .executeUpdate();
@@ -534,13 +534,13 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
 
   private void deleteShareRecordRequestWhereUserIsTarget(Long userId, Session session) {
     session
-        .createSQLQuery("delete from ShareRecordMessageOrRequest where target_id = :userId")
+        .createNativeQuery("delete from ShareRecordMessageOrRequest where target_id = :userId")
         .setParameter("userId", userId)
         .executeUpdate();
   }
 
   private void execute(Object userId, Session session, String idQuery) {
-    Query<?> query = session.createSQLQuery(idQuery);
+    Query<?> query = session.createNativeQuery(idQuery);
     query.setParameter("id", userId);
     query.executeUpdate();
     session.flush();

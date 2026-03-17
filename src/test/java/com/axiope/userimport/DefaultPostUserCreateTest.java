@@ -12,7 +12,7 @@ import com.researchspace.model.audittrail.HistoricalEvent;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserRoleHandler;
 import com.researchspace.testutils.TestFactory;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

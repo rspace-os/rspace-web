@@ -5,7 +5,7 @@ import com.researchspace.api.v1.model.ApiSnippet;
 import com.researchspace.api.v1.service.SnippetService;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Snippet;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.web.bind.annotation.PathVariable;

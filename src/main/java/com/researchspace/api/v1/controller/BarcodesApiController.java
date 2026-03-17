@@ -4,10 +4,10 @@ import com.researchspace.api.v1.BarcodesApi;
 import com.researchspace.api.v1.model.ApiBarcodeRequest;
 import com.researchspace.core.util.imageutils.BarcodeUtils;
 import com.researchspace.model.User;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.RequestAttribute;
 

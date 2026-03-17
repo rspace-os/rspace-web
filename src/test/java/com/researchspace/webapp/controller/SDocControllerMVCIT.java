@@ -13,8 +13,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -31,7 +31,6 @@ import com.researchspace.model.EcatImage;
 import com.researchspace.model.FieldAttachment;
 import com.researchspace.model.Group;
 import com.researchspace.model.IFieldLinkableElement;
-import com.researchspace.model.SignatureHash;
 import com.researchspace.model.SignatureHashInfo;
 import com.researchspace.model.SignatureHashType;
 import com.researchspace.model.SignatureInfo;
@@ -67,7 +66,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.hibernate.criterion.Projections;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -103,7 +101,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload(
+                multipart(
                         STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/createFromWord/{parentId}",
                         target.getId())
                     .file(dummyConverter.getMultiFile()))
@@ -137,7 +135,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result2 =
         mockMvc
             .perform(
-                fileUpload(
+                multipart(
                         STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/createFromWord/{parentId}",
                         target.getId())
                     .file(invalid))
@@ -158,7 +156,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload(
+                multipart(
                         STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/createFromWord/{parentId}",
                         target.getId())
                     .file(dummyConverter.getMultiFile())
@@ -529,12 +527,10 @@ public class SDocControllerMVCIT extends MVCTestBase {
   private int getSigHashCount() throws Exception {
     return doInTransaction(
         () ->
-            ((Long)
-                    sessionFactory
-                        .getCurrentSession()
-                        .createCriteria(SignatureHash.class)
-                        .setProjection(Projections.rowCount())
-                        .uniqueResult())
+            sessionFactory
+                .getCurrentSession()
+                .createQuery("select count(s) from SignatureHash s", Long.class)
+                .getSingleResult()
                 .intValue());
   }
 

@@ -2,10 +2,10 @@ package com.researchspace.service.archive;
 
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.model.User;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import javax.servlet.http.HttpServletResponse;
 
 /** Utility methods for export functionality. */
 public interface IExportUtils {

@@ -14,7 +14,6 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatMediaFile;
-import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
@@ -56,8 +55,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -252,10 +249,11 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     Object rc =
         sessionFactory
             .getCurrentSession()
-            .createCriteria(FileProperty.class)
-            .add(Restrictions.eq("fileOwner", username))
-            .setProjection(Projections.countDistinct("id"))
-            .uniqueResult();
+            .createQuery(
+                "select count(distinct fp.id) from FileProperty fp where fp.fileOwner = :owner",
+                Long.class)
+            .setParameter("owner", username)
+            .getSingleResult();
     commitTransaction();
     return (Long) rc;
   }

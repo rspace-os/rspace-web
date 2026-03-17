@@ -24,11 +24,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package com.axiope.webapp.jsp;
 
+import jakarta.el.ELContext;
+import jakarta.el.ELException;
+import jakarta.el.ELResolver;
 import java.beans.FeatureDescriptor;
 import java.util.Iterator;
-import javax.el.ELContext;
-import javax.el.ELException;
-import javax.el.ELResolver;
 
 /** {@link ELResolver} which escapes XML in String values. */
 public class EscapeXmlELResolver extends ELResolver {

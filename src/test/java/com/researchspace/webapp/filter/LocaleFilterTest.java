@@ -1,8 +1,8 @@
 package com.researchspace.webapp.filter;
 
 import com.researchspace.Constants;
+import jakarta.servlet.jsp.jstl.core.Config;
 import java.util.Locale;
-import javax.servlet.jsp.jstl.core.Config;
 import junit.framework.TestCase;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.mock.web.MockFilterConfig;

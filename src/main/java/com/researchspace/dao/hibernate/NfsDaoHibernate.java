@@ -3,14 +3,12 @@ package com.researchspace.dao.hibernate;
 import com.researchspace.dao.NfsDao;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
-import java.math.BigInteger;
 import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Repository;
 
 /** For manipulating net file store related entities. */
@@ -22,7 +20,6 @@ public class NfsDaoHibernate implements NfsDao {
   private SessionFactory sessionFactory;
 
   @Autowired
-  @Required
   public void setSessionFactory(SessionFactory sessionFactory) {
     this.sessionFactory = sessionFactory;
   }
@@ -34,7 +31,7 @@ public class NfsDaoHibernate implements NfsDao {
             sessionFactory
                 .getCurrentSession()
                 .createQuery("from NfsFileStore where id=:fileStoreId")
-                .setLong("fileStoreId", id)
+                .setParameter("fileStoreId", id)
                 .uniqueResult();
     return folder;
   }
@@ -69,7 +66,7 @@ public class NfsDaoHibernate implements NfsDao {
         sessionFactory
             .getCurrentSession()
             .createQuery("from NfsFileStore where user_id=:userId and deleted=false")
-            .setLong("userId", userId)
+            .setParameter("userId", userId)
             .list();
     return fileStores;
   }
@@ -110,10 +107,10 @@ public class NfsDaoHibernate implements NfsDao {
 
     Session ss = sessionFactory.getCurrentSession();
     int fileStoresCount =
-        ((BigInteger)
-                ss.createSQLQuery("select count(*) from NfsFileStore where fileSystem_id=:id")
+        ((Number)
+                ss.createNativeQuery("select count(*) from NfsFileStore where fileSystem_id=:id")
                     .setParameter("id", id)
-                    .uniqueResult())
+                    .getSingleResult())
             .intValue();
 
     log.info("found " + fileStoresCount + " file stores when deleting file system " + id);

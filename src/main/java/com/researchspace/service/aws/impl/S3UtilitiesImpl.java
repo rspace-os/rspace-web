@@ -1,11 +1,11 @@
 package com.researchspace.service.aws.impl;
 
 import com.researchspace.service.aws.S3Utilities;
+import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.net.URL;
 import java.time.Duration;
 import java.util.function.Function;
-import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;

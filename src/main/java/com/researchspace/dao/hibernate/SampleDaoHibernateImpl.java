@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.Validate;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -294,8 +294,8 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
   @Override
   public Sample saveAndReindexSubSamples(Sample sample) {
     Session ssnx = sessionFactory.getCurrentSession();
-    FullTextSession fssn = Search.getFullTextSession(ssnx);
-    sample.getSubSamples().forEach(fssn::index);
+    SearchSession searchSession = Search.session(ssnx);
+    sample.getSubSamples().forEach(searchSession.indexingPlan()::addOrUpdate);
     return save(sample);
   }
 

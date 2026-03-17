@@ -3,7 +3,7 @@ package com.researchspace.api.v1.controller;
 import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.api.v1.model.ApiSortEnum;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

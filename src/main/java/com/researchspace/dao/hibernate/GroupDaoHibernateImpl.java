@@ -12,19 +12,18 @@ import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.GroupSearchCriteria;
 import com.researchspace.model.views.UserView;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.hibernate.Criteria;
-import org.hibernate.FetchMode;
 import org.hibernate.Session;
-import org.hibernate.criterion.MatchMode;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.SimpleExpression;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
@@ -80,93 +79,60 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
   @Override
   public ISearchResults<Group> list(PaginationCriteria<Group> pgCrit) {
     Session session = sessionFactory.getCurrentSession();
-    Criteria countCrit = session.createCriteria(Group.class);
-    Criteria crit = session.createCriteria(Group.class);
+    CriteriaBuilder builder = session.getCriteriaBuilder();
     if (pgCrit.getSearchCriteria() != null) {
       GroupSearchCriteria filter = (GroupSearchCriteria) pgCrit.getSearchCriteria();
-      Map<String, Object> searchTerms = null;
-      try {
-        searchTerms = filter.getSearchTermField2Values();
-      } catch (Exception e) {
-        log.error("problem with converting search critera to search terms", e);
+      if (filter == null) {
         return createEmptyResultSet(pgCrit);
       }
-
-      for (Entry<String, Object> entry : searchTerms.entrySet()) {
-        if ("displayName".equals(entry.getKey())) {
-          crit.add(
-              Restrictions.ilike("displayName", entry.getValue().toString(), MatchMode.ANYWHERE));
-          countCrit.add(
-              Restrictions.ilike("displayName", entry.getValue().toString(), MatchMode.ANYWHERE));
-        }
-        if ("uniqueName".equals(entry.getKey())) {
-          crit.add(
-              Restrictions.ilike("uniqueName", entry.getValue().toString(), MatchMode.ANYWHERE));
-          countCrit.add(
-              Restrictions.ilike("uniqueName", entry.getValue().toString(), MatchMode.ANYWHERE));
-        }
-        if ("groupType".equals(entry.getKey())) {
-          crit.add(Restrictions.eq("groupType", entry.getValue()));
-          countCrit.add(Restrictions.eq("groupType", entry.getValue()));
-        }
-      }
-
-      if (filter.getCommunityId() != null) {
-        crit.createAlias("communities", "community")
-            .add(Restrictions.eq("community.id", filter.getCommunityId()));
-        countCrit
-            .createAlias("communities", "community")
-            .add(Restrictions.eq("community.id", filter.getCommunityId()));
-      }
-
-      if (filter.isOnlyPublicProfiles()) {
-        SimpleExpression publicProfileRestriction = Restrictions.ne("privateProfile", true);
-        crit.add(publicProfileRestriction);
-        countCrit.add(publicProfileRestriction);
-      }
     }
-    countCrit.setProjection(Projections.countDistinct("id"));
 
-    Long count = (Long) countCrit.uniqueResult();
+    CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+    Root<Group> countRoot = countQuery.from(Group.class);
+    List<Predicate> countPredicates = buildGroupPredicates(pgCrit, builder, countRoot);
+    countQuery.select(builder.countDistinct(countRoot.get("id")));
+    if (!countPredicates.isEmpty()) {
+      countQuery.where(countPredicates.toArray(new Predicate[0]));
+    }
+
+    Long count = session.createQuery(countQuery).getSingleResult();
     if (count == 0) {
       return createEmptyResultSet(pgCrit);
     }
-    crit.setProjection(Projections.distinct(Projections.id()));
-    crit.createAlias("owner", "owner");
-    if (pgCrit.getOrderBy() != null && pgCrit.getOrderBy().equals("piname")) {
-      crit.setMaxResults(pgCrit.getResultsPerPage());
-      crit.setFirstResult(pgCrit.getFirstResultIndex());
-      if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
-        crit.addOrder(Order.asc("owner.lastName"));
-      } else {
-        crit.addOrder(Order.desc("owner.lastName"));
-      }
-    } else {
-      DatabasePaginationUtils.addPaginationCriteriaToHibernateCriteria(pgCrit, crit);
-    }
-    List<Long> ids = crit.list();
 
-    Criteria criteria2 =
+    CriteriaQuery<Long> idQuery = builder.createQuery(Long.class);
+    Root<Group> idRoot = idQuery.from(Group.class);
+    List<Predicate> idPredicates = buildGroupPredicates(pgCrit, builder, idRoot);
+    idQuery.select(idRoot.get("id")).distinct(true);
+    if (!idPredicates.isEmpty()) {
+      idQuery.where(idPredicates.toArray(new Predicate[0]));
+    }
+    applyGroupOrder(pgCrit, builder, idRoot, idQuery);
+    Query<Long> idQueryExec =
         session
-            .createCriteria(Group.class)
-            .add(Restrictions.in("id", ids))
-            .setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-    criteria2.createAlias("owner", "owner");
+            .createQuery(idQuery)
+            .setFirstResult(pgCrit.getFirstResultIndex())
+            .setMaxResults(pgCrit.getResultsPerPage());
+    List<Long> ids = idQueryExec.list();
+
+    if (ids.isEmpty()) {
+      return createEmptyResultSet(pgCrit);
+    }
+
+    CriteriaQuery<Group> fetchQuery = builder.createQuery(Group.class);
+    Root<Group> fetchRoot = fetchQuery.from(Group.class);
+    fetchQuery.select(fetchRoot).distinct(true);
+    fetchQuery.where(fetchRoot.get("id").in(ids));
+    fetchRoot.join("owner", JoinType.LEFT);
     if (pgCrit.getSearchCriteria() != null) {
       GroupSearchCriteria filter = (GroupSearchCriteria) pgCrit.getSearchCriteria();
       if (filter != null && filter.isLoadCommunity()) {
-        criteria2.setFetchMode("communities", FetchMode.JOIN);
+        fetchRoot.fetch("communities", JoinType.LEFT);
       }
     }
-    if (pgCrit.getOrderBy() != null) {
-      if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
-        criteria2.addOrder(Order.asc(pgCrit.getOrderBy()));
-      } else {
-        criteria2.addOrder(Order.desc(pgCrit.getOrderBy()));
-      }
-    }
+    applyGroupOrder(pgCrit, builder, fetchRoot, fetchQuery);
 
-    return new SearchResultsImpl<Group>(criteria2.list(), pgCrit, count);
+    return new SearchResultsImpl<>(session.createQuery(fetchQuery).list(), pgCrit, count);
   }
 
   @Override
@@ -196,13 +162,75 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
   @SuppressWarnings("unchecked")
   @Override
   public List<Group> searchGroups(String term) {
-    Session session = getSessionFactory().getCurrentSession();
-    Criteria criteria = session.createCriteria(Group.class, "group");
-    criteria.add(Restrictions.ilike("displayName", term, MatchMode.ANYWHERE));
-    criteria.addOrder(Order.asc("displayName"));
-    criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-    List<Group> result = criteria.list();
-    return result;
+    return getSession()
+        .createQuery(
+            "select distinct g from Group g where lower(g.displayName) like :term "
+                + "order by g.displayName asc",
+            Group.class)
+        .setParameter("term", "%" + term.toLowerCase() + "%")
+        .list();
+  }
+
+  private List<Predicate> buildGroupPredicates(
+      PaginationCriteria<Group> pgCrit, CriteriaBuilder builder, Root<Group> root) {
+    List<Predicate> predicates = new java.util.ArrayList<>();
+    if (pgCrit.getSearchCriteria() != null) {
+      GroupSearchCriteria filter = (GroupSearchCriteria) pgCrit.getSearchCriteria();
+      Map<String, Object> searchTerms;
+      try {
+        searchTerms = filter.getSearchTermField2Values();
+      } catch (Exception e) {
+        log.error("problem with converting search criteria to search terms", e);
+        return predicates;
+      }
+
+      for (Entry<String, Object> entry : searchTerms.entrySet()) {
+        String term = entry.getValue().toString().toLowerCase();
+        if ("displayName".equals(entry.getKey())) {
+          predicates.add(builder.like(builder.lower(root.get("displayName")), "%" + term + "%"));
+        }
+        if ("uniqueName".equals(entry.getKey())) {
+          predicates.add(builder.like(builder.lower(root.get("uniqueName")), "%" + term + "%"));
+        }
+        if ("groupType".equals(entry.getKey())) {
+          predicates.add(builder.equal(root.get("groupType"), entry.getValue()));
+        }
+      }
+
+      if (filter.getCommunityId() != null) {
+        Join<Group, ?> communityJoin = root.join("communities", JoinType.INNER);
+        predicates.add(builder.equal(communityJoin.get("id"), filter.getCommunityId()));
+      }
+
+      if (filter.isOnlyPublicProfiles()) {
+        predicates.add(builder.notEqual(root.get("privateProfile"), true));
+      }
+    }
+    return predicates;
+  }
+
+  private void applyGroupOrder(
+      PaginationCriteria<Group> pgCrit,
+      CriteriaBuilder builder,
+      Root<Group> root,
+      CriteriaQuery<?> query) {
+    if (pgCrit.getOrderBy() == null) {
+      return;
+    }
+    if ("piname".equals(pgCrit.getOrderBy())) {
+      Join<Group, ?> ownerJoin = root.join("owner", JoinType.LEFT);
+      if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
+        query.orderBy(builder.asc(ownerJoin.get("lastName")));
+      } else {
+        query.orderBy(builder.desc(ownerJoin.get("lastName")));
+      }
+    } else if (pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
+      if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
+        query.orderBy(builder.asc(root.get(pgCrit.getOrderBy())));
+      } else {
+        query.orderBy(builder.desc(root.get(pgCrit.getOrderBy())));
+      }
+    }
   }
 
   @SuppressWarnings("unchecked")

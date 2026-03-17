@@ -84,7 +84,6 @@ import javax.sql.DataSource;
 import lombok.Value;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.hibernate.criterion.Projections;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1160,12 +1159,10 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
   protected Long getTotalGroupCount() throws Exception {
     return doInTransaction(
         () ->
-            (Long)
-                sessionFactory
-                    .getCurrentSession()
-                    .createCriteria(Group.class)
-                    .setProjection(Projections.rowCount())
-                    .uniqueResult());
+            sessionFactory
+                .getCurrentSession()
+                .createQuery("select count(g) from Group g", Long.class)
+                .getSingleResult());
   }
 
   protected User doCreateAndInitUser(String username, String role) {

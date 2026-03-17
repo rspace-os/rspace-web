@@ -10,12 +10,10 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecordAdaptable;
 import java.io.IOException;
 import java.util.List;
-import org.apache.lucene.search.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
-import org.hibernate.search.query.dsl.QueryBuilder;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,9 +40,9 @@ public class TextSearchDaoHibernate implements TextSearchDao {
       throw new IllegalStateException("Error: sessionFactory cannot create session");
     }
 
-    FullTextSession fullTxt = Search.getFullTextSession(ssn);
+    SearchSession fullTxt = Search.session(ssn);
     log.info("Starting to rebuild text index.");
-    fullTxt.createIndexer().batchSizeToLoadObjects(DEFAULT_BATCH_SIZE).startAndWait();
+    fullTxt.massIndexer().batchSizeToLoadObjects(DEFAULT_BATCH_SIZE).startAndWait();
     log.info("Finished rebuilding text index.");
   }
 
@@ -68,18 +66,13 @@ public class TextSearchDaoHibernate implements TextSearchDao {
   public List searchText(String flds[], String match, Class<?> persistentClass) {
     Session ssn = sessionFactory.getCurrentSession();
 
-    FullTextSession fullTxt = Search.getFullTextSession(ssn);
+    SearchSession fullTxt = Search.session(ssn);
     log.debug("Transaction start");
-    QueryBuilder qb =
-        fullTxt.getSearchFactory().buildQueryBuilder().forEntity(persistentClass).get();
-    log.debug("qb: " + qb.toString());
-    org.apache.lucene.search.Query query =
-        (Query) (qb.keyword().onFields(flds).matching(match).createQuery());
-    log.debug("query: " + query.toString());
-
-    // has to wrapp into HQL
-    org.hibernate.query.Query hibQuery = fullTxt.createFullTextQuery(query, persistentClass);
-    List results = hibQuery.list();
+    List results =
+        fullTxt
+            .search(persistentClass)
+            .where(f -> f.match().fields(flds).matching(match))
+            .fetchAllHits();
 
     log.debug("Transaction commit");
     return results;

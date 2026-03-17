@@ -10,7 +10,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InventoryRecord;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 /** Handles API actions around Inventory Container. */
 public interface ContainerApiManager extends InventoryApiManager {

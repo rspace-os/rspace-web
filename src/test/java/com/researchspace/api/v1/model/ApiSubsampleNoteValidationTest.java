@@ -2,12 +2,12 @@ package com.researchspace.api.v1.model;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestFactory;
 import org.junit.Test;
 
-public class ApiSubsampleNoteValidationTest extends JavaxValidatorTest {
+public class ApiSubsampleNoteValidationTest extends JakartaValidatorTest {
 
   User any = TestFactory.createAnyUser("any");
 

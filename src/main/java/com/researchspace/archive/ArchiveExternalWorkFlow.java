@@ -1,8 +1,8 @@
 package com.researchspace.archive;
 
 import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;

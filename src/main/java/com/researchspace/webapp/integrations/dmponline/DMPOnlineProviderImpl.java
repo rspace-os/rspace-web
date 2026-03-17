@@ -2,11 +2,11 @@ package com.researchspace.webapp.integrations.dmponline;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.rda.model.extras.DMPList;
+import jakarta.annotation.PostConstruct;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
-import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;

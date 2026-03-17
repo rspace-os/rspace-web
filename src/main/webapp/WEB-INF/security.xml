@@ -16,7 +16,7 @@
         <property name="successUrl" value="/workspace" />
         <property name="unauthorizedUrl" value="login?error=true" />
 
-        <!-- The 'filters' property is not necessary since any declared javax.servlet.Filter bean -->
+        <!-- The 'filters' property is not necessary since any declared jakarta.servlet.Filter bean -->
         <!-- defined will be automatically acquired and available via its beanName in chain -->
         <!-- definitions, but you can perform instance overrides or name aliases here if you like: -->
         <property name="filters">

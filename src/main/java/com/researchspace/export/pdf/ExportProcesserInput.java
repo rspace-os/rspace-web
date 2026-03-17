@@ -1,9 +1,9 @@
 package com.researchspace.export.pdf;
 
 import com.researchspace.archive.ArchivalNfsFile;
+import jakarta.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nonnull;
 import lombok.Getter;
 
 /** Representation of StructuredDocument as HTML and view objects for export or preview. */

@@ -2,8 +2,8 @@ package com.researchspace.api.v1;
 
 import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.model.User;
-import javax.servlet.ServletRequest;
-import javax.validation.Valid;
+import jakarta.servlet.ServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;

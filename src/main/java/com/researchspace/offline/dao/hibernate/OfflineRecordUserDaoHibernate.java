@@ -56,7 +56,7 @@ public class OfflineRecordUserDaoHibernate extends GenericDaoHibernate<OfflineRe
     // note that this is SQL not HQL Query, that's because of problems with hql inner query
     int updatedRows =
         session
-            .createSQLQuery(
+            .createNativeQuery(
                 "update OfflineRecordUser set workType=:editWorkType  where id=:id    and 1 >"
                     + " (select count(*) from (select record_id from OfflineRecordUser             "
                     + " where record_id=:recordId and workType=:editWorkType) as tmptable)")
