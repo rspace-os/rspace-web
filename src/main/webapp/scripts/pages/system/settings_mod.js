@@ -73,6 +73,7 @@ define(function() {
         _printSettings([ 'argos.available' ]);
         _printSettings([ 'dmponline.available' ]);
         _printSettings([ 'dmptool.available' ]);
+        _printSettings([ 'dsw.available' ]);
 
         _printCategory('Collaboration and Communication');
         _printSettings([ 'msteams.available' ]);

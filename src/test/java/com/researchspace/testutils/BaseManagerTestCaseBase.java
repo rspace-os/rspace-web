@@ -317,7 +317,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
 
   /** Mock principal that be passed into controller methods. */
   @Value
-  public class MockPrincipal implements Principal {
+  public static class MockPrincipal implements Principal {
     private String name;
 
     public MockPrincipal(User subject) {

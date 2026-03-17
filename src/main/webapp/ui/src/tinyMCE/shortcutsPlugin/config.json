@@ -47,87 +47,87 @@
     "Currency": [
       [
         36,
-        "dollar"
+        "dollar sign"
       ],
       [
         162,
-        "cent"
+        "cent sign"
       ],
       [
         8364,
-        "euro"
+        "euro sign"
       ],
       [
         163,
-        "pound"
+        "pound sign"
       ],
       [
         165,
-        "yen"
+        "yen sign"
       ],
       [
         164,
-        "currency"
+        "currency sign"
       ],
       [
         8352,
-        "euro-currency"
+        "euro-currency sign"
       ],
       [
         8353,
-        "colon"
+        "colon sign"
       ],
       [
         8354,
-        "cruzeiro"
+        "cruzeiro sign"
       ],
       [
         8355,
-        "french franc"
+        "french franc sign"
       ],
       [
         8356,
-        "lira"
+        "lira sign"
       ],
       [
         8357,
-        "mill"
+        "mill sign"
       ],
       [
         8358,
-        "naira"
+        "naira sign"
       ],
       [
         8359,
-        "peseta"
+        "peseta sign"
       ],
       [
         8360,
-        "rupee"
+        "rupee sign"
       ],
       [
         8361,
-        "won"
+        "won sign"
       ],
       [
         8362,
-        "new sheqel"
+        "new sheqel sign"
       ],
       [
         8363,
-        "dong"
+        "dong sign"
       ],
       [
         8365,
-        "kip"
+        "kip sign"
       ],
       [
         8366,
-        "tugrik"
+        "tugrik sign"
       ],
       [
         8367,
-        "drachma"
+        "drachma sign"
       ],
       [
         8368,
@@ -135,55 +135,55 @@
       ],
       [
         8369,
-        "peso"
+        "peso sign"
       ],
       [
         8370,
-        "guarani"
+        "guarani sign"
       ],
       [
         8371,
-        "austral"
+        "austral sign"
       ],
       [
         8372,
-        "hryvnia"
+        "hryvnia sign"
       ],
       [
         8373,
-        "cedi"
+        "cedi sign"
       ],
       [
         8374,
-        "livre tournois"
+        "livre tournois sign"
       ],
       [
         8375,
-        "spesmilo"
+        "spesmilo sign"
       ],
       [
         8376,
-        "tenge"
+        "tenge sign"
       ],
       [
         8377,
-        "indian rupee"
+        "indian rupee sign"
       ],
       [
         8378,
-        "turkish lira"
+        "turkish lira sign"
       ],
       [
         8379,
-        "nordic mark"
+        "nordic mark sign"
       ],
       [
         8380,
-        "manat"
+        "manat sign"
       ],
       [
         8381,
-        "ruble"
+        "ruble sign"
       ],
       [
         20870,
@@ -205,23 +205,23 @@
     "Text": [
       [
         169,
-        "copyright"
+        "copyright sign"
       ],
       [
         174,
-        "registered"
+        "registered sign"
       ],
       [
         8482,
-        "trade mark"
+        "trade mark sign"
       ],
       [
         8240,
-        "per mille"
+        "per mille sign"
       ],
       [
         181,
-        "micro"
+        "micro sign"
       ],
       [
         183,
@@ -245,11 +245,11 @@
       ],
       [
         167,
-        "section"
+        "section sign"
       ],
       [
         182,
-        "paragraph"
+        "paragraph sign"
       ],
       [
         223,
@@ -299,11 +299,11 @@
       ],
       [
         60,
-        "less-than"
+        "less-than sign"
       ],
       [
         62,
-        "greater-than"
+        "greater-than sign"
       ],
       [
         8804,
@@ -331,7 +331,7 @@
       ],
       [
         164,
-        "currency"
+        "currency sign"
       ],
       [
         166,
@@ -359,19 +359,19 @@
       ],
       [
         176,
-        "degree"
+        "degree sign"
       ],
       [
         8722,
-        "minus"
+        "minus sign"
       ],
       [
         177,
-        "plus-minus"
+        "plus-minus sign"
       ],
       [
         247,
-        "division"
+        "division sign"
       ],
       [
         8260,
@@ -379,7 +379,7 @@
       ],
       [
         215,
-        "multiplication"
+        "multiplication sign"
       ],
       [
         185,
@@ -473,7 +473,7 @@
       ],
       [
         172,
-        "not"
+        "not sign"
       ],
       [
         8745,
@@ -516,7 +516,7 @@
         "angle"
       ]
     ],
-    "Latin": [
+    "Extended Latin": [
       [
         192,
         "A - grave"

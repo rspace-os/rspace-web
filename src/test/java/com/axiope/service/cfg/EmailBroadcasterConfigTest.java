@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import com.researchspace.service.impl.EmailBroadcastImp;
 import com.researchspace.service.impl.StrictEmailContentGenerator;
+import org.apache.velocity.spring.VelocityEngineFactoryBean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -17,7 +18,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
-import org.springframework.ui.velocity.VelocityEngineFactoryBean;
 
 /**
  * This test class tests how different deployment property settings affect the configuration of

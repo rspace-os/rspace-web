@@ -92,6 +92,16 @@ export type IntegrationStates = {
   DRYAD: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
+  DSW: IntegrationState<
+      Array<
+          Optional<{
+            DSW_APIKEY: string;
+            DSW_URL: string;
+            DSW_ALIAS: string;
+            optionsId: OptionsId;
+          }>
+      >
+  >;
   EGNYTE: IntegrationState<{
     EGNYTE_DOMAIN: Optional<string>;
   }>;
@@ -380,6 +390,43 @@ function decodeDryad(data: FetchedState): IntegrationStates["DRYAD"] {
     credentials: {
       ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
     },
+  };
+}
+
+function decodeDsw(data: FetchedState): IntegrationStates["DSW"] {
+  function isValidConfig(config: unknown): config is {
+    DSW_APIKEY: string;
+    DSW_URL: string;
+    DSW_ALIAS: string;
+  } {
+    return Parsers.isObject(config)
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.isRecord)
+        .map<boolean>((configRecord: Record<string, unknown>) => {
+          return (
+              typeof configRecord.DSW_APIKEY === "string" &&
+              typeof configRecord.DSW_URL === "string" &&
+              typeof configRecord.DSW_ALIAS === "string"
+          );
+        })
+        .orElse(false);
+  }
+
+  return {
+    mode: parseState(data),
+    credentials:
+        Object.entries(data.options).length > 0
+            ? Object.entries(data.options).map(([optionsId, config]) =>
+                isValidConfig(config)
+                    ? Optional.present({
+                      DSW_APIKEY: config.DSW_APIKEY,
+                      DSW_URL: config.DSW_URL,
+                      DSW_ALIAS: config.DSW_ALIAS,
+                      optionsId,
+                    })
+                    : Optional.empty()
+            )
+            : [],
   };
 }
 
@@ -860,6 +907,7 @@ function decodeIntegrationStates(data: {
     DMPTOOL: decodeDmpTool(data.DMPTOOL),
     DROPBOX: decodeDropbox(data.DROPBOX),
     DRYAD: decodeDryad(data.DRYAD),
+    DSW: decodeDsw(data.DSW),
     EGNYTE: decodeEgnyte(data.EGNYTE),
     EVERNOTE: decodeEvernote(data.EVERNOTE),
     FIELDMARK: decodeFieldmark(data.FIELDMARK),
@@ -1043,6 +1091,45 @@ const encodeIntegrationState = <I extends Integration>(
           ACCESS_TOKEN: token,
         })).orElse({}),
       },
+    };
+  }
+  if (integration === "DSW") {
+    // @ts-expect-error Looks like this is a bug in TypeScript
+    const creds: IntegrationStates["DSW"]["credentials"] =
+        data.credentials;
+    return {
+      name: "DSW",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      options: Object.fromEntries(
+          ArrayUtils.mapOptional<
+              Optional<{
+                DSW_APIKEY: string;
+                DSW_URL: string;
+                DSW_ALIAS: string;
+                optionsId: OptionsId;
+              }>,
+              [
+                OptionsId,
+                {
+                  DSW_APIKEY: string;
+                  DSW_URL: string;
+                  DSW_ALIAS: string;
+                }
+              ]
+          >(
+              (config) =>
+                  config.map((c) => [
+                    c.optionsId,
+                    {
+                      DSW_ALIAS: c.DSW_ALIAS,
+                      DSW_URL: c.DSW_URL,
+                      DSW_APIKEY: c.DSW_APIKEY
+                    },
+                  ]),
+              creds
+          )
+      ),
     };
   }
   if (integration === "EGNYTE") {
@@ -1475,6 +1562,8 @@ export function useIntegrationsEndpoint(): {
                 return decodeDropbox(responseData.data) as IntegrationStates[I];
               case "DRYAD":
                 return decodeDryad(responseData.data) as IntegrationStates[I];
+              case "DSW":
+                return decodeDsw(responseData.data) as IntegrationStates[I];
               case "EGNYTE":
                 return decodeEgnyte(responseData.data) as IntegrationStates[I];
               case "EVERNOTE":
@@ -1586,6 +1675,8 @@ export function useIntegrationsEndpoint(): {
           return decodeDropbox(response.data.data) as IntegrationStates[I];
         case "DRYAD":
           return decodeDryad(response.data.data) as IntegrationStates[I];
+        case "DSW":
+          return decodeDsw(response.data.data) as IntegrationStates[I];
         case "EGNYTE":
           return decodeEgnyte(response.data.data) as IntegrationStates[I];
         case "EVERNOTE":

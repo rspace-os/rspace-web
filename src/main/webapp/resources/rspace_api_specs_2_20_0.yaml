@@ -833,6 +833,7 @@ paths:
 
           - `options` A list  of options. There must be at least  1 option.
           - `defaultOption` If not empty, must be an item in the `options` list.
+          - `showAsPickList` this defaults to false. If true, then the radio buttons will be presented as a pick list.
 
         `{"name":"Antibodies",
         "type":"Radio","options":["gp41","gp120","gp232"],"defaultOption":"gp41"}`
@@ -1436,6 +1437,8 @@ paths:
               created: '2017-12-05T13:07:57.000Z'
               lastModified: '2017-12-07T13:07:57.000Z'
               notebook: true
+              systemFolder: false
+              sharedFolder: false
               parentFolderId: 456
               mediaType: null
               pathToRootFolder: null
@@ -3902,6 +3905,12 @@ definitions:
       type:
         type: string
         description: An indication of the type of record returned - one of 'DOCUMENT', 'MEDIA', 'NOTEBOOK' or 'FOLDER'
+      systemFolder:
+        type: boolean
+        description: Whether or not this is a system-managed folder (only present for folders).
+      sharedFolder:
+        type: boolean
+        description: Whether or not this folder is shared (only present for folders).
   FormPost:
     description: |
 
@@ -3947,6 +3956,7 @@ definitions:
             - antibody2
             - antibody3
           defaultOption: antibody2
+          showAsPickList: true
         - name: date FormField Example
           type: Date
           defaultValue: '2018-03-21'
@@ -4126,6 +4136,12 @@ definitions:
         type: boolean
         default: false
         description: 'Whether or not this folder is a Notebook, or just a regular folder.'
+      systemFolder:
+        type: boolean
+        description: Whether or not this is a system-managed folder.
+      sharedFolder:
+        type: boolean
+        description: Whether or not this folder is shared.
   Activity:
     description: A single activity from the RSpace audit trail.
     properties:

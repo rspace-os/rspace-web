@@ -15,14 +15,18 @@ import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.integrations.dsw.exception.DSWProjectRetrievalException;
+import com.researchspace.webapp.integrations.dsw.model.DSWProject;
 import com.researchspace.webapp.integrations.dsw.model.DSWProjects;
 import com.researchspace.webapp.integrations.dsw.model.DSWUser;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -36,7 +40,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Slf4j
 public class DSWClient {
 
-  public static final String DSW_CONFIGURED_SERVERS = "DSW_CONFIGURED_SERVERS";
   public static final String DSW_URL = "DSW_URL";
   public static final String DSW_APIKEY = "DSW_APIKEY";
   public static final String DSW_ALIAS = "DSW_ALIAS";
@@ -157,6 +160,19 @@ public class DSWClient {
           MalformedURLException,
           DSWProjectRetrievalException {
 
+    // The description metadata does not come with the questionnaire, only
+    // in the list of projects, so first of all we need to retrieve those.
+    DSWProjects projects = getProjectsForCurrentUser(serverAlias, cfg);
+    List<DSWProject> currentProjects =
+        Arrays.stream(projects.getProjects())
+            .filter(p -> p.getUuid().equals(planUuid))
+            .collect(Collectors.toList());
+    if (currentProjects.isEmpty()) {
+      throw new DSWProjectRetrievalException("Cannot find project with UUID: " + planUuid);
+    } else if (currentProjects.size() > 1) {
+      throw new DSWProjectRetrievalException("Two many projects returned with UUID: " + planUuid);
+    }
+
     DSWConnectionConfig connCfg = new DSWConnectionConfig(cfg);
 
     JsonNode plan =
@@ -182,7 +198,12 @@ public class DSWClient {
 
     try {
       EcatDocumentFile file =
-          mediaManager.saveNewDMP(projectName, is, cfg.getUserAppConfig().getUser(), null);
+          mediaManager.saveNewDMPWithDescription(
+              projectName,
+              is,
+              cfg.getUserAppConfig().getUser(),
+              null,
+              currentProjects.get(0).getDescription());
 
       Optional<DMPUser> dmpUser =
           dmpManager.findByDmpId(planUuid, cfg.getUserAppConfig().getUser());

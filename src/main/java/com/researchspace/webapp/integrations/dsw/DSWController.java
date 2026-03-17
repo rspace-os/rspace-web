@@ -12,7 +12,8 @@ import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.dsw.exception.DSWProjectRetrievalException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.util.Optional;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -49,14 +50,9 @@ public class DSWController {
   public ResponseEntity<JsonNode> currentUsers(@RequestParam() String serverAlias)
       throws URISyntaxException, MalformedURLException {
     User user = userManager.getAuthenticatedUserInSession();
-    UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
-    // TODO: Fix this when we have multiple instances properly supported.  (Although we
-    //  might not need to change anything if there's always one result.)
-    Optional<AppConfigElementSet> cfg =
-        userAppConfigMgr.findByAppConfigElementSetId(
-            uacfg.getAppConfigElementSets().iterator().next().getId());
     try {
-      return ResponseEntity.ok().body(dswClient.currentUser(serverAlias, cfg.get()));
+      AppConfigElementSet cfg = getConfigForServer(user, serverAlias);
+      return ResponseEntity.ok().body(dswClient.currentUser(serverAlias, cfg));
     } catch (HttpClientErrorException e) {
       JsonNode err = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
       return ResponseEntity.status(e.getStatusCode()).body(err);
@@ -70,14 +66,9 @@ public class DSWController {
   public AjaxReturnObject<JsonNode> listDSWPlans(@RequestParam() String serverAlias)
       throws URISyntaxException, MalformedURLException {
     User user = userManager.getAuthenticatedUserInSession();
-    UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
-    // TODO: Fix this when we have multiple instances properly supported.  (Although we
-    //  might not need to change anything if there's always one result.)
-    Optional<AppConfigElementSet> cfg =
-        userAppConfigMgr.findByAppConfigElementSetId(
-            uacfg.getAppConfigElementSets().iterator().next().getId());
     try {
-      JsonNode plans = dswClient.getProjectsForCurrentUserJson(serverAlias, cfg.get());
+      AppConfigElementSet cfg = getConfigForServer(user, serverAlias);
+      JsonNode plans = dswClient.getProjectsForCurrentUserJson(serverAlias, cfg);
       return new AjaxReturnObject<>(plans, null);
     } catch (Exception e) {
       log.warn(MSG_PROJECTS_ERROR, e);
@@ -91,18 +82,45 @@ public class DSWController {
       @RequestParam() String serverAlias, @RequestParam() String planUuid)
       throws URISyntaxException, MalformedURLException {
     User user = userManager.getAuthenticatedUserInSession();
-    UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
-    // TODO: Fix this when we have multiple instances properly supported.  (Although we
-    //  might not need to change anything if there's always one result.)
-    Optional<AppConfigElementSet> cfg =
-        userAppConfigMgr.findByAppConfigElementSetId(
-            uacfg.getAppConfigElementSets().iterator().next().getId());
     try {
-      JsonNode plan = dswClient.importPlan(serverAlias, cfg.get(), planUuid);
+      AppConfigElementSet cfg = getConfigForServer(user, serverAlias);
+      JsonNode plan = dswClient.importPlan(serverAlias, cfg, planUuid);
       return new AjaxReturnObject<>(plan, null);
     } catch (DSWProjectRetrievalException e) {
       log.warn(MSG_PROJECT_ERROR, e);
       return new AjaxReturnObject<>(null, ErrorList.of(e.getMessage()));
     }
+  }
+
+  protected AppConfigElementSet getConfigForServer(User user, String serverAlias)
+      throws DSWProjectRetrievalException {
+    UserAppConfig uacfg = userAppConfigMgr.getByAppName("app.dsw", user);
+
+    List<AppConfigElementSet> appConfigs =
+        uacfg.getAppConfigElementSets().stream()
+            .filter(
+                s ->
+                    s.getConfigElements().stream()
+                        .map(e -> e.getValue().equals(serverAlias))
+                        .collect(Collectors.toList())
+                        .contains(true))
+            .collect(Collectors.toList());
+
+    if (appConfigs.size() > 1) {
+      log.warn(
+          "Found "
+              + appConfigs.size()
+              + " application configurations for server alias: "
+              + serverAlias
+              + " when expecting only 1");
+      throw new DSWProjectRetrievalException(
+          "Too many instances found for server alias: " + serverAlias);
+    } else if (0 == appConfigs.size()) {
+      log.warn(
+          "Application configuration for server alias: " + serverAlias + " could not be found");
+      throw new DSWProjectRetrievalException("No instance found with server alias: " + serverAlias);
+    }
+
+    return appConfigs.get(0);
   }
 }

@@ -59,6 +59,7 @@ import lombok.AccessLevel;
 import lombok.Setter;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.spring.VelocityEngineUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +67,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.AsyncResult;
-import org.springframework.ui.velocity.VelocityEngineUtils;
 
 public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
 

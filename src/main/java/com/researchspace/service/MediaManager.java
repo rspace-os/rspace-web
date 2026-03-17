@@ -119,6 +119,14 @@ public interface MediaManager {
       String originalFileName, InputStream inputStream, User user, ImportOverride override)
       throws IOException;
 
+  EcatDocumentFile saveNewDMPWithDescription(
+      String originalFileName,
+      InputStream inputStream,
+      User user,
+      ImportOverride override,
+      String description)
+      throws IOException;
+
   /**
    * Saves a file to File Store and creates a new EcatChemistry entity for it. <br>
    * Delegates to {{@link #saveMediaFile(InputStream, Long, String, String, Long, Folder, String,
