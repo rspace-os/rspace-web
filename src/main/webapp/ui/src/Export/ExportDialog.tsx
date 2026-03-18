@@ -128,7 +128,7 @@ function ExportDialog({
 
     if (state.exportConfig.repository) {
       // TODO: move this back to after setup repository
-      if (isArchiveExport(state.exportConfig.archiveType) && raidEnabled) {
+      if (raidEnabled) {
         appendPane(newListOfPanes, makePane("ExportDialogRaid", "RAiD"));
       }
       appendPane(newListOfPanes, makePane("ExportRepo", "Setup Repository"));
