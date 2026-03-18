@@ -1,9 +1,11 @@
 package com.researchspace.service.aws;
 
 import com.researchspace.service.archive.export.ExportFailureException;
+import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import java.io.File;
 import java.net.URL;
-import java.util.function.Function;
+import java.util.Collections;
+import java.util.List;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 
@@ -58,6 +60,15 @@ public interface S3Utilities {
    */
   void downloadFromS3(String filePath, File destinationFile);
 
+  /**
+   * Lists the contents of a folder in S3.
+   *
+   * @param folderPath the path to the folder to list
+   * @return List of S3FolderItem objects representing files and subfolders
+   * @throws ExportFailureException if an exception occurs during the listing
+   */
+  List<S3FolderContentItem> listFolderContents(String folderPath);
+
   /** No-op implementation for when parameter hasS3Access is false. */
   S3Utilities NOOP_S3Utilities =
       new S3Utilities() {
@@ -85,6 +96,11 @@ public interface S3Utilities {
         @Override
         public void downloadFromS3(String filePath, File destinationFile) {
           // no-op
+        }
+
+        @Override
+        public List<S3FolderContentItem> listFolderContents(String folderPath) {
+          return Collections.emptyList();
         }
       };
 }
