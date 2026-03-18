@@ -4,9 +4,7 @@ import static com.researchspace.CacheNames.RAID_CONNECTION;
 
 import com.researchspace.CacheNames;
 import com.researchspace.core.util.NumberUtils;
-import javax.cache.Cache;
 import javax.cache.CacheManager;
-import javax.cache.configuration.MutableConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -67,17 +65,6 @@ class EhCacheConfigurer {
     warnOverride(baseRecordMaxElementsInMemory, "com.researchspace.model.record.BaseRecord");
     warnOverride(userGroupMaxElementsInMemory, "com.researchspace.model.UserGroup");
     warnOverride(userPreferenceMaxElementsInMemory, "com.researchspace.model.UserPreference");
-
-    ensureCachePresent(cacheManager, filePropertyCachename);
-    ensureCachePresent(cacheManager, imageBlobCachename);
-    ensureCachePresent(cacheManager, userRolesCachename);
-    ensureCachePresent(cacheManager, fieldFormCachename);
-    ensureCachePresent(cacheManager, formCachename);
-    ensureCachePresent(cacheManager, CacheNames.INTEGRATION_INFO);
-    ensureCachePresent(cacheManager, RAID_CONNECTION);
-    ensureCachePresent(cacheManager, "com.researchspace.model.record.BaseRecord");
-    ensureCachePresent(cacheManager, "com.researchspace.model.UserGroup");
-    ensureCachePresent(cacheManager, "com.researchspace.model.UserPreference");
   }
 
   private void warnOverride(String value, String cachename) {
@@ -96,13 +83,6 @@ class EhCacheConfigurer {
 
   private boolean isCacheSizeSetToZero(String cacheOverridValue) {
     return NumberUtils.stringToInt(cacheOverridValue, -1) == 0;
-  }
-
-  private void ensureCachePresent(CacheManager cacheManager, String cacheName) {
-    Cache<?, ?> cache = cacheManager.getCache(cacheName);
-    if (cache == null) {
-      cacheManager.createCache(cacheName, new MutableConfiguration<>());
-    }
   }
 
   // for testing

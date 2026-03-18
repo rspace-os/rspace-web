@@ -4,366 +4,362 @@
         xsi:schemaLocation="http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core-3.0.xsd">
 
   <cache alias="com.researchspace.model.Role">
-    <resources>
-      <heap unit="entries">100</heap>
-    </resources>
     <expiry>
       <none/>
     </expiry>
+    <resources>
+      <heap unit="entries">100</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.Role.permissionStrings">
-    <resources>
-      <heap unit="entries">100</heap>
-    </resources>
     <expiry>
       <none/>
     </expiry>
+    <resources>
+      <heap unit="entries">100</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.UserGroup">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
     <resources>
       <heap unit="entries">1000</heap>
     </resources>
-    <expiry>
-      <ttl unit="seconds">3600</ttl>
-      <tti unit="seconds">1200</tti>
-    </expiry>
   </cache>
 
   <cache alias="com.researchspace.model.User">
-    <resources>
-      <heap unit="entries">1000</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
   </cache>
 
   <cache alias="pubchemResults">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
     <resources>
       <heap unit="entries">500</heap>
     </resources>
-    <expiry>
-      <ttl unit="seconds">3600</ttl>
-      <tti unit="seconds">1800</tti>
-    </expiry>
   </cache>
 
   <cache alias="com.researchspace.model.User.roles">
-    <resources>
-      <heap unit="entries">1000</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.User.fullName">
-    <resources>
-      <heap unit="entries">1000</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.archive.ArchivalCheckSum">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
     <resources>
       <heap unit="entries">10000</heap>
     </resources>
-    <expiry>
-      <ttl unit="seconds">3600</ttl>
-    </expiry>
   </cache>
 
   <cache alias="com.researchspace.model.ImageBlob">
-    <resources>
-      <heap unit="entries">1000</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.record.IconEntity">
-    <resources>
-      <heap unit="entries">1000</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.ArchiveVersionToAppVersion">
-    <resources>
-      <heap unit="entries">100</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">100</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.Thumbnail">
-    <resources>
-      <heap unit="entries">100</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">100</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.record.BaseRecord">
-    <resources>
-      <heap unit="entries">100</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">100</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.system.SystemProperty">
-    <resources>
-      <heap unit="entries">50</heap>
-    </resources>
     <expiry>
       <none/>
     </expiry>
+    <resources>
+      <heap unit="entries">50</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.PropertyDescriptor">
+    <expiry>
+      <none/>
+    </expiry>
     <resources>
       <heap unit="entries">200</heap>
     </resources>
-    <expiry>
-      <none/>
-    </expiry>
   </cache>
 
   <cache alias="com.researchspace.model.apps.AppConfigElementDescriptor">
-    <resources>
-      <heap unit="entries">100</heap>
-    </resources>
     <expiry>
       <none/>
     </expiry>
+    <resources>
+      <heap unit="entries">100</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.system.SystemPropertyValue">
-    <resources>
-      <heap unit="entries">50</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">50</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.UserPreference">
-    <resources>
-      <heap unit="entries">1000</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.dto.IntegrationInfo">
-    <resources>
-      <heap unit="entries">1000</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.webapp.integrations.raid.connection">
-    <resources>
-      <heap unit="entries">1000</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.service.audit.files">
-    <resources>
-      <heap unit="entries">10</heap>
-    </resources>
     <expiry>
       <none/>
     </expiry>
+    <resources>
+      <heap unit="entries">10</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.documentPreview">
-    <resources>
-      <heap unit="entries">2000</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">86400</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">2000</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.FileStoreRoot">
-    <resources>
-      <heap unit="entries">50</heap>
-    </resources>
     <expiry>
       <none/>
     </expiry>
+    <resources>
+      <heap unit="entries">50</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.ror">
-    <resources>
-      <heap unit="entries">10</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">2592000</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">10</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.maintenance.model.ScheduledMaintenance">
-    <resources>
-      <heap unit="entries">10</heap>
-    </resources>
     <expiry>
       <none/>
     </expiry>
+    <resources>
+      <heap unit="entries">10</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.field.FieldForm">
-    <resources>
-      <heap unit="entries">1000</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.record.RSForm">
-    <resources>
-      <heap unit="entries">1000</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.RSMath">
-    <resources>
-      <heap unit="entries">500</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">1200</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">500</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.FileProperty">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
     <resources>
       <heap unit="entries">2500</heap>
     </resources>
-    <expiry>
-      <ttl unit="seconds">3600</ttl>
-    </expiry>
   </cache>
 
   <cache alias="com.researchspace.model.apps.App">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
     <resources>
       <heap unit="entries">20</heap>
     </resources>
-    <expiry>
-      <ttl unit="seconds">3600</ttl>
-    </expiry>
   </cache>
 
   <cache alias="com.researchspace.model.apps.AppConfigElement">
-    <resources>
-      <heap unit="entries">500</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">500</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.api.v1.file">
-    <resources>
-      <heap unit="entries">10</heap>
-    </resources>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
+    <resources>
+      <heap unit="entries">10</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.Community">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
     <resources>
       <heap unit="entries">100</heap>
     </resources>
-    <expiry>
-      <ttl unit="seconds">3600</ttl>
-    </expiry>
   </cache>
 
   <cache alias="com.researchspace.model.netfiles.NfsFileSystem">
-    <resources>
-      <heap unit="entries">50</heap>
-    </resources>
     <expiry>
       <none/>
     </expiry>
+    <resources>
+      <heap unit="entries">50</heap>
+    </resources>
   </cache>
 
   <cache alias="com.researchspace.model.netfiles.NfsFileStore">
+    <expiry>
+      <none/>
+    </expiry>
     <resources>
       <heap unit="entries">50</heap>
     </resources>
-    <expiry>
-      <none/>
-    </expiry>
   </cache>
 
   <cache alias="com.researchspace.maintenance.service.impl.Maintenance">
+    <expiry>
+      <none/>
+    </expiry>
     <resources>
       <heap unit="entries">10</heap>
     </resources>
-    <expiry>
-      <none/>
-    </expiry>
   </cache>
 
   <cache alias="com.researchspace.model.Organisation">
+    <expiry>
+      <none/>
+    </expiry>
     <resources>
       <heap unit="entries">5000</heap>
     </resources>
-    <expiry>
-      <none/>
-    </expiry>
   </cache>
 
   <cache alias="com.researchspace.model.oauth.UserConnection">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
     <resources>
       <heap unit="entries">1000</heap>
     </resources>
-    <expiry>
-      <ttl unit="seconds">3600</ttl>
-    </expiry>
   </cache>
 
   <cache alias="org.hibernate.cache.internal.StandardQueryCache">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
     <resources>
       <heap unit="entries">500</heap>
     </resources>
-    <expiry>
-      <ttl unit="seconds">3600</ttl>
-      <tti unit="seconds">600</tti>
-    </expiry>
   </cache>
 
   <cache alias="org.hibernate.cache.spi.UpdateTimestampsCache">
-    <resources>
-      <heap unit="entries">500</heap>
-    </resources>
     <expiry>
       <none/>
     </expiry>
+    <resources>
+      <heap unit="entries">500</heap>
+    </resources>
   </cache>
-
 </config>

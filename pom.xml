@@ -1116,6 +1116,7 @@
       <groupId>org.apache.shiro</groupId>
       <artifactId>shiro-core</artifactId>
       <version>${shiro.version}</version>
+      <classifier>jakarta</classifier>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -1127,16 +1128,13 @@
       <groupId>org.apache.shiro</groupId>
       <artifactId>shiro-web</artifactId>
       <version>${shiro.version}</version>
+      <classifier>jakarta</classifier>
     </dependency>
     <dependency>
       <groupId>org.apache.shiro</groupId>
       <artifactId>shiro-spring</artifactId>
       <version>${shiro.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.shiro</groupId>
-      <artifactId>shiro-ehcache</artifactId>
-      <version>${shiro.version}</version>
+      <classifier>jakarta</classifier>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>

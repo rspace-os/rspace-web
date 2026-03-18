@@ -6,7 +6,7 @@ import com.researchspace.auth.FirstSuccessOrExceptionAuthStrategy;
 import java.util.ArrayList;
 import java.util.Collection;
 import org.apache.shiro.authc.pam.ModularRealmAuthenticator;
-import org.apache.shiro.cache.ehcache.EhCacheManager;
+import org.apache.shiro.cache.MemoryConstrainedCacheManager;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
@@ -49,24 +49,17 @@ public class SecurityRunProdConfig extends SecurityBaseConfig {
     ModularRealmAuthenticator authenticator = (ModularRealmAuthenticator) rc.getAuthenticator();
     authenticator.setAuthenticationStrategy(new FirstSuccessOrExceptionAuthStrategy());
 
-    /* configuring ehcache in java config is still problematic in test
-     * environment, loading from XML config for now */
-    // security-realm-config test since upgrading to Spring 5 has issues loading multiple instances
-    // of the cache
-    // since the cache is not needed in test environment( but in tests, we want to test this
-    // production configuration)
-    // we have this conditional
+    // The security-realm-config tests load this production configuration; avoid extra cache
+    // manager wiring during those tests.
     if (!contains(context.getEnvironment().getActiveProfiles(), "securitytest")) {
-      rc.setCacheManager(shiroEhCacheMgr());
+      rc.setCacheManager(shiroCacheManager());
     }
 
     return rc;
   }
 
   @Bean(name = "ehcacheManager")
-  public EhCacheManager shiroEhCacheMgr() {
-    EhCacheManager mgr = new EhCacheManager();
-    mgr.setCacheManagerConfigFile("classpath:ehcache-shiro.xml");
-    return mgr;
+  public MemoryConstrainedCacheManager shiroCacheManager() {
+    return new MemoryConstrainedCacheManager();
   }
 }

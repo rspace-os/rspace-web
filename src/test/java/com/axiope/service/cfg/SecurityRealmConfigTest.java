@@ -20,7 +20,7 @@ import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.CommunityTestContext;
 import com.researchspace.testutils.SSOTestContext;
-import org.apache.shiro.cache.ehcache.EhCacheManager;
+import org.apache.shiro.cache.MemoryConstrainedCacheManager;
 import org.apache.shiro.mgt.RealmSecurityManager;
 import org.junit.After;
 import org.junit.Before;
@@ -66,7 +66,7 @@ public class SecurityRealmConfigTest {
   // of other tests
   static class MockDependenciesConfig {
     @Mock UserManager mgr;
-    @Mock EhCacheManager ehCacheManager;
+    @Mock MemoryConstrainedCacheManager ehCacheManager;
     @Mock IPropertyHolder propertyHolder;
     @Mock WhiteListedIPAddressManager ipMgr;
     @Mock MaintenanceManager maintenanceMgr;
@@ -77,7 +77,7 @@ public class SecurityRealmConfigTest {
     @Mock OAuthAppManager oAuthAppManager;
 
     @Bean
-    EhCacheManager ehcacheManager() {
+    MemoryConstrainedCacheManager ehcacheManager() {
       initMocks();
       return ehCacheManager;
     }
