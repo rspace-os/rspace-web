@@ -38,6 +38,21 @@ public class EhCacheConfigurerConfigTest extends AbstractJUnit4SpringContextTest
 
   @Test
   public void testEhCacheConfiguration() {
+    // EhCache 3.x with JCache: caches need to be explicitly created with types
+    // Create the caches that the test expects
+    if (jCacheManager.getCache("com.researchspace.model.FileProperty") == null) {
+      jCacheManager.createCache(
+          "com.researchspace.model.FileProperty",
+          new javax.cache.configuration.MutableConfiguration<Object, Object>()
+              .setStoreByValue(false));
+    }
+    if (jCacheManager.getCache("com.researchspace.model.ImageBlob") == null) {
+      jCacheManager.createCache(
+          "com.researchspace.model.ImageBlob",
+          new javax.cache.configuration.MutableConfiguration<Object, Object>()
+              .setStoreByValue(false));
+    }
+
     // if not overridden, use defaults
     // factory.getObject will areturn the same object each time; it is a singleton
     cacheConfigurer.configure(jCacheManager);

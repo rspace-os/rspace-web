@@ -76,6 +76,8 @@
   </cache>
 
   <cache alias="com.researchspace.model.ImageBlob">
+    <key-type>java.lang.Long</key-type>
+    <value-type>com.researchspace.model.ImageBlob</value-type>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
@@ -256,6 +258,8 @@
   </cache>
 
   <cache alias="com.researchspace.model.FileProperty">
+    <key-type>java.lang.Long</key-type>
+    <value-type>com.researchspace.model.FileProperty</value-type>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>

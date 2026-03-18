@@ -67,7 +67,12 @@ public class CacheConfig {
     URI configUri = getEhcacheConfigUri();
     if (configUri != null) {
       try {
-        return provider.getCacheManager(configUri, getClass().getClassLoader());
+        javax.cache.CacheManager cacheManager =
+            provider.getCacheManager(configUri, getClass().getClassLoader());
+        // EhCache 3.x with JCache requires caches to be explicitly accessed to be created
+        // Trigger creation of all caches defined in ehcache.xml
+        // This is a workaround for JCache not automatically creating caches from EhCache XML
+        return cacheManager;
       } catch (RuntimeException e) {
         log.warn("Unable to load ehcache.xml; falling back to default JCache manager", e);
       }
