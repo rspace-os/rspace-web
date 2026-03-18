@@ -38,6 +38,7 @@ public interface S3Utilities {
    */
   SdkHttpResponse uploadToS3(File file);
 
+
   /**
    * Deletes an object from s3 using the aws sdk, this is a blocking method and wont return until it
    * completes.
@@ -47,6 +48,15 @@ public interface S3Utilities {
    * @throws ExportFailureException
    */
   DeleteObjectResponse deleteArchiveFromS3(String fileName);
+
+  /**
+   * Downloads a file from S3 to a local file.
+   *
+   * @param filePath the path within the bucket to the file to download
+   * @param destinationFile the local file to write the downloaded content to
+   * @throws ExportFailureException if an exception occurs during the download
+   */
+  void downloadFromS3(String filePath, File destinationFile);
 
   /** No-op implementation for when parameter hasS3Access is false. */
   S3Utilities NOOP_S3Utilities =
@@ -70,6 +80,11 @@ public interface S3Utilities {
         @Override
         public SdkHttpResponse uploadToS3(File file) {
           return SdkHttpResponse.builder().statusCode(400).build();
+        }
+
+        @Override
+        public void downloadFromS3(String filePath, File destinationFile) {
+          // no-op
         }
       };
 }

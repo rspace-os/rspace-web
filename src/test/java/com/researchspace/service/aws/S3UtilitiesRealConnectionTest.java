@@ -1,5 +1,6 @@
 package com.researchspace.service.aws;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -11,7 +12,9 @@ import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,8 +39,10 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   @Value("${s3.realConnectionTest.bucketName}")
   private String s3bucketName;
 
-  private static final String S3_OBJECT_KEY = "aws-export-test";
+  private static final String TEST_ARCHIVE_PATH = "aws-export-test";
+  private static final String TEST_UNIT_TESTS_PATH = "unitTests";
   private static final String TEST_FILE_NAME = "demo-export2.zip";
+
 
   private S3UtilitiesImpl s3Utilities;
 
@@ -48,7 +53,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     s3Utilities = new S3UtilitiesImpl();
     ReflectionTestUtils.setField(s3Utilities, "region", s3region);
     ReflectionTestUtils.setField(s3Utilities, "s3BucketName", s3bucketName);
-    ReflectionTestUtils.setField(s3Utilities, "s3ArchivePath", S3_OBJECT_KEY);
+    ReflectionTestUtils.setField(s3Utilities, "s3ArchivePath", TEST_ARCHIVE_PATH);
     ReflectionTestUtils.setField(s3Utilities, "archiveFolderStorageTime", 1);
     s3Utilities.init();
 
@@ -87,5 +92,20 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   @RunIfSystemPropertyDefined(value = "nightly")
   public void testPresignedURLFileDoesNotExist() {
     assertNull(s3Utilities.getPresignedUrlForArchiveDownload("doesNotExist.zip"));
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testDownloadFile() throws IOException {
+    // Download the file
+    File downloadedFile = File.createTempFile("downloaded", ".txt");
+    s3Utilities.downloadFromS3(TEST_UNIT_TESTS_PATH  + "/" + "testS3File.txt", downloadedFile);
+
+    // Verify content
+    String downloadedContent = Files.readString(downloadedFile.toPath());
+    assertEquals("testS3Content", downloadedContent);
+
+    // cleanup
+    downloadedFile.delete();
   }
 }

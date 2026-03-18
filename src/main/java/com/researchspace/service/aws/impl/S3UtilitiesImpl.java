@@ -2,19 +2,24 @@ package com.researchspace.service.aws.impl;
 
 import com.researchspace.service.aws.S3Utilities;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.function.Function;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
@@ -159,6 +164,27 @@ public class S3UtilitiesImpl implements S3Utilities {
     }
     return new S3MultipartChunkedUploader(
         s3Client, s3BucketName, s3ArchivePath, chunkedUploadMbSize);
+  }
+
+  @Override
+  public void downloadFromS3(String filePath, File destinationFile) {
+    try {
+      GetObjectRequest getObjectRequest =
+          GetObjectRequest.builder()
+              .bucket(s3BucketName)
+              .key(filePath)
+              .build();
+
+      ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest);
+      Files.copy(response, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      log.info("Successfully downloaded {} from S3 to {}", filePath, destinationFile.getPath());
+    } catch (IOException e) {
+      log.error("Failed to write downloaded file from S3 to {}", destinationFile.getPath(), e);
+      throw new RuntimeException("Failed to write downloaded file", e);
+    } catch (Exception e) {
+      log.error("Failed to download file {} from S3", filePath, e);
+      throw e;
+    }
   }
 
 }
