@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_USER_TOKEN;
+import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
 import static com.researchspace.service.IntegrationsHandler.ONBOARDING_APP_NAME;
@@ -73,6 +74,11 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+
+import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_ALIAS;
+import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_URL;
+import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_APIKEY;
+
 
 public class IntegrationsHandlerTest {
 
@@ -422,6 +428,194 @@ public class IntegrationsHandlerTest {
     assertEquals(MASKED_TOKEN, ((Map<String, String>) options.get("null")).get(PYRAT_APIKEY));
     assertEquals(
         "http://pyrat1.server.com/", ((Map<String, String>) options.get("null")).get(PYRAT_URL));
+  }
+
+  @Test
+  public void testSaveDSWAppConfigOption() {
+    String origDswAlias = "dswAlias";
+    String origDswUrl = "dsw.url.org";
+    String origDswToken = "abc123";
+
+    AppConfigElementSet aces = new AppConfigElementSet();
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_ALIAS, SettingsType.STRING, null)),
+            origDswAlias));
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_URL, SettingsType.STRING, null)),
+            origDswUrl));
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_APIKEY, SettingsType.STRING, null)),
+            origDswToken));
+
+    UserConnection existingConnection = new UserConnection();
+    existingConnection.setDisplayName("DSW Display Name");
+    existingConnection.setRank(1);
+    existingConnection.setId(new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
+    existingConnection.setExpireTime(0l);
+    existingConnection.setAccessToken(origDswToken);
+
+    when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
+    when(userConnectionManager.findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, origDswAlias)).thenReturn(Optional.of(existingConnection));
+
+    // The potentially updated options that are being passed in
+    // from the UI.  Note that the API Key is set as the default
+    // masked value that is returned to the UI.
+    Map<String, String> dswOptions = new HashMap<>();
+    dswOptions.put(DSW_ALIAS, origDswAlias);
+    dswOptions.put(DSW_URL, origDswUrl);
+    dswOptions.put(DSW_APIKEY, MASKED_TOKEN);
+
+    handler.saveAppOptions(null, dswOptions, DSW_APP_NAME, false, subject);
+    Mockito.verify(userConnectionManager, times(0))
+        .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
+    Mockito.verify(userConnectionManager, times(1))
+        .save(any());
+  }
+
+  @Test
+  public void testUpdateDSWAppConfigOptionAlias() {
+    String origDswAlias = "dswAlias";
+    String origDswUrl = "dsw.url.org";
+    String origDswToken = "abc123";
+    String updatedDswAlias = "newDswAlias";
+
+    AppConfigElementSet aces = new AppConfigElementSet();
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_ALIAS, SettingsType.STRING, null)),
+            origDswAlias));
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_URL, SettingsType.STRING, null)),
+            origDswUrl));
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_APIKEY, SettingsType.STRING, null)),
+            origDswToken));
+
+    UserConnection existingConnection = new UserConnection();
+    existingConnection.setDisplayName("DSW Display Name");
+    existingConnection.setRank(1);
+    existingConnection.setId(new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
+    existingConnection.setExpireTime(0l);
+    existingConnection.setAccessToken(origDswToken);
+
+    when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
+    when(userConnectionManager.findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, origDswAlias)).thenReturn(Optional.of(existingConnection));
+
+    Map<String, String> dswOptions = new HashMap<>();
+    dswOptions.put(DSW_ALIAS, updatedDswAlias);
+    dswOptions.put(DSW_URL, origDswUrl);
+    dswOptions.put(DSW_APIKEY, MASKED_TOKEN);
+
+    handler.saveAppOptions(1l, dswOptions, DSW_APP_NAME, false, subject);
+    Mockito.verify(userConnectionManager, times(1))
+        .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
+    Mockito.verify(userConnectionManager, times(1))
+        .save(any());
+  }
+
+  @Test
+  public void testUpdateDSWAppConfigOptionUrl() {
+    String origDswAlias = "dswAlias";
+    String origDswUrl = "dsw.url.org";
+    String origDswToken = "abc123";
+    String updatedDswUrl = "dsw.newurl.com";
+
+    AppConfigElementSet aces = new AppConfigElementSet();
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_ALIAS, SettingsType.STRING, null)),
+            origDswAlias));
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_URL, SettingsType.STRING, null)),
+            origDswUrl));
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_APIKEY, SettingsType.STRING, null)),
+            origDswToken));
+
+    UserConnection existingConnection = new UserConnection();
+    existingConnection.setDisplayName("DSW Display Name");
+    existingConnection.setRank(1);
+    existingConnection.setId(new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
+    existingConnection.setExpireTime(0l);
+    existingConnection.setAccessToken(origDswToken);
+
+    when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
+    when(userConnectionManager.findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, origDswAlias)).thenReturn(Optional.of(existingConnection));
+
+    Map<String, String> dswOptions = new HashMap<>();
+    dswOptions.put(DSW_ALIAS, origDswAlias);
+    dswOptions.put(DSW_URL, updatedDswUrl);
+    dswOptions.put(DSW_APIKEY, MASKED_TOKEN);
+
+    handler.saveAppOptions(1l, dswOptions, DSW_APP_NAME, false, subject);
+    // There will be no interactions with the userConnectionManager methods since
+    // the URL is not stored in the UserConnection table.
+    Mockito.verify(userConnectionManager, times(0))
+        .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
+    Mockito.verify(userConnectionManager, times(0))
+        .save(any());
+  }
+
+  @Test
+  public void testUpdateDSWAppConfigOptionAPIKey() {
+    String origDswAlias = "dswAlias";
+    String origDswUrl = "dsw.url.org";
+    String origDswToken = "abc123";
+    String updatedDswToken = "987zyx";
+
+    AppConfigElementSet aces = new AppConfigElementSet();
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_ALIAS, SettingsType.STRING, null)),
+            origDswAlias));
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_URL, SettingsType.STRING, null)),
+            origDswUrl));
+    aces.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor(DSW_APIKEY, SettingsType.STRING, null)),
+            origDswToken));
+
+    UserConnection existingConnection = new UserConnection();
+    existingConnection.setDisplayName("DSW Display Name");
+    existingConnection.setRank(1);
+    existingConnection.setId(new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
+    existingConnection.setExpireTime(0l);
+    existingConnection.setAccessToken(origDswToken);
+
+    when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
+    when(userConnectionManager.findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, origDswAlias)).thenReturn(Optional.of(existingConnection));
+
+    Map<String, String> dswOptions = new HashMap<>();
+    dswOptions.put(DSW_ALIAS, origDswAlias);
+    dswOptions.put(DSW_URL, origDswUrl);
+    dswOptions.put(DSW_APIKEY, updatedDswToken);
+
+    handler.saveAppOptions(1l, dswOptions, DSW_APP_NAME, false, subject);
+    Mockito.verify(userConnectionManager, times(1))
+        .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
+    Mockito.verify(userConnectionManager, times(1))
+        .save(any());
   }
 
   private SystemPropertyValue getSystemPropertyValueAllowed(SystemPropertyName propertyName) {

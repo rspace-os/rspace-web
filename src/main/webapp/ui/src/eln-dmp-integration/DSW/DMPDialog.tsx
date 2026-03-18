@@ -151,11 +151,17 @@ function DMPDialogContent({
 
       } else {
         setFetching(false);
+        let errorMsg = r.data && r.data.error && r.data.error.errorMessages ?
+            //Object.entries(r.data.error.errorMessages)[0] : null;
+            r.data.error.errorMessages[0] : null;
+        console.log("DDDDCgD Error message: ", errorMsg);
         addAlert(
           mkAlert({
             title: "Unable to load projects.",
             message: (
               <>
+                {errorMsg}
+                <br/>
                 For more information{" "}
                 <a href={docLinks.dmptoolImportingDmps} rel="noreferrer">
                   visit our docs
@@ -175,7 +181,7 @@ function DMPDialogContent({
       if (e instanceof Error) {
         addAlert(
           mkAlert({
-            title: "Fetch failed.",
+            title: "Unable to load projects.",
             message: `Could not get DMPs: ${e.message}`,
             variant: "error",
           }),
@@ -260,16 +266,8 @@ function DMPDialogContent({
         >
           <Grid item>
             <Typography variant="body2">
-              Importing a DMP{" "}
-              {mapNullable(
-                (host) => (
-                  <>
-                    from <strong>{host}</strong>{" "}
-                  </>
-                ),
-                DMPHost,
-              ) ?? ""}
-              will make it available to view and reference within RSpace.
+              Importing a project from <strong>{connection.DSW_ALIAS}</strong> will make
+              it available to view and reference as a DMP within RSpace.
             </Typography>
             <Typography variant="body2">
               See <Link href="https://researchers.dsw.elixir-europe.org">researchers.dsw.elixir-europe.org</Link> and our{" "}
@@ -285,11 +283,11 @@ function DMPDialogContent({
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithFieldName<"serverAlias", DswProjectWithOrigin>("serverAlias", {
-                  headerName: "Source Server",
-                  flex: 1,
-                  sortable: false,
-                }),
+                // DataGridColumn.newColumnWithFieldName<"serverAlias", DswProjectWithOrigin>("serverAlias", {
+                //   headerName: "Source Server",
+                //   flex: 1,
+                //   sortable: false,
+                // }),
                 DataGridColumn.newColumnWithFieldName<"description", DswProjectWithOrigin>(
                   "description",
                   {

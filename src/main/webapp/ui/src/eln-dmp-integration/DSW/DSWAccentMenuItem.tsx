@@ -32,8 +32,10 @@ export default function DSWAccentMenuItem({
   return (
     <>
       <AccentMenuItem
-        title="DSW / FAIR Wizard"
-        subheader={showAlias && connection.DSW_ALIAS}
+        // title="DSW / FAIR Wizard"
+        // subheader={showAlias && connection.DSW_ALIAS}
+        title={connection.DSW_ALIAS}
+        subheader="DSW / FAIR Wizard"
         avatar={<CardMedia image={DSWIcon} />}
         backgroundColor={LOGO_COLOR}
         foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}

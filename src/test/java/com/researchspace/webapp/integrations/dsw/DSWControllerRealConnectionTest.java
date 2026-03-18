@@ -192,8 +192,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   public void testImportPlanIncorrectUuid() {
     try {
       String invalidUuid = "Not-a-valid-uuid";
-      AjaxReturnObject<JsonNode> project =
-          dswController.importPlan(DSW_SERVER_ALIAS, invalidUuid);
+      AjaxReturnObject<JsonNode> project = dswController.importPlan(DSW_SERVER_ALIAS, invalidUuid);
 
       assertNotNull(project);
       assertNull(project.getData());
@@ -265,5 +264,4 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     assertTrue(e.getMessage().contains("No instance found"));
     assertTrue(e.getMessage().contains(TEST_ALIAS));
   }
-
 }
