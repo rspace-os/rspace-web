@@ -67,7 +67,6 @@ declare global {
 class StoichiometryPlugin {
   constructor(editor: Editor) {
     const theme = createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR));
-    const TEMP_STOICHIOMETRY_ID_ATTR = "data-stoichiometry-temp-id";
 
     function* renderDialog(
       domContainer: HTMLElement,
@@ -180,34 +179,15 @@ class StoichiometryPlugin {
       };
     };
 
-    const findChemNode = ({
-      chemNodeId,
-      temporaryStoichiometryId,
-    }: {
-      chemNodeId?: string;
-      temporaryStoichiometryId?: string;
-    }): HTMLElement | null => {
-      if (chemNodeId) {
-        const byId = editor.getDoc().getElementById(chemNodeId);
-        if (byId) {
-          return byId;
-        }
-      }
-      if (!temporaryStoichiometryId) {
+    const findChemNode = (chemNodeId?: string): HTMLElement | null => {
+      if (!chemNodeId) {
         return null;
       }
-      return editor
-        .getDoc()
-        .querySelector(
-          `img.chem[${TEMP_STOICHIOMETRY_ID_ATTR}="${temporaryStoichiometryId}"]`,
-        );
+      return editor.getDoc().getElementById(chemNodeId);
     };
 
     const updateChemicalNodeStoichiometry = (
-      target: {
-        chemNodeId?: string;
-        temporaryStoichiometryId?: string;
-      },
+      chemNodeId: string | undefined,
       stoichiometry:
         | {
             id: number;
@@ -215,7 +195,7 @@ class StoichiometryPlugin {
           }
         | null,
     ) => {
-      const targetNode = findChemNode(target);
+      const targetNode = findChemNode(chemNodeId);
       if (!targetNode) {
         return;
       }
@@ -225,10 +205,8 @@ class StoichiometryPlugin {
           "data-stoichiometry-table",
           JSON.stringify(stoichiometry),
         );
-        targetNode.removeAttribute(TEMP_STOICHIOMETRY_ID_ATTR);
       } else {
         targetNode.removeAttribute("data-stoichiometry-table");
-        targetNode.removeAttribute(TEMP_STOICHIOMETRY_ID_ATTR);
       }
 
       editor.selection.select(targetNode);
@@ -236,16 +214,11 @@ class StoichiometryPlugin {
       editor.setDirty(true);
     };
 
-    const createTemporaryStoichiometryId = () =>
-      `tmp-stoich-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-    const insertTemporaryStoichiometryAnchor = (
-      temporaryStoichiometryId: string,
-    ): string => {
+    const insertTemporaryStoichiometryAnchor = (): string => {
       const temporaryNodeId = `stoich-anchor-${Date.now()}-${Math.random()
         .toString(16)
         .slice(2)}`;
-      const html = `<img class="chem" id="${temporaryNodeId}" src="" width="1" height="1" ${TEMP_STOICHIOMETRY_ID_ATTR}="${temporaryStoichiometryId}" alt="Stoichiometry table anchor" />`;
+      const html = `<img class="chem" id="${temporaryNodeId}" src="" width="1" height="1" alt="Stoichiometry table anchor" />`;
       editor.execCommand("mceInsertContent", false, html);
       editor.setDirty(true);
       return temporaryNodeId;
@@ -263,12 +236,9 @@ class StoichiometryPlugin {
       stoichiometryRevision: number | undefined;
     }) => {
       let activeChemNodeId = chemNodeId;
-      let temporaryStoichiometryId: string | undefined;
 
       if (!activeChemNodeId && stoichiometryId === undefined) {
-        temporaryStoichiometryId = createTemporaryStoichiometryId();
-        activeChemNodeId =
-          insertTemporaryStoichiometryAnchor(temporaryStoichiometryId);
+        activeChemNodeId = insertTemporaryStoichiometryAnchor();
       }
 
       dialogRenderer.next({
@@ -278,40 +248,24 @@ class StoichiometryPlugin {
         stoichiometryId,
         stoichiometryRevision,
         onTableCreated: (id: number, revision) => {
-          updateChemicalNodeStoichiometry(
-            {
-              chemNodeId: activeChemNodeId,
-              temporaryStoichiometryId,
-            },
-            { id, revision },
-          );
-          temporaryStoichiometryId = undefined;
+          updateChemicalNodeStoichiometry(activeChemNodeId, { id, revision });
           dialogRenderer.next({
             stoichiometryId: id,
             stoichiometryRevision: revision,
           });
         },
         onSave: (id, version) => {
-          updateChemicalNodeStoichiometry(
-            {
-              chemNodeId: activeChemNodeId,
-              temporaryStoichiometryId,
-            },
-            { id, revision: version },
-          );
+          updateChemicalNodeStoichiometry(activeChemNodeId, {
+            id,
+            revision: version,
+          });
           dialogRenderer.next({
             stoichiometryId: id,
             stoichiometryRevision: version,
           });
         },
         onDelete: () => {
-          updateChemicalNodeStoichiometry(
-            {
-              chemNodeId: activeChemNodeId,
-              temporaryStoichiometryId,
-            },
-            null,
-          );
+          updateChemicalNodeStoichiometry(activeChemNodeId, null);
           resetDialog();
         },
       });
