@@ -253,7 +253,7 @@ export function useEditableStoichiometryTable({
               numericValue: 1,
               unitId: 1,
             },
-            reducesStock: existingLink?.reducesStock,
+            stockDeducted: existingLink?.stockDeducted,
           };
         }),
       );
