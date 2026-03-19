@@ -24,13 +24,6 @@ type MenuItemConfig = {
   onAction: () => void;
 };
 
-type InsertAction = {
-  text: string;
-  icon: string;
-  action: () => void;
-  aliases?: string[];
-};
-
 export interface Editor {
   ui: {
     registry: {
@@ -57,12 +50,6 @@ declare const tinymce: {
   };
   activeEditor: Editor;
 };
-
-declare global {
-  interface Window {
-    insertActions?: Map<string, InsertAction>;
-  }
-}
 
 class StoichiometryPlugin {
   constructor(editor: Editor) {
@@ -271,10 +258,6 @@ class StoichiometryPlugin {
       });
     };
 
-    const openStoichiometryAction = () => {
-      editor.execCommand("cmdStoichiometry", false);
-    };
-
     editor.addCommand("cmdStoichiometry", function () {
       const selectedChemical = getSelectedChemicalContext();
       openStoichiometryDialog({
@@ -283,28 +266,6 @@ class StoichiometryPlugin {
         stoichiometryId: selectedChemical?.stoichiometryId,
         stoichiometryRevision: selectedChemical?.stoichiometryRevision,
       });
-    });
-
-    editor.ui.registry.addButton("btnStoichiometry", {
-      tooltip: "Insert Stoichiometry Table",
-      icon: "stoichiometry",
-      onAction: openStoichiometryAction,
-    });
-
-    editor.ui.registry.addMenuItem("optStoichiometry", {
-      text: "Stoichiometry Table",
-      icon: "stoichiometry",
-      onAction: openStoichiometryAction,
-    });
-
-    if (!window.insertActions) {
-      window.insertActions = new Map();
-    }
-    window.insertActions.set("optStoichiometry", {
-      text: "Stoichiometry Table",
-      icon: "stoichiometry",
-      aliases: ["Reaction Table"],
-      action: openStoichiometryAction,
     });
   }
 }
