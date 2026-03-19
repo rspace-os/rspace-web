@@ -27,14 +27,20 @@ function calculateActualYieldOrExcess(
   molecule: EditableMolecule,
   limitingReagentMoles: number,
 ): number | null {
+  if (molecule.coefficient === null || molecule.molecularWeight === null) {
+    throw new Error(
+      "Cannot calculate yield or excess for molecule with missing coefficient or molecular weight",
+    );
+  }
+
   if (molecule.role === "PRODUCT") {
     // For products, calculate yield percentage based on theoretical yield from limiting reagent
     if (molecule.actualAmount === null || limitingReagentMoles <= 0) {
       return null;
     }
-    // @ts-expect-error Fix this before release
+
     const theoreticalMoles = limitingReagentMoles * molecule.coefficient;
-    // @ts-expect-error Fix this before release
+
     const theoreticalMass = theoreticalMoles * molecule.molecularWeight;
     if (theoreticalMass <= 0) {
       return null;
@@ -50,7 +56,7 @@ function calculateActualYieldOrExcess(
     }
     return (
       (calculateMoles(molecule.actualAmount, molecule.molecularWeight) ?? 0) /
-        // @ts-expect-error Fix this before release
+        
         molecule.coefficient /
         limitingReagentMoles -
       1
@@ -67,11 +73,15 @@ function updateYieldAndExcess(
     return molecules;
   }
 
+  if (limitingReagent.coefficient === null) {
+    throw new Error("Limiting reagent must have a valid coefficient");
+  }
+
   const limitingReagentMoles =
     (calculateMoles(
       limitingReagent.actualAmount,
       limitingReagent.molecularWeight,
-      // @ts-expect-error Fix this before release
+      
     ) ?? 0) / limitingReagent.coefficient;
   if (limitingReagentMoles <= 0) {
     return molecules;
@@ -92,11 +102,17 @@ function normaliseCoefficients(
   limitingReagent: EditableMolecule,
 ): ReadonlyArray<EditableMolecule> {
   const limitingCoefficient = limitingReagent.coefficient;
+  if (!limitingCoefficient) {
+    throw new Error("Limiting reagent must have a valid coefficient");
+  }
+
+  if (molecules.find((m) => m.coefficient === null)) {
+    throw new Error("All molecules must have a valid coefficient");
+  }
 
   return produce(molecules, (draftMolecules) => {
     for (const molecule of draftMolecules) {
-      // @ts-expect-error Fix this before release
-      molecule.coefficient = molecule.coefficient / limitingCoefficient;
+      molecule.coefficient = molecule.coefficient as number / limitingCoefficient;
     }
   });
 }
@@ -109,10 +125,17 @@ function applyMassByRatio(
     return molecules;
   }
 
+  if (molecules.find((m) => m.coefficient === null || m.molecularWeight === null)) {
+    throw new Error(
+      "All molecules must have valid coefficient and molecular weight to apply mass by ratio",
+    );
+  }
+
   return produce(molecules, (draftMolecules) => {
     for (const molecule of draftMolecules) {
-      // @ts-expect-error Fix this before release
-      molecule.mass = molecule.coefficient * ratio * molecule.molecularWeight;
+      const { coefficient, molecularWeight } = molecule;
+      // @ts-expect-error These are pre-checked above
+      molecule.mass = coefficient * ratio * molecularWeight;
     }
   });
 }
@@ -205,6 +228,9 @@ export function calculateUpdatedMolecules(
     if (editedRow.limitingReagent) {
       const limitingReagent = allMolecules.find((m) => m.limitingReagent);
       if (!limitingReagent) throw new Error("No limiting reagent defined");
+      if (limitingReagent.coefficient === null) {
+        throw new Error("Limiting reagent coefficient is undefined");
+      }
       const limitingReagentMoles = calculateMoles(
         editedRow.mass,
         limitingReagent.molecularWeight,
@@ -212,7 +238,7 @@ export function calculateUpdatedMolecules(
       const ratio =
         limitingReagentMoles === null
           ? null
-          : // @ts-expect-error Fix this before release
+          : 
             limitingReagentMoles / limitingReagent.coefficient;
       return updateYieldAndExcess(
         applyChanges(
@@ -235,25 +261,37 @@ export function calculateUpdatedMolecules(
     if (editedRow.limitingReagent) {
       const limitingReagent = allMolecules.find((m) => m.limitingReagent);
       if (!limitingReagent) throw new Error("No limiting reagent defined");
+      if (limitingReagent.coefficient === null) {
+        throw new Error("Limiting reagent coefficient weight is undefined");
+      }
       const limitingReagentMoles = editedRow.moles;
       const ratio =
         limitingReagentMoles === null
           ? null
-          : // @ts-expect-error Fix this before release
+          : 
             limitingReagentMoles / limitingReagent.coefficient;
+
+      if (beforeMolecule.molecularWeight === null) {
+        throw new Error("Molecular weight is undefined");
+      }
+
       return updateYieldAndExcess(
         applyChanges(
           {
-            // @ts-expect-error Fix this before release
+            
             mass: editedRow.moles * beforeMolecule.molecularWeight,
           },
           applyMassByRatio(allMolecules, ratio),
         ),
       );
     } else {
+      if (beforeMolecule.molecularWeight === null) {
+        throw new Error("Molecular weight is undefined");
+      }
+
       return updateYieldAndExcess(
         applyChanges({
-          // @ts-expect-error Fix this before release
+          
           mass: editedRow.moles * beforeMolecule.molecularWeight,
         }),
       );
@@ -269,9 +307,12 @@ export function calculateUpdatedMolecules(
   }
 
   if (editedRow.actualMoles !== null) {
+    if (beforeMolecule.molecularWeight === null) {
+      throw new Error("Molecular weight is undefined");
+    }
+
     return updateYieldAndExcess(
       applyChanges({
-        // @ts-expect-error Fix this before release
         actualAmount: editedRow.actualMoles * beforeMolecule.molecularWeight,
       }),
     );
@@ -298,9 +339,10 @@ export function calculateUpdatedMolecules(
   }
 
   if (beforeMolecule.coefficient !== editedRow.coefficient) {
-    const changeInCoefficient =
-      // @ts-expect-error Fix this before release
-      editedRow.coefficient / beforeMolecule.coefficient;
+    if (beforeMolecule.coefficient === null || editedRow.coefficient === null) {
+      throw new Error("Molecule coefficient is undefined");
+    }
+    const changeInCoefficient = editedRow.coefficient / beforeMolecule.coefficient;
     const updatedMolecules = applyChanges({
       coefficient: editedRow.coefficient,
       mass:

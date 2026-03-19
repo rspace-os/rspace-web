@@ -146,6 +146,19 @@ describe("calculateUpdatedMolecules", () => {
     expect(result[2].mass).toBeCloseTo(60);
   });
 
+  it("keeps other masses unchanged when limiting reagent mass is set to null", () => {
+    const molecules = makeBaseMolecules();
+    const editedRow = { ...molecules[0], mass: null };
+
+    const result = calculateUpdatedMolecules(molecules, editedRow);
+
+    expect(result[0].mass).toBeNull();
+    expect(result[1].mass).toBe(40);
+    expect(result[2].mass).toBe(30);
+    expect(result[1].actualYield).toBeCloseTo(0.25);
+    expect(result[2].actualYield).toBeCloseTo(0.5);
+  });
+
   it("updates non-limiting reagent mass when moles are edited", () => {
     const molecules = makeBaseMolecules();
     const editedRow = { ...molecules[1], moles: 4 };
@@ -177,6 +190,29 @@ describe("calculateUpdatedMolecules", () => {
     expect(result[1].actualAmount).toBe(60);
     expect(result[1].actualYield).toBeCloseTo(0.5);
     expect(result[2].actualYield).toBeCloseTo(0.5);
+  });
+
+  it("clears yield or excess for a molecule when its actual amount is set to null", () => {
+    const molecules = makeBaseMolecules();
+    const editedRow = { ...molecules[1], actualAmount: null };
+
+    const result = calculateUpdatedMolecules(molecules, editedRow);
+
+    expect(result[1].actualAmount).toBeNull();
+    expect(result[1].actualYield).toBeNull();
+    expect(result[2].actualYield).toBeCloseTo(0.5);
+  });
+
+  it("leaves all yields null when the limiting reagent actual amount is set to null", () => {
+    const molecules = makeBaseMolecules();
+    const editedRow = { ...molecules[0], actualAmount: null };
+
+    const result = calculateUpdatedMolecules(molecules, editedRow);
+
+    expect(result[0].actualAmount).toBeNull();
+    expect(result[0].actualYield).toBeNull();
+    expect(result[1].actualYield).toBeNull();
+    expect(result[2].actualYield).toBeNull();
   });
 
   it("updates actual amount from actual moles and recalculates yield/excess", () => {
@@ -285,6 +321,46 @@ describe("calculateUpdatedMolecules", () => {
 
     expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow(
       "No limiting reagent defined",
+    );
+  });
+
+  it("throws when moles are edited for a molecule with null molecular weight", () => {
+    const molecules = makeBaseMolecules();
+    molecules[1] = { ...molecules[1], molecularWeight: null };
+    const editedRow = { ...molecules[1], moles: 4 };
+
+    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow(
+      "Molecular weight is undefined",
+    );
+  });
+
+  it("throws when actual moles are edited for a molecule with null molecular weight", () => {
+    const molecules = makeBaseMolecules();
+    molecules[1] = { ...molecules[1], molecularWeight: null };
+    const editedRow = { ...molecules[1], actualMoles: 4 };
+
+    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow(
+      "Molecular weight is undefined",
+    );
+  });
+
+  it("throws when the edited coefficient was previously null", () => {
+    const molecules = makeBaseMolecules();
+    molecules[1] = { ...molecules[1], coefficient: null };
+    const editedRow = { ...molecules[1], coefficient: 4 };
+
+    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow(
+      "Molecule coefficient is undefined",
+    );
+  });
+
+  it("throws when changing limiting reagent and any molecule coefficient is null", () => {
+    const molecules = makeBaseMolecules();
+    molecules[2] = { ...molecules[2], coefficient: null };
+    const editedRow = { ...molecules[1], limitingReagent: true };
+
+    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow(
+      "All molecules must have a valid coefficient",
     );
   });
 });
