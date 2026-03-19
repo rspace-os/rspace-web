@@ -11,11 +11,13 @@ import {
 } from "@/modules/stoichiometry/schema";
 import { stoichiometryQueryKeys } from "@/modules/stoichiometry/queries";
 import {
-  resolveToken,
   STOICHIOMETRY_API_BASE_URL,
-  TokenParams,
   toStoichiometryError,
 } from "@/modules/stoichiometry/utils";
+import {
+  resolveToken,
+  TokenParams,
+} from "@/modules/common/utils/auth";
 
 export type CalculateStoichiometryParams = {
   recordId: number;
