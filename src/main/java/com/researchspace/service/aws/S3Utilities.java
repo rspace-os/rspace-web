@@ -36,10 +36,8 @@ public interface S3Utilities {
    * @param file The file to export
    * @return SdkHttpResponse received from aws
    * @throws ExportFailureException if an exception occurs during the export
-   *
    */
   SdkHttpResponse uploadToS3(File file);
-
 
   /**
    * Deletes an object from s3 using the aws sdk, this is a blocking method and wont return until it

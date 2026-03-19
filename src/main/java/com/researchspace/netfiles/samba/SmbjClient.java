@@ -43,14 +43,10 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
   private static final long serialVersionUID = -362934103902354196L;
   private boolean sambaNameMustMatchPath = false;
 
-  @Getter
-  private String sambaHost;
-  @Getter
-  private String shareName;
-  @Getter
-  private String afterShareNamePath;
-  @Getter
-  private transient AuthenticationContext authContext;
+  @Getter private String sambaHost;
+  @Getter private String shareName;
+  @Getter private String afterShareNamePath;
+  @Getter private transient AuthenticationContext authContext;
   private boolean withDfsEnabled;
 
   // marked transient as not serializable
@@ -442,5 +438,4 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
   private String sanitisePath(String target) {
     return StringUtils.isEmpty(target) ? "" : target;
   }
-
 }

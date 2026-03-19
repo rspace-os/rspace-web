@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import org.apache.commons.codec.binary.Base64;
@@ -217,8 +216,8 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
         nfsFileDetails.setFileSystemParentPath(getParentPathFromFullPath(lsPath));
 
       } else {
-        log.warn("unexpected number of ls results: {} when querying path: {}", lsResult.size(),
-            lsPath);
+        log.warn(
+            "unexpected number of ls results: {} when querying path: {}", lsResult.size(), lsPath);
       }
 
     } catch (NfsException e) {

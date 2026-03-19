@@ -165,8 +165,8 @@ public class S3UtilitiesImpl implements S3Utilities {
   }
 
   protected Function<File, SdkHttpResponse> getS3Uploader(File file) {
-    if ((file.length() <= AWS_PUT_FILE_LIMIT) &&
-        (chunkedUploadMbThreshold * FileUtils.ONE_MB > file.length())) {
+    if ((file.length() <= AWS_PUT_FILE_LIMIT)
+        && (chunkedUploadMbThreshold * FileUtils.ONE_MB > file.length())) {
       return new S3PutUploader(s3Client, s3BucketName, s3ArchivePath);
     }
     return new S3MultipartChunkedUploader(
@@ -177,10 +177,7 @@ public class S3UtilitiesImpl implements S3Utilities {
   public void downloadFromS3(String filePath, File destinationFile) {
     try {
       GetObjectRequest getObjectRequest =
-          GetObjectRequest.builder()
-              .bucket(s3BucketName)
-              .key(filePath)
-              .build();
+          GetObjectRequest.builder().bucket(s3BucketName).key(filePath).build();
 
       ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest);
       Files.copy(response, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -197,13 +194,14 @@ public class S3UtilitiesImpl implements S3Utilities {
   @Override
   public List<S3FolderContentItem> listFolderContents(String folderPath) {
     try {
-      String prefix = folderPath.endsWith("/") ? folderPath : folderPath + "/";
+      String folderPathWithSlash = folderPath.endsWith("/") ? folderPath : folderPath + "/";
 
-      ListObjectsV2Request listRequest = ListObjectsV2Request.builder()
-          .bucket(s3BucketName)
-          .prefix(prefix)
-          .delimiter("/")
-          .build();
+      ListObjectsV2Request listRequest =
+          ListObjectsV2Request.builder()
+              .bucket(s3BucketName)
+              .prefix(folderPathWithSlash)
+              .delimiter("/")
+              .build();
 
       ListObjectsV2Response listResponse = s3Client.listObjectsV2(listRequest);
 
@@ -211,7 +209,7 @@ public class S3UtilitiesImpl implements S3Utilities {
 
       // Add subfolders (common prefixes)
       for (CommonPrefix commonPrefix : listResponse.commonPrefixes()) {
-        String folderName = commonPrefix.prefix().substring(prefix.length());
+        String folderName = commonPrefix.prefix().substring(folderPathWithSlash.length());
         if (folderName.endsWith("/")) {
           folderName = folderName.substring(0, folderName.length() - 1);
         }
@@ -221,8 +219,8 @@ public class S3UtilitiesImpl implements S3Utilities {
       // Add files (objects)
       for (S3Object s3Object : listResponse.contents()) {
         String key = s3Object.key();
-        if (!key.equals(prefix)) { // Skip the folder itself
-          String fileName = key.substring(prefix.length());
+        if (!key.equals(folderPathWithSlash)) { // Skip the folder itself
+          String fileName = key.substring(folderPathWithSlash.length());
           items.add(new S3FolderContentItem(fileName, false, s3Object.size()));
         }
       }
@@ -241,5 +239,4 @@ public class S3UtilitiesImpl implements S3Utilities {
     private final boolean isFolder;
     private final Long sizeInBytes;
   }
-
 }

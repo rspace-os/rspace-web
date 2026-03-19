@@ -41,7 +41,9 @@ public class JcifsClient extends NfsAbstractClient implements NfsClient {
            * the object returned (if not null) will be used to resubmit the request */
           @Override
           protected NtlmPasswordAuthentication getNtlmPasswordAuthentication() {
-            log.warn("ntlm exception: {} for {}", getRequestingException().getMessage(),
+            log.warn(
+                "ntlm exception: {} for {}",
+                getRequestingException().getMessage(),
                 getRequestingURL());
             return null; // don't retry
           }
@@ -82,8 +84,10 @@ public class JcifsClient extends NfsAbstractClient implements NfsClient {
       log.debug("connected to: {}", connectionTarget.getPath());
     } catch (SmbAuthException auth) {
       if (getAuthenticationPrincipal() != null) {
-        log.warn("smb authorisation exception for user: {} and domain: {}",
-            getAuthenticationPrincipal().getUsername(), getAuthenticationPrincipal().getDomain());
+        log.warn(
+            "smb authorisation exception for user: {} and domain: {}",
+            getAuthenticationPrincipal().getUsername(),
+            getAuthenticationPrincipal().getDomain());
       }
       throw new NfsAuthException(auth.getMessage(), auth);
     } catch (SmbException e) {

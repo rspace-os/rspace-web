@@ -23,13 +23,11 @@ public class S3NfsClient extends NfsAbstractClient implements NfsClient {
   }
 
   @Override
-  public void tryConnectAndReadTarget(String target) throws NfsException, MalformedURLException {
-
-  }
+  public void tryConnectAndReadTarget(String target) throws NfsException, MalformedURLException {}
 
   @Override
-  public NfsFileTreeNode createFileTree(String target, String nfsorder,
-      NfsFileStore selectedUserFolder) throws IOException {
+  public NfsFileTreeNode createFileTree(
+      String target, String nfsorder, NfsFileStore selectedUserFolder) throws IOException {
     return null;
   }
 
@@ -42,5 +40,4 @@ public class S3NfsClient extends NfsAbstractClient implements NfsClient {
   public NfsFolderDetails queryForNfsFolder(NfsTarget nfsTarget) throws IOException {
     return null;
   }
-
 }
