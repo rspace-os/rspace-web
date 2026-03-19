@@ -143,4 +143,12 @@ describe("getStoichiometry", () => {
       getStoichiometry({ stoichiometryId: 3, token }),
     ).rejects.toThrow("Failed to fetch stoichiometry: Internal Server Error");
   });
+
+  it("bubbles up network failures", async () => {
+    fetchMock.mockRejectOnce(new Error("Network down"));
+
+    await expect(
+      getStoichiometry({ stoichiometryId: 3, token }),
+    ).rejects.toThrow("Network down");
+  });
 });

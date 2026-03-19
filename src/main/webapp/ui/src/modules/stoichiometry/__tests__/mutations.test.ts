@@ -141,6 +141,40 @@ describe("calculateStoichiometry", () => {
       }),
     );
   });
+
+  it("throws API message when calculation request fails", async () => {
+    fetchMock.mockResponseOnce(
+      JSON.stringify({ message: "Unable to calculate stoichiometry" }),
+      {
+        status: 400,
+        statusText: "Bad Request",
+      },
+    );
+
+    await expect(
+      calculateStoichiometry(
+        {
+          recordId: 123,
+          chemId: 456,
+        },
+        token,
+      ),
+    ).rejects.toThrow("Unable to calculate stoichiometry");
+  });
+
+  it("bubbles up network failures during calculation", async () => {
+    fetchMock.mockRejectOnce(new Error("Network down"));
+
+    await expect(
+      calculateStoichiometry(
+        {
+          recordId: 123,
+          chemId: 456,
+        },
+        token,
+      ),
+    ).rejects.toThrow("Network down");
+  });
 });
 
 describe("updateStoichiometry", () => {
@@ -192,6 +226,40 @@ describe("updateStoichiometry", () => {
       inventoryItemGlobalId: "SA123",
       stockDeducted: false,
     });
+  });
+
+  it("throws API message when update request fails", async () => {
+    fetchMock.mockResponseOnce(
+      JSON.stringify({ message: "Could not update stoichiometry" }),
+      {
+        status: 409,
+        statusText: "Conflict",
+      },
+    );
+
+    await expect(
+      updateStoichiometry(
+        {
+          stoichiometryId: 3,
+          stoichiometryData: mockStoichiometryRequest,
+        },
+        token,
+      ),
+    ).rejects.toThrow("Could not update stoichiometry");
+  });
+
+  it("bubbles up network failures during updates", async () => {
+    fetchMock.mockRejectOnce(new Error("Network down"));
+
+    await expect(
+      updateStoichiometry(
+        {
+          stoichiometryId: 3,
+          stoichiometryData: mockStoichiometryRequest,
+        },
+        token,
+      ),
+    ).rejects.toThrow("Network down");
   });
 });
 
@@ -245,6 +313,25 @@ describe("deleteStoichiometry", () => {
       deleteStoichiometry({ stoichiometryId: 3 }, token),
     ).rejects.toThrow("No stoichiometry found with id 3");
   });
+
+  it("falls back to status text when delete error body cannot be parsed", async () => {
+    fetchMock.mockResponseOnce("", {
+      status: 500,
+      statusText: "Internal Server Error",
+    });
+
+    await expect(
+      deleteStoichiometry({ stoichiometryId: 3 }, token),
+    ).rejects.toThrow("Failed to delete stoichiometry: Internal Server Error");
+  });
+
+  it("bubbles up network failures during deletion", async () => {
+    fetchMock.mockRejectOnce(new Error("Network down"));
+
+    await expect(
+      deleteStoichiometry({ stoichiometryId: 3 }, token),
+    ).rejects.toThrow("Network down");
+  });
 });
 
 describe("getMoleculeInfo", () => {
@@ -268,5 +355,37 @@ describe("getMoleculeInfo", () => {
         body: JSON.stringify({ chemical: "CC(=O)O" }),
       }),
     );
+  });
+
+  it("throws API message when molecule info request fails", async () => {
+    fetchMock.mockResponseOnce(
+      JSON.stringify({ message: "Unsupported SMILES string" }),
+      {
+        status: 422,
+        statusText: "Unprocessable Entity",
+      },
+    );
+
+    await expect(
+      getMoleculeInfo(
+        {
+          smiles: "CC(=O)O",
+        },
+        token,
+      ),
+    ).rejects.toThrow("Unsupported SMILES string");
+  });
+
+  it("bubbles up network failures during molecule info requests", async () => {
+    fetchMock.mockRejectOnce(new Error("Network down"));
+
+    await expect(
+      getMoleculeInfo(
+        {
+          smiles: "CC(=O)O",
+        },
+        token,
+      ),
+    ).rejects.toThrow("Network down");
   });
 });
