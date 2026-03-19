@@ -1,7 +1,7 @@
 package com.researchspace.service.aws.impl;
 
+import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.aws.S3Utilities;
-import com.researchspace.service.export.ExportFailureException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -179,9 +179,9 @@ public class S3UtilitiesImpl implements S3Utilities {
     try {
       GetObjectRequest getObjectRequest =
           GetObjectRequest.builder().bucket(s3BucketName).key(filePath).build();
-
-      ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest);
-      Files.copy(response, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      try (ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest)) {
+        Files.copy(response, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      }
       log.info("Successfully downloaded {} from S3 to {}", filePath, destinationFile.getPath());
     } catch (IOException e) {
       log.error("Failed to write downloaded file from S3 to {}", destinationFile.getPath(), e);
