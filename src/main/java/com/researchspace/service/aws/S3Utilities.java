@@ -1,9 +1,11 @@
 package com.researchspace.service.aws;
 
 import com.researchspace.service.archive.export.ExportFailureException;
+import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import java.io.File;
 import java.net.URL;
-import java.util.function.Function;
+import java.util.Collections;
+import java.util.List;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 
@@ -28,14 +30,14 @@ public interface S3Utilities {
   URL getPresignedUrlForArchiveDownload(String fileName);
 
   /**
-   * Gets a function to export a file to S3 using the aws sdk. Note that this is a blocking method,
-   * it won't return until the the file has been completely uploaded and returned successfully.
+   * Export a file to S3 using the aws sdk. Note that this is a blocking method, it won't return
+   * until the file has been completely uploaded and returned successfully.
    *
    * @param file The file to export
    * @return SdkHttpResponse received from aws
    * @throws ExportFailureException if an exception occurs during the export
    */
-  Function<File, SdkHttpResponse> getS3Uploader(File file);
+  SdkHttpResponse uploadToS3(File file);
 
   /**
    * Deletes an object from s3 using the aws sdk, this is a blocking method and wont return until it
@@ -47,8 +49,26 @@ public interface S3Utilities {
    */
   DeleteObjectResponse deleteArchiveFromS3(String fileName);
 
+  /**
+   * Downloads a file from S3 to a local file.
+   *
+   * @param filePath the path within the bucket to the file to download
+   * @param destinationFile the local file to write the downloaded content to
+   * @throws ExportFailureException if an exception occurs during the download
+   */
+  void downloadFromS3(String filePath, File destinationFile);
+
+  /**
+   * Lists the contents of a folder in S3.
+   *
+   * @param folderPath the path to the folder to list
+   * @return List of S3FolderItem objects representing files and subfolders
+   * @throws ExportFailureException if an exception occurs during the listing
+   */
+  List<S3FolderContentItem> listFolderContents(String folderPath);
+
   /** No-op implementation for when parameter hasS3Access is false. */
-  public static final S3Utilities NOOP_S3Utilities =
+  S3Utilities NOOP_S3Utilities =
       new S3Utilities() {
 
         @Override
@@ -67,8 +87,18 @@ public interface S3Utilities {
         }
 
         @Override
-        public Function<File, SdkHttpResponse> getS3Uploader(File file) {
-          return file2 -> SdkHttpResponse.builder().statusCode(400).build();
+        public SdkHttpResponse uploadToS3(File file) {
+          return SdkHttpResponse.builder().statusCode(400).build();
+        }
+
+        @Override
+        public void downloadFromS3(String filePath, File destinationFile) {
+          // no-op
+        }
+
+        @Override
+        public List<S3FolderContentItem> listFolderContents(String folderPath) {
+          return Collections.emptyList();
         }
       };
 }

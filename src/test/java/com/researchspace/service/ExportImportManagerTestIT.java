@@ -137,7 +137,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.io.FileUtils;
@@ -2579,13 +2578,11 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     // Mock S3 Utilities
     SdkHttpResponse sdkHttpResponse = SdkHttpResponse.builder().statusCode(200).build();
     // PutObjectResponse putObjectResponse = Mockito.mock(PutObjectResponse.class);
-    Function mockExporter = Mockito.mock(Function.class);
 
     when(s3Utilities.getPresignedUrlForArchiveDownload(anyString()))
         .thenReturn(new URL("http://www.google.com"));
     when(s3Utilities.isArchiveInS3(anyString())).thenReturn(true);
-    when(s3Utilities.getS3Uploader(any(File.class))).thenReturn(mockExporter);
-    when(mockExporter.apply(any(File.class))).thenReturn(sdkHttpResponse);
+    when(s3Utilities.uploadToS3(any(File.class))).thenReturn(sdkHttpResponse);
     ReflectionTestUtils.setField(standardPostExport, "hasS3Access", true);
 
     File file =

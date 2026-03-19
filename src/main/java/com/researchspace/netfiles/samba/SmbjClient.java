@@ -30,6 +30,7 @@ import java.net.URL;
 import java.security.Security;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -42,14 +43,14 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
   private static final long serialVersionUID = -362934103902354196L;
   private boolean sambaNameMustMatchPath = false;
 
-  private String sambaHost;
-  private String shareName;
-  private String afterShareNamePath;
+  @Getter private String sambaHost;
+  @Getter private String shareName;
+  @Getter private String afterShareNamePath;
+  @Getter private transient AuthenticationContext authContext;
   private boolean withDfsEnabled;
 
   // marked transient as not serializable
   private transient SMBClient client;
-  private transient AuthenticationContext authContext;
   private transient Connection connection;
   private transient Session session;
 
@@ -89,7 +90,7 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
       afterShareNamePath = calculateAfterShareNamePath(serverURL.getPath());
       this.sambaNameMustMatchPath = sambaNameMustMatchPath;
     } catch (MalformedURLException e) {
-      log.error("couldn't parse SMB serverUrl: " + serverUrl, e);
+      log.error("couldn't parse SMB serverUrl: {}", serverUrl, e);
     }
 
     authContext =
@@ -121,7 +122,7 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
       DiskShare share = getConnectedDiskShare();
       share.folderExists(path);
     } catch (IOException | SMBApiException e) {
-      log.warn("error on connecting to share and listing path: " + e.getMessage());
+      log.warn("error on connecting to share and listing path: {}", e.getMessage());
       throw new NfsException("couldn't retrieve path: " + path, e);
     }
   }
@@ -312,8 +313,7 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
       log.info("authenticating smbj client for session");
       session = connection.authenticate(authContext);
     }
-    DiskShare share = (DiskShare) session.connectShare(shareName);
-    return share;
+    return (DiskShare) session.connectShare(shareName);
   }
 
   @Override
@@ -321,7 +321,7 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
     if (nfsFileDetails != null) {
       File smbjFile = ((SmbjFileDetails) nfsFileDetails).getSmbjFile();
       if (smbjFile != null) {
-        log.info("closing remote file {} after download ", smbjFile.toString());
+        log.info("closing remote file {} after download ", smbjFile);
         smbjFile.closeSilently();
       }
     }
@@ -437,24 +437,5 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
 
   private String sanitisePath(String target) {
     return StringUtils.isEmpty(target) ? "" : target;
-  }
-
-  /*
-   * ==================== for tests ====================
-   */
-  public String getSambaHost() {
-    return sambaHost;
-  }
-
-  public String getShareName() {
-    return shareName;
-  }
-
-  public String getAfterShareNamePath() {
-    return afterShareNamePath;
-  }
-
-  public AuthenticationContext getAuthContext() {
-    return authContext;
   }
 }
