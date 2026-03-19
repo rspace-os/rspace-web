@@ -10,7 +10,7 @@ import {
 import { useGetStoichiometryQuery } from "@/modules/stoichiometry/queries";
 import type {
   ExistingMoleculeUpdate,
-  NewReagent,
+  NewMolecule,
   RsChemElement,
   StoichiometryRequest,
 } from "@/modules/stoichiometry/schema";
@@ -102,12 +102,11 @@ export function useEditableStoichiometryTable({
           throw new Error("New reagents must have a name");
         }
 
-        const newReagent: NewReagent = {
+        return {
           role: "AGENT",
           smiles,
           name,
-        };
-        return newReagent;
+        } as NewMolecule;
       }),
     };
 

@@ -150,10 +150,6 @@ export const NewMoleculeSchema = v.objectWithRest(
 );
 export type NewMolecule = v.InferOutput<typeof NewMoleculeSchema>;
 
-// Backward-compatible alias while call sites migrate from "reagent" terminology.
-export const NewReagentSchema = NewMoleculeSchema;
-export type NewReagent = NewMolecule;
-
 export const StoichiometryRequestSchema = v.object({
   id: v.number(),
   molecules: v.array(v.union([ExistingMoleculeUpdateSchema, NewMoleculeSchema])),
