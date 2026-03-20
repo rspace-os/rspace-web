@@ -115,16 +115,6 @@ const DialogContent = observer(
 
       async function saveExistingConfig(config: ExistingConfig, index: number) {
 
-        console.log("DsEC config: ", config, " , index: ", index);
-        console.log("DsEC configs: ", configs);
-        console.log("DsEC UPDATED? config.dirty     : ", config.dirty);
-        console.log("DsEC UPDATED? config.optionsId : ", config.optionsId);
-        console.log("DsEC UPDATED? config.DSW_ALIAS : ", config.DSW_ALIAS);
-        console.log("DsEC UPDATED? config.DSW_URL   : ", config.DSW_URL);
-        console.log("DsEC UPDATED? config.DSW_APIKEY: ", config.DSW_APIKEY);
-        console.log("DsEC Matching config?: ", configs[index]);
-
-
         try {
           const newState = await saveAppOptions(
               "DSW",

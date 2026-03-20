@@ -449,7 +449,6 @@ const DmpMenuSection = ({
     })();
   }, []);
 
-  console.log("S DSW connections: ", dswConnections);
   if (!showArgos && !showDmponline && !showDmptool && !showDsw) return null;
   return (
     <>
