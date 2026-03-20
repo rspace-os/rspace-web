@@ -71,6 +71,7 @@ import useFilestoresEndpoint from "../useFilestoresEndpoint";
 import { useSnippetPreview } from "./CallableSnippetPreview";
 import { ShareDialog } from "@/components/ShareDialog";
 import { Menu } from "@/components/DialogBoundary";
+import useWhoAmI from "@/hooks/api/useWhoAmI";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -314,6 +315,10 @@ function ActionsMenu({
   const { openSnapGenePreview } = useSnapGenePreview();
   const { openFolder } = useFolderOpen();
   const { openSnippetPreview } = useSnippetPreview();
+  const fetchedCurrentUser = useWhoAmI();
+
+  const currentUser =
+    FetchingData.getSuccessValue(fetchedCurrentUser).orElse(null);
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
@@ -478,6 +483,32 @@ function ActionsMenu({
       return Result.Error([
         new Error("Cannot share snippets that are missing global IDs."),
       ]);
+    }
+
+    /*
+     * This is a workaround to disable the Share button when the snippet is
+     * selected in a shared folder. Shared snippets have a different ID to the
+     * original and changing share settings
+     */
+    for (const file of selectedFiles) {
+      const currentFolder = file.path.at(-1);
+      if (!currentFolder) {
+        continue;
+      }
+
+      if (currentFolder.isSharedFolder && !currentFolder.isSystemFolder) {
+        /*
+         * This is a workaround as we don't currently expose granular permissions
+         * in /gallery/getUploadedFiles.
+         */
+        if (currentUser?.id !== file.ownerId) {
+          return Result.Error([
+            new Error(
+              "Only owners of the snippet can change its share settings.",
+            ),
+          ]);
+        }
+      }
     }
 
     return Result.Ok({
