@@ -1369,7 +1369,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dataverse-adapter</artifactId>
-      <version>RSDEV-955-adapter-SNAPSHOT</version>
+      <version>3.0.2</version>
     </dependency>
     <dependency>
       <!-- dataverse-rspace-adaptor internally-conflicting dependency,
