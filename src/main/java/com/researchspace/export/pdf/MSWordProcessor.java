@@ -24,6 +24,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.spring.VelocityEngineUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -33,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.ui.velocity.VelocityEngineUtils;
 
 public class MSWordProcessor extends AbstractExportProcessor implements ExportProcessor {
 
@@ -92,7 +92,7 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
   @Override
   public void makeExport(
       File tempExportFile,
-      ExportProcesserInput exportInput,
+      ExportProcessorInput exportInput,
       IRSpaceDoc strucDoc,
       ExportToFileConfig exportConfig)
       throws IOException {
@@ -114,7 +114,7 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
 
   private File extractImagesAndReplaceSrcLinks(
       File tempExportFile,
-      ExportProcesserInput exportInput,
+      ExportProcessorInput exportInput,
       ExportToFileConfig exportConfig,
       IRSpaceDoc strucDoc)
       throws IOException, FileNotFoundException {

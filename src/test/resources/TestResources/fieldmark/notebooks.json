@@ -1,31 +1,25 @@
 [
   {
     "name": "RSpace IGSN Demo",
-    "is_admin": true,
-    "project_id": "1726126204618-rspace-igsn-demo",
+    "status": "OPEN",
+    "id": null,
     "metadata": {
+      "name": "RSpace IGSN Demo",
+      "showQRCodeButton": "true",
       "Age": "123",
       "Size": "Large",
-      "accesses": [
-        "admin",
-        "moderator",
-        "team",
-        "user"
-      ],
-      "filenames": [],
       "ispublic": false,
       "isrequest": false,
       "lead_institution": "Fieldmark",
-      "name": "RSpace IGSN Demo",
       "notebook_version": "1.1",
       "pre_description": "Demonstration notebook to help develop an export pipeline from Fieldmark to RSpace.",
       "project_lead": "Steve Cassidy",
       "project_status": "New",
-      "schema_version": "1.0",
-      "sections": {},
-      "showQRCodeButton": "true",
+      "schema_version": "2.0",
       "project_id": "1726126204618-rspace-igsn-demo"
     },
-    "status": "OPEN"
+    "project_id": "1726126204618-rspace-igsn-demo",
+    "listing_id": null,
+    "ui-specification": null
   }
 ]

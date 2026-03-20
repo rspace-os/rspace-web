@@ -198,15 +198,14 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
         RSChemElement newMol = createNewRsChemElement(user, originalMol);
         StoichiometryMolecule copy = buildMolecule(originalMol, newStoich, newMol);
         newStoich.addMolecule(copy);
+        // Save parent Stoichiometry to ensure the newly created molecule gets an ID, required for
+        // copying inventory links and further updates
+        newStoich = save(newStoich);
         if (originalMol.getInventoryLink() != null) {
-          // Save parent Stoichiometry to ensure the newly created molecule gets an ID, required for
-          // copying inventory links
-          newStoich = save(newStoich);
           copyInventoryLink(user, originalMol, copy);
         }
       }
     }
-    save(newStoich);
     return newStoich;
   }
 
@@ -216,12 +215,8 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
         StoichiometryInventoryLinkRequest.builder()
             .inventoryItemGlobalId(
                 sourceMol.getInventoryLink().getConnectedRecordGlobalIdentifier())
-            .stoichiometryMoleculeId(copy.getId())
-            .quantity(sourceMol.getInventoryLink().getQuantity().getNumericValue())
-            .unitId(sourceMol.getInventoryLink().getQuantity().getUnitId())
-            .reducesStock(false) // copied links do not reduce stock by default
             .build();
-    stoichiometryInventoryLinkManager.createLink(link, user);
+    stoichiometryInventoryLinkManager.createLink(copy.getId(), link, user);
   }
 
   public static StoichiometryMolecule buildMolecule(
@@ -278,19 +273,19 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
     Map<Long, StoichiometryMolecule> idToMol =
         buildExistingMoleculesMap(stoichiometry.getMolecules());
 
-    for (StoichiometryMoleculeUpdateDTO u : updates) {
-      if (u.getId() == null) {
-        addNewMoleculeFromDto(stoichiometry, u, user);
+    for (StoichiometryMoleculeUpdateDTO update : updates) {
+      if (update.getId() == null) {
+        addNewMoleculeFromDto(stoichiometry, update, user);
         continue;
       }
 
-      StoichiometryMolecule existing = idToMol.get(u.getId());
+      StoichiometryMolecule existing = idToMol.get(update.getId());
       if (existing == null) {
         throw new StoichiometryException(
-            "Molecule ID " + u.getId() + " not found in existing stoichiometry molecules.");
+            "Molecule ID " + update.getId() + " not found in existing stoichiometry molecules.");
       }
 
-      applyFieldUpdates(existing, u);
+      applyFieldUpdates(existing, update, user);
       keepIds.add(existing.getId());
     }
 
@@ -328,16 +323,42 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
             .build();
 
     stoichiometry.addMolecule(newMol);
+    processInventoryLinkUpdate(newMol, updateMol.getInventoryLink(), user);
   }
 
-  private void applyFieldUpdates(StoichiometryMolecule existing, StoichiometryMoleculeUpdateDTO u) {
-    existing.setCoefficient(u.getCoefficient());
-    existing.setMass(u.getMass());
-    existing.setActualAmount(u.getActualAmount());
-    existing.setActualYield(u.getActualYield());
-    existing.setLimitingReagent(u.getLimitingReagent());
-    existing.setNotes(u.getNotes());
-    existing.setRole(u.getRole());
+  private void applyFieldUpdates(
+      StoichiometryMolecule existing, StoichiometryMoleculeUpdateDTO update, User user) {
+    existing.setCoefficient(update.getCoefficient());
+    existing.setMass(update.getMass());
+    existing.setActualAmount(update.getActualAmount());
+    existing.setActualYield(update.getActualYield());
+    existing.setLimitingReagent(update.getLimitingReagent());
+    existing.setNotes(update.getNotes());
+    existing.setRole(update.getRole());
+
+    processInventoryLinkUpdate(existing, update.getInventoryLink(), user);
+  }
+
+  private void processInventoryLinkUpdate(
+      StoichiometryMolecule molecule, StoichiometryInventoryLinkRequest linkRequest, User user) {
+    if (linkRequest == null) {
+      // remove link
+      molecule.setInventoryLink(null);
+    } else {
+      // create new
+      if (molecule.getInventoryLink() == null) {
+        molecule.setInventoryLink(
+            stoichiometryInventoryLinkManager.createLink(molecule.getId(), linkRequest, user));
+      } else if (!molecule
+          .getInventoryLink()
+          .getConnectedRecordGlobalIdentifier()
+          .equals(linkRequest.getInventoryItemGlobalId())) {
+        // Throw exception if attempting to update an existing link's target
+        throw new StoichiometryException(
+            "Directly updating an inventory link target is not supported. To change the target,"
+                + " first set the inventoryLink to null to remove the existing link.");
+      }
+    }
   }
 
   private void removeMoleculesNotInKeep(

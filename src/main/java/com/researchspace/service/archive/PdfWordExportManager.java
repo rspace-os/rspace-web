@@ -1,16 +1,16 @@
 package com.researchspace.service.archive;
 
 import com.researchspace.export.pdf.ExportToFileConfig;
-import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
-import java.io.File;
+import com.researchspace.service.archive.export.ExportEcatDocumentResult;
+import com.researchspace.service.archive.export.ExportFileResult;
 import java.io.IOException;
 import java.util.List;
 
 /** Service method to export to PDF/Word format rather than archive. */
 public interface PdfWordExportManager {
 
-  EcatDocumentFile doExport(
+  ExportEcatDocumentResult doExport(
       User ownerOfWork,
       Long[] exportIds,
       String[] exportNames,
@@ -19,7 +19,7 @@ public interface PdfWordExportManager {
       User exporter)
       throws IOException;
 
-  File doExportForSigning(
+  ExportFileResult doExportForSigning(
       User ownerOfWork,
       Long[] exportIds,
       String[] exportNames,

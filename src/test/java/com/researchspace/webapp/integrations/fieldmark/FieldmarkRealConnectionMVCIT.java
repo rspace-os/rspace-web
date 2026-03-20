@@ -31,8 +31,7 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
 
   private static final FieldmarkApiImportRequest IMPORT_REQUEST =
       new FieldmarkApiImportRequest("1726126204618-rspace-igsn-demo");
-  private static final String LONG_LIVED_TOKEN =
-      "wDor74KSJe5ZZzeNE2jnGT7S5RYtYa9cWTi6f3wfBv0yjigQwFjQbodLlGwSKGAW";
+  private static final String LONG_LIVED_TOKEN = "________PASTE_TOKEN_HERE________";
 
   private User user;
   private String apiKey;

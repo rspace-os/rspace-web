@@ -1,23 +1,36 @@
 package com.researchspace.service.aws.impl;
 
+import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.aws.S3Utilities;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 import javax.annotation.PostConstruct;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
@@ -148,16 +161,84 @@ public class S3UtilitiesImpl implements S3Utilities {
   }
 
   @Override
-  public Function<File, SdkHttpResponse> getS3Uploader(File file) {
-    if (file.length() > AWS_PUT_FILE_LIMIT) {
-      return new S3MultipartChunkedUploader(
-          s3Client, s3BucketName, s3ArchivePath, chunkedUploadMbSize);
-    }
-    if (chunkedUploadMbThreshold * FileUtils.ONE_MB > file.length()) {
+  public SdkHttpResponse uploadToS3(File file) {
+    return getS3Uploader(file).apply(file);
+  }
+
+  protected Function<File, SdkHttpResponse> getS3Uploader(File file) {
+    if ((file.length() <= AWS_PUT_FILE_LIMIT)
+        && (chunkedUploadMbThreshold * FileUtils.ONE_MB > file.length())) {
       return new S3PutUploader(s3Client, s3BucketName, s3ArchivePath);
-    } else {
-      return new S3MultipartChunkedUploader(
-          s3Client, s3BucketName, s3ArchivePath, chunkedUploadMbSize);
     }
+    return new S3MultipartChunkedUploader(
+        s3Client, s3BucketName, s3ArchivePath, chunkedUploadMbSize);
+  }
+
+  @Override
+  public void downloadFromS3(String filePath, File destinationFile) {
+    try {
+      GetObjectRequest getObjectRequest =
+          GetObjectRequest.builder().bucket(s3BucketName).key(filePath).build();
+      try (ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest)) {
+        Files.copy(response, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      }
+      log.info("Successfully downloaded {} from S3 to {}", filePath, destinationFile.getPath());
+    } catch (IOException e) {
+      log.error("Failed to write downloaded file from S3 to {}", destinationFile.getPath(), e);
+      throw new ExportFailureException(
+          "Failed to write downloaded file from S3 to " + destinationFile.getPath(), e);
+    } catch (Exception e) {
+      log.error("Failed to download file {} from S3", filePath, e);
+      throw new ExportFailureException("Failed to download file " + filePath + " from S3", e);
+    }
+  }
+
+  @Override
+  public List<S3FolderContentItem> listFolderContents(String folderPath) {
+    try {
+      String folderPathWithSlash = folderPath.endsWith("/") ? folderPath : folderPath + "/";
+
+      ListObjectsV2Request listRequest =
+          ListObjectsV2Request.builder()
+              .bucket(s3BucketName)
+              .prefix(folderPathWithSlash)
+              .delimiter("/")
+              .build();
+
+      ListObjectsV2Response listResponse = s3Client.listObjectsV2(listRequest);
+
+      List<S3FolderContentItem> items = new ArrayList<>();
+
+      // Add subfolders (common prefixes)
+      for (CommonPrefix commonPrefix : listResponse.commonPrefixes()) {
+        String folderName = commonPrefix.prefix().substring(folderPathWithSlash.length());
+        if (folderName.endsWith("/")) {
+          folderName = folderName.substring(0, folderName.length() - 1);
+        }
+        items.add(new S3FolderContentItem(folderName, true, null));
+      }
+
+      // Add files (objects)
+      for (S3Object s3Object : listResponse.contents()) {
+        String key = s3Object.key();
+        if (!key.equals(folderPathWithSlash)) { // Skip the folder itself
+          String fileName = key.substring(folderPathWithSlash.length());
+          items.add(new S3FolderContentItem(fileName, false, s3Object.size()));
+        }
+      }
+
+      log.info("Successfully listed {} items in folder {}", items.size(), folderPath);
+      return items;
+    } catch (Exception e) {
+      log.error("Failed to list folder contents for {}", folderPath, e);
+      throw e;
+    }
+  }
+
+  @Data
+  public static class S3FolderContentItem {
+    private final String name;
+    private final boolean isFolder;
+    private final Long sizeInBytes;
   }
 }

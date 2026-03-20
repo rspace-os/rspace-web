@@ -16,6 +16,7 @@ import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.spring.VelocityEngineUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -24,7 +25,6 @@ import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.ui.velocity.VelocityEngineUtils;
 
 /**
  * Creates the HTML output required for conversion of {@link StructuredDocument} to PDF. In addition
@@ -51,7 +51,7 @@ public class PdfHtmlGenerator {
   }
 
   public String prepareHtml(
-      ExportProcesserInput documentData, IRSpaceDoc doc, ExportToFileConfig config) {
+      ExportProcessorInput documentData, IRSpaceDoc doc, ExportToFileConfig config) {
     String docTitle = StringUtils.abbreviate(doc.getName(), MAX_TITLE_WIDTH);
     String pageSize = config.getPageSize().equals("A4") ? "A4" : "LETTER";
     String footerFormattedDate = formatFooterDate(doc, config);
@@ -145,7 +145,7 @@ public class PdfHtmlGenerator {
   }
 
   private String addDocExtras(
-      ExportProcesserInput documentData, ExportToFileConfig config, String html) {
+      ExportProcessorInput documentData, ExportToFileConfig config, String html) {
     // a page break should be inserted (only) once after the main content and before the extra info.
     // where it should be inserted depends on which extras (if any) are to be included in the
     // exported doc.

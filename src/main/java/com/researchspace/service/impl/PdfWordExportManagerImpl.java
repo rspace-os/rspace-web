@@ -12,8 +12,8 @@ import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.export.pdf.ExportOperationDetails;
-import com.researchspace.export.pdf.ExportProcesserInput;
 import com.researchspace.export.pdf.ExportProcessor;
+import com.researchspace.export.pdf.ExportProcessorInput;
 import com.researchspace.export.pdf.ExportToFileConfig;
 import com.researchspace.export.pdf.HTMLStringGenerator;
 import com.researchspace.files.service.FileStore;
@@ -38,14 +38,19 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.archive.PdfWordExportManager;
+import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.archive.export.ExportFailureException;
+import com.researchspace.service.archive.export.ExportFileResult;
 import com.researchspace.service.archive.export.RecordIdExtractor;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -82,7 +87,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
   @Autowired private HTMLStringGenerator htmlStringGenerator;
 
   @Override
-  public EcatDocumentFile doExport(
+  public ExportEcatDocumentResult doExport(
       User ownerOfWork,
       Long[] exportIds,
       String[] exportNames,
@@ -99,8 +104,9 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
     List<File> tmpExportedFiles = new ArrayList<>();
 
     EcatDocumentFile exportResult = null;
-    processDocsForDocExport(
-        ownerOfWork, exportIds, exportTypes, config, exporter, details, tmpExportedFiles);
+    Set<String> igsnInventoryLinkedItems =
+        processDocsForDocExport(
+            ownerOfWork, exportIds, exportTypes, config, exporter, details, tmpExportedFiles);
     FileProperty fp = generateFilePropertyForExportedFile(config, exporter, details);
 
     if (mergeFilesIntoFinalOutputFileAndSaveInFileStore(
@@ -110,10 +116,10 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
       log.error("Couldn't generate EcatDocumentFile");
       removeTempFiles(details);
     }
-    return exportResult;
+    return new ExportEcatDocumentResult(exportResult, igsnInventoryLinkedItems);
   }
 
-  public File doExportForSigning(
+  public ExportFileResult doExportForSigning(
       User ownerOfWork,
       Long[] exportIds,
       String[] exportNames,
@@ -128,8 +134,9 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
     // default type as StructuredDocument
     verifyInput(exportIds, exportTypes);
     List<File> tmpExportedFiles = new ArrayList<>();
-    processDocsForDocExport(
-        ownerOfWork, exportIds, exportTypes, config, exporter, details, tmpExportedFiles);
+    Set<String> igsnInventoryLinkedItems =
+        processDocsForDocExport(
+            ownerOfWork, exportIds, exportTypes, config, exporter, details, tmpExportedFiles);
     ExportProcessor processor = getExportProcessor(config);
     try {
       processor.concatenateExportedFilesIntoOne(
@@ -138,7 +145,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
       log.error("Couldn't generate PDF");
       removeTempFiles(details);
     }
-    return details.getConcatenatedExportFile();
+    return new ExportFileResult(details.getConcatenatedExportFile(), igsnInventoryLinkedItems);
   }
 
   private EcatDocumentFile addPdfToGallery(
@@ -228,7 +235,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
     return fp;
   }
 
-  private void processDocsForDocExport(
+  private Set<String> processDocsForDocExport(
       User ownerOfWork,
       Long[] exportIds,
       String[] exportTypes,
@@ -236,14 +243,17 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
       User exporter,
       ExportOperationDetails details,
       List<File> tmpExportedFiles) {
+    Set<String> igsnInventoryLinkedItems = new HashSet<>();
     for (int i = 0; i < exportIds.length; i++) {
       try {
         String tp1 = exportTypes[i];
         if (RecordType.isNotebookOrFolder(tp1)) {
-          processFolderForExportToPdfWord(
-              exportIds[i], tmpExportedFiles, ownerOfWork, config, details);
+          igsnInventoryLinkedItems.addAll(
+              processFolderForExportToPdfWord(
+                  exportIds[i], tmpExportedFiles, ownerOfWork, config, details));
         } else if (RecordType.isDocumentOrTemplate(tp1)) {
-          processRecordForExport(exportIds[i], tmpExportedFiles, exporter, config, details);
+          igsnInventoryLinkedItems.addAll(
+              processRecordForExport(exportIds[i], tmpExportedFiles, exporter, config, details));
         } else {
           log.info("Error in doExport()");
           // what if it's none of these things? Should fail here
@@ -255,6 +265,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
         log.warn("Error on {} for id={}", ex.getMessage(), exportIds[i]);
       }
     }
+    return igsnInventoryLinkedItems;
   }
 
   private void removeTempFiles(ExportOperationDetails details) {
@@ -337,12 +348,13 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
     return exportIDs;
   }
 
-  private void processFolderForExportToPdfWord(
+  private Set<String> processFolderForExportToPdfWord(
       Long folderId,
       List<File> tempIndividualExportFiles,
       User user,
       ExportToFileConfig exportConfig,
       ExportOperationDetails exportOpDetails) {
+    Set<String> igsnInventoryLinkedItems = new HashSet<>();
     try {
       Folder fd1 = fMger.getFolder(folderId, user, SearchDepth.INFINITE);
       if (!permissions.isPermitted(fd1, PermissionType.READ, user)) {
@@ -360,12 +372,13 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
                 List<GlobalIdentifier> rcdIds =
                     idExtractor.getExportRecordList().getRecordsToExport();
                 for (GlobalIdentifier recordOid : rcdIds) {
-                  processRecordForExport(
-                      recordOid.getDbId(),
-                      tempIndividualExportFiles,
-                      user,
-                      exportConfig,
-                      exportOpDetails);
+                  igsnInventoryLinkedItems.addAll(
+                      processRecordForExport(
+                          recordOid.getDbId(),
+                          tempIndividualExportFiles,
+                          user,
+                          exportConfig,
+                          exportOpDetails));
                 }
               });
     } catch (AuthorizationException ex) {
@@ -379,9 +392,10 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
       log.warn(ex.toString());
       throw new ExportFailureException(ex.getMessage());
     }
+    return igsnInventoryLinkedItems;
   }
 
-  private void processRecordForExport(
+  private Set<String> processRecordForExport(
       Long sid,
       List<File> tempExportFiles,
       User user,
@@ -397,7 +411,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
             "{} of type {} is not an id for a notebook entry or document.. skipping",
             sid,
             (strucDocMaybe != null) ? strucDocMaybe.getType() : "null");
-        return;
+        return Collections.emptySet();
       }
       StructuredDocument strucDoc = strucDocMaybe.asStrucDoc();
       // fail if exportint
@@ -414,12 +428,12 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
           new File(
               exportOpDetails.getTempExportFolder(), createExportFileName(strucDoc, exportConfig));
 
-      ExportProcesserInput exportInputHtml =
+      ExportProcessorInput exportInputHtml =
           htmlStringGenerator.extractHtmlStr(strucDoc, exportConfig);
       ExportProcessor processor = getExportProcessor(exportConfig);
       processor.makeExport(tempExportFile, exportInputHtml, strucDoc, exportConfig);
       tempExportFiles.add(tempExportFile);
-
+      return exportInputHtml.getIgsnInventoryLinkedItems();
     } catch (AuthorizationException ex) {
       log.warn(ex.toString());
       throw new ExportFailureException(

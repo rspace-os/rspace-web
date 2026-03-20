@@ -207,14 +207,14 @@ public class FieldmarkServiceClientAdapterTest {
         metadataUnderTest.getPreDescription());
     assertEquals("Steve Cassidy", metadataUnderTest.getProjectLead());
     assertEquals("New", metadataUnderTest.getProjectStatus());
-    assertEquals("1.0", metadataUnderTest.getSchemaVersion());
+    assertEquals("2.0", metadataUnderTest.getSchemaVersion());
     assertEquals("true", metadataUnderTest.getShowQRCodeButton());
     assertEquals("1726126204618-rspace-igsn-demo", metadataUnderTest.getProjectId());
 
     // check records and fields
     Map<String, FieldmarkRecordDTO> recordsUnderTest = resultUnderTest.getRecords();
     assertNotNull(recordsUnderTest);
-    assertEquals(3, recordsUnderTest.size());
+    assertEquals(4, recordsUnderTest.size());
 
     // record 1
     assertTrue(recordsUnderTest.containsKey("rec-5eb53c21-d7f8-41a7-a8b5-4900e46cf8e0"));
@@ -229,15 +229,13 @@ public class FieldmarkServiceClientAdapterTest {
         "Sample-12-00009", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
     assertEquals(12, currentRecord.getField("Survey-Number").getFieldValue());
     assertEquals(
-        new FieldmarkDoiIdentifier("1"),
+        new FieldmarkDoiIdentifier("https://doi.org/10.82316/gp0r-r008"),
         currentRecord.getField(IGSN_CANDIDATE_FIELD_NAME).getFieldValue());
     assertNull(currentRecord.getField("Sample-Location").getFieldValue());
     assertEquals("Roma", currentRecord.getField("New-Text-Field").getFieldValue());
+    assertNull(currentRecord.getField("Item-Description").getFieldValue());
     assertEquals(
-        "https://doi.org/10.82316/rzqc-0n83",
-        currentRecord.getField("Item-Description").getFieldValue());
-    assertEquals(
-        "Sample-Photograph/Sample-12-00009-Sample-Photograph.jpg",
+        "primary/sample-photograph/sample-12-00009.jpg",
         ((FieldmarkFileExtractor) currentRecord.getField("Sample-Photograph")).getFileName());
     assertEquals(byte[].class, currentRecord.getField("Sample-Photograph").getFieldType());
     assertEquals(18, currentRecord.getField("Length-mm").getFieldValue());
@@ -256,7 +254,7 @@ public class FieldmarkServiceClientAdapterTest {
         "Sample-63-00050", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
     assertEquals(63, currentRecord.getField("Survey-Number").getFieldValue());
     assertEquals(
-        new FieldmarkDoiIdentifier("1"),
+        new FieldmarkDoiIdentifier("https://doi.org/10.82316/60cg-y548"),
         currentRecord.getField(IGSN_CANDIDATE_FIELD_NAME).getFieldValue());
     assertEquals(
         "14.036364239998946",
@@ -267,9 +265,9 @@ public class FieldmarkServiceClientAdapterTest {
         ((FieldmarkLocationExtractor) currentRecord.getField("Sample-Location"))
             .getLongitudeStringValue());
     assertEquals("homeS", currentRecord.getField("New-Text-Field").getFieldValue());
-    assertEquals("10.82316/8vmr-be22", currentRecord.getField("Item-Description").getFieldValue());
+    assertNull(currentRecord.getField("Item-Description").getFieldValue());
     assertEquals(
-        "Sample-Photograph/Sample-63-00050-Sample-Photograph.jpg",
+        "primary/sample-photograph/sample-63-00050.jpg",
         ((FieldmarkFileExtractor) currentRecord.getField("Sample-Photograph")).getFileName());
     assertEquals(byte[].class, currentRecord.getField("Sample-Photograph").getFieldType());
     assertEquals(50, currentRecord.getField("Length-mm").getFieldValue());
@@ -288,16 +286,15 @@ public class FieldmarkServiceClientAdapterTest {
         "Sample-1-00008", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
     assertEquals(1, currentRecord.getField("Survey-Number").getFieldValue());
     assertEquals(
-        "1",
+        "https://doi.org/10.82316/60cg-y548",
         ((FieldmarkDoiIdentifier) currentRecord.getField("IGSN-QR-Code").getFieldValue())
             .getDoiIdentifier());
     assertNull(currentRecord.getField("Sample-Location").getFieldValue());
     assertEquals(
         "Glasgow or PAISLEY (Scotland)", currentRecord.getField("New-Text-Field").getFieldValue());
+    assertNull(currentRecord.getField("Item-Description").getFieldValue());
     assertEquals(
-        "doi.org/10.82316/731r-r253", currentRecord.getField("Item-Description").getFieldValue());
-    assertEquals(
-        "Sample-Photograph/Sample-1-00008-Sample-Photograph.jpg",
+        "primary/sample-photograph/sample-1-00008.jpg",
         ((FieldmarkFileExtractor) currentRecord.getField("Sample-Photograph")).getFileName());
     assertEquals(byte[].class, currentRecord.getField("Sample-Photograph").getFieldType());
     assertEquals(22, currentRecord.getField("Length-mm").getFieldValue());
