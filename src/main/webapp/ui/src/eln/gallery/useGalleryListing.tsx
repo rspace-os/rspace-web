@@ -598,6 +598,18 @@ export class Filestore implements GalleryFile {
     return "/images/icons/filestore.svg";
   }
 
+  get ownerId(): number | null {
+    return null;
+  }
+
+  get ownerName(): string {
+    return "Unknown owner";
+  }
+
+  get ownerUsername(): string | null {
+    return null;
+  }
+
   pathAsString(): string {
     return "/";
   }
@@ -773,6 +785,18 @@ export class RemoteFile implements GalleryFile {
       this,
       GALLERY_SECTION.NETWORKFILES,
     );
+  }
+
+  get ownerId(): number | null {
+    return null;
+  }
+
+  get ownerName(): string {
+    return "Unknown owner";
+  }
+
+  get ownerUsername(): string | null {
+    return null;
   }
 
   pathAsString(): string {
