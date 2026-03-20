@@ -412,8 +412,6 @@ function decodeDsw(data: FetchedState): IntegrationStates["DSW"] {
         .orElse(false);
   }
 
-  console.log("uIEdD data to decode: ", data);
-
   return {
     mode: parseState(data),
     credentials:

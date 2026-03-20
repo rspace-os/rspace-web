@@ -90,40 +90,21 @@ function DMPDialogContent({
 
   const [importing, setImporting] = useState(false);
 
-  React.useEffect(() => {
-    // console.log("DDCuE fetching dmpHost I guess");
-    // axios
-    //   .get<string>("/apps/dmptool/baseUrlHost")
-    //   .then((r) => setDMPHost(r.data))
-    //   .catch((e) => console.error("Cannot establish DMP host", e));
-    // console.log("DDCuE dmpHost: ", DMPHost);
-    //const;
-  }, []);
-
   const getDMPs = async () => {
     setFetching(true);
     const thisId = fetchingId.current;
 
     let allPlans : Array<DswProjectWithOrigin> = [];
-    // let remainingToGet = connections?.length;
-    // console.log("DDDDCgD Getting projects for this many connections: ", connections?.length);
-    console.log("DDDDCgD Getting projects for this connection: ", connection);
     try {
-      console.log("DDDDCgD Getting plans for connection alias: ", connection.DSW_ALIAS);
-
       const r = await axios.get<{
         success: true;
         data: Array<DswProject>;
         error?: { errorMessages: Array<string> };
       }>(`/apps/dsw/plans?serverAlias=${connection.DSW_ALIAS}`);
-      console.log("DDDDCgD plans: ", (r.data.data ? r.data.data : null)); //.data.data.projects);
 
-      console.log("DDDDCgD r: ", r);
-      console.log("DDDDCgD success? ", r.data.success);
       if (r.data.success) {
 
         Object.entries(r.data.data).map(([id, project]) => {
-          console.log("DDDDCgD x: ", id, " , y: ", project);
           let projectWithAlias: DswProjectWithOrigin = {
             createdAt: project.createdAt,
             description: project.description,
@@ -136,25 +117,16 @@ function DMPDialogContent({
             updatedAt: project.updatedAt,
             uuid: project.uuid,
             visibility: project.visibility
-          }; //y as DswProjectWithOrigin;
-          console.log("DDDDCgD projectWithAlias: ", projectWithAlias);
+          };
           allPlans.push(projectWithAlias);
         })
 
-        // console.log("DDDDCgD allPlans: ", allPlans);
-        // console.log("DDDDCgD remaining to get was: ", remainingToGet, " , and is it? ", (remainingToGet? true : false));
-        // remainingToGet = remainingToGet? remainingToGet - 1 : remainingToGet;
-        // console.log("DDDDCgD remaining to get now: ", remainingToGet);
-        // if (0 == remainingToGet) {
-        console.log("DDDDCgD allPlans FINALLY: ", allPlans);
         setDMPs(allPlans);
 
       } else {
         setFetching(false);
         let errorMsg = r.data && r.data.error && r.data.error.errorMessages ?
-            //Object.entries(r.data.error.errorMessages)[0] : null;
             r.data.error.errorMessages[0] : null;
-        console.log("DDDDCgD Error message: ", errorMsg);
         addAlert(
           mkAlert({
             title: "Unable to load projects.",
@@ -174,7 +146,6 @@ function DMPDialogContent({
         );
         return;
       }
-      console.log("DDDDCgD Fetching false");
       setFetching(false);
     } catch (e) {
       console.error("Could not get DSW plans for reason: ", e);
@@ -200,7 +171,6 @@ function DMPDialogContent({
   const handleImport = async () => {
     try {
       setImporting(true);
-      //const selectedPlanId = Number(selectedPlan?.id);
       if (selectedPlan) {
         await axios
           .post<{
@@ -234,9 +204,6 @@ function DMPDialogContent({
       setImporting(false);
     }
   };
-
-  console.log("DDC DMPHost: ", DMPHost);
-  console.log("DDC DMPs: ", DMPs);
 
   return (
     <>
@@ -297,11 +264,6 @@ function DMPDialogContent({
                   flex: 1,
                   sortable: true,
                 }),
-                // DataGridColumn.newColumnWithFieldName<"serverAlias", DswProjectWithOrigin>("serverAlias", {
-                //   headerName: "Source Server",
-                //   flex: 1,
-                //   sortable: false,
-                // }),
                 DataGridColumn.newColumnWithFieldName<"description", DswProjectWithOrigin>(
                   "description",
                   {
@@ -347,8 +309,6 @@ function DMPDialogContent({
               rows={fetching ? [] : DMPs}
               selectedRowId={selectedPlan?.id}
               onSelectionChange={(newSelectionId: GridRowId) => {
-                console.log("DDC newSelectionId: ", newSelectionId);
-                console.log("DDC Which gives plan: ", DMPs.find((d) => d.id === newSelectionId));
                 setSelectedPlan(DMPs.find((d) => d.id === newSelectionId));
               }}
               selectRadioAriaLabelFunc={(row) => `Select plan: ${row.title}`}
@@ -375,8 +335,6 @@ function DMPDialogContent({
               getRowHeight={() => "auto"}
               onCellKeyDown={({ id }, e) => {
                 if (e.key === " " || e.key === "Enter") {
-                  console.log("DDC keydown id: ", id);
-                  console.log("DDC Which gives plan: ", DMPs.find((d) => d.id === id));
                   setSelectedPlan(DMPs.find((d) => d.id === id));
                   e.stopPropagation();
                 }

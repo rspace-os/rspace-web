@@ -15,7 +15,6 @@ export type DswConfig = {
 type DSWAccentMenuItemArgs = {
   onDialogClose: () => void;
   connection: DswConfig;
-  showAlias: boolean;
 };
 
 /**
@@ -23,17 +22,13 @@ type DSWAccentMenuItemArgs = {
  */
 export default function DSWAccentMenuItem({
   onDialogClose,
-    connection,
-    showAlias
+    connection
 }: DSWAccentMenuItemArgs): React.ReactNode {
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
-  console.log("DAMI connection: ", connection);
 
   return (
     <>
       <AccentMenuItem
-        // title="DSW / FAIR Wizard"
-        // subheader={showAlias && connection.DSW_ALIAS}
         title={connection.DSW_ALIAS}
         subheader="DSW / FAIR Wizard"
         avatar={<CardMedia image={DSWIcon} />}

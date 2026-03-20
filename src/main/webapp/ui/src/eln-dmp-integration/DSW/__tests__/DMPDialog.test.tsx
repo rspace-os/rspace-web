@@ -7,11 +7,9 @@ import React from "react";
 import {
   render,
   screen,
-  fireEvent,
   waitFor,
-  act,
 } from "@testing-library/react";
-import DMPDialog, {DswProject} from "../DMPDialog";
+import DMPDialog from "../DMPDialog";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import MockAdapter from "axios-mock-adapter";

@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React from "react";
 import { useLandmark } from "../../../components/LandmarksContext";
 import Box from "@mui/material/Box";
 import { Drawer, Menu } from "../../../components/DialogBoundary";
@@ -49,13 +49,7 @@ import AddFilestoreDialog from "./AddFilestoreDialog";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import DSWAccentMenuItem from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import {DswConfig} from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
-import {Plan} from "@/eln-dmp-integration/DSW/DMPDialog";
-import {
-  useIntegrationsEndpoint,
-  type IntegrationStates, Integration, FetchedState
-} from "../../apps/useIntegrationsEndpoint";
-import {doNotAwait, mapObject} from "@/util/Util";
-import {Optional} from "@/util/optional";
+import {Integration, FetchedState} from "../../apps/useIntegrationsEndpoint";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -400,11 +394,6 @@ const DmpMenuSection = ({
   showDmpPanel,
 }: DmpMenuSectionArgs) => {
 
-  // const [dswConnections, setDswConnections] = React.useState<null | ReadonlyArray<{
-  //   DSW_ALIAS: string;
-  //   DSW_APIKEY: string;
-  //   DSW_URL: string;
-  // }>>(null);
   const [dswConnections, setDswConnections] = React.useState<null | DswConfig[]>(null);
 
   const showArgos = FetchingData.getSuccessValue(
@@ -419,7 +408,6 @@ const DmpMenuSection = ({
   const showDsw = FetchingData.getSuccessValue(
     useIntegrationIsAllowedAndEnabled("DSW"),
   ).orElse(false);
-  console.log("SdMS showDsw: ", showDsw);
 
   React.useEffect(() => {
     void (async () => {
@@ -433,8 +421,6 @@ const DmpMenuSection = ({
       window.gallery = showDmpPanel;
 
       const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
-
-      console.log("SuE About to get all integrations maybe");
 
       const api = axios.create({
         baseURL: "/integration",
@@ -453,20 +439,11 @@ const DmpMenuSection = ({
         error: string;
       }
       >("allIntegrations");
-      console.log("SuE states: ", states);
-      // console.log("SuE data: ", states.data.data);
       if (states.data.success) {
         const data = states.data.data;
-        // console.log("SuE DSW state: ", data.DSW);
-        // console.log("SuE DSW options: ", data.DSW.options);
-        // data.DSW.options
-        // const decodedStates = decodeIntegrationStates(data);
-        // console.log("SuE decoded states: ", decodedStates);
-        //setDswConnections(data.DSW.options);
         const configs = Object.entries(data.DSW.options).map(([optionsId, config]) => {
           return config as DswConfig;
         });
-        console.log("SuE configs: ", configs);
         setDswConnections(configs);
       }
     })();
@@ -487,7 +464,7 @@ const DmpMenuSection = ({
       {
         showDsw && dswConnections &&
           Object.entries(dswConnections).map(([index, connection]) => {
-            return <DSWAccentMenuItem onDialogClose={onDialogClose} connection={connection} showAlias={dswConnections.length > 1}/>
+            return <DSWAccentMenuItem onDialogClose={onDialogClose} connection={connection}/>
           })
       }
     </>
@@ -503,12 +480,6 @@ type SidebarArgs = {
   refreshListing: () => Promise<void>;
   id: string;
 };
-
-// type DswConfig = {
-//   DSW_APIKEY: string;
-//   DSW_URL: string;
-//   DSW_ALIAS: string;
-// }
 
 const Sidebar = ({
   selectedSection,
@@ -531,16 +502,6 @@ const Sidebar = ({
     });
 
   }, [viewport]);
-
-  // useEffect(() => {
-  //       console.log("SuEdNA Going to get integrations");
-  //       const { allIntegrations } = useIntegrationsEndpoint();
-  //       console.log("SuEdNA About to await all integrations");
-  //       const integrations = allIntegrations();
-  //       console.log("SuEdNA integrations: ", integrations);
-  //       console.log("SuEdNA DSW integrations: ", integrations.DSW);
-  //     }, []);
-
 
   const showFilestores = FetchingData.getSuccessValue(filestoresEnabled)
     .flatMap(Parsers.isBoolean)
