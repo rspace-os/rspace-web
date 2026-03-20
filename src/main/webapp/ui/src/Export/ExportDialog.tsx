@@ -127,7 +127,6 @@ function ExportDialog({
     appendPane(newListOfPanes, makePane("FormatSpecificOptions", "Export"));
 
     if (state.exportConfig.repository) {
-      // TODO: move this back to after setup repository
       if (raidEnabled) {
         appendPane(newListOfPanes, makePane("ExportDialogRaid", "RAiD"));
       }
