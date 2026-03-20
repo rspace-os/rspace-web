@@ -15,6 +15,9 @@ import static com.researchspace.service.SystemPropertyName.PYRAT_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.SLACK_AVAILABLE;
 import static com.researchspace.service.impl.IntegrationsHandlerImpl.MASKED_TOKEN;
 import static com.researchspace.testutils.SystemPropertyTestFactory.createPermissionEnumSystemProperty;
+import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_ALIAS;
+import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_APIKEY;
+import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_URL;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIAS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
@@ -74,11 +77,6 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-
-import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_ALIAS;
-import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_URL;
-import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_APIKEY;
-
 
 public class IntegrationsHandlerTest {
 
@@ -456,12 +454,15 @@ public class IntegrationsHandlerTest {
     UserConnection existingConnection = new UserConnection();
     existingConnection.setDisplayName("DSW Display Name");
     existingConnection.setRank(1);
-    existingConnection.setId(new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
+    existingConnection.setId(
+        new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
     existingConnection.setExpireTime(0l);
     existingConnection.setAccessToken(origDswToken);
 
     when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
-    when(userConnectionManager.findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, origDswAlias)).thenReturn(Optional.of(existingConnection));
+    when(userConnectionManager.findByUserNameProviderName(
+            subject.getUsername(), DSW_APP_NAME, origDswAlias))
+        .thenReturn(Optional.of(existingConnection));
 
     // The potentially updated options that are being passed in
     // from the UI.  Note that the API Key is set as the default
@@ -474,8 +475,7 @@ public class IntegrationsHandlerTest {
     handler.saveAppOptions(null, dswOptions, DSW_APP_NAME, false, subject);
     Mockito.verify(userConnectionManager, times(0))
         .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
-    Mockito.verify(userConnectionManager, times(1))
-        .save(any());
+    Mockito.verify(userConnectionManager, times(1)).save(any());
   }
 
   @Test
@@ -505,12 +505,15 @@ public class IntegrationsHandlerTest {
     UserConnection existingConnection = new UserConnection();
     existingConnection.setDisplayName("DSW Display Name");
     existingConnection.setRank(1);
-    existingConnection.setId(new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
+    existingConnection.setId(
+        new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
     existingConnection.setExpireTime(0l);
     existingConnection.setAccessToken(origDswToken);
 
     when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
-    when(userConnectionManager.findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, origDswAlias)).thenReturn(Optional.of(existingConnection));
+    when(userConnectionManager.findByUserNameProviderName(
+            subject.getUsername(), DSW_APP_NAME, origDswAlias))
+        .thenReturn(Optional.of(existingConnection));
 
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, updatedDswAlias);
@@ -520,8 +523,7 @@ public class IntegrationsHandlerTest {
     handler.saveAppOptions(1l, dswOptions, DSW_APP_NAME, false, subject);
     Mockito.verify(userConnectionManager, times(1))
         .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
-    Mockito.verify(userConnectionManager, times(1))
-        .save(any());
+    Mockito.verify(userConnectionManager, times(1)).save(any());
   }
 
   @Test
@@ -551,12 +553,15 @@ public class IntegrationsHandlerTest {
     UserConnection existingConnection = new UserConnection();
     existingConnection.setDisplayName("DSW Display Name");
     existingConnection.setRank(1);
-    existingConnection.setId(new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
+    existingConnection.setId(
+        new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
     existingConnection.setExpireTime(0l);
     existingConnection.setAccessToken(origDswToken);
 
     when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
-    when(userConnectionManager.findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, origDswAlias)).thenReturn(Optional.of(existingConnection));
+    when(userConnectionManager.findByUserNameProviderName(
+            subject.getUsername(), DSW_APP_NAME, origDswAlias))
+        .thenReturn(Optional.of(existingConnection));
 
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, origDswAlias);
@@ -568,8 +573,7 @@ public class IntegrationsHandlerTest {
     // the URL is not stored in the UserConnection table.
     Mockito.verify(userConnectionManager, times(0))
         .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
-    Mockito.verify(userConnectionManager, times(0))
-        .save(any());
+    Mockito.verify(userConnectionManager, times(0)).save(any());
   }
 
   @Test
@@ -599,12 +603,15 @@ public class IntegrationsHandlerTest {
     UserConnection existingConnection = new UserConnection();
     existingConnection.setDisplayName("DSW Display Name");
     existingConnection.setRank(1);
-    existingConnection.setId(new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
+    existingConnection.setId(
+        new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
     existingConnection.setExpireTime(0l);
     existingConnection.setAccessToken(origDswToken);
 
     when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
-    when(userConnectionManager.findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, origDswAlias)).thenReturn(Optional.of(existingConnection));
+    when(userConnectionManager.findByUserNameProviderName(
+            subject.getUsername(), DSW_APP_NAME, origDswAlias))
+        .thenReturn(Optional.of(existingConnection));
 
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, origDswAlias);
@@ -614,8 +621,7 @@ public class IntegrationsHandlerTest {
     handler.saveAppOptions(1l, dswOptions, DSW_APP_NAME, false, subject);
     Mockito.verify(userConnectionManager, times(1))
         .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
-    Mockito.verify(userConnectionManager, times(1))
-        .save(any());
+    Mockito.verify(userConnectionManager, times(1)).save(any());
   }
 
   private SystemPropertyValue getSystemPropertyValueAllowed(SystemPropertyName propertyName) {

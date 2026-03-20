@@ -279,9 +279,23 @@ function DMPDialogContent({
             <DataGridWithRadioSelection
               columns={[
                 DataGridColumn.newColumnWithFieldName<"name", DswProjectWithOrigin>("name", {
+                  renderCell: (params: { row: DswProjectWithOrigin }) => {
+                    const sanitized = DOMPurify.sanitize(
+                        params.row.name,
+                    );
+                    return (
+                        <span
+                            dangerouslySetInnerHTML={{
+                              __html: `${sanitized.substring(0, 200)} ${
+                                  sanitized.length > 200 ? "..." : ""
+                              }`,
+                            }}
+                        ></span>
+                    );
+                  },
                   headerName: "Name",
                   flex: 1,
-                  sortable: false,
+                  sortable: true,
                 }),
                 // DataGridColumn.newColumnWithFieldName<"serverAlias", DswProjectWithOrigin>("serverAlias", {
                 //   headerName: "Source Server",
@@ -306,9 +320,8 @@ function DMPDialogContent({
                       );
                     },
                     headerName: "Description",
-                    display: "flex",
                     flex: 1,
-                    sortable: false,
+                    sortable: true,
                   },
                 ),
                 DataGridColumn.newColumnWithValueMapper<"createdAt", DswProjectWithOrigin>(
@@ -316,8 +329,9 @@ function DMPDialogContent({
                   (createdAt) => new Date(createdAt).toLocaleString(),
                   {
                     headerName: "Created At",
+                    display: "flex",
                     flex: 1,
-                    sortable: false,
+                    sortable: true,
                   },
                 ),
                 DataGridColumn.newColumnWithValueMapper<"updatedAt", DswProjectWithOrigin>(
@@ -326,7 +340,7 @@ function DMPDialogContent({
                   {
                     headerName: "Updated At",
                     flex: 1,
-                    sortable: false,
+                    sortable: true,
                   },
                 ),
               ]}
@@ -342,8 +356,7 @@ function DMPDialogContent({
                 columns: {
                   columnVisibilityModel: {
                     id: !isViewportSmall,
-                    description: false,
-                    created: false,
+                    createdAt: false,
                     modified: false,
                   },
                 },
