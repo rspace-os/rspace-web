@@ -89,8 +89,10 @@
                         <spring:message code="system.netfilesystem.details.client.samba" /></label>
                     <label><input type="radio" id="fileSystemClientTypeSftp" name="fileSystemClientType" value="SFTP">
                         <spring:message code="system.netfilesystem.details.client.sftp" /></label>
-                     <label><input type="radio" id="fileSystemClientTypeIrods" name="fileSystemClientType" value="IRODS">
+                    <label><input type="radio" id="fileSystemClientTypeIrods" name="fileSystemClientType" value="IRODS">
                         <spring:message code="system.netfilesystem.details.client.irods" /></label>
+                    <label><input type="radio" id="fileSystemClientTypeAwsS3" name="fileSystemClientType" value="AWS_S3">
+                        <spring:message code="system.netfilesystem.details.client.s3" /></label>
                 </td>
             </tr>
             <tr class="fileSystemDetailsSambaRow">
@@ -106,7 +108,7 @@
                 <td style="width: 120px"><label for="fileSystemName"><spring:message code="system.netfilesystem.details.name" /></label></td>
                 <td><input id="fileSystemName" type="text" style="width: 20em" required /></td>
             </tr>
-            <tr>
+            <tr class="fileSystemDetailsUrlRow">
                 <td><label for="fileSystemUrl"><spring:message code="system.netfilesystem.details.url" /></label></td>
                 <td><input id="fileSystemUrl" type="text" style="width: 20em" required /></td>
             </tr>
@@ -143,10 +145,6 @@
              </tr>
 
 
-
-
-
-
             <tr class="fileSystemDetailsSftpRow">
                 <td><label for="fileSystemSftpServerPublicKey">
                     <spring:message code="system.netfilesystem.details.client.sftp.server.public.key" /></label></td>
@@ -160,13 +158,18 @@
                         <label><input type="radio" id="fileSystemDetailsSftpDirChoiceNo" value="false" name="fileSystemDirChoice" />No</label></td>
                 </tr>
             </rst:hasDeploymentProperty>
-            <tr>
+            <tr class="fileSystemDetailsAuthRow">
                 <td><label><spring:message code="system.netfilesystem.details.auth" /></label></td>
                 <td>
-                    <label><input type="radio" id="fileSystemAuthTypePassword" name="fileSystemAuthType" value="PASSWORD" required>
+                    <label for="fileSystemAuthTypePassword">
+                        <input type="radio" id="fileSystemAuthTypePassword" name="fileSystemAuthType" value="PASSWORD" required>
                         <span id="fileSystemAuthTypePasswordSpan"><spring:message code="system.netfilesystem.details.auth.password" /></span></label>
-                    <label for="fileSystemAuthTypePubKey"><input type="radio" id="fileSystemAuthTypePubKey" name="fileSystemAuthType" value="PUBKEY">
+                    <label for="fileSystemAuthTypePubKey">
+                        <input type="radio" id="fileSystemAuthTypePubKey" name="fileSystemAuthType" value="PUBKEY">
                         <spring:message code="system.netfilesystem.details.auth.pubkey" /></label>
+                    <label for="fileSystemAuthTypeNone">
+                        <input type="radio" id="fileSystemAuthTypeNone" name="fileSystemAuthType" value="NONE">
+                        <spring:message code="system.netfilesystem.details.auth.none" /></label>
                 </td>
             </tr>
             <tr class="fileSystemDetailsPubKeyRow">
@@ -175,14 +178,13 @@
                 <td><input id="fileSystemPubKeyRegistrationUrl" type="text" style="width: 20em" /></td>
             </tr>
 
-	                <tr class="fileSystemDetailsIrodsAuthRow">
+            <tr class="fileSystemDetailsIrodsAuthRow">
                 <td><label><spring:message code="system.netfilesystem.details.client.irods.auth" /></label></td>
                 <td>
                     <label><input type="radio" id="iRODSfileSystemAuthTypeNative" name="iRODSfileSystemAuthType" value="NATIVE">
                         <span id="iRODSfileSystemAuthTypeNativeSpan"><spring:message code="system.netfilesystem.details.client.irods.auth.native" /></span></label>
                     <label><input type="radio" id="iRODSfileSystemAuthTypePAM" name="iRODSfileSystemAuthType" value="PAM">
                         <span id="iRODSfileSystemAuthTypePAMSpan"><spring:message code="system.netfilesystem.details.client.irods.auth.pam" /></span></label>
-
                 </td>
             </tr>
 

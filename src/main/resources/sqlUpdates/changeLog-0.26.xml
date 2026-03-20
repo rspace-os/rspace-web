@@ -169,19 +169,19 @@
 	</changeSet>
 
 <!-- Please read DatabaseChangeGuidelines in this folder before committing 
-   new changesets and leave this reminder in place ! 
-     
-     Please only put below liquibase changeSets containing customChange command. 
-   Other updates should go above. That's because customChange code should be the 
+   new changesets and leave this reminder in place!
+
+     Please only put below liquibase changeSets containing customChange command.
+   Other updates should go above. That's because customChange code should be the
    last changeSet in a given changeLog file.  -->
-   
-    <changeSet id="nfsFileSystem_import" author="matthias" context="run">
+
+<!--    <changeSet id="nfsFileSystem_import" author="matthias" context="run">
         <comment>Migrating netfilestore deployment properties into NfsFileSystem table</comment>
         <customChange
             class="com.researchspace.dao.customliquibaseupdates.v26.NfsFileSystemImporter">
         </customChange>
-    </changeSet>
-    
+    </changeSet> -->
+
 <!--  only customChange changeSets should be placed here -->
 
 </databaseChangeLog>
