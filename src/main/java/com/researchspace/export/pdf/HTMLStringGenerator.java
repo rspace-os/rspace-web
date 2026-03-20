@@ -11,6 +11,6 @@ public interface HTMLStringGenerator {
    * @param strucDoc
    * @param exportConfig
    */
-  ExportProcesserInput extractHtmlStr(
+  ExportProcessorInput extractHtmlStr(
       StructuredDocument strucDoc, StructuredDocumentHTMLViewConfig exportConfig);
 }

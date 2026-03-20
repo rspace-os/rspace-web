@@ -64,7 +64,7 @@ public class PdfProcessor extends AbstractExportProcessor implements ExportProce
   @Override
   public void makeExport(
       File tempExportFile,
-      ExportProcesserInput documentData,
+      ExportProcessorInput documentData,
       IRSpaceDoc strucDoc,
       ExportToFileConfig config)
       throws IOException {
@@ -99,7 +99,7 @@ public class PdfProcessor extends AbstractExportProcessor implements ExportProce
 
   private int doExportPdf(
       File tempExportFile,
-      ExportProcesserInput documentData,
+      ExportProcessorInput documentData,
       IRSpaceDoc strucDoc,
       ExportToFileConfig config)
       throws DocumentException, IOException {
@@ -157,15 +157,16 @@ public class PdfProcessor extends AbstractExportProcessor implements ExportProce
     }
   }
 
-  private ExportProcesserInput preProcessHTML(ExportProcesserInput documentData) {
+  private ExportProcessorInput preProcessHTML(ExportProcessorInput documentData) {
     String html = documentData.getDocumentAsHtml();
     html = htmlUnicodeFontProcesser.apply(html);
     log.debug("Processed: {}", html);
-    return new ExportProcesserInput(
+    return new ExportProcessorInput(
         html,
         documentData.getComments(),
         documentData.getRevisionInfo(),
-        documentData.getNfsLinks());
+        documentData.getNfsLinks(),
+        documentData.getIgsnInventoryLinkedItems());
   }
 
   /*

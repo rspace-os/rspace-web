@@ -15,6 +15,7 @@ import com.researchspace.model.views.SigningResult;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.FileDuplicateStrategy;
 import com.researchspace.service.archive.ExportImport;
+import com.researchspace.service.archive.export.ExportFileResult;
 import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +44,7 @@ public class PostRecordSigningExportHashTest {
   ArchiveResult result = null;
   Signature sig = null;
   SigningResult signatureResult = null;
-  File mockPdfExportFile = null;
+  ExportFileResult mockPdfExportFile = null;
 
   @Before
   public void setUp() throws Exception {
@@ -55,7 +56,7 @@ public class PostRecordSigningExportHashTest {
     result = new ArchiveResult();
     sig = TestFactory.createASignature(doc, any);
     signatureResult = new SigningResult(doc, "OK", sig);
-    mockPdfExportFile = File.createTempFile("pdf", ".pdf");
+    mockPdfExportFile = new ExportFileResult(File.createTempFile("pdf", ".pdf"), null);
   }
 
   @After
@@ -104,6 +105,6 @@ public class PostRecordSigningExportHashTest {
   private void setUpPerformPdfExportOk() throws IOException {
     when(exportImport.asyncExportSelectionToPdfForSigning(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
-        .thenReturn(new AsyncResult<File>(mockPdfExportFile));
+        .thenReturn(new AsyncResult<ExportFileResult>(mockPdfExportFile));
   }
 }

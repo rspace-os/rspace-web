@@ -15,6 +15,7 @@ import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.archive.ExportImport;
+import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.SearchTestUtils;
@@ -59,7 +60,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     ExportToFileConfig config = new ExportToFileConfig();
     final String exportName = "xxxx";
     config.setExportName(exportName);
-    EcatDocumentFile edf =
+    ExportEcatDocumentResult exportEcatDocumentResult =
         exportImportMgr
             .asyncExportSelectionToPdf(
                 new Long[] {sd.getId()},
@@ -68,6 +69,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
                 config,
                 exporter)
             .get();
+    EcatDocumentFile edf = exportEcatDocumentResult.getEcatDocumentFile();
     assertNotNull(edf);
     assertTrue(edf.getName().contains(exportName));
 
@@ -76,13 +78,14 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     // now login as sysadmin, check he can export: RSPAC425
     User sysadmin = logoutAndLoginAsSysAdmin();
     initUser(sysadmin);
-    EcatDocumentFile edf2 =
+    ExportEcatDocumentResult exportEcatDocumentResult2 =
         exportImportMgr.syncExportSelectionToPdf(
             new Long[] {sd.getId()},
             new String[] {sd.getName()},
             new String[] {RecordType.NORMAL.toString()},
             config,
             sysadmin);
+    EcatDocumentFile edf2 = exportEcatDocumentResult2.getEcatDocumentFile();
     assertNotNull(edf2);
     assertTrue(edf2.getName().contains(exportName));
   }
@@ -110,26 +113,28 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     config.setExportName("xxxx");
 
     // Exporting file of another user
-    EcatDocumentFile ecatDocumentFile =
+    ExportEcatDocumentResult exportEcatDocumentResult =
         exportImportMgr.syncExportSelectionToPdf(
             new Long[] {sd.getId()},
             new String[] {sd.getName()},
             new String[] {RecordType.NORMAL.toString()},
             config,
             exporterPi);
+    EcatDocumentFile ecatDocumentFile = exportEcatDocumentResult.getEcatDocumentFile();
     assertNotNull(ecatDocumentFile);
     PdfReader reader = new PdfReader(ecatDocumentFile.getFileUri());
     assertTrue(reader.getNumberOfPages() > 0);
 
     // Exporting folder of another user
     BaseRecord folder = searchByName(user.getUsername(), exporterPi).getFirstResult();
-    ecatDocumentFile =
+    exportEcatDocumentResult =
         exportImportMgr.syncExportSelectionToPdf(
             new Long[] {folder.getId()},
             new String[] {"user folder export"},
             new String[] {RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT.toString()},
             config,
             exporterPi);
+    ecatDocumentFile = exportEcatDocumentResult.getEcatDocumentFile();
     assertNotNull(ecatDocumentFile);
     reader = new PdfReader(ecatDocumentFile.getFileUri());
     int pages = reader.getNumberOfPages();
@@ -167,26 +172,28 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     config.setExportName("xxxx");
 
     // Exporting file of another user
-    EcatDocumentFile ecatDocumentFile =
+    ExportEcatDocumentResult exportEcatDocumentResult =
         exportImportMgr.syncExportSelectionToPdf(
             new Long[] {sd.getId()},
             new String[] {sd.getName()},
             new String[] {RecordType.NORMAL.toString()},
             config,
             labAdmin);
+    EcatDocumentFile ecatDocumentFile = exportEcatDocumentResult.getEcatDocumentFile();
     assertNotNull(ecatDocumentFile);
     PdfReader reader = new PdfReader(ecatDocumentFile.getFileUri());
     assertTrue(reader.getNumberOfPages() > 0);
 
     // Exporting folder of another user
     BaseRecord folder = searchByName(user.getUsername(), labAdmin).getFirstResult();
-    ecatDocumentFile =
+    exportEcatDocumentResult =
         exportImportMgr.syncExportSelectionToPdf(
             new Long[] {folder.getId()},
             new String[] {"user folder export"},
             new String[] {RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT.toString()},
             config,
             labAdmin);
+    ecatDocumentFile = exportEcatDocumentResult.getEcatDocumentFile();
     assertNotNull(ecatDocumentFile);
     reader = new PdfReader(ecatDocumentFile.getFileUri());
     int pages = reader.getNumberOfPages();
@@ -209,7 +216,9 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
     ExportToFileConfig config = new ExportToFileConfig();
     config.setExportName("xxxx");
     logoutAndLoginAs(pi);
-    EcatDocumentFile export = exportImportMgr.asyncExportGroupToPdf(config, pi, grp.getId()).get();
+    ExportEcatDocumentResult exportResult =
+        exportImportMgr.asyncExportGroupToPdf(config, pi, grp.getId()).get();
+    EcatDocumentFile export = exportResult.getEcatDocumentFile();
     assertNotNull(export);
 
     PdfReader reader = new PdfReader(export.getFileUri());
@@ -221,7 +230,8 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
             .getFirstResult();
     delMgr.deleteRecord(folderMgr.getRootFolderForUser(pi).getId(), toDelete.getId(), pi);
 
-    export = exportImportMgr.asyncExportGroupToPdf(config, pi, grp.getId()).get();
+    exportResult = exportImportMgr.asyncExportGroupToPdf(config, pi, grp.getId()).get();
+    export = exportResult.getEcatDocumentFile();
     reader = new PdfReader(export.getFileUri());
     int afterDeletedPageCount = reader.getNumberOfPages();
 

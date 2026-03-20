@@ -1,5 +1,9 @@
 package com.researchspace.service.inventory;
 
+import static com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.CHANGE_OWNER;
+import static com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.LIMITED_READ;
+import static com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.READ;
+import static com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.UPDATE;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -162,19 +166,39 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
      */
 
     // testUser see pi's subsample in default listing
-    ApiSubSampleSearchResult userSubSamplesResult =
+    ApiSubSampleSearchResult testUserSubSamplesResult =
         subSampleApiMgr.getSubSamplesForUser(null, null, null, testUser);
-    assertEquals(2, userSubSamplesResult.getTotalHits().intValue());
-    ApiSubSampleInfo retrievedTestUserSubSample = userSubSamplesResult.getSubSamples().get(0);
+    assertEquals(2, testUserSubSamplesResult.getTotalHits().intValue());
+    ApiSubSampleInfo retrievedTestUserSubSample = testUserSubSamplesResult.getSubSamples().get(0);
     assertEquals(testUserSubSample.getName(), retrievedTestUserSubSample.getName());
-    ApiSubSampleInfo retrievedPiSubSample = userSubSamplesResult.getSubSamples().get(1);
+    ApiSubSampleInfo retrievedPiSubSample = testUserSubSamplesResult.getSubSamples().get(1);
     assertEquals(piSubSample.getName(), retrievedPiSubSample.getName());
     // testUser can query full details of pi's subsample
     ApiSubSample fullPiSubSample =
         subSampleApiMgr.getApiSubSampleById(retrievedPiSubSample.getId(), testUser);
     assertFalse(fullPiSubSample.isClearedForPublicView());
+
+    /* *
+     *
+     * //FIXME
+     *
+     * For some reason next assertion fails in Jenkins:
+     *  - `assertEquals(2, fullPiSubSample.getPermittedActions().size())`
+     *
+     * in fact in JENKINS `fullPiSubSample.getPermittedActions()` is `[READ, UPDATE, CHANGE_OWNER]`
+     * and that is wrong because there should not be the `CHANGE_OWNER`.
+     *
+     * The `CHANGE_OWNER` is there because the condition `user.getUsername().equals(invRecOwner)`is `true`
+     * at this method `invPermissions.setPermissionsInApiInventoryRecord(recordInfo, invRec, user)`
+     *
+     * */
+    System.out.println(
+        " ### fullPiSubSample ### IN LOCAL is 2 (correct) , in JENKINS sometime is 3 ### : "
+            + fullPiSubSample.getPermittedActions());
     // testUser have update permission to pi's subsample
     assertEquals(2, fullPiSubSample.getPermittedActions().size());
+    assertTrue(fullPiSubSample.getPermittedActions().contains(UPDATE));
+    assertTrue(fullPiSubSample.getPermittedActions().contains(READ));
     // testUser can only see public details of other user's subsample
     ApiSubSample subSampleRetrievedByTestUser =
         subSampleApiMgr.getApiSubSampleById(otherUserSubSample.getId(), testUser);
@@ -197,7 +221,12 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
         subSampleApiMgr.getApiSubSampleById(retrievedTestUserSubSample.getId(), pi);
     assertEquals(testUserSubSample.getName(), fullTestUserSubSample.getName());
     // pi have update and transfer permission to user's subsample
+    System.out.println(
+        " ### fullTestUserSubSample ### : " + fullTestUserSubSample.getPermittedActions());
     assertEquals(3, fullTestUserSubSample.getPermittedActions().size());
+    assertTrue(fullTestUserSubSample.getPermittedActions().contains(UPDATE));
+    assertTrue(fullTestUserSubSample.getPermittedActions().contains(CHANGE_OWNER));
+    assertTrue(fullTestUserSubSample.getPermittedActions().contains(READ));
     // pi only see public details of other user's subsample
     ApiSubSample subSampleRetrievedByPi =
         subSampleApiMgr.getApiSubSampleById(otherUserSubSample.getId(), pi);
@@ -241,9 +270,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(testUserSubSample.getName(), fullTestUserSubSample.getName());
     // community admin only have read access to subsample within community
     assertEquals(1, fullTestUserSubSample.getPermittedActions().size());
-    assertEquals(
-        ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.READ,
-        fullTestUserSubSample.getPermittedActions().get(0));
+    assertTrue(fullTestUserSubSample.getPermittedActions().contains(READ));
     // community admin will only have public details for subsample of user outside the community
     ApiSubSample subSampleRetrievedByCommAdmin =
         subSampleApiMgr.getApiSubSampleById(otherUserSubSample.getId(), commAdmin);
@@ -272,12 +299,8 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(otherUserSubSample.getName(), fullOtherUserSubSample.getName());
     // system admin have only read/transfer access to any subsample
     assertEquals(2, fullOtherUserSubSample.getPermittedActions().size());
-    assertEquals(
-        ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.READ,
-        fullOtherUserSubSample.getPermittedActions().get(0));
-    assertEquals(
-        ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.CHANGE_OWNER,
-        fullOtherUserSubSample.getPermittedActions().get(1));
+    assertEquals(READ, fullOtherUserSubSample.getPermittedActions().get(0));
+    assertEquals(CHANGE_OWNER, fullOtherUserSubSample.getPermittedActions().get(1));
   }
 
   @Test
@@ -1139,18 +1162,12 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     ApiContainer containerAsSeenByOtherUser =
         containerApiMgr.getApiContainerById(apiContainer.getId(), otherUser);
     assertEquals(2, containerAsSeenByOtherUser.getPermittedActions().size());
-    assertEquals(
-        ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.READ,
-        containerAsSeenByOtherUser.getPermittedActions().get(0));
-    assertEquals(
-        ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.UPDATE,
-        containerAsSeenByOtherUser.getPermittedActions().get(1));
+    assertEquals(READ, containerAsSeenByOtherUser.getPermittedActions().get(0));
+    assertEquals(UPDATE, containerAsSeenByOtherUser.getPermittedActions().get(1));
     ApiSubSampleInfo subSampleInfoAsSeenByOtherUser =
         (ApiSubSampleInfo) containerAsSeenByOtherUser.getStoredContent().get(0);
     assertEquals(1, subSampleInfoAsSeenByOtherUser.getPermittedActions().size());
-    assertEquals(
-        ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.LIMITED_READ,
-        subSampleInfoAsSeenByOtherUser.getPermittedActions().get(0));
+    assertEquals(LIMITED_READ, subSampleInfoAsSeenByOtherUser.getPermittedActions().get(0));
     assertNotNull(subSampleInfoAsSeenByOtherUser.getName());
     assertNotNull(subSampleInfoAsSeenByOtherUser.getBarcodes());
     assertNotNull(subSampleInfoAsSeenByOtherUser.getParentContainers());
@@ -1160,9 +1177,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     ApiSubSample subSampleAsSeenByOtherUser =
         subSampleApiMgr.getApiSubSampleById(apiSubSample.getId(), otherUser);
     assertEquals(1, subSampleAsSeenByOtherUser.getPermittedActions().size());
-    assertEquals(
-        ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.LIMITED_READ,
-        subSampleAsSeenByOtherUser.getPermittedActions().get(0));
+    assertEquals(LIMITED_READ, subSampleAsSeenByOtherUser.getPermittedActions().get(0));
     // assert only some fields populated
     assertNotNull(subSampleAsSeenByOtherUser.getName());
     assertNotNull(subSampleAsSeenByOtherUser.getBarcodes());

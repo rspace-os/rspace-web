@@ -15,7 +15,6 @@ import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.export.pdf.ExportToFileConfig;
 import com.researchspace.model.ArchivalCheckSum;
-import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
@@ -45,7 +44,9 @@ import com.researchspace.service.archive.PdfWordExportManager;
 import com.researchspace.service.archive.PostArchiveCompletion;
 import com.researchspace.service.archive.export.ArchiveExportPlanner;
 import com.researchspace.service.archive.export.ArchiveRemover;
+import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.archive.export.ExportFailureException;
+import com.researchspace.service.archive.export.ExportFileResult;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -113,7 +114,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired ArchiveExportPlanner archivePlanner;
 
-  public Future<EcatDocumentFile> asyncExportAllUserRecordsToPdf(
+  public Future<ExportEcatDocumentResult> asyncExportAllUserRecordsToPdf(
       User toExport, ExportToFileConfig config, User exporter) throws IOException {
     Folder rootRecord = folderManager.getRootFolderForUser(toExport);
     config.setExportScope(ExportScope.USER);
@@ -127,7 +128,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     String[] exportTypes = new String[] {RecordType.FOLDER.name()};
     String[] exportNames = new String[] {rootRecord.getName()};
     try {
-      EcatDocumentFile pdfExport =
+      ExportEcatDocumentResult pdfExport =
           pdfWordExportManager.doExport(
               toExport, exportIds, exportNames, exportTypes, config, exporter);
       return new AsyncResult<>(pdfExport);
@@ -143,7 +144,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   }
 
   @Override
-  public Future<EcatDocumentFile> asyncExportSelectionToPdf(
+  public Future<ExportEcatDocumentResult> asyncExportSelectionToPdf(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,
@@ -152,7 +153,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       throws IOException {
 
     try {
-      EcatDocumentFile pdfExport =
+      ExportEcatDocumentResult pdfExport =
           pdfWordExportManager.doExport(
               exporter, exportIds, exportNames, exportTypes, config, exporter);
       return new AsyncResult<>(pdfExport);
@@ -163,7 +164,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   }
 
   @Override
-  public Future<File> asyncExportSelectionToPdfForSigning(
+  public Future<ExportFileResult> asyncExportSelectionToPdfForSigning(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,
@@ -172,7 +173,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       throws IOException {
 
     try {
-      File pdfExport =
+      ExportFileResult pdfExport =
           pdfWordExportManager.doExportForSigning(
               exporter, exportIds, exportNames, exportTypes, config, exporter);
       return new AsyncResult<>(pdfExport);
@@ -183,7 +184,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   }
 
   @Override
-  public EcatDocumentFile syncExportSelectionToPdf(
+  public ExportEcatDocumentResult syncExportSelectionToPdf(
       Long[] exportIds,
       String[] exportNames,
       String[] exportTypes,
@@ -471,7 +472,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   }
 
   @Override
-  public Future<EcatDocumentFile> asyncExportGroupToPdf(
+  public Future<ExportEcatDocumentResult> asyncExportGroupToPdf(
       ExportToFileConfig expCfg, User exporter, Long groupId) throws IOException {
 
     expCfg.setExportScope(ExportScope.GROUP);
@@ -484,7 +485,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     archivePlanner.getGroupMembersRootFolderIds(grp, exporter, ids, types, names);
 
     try {
-      EcatDocumentFile ecatdoc =
+      ExportEcatDocumentResult ecatdoc =
           pdfWordExportManager.doExport(
               exporter,
               ids.toArray(new Long[0]),
