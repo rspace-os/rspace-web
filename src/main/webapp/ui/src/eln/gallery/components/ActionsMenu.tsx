@@ -469,6 +469,9 @@ function ActionsMenu({
     globalIds: ReadonlyArray<string>;
     names: ReadonlyArray<string>;
   }> => {
+    if (fetchedCurrentUser.tag === "loading") {
+      return Result.Error([new Error("Loading user information...")]);
+    }
     if (selection.isEmpty)
       return Result.Error([new Error("At least one snippet must be selected.")]);
     if (selection.asSet().some((f) => !f.isSnippet))

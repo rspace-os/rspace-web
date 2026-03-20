@@ -28,7 +28,9 @@ const nonFolderFile: GalleryFile = {
   modificationDate: new Date(),
   type: "image",
   thumbnailUrl: "example.com",
+  ownerId: 1,
   ownerName: "Joe Bloggs",
+  ownerUsername: "joebloggs",
   description: new Description({ key: "empty" }),
   version: 1,
   size: 1024,
@@ -36,6 +38,7 @@ const nonFolderFile: GalleryFile = {
   pathAsString: () => "",
   isFolder: false,
   isSystemFolder: false,
+  isSharedFolder: false,
   isImage: true,
   isSnippet: false,
   isSnippetFolder: false,
@@ -69,7 +72,9 @@ const folderFile: GalleryFile = {
   modificationDate: new Date(),
   type: "folder",
   thumbnailUrl: "example.com",
+  ownerId: 1,
   ownerName: "Joe Bloggs",
+  ownerUsername: "joebloggs",
   description: new Description({ key: "empty" }),
   version: 1,
   size: 1024,
@@ -77,6 +82,7 @@ const folderFile: GalleryFile = {
   pathAsString: () => "",
   isFolder: true,
   isSystemFolder: false,
+  isSharedFolder: false,
   isImage: false,
   isSnippet: false,
   isSnippetFolder: false,
@@ -110,7 +116,9 @@ const snippetFile: GalleryFile = {
   modificationDate: new Date(),
   type: "Snippet",
   thumbnailUrl: "example.com",
+  ownerId: 1,
   ownerName: "Joe Bloggs",
+  ownerUsername: "joebloggs",
   description: new Description({ key: "empty" }),
   version: 1,
   size: 512,
@@ -118,6 +126,7 @@ const snippetFile: GalleryFile = {
   pathAsString: () => "",
   isFolder: false,
   isSystemFolder: false,
+  isSharedFolder: false,
   isImage: false,
   isSnippet: true,
   isSnippetFolder: false,
@@ -140,6 +149,24 @@ const snippetFile: GalleryFile = {
   key: "GF3",
   metadata: {},
 };
+
+function sharedFolderInPath({
+  id,
+  isSystemFolder = false,
+}: {
+  id: ReturnType<typeof dummyId>;
+  isSystemFolder?: boolean;
+}): GalleryFile {
+  return {
+    ...folderFile,
+    id,
+    globalId: `SHARED_${id}`,
+    key: `SHARED_${id}`,
+    name: isSystemFolder ? "Shared root" : "Shared folder",
+    isSystemFolder,
+    isSharedFolder: true,
+  };
+}
 
 function renderWithProviders(files: Array<GalleryFile>) {
   return (
@@ -223,3 +250,50 @@ export function ActionsMenuWithSnippetMissingGlobalId() {
     },
   ]);
 }
+
+export function ActionsMenuWithSnippetInSharedFolderOwnedBySelf() {
+  return renderWithProviders([
+    {
+      ...snippetFile,
+      id: dummyId(),
+      globalId: "GF_SHARED_SELF",
+      key: "GF_SHARED_SELF",
+      name: "My Shared Snippet",
+      ownerId: 1,
+      path: [sharedFolderInPath({ id: dummyId() })],
+    },
+  ]);
+}
+
+export function ActionsMenuWithSnippetInSharedFolderOwnedByOther() {
+  return renderWithProviders([
+    {
+      ...snippetFile,
+      id: dummyId(),
+      globalId: "GF_SHARED_OTHER",
+      key: "GF_SHARED_OTHER",
+      name: "Someone Else's Shared Snippet",
+      ownerId: 99,
+      ownerName: "Other User",
+      ownerUsername: "otheruser",
+      path: [sharedFolderInPath({ id: dummyId() })],
+    },
+  ]);
+}
+
+export function ActionsMenuWithSnippetInSystemSharedFolder() {
+  return renderWithProviders([
+    {
+      ...snippetFile,
+      id: dummyId(),
+      globalId: "GF_SHARED_SYSTEM",
+      key: "GF_SHARED_SYSTEM",
+      name: "System Shared Snippet",
+      ownerId: 99,
+      ownerName: "Other User",
+      ownerUsername: "otheruser",
+      path: [sharedFolderInPath({ id: dummyId(), isSystemFolder: true })],
+    },
+  ]);
+}
+

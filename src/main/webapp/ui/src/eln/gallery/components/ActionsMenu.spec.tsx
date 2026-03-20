@@ -12,6 +12,9 @@ import {
   ActionsMenuWithMixedSelection,
   ActionsMenuWithMultipleSnippets,
   ActionsMenuWithSnippetMissingGlobalId,
+  ActionsMenuWithSnippetInSharedFolderOwnedBySelf,
+  ActionsMenuWithSnippetInSharedFolderOwnedByOther,
+  ActionsMenuWithSnippetInSystemSharedFolder,
 } from "./ActionsMenu.story";
 
 test.skip(
@@ -28,6 +31,9 @@ const feature = test.extend<{
     "the actions menu with mixed selection is mounted": () => Promise<void>;
     "the actions menu with multiple snippets is mounted": () => Promise<void>;
     "the actions menu with a snippet missing global ID is mounted": () => Promise<void>;
+    "the actions menu with a snippet in a shared folder owned by the current user is mounted": () => Promise<void>;
+    "the actions menu with a snippet in a shared folder owned by another user is mounted": () => Promise<void>;
+    "the actions menu with a snippet in a system shared folder is mounted": () => Promise<void>;
   };
   When: {
     "the user clicks the actions menu button": () => Promise<void>;
@@ -46,8 +52,10 @@ const feature = test.extend<{
     "the Share option should be enabled": () => Promise<void>;
     "the share dialog for the selected snippet should be visible": () => Promise<void>;
     "the share dialog for two snippets should be visible": () => Promise<void>;
-    "share info should be requested for both selected snippets": () => void;
+    "share info should be requested for both selected snippets": () => Promise<void>;
     "the Share disabled reason for missing global IDs should be visible": () => Promise<void>;
+    "the Share disabled reason for shared folder ownership should be visible": () => Promise<void>;
+    "the Share disabled loading reason should be visible": () => Promise<void>;
     "a share success alert should be visible": () => Promise<void>;
     "the share dialog should close": () => Promise<void>;
     "there shouldn't be any axe violations": () => Promise<void>;
@@ -77,6 +85,18 @@ const feature = test.extend<{
       "the actions menu with a snippet missing global ID is mounted":
         async () => {
           await mount(<ActionsMenuWithSnippetMissingGlobalId />);
+        },
+      "the actions menu with a snippet in a shared folder owned by the current user is mounted":
+        async () => {
+          await mount(<ActionsMenuWithSnippetInSharedFolderOwnedBySelf />);
+        },
+      "the actions menu with a snippet in a shared folder owned by another user is mounted":
+        async () => {
+          await mount(<ActionsMenuWithSnippetInSharedFolderOwnedByOther />);
+        },
+      "the actions menu with a snippet in a system shared folder is mounted":
+        async () => {
+          await mount(<ActionsMenuWithSnippetInSystemSharedFolder />);
         },
     });
   },
@@ -159,6 +179,7 @@ const feature = test.extend<{
         const requestedPaths = networkRequests.map((url) => url.pathname);
         expect(requestedPaths).toContain("/api/v1/share/document/3");
         expect(requestedPaths).toContain("/api/v1/share/document/5");
+        return Promise.resolve();
       },
       "the Share disabled reason for missing global IDs should be visible":
         async () => {
@@ -168,6 +189,20 @@ const feature = test.extend<{
             { timeout: 5000 },
           );
         },
+      "the Share disabled reason for shared folder ownership should be visible":
+        async () => {
+          const shareMenuItem = page.getByRole("menuitem", { name: /share/i });
+          await expect(shareMenuItem).toContainText(
+            /Only owners of the snippet can change its share settings\./i,
+            { timeout: 5000 },
+          );
+        },
+      "the Share disabled loading reason should be visible": async () => {
+        const shareMenuItem = page.getByRole("menuitem", { name: /share/i });
+        await expect(shareMenuItem).toContainText(/Loading user information\.\.\./i, {
+          timeout: 5000,
+        });
+      },
       "a share success alert should be visible": async () => {
         await expect(
           page.getByRole("alert").filter({
@@ -569,6 +604,77 @@ test.describe("ActionsMenu", () => {
         await Then[
           "the Share disabled reason for missing global IDs should be visible"
         ]();
+      },
+    );
+    feature(
+      "Share should be enabled when the current user owns a snippet in a shared folder",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the actions menu with a snippet in a shared folder owned by the current user is mounted"
+        ]();
+        await When["the user clicks the actions menu button"]();
+        await Then["the Share option should be visible"]();
+        await Then["the Share option should be enabled"]();
+      },
+    );
+    feature(
+      "Share should be disabled when another user owns a snippet in a shared folder",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the actions menu with a snippet in a shared folder owned by another user is mounted"
+        ]();
+        await When["the user clicks the actions menu button"]();
+        await Then["the Share option should be visible"]();
+        await Then["the Share option should be disabled"]();
+        await Then[
+          "the Share disabled reason for shared folder ownership should be visible"
+        ]();
+      },
+    );
+    feature(
+      "Share should stay enabled for a snippet in a system shared folder",
+      async ({ Given, When, Then }) => {
+        await Given[
+          "the actions menu with a snippet in a system shared folder is mounted"
+        ]();
+        await When["the user clicks the actions menu button"]();
+        await Then["the Share option should be visible"]();
+        await Then["the Share option should be enabled"]();
+      },
+    );
+    feature(
+      "Share should be disabled while the current user details are still loading",
+      async ({ Given, When, Then, router }) => {
+        let releaseWhoAmIResponse: (() => void) | undefined;
+        const whoAmIResponseReleased = new Promise<void>((resolve) => {
+          releaseWhoAmIResponse = resolve;
+        });
+
+        await router.route("/api/v1/userDetails/whoami", async (route) => {
+          await whoAmIResponseReleased;
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              id: 1,
+              username: "testuser",
+              email: "test@example.com",
+              firstName: "Test",
+              lastName: "User",
+              hasPiRole: false,
+              hasSysAdminRole: false,
+              workbenchId: 1,
+            }),
+          });
+        });
+
+        await Given["the actions menu with a snippet is mounted"]();
+        await When["the user clicks the actions menu button"]();
+        await Then["the Share option should be visible"]();
+        await Then["the Share option should be disabled"]();
+        await Then["the Share disabled loading reason should be visible"]();
+
+        if (releaseWhoAmIResponse) releaseWhoAmIResponse();
       },
     );
     feature(
