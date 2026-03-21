@@ -2484,6 +2484,7 @@
             <version>1.15.1</version>
             <configuration>
               <nodeVersion>v24.13.1</nodeVersion>
+              <npmVersion>11.11.1</npmVersion>
               <workingDirectory>src/main/webapp/ui</workingDirectory>
             </configuration>
             <executions>
