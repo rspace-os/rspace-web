@@ -1,5 +1,5 @@
 import React from "react";
-import DMPDialog from "./DMPDialog";
+import DSWImportDialog from "./DSWImportDialog";
 import AccentMenuItem from "../../components/AccentMenuItem";
 import DSWIcon from "../../assets/branding/dsw/logo.svg";
 import { LOGO_COLOR } from "../../assets/branding/dsw";
@@ -24,7 +24,7 @@ export default function DSWAccentMenuItem({
   onDialogClose,
     connection
 }: DSWAccentMenuItemArgs): React.ReactNode {
-  const [showDMPDialog, setShowDMPDialog] = React.useState(false);
+  const [showDSWDialog, setShowDSWDialog] = React.useState(false);
 
   return (
     <>
@@ -35,16 +35,16 @@ export default function DSWAccentMenuItem({
         backgroundColor={LOGO_COLOR}
         foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}
         onClick={() => {
-          setShowDMPDialog(true);
+          setShowDSWDialog(true);
         }}
         aria-haspopup="dialog"
         compact
       />
       <EventBoundary>
-        <DMPDialog
-          open={showDMPDialog}
+        <DSWImportDialog
+          open={showDSWDialog}
           setOpen={(b) => {
-            setShowDMPDialog(b);
+            setShowDSWDialog(b);
             onDialogClose();
           }}
           connection={connection}

@@ -9,7 +9,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import DMPDialog from "../DMPDialog";
+import DSWImportDialog from "../DSWImportDialog";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import MockAdapter from "axios-mock-adapter";
@@ -78,7 +78,7 @@ describe("DMPDialog", () => {
 
     render(
       <ThemeProvider theme={materialTheme}>
-        <DMPDialog open setOpen={() => {}} connection={connectionSettings}/>
+        <DSWImportDialog open setOpen={() => {}} connection={connectionSettings}/>
       </ThemeProvider>
 
     );
@@ -120,7 +120,7 @@ describe("DMPDialog", () => {
 
     render(
       <ThemeProvider theme={materialTheme}>
-        <DMPDialog open setOpen={() => {}} connection={connectionSettings}/>
+        <DSWImportDialog open setOpen={() => {}} connection={connectionSettings}/>
       </ThemeProvider>
 
     );

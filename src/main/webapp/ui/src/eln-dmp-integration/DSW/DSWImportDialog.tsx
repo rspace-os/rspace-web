@@ -25,7 +25,6 @@ import Stack from "@mui/material/Stack";
 import { GridRowId } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import DOMPurify from "dompurify";
-import { mapNullable } from "../../util/Util";
 import { ACCENT_COLOR } from "../../assets/branding/dsw";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 import {DswConfig} from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
@@ -71,7 +70,7 @@ export interface DswProjectWithOrigin extends DswProject {
   serverAlias: string;
 }
 
-function DMPDialogContent({
+function DSWImportDialogContent({
   setOpen,
     connection
 }: {
@@ -81,7 +80,6 @@ function DMPDialogContent({
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
 
-  const [DMPHost, setDMPHost] = React.useState<string | null>();
   const [DMPs, setDMPs] = React.useState<Array<DswProjectWithOrigin>>([]);
   const [selectedPlan, setSelectedPlan] = useState<DswProjectWithOrigin | null>();
 
@@ -328,7 +326,7 @@ function DMPDialogContent({
                 pagination: null,
               }}
               localeText={{
-                noRowsLabel: "No DMPs",
+                noRowsLabel: "No projects found",
               }}
               loading={fetching}
               getRowId={(row) => row.id}
@@ -369,7 +367,7 @@ function DMPDialogContent({
   );
 }
 
-type DMPDialogArgs = {
+type DSWImportDialogArgs = {
   open: boolean;
   setOpen: (open: boolean) => void;
   connection: DswConfig;
@@ -383,7 +381,7 @@ type DMPDialogArgs = {
  * custom tabbing behaviour of the Gallery page takes control of the tab key
  * events away from the React+MUI tech stack. See ../../../../scripts/global.js
  */
-function DMPDialog({ open, setOpen, connection }: DMPDialogArgs): React.ReactNode {
+function DSWImportDialog({ open, setOpen, connection }: DSWImportDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
 
   /*
@@ -407,7 +405,7 @@ function DMPDialog({ open, setOpen, connection }: DMPDialogArgs): React.ReactNod
             fullWidth
             fullScreen={isViewportSmall}
           >
-            <DMPDialogContent setOpen={setOpen} connection={connection} />
+            <DSWImportDialogContent setOpen={setOpen} connection={connection} />
           </CustomDialog>
         </DialogBoundary>
       </Portal>
@@ -415,4 +413,4 @@ function DMPDialog({ open, setOpen, connection }: DMPDialogArgs): React.ReactNod
   );
 }
 
-export default observer(DMPDialog);
+export default observer(DSWImportDialog);
