@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import com.researchspace.service.impl.ConditionalTestRunner;
+import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.File;
 import java.io.IOException;
@@ -53,7 +54,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  // @RunIfSystemPropertyDefined(value = "nightly")
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testDownloadFile() throws IOException {
     File tmpFile = File.createTempFile("downloaded", ".tmp");
 
@@ -72,7 +73,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  // @RunIfSystemPropertyDefined(value = "nightly")
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testListFolderContents() {
 
     // check the root folder
