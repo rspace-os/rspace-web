@@ -65,7 +65,7 @@ afterEach(() => {
   restoreConsole();
 
 });
-describe("DMPDialog", () => {
+describe("DSWImportDialog", () => {
 
   test("No DMPs message is shown when no DMPs are returned.", async () => {
     mockAxios
@@ -83,7 +83,7 @@ describe("DMPDialog", () => {
 
     );
     await waitFor(() => {
-      expect(screen.getByText("No DMPs")).toBeVisible();
+      expect(screen.getByText("No projects found")).toBeVisible();
     });
   });
 
