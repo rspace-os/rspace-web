@@ -13,11 +13,11 @@ public class S3UtilitiesTest {
   @Test
   public void getUploadStrategyForFileSize() {
     S3UtilitiesImpl impl = new S3UtilitiesImpl();
-    impl.setChunkedUploadThreshold(1);
+    impl.setChunkedUploadMbThreshold(1);
     File subThreshold = RSpaceTestUtils.getResource("adrenaline.smiles"); // 90bytes
-    assertTrue(impl.getS3Uploader(subThreshold) instanceof S3PutUploader);
+    assertTrue(impl.getS3Uploader(null, subThreshold) instanceof S3PutUploader);
 
     File requiresChunking = RSpaceTestUtils.getResource("weather_data2.csv"); // 7 Mb
-    assertTrue(impl.getS3Uploader(requiresChunking) instanceof S3MultipartChunkedUploader);
+    assertTrue(impl.getS3Uploader(null, requiresChunking) instanceof S3MultipartChunkedUploader);
   }
 }

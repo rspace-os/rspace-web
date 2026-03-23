@@ -1,20 +1,14 @@
 package com.researchspace.service.aws;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.researchspace.service.aws.impl.S3UtilitiesImpl;
+import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
-import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
@@ -22,9 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.util.ReflectionTestUtils;
-import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
  * The tests running a real connection to AWS S3 bucket.
@@ -42,66 +35,24 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   @Value("${s3.realConnectionTest.bucketName}")
   private String s3bucketName;
 
-  private static final String TEST_ARCHIVE_PATH = "aws-export-test";
-  private static final String TEST_FILE_NAME = "demo-export2.zip";
+  @Autowired private S3UtilitiesFactory s3UtilitiesFactory;
 
   private static final String TEST_UNIT_TESTS_PATH = "unitTests";
   private static final int TEST_UNIT_TESTS_CONTENT_COUNT = 2;
   private static final String TEST_UNIT_TESTS_SUBFOLDER_NAME = "unitTests subfolder";
   private static final int TEST_UNIT_TESTS_SUBFOLDER_CONTENT_COUNT = 1;
 
-  private S3UtilitiesImpl s3Utilities;
+  private S3Utilities s3Utilities;
 
   private File archiveToExport;
 
   @Before
   public void setup() {
-    s3Utilities = new S3UtilitiesImpl();
-    ReflectionTestUtils.setField(s3Utilities, "region", s3region);
-    ReflectionTestUtils.setField(s3Utilities, "s3BucketName", s3bucketName);
-    ReflectionTestUtils.setField(s3Utilities, "s3ArchivePath", TEST_ARCHIVE_PATH);
-    ReflectionTestUtils.setField(s3Utilities, "archiveFolderStorageTime", 1);
-    s3Utilities.init();
-
-    archiveToExport = RSpaceTestUtils.getResource("archives/demo-export2.zip");
+    s3Utilities = s3UtilitiesFactory.createS3Utilities(s3region, s3bucketName);
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
-  public void testFileNotInS3() {
-    assertFalse(s3Utilities.isArchiveInS3("fileNotInS3.zip"));
-  }
-
-  @Test(expected = SdkClientException.class)
-  @RunIfSystemPropertyDefined(value = "nightly")
-  public void testIsArchiveInS3BucketNameNull() {
-    ReflectionTestUtils.setField(s3Utilities, "s3BucketName", null);
-    s3Utilities.isArchiveInS3(TEST_FILE_NAME);
-  }
-
-  @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
-  public void testUpload() {
-    s3Utilities.uploadToS3(archiveToExport);
-    assertTrue(s3Utilities.isArchiveInS3(TEST_FILE_NAME));
-  }
-
-  @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
-  public void testPresignedURL() {
-    s3Utilities.uploadToS3(archiveToExport);
-    URL url = s3Utilities.getPresignedUrlForArchiveDownload(TEST_FILE_NAME);
-    assertNotNull(url);
-  }
-
-  @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
-  public void testPresignedURLFileDoesNotExist() {
-    assertNull(s3Utilities.getPresignedUrlForArchiveDownload("doesNotExist.zip"));
-  }
-
-  @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  // @RunIfSystemPropertyDefined(value = "nightly")
   public void testDownloadFile() throws IOException {
     File tmpFile = File.createTempFile("downloaded", ".tmp");
 
@@ -121,7 +72,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  // @RunIfSystemPropertyDefined(value = "nightly")
   public void testListFolderContents() {
 
     // check the top-level unit tests folder

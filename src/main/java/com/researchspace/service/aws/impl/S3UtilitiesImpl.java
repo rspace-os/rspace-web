@@ -4,18 +4,19 @@ import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.aws.S3Utilities;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import javax.annotation.PostConstruct;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.springframework.beans.factory.annotation.Value;
+import org.apache.commons.lang3.Validate;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.regions.Region;
@@ -31,147 +32,71 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.S3Object;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class S3UtilitiesImpl implements S3Utilities {
-
-  private static final Integer USE_CHUNKED_UPLOAD_MB_THRESHOLD_DEFAULT = 1000;
-
-  private static final Integer DEFAULT_CHUNK_SIZE_MB = 50;
 
   // AWS max limit for a PutUpload
   private static final long AWS_PUT_FILE_LIMIT = 5 * FileUtils.ONE_GB;
 
-  @Value("${aws.s3.bucketName}")
+  @Setter(AccessLevel.PACKAGE)
+  private Integer chunkedUploadMbThreshold;
+
+  @Setter(AccessLevel.PACKAGE)
+  private Integer chunkedUploadMbSize;
+
   private String s3BucketName;
 
-  @Value(("${archive.folder.storagetime}"))
-  private int archiveFolderStorageTime;
+  @Getter private S3Client s3Client;
 
-  @Value("${aws.s3.archivePath}")
-  private String s3ArchivePath;
+  /** Initializes s3 client used by this S3Utilities instance */
+  protected void initializeS3Client(String s3Region, String s3BucketName) {
+    Validate.notBlank(s3BucketName, "s3BucketName must be set for initialization");
+    Validate.notBlank(s3Region, "s3Region must be set for initialization");
+    this.s3BucketName = s3BucketName;
 
-  @Value("${aws.s3.region}")
-  private String region;
-
-  // must be >5Mb
-  @Value("${aws.s3.chunk.threshold.mb:1000}")
-  private Integer chunkedUploadMbThreshold = USE_CHUNKED_UPLOAD_MB_THRESHOLD_DEFAULT;
-
-  // must be >5Mb
-  @Value("${aws.s3.chunk.size.mb:50}")
-  private Integer chunkedUploadMbSize = DEFAULT_CHUNK_SIZE_MB;
-
-  /* for testing */
-  void setChunkedUploadThreshold(Integer chunkedUploadMbThreshold) {
-    this.chunkedUploadMbThreshold = chunkedUploadMbThreshold;
-  }
-
-  private S3Client s3Client;
-
-  private S3Presigner s3Presigner;
-
-  /**
-   * Post-construct method which builds s3 client objects and also checks whether connection to S3
-   * can be made by making a head bucket request to determine if S3 parameters are configured
-   * correctly on the RSpace side.
-   */
-  @PostConstruct
-  public void init() {
     try {
-      s3Client = S3Client.builder().region(Region.of(region)).build();
-
-      s3Presigner = S3Presigner.builder().region(Region.of(region)).build();
-      // Check s3Client is configured correctly by checking if bucket exists
+      s3Client = S3Client.builder().region(Region.of(s3Region)).build();
       HeadBucketRequest headBucketRequest =
           HeadBucketRequest.builder().bucket(s3BucketName).build();
       s3Client.headBucket(headBucketRequest);
 
     } catch (Exception e) {
-      log.error("Error building S3 client with region {} and bucket {}", region, s3BucketName, e);
+      log.error("Error building S3 client with region {} and bucket {}", s3Region, s3BucketName, e);
     }
   }
 
   @Override
-  public boolean isArchiveInS3(String fileName) {
+  public boolean isFileInS3(String folderPath, String fileName) {
     try {
       HeadObjectRequest headObjectRequest =
-          HeadObjectRequest.builder()
-              .bucket(s3BucketName)
-              .key(s3ArchivePath + "/" + fileName)
-              .build();
+          HeadObjectRequest.builder().bucket(s3BucketName).key(folderPath + "/" + fileName).build();
       s3Client.headObject(headObjectRequest);
       return true;
     } catch (NoSuchKeyException e) {
-      log.error("Could not find object {} in S3", s3ArchivePath + "/" + fileName, e);
+      log.error("Could not find object {} in S3", folderPath + "/" + fileName, e);
       return false;
     } catch (Exception e) {
       log.error(
           "Error while making head object request for bucket {} and file {}",
           s3BucketName,
-          s3ArchivePath + "/" + fileName);
+          folderPath + "/" + fileName);
       throw e;
     }
   }
 
   @Override
-  public URL getPresignedUrlForArchiveDownload(String fileName) {
-    try {
-      if (isArchiveInS3(fileName)) {
-        GetObjectRequest getObjectRequest =
-            GetObjectRequest.builder()
-                .bucket(s3BucketName)
-                .key(s3ArchivePath + "/" + fileName)
-                .build();
-
-        GetObjectPresignRequest getObjectPresignRequest =
-            GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofHours(archiveFolderStorageTime))
-                .getObjectRequest(getObjectRequest)
-                .build();
-
-        return s3Presigner.presignGetObject(getObjectPresignRequest).url();
-      } else {
-        return null;
-      }
-
-    } catch (Exception e) {
-      log.error(
-          "Failed to generate pre-signed url for S3 Object: {}", s3ArchivePath + "/" + fileName, e);
-      throw e;
-    }
+  public SdkHttpResponse uploadToS3(String folderPath, File file) {
+    return getS3Uploader(folderPath, file).apply(file);
   }
 
-  @Override
-  public DeleteObjectResponse deleteArchiveFromS3(String fileName) {
-    try {
-      DeleteObjectRequest deleteObjectRequest =
-          DeleteObjectRequest.builder()
-              .bucket(s3BucketName)
-              .key(s3ArchivePath + "/" + fileName)
-              .build();
-
-      return s3Client.deleteObject(deleteObjectRequest);
-    } catch (Exception e) {
-      log.error("Failed to delete object {} from S3", s3ArchivePath + "/" + fileName, e);
-      throw e;
-    }
-  }
-
-  @Override
-  public SdkHttpResponse uploadToS3(File file) {
-    return getS3Uploader(file).apply(file);
-  }
-
-  protected Function<File, SdkHttpResponse> getS3Uploader(File file) {
+  protected Function<File, SdkHttpResponse> getS3Uploader(String folderPath, File file) {
     if ((file.length() <= AWS_PUT_FILE_LIMIT)
         && (chunkedUploadMbThreshold * FileUtils.ONE_MB > file.length())) {
-      return new S3PutUploader(s3Client, s3BucketName, s3ArchivePath);
+      return new S3PutUploader(s3Client, s3BucketName, folderPath);
     }
-    return new S3MultipartChunkedUploader(
-        s3Client, s3BucketName, s3ArchivePath, chunkedUploadMbSize);
+    return new S3MultipartChunkedUploader(s3Client, s3BucketName, folderPath, chunkedUploadMbSize);
   }
 
   @Override
@@ -240,5 +165,21 @@ public class S3UtilitiesImpl implements S3Utilities {
     private final String name;
     private final boolean isFolder;
     private final Long sizeInBytes;
+  }
+
+  @Override
+  public DeleteObjectResponse deleteFromS3(String folderPath, String fileName) {
+    try {
+      DeleteObjectRequest deleteObjectRequest =
+          DeleteObjectRequest.builder()
+              .bucket(s3BucketName)
+              .key(folderPath + "/" + fileName)
+              .build();
+
+      return s3Client.deleteObject(deleteObjectRequest);
+    } catch (Exception e) {
+      log.error("Failed to delete object {} from S3", folderPath + "/" + fileName, e);
+      throw e;
+    }
   }
 }

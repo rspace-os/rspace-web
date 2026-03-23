@@ -12,6 +12,7 @@ import com.researchspace.model.UserKeyPair;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.netfiles.aws3s.AwsS3Client;
 import com.researchspace.netfiles.samba.JcifsClient;
 import com.researchspace.netfiles.samba.SmbjClient;
 import com.researchspace.netfiles.sftp.SftpClient;
@@ -136,5 +137,16 @@ public class NfsFactoryTest {
     assertNotNull(smbjClient);
     assertEquals("test.url", smbjClient.getSambaHost());
     assertEquals("testShare", smbjClient.getShareName());
+  }
+
+  @Test
+  public void creatingAwsS3Client() {
+    testFileSystem.setClientType(NfsClientType.AWS_S3);
+    testFileSystem.setAuthType(NfsAuthenticationType.NONE);
+
+    AwsS3Client awsS3Client =
+        (AwsS3Client) factory.getNfsClient(testUsername, null, testFileSystem);
+    assertNotNull(awsS3Client);
+    assertEquals(testUsername, awsS3Client.getUsername());
   }
 }
