@@ -627,6 +627,7 @@ test.describe("Gallery", () => {
                 name: "Alice and Bob's Group",
                 type: "LAB_GROUP",
                 sharedFolderId: 1,
+                sharedSnippetFolderId: 2,
                 members: [
                   { id: 1, username: "alice", role: "PI" },
                   { id: 2, username: "bob", role: "USER" },

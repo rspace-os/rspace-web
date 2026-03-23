@@ -417,6 +417,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
           name: "Alice and Bob's Group",
           type: "LAB_GROUP",
           sharedFolderId: 1,
+          sharedSnippetFolderId: 2,
           members: [
             {
               id: 1,
