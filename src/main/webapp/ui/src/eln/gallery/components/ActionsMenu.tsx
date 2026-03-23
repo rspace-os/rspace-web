@@ -472,6 +472,13 @@ function ActionsMenu({
     if (fetchedCurrentUser.tag === "loading") {
       return Result.Error([new Error("Loading user information...")]);
     }
+    if (fetchedCurrentUser.tag === "error") {
+      return Result.Error([
+        new Error(
+          "Unable to load user information. Sharing is temporarily unavailable.",
+        ),
+      ]);
+    }
     if (selection.isEmpty)
       return Result.Error([new Error("At least one snippet must be selected.")]);
     if (selection.asSet().some((f) => !f.isSnippet))
