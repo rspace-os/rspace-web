@@ -13,6 +13,7 @@ import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Date;
 import java.util.List;
 
 public class AwsS3Client extends NfsAbstractClient implements NfsClient {
@@ -59,6 +60,11 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
       node.setFileSize("" + item.getSizeInBytes());
       node.setFileSizeBytes(item.getSizeInBytes());
     }
+    node.calculateLogicPath(item.getName(), null);
+
+    node.setNodePath(item.getName());
+    node.setModificationDateMillis((new Date()).getTime()); // FIXME
+    node.calculateLogicPath(item.getName(), null);
 
     return node;
   }

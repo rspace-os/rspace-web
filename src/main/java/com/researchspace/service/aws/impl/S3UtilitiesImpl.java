@@ -16,7 +16,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.regions.Region;
@@ -120,23 +122,22 @@ public class S3UtilitiesImpl implements S3Utilities {
 
   @Override
   public List<S3FolderContentItem> listFolderContents(String folderPath) {
-    try {
-      String folderPathWithSlash = folderPath.endsWith("/") ? folderPath : folderPath + "/";
 
+    String folderPrefixToQuery = getFolderPrefixToQuery(folderPath);
+    try {
       ListObjectsV2Request listRequest =
           ListObjectsV2Request.builder()
               .bucket(s3BucketName)
-              .prefix(folderPathWithSlash)
+              .prefix(folderPrefixToQuery)
               .delimiter("/")
               .build();
 
       ListObjectsV2Response listResponse = s3Client.listObjectsV2(listRequest);
-
       List<S3FolderContentItem> items = new ArrayList<>();
 
       // Add subfolders (common prefixes)
       for (CommonPrefix commonPrefix : listResponse.commonPrefixes()) {
-        String folderName = commonPrefix.prefix().substring(folderPathWithSlash.length());
+        String folderName = commonPrefix.prefix().substring(folderPrefixToQuery.length());
         if (folderName.endsWith("/")) {
           folderName = folderName.substring(0, folderName.length() - 1);
         }
@@ -146,8 +147,8 @@ public class S3UtilitiesImpl implements S3Utilities {
       // Add files (objects)
       for (S3Object s3Object : listResponse.contents()) {
         String key = s3Object.key();
-        if (!key.equals(folderPathWithSlash)) { // Skip the folder itself
-          String fileName = key.substring(folderPathWithSlash.length());
+        if (!key.equals(folderPrefixToQuery)) { // Skip the folder itself
+          String fileName = key.substring(folderPrefixToQuery.length());
           items.add(new S3FolderContentItem(fileName, false, s3Object.size()));
         }
       }
@@ -158,6 +159,20 @@ public class S3UtilitiesImpl implements S3Utilities {
       log.error("Failed to list folder contents for {}", folderPath, e);
       throw e;
     }
+  }
+
+  @NotNull
+  private String getFolderPrefixToQuery(String folderPath) {
+    String prefixToQuery = folderPath;
+    if (!StringUtils.isEmpty(folderPath)) {
+      if (folderPath.startsWith("/")) {
+        prefixToQuery = folderPath.substring(1);
+      }
+      if (!folderPath.endsWith("/")) {
+        prefixToQuery = prefixToQuery + "/";
+      }
+    }
+    return prefixToQuery;
   }
 
   @Data

@@ -37,10 +37,11 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
   @Autowired private S3UtilitiesFactory s3UtilitiesFactory;
 
-  private static final String TEST_UNIT_TESTS_PATH = "unitTests";
-  private static final int TEST_UNIT_TESTS_CONTENT_COUNT = 2;
-  private static final String TEST_UNIT_TESTS_SUBFOLDER_NAME = "unitTests subfolder";
-  private static final int TEST_UNIT_TESTS_SUBFOLDER_CONTENT_COUNT = 1;
+  private static final int TOP_LEVEL_FOLDER_CONTENT_COUNT = 2;
+  private static final String UNIT_TESTS_FOLDER_PATH = "unitTests";
+  private static final int UNIT_TESTS_FOLDER_CONTENT_COUNT = 3;
+  private static final String UNIT_TESTS_SUBFOLDER_NAME = "unitTests subfolder";
+  private static final int UNIT_TESTS_SUBFOLDER_CONTENT_COUNT = 1;
 
   private S3Utilities s3Utilities;
 
@@ -57,14 +58,13 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     File tmpFile = File.createTempFile("downloaded", ".tmp");
 
     // download txt file from the top folder
-    s3Utilities.downloadFromS3(TEST_UNIT_TESTS_PATH + "/" + "testS3File.txt", tmpFile);
+    s3Utilities.downloadFromS3(UNIT_TESTS_FOLDER_PATH + "/" + "testS3File.txt", tmpFile);
     String downloadedContent = Files.readString(tmpFile.toPath());
     assertEquals("testS3Content", downloadedContent);
 
     // download img file from subfolder
     s3Utilities.downloadFromS3(
-        TEST_UNIT_TESTS_PATH + "/" + TEST_UNIT_TESTS_SUBFOLDER_NAME + "/" + "test image.png",
-        tmpFile);
+        UNIT_TESTS_FOLDER_PATH + "/" + UNIT_TESTS_SUBFOLDER_NAME + "/" + "test image.png", tmpFile);
     assertEquals(168434L, tmpFile.length());
 
     // cleanup
@@ -75,9 +75,13 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   // @RunIfSystemPropertyDefined(value = "nightly")
   public void testListFolderContents() {
 
+    // check the root folder
+    List<S3FolderContentItem> items = s3Utilities.listFolderContents("");
+    assertEquals(TOP_LEVEL_FOLDER_CONTENT_COUNT, items.size());
+
     // check the top-level unit tests folder
-    List<S3FolderContentItem> items = s3Utilities.listFolderContents(TEST_UNIT_TESTS_PATH);
-    assertEquals(TEST_UNIT_TESTS_CONTENT_COUNT, items.size());
+    items = s3Utilities.listFolderContents(UNIT_TESTS_FOLDER_PATH);
+    assertEquals(UNIT_TESTS_FOLDER_CONTENT_COUNT, items.size());
 
     // find the expected test file and verify its size
     String testS3TxtFile = "testS3File.txt";
@@ -93,15 +97,14 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     // find the subfolder
     Optional<S3FolderContentItem> subfolder =
         items.stream()
-            .filter(
-                item -> item.getName().equals(TEST_UNIT_TESTS_SUBFOLDER_NAME) && item.isFolder())
+            .filter(item -> item.getName().equals(UNIT_TESTS_SUBFOLDER_NAME) && item.isFolder())
             .findFirst();
     assertTrue("Expected to find subfolder 'unitTests subfolder'", subfolder.isPresent());
 
     // check the content of the subfolder
     items =
-        s3Utilities.listFolderContents(TEST_UNIT_TESTS_PATH + "/" + TEST_UNIT_TESTS_SUBFOLDER_NAME);
-    assertEquals(TEST_UNIT_TESTS_SUBFOLDER_CONTENT_COUNT, items.size());
+        s3Utilities.listFolderContents(UNIT_TESTS_FOLDER_PATH + "/" + UNIT_TESTS_SUBFOLDER_NAME);
+    assertEquals(UNIT_TESTS_SUBFOLDER_CONTENT_COUNT, items.size());
 
     // find the expected test image in subfolder
     String testS3PngFile = "test image.png";
