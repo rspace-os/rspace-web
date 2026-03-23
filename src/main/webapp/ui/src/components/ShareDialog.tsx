@@ -502,7 +502,7 @@ export function ShareDialog({
    */
   async function handleSave() {
     if (!hasChanges) {
-      trackEvent("user:close:share_dialog:workspace");
+      trackEvent("user:close:share_dialog");
       handleClose();
       return;
     }
