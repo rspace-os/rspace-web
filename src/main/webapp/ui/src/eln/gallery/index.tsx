@@ -502,16 +502,16 @@ const queryClient = new QueryClient();
 
 export function Gallery() {
   return (
-    <Alerts>
-      <QueryClientProvider client={queryClient}>
-        <Analytics>
-          <LandmarksProvider>
-            <ErrorBoundary>
-              <SkipToContentMenu />
-              <GoogleLoginProvider />
-              <StyledEngineProvider injectFirst>
-                <CssBaseline />
-                <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+    <StyledEngineProvider injectFirst>
+      <CssBaseline />
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+        <Alerts>
+          <QueryClientProvider client={queryClient}>
+            <Analytics>
+              <LandmarksProvider>
+                <ErrorBoundary>
+                  <SkipToContentMenu />
+                  <GoogleLoginProvider />
                   <UiPreferences>
                     <DisableDragAndDropByDefault>
                       <Routes>
@@ -558,13 +558,13 @@ export function Gallery() {
                       </Routes>
                     </DisableDragAndDropByDefault>
                   </UiPreferences>
-                </ThemeProvider>
-              </StyledEngineProvider>
-            </ErrorBoundary>
-          </LandmarksProvider>
-        </Analytics>
-      </QueryClientProvider>
-    </Alerts>
+                </ErrorBoundary>
+              </LandmarksProvider>
+            </Analytics>
+          </QueryClientProvider>
+        </Alerts>
+      </ThemeProvider>
+    </StyledEngineProvider>
   );
 }
 
