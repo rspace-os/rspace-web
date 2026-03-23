@@ -1093,7 +1093,7 @@ test.describe("ShareDialog", () => {
             (window as Window & { __trackedEvents?: string[] }).__trackedEvents ??
             [],
         );
-        expect(trackedEvents).toContain("user:close:share_dialog:workspace");
+        expect(trackedEvents).toContain("user:close:share_dialog");
       },
     );
   });
