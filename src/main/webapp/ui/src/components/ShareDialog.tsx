@@ -727,7 +727,7 @@ export function ShareDialog({
                         {
                           id: sharedFolderId,
                           name:
-                            groupFolderNames.get(newValue.id) || "Loading...",
+                            groupFolderNames.get(newValue.id) || "",
                         },
                       );
                       setShareFolderChanges(currentFolderChanges);
@@ -757,7 +757,7 @@ export function ShareDialog({
                       permission: "READ", // default permission
                       locationName:
                         newValue.optionType === "GROUP"
-                          ? groupFolderNames.get(newValue.id) || "Loading..."
+                          ? groupFolderNames.get(newValue.id) || ""
                           : null,
                       locationId:
                         newValue.optionType === "GROUP"
