@@ -633,14 +633,17 @@ test.describe("ActionsMenu", () => {
       },
     );
     feature(
-      "Share should stay enabled for a snippet in a system shared folder",
+      "Share should not be enabled for a snippet in a system shared folder",
       async ({ Given, When, Then }) => {
         await Given[
           "the actions menu with a snippet in a system shared folder is mounted"
         ]();
         await When["the user clicks the actions menu button"]();
         await Then["the Share option should be visible"]();
-        await Then["the Share option should be enabled"]();
+        await Then["the Share option should be disabled"]();
+        await Then[
+          "the Share disabled reason for shared folder ownership should be visible"
+        ]();
       },
     );
     feature(
