@@ -133,7 +133,7 @@ function DSWImportDialogContent({
                 {errorMsg}
                 <br/>
                 For more information{" "}
-                <a href={docLinks.dmptoolImportingDmps} rel="noreferrer">
+                <a href={docLinks.dsw} rel="noreferrer">
                   visit our docs
                 </a>
                 .
@@ -212,7 +212,7 @@ function DSWImportDialogContent({
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: docLinks.dmptool,
+          docLink: docLinks.dsw,
           title: "DSW / FAIR Wizard help",
         }}
       />
@@ -236,7 +236,7 @@ function DSWImportDialogContent({
             </Typography>
             <Typography variant="body2">
               See <Link href="https://researchers.dsw.elixir-europe.org">researchers.dsw.elixir-europe.org</Link> and our{" "}
-              <Link href={docLinks.dmptool}>DSW / FAIR Wizard integration docs</Link> for
+              <Link href={docLinks.dsw}>DSW / FAIR Wizard integration docs</Link> for
               more.
             </Typography>
           </Grid>
