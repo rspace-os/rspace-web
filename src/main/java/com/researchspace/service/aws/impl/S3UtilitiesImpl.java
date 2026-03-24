@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -141,7 +142,7 @@ public class S3UtilitiesImpl implements S3Utilities {
         if (folderName.endsWith("/")) {
           folderName = folderName.substring(0, folderName.length() - 1);
         }
-        items.add(new S3FolderContentItem(folderName, true, null));
+        items.add(new S3FolderContentItem(folderName, true, null, null));
       }
 
       // Add files (objects)
@@ -149,7 +150,8 @@ public class S3UtilitiesImpl implements S3Utilities {
         String key = s3Object.key();
         if (!key.equals(folderPrefixToQuery)) { // Skip the folder itself
           String fileName = key.substring(folderPrefixToQuery.length());
-          items.add(new S3FolderContentItem(fileName, false, s3Object.size()));
+          items.add(
+              new S3FolderContentItem(fileName, false, s3Object.size(), s3Object.lastModified()));
         }
       }
 
@@ -180,6 +182,7 @@ public class S3UtilitiesImpl implements S3Utilities {
     private final String name;
     private final boolean isFolder;
     private final Long sizeInBytes;
+    private final Instant lastModified;
   }
 
   @Override

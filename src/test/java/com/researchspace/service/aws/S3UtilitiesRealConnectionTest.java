@@ -11,6 +11,8 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -94,6 +96,9 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     assertTrue("Expected to find file 'testS3File.txt'", testS3File.isPresent());
     assertEquals(
         "Unexpected testS3File.txt size", testS3TxtFileSize, testS3File.get().getSizeInBytes());
+    assertEquals(
+        LocalDate.of(2026, 3, 18),
+        testS3File.get().getLastModified().atZone(ZoneOffset.UTC).toLocalDate());
 
     // find the subfolder
     Optional<S3FolderContentItem> subfolder =

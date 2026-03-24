@@ -11,11 +11,15 @@ import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class AwsS3Client extends NfsAbstractClient implements NfsClient {
 
   final S3Utilities s3Utilities;
@@ -35,7 +39,7 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
 
   @Override
   public NfsFileTreeNode createFileTree(
-      String target, String nfsOrder, NfsFileStore selectedUserFolder) throws IOException {
+      String target, String nfsOrder, NfsFileStore activeFilestore) throws IOException {
 
     NfsFileTreeNode rootNode = new NfsFileTreeNode();
     NfsFileTreeOrderType order = NfsFileTreeOrderType.parseOrderTypeString(nfsOrder);
@@ -43,39 +47,57 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
 
     List<S3FolderContentItem> s3FolderContentItems = s3Utilities.listFolderContents(target);
     for (S3FolderContentItem item : s3FolderContentItems) {
-      rootNode.addNode(getNodeFromS3Item(item, order));
+      rootNode.addNode(getNodeFromS3Item(item, order, activeFilestore));
     }
     rootNode.setNodePath(target);
 
     return rootNode;
   }
 
-  private NfsFileTreeNode getNodeFromS3Item(S3FolderContentItem item, NfsFileTreeOrderType order) {
+  private NfsFileTreeNode getNodeFromS3Item(
+      S3FolderContentItem item, NfsFileTreeOrderType order, NfsFileStore activeFilestore) {
 
     NfsFileTreeNode node = new NfsFileTreeNode();
     node.setOrderType(order);
     node.calculateFileName(item.getName());
     node.setIsFolder(item.isFolder());
+    node.setModificationDateMillis((new Date()).getTime());
     if (!item.isFolder()) {
       node.setFileSize("" + item.getSizeInBytes());
       node.setFileSizeBytes(item.getSizeInBytes());
+      node.setModificationDateMillis(item.getLastModified().toEpochMilli());
     }
-    node.calculateLogicPath(item.getName(), null);
 
     node.setNodePath(item.getName());
-    node.setModificationDateMillis((new Date()).getTime()); // FIXME
-    node.calculateLogicPath(item.getName(), null);
+    node.calculateLogicPath(item.getName(), activeFilestore);
 
     return node;
   }
 
   @Override
   public NfsFileDetails queryForNfsFile(NfsTarget nfsTarget) {
+
     return null;
   }
 
   @Override
   public NfsFolderDetails queryForNfsFolder(NfsTarget nfsTarget) throws IOException {
     return null;
+  }
+
+  @Override
+  public NfsFileDetails queryNfsFileForDownload(NfsTarget target) throws IOException {
+    log.debug("file download request for: {}", target.getPath());
+
+    boolean filePresent = s3Utilities.isFileInS3("", target.getPath());
+    if (!filePresent) {
+      throw new IllegalArgumentException("file not found in S3: " + target.getPath());
+    }
+
+    File tmpFile = File.createTempFile("downloaded", ".tmp");
+    s3Utilities.downloadFromS3(target.getPath(), tmpFile);
+    NfsFileDetails nfsDetails = new NfsFileDetails("downloaded.test");
+    nfsDetails.setRemoteInputStream(new FileInputStream(tmpFile));
+    return nfsDetails;
   }
 }

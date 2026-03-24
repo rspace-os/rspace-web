@@ -28,7 +28,7 @@ public class S3UtilitiesFactory {
   }
 
   public S3Utilities createS3Utilities(NfsFileSystem fileSystem) {
-    // TODO just for testing, should retrieve from fileSystem
+    // TODO just for testing, should retrieve from fileSystem details
     return createS3Utilities("eu-west-2", "rspace-s3-integration-unit-tests");
   }
 }
