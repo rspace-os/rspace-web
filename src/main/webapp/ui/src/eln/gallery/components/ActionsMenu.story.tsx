@@ -8,6 +8,7 @@ import Result from "../../../util/result";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Alerts from "@/components/Alerts/Alerts";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,7 +28,9 @@ const nonFolderFile: GalleryFile = {
   modificationDate: new Date(),
   type: "image",
   thumbnailUrl: "example.com",
+  ownerId: 1,
   ownerName: "Joe Bloggs",
+  ownerUsername: "joebloggs",
   description: new Description({ key: "empty" }),
   version: 1,
   size: 1024,
@@ -35,6 +38,7 @@ const nonFolderFile: GalleryFile = {
   pathAsString: () => "",
   isFolder: false,
   isSystemFolder: false,
+  isSharedFolder: false,
   isImage: true,
   isSnippet: false,
   isSnippetFolder: false,
@@ -68,7 +72,9 @@ const folderFile: GalleryFile = {
   modificationDate: new Date(),
   type: "folder",
   thumbnailUrl: "example.com",
+  ownerId: 1,
   ownerName: "Joe Bloggs",
+  ownerUsername: "joebloggs",
   description: new Description({ key: "empty" }),
   version: 1,
   size: 1024,
@@ -76,6 +82,7 @@ const folderFile: GalleryFile = {
   pathAsString: () => "",
   isFolder: true,
   isSystemFolder: false,
+  isSharedFolder: false,
   isImage: false,
   isSnippet: false,
   isSnippetFolder: false,
@@ -109,7 +116,9 @@ const snippetFile: GalleryFile = {
   modificationDate: new Date(),
   type: "Snippet",
   thumbnailUrl: "example.com",
+  ownerId: 1,
   ownerName: "Joe Bloggs",
+  ownerUsername: "joebloggs",
   description: new Description({ key: "empty" }),
   version: 1,
   size: 512,
@@ -117,6 +126,7 @@ const snippetFile: GalleryFile = {
   pathAsString: () => "",
   isFolder: false,
   isSystemFolder: false,
+  isSharedFolder: false,
   isImage: false,
   isSnippet: true,
   isSnippetFolder: false,
@@ -140,16 +150,36 @@ const snippetFile: GalleryFile = {
   metadata: {},
 };
 
+function sharedFolderInPath({
+  id,
+  isSystemFolder = false,
+}: {
+  id: ReturnType<typeof dummyId>;
+  isSystemFolder?: boolean;
+}): GalleryFile {
+  return {
+    ...folderFile,
+    id,
+    globalId: `SHARED_${id}`,
+    key: `SHARED_${id}`,
+    name: isSystemFolder ? "Shared root" : "Shared folder",
+    isSystemFolder,
+    isSharedFolder: true,
+  };
+}
+
 function renderWithProviders(files: Array<GalleryFile>) {
   return (
     <QueryClientProvider client={queryClient}>
       <React.Suspense fallback={null}>
         <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-          <LandmarksProvider>
-            <GallerySelection>
-              <ActionsMenuWrapper files={files} />
-            </GallerySelection>
-          </LandmarksProvider>
+          <Alerts>
+            <LandmarksProvider>
+              <GallerySelection>
+                <ActionsMenuWrapper files={files} />
+              </GallerySelection>
+            </LandmarksProvider>
+          </Alerts>
         </ThemeProvider>
       </React.Suspense>
     </QueryClientProvider>
@@ -191,3 +221,79 @@ export function ActionsMenuWithMultipleFiles() {
 export function ActionsMenuWithSnippet() {
   return renderWithProviders([snippetFile]);
 }
+
+export function ActionsMenuWithMixedSelection() {
+  return renderWithProviders([snippetFile, nonFolderFile]);
+}
+
+export function ActionsMenuWithMultipleSnippets() {
+  return renderWithProviders([
+    snippetFile,
+    {
+      ...snippetFile,
+      globalId: "GF5",
+      key: "GF5",
+      id: dummyId(),
+      name: "My Second Snippet",
+    },
+  ]);
+}
+
+export function ActionsMenuWithSnippetMissingGlobalId() {
+  return renderWithProviders([
+    {
+      ...snippetFile,
+      globalId: undefined,
+      key: "GF_MISSING",
+      id: dummyId(),
+      name: "Snippet Missing Global ID",
+    },
+  ]);
+}
+
+export function ActionsMenuWithSnippetInSharedFolderOwnedBySelf() {
+  return renderWithProviders([
+    {
+      ...snippetFile,
+      id: dummyId(),
+      globalId: "GF_SHARED_SELF",
+      key: "GF_SHARED_SELF",
+      name: "My Shared Snippet",
+      ownerId: 1,
+      path: [sharedFolderInPath({ id: dummyId() })],
+    },
+  ]);
+}
+
+export function ActionsMenuWithSnippetInSharedFolderOwnedByOther() {
+  return renderWithProviders([
+    {
+      ...snippetFile,
+      id: dummyId(),
+      globalId: "GF_SHARED_OTHER",
+      key: "GF_SHARED_OTHER",
+      name: "Someone Else's Shared Snippet",
+      ownerId: 99,
+      ownerName: "Other User",
+      ownerUsername: "otheruser",
+      path: [sharedFolderInPath({ id: dummyId() })],
+    },
+  ]);
+}
+
+export function ActionsMenuWithSnippetInSystemSharedFolder() {
+  return renderWithProviders([
+    {
+      ...snippetFile,
+      id: dummyId(),
+      globalId: "GF_SHARED_SYSTEM",
+      key: "GF_SHARED_SYSTEM",
+      name: "System Shared Snippet",
+      ownerId: 99,
+      ownerName: "Other User",
+      ownerUsername: "otheruser",
+      path: [sharedFolderInPath({ id: dummyId(), isSystemFolder: true })],
+    },
+  ]);
+}
+

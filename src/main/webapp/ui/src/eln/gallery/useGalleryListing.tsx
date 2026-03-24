@@ -150,7 +150,9 @@ export interface GalleryFile {
   readonly modificationDate?: Date;
   readonly type?: string;
   readonly thumbnailUrl: UrlType;
-  readonly ownerName?: string;
+  readonly ownerId: number | null;
+  readonly ownerName: string;
+  readonly ownerUsername: string | null;
   description: Description;
 
   // In bytes. Folders are always 0 bytes
@@ -187,6 +189,7 @@ export interface GalleryFile {
    */
   readonly isFolder: boolean;
   readonly isSystemFolder: boolean;
+  readonly isSharedFolder: boolean;
   readonly isImage: boolean;
   readonly isSnippet: boolean;
   readonly isSnippetFolder: boolean;
@@ -300,7 +303,11 @@ export class LocalGalleryFile implements GalleryFile {
   readonly modificationDate: Date;
   description: Description;
   readonly type: string;
+  readonly isSystemFolder: boolean;
+  readonly isSharedFolder: boolean;
+  readonly ownerId: number | null;
   readonly ownerName: string;
+  readonly ownerUsername: string | null;
   readonly gallerySection: GallerySection;
   readonly size: number;
   readonly version: number;
@@ -331,7 +338,11 @@ export class LocalGalleryFile implements GalleryFile {
     modificationDate,
     description,
     type,
+    isSystemFolder,
+    isSharedFolder,
+    ownerId,
     ownerName,
+    ownerUsername,
     path,
     gallerySection,
     size,
@@ -349,7 +360,11 @@ export class LocalGalleryFile implements GalleryFile {
     modificationDate: Date;
     description: Description;
     type: string;
+    isSystemFolder: boolean;
+    isSharedFolder: boolean;
+    ownerId: number | null;
     ownerName: string;
+    ownerUsername: string | null;
     path: ReadonlyArray<GalleryFile>;
     gallerySection: GallerySection;
     size: number;
@@ -371,7 +386,11 @@ export class LocalGalleryFile implements GalleryFile {
     this.modificationDate = modificationDate;
     this.description = description;
     this.type = type;
+    this.isSystemFolder = isSystemFolder;
+    this.isSharedFolder = isSharedFolder;
+    this.ownerId = ownerId;
     this.ownerName = ownerName;
+    this.ownerUsername = ownerUsername;
     this.path = path;
     this.gallerySection = gallerySection;
     this.size = size;
@@ -422,10 +441,6 @@ export class LocalGalleryFile implements GalleryFile {
 
   get isSnippet(): boolean {
     return /Snippet/.test(this.type);
-  }
-
-  get isSystemFolder(): boolean {
-    return /System Folder/.test(this.type);
   }
 
   get isSnippetFolder(): boolean {
@@ -583,12 +598,28 @@ export class Filestore implements GalleryFile {
     return "/images/icons/filestore.svg";
   }
 
+  get ownerId(): number | null {
+    return null;
+  }
+
+  get ownerName(): string {
+    return "Unknown owner";
+  }
+
+  get ownerUsername(): string | null {
+    return null;
+  }
+
   pathAsString(): string {
     return "/";
   }
 
   get isSystemFolder(): boolean {
     return false;
+  }
+
+  get isSharedFolder(): boolean {
+    return true;
   }
 
   get isImage(): boolean {
@@ -756,6 +787,18 @@ export class RemoteFile implements GalleryFile {
     );
   }
 
+  get ownerId(): number | null {
+    return null;
+  }
+
+  get ownerName(): string {
+    return "Unknown owner";
+  }
+
+  get ownerUsername(): string | null {
+    return null;
+  }
+
   pathAsString(): string {
     const parent = ArrayUtils.last(this.path).elseThrow();
     return `${parent.pathAsString()}${this.name}/`;
@@ -763,6 +806,10 @@ export class RemoteFile implements GalleryFile {
 
   get isSystemFolder(): boolean {
     return false;
+  }
+
+  get isSharedFolder(): boolean {
+    return true;
   }
 
   get isImage(): boolean {
@@ -893,6 +940,13 @@ function parseGalleryFileFromFolderApiResponse(
       .flatMap(Parsers.isString)
       .flatMap(parseGallerySection)
       .elseThrow();
+    const isSystemFolder = Parsers.getValueWithKey("systemFolder")(obj)
+      .flatMap(Parsers.isBoolean)
+      .elseThrow();
+    const isSharedFolder = Parsers.getValueWithKey("sharedFolder")(obj)
+      .flatMap(Parsers.isBoolean)
+      .elseThrow();
+
     return Result.Ok(
       new LocalGalleryFile({
         id,
@@ -903,7 +957,11 @@ function parseGalleryFileFromFolderApiResponse(
         modificationDate,
         description: Description.Missing(),
         type: "Folder",
+        isSystemFolder,
+        isSharedFolder,
+        ownerId: null,
         ownerName: "Unknown owner",
+        ownerUsername: null,
         path,
         gallerySection: mediaType,
         size: 0,
@@ -1198,11 +1256,21 @@ export function useGalleryListing({
                     .flatMap(Parsers.isString)
                     .elseThrow();
 
+                  const ownerId = Parsers.getValueWithKey("ownerId")(obj)
+                    .flatMap(Parsers.isNumber)
+                    .orElse(null);
+
                   const ownerName = Parsers.getValueWithKey("ownerFullName")(
                     obj,
                   )
                     .flatMap(Parsers.isString)
                     .orElse("Unknown owner");
+
+                  const ownerUsername = Parsers.getValueWithKey("ownerUsername")(
+                    obj,
+                  )
+                    .flatMap(Parsers.isString)
+                    .orElse(null);
 
                   const description = Parsers.getValueWithKey("description")(
                     obj,
@@ -1236,6 +1304,16 @@ export function useGalleryListing({
                   const type = Parsers.getValueWithKey("type")(obj)
                     .flatMap(Parsers.isString)
                     .elseThrow();
+
+                  const isSystemFolder = Parsers.getValueWithKey("systemFolder")(obj)
+                    .flatMap(Parsers.isBoolean)
+                    .orElse(false);
+
+                  const isSharedFolder = Parsers.getValueWithKey(
+                    "sharedFolder",
+                  )(obj)
+                    .flatMap(Parsers.isBoolean)
+                    .orElse(false);
 
                   const extension = Parsers.getValueWithKey("extension")(obj)
                     .flatMap((e) =>
@@ -1276,7 +1354,11 @@ export function useGalleryListing({
                       modificationDate,
                       description,
                       type,
+                      isSystemFolder,
+                      isSharedFolder,
+                      ownerId,
                       ownerName,
+                      ownerUsername,
                       path: p,
                       gallerySection:
                         FetchingData.getSuccessValue(section).elseThrow(),
