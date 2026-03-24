@@ -506,7 +506,7 @@ function ActionsMenu({
         continue;
       }
 
-      if (currentFolder.isSharedFolder && !currentFolder.isSystemFolder) {
+      if (currentFolder.isSharedFolder) {
         /*
          * This is a workaround as we don't currently expose granular permissions
          * in /gallery/getUploadedFiles.
