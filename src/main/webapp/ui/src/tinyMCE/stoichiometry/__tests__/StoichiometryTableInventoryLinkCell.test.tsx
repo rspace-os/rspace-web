@@ -5,6 +5,16 @@ import userEvent from "@testing-library/user-event";
 import type { InventoryLink } from "@/modules/stoichiometry/schema";
 import StoichiometryTableInventoryLinkCell from "@/tinyMCE/stoichiometry/StoichiometryTableInventoryLinkCell";
 
+vi.mock("@/Inventory/components/RecordLink", () => ({
+  RecordLink: ({
+    record,
+  }: {
+    record: { recordLinkLabel: string; permalinkURL: string | null };
+  }) => (
+    <a href={record.permalinkURL ?? undefined}>{record.recordLinkLabel}</a>
+  ),
+}));
+
 vi.mock("@/stores/models/Factory/MemoisedFactory", () => ({
   default: class MockMemoisedFactory {},
 }));
@@ -40,14 +50,14 @@ vi.mock("@/Inventory/components/Picker/Picker", () => ({
           : "reset active result disabled"}
       </div>
       <div>
-        {search.alwaysFilterOut({ globalId: "SA123" })
-          ? "SA123 filtered"
-          : "SA123 available"}
+        {search.alwaysFilterOut({ globalId: "SS123" })
+          ? "SS123 filtered"
+          : "SS123 available"}
       </div>
       <button
         type="button"
         onClick={() => {
-          onAddition([{ id: 999, globalId: "SA999" }]);
+          onAddition([{ id: 999, globalId: "SS999" }]);
         }}
       >
         Select inventory item
@@ -55,7 +65,7 @@ vi.mock("@/Inventory/components/Picker/Picker", () => ({
       <button
         type="button"
         onClick={() => {
-          onAddition([{ id: 123, globalId: "SA123" }]);
+          onAddition([{ id: 123, globalId: "SS123" }]);
         }}
       >
         Select existing inventory item
@@ -66,7 +76,7 @@ vi.mock("@/Inventory/components/Picker/Picker", () => ({
 
 const mockInventoryLink: InventoryLink = {
   id: 501,
-  inventoryItemGlobalId: "SA123",
+  inventoryItemGlobalId: "SS123",
   stoichiometryMoleculeId: 5,
   quantity: {
     numericValue: 10,
@@ -113,7 +123,7 @@ describe("StoichiometryTableInventoryLinkCell", () => {
     expect(screen.getByText("reset active result enabled")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Select inventory item" }));
 
-    expect(onPickInventoryItem).toHaveBeenCalledWith(999, "SA999");
+    expect(onPickInventoryItem).toHaveBeenCalledWith(999, "SS999");
     await waitFor(() => {
       expect(
         screen.getByRole("dialog", {
@@ -130,12 +140,12 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       <StoichiometryTableInventoryLinkCell
         inventoryLink={null}
         moleculeName="Benzene"
-        linkedInventoryItemGlobalIds={["SA123"]}
+        linkedInventoryItemGlobalIds={["SS123"]}
       />,
     );
 
     await user.click(screen.getByLabelText("Add inventory link for Benzene"));
-    expect(screen.getByText("SA123 filtered")).toBeVisible();
+    expect(screen.getByText("SS123 filtered")).toBeVisible();
   });
 
   it("does not allow selecting an already linked inventory item", async () => {
@@ -146,7 +156,7 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       <StoichiometryTableInventoryLinkCell
         inventoryLink={null}
         moleculeName="Benzene"
-        linkedInventoryItemGlobalIds={["SA123"]}
+        linkedInventoryItemGlobalIds={["SS123"]}
         onPickInventoryItem={onPickInventoryItem}
       />,
     );
@@ -164,7 +174,7 @@ describe("StoichiometryTableInventoryLinkCell", () => {
     ).toBeVisible();
   });
 
-  it("renders linked inventory chip and delete button when a link exists", () => {
+  it("renders linked inventory record link and delete button when a link exists", () => {
     render(
       <StoichiometryTableInventoryLinkCell
         inventoryLink={mockInventoryLink}
@@ -172,7 +182,10 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    expect(screen.getByText("SA123")).toBeVisible();
+    expect(screen.getByRole("link", { name: "SS123" })).toHaveAttribute(
+      "href",
+      "/inventory/subsample/123",
+    );
     expect(
       screen.getByLabelText("Remove inventory link for Cyclopentadiene"),
     ).toBeVisible();

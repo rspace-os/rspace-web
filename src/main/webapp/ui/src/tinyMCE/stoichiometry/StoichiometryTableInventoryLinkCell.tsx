@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Stack from "@mui/material/Stack";
-import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Dialog from "@mui/material/Dialog";
@@ -8,6 +7,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { RecordLink } from "@/Inventory/components/RecordLink";
 import type { InventoryLink } from "@/modules/stoichiometry/schema";
 import InventoryPicker from "@/Inventory/components/Picker/Picker";
 import Search from "@/stores/models/Search";
@@ -50,6 +50,7 @@ function createInventoryPickerSearch(): Search {
 
 type StoichiometryTableInventoryLinkCellProps = {
   inventoryLink: InventoryLink | null | undefined;
+  inventoryRecord?: InventoryRecord | null;
   moleculeName: string | null;
   editable?: boolean;
   linkedInventoryItemGlobalIds?: string[];
@@ -57,8 +58,31 @@ type StoichiometryTableInventoryLinkCellProps = {
   onRemoveInventoryLink?: () => void;
 };
 
+function toLinkedSubsampleRecord(
+  inventoryLink: InventoryLink,
+  inventoryRecord?: InventoryRecord | null,
+): InventoryRecord {
+  if (inventoryRecord?.globalId === inventoryLink.inventoryItemGlobalId) {
+    return inventoryRecord;
+  }
+
+  const id = Number.parseInt(inventoryLink.inventoryItemGlobalId.slice(2), 10);
+
+  return {
+    id: Number.isNaN(id) ? inventoryLink.id : id,
+    name: inventoryLink.inventoryItemGlobalId,
+    globalId: inventoryLink.inventoryItemGlobalId,
+    iconName: "subsample",
+    recordTypeLabel: "Subsample",
+    permalinkURL: Number.isNaN(id) ? null : `/inventory/subsample/${id}`,
+    recordLinkLabel: inventoryLink.inventoryItemGlobalId,
+    showRecordOnNavigate: true,
+  } as InventoryRecord;
+}
+
 const StoichiometryTableInventoryLinkCell = ({
   inventoryLink,
+  inventoryRecord,
   moleculeName,
   editable = true,
   linkedInventoryItemGlobalIds = [],
@@ -119,18 +143,11 @@ const StoichiometryTableInventoryLinkCell = ({
   );
 
   if (inventoryLink) {
+    const record = toLinkedSubsampleRecord(inventoryLink, inventoryRecord);
+
     return (
       <Stack direction="row" alignItems="center" spacing={0.5} sx={{ height: '100%' }}>
-        <Chip
-          label={inventoryLink.inventoryItemGlobalId}
-          size="small"
-          sx={{
-            color: "#1566b7",
-            backgroundColor: "#f5fbfe",
-            border: "1px solid #1566b7",
-            fontWeight: 500,
-          }}
-        />
+        <RecordLink record={record} disableNavigationContext={true} newTab={true} />
         {editable && (
           <Tooltip title="Remove inventory link">
             <span>
