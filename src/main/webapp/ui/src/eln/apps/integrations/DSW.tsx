@@ -507,7 +507,7 @@ function DSW({
             }
             helpLinkText="DSW integration docs"
             website="researchers.dsw.elixir-europe.org"
-            docLink="dmptool"
+            docLink="dsw"
             usageText="You can import projects from Data Stewardship Wizard or FAIR Wizard into RSpace, and associate them as Data Management Plans with repository exports."
             setupSection={
               <>
