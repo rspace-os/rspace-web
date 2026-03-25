@@ -205,7 +205,7 @@ export type IntegrationStates = {
   }>;
 };
 
-type FetchedState = {
+export type FetchedState = {
   name: string;
   available: boolean;
   enabled: boolean;

@@ -114,6 +114,7 @@ const DialogContent = observer(
       const [newConfig, setNewConfig] = useState<NewConfig | null>(null);
 
       async function saveExistingConfig(config: ExistingConfig, index: number) {
+
         try {
           const newState = await saveAppOptions(
               "DSW",

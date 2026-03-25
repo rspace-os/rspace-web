@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
 @Slf4j
 @Controller
@@ -36,6 +37,9 @@ public class DSWController {
 
   private static String MSG_PROJECT_ERROR = "Error retrieving DSW project";
   private static String MSG_PROJECTS_ERROR = "Error getting DSW projects";
+  private static String MSG_PROJECTS_ERROR_CREDS =
+      "Cannot access the server using the supplied API key";
+  private static String MSG_PROJECTS_ERROR_URL = "Cannot access the specified server URL";
 
   @Autowired
   public DSWController(
@@ -70,6 +74,15 @@ public class DSWController {
       AppConfigElementSet cfg = getConfigForServer(user, serverAlias);
       JsonNode plans = dswClient.getProjectsForCurrentUserJson(serverAlias, cfg);
       return new AjaxReturnObject<>(plans, null);
+    } catch (MalformedURLException e) {
+      log.warn(MSG_PROJECTS_ERROR_URL, e);
+      return new AjaxReturnObject<>(null, ErrorList.of(MSG_PROJECTS_ERROR_URL));
+    } catch (ResourceAccessException e) {
+      log.warn(MSG_PROJECTS_ERROR_URL, e);
+      return new AjaxReturnObject<>(null, ErrorList.of(MSG_PROJECTS_ERROR_URL));
+    } catch (HttpClientErrorException e) {
+      log.warn(MSG_PROJECTS_ERROR_CREDS, e);
+      return new AjaxReturnObject<>(null, ErrorList.of(MSG_PROJECTS_ERROR_CREDS));
     } catch (Exception e) {
       log.warn(MSG_PROJECTS_ERROR, e);
       return new AjaxReturnObject<>(null, ErrorList.of(MSG_PROJECTS_ERROR));
