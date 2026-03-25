@@ -489,13 +489,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       saveNewUserConnectionForMultipleOptionApp(
           options.get(GALAXY_APIKEY), user, GALAXY_APP_NAME, options.get(GALAXY_ALIAS));
     } else if (DSW_APP_NAME.equals(appName)) {
-      if (null != existingAlias) {
-        updateUserConnectionForMultipleOptionApp(
-            options.get(DSW_APIKEY), user, DSW_APP_NAME, options.get(DSW_ALIAS), existingAlias);
-      } else {
-        saveNewUserConnectionForMultipleOptionApp(
-            options.get(DSW_APIKEY), user, DSW_APP_NAME, options.get(DSW_ALIAS));
-      }
+      updateUserConnectionForMultipleOptionApp(
+          options.get(DSW_APIKEY), user, DSW_APP_NAME, options.get(DSW_ALIAS), existingAlias);
     }
   }
 
@@ -621,7 +616,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
           appConfigMgr.findByAppConfigElementSetId(optionsId);
       if (!prevSavedOptions.isEmpty()) {
         AppConfigElement prevSavedAlias =
-            prevSavedOptions.get().findElementByPropertyName("DSW_ALIAS");
+            prevSavedOptions.get().findElementByPropertyName(DSW_ALIAS);
         if (null != prevSavedAlias) {
           existingAlias = prevSavedAlias.getValue();
         }
