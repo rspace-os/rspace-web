@@ -130,7 +130,7 @@ describe("DSWImportDialog", () => {
       expect(screen.getByText("Name")).toBeVisible();
       expect(screen.getByText("Description")).toBeVisible();
       expect(screen.getByText("Updated At")).toBeVisible();
-      expect(screen.getAllByRole("row")).length(3); // Includes table header
+      expect(screen.getAllByRole("row")).toHaveLength(3); // Includes table header
 
       expect(screen.getByText("MockProject01")).toBeVisible();
       expect(screen.getByText("MockProject02")).toBeVisible();

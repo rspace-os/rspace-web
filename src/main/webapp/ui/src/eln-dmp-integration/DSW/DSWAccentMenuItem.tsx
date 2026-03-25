@@ -18,7 +18,7 @@ type DSWAccentMenuItemArgs = {
 };
 
 /**
- * The menu item for the create menu for importing DMPs from DMPonline.
+ * The menu item for the create menu for importing DMPs from DSW/FAIR Wizard.
  */
 export default function DSWAccentMenuItem({
   onDialogClose,

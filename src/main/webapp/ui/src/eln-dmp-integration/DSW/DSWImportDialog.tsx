@@ -45,14 +45,6 @@ const CustomDialog = withStyles<
   },
 }))(Dialog);
 
-export type Plan = {
-  id: number;
-  title: string;
-  description: string;
-  modified: string;
-  created: string;
-};
-
 export interface DswProject {
   createdAt: string;
   description: string;
@@ -309,7 +301,7 @@ function DSWImportDialogContent({
               onSelectionChange={(newSelectionId: GridRowId) => {
                 setSelectedPlan(DMPs.find((d) => d.id === newSelectionId));
               }}
-              selectRadioAriaLabelFunc={(row) => `Select plan: ${row.title}`}
+              selectRadioAriaLabelFunc={(row) => `Select plan: ${row.name}`}
               initialState={{
                 columns: {
                   columnVisibilityModel: {

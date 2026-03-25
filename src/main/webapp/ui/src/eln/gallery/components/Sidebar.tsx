@@ -33,7 +33,7 @@ import { useIntegrationIsAllowedAndEnabled } from "../../../hooks/api/integratio
 import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import { observer } from "mobx-react-lite";
-import {autorun, observable} from "mobx";
+import {autorun} from "mobx";
 import EventBoundary from "../../../components/EventBoundary";
 import ValidatingSubmitButton, {
   IsValid,
@@ -410,41 +410,49 @@ const DmpMenuSection = ({
   ).orElse(false);
 
   React.useEffect(() => {
-    void (async () => {
-      /*
-       * This is to maintain backwards compatibility with the old Gallery. It
-       * exposes a global function `gallery` to updates the current listing of
-       * files. Once we no longer need to maintain backwards compatibility, we
-       * could pass `showDmpPanel` down into each DMPDialog component.
-       */
-      // @ts-expect-error gallery is a global function
-      window.gallery = showDmpPanel;
+    /*
+     * This is to maintain backwards compatibility with the old Gallery. It
+     * exposes a global function `gallery` to updates the current listing of
+     * files. Once we no longer need to maintain backwards compatibility, we
+     * could pass `showDmpPanel` down into each DMPDialog component.
+     */
+    // @ts-expect-error gallery is a global function
+    window.gallery = showDmpPanel;
+  }, [showDmpPanel]);
 
-      const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
+  React.useEffect(() => {
+    void (async () => {
+
+      const ONE_MINUTE_IN_MS = 60 * 1000;
 
       const api = axios.create({
         baseURL: "/integration",
         timeout: ONE_MINUTE_IN_MS,
       });
 
-      const states = await api.get<
-          | {
-        success: true;
-        data: { [integration in Integration]: FetchedState };
-        error: null;
-      }
-          | {
-        success: false;
-        data: null;
-        error: string;
-      }
-      >("allIntegrations");
-      if (states.data.success) {
-        const data = states.data.data;
-        const configs = Object.entries(data.DSW.options).map(([optionsId, config]) => {
-          return config as DswConfig;
-        });
-        setDswConnections(configs);
+      try {
+        const states = await api.get<
+            | {
+          success: true;
+          data: { [integration in Integration]: FetchedState };
+          error: null;
+        }
+            | {
+          success: false;
+          data: null;
+          error: string;
+        }
+        >("allIntegrations");
+        if (states.data.success) {
+          const data = states.data.data;
+          const configs = Object.entries(data.DSW.options).map(([optionsId, config]) => {
+            return config as DswConfig;
+          });
+          setDswConnections(configs);
+        }
+      } catch (e) {
+        console.error(e);
+        setDswConnections([]);
       }
     })();
   }, []);
@@ -462,9 +470,9 @@ const DmpMenuSection = ({
       {showDmptool && <DMPToolAccentMenuItem onDialogClose={onDialogClose} />}
       {
         showDsw && dswConnections &&
-          Object.entries(dswConnections).map(([index, connection]) => {
-            return <DSWAccentMenuItem onDialogClose={onDialogClose} connection={connection}/>
-          })
+        dswConnections.map((connection, index) => {
+          return <DSWAccentMenuItem onDialogClose={onDialogClose} connection={connection}/>
+        })
       }
     </>
   );
