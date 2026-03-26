@@ -107,7 +107,7 @@ public class FormsApiController extends BaseApiController implements FormsApi {
   private FormSearchCriteria configureFormSearch(ApiFormSearchConfig apiSrchConfig) {
     FormSearchCriteria srchConfig = new FormSearchCriteria();
     srchConfig.setIncludeSystemForm(true);
-    srchConfig.setPublishedOnly(true);
+    srchConfig.setPublishedOnly(false);
     srchConfig.setInUserMenu(false);
     srchConfig.setSearchTerm(apiSrchConfig.getQuery());
     srchConfig.setFormType(FormType.NORMAL);

@@ -287,12 +287,16 @@ public class FormTemplatesCommonTest extends JavaxValidatorTest {
         .thenReturn(true);
   }
 
-  public static FormTemplatesCommon.FormPost createValidFormPost() {
+  public static FormTemplatesCommon.FormPost createValidFormPost(String name) {
     FormTemplatesCommon.FormPost formPost = new FormTemplatesCommon.FormPost();
-    formPost.setName("name");
+    formPost.setName(name);
     formPost.setTags("dd");
     formPost.setFields(createFields());
     return formPost;
+  }
+
+  public static FormTemplatesCommon.FormPost createValidFormPost() {
+    return createValidFormPost("name");
   }
 
   static List<FormFieldPost<? extends FieldForm>> createFields() {

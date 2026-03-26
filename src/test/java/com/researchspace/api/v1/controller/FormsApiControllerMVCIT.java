@@ -12,7 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.api.v1.controller.FormTemplatesCommon.FormFieldPost;
 import com.researchspace.api.v1.model.ApiForm;
 import com.researchspace.api.v1.model.ApiFormField;
-import com.researchspace.api.v1.model.ApiFormInfo;
 import com.researchspace.api.v1.model.ApiFormSearchResult;
 import com.researchspace.api.v1.model.ApiStringFormField;
 import com.researchspace.core.util.JacksonUtil;
@@ -44,41 +43,55 @@ import org.springframework.validation.BindException;
 public class FormsApiControllerMVCIT extends API_MVC_TestBase {
 
   User anyUser, otherUser;
-  String apiKey;
+  String apiKeyAnyUser, apiKeyPiUser;
 
   @Before
   public void setup() throws Exception {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();
-    apiKey = createNewApiKeyForUser(anyUser);
+    apiKeyAnyUser = createNewApiKeyForUser(anyUser);
+    apiKeyPiUser = createNewApiKeyForUser(piUser);
   }
 
   @Test
-  public void testGetPaginatedForms() throws Exception {
-
+  public void testGetPaginatedFormSearch() throws Exception {
+    final String FORM_NAME_PREFIX = "SearchableForm";
     MvcResult result =
         mockMvc
-            .perform(createBuilderForGet(API_VERSION.ONE, apiKey, "/forms", anyUser))
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKeyAnyUser, "/forms?query=" + FORM_NAME_PREFIX, anyUser))
             .andReturn();
     assertNull(result.getResolvedException());
 
     ApiFormSearchResult apiForms = getFromJsonResponseBody(result, ApiFormSearchResult.class);
     assertNotNull(apiForms);
-    assertTrue(apiForms.getForms().size() > 0);
+    assertTrue(apiForms.getForms().isEmpty());
 
-    ApiFormInfo apiForm = apiForms.getForms().get(0);
-    assertNotNull(apiForm.getName());
-    assertEquals(1, apiForm.getLinks().size());
+    // 5 in total now
+    final Number TOTAL_HITS = 5;
+    IntStream.range(0, TOTAL_HITS.intValue())
+        .forEach(
+            i -> {
+              try {
+                FormTemplatesCommon.FormPost formPost =
+                    FormTemplatesCommonTest.createValidFormPost(FORM_NAME_PREFIX + i);
+                mockMvc.perform(
+                    createBuilderForPostWithJSONBody(
+                        apiKeyPiUser, "/forms?query=" + FORM_NAME_PREFIX, piUser, formPost));
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+            });
 
-    // 11 in total now
-    IntStream.range(0, 10).forEach(i -> createAnyForm(piUser));
-
+    final Number PAGE_SIZE = 3;
     result =
         mockMvc
             .perform(
-                createBuilderForGet(API_VERSION.ONE, apiKey, "/forms", anyUser)
+                createBuilderForGet(
+                        API_VERSION.ONE, apiKeyPiUser, "/forms?query=" + FORM_NAME_PREFIX, piUser)
                     .param("pageNumber", "0")
-                    .param("pageSize", "3")
+                    .param("pageSize", PAGE_SIZE.toString())
                     .param("orderBy", "created asc")
                     .param("scope", "all"))
             .andReturn();
@@ -86,7 +99,9 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
 
     apiForms = getFromJsonResponseBody(result, ApiFormSearchResult.class);
     assertNotNull(apiForms);
-    assertEquals(3, apiForms.getForms().size());
+    assertEquals(TOTAL_HITS.longValue(), apiForms.getTotalHits().longValue());
+    assertEquals(PAGE_SIZE, apiForms.getForms().size());
+    assertEquals(2, apiForms.getLinks().size());
   }
 
   @Test
@@ -99,7 +114,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result =
         mockMvc
             .perform(
-                createBuilderForPost(API_VERSION.ONE, apiKey, "/forms", anyUser)
+                createBuilderForPost(API_VERSION.ONE, apiKeyAnyUser, "/forms", anyUser)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(jsonBody))
             .andReturn();
@@ -108,7 +123,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
         mockMvc
             .perform(
                 createBuilderForGet(
-                    API_VERSION.ONE, apiKey, "/forms/{id}", anyUser, apiForm.getId()))
+                    API_VERSION.ONE, apiKeyAnyUser, "/forms/{id}", anyUser, apiForm.getId()))
             .andExpect(status().isOk())
             .andReturn();
     ApiForm apiFormGet = getFromJsonResponseBody(result2, ApiForm.class);
@@ -125,17 +140,18 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
 
     // delete
     mockMvc
-        .perform(createBuilderForDelete(apiKey, "/forms/{id}", anyUser, apiForm.getId()))
+        .perform(createBuilderForDelete(apiKeyAnyUser, "/forms/{id}", anyUser, apiForm.getId()))
         .andExpect(status().isNoContent());
     assertExceptionThrown(() -> formMgr.get(apiForm.getId(), anyUser), DataAccessException.class);
     mockMvc
         .perform(
-            createBuilderForGet(API_VERSION.ONE, apiKey, "/forms/{id}", anyUser, apiForm.getId()))
+            createBuilderForGet(
+                API_VERSION.ONE, apiKeyAnyUser, "/forms/{id}", anyUser, apiForm.getId()))
         .andExpect(status().isNotFound())
         .andReturn();
     // delete again, get 404
     mockMvc
-        .perform(createBuilderForDelete(apiKey, "/forms/{id}", anyUser, apiForm.getId()))
+        .perform(createBuilderForDelete(apiKeyAnyUser, "/forms/{id}", anyUser, apiForm.getId()))
         .andExpect(status().isNotFound());
   }
 
@@ -151,7 +167,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
         mockMvc
             .perform(
                 createBuilderForGet(
-                    API_VERSION.ONE, apiKey, "/forms/{id}", anyUser, seleniumForm.getId()))
+                    API_VERSION.ONE, apiKeyAnyUser, "/forms/{id}", anyUser, seleniumForm.getId()))
             .andExpect(status().isOk())
             .andReturn();
     ApiForm apiForm = getFromJsonResponseBody(result2, ApiForm.class);
@@ -166,7 +182,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result =
         mockMvc
             .perform(
-                createBuilderForPost(API_VERSION.ONE, apiKey, "/forms", anyUser)
+                createBuilderForPost(API_VERSION.ONE, apiKeyAnyUser, "/forms", anyUser)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(toJson(formPost)))
             .andExpect(status().isBadRequest())
@@ -179,7 +195,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     FormTemplatesCommon.FormPost formPost = FormTemplatesCommonTest.createValidFormPost();
     MvcResult result =
         mockMvc
-            .perform(createBuilderForPostWithJSONBody(apiKey, "/forms", anyUser, formPost))
+            .perform(createBuilderForPostWithJSONBody(apiKeyAnyUser, "/forms", anyUser, formPost))
             .andReturn();
     ApiForm apiForm = getFromJsonResponseBody(result, ApiForm.class);
 
@@ -224,7 +240,8 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
 
   private MvcResult putUrl(String formPutUrl) throws Exception {
     return mockMvc
-        .perform(put(formPutUrl).principal(createPrincipal(anyUser)).header("apiKey", apiKey))
+        .perform(
+            put(formPutUrl).principal(createPrincipal(anyUser)).header("apiKey", apiKeyAnyUser))
         .andExpect(status().isOk())
         .andReturn();
   }
@@ -258,7 +275,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
                 fileUpload(createUrl(API_VERSION.ONE, "/forms/{id}/icon"), apiForm.getId())
                     .file(iconFile)
                     .principal(createPrincipal(anyUser))
-                    .header("apiKey", apiKey))
+                    .header("apiKey", apiKeyAnyUser))
             .andExpect(status().isCreated())
             .andReturn();
     ApiForm formWithUpdatedIcon = getFromJsonResponseBody(result, ApiForm.class);
@@ -275,7 +292,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
             .perform(
                 createBuilderForGet(
                     API_VERSION.ONE,
-                    apiKey,
+                    apiKeyAnyUser,
                     "/forms/{id}/icon/{iconId}",
                     anyUser,
                     formWithUpdatedIcon.getId(),
@@ -314,7 +331,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result =
         mockMvc
             .perform(
-                createBuilderForGet(API_VERSION.ONE, apiKey, "/forms", anyUser)
+                createBuilderForGet(API_VERSION.ONE, apiKeyAnyUser, "/forms", anyUser)
                     .param("query", formName))
             .andReturn();
     ApiFormSearchResult apiForms = getFromJsonResponseBody(result, ApiFormSearchResult.class);
@@ -325,7 +342,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
   private ApiForm postValidForm(FormTemplatesCommon.FormPost formPost) throws Exception {
     MvcResult result =
         mockMvc
-            .perform(createBuilderForPostWithJSONBody(apiKey, "/forms", anyUser, formPost))
+            .perform(createBuilderForPostWithJSONBody(apiKeyAnyUser, "/forms", anyUser, formPost))
             .andExpect(status().isCreated())
             .andReturn();
     return getFromJsonResponseBody(result, ApiForm.class);
@@ -469,7 +486,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
   private ApiForm postANewForm(FormTemplatesCommon.FormPost formPost) throws Exception {
     MvcResult result =
         mockMvc
-            .perform(createBuilderForPostWithJSONBody(apiKey, "/forms", anyUser, formPost))
+            .perform(createBuilderForPostWithJSONBody(apiKeyAnyUser, "/forms", anyUser, formPost))
             .andExpect(status().isCreated())
             .andReturn();
 
@@ -481,7 +498,9 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
       throws Exception {
     MvcResult result =
         mockMvc
-            .perform(createBuilderForPutWithJSONBody(apiKey, "/forms/" + formId, anyUser, formPost))
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKeyAnyUser, "/forms/" + formId, anyUser, formPost))
             .andExpect(status().isOk())
             .andReturn();
     ApiForm apiForm = getFromJsonResponseBody(result, ApiForm.class);
