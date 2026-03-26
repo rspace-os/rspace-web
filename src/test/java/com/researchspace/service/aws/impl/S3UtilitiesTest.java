@@ -14,6 +14,7 @@ public class S3UtilitiesTest {
   public void getUploadStrategyForFileSize() {
     S3UtilitiesImpl impl = new S3UtilitiesImpl();
     impl.setChunkedUploadMbThreshold(1);
+    impl.setChunkedUploadMbSize(5);
     File subThreshold = RSpaceTestUtils.getResource("adrenaline.smiles"); // 90bytes
     assertTrue(impl.getS3Uploader(null, subThreshold) instanceof S3PutUploader);
 

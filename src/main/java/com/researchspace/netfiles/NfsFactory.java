@@ -13,6 +13,8 @@ import com.researchspace.netfiles.samba.JcifsSmbjClient;
 import com.researchspace.netfiles.samba.SmbjClient;
 import com.researchspace.netfiles.sftp.SftpClient;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
+import lombok.AccessLevel;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.irods.jargon.core.connection.AuthScheme;
 import org.irods.jargon.core.connection.ClientServerNegotiationPolicy;
@@ -43,6 +45,7 @@ public class NfsFactory {
 
   @Autowired private NfsPublicKeyAuthentication publicKeyAuthentication;
 
+  @Setter(AccessLevel.PROTECTED)
   @Autowired private S3UtilitiesFactory s3UtilitiesFactory;
 
   @Value("${netfilestores.auth.pubKey.passphrase}")

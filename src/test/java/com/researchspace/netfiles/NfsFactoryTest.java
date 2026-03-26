@@ -16,6 +16,7 @@ import com.researchspace.netfiles.aws3s.AwsS3Client;
 import com.researchspace.netfiles.samba.JcifsClient;
 import com.researchspace.netfiles.samba.SmbjClient;
 import com.researchspace.netfiles.sftp.SftpClient;
+import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,6 +33,8 @@ public class NfsFactoryTest {
 
   @Before
   public void setUp() {
+    factory.setS3UtilitiesFactory(new S3UtilitiesFactory());
+
     // dummy key pair
     testUserKeyPair = new UserKeyPair();
     testUserKeyPair.setUser(new User(testUsername));
