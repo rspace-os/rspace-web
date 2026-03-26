@@ -167,22 +167,13 @@ export function useEditableStoichiometryTable({
         };
 
         const limitingReagent = allMolecules.find((m) => m.limitingReagent);
-        if (!limitingReagent) throw new Error("No limiting reagent defined");
-        if (
-          !limitingReagent.mass ||
-          !limitingReagent.molecularWeight ||
-          !limitingReagent.coefficient
-        ) {
-          throw new Error(
-            "Limiting reagent must have mass, molecular weight and coefficient defined",
-          );
-        }
-        const limitingReagentMoles = calculateMoles(
+
+        const limitingReagentMoles = limitingReagent ? calculateMoles(
           limitingReagent.mass,
           limitingReagent.molecularWeight,
-        );
+        ) : null;
         const ratio =
-          limitingReagentMoles === null
+          !limitingReagent?.coefficient || limitingReagentMoles === null
             ? null
             : limitingReagentMoles / limitingReagent.coefficient;
 
