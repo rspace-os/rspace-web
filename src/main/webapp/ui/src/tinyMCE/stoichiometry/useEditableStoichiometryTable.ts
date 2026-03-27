@@ -106,6 +106,13 @@ export function useEditableStoichiometryTable({
           role: "AGENT",
           smiles,
           name,
+          coefficient: m.coefficient ?? undefined,
+          mass: m.mass,
+          actualAmount: m.actualAmount,
+          actualYield: m.actualYield,
+          limitingReagent: m.limitingReagent ?? undefined,
+          notes: m.notes,
+          inventoryLink: m.inventoryLink ?? null,
         } as NewMolecule;
       }),
     };
