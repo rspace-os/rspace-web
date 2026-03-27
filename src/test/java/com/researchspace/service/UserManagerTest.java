@@ -36,7 +36,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -269,7 +269,7 @@ public class UserManagerTest extends SpringTransactionalTest {
   public void testViewableUserListSingleUser() throws IllegalAddChildOperation {
     User user = createAndSaveUserIfNotExists(getRandomName(10), Constants.USER_ROLE);
     initialiseContentWithEmptyContent(user);
-    assertEquals(1, userMgr.getViewableUserList(user).size());
+    assertEquals(1, userMgr.getViewableUserSet(user).size());
   }
 
   @Test
@@ -284,9 +284,9 @@ public class UserManagerTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(pi, user1, user2, user3);
 
     // initially user1 is only connected to themselves
-    List<User> connectedUsers = userMgr.populateConnectedUserList(user1);
+    Set<User> connectedUsers = userMgr.populateConnectedUserSet(user1);
     assertEquals(1, connectedUsers.size());
-    assertEquals(user1.getUsername(), connectedUsers.get(0).getUsername());
+    assertEquals(user1.getUsername(), connectedUsers.iterator().next().getUsername());
     assertTrue(user1.isConnectedToUser(user1));
     assertFalse(user1.isConnectedToUser(user2));
 
@@ -299,25 +299,25 @@ public class UserManagerTest extends SpringTransactionalTest {
     addUsersToGroup(pi, group2, user3);
 
     // user is connected to first group and members, even if nothing is shared
-    connectedUsers = userMgr.populateConnectedUserList(user1);
+    connectedUsers = userMgr.populateConnectedUserSet(user1);
     assertEquals(3, connectedUsers.size());
     assertTrue(user1.isConnectedToUser(pi));
     assertTrue(user1.isConnectedToUser(user2));
     assertFalse(user1.isConnectedToUser(user3));
 
-    userMgr.populateConnectedGroupList(user1);
+    userMgr.populateConnectedGroupSet(user1);
     assertTrue(user1.isConnectedToGroup(group1));
     assertFalse(user1.isConnectedToGroup(group2));
 
     // pi of both groups is connected to all users, but not to community admin
-    connectedUsers = userMgr.populateConnectedUserList(pi);
+    connectedUsers = userMgr.populateConnectedUserSet(pi);
     assertEquals(4, connectedUsers.size());
     assertTrue(pi.isConnectedToUser(user1));
     assertTrue(pi.isConnectedToUser(user2));
     assertTrue(pi.isConnectedToUser(user3));
     assertFalse(pi.isConnectedToUser(admin));
 
-    userMgr.populateConnectedGroupList(pi);
+    userMgr.populateConnectedGroupSet(pi);
     assertTrue(pi.isConnectedToGroup(group1));
     assertTrue(pi.isConnectedToGroup(group2));
 
@@ -327,7 +327,7 @@ public class UserManagerTest extends SpringTransactionalTest {
     group2 = reloadGroup(group2);
     grpMgr.removeUserFromGroup(user1.getUsername(), group2.getId(), pi);
     group2 = reloadGroup(group2);
-    connectedUsers = userMgr.populateConnectedUserList(user1);
+    connectedUsers = userMgr.populateConnectedUserSet(user1);
     assertEquals(3, connectedUsers.size());
     assertTrue(user1.isConnectedToUser(pi));
     assertTrue(user1.isConnectedToUser(user2));
@@ -345,25 +345,25 @@ public class UserManagerTest extends SpringTransactionalTest {
     logoutAndLoginAs(pi);
     grpMgr.removeUserFromGroup(user1.getUsername(), group2.getId(), pi);
     group2 = reloadGroup(group2);
-    connectedUsers = userMgr.populateConnectedUserList(user1);
+    connectedUsers = userMgr.populateConnectedUserSet(user1);
     assertEquals(4, connectedUsers.size());
     assertTrue(user1.isConnectedToUser(user3)); // connected now through share
 
     // community admin can see all users in their community, but not one from other
-    connectedUsers = userMgr.populateConnectedUserList(admin);
+    connectedUsers = userMgr.populateConnectedUserSet(admin);
     assertEquals(4, connectedUsers.size());
     assertTrue(admin.isConnectedToUser(pi));
     assertTrue(admin.isConnectedToUser(user1));
     assertTrue(admin.isConnectedToUser(user2));
     assertFalse(admin.isConnectedToUser(user3));
 
-    userMgr.populateConnectedGroupList(admin);
+    userMgr.populateConnectedGroupSet(admin);
     assertTrue(admin.isConnectedToGroup(group1));
     assertFalse(admin.isConnectedToGroup(group2));
 
     // sysadmin always connected to everyone, but connection list is not really populated
     User sysadmin = createAndSaveSysadminUser();
-    List<User> sysadminConnections = userMgr.populateConnectedUserList(sysadmin);
+    Set<User> sysadminConnections = userMgr.populateConnectedUserSet(sysadmin);
     assertEquals(1, sysadminConnections.size()); // just sysadmin
     assertTrue(sysadmin.isConnectedToUser(pi));
     assertTrue(sysadmin.isConnectedToUser(user1));
@@ -371,7 +371,7 @@ public class UserManagerTest extends SpringTransactionalTest {
     assertTrue(sysadmin.isConnectedToUser(user3));
     assertTrue(sysadmin.isConnectedToUser(admin));
 
-    userMgr.populateConnectedGroupList(sysadmin);
+    userMgr.populateConnectedGroupSet(sysadmin);
     assertTrue(sysadmin.isConnectedToGroup(group1));
     assertTrue(sysadmin.isConnectedToGroup(group2));
   }
@@ -390,11 +390,11 @@ public class UserManagerTest extends SpringTransactionalTest {
     addUsersToGroup(pi, group, user1, user2, user3);
     final int TOTAL_GROUP_SIZE = 4;
 
-    assertEquals(TOTAL_GROUP_SIZE, userMgr.getViewableUserList(pi).size());
+    assertEquals(TOTAL_GROUP_SIZE, userMgr.getViewableUserSet(pi).size());
     // individual users can only see themselves
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user1).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user2).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user3).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserSet(user1).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserSet(user2).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserSet(user3).size());
 
     // user1 now shares with user2
     logoutAndLoginAs(user1);
@@ -402,18 +402,18 @@ public class UserManagerTest extends SpringTransactionalTest {
     shareRecordWithUser(user1, docD1, user2);
 
     // This covers sharing a record individually within a group (stand alone and cloud environment)
-    assertEquals(2, userMgr.getViewableUserList(user2).size());
+    assertEquals(2, userMgr.getViewableUserSet(user2).size());
 
     // user 3 now shares with everyone in the group
     logoutAndLoginAs(user3);
     StructuredDocument docD2 = createBasicDocumentInRootFolderWithText(user3, "any");
     shareRecordWithGroup(user3, group, docD2);
     // user 1 + user 3
-    assertEquals(2, userMgr.getViewableUserList(user1).size());
+    assertEquals(2, userMgr.getViewableUserSet(user1).size());
     // user1, user2, user3
-    assertEquals(3, userMgr.getViewableUserList(user2).size());
+    assertEquals(3, userMgr.getViewableUserSet(user2).size());
     // no-one has shared with user1, so can only see themselves
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user3).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserSet(user3).size());
   }
 
   @Test
@@ -441,15 +441,15 @@ public class UserManagerTest extends SpringTransactionalTest {
     addUsersToGroup(piA, collabGroup, user1, user3);
 
     // piA can see user1 and user2 (Group Right) => BUG FIXED
-    assertEquals(3, userMgr.getViewableUserList(piA).size());
+    assertEquals(3, userMgr.getViewableUserSet(piA).size());
 
     // piB can see user3 and user4 (Group Right) => BUG FIXED
-    assertEquals(3, userMgr.getViewableUserList(piB).size());
+    assertEquals(3, userMgr.getViewableUserSet(piB).size());
 
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user1).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user2).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user3).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user4).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserSet(user1).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserSet(user2).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserSet(user3).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserSet(user4).size());
 
     // user1 shares with collab group
     logoutAndLoginAs(user1);
@@ -458,13 +458,13 @@ public class UserManagerTest extends SpringTransactionalTest {
     shareRecordWithGroup(user1, collabGroup, docD1);
 
     // After sharing a record with the collaboration group.
-    assertEquals(3, userMgr.getViewableUserList(piA).size());
-    assertEquals(4, userMgr.getViewableUserList(piB).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user1).size());
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserList(user2).size());
+    assertEquals(3, userMgr.getViewableUserSet(piA).size());
+    assertEquals(4, userMgr.getViewableUserSet(piB).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserSet(user1).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS, userMgr.getViewableUserSet(user2).size());
     // user3 is in collab group with user1 so can now potentially see his documents
-    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS + 1, userMgr.getViewableUserList(user3).size());
-    assertEquals(1, userMgr.getViewableUserList(user4).size());
+    assertEquals(INDIVIDUAL_DEFAULT_VIEWABLE_USERS + 1, userMgr.getViewableUserSet(user3).size());
+    assertEquals(1, userMgr.getViewableUserSet(user4).size());
   }
 
   @Test

@@ -209,12 +209,12 @@ public class UserProfileController extends BaseController {
 
     if (properties.isProfileHidingEnabled()) {
       if (user.isPrivateProfile()) {
-        userManager.populateConnectedUserList(sessionUser);
+        userManager.populateConnectedUserSet(sessionUser);
         if (!sessionUser.isConnectedToUser(user)) {
           throw new RecordAccessDeniedException(getResourceNotFoundMessage("User", userId));
         }
       }
-      userManager.populateConnectedGroupList(sessionUser);
+      userManager.populateConnectedGroupSet(sessionUser);
     }
 
     boolean canEdit = checkPermissions(sessionUser, user);
@@ -892,7 +892,7 @@ public class UserProfileController extends BaseController {
     User sessionUser = userManager.getAuthenticatedUserInSession();
     User profileUser = userManager.getUser(userId + "");
     if (properties.isProfileHidingEnabled() && profileUser.isPrivateProfile()) {
-      userManager.populateConnectedUserList(sessionUser);
+      userManager.populateConnectedUserSet(sessionUser);
       if (!sessionUser.isConnectedToUser(profileUser)) {
         String errorMsg = getResourceNotFoundMessage("User", userId);
         return new AjaxReturnObject<>(null, ErrorList.of(errorMsg));
@@ -1032,7 +1032,7 @@ public class UserProfileController extends BaseController {
     boolean hasAnyPrivateGroups =
         profileUser.getGroups().stream().anyMatch(this::isPrivateGroupProfile);
     if (hasAnyPrivateGroups) {
-      userManager.populateConnectedGroupList(subject);
+      userManager.populateConnectedGroupSet(subject);
     }
     for (UserGroup ug : profileUser.getUserGroups()) {
       Group grp = ug.getGroup();

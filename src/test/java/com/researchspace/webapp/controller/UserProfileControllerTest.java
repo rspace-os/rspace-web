@@ -232,10 +232,10 @@ public class UserProfileControllerTest {
     when(usrMgr.getAuthenticatedUserInSession()).thenReturn(sessionUser);
     when(usrMgr.getUser(2L + "")).thenReturn(anyUser);
     when(properties.isProfileHidingEnabled()).thenReturn(true);
-    when(usrMgr.populateConnectedUserList(sessionUser)).thenReturn(Collections.emptyList());
+    when(usrMgr.populateConnectedUserSet(sessionUser)).thenReturn(Collections.emptySet());
     when(messages.getMessage(Mockito.eq("record.inaccessible"), Mockito.any(Long[].class)))
         .thenReturn("error");
-    sessionUser.setConnectedUsers(Collections.emptyList());
+    sessionUser.setConnectedUsers(Collections.emptySet());
     anyUser.setPrivateProfile(true);
 
     AjaxReturnObject<MiniProfile> rc = userProfileController.miniprofile(2L);
@@ -298,13 +298,13 @@ public class UserProfileControllerTest {
     when(usrMgr.getAuthenticatedUserInSession()).thenReturn(anyUser);
     when(usrMgr.get(2L)).thenReturn(anyUser);
     when(properties.isProfileHidingEnabled()).thenReturn(Boolean.TRUE);
-    anyUser.setConnectedGroups(TransformerUtils.toList(g1));
+    anyUser.setConnectedGroups(TransformerUtils.toSet(g1));
     AjaxReturnObject<List<UserGroupInfo>> ugs = userProfileController.getUserGroupInfo(2L);
     assertGroupViewable(ugs);
 
     // session user is now not in group
     when(usrMgr.getAuthenticatedUserInSession()).thenReturn(sessionUser);
-    sessionUser.setConnectedGroups(Collections.emptyList());
+    sessionUser.setConnectedGroups(Collections.emptySet());
     ugs = userProfileController.getUserGroupInfo(2L);
     assertGroupHidden(ugs);
 
