@@ -1,4 +1,4 @@
-package com.researchspace.netfiles.aws3s;
+package com.researchspace.netfiles.s3;
 
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.netfiles.NfsAbstractClient;
@@ -15,9 +15,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 
 @Slf4j
 public class AwsS3Client extends NfsAbstractClient implements NfsClient {
@@ -45,7 +45,12 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
     NfsFileTreeOrderType order = NfsFileTreeOrderType.parseOrderTypeString(nfsOrder);
     rootNode.setOrderType(order);
 
-    List<S3FolderContentItem> s3FolderContentItems = s3Utilities.listFolderContents(target);
+    String pathToList = StringUtils.isEmpty(target) ? "" : target;
+    // ui may be passing '/' for root folder, but s3 paths start without it
+    if (pathToList.startsWith("/")) {
+      pathToList = pathToList.substring(1);
+    }
+    List<S3FolderContentItem> s3FolderContentItems = s3Utilities.listFolderContents(pathToList);
     for (S3FolderContentItem item : s3FolderContentItems) {
       rootNode.addNode(getNodeFromS3Item(item, order, activeFilestore));
     }
@@ -54,14 +59,14 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
     return rootNode;
   }
 
-  private NfsFileTreeNode getNodeFromS3Item(
+  protected NfsFileTreeNode getNodeFromS3Item(
       S3FolderContentItem item, NfsFileTreeOrderType order, NfsFileStore activeFilestore) {
 
     NfsFileTreeNode node = new NfsFileTreeNode();
     node.setOrderType(order);
     node.calculateFileName(item.getName());
     node.setIsFolder(item.isFolder());
-    node.setModificationDateMillis((new Date()).getTime());
+    // node.setModificationDateMillis((new Date()).getTime());
     if (!item.isFolder()) {
       node.setFileSize("" + item.getSizeInBytes());
       node.setFileSizeBytes(item.getSizeInBytes());

@@ -5,9 +5,9 @@ import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemOption;
-import com.researchspace.netfiles.aws3s.AwsS3Client;
 import com.researchspace.netfiles.irods.IRODSClient;
 import com.researchspace.netfiles.irods.JargonFacade;
+import com.researchspace.netfiles.s3.AwsS3Client;
 import com.researchspace.netfiles.samba.JcifsClient;
 import com.researchspace.netfiles.samba.JcifsSmbjClient;
 import com.researchspace.netfiles.samba.SmbjClient;
@@ -46,7 +46,8 @@ public class NfsFactory {
   @Autowired private NfsPublicKeyAuthentication publicKeyAuthentication;
 
   @Setter(AccessLevel.PROTECTED)
-  @Autowired private S3UtilitiesFactory s3UtilitiesFactory;
+  @Autowired
+  private S3UtilitiesFactory s3UtilitiesFactory;
 
   @Value("${netfilestores.auth.pubKey.passphrase}")
   private String passphrase;

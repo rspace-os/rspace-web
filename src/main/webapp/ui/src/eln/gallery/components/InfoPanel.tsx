@@ -623,7 +623,7 @@ const InfoPanelContent = observer(
                 label: "Size",
                 value: formatFileSize(file.size),
               },
-              ...(typeof file.creationDate !== "undefined"
+              ...(file.creationDate
                 ? [
                     {
                       label: "Created",
@@ -631,7 +631,7 @@ const InfoPanelContent = observer(
                     },
                   ]
                 : []),
-              ...(typeof file.modificationDate !== "undefined"
+              ...(file.modificationDate
                 ? [
                     {
                       label: "Modified",
@@ -672,7 +672,7 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
   const sortedByCreated = selection
     .asSet()
     .mapOptional((file) =>
-      typeof file.creationDate === "undefined"
+      !file.creationDate
         ? Optional.empty<Date>()
         : Optional.present(file.creationDate),
     )
@@ -680,7 +680,7 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
   const sortedByModified = selection
     .asSet()
     .mapOptional((file) =>
-      typeof file.modificationDate === "undefined"
+      !file.modificationDate
         ? Optional.empty<Date>()
         : Optional.present(file.modificationDate),
     )

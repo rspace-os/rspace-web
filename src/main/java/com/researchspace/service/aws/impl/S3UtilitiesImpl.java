@@ -17,7 +17,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -165,16 +164,10 @@ public class S3UtilitiesImpl implements S3Utilities {
 
   @NotNull
   private String getFolderPrefixToQuery(String folderPath) {
-    String prefixToQuery = folderPath;
-    if (!StringUtils.isEmpty(folderPath)) {
-      if (folderPath.startsWith("/")) {
-        prefixToQuery = folderPath.substring(1);
-      }
-      if (!folderPath.endsWith("/")) {
-        prefixToQuery = prefixToQuery + "/";
-      }
+    if (!folderPath.isEmpty() && !folderPath.endsWith("/")) {
+      return folderPath + "/";
     }
-    return prefixToQuery;
+    return folderPath;
   }
 
   @Data

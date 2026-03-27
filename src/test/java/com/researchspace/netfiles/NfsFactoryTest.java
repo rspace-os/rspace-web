@@ -12,7 +12,7 @@ import com.researchspace.model.UserKeyPair;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileSystem;
-import com.researchspace.netfiles.aws3s.AwsS3Client;
+import com.researchspace.netfiles.s3.AwsS3Client;
 import com.researchspace.netfiles.samba.JcifsClient;
 import com.researchspace.netfiles.samba.SmbjClient;
 import com.researchspace.netfiles.sftp.SftpClient;
