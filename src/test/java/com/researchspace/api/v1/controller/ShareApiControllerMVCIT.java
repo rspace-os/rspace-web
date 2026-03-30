@@ -38,7 +38,6 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.TreeViewItem;
-import com.researchspace.service.RecordSharingManager;
 import com.researchspace.testutils.TestGroup;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
@@ -53,8 +52,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 @WebAppConfiguration
 public class ShareApiControllerMVCIT extends API_MVC_TestBase {
-
-  @Autowired private RecordSharingManager recordSharingManager;
 
   @Autowired private RecordGroupSharingDao recordSharingDao;
 
