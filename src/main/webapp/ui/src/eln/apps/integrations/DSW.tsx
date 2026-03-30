@@ -23,6 +23,7 @@ import DSWIcon from "../../../assets/branding/dsw/logo.svg";
 import Typography from "@mui/material/Typography";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { LOGO_COLOR } from "../../../assets/branding/dsw";
+import AnalyticsContext from "@/stores/contexts/Analytics";
 
 type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
 
@@ -96,6 +97,7 @@ const DialogContent = observer(
       const { addAlert } = useContext(AlertContext);
       const { test } = useDSWTestEndpoint();
       const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
+      const { trackEvent } = React.useContext(AnalyticsContext);
 
       /*
        * We take a copy of the current state for the user to edit in the UI. When
@@ -286,6 +288,7 @@ const DialogContent = observer(
                           <CardActions>
                             <Button
                                 onClick={doNotAwait(async () => {
+                                  trackEvent("user:delete:dsw_connection:apps");
                                   try {
                                     await deleteAppOptions(
                                         "DSW",
@@ -366,6 +369,7 @@ const DialogContent = observer(
                       <Card variant="outlined">
                         <form
                             onSubmit={(event) => {
+                              trackEvent("user:create:dsw_connection:apps");
                               event.preventDefault();
                               void saveNewConfig(newConfig);
                             }}
