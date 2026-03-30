@@ -5,6 +5,7 @@ import DSWIcon from "../../assets/branding/dsw/logo.svg";
 import { LOGO_COLOR } from "../../assets/branding/dsw";
 import CardMedia from "@mui/material/CardMedia";
 import EventBoundary from "../../components/EventBoundary";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 export type DswConfig = {
   DSW_APIKEY: string;
@@ -24,6 +25,7 @@ export default function DSWAccentMenuItem({
   onDialogClose,
     connection
 }: DSWAccentMenuItemArgs): React.ReactNode {
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const [showDSWDialog, setShowDSWDialog] = React.useState(false);
 
   return (
@@ -35,6 +37,7 @@ export default function DSWAccentMenuItem({
         backgroundColor={LOGO_COLOR}
         foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}
         onClick={() => {
+          trackEvent("user:open:dsw_import:gallery");
           setShowDSWDialog(true);
         }}
         aria-haspopup="dialog"
