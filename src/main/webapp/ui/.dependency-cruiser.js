@@ -118,7 +118,7 @@ module.exports = {
           "src/Toolbar/Gallery/Toolbar.tsx",
           "src/system-groups/NewLabGroup.js",
           "src/tinyMCE/sidebarInfo.js",
-          "src/tinyMCE/previewInfo.js",
+          "src/tinyMCE/PreviewInfo.tsx",
           "src/components/UserDetails.js",
           "src/my-rspace/directory/groups/GroupUserActivity.js",
           "src/my-rspace/profile/GroupActivity.js",
@@ -503,8 +503,8 @@ module.exports = {
          if anything goes for you. Only works when the 'exportsFields' array is
          non-empty.
 
-        If you have a 'conditionNames' attribute in your webpack config, that one will
-        have precedence over the one specified here.
+        If you have a 'conditionNames' attribute in your webpack config, that one
+        will have precedence over the one specified here.
       */
       conditionNames: ["import", "require", "node", "default"],
       /*

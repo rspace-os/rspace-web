@@ -275,7 +275,8 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
 
     for (StoichiometryMoleculeUpdateDTO update : updates) {
       if (update.getId() == null) {
-        addNewMoleculeFromDto(stoichiometry, update, user);
+        StoichiometryMolecule newMol = addNewMoleculeFromDto(stoichiometry, update, user);
+        keepIds.add(newMol.getId());
         continue;
       }
 
@@ -292,7 +293,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
     return keepIds;
   }
 
-  private void addNewMoleculeFromDto(
+  private StoichiometryMolecule addNewMoleculeFromDto(
       Stoichiometry stoichiometry, StoichiometryMoleculeUpdateDTO updateMol, User user) {
     if (updateMol.getSmiles() == null || updateMol.getSmiles().isBlank()) {
       throw new StoichiometryException("New molecule requires a SMILES string");
@@ -323,7 +324,9 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
             .build();
 
     stoichiometry.addMolecule(newMol);
+    save(stoichiometry); // ensure new molecule gets an ID for linking
     processInventoryLinkUpdate(newMol, updateMol.getInventoryLink(), user);
+    return newMol;
   }
 
   private void applyFieldUpdates(

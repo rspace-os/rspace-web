@@ -1,24 +1,53 @@
 import Chip from "@mui/material/Chip";
-import React, { useContext } from "react";
+import { type MouseEvent, useContext } from "react";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import useStores from "../../stores/use-stores";
-import { emphasize } from "@mui/material/styles";
-import { makeStyles } from "tss-react/mui";
+import { emphasize, type Theme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
-import clsx from "clsx";
-import { preventEventBubbling, preventEventDefault } from "../../util/Util";
 import NavigateContext from "../../stores/contexts/Navigate";
-import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
+import { type InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import Typography from "@mui/material/Typography";
 
-const useStyles = makeStyles()((theme) => ({
-  root: {
-    paddingLeft: theme.spacing(1),
+type OverflowProps = {
+  overflow?: boolean;
+};
+
+type ChipSxOptions = OverflowProps & {
+  withoutIcon?: boolean;
+  clickable?: boolean;
+};
+
+type RecordChipProps = OverflowProps & {
+  record: InventoryRecord;
+};
+
+const interactiveChipSx =
+  ({
+    overflow = false,
+    withoutIcon = false,
+    clickable = false,
+  }: ChipSxOptions = {}) =>
+  (theme: Theme) => ({
+    ...(overflow
+      ? {
+          padding: theme.spacing(0.5, 1),
+          wordBreak: "break-word",
+          height: "auto",
+        }
+      : {
+          paddingLeft: theme.spacing(1),
+        }),
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
     backgroundColor: theme.palette.grey[200],
     color: theme.palette.grey[800],
-    fontWeight: theme.typography.fontWeightRegular,
+    ...(clickable
+      ? {
+          cursor: "pointer",
+        }
+      : {}),
+    fontWeight: theme.typography.fontWeightRegular ?? 400,
+    transitionDuration: "500ms",
     "&:hover, &:focus": {
       backgroundColor: theme.palette.grey[300],
     },
@@ -29,76 +58,106 @@ const useStyles = makeStyles()((theme) => ({
       boxShadow: theme.shadows[1],
       backgroundColor: emphasize(theme.palette.grey[300], 0.12),
     },
-    transitionDuration: "500ms",
-  },
-  overflowRoot: {
-    wordBreak: "break-word",
-    height: "auto",
-    padding: theme.spacing(0.5, 1),
-  },
-  overflowLabel: {
-    whiteSpace: "break-spaces",
-  },
-  static: {
-    paddingLeft: theme.spacing(1),
+    "& .MuiChip-label": {
+      ...(overflow
+        ? {
+            whiteSpace: "break-spaces",
+          }
+        : {}),
+      ...(withoutIcon
+        ? {
+            paddingRight: theme.spacing(2),
+          }
+        : {}),
+    },
+  });
+
+const staticChipSx =
+  ({ overflow = false, withoutIcon = false }: ChipSxOptions = {}) =>
+  (theme: Theme) => ({
+    ...(overflow
+      ? {
+          padding: theme.spacing(0.5, 1),
+          wordBreak: "break-word",
+          height: "auto",
+        }
+      : {
+          paddingLeft: theme.spacing(1),
+        }),
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
     backgroundColor: theme.palette.grey[300],
     color: theme.palette.grey[800],
-    fontWeight: theme.typography.fontWeightRegular,
-  },
-  withoutIcon: {
-    paddingRight: theme.spacing(2),
-  },
-}));
+    fontWeight: theme.typography.fontWeightRegular ?? 400,
+    "& .MuiChip-label": {
+      ...(overflow
+        ? {
+            whiteSpace: "break-spaces",
+          }
+        : {}),
+      ...(withoutIcon
+        ? {
+            paddingRight: theme.spacing(2),
+          }
+        : {}),
+    },
+  });
 
-type RecordLinkArgs = {
-  record: InventoryRecord;
-  overflow?: boolean;
+type RecordLinkArgs = RecordChipProps & {
   newTab?: boolean;
+  /**
+   * Enable this to disable using `navigate()`. Used in workspace non-Reactified context where React Router is not available.
+   */
+  disableNavigationContext?: boolean;
 };
 
 export const RecordLink = observer(
-  ({ record, overflow = false }: RecordLinkArgs): React.ReactNode => {
-    const { classes } = useStyles();
+  ({
+    record,
+    overflow = false,
+    newTab = false,
+    disableNavigationContext = false,
+  }: RecordLinkArgs) => {
     const { trackingStore, uiStore } = useStores();
     const { useNavigate } = useContext(NavigateContext);
     const navigate = useNavigate();
 
+    const onClick = (event: MouseEvent) => {
+      if (!record.permalinkURL) {
+        return;
+      }
+
+      if (disableNavigationContext) {
+        return;
+      }
+
+      event.stopPropagation();
+      event.preventDefault();
+      navigate(record.permalinkURL);
+      trackingStore.trackEvent("BreadcrumbClicked");
+      uiStore.setVisiblePanel(record.showRecordOnNavigate ? "right" : "left");
+    };
+
     return (
       <Chip
         size="small"
-        classes={{
-          root: clsx(classes.root, overflow && classes.overflowRoot),
-          label: clsx(overflow && classes.overflowLabel),
-        }}
+        sx={interactiveChipSx({
+          overflow,
+          clickable: Boolean(record.permalinkURL),
+        })}
         component="a"
         href={record.permalinkURL || undefined}
         label={record.recordLinkLabel}
+        target={newTab ? "_blank" : undefined}
         icon={<RecordTypeIcon record={record} />}
-        onClick={preventEventBubbling(
-          preventEventDefault((_: React.MouseEvent) => {
-            if (record.permalinkURL) {
-              navigate(record.permalinkURL);
-              trackingStore.trackEvent("BreadcrumbClicked");
-              uiStore.setVisiblePanel(
-                record.showRecordOnNavigate ? "right" : "left"
-              );
-            }
-          })
-        )}
+        onClick={onClick}
       />
     );
   }
 );
 
-type TopLinkArgs = {
-  overflow?: boolean;
-};
-
 export const TopLink = observer(
-  ({ overflow = false }: TopLinkArgs): React.ReactNode => {
-    const { classes } = useStyles();
+  ({ overflow = false }: OverflowProps) => {
     const { searchStore, trackingStore } = useStores();
     const { useNavigate } = useContext(NavigateContext);
     const navigate = useNavigate();
@@ -107,7 +166,7 @@ export const TopLink = observer(
       .generateNewQuery({ resultType: "CONTAINER" })
       .toString()}`;
 
-    const toTopContainers = (e: React.MouseEvent) => {
+    const toTopContainers = (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       navigate(containersRoot);
@@ -118,10 +177,7 @@ export const TopLink = observer(
       <Typography variant="body1">
         <Chip
           size="small"
-          classes={{
-            root: clsx(classes.root, overflow && classes.overflowRoot),
-            label: clsx(classes.withoutIcon, overflow && classes.overflowLabel),
-          }}
+          sx={interactiveChipSx({ overflow, withoutIcon: true })}
           component="span"
           label="Containers"
           onClick={toTopContainers}
@@ -131,23 +187,13 @@ export const TopLink = observer(
   }
 );
 
-type CurrentRecordArgs = {
-  record: InventoryRecord;
-  overflow?: boolean;
-};
-
 export const CurrentRecord = observer(
-  ({ record, overflow = false }: CurrentRecordArgs): React.ReactNode => {
-    const { classes } = useStyles();
-
+  ({ record, overflow = false }: RecordChipProps) => {
     return (
       <Typography variant="body1">
         <Chip
           size="small"
-          classes={{
-            root: clsx(classes.static, overflow && classes.overflowRoot),
-            label: clsx(overflow && classes.overflowLabel),
-          }}
+          sx={staticChipSx({ overflow })}
           clickable={false}
           component="span"
           label={record.recordLinkLabel}
@@ -158,21 +204,14 @@ export const CurrentRecord = observer(
   }
 );
 
-export function InTrash(): React.ReactNode {
-  const { classes } = useStyles();
-
-  return (
-    <Typography variant="body1">
-      <Chip
-        size="small"
-        classes={{
-          root: classes.static,
-          label: classes.withoutIcon,
-        }}
-        clickable={false}
-        component="span"
-        label="In Trash"
-      />
-    </Typography>
-  );
-}
+export const InTrash = () => (
+  <Typography variant="body1">
+    <Chip
+      size="small"
+      sx={staticChipSx({ withoutIcon: true })}
+      clickable={false}
+      component="span"
+      label="In Trash"
+    />
+  </Typography>
+);
