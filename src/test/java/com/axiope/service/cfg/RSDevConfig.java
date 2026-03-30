@@ -50,14 +50,13 @@ import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * Dev profile spring configuration for running tests <br>
  * Activate using property -Dspring.profiles.active=dev (which is active in Spring test classes)
  */
 @Configuration
-@EnableAsync
+// @EnableAsync - TEMPORARILY DISABLED for Spring 6 migration testing
 @Profile("dev")
 public class RSDevConfig extends BaseConfig {
 

@@ -280,9 +280,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
@@ -293,11 +290,12 @@ import org.springframework.web.multipart.support.StandardServletMultipartResolve
 /**
  * Base class with configuration for all Spring profiles - gradually using this for new beans
  * /services rather than XML configuration.
+ *
+ * <p>Spring 6: NOT using @EnableTransactionManagement here because it conflicts when loaded via
+ * component-scan in combination with other @Enable* annotations. Transaction management configured
+ * via XML <tx:annotation-driven/> instead.
  */
 @Configuration
-@EnableScheduling
-@EnableTransactionManagement
-@EnableRetry
 public abstract class BaseConfig {
 
   @Autowired ApplicationContext context;

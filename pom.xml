@@ -2850,7 +2850,7 @@
     <hibernate.statsLogLevel>INFO</hibernate.statsLogLevel>
     <hibernate.showSQL>false</hibernate.showSQL>
 
-    <aspectj.version>1.9.7</aspectj.version>
+    <aspectj.version>1.9.22.1</aspectj.version>
     <apache.batik.version>1.19</apache.batik.version>
     <commons.fileupload.version>1.4</commons.fileupload.version>
     <ehcache.version>2.6.11</ehcache.version>
@@ -2859,7 +2859,7 @@
     <javassist.version>3.24.0-GA</javassist.version>
     <jsonwebtoken.version>0.11.2</jsonwebtoken.version>
     <jstl.version>3.0.0</jstl.version>
-    <lucene.version>8.11.2</lucene.version>
+    <lucene.version>9.8.0</lucene.version>
     <servlet.version>6.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>

@@ -7,9 +7,13 @@
           IF we want to make a property externally configurable, add it in sessionFactory bean configuration -->
         <property name="hibernate.cache.region.factory_class">org.hibernate.cache.jcache.JCacheRegionFactory</property>
         <property name="hibernate.javax.cache.provider">org.ehcache.jsr107.EhcacheCachingProvider</property>
-        <property name="hibernate.javax.cache.uri">classpath:ehcache.xml</property>
+        <property name="hibernate.cache.jcache.config_uri">classpath:ehcache.xml</property>
         <property name="hibernate.cache.use_second_level_cache">true</property>
         <property name="hibernate.cache.use_query_cache">true</property>
+        
+        <!-- Hibernate Search 6 Lucene analyzer configuration -->
+        <property name="hibernate.search.backend.analysis.configurer">com.researchspace.search.impl.RSpaceLuceneAnalysisConfigurer</property>
+        
         <!-- RSPAC-22 -->
         <property name="hibernate.envers.autoRegisterListeners">false</property>
   
