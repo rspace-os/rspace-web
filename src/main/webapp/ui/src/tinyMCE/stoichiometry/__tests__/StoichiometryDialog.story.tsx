@@ -6,11 +6,11 @@ import StoichiometryDialog from "../StoichiometryDialog";
 import Alerts from "../../../components/Alerts/Alerts";
 import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
 
-export function StoichiometryDialogWithCalculateButtonStory({
+export const StoichiometryDialogWithCalculateButtonStory = ({
   onTableCreated,
 }: {
   onTableCreated?: () => void;
-} = {}): React.ReactNode {
+} = {}) => {
   const [open, setOpen] = React.useState(true);
   const [stoichiometryId, setStoichiometryId] = React.useState<
     number | undefined
@@ -44,8 +44,9 @@ export function StoichiometryDialogWithCalculateButtonStory({
       </ThemeProvider>
     </StyledEngineProvider>
   );
-}
-export function StoichiometryDialogWithTableStory({
+};
+
+export const StoichiometryDialogWithTableStory = ({
   onChangesUpdate,
   onSave,
   onDelete,
@@ -53,7 +54,7 @@ export function StoichiometryDialogWithTableStory({
   onChangesUpdate?: (hasChanges: boolean) => void;
   onSave?: () => void;
   onDelete?: () => void;
-} = {}): React.ReactNode {
+} = {}) => {
   const [open, setOpen] = React.useState(true);
 
   return (
@@ -76,9 +77,9 @@ export function StoichiometryDialogWithTableStory({
       </ThemeProvider>
     </StyledEngineProvider>
   );
-}
+};
 
-export function StoichiometryDialogClosedStory(): React.ReactNode {
+export const StoichiometryDialogClosedStory = () => {
   const [stoichiometryId, setStoichiometryId] = React.useState<
     number | undefined
   >(undefined);
@@ -111,4 +112,4 @@ export function StoichiometryDialogClosedStory(): React.ReactNode {
       </ThemeProvider>
     </StyledEngineProvider>
   );
-}
+};

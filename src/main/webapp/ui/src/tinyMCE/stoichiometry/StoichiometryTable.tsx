@@ -45,7 +45,7 @@ type StoichiometryTableGridProps = {
   ) => EditableMolecule;
 };
 
-function StoichiometryTableGrid({
+const StoichiometryTableGrid = ({
   editable,
   allMolecules,
   isGettingMoleculeInfo = false,
@@ -55,7 +55,7 @@ function StoichiometryTableGrid({
   onRemoveInventoryLink,
   onSelectLimitingReagent,
   onProcessRowUpdate,
-}: StoichiometryTableGridProps) {
+}: StoichiometryTableGridProps) => {
   const limitingReagent = allMolecules.find(
     (m) => m.limitingReagent && m.role.toLowerCase() === "reactant",
   );
@@ -352,12 +352,12 @@ function StoichiometryTableGrid({
       <StoichiometryTableLoadingDialog open={isGettingMoleculeInfo} />
     </>
   );
-}
+};
 
-function StoichiometryTableWithQueryData({
+const StoichiometryTableWithQueryData = ({
   stoichiometryId,
   stoichiometryRevision,
-}: StoichiometryTableProps) {
+}: StoichiometryTableProps) => {
   const { getToken } = useOauthToken();
   const { data } = useGetStoichiometryQuery({
     stoichiometryId,
@@ -371,13 +371,13 @@ function StoichiometryTableWithQueryData({
       allMolecules={toEditableMolecules(data)}
     />
   );
-}
+};
 
-function StoichiometryTable({
+const StoichiometryTable = ({
   stoichiometryId,
   stoichiometryRevision,
   editable = false,
-}: StoichiometryTableProps) {
+}: StoichiometryTableProps) => {
   const tableController = useStoichiometryTableController();
 
   if (editable && tableController) {
@@ -403,6 +403,6 @@ function StoichiometryTable({
       editable={editable}
     />
   );
-}
+};
 
 export default StoichiometryTable;

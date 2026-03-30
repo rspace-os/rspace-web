@@ -27,16 +27,16 @@ type StoichiometryTableControllerProviderProps = {
   value: StoichiometryTableController;
   children: React.ReactNode;
 };
-export function StoichiometryTableControllerProvider({
+export const StoichiometryTableControllerProvider = ({
   value,
   children,
-}: StoichiometryTableControllerProviderProps): React.ReactNode {
+}: StoichiometryTableControllerProviderProps) => {
   return (
     <StoichiometryTableControllerContext.Provider value={value}>
       {children}
     </StoichiometryTableControllerContext.Provider>
   );
-}
+};
 export function useStoichiometryTableController() {
   return React.useContext(StoichiometryTableControllerContext);
 }

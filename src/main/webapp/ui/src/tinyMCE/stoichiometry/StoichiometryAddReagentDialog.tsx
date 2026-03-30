@@ -23,7 +23,7 @@ const StoichiometryAddReagentDialog = ({
   open,
   onClose,
   onAddReagent,
-}: AddReagentDialogArgs): React.ReactNode => {
+}: AddReagentDialogArgs) => {
   const [smilesString, setSmilesString] = useState<string>("");
   const [name, setName] = useState<string>("");
 

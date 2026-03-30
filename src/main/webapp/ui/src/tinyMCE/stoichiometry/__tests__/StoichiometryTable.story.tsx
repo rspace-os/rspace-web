@@ -19,7 +19,7 @@ const queryClient = new QueryClient({
   },
 });
 
-function StoichiometryTableWithQueryData(): React.ReactNode {
+const StoichiometryTableWithQueryData = () => {
   const { tableController } = useEditableStoichiometryTable({
     stoichiometryId: 1,
     stoichiometryRevision: 1,
@@ -34,9 +34,9 @@ function StoichiometryTableWithQueryData(): React.ReactNode {
       />
     </StoichiometryTableControllerProvider>
   );
-}
+};
 
-export function StoichiometryTableWithDataStory(): React.ReactNode {
+export const StoichiometryTableWithDataStory = () => {
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider
@@ -72,4 +72,4 @@ export function StoichiometryTableWithDataStory(): React.ReactNode {
       </ThemeProvider>
     </StyledEngineProvider>
   );
-}
+};

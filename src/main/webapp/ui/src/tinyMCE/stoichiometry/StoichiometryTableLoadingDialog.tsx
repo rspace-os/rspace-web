@@ -5,13 +5,13 @@ import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 
-function StoichiometryTableLoadingDialog({
+const StoichiometryTableLoadingDialog = ({
   open,
   message = "Loading molecule information...",
 }: {
   open: boolean;
   message?: string;
-}): React.ReactNode {
+}) => {
   return (
     <Dialog
       open={open}
@@ -39,6 +39,6 @@ function StoichiometryTableLoadingDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};
 
 export default StoichiometryTableLoadingDialog;

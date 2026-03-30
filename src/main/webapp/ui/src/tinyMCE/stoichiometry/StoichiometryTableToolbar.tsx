@@ -45,11 +45,11 @@ declare module "@mui/x-data-grid" {
   }
 }
 
-function StoichiometryTableToolbar({
+const StoichiometryTableToolbar = ({
   onAddReagent,
   editable,
   allMolecules,
-}: GridSlotProps["toolbar"]): React.ReactNode {
+}: GridSlotProps["toolbar"]) => {
   const apiRef = useGridApiContext();
   const [addReagantMenuAnchorEl, setAddReagentMenuAnchorEl] =
     React.useState<HTMLButtonElement | null>(null);
@@ -258,6 +258,6 @@ function StoichiometryTableToolbar({
       </Toolbar>
     </>
   );
-}
+};
 
 export default StoichiometryTableToolbar;

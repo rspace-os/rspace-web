@@ -32,11 +32,11 @@ const queryClient = new QueryClient({
   },
 });
 
-function StoichiometryTableLoadingFallback({
+const StoichiometryTableLoadingFallback = ({
   disableClose,
 }: {
   disableClose: boolean;
-}): React.ReactNode {
+}) => {
   return (
     <>
       <DialogContent>
@@ -64,9 +64,9 @@ function StoichiometryTableLoadingFallback({
       </DialogActions>
     </>
   );
-}
+};
 
-function EditableStoichiometryDialogSection({
+const EditableStoichiometryDialogSection = ({
   currentStoichiometry,
   onClose,
   onSave,
@@ -88,7 +88,7 @@ function EditableStoichiometryDialogSection({
     } | null>
   >;
   registerCloseHandler?: (handler: (() => Promise<void>) | null) => void;
-}): React.ReactNode {
+}) => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const confirm = useConfirm();
   const {
@@ -224,9 +224,9 @@ function EditableStoichiometryDialogSection({
       </DialogActions>
     </StoichiometryTableControllerProvider>
   );
-}
+};
 
-function StandaloneDialogInner({
+const StandaloneDialogInner = ({
   open,
   onClose,
   chemId,
@@ -246,7 +246,7 @@ function StandaloneDialogInner({
   onTableCreated?: (id: number, version: number) => void;
   onSave?: (id: number, version: number) => void;
   onDelete?: () => void;
-}): React.ReactNode {
+}) => {
   const titleId = React.useId();
   const { getToken } = useOauthToken();
   const calculateStoichiometryMutation = useCalculateStoichiometryMutation({
@@ -431,11 +431,11 @@ function StandaloneDialogInner({
       )}
     </Dialog>
   );
-}
+};
 
-export default function StoichiometryDialog(
+const StoichiometryDialog = (
   props: React.ComponentProps<typeof StandaloneDialogInner>,
-): React.ReactNode {
+) => {
   return (
     <QueryClientProvider client={queryClient}>
       <DialogBoundary>
@@ -445,5 +445,7 @@ export default function StoichiometryDialog(
       </DialogBoundary>
     </QueryClientProvider>
   );
-}
+};
+
+export default StoichiometryDialog;
 
