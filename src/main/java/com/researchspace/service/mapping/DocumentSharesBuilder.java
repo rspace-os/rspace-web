@@ -2,6 +2,7 @@ package com.researchspace.service.mapping;
 
 import com.researchspace.api.v1.model.DocumentShares;
 import com.researchspace.model.RecordGroupSharing;
+import com.researchspace.model.User;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSPath;
@@ -40,6 +41,7 @@ public class DocumentSharesBuilder {
    */
   private DocumentShares.Share toShare(BaseRecord record, RecordGroupSharing share) {
     boolean isUser = share.getSharee().isUser();
+
     BaseRecord location = locationResolver.resolveLocation(share, record);
     Long parentId = location != null ? location.getId() : null;
 
@@ -53,10 +55,11 @@ public class DocumentSharesBuilder {
       grandparentId = rsPath.get(gpIndex).map(BaseRecord::getId).orElse(null);
     }
 
+    User sharedBy = share.getSharedBy(); // may be null for old shares, see SUPPORT-529
     return DocumentShares.Share.builder()
         .shareId(share.getId())
-        .sharerId(share.getSharedBy().getId())
-        .sharerName(share.getSharedBy().getDisplayName())
+        .sharerId(sharedBy == null ? null : sharedBy.getId())
+        .sharerName(sharedBy == null ? null : sharedBy.getDisplayName())
         .recipientId(share.getSharee().getId())
         .recipientName(share.getSharee().getDisplayName())
         .recipientType(
