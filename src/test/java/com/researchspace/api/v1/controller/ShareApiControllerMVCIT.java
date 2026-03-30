@@ -26,9 +26,11 @@ import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
+import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
@@ -36,7 +38,7 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.TreeViewItem;
-import com.researchspace.service.GroupManager;
+import com.researchspace.service.RecordSharingManager;
 import com.researchspace.testutils.TestGroup;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
@@ -52,7 +54,9 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 @WebAppConfiguration
 public class ShareApiControllerMVCIT extends API_MVC_TestBase {
 
-  @Autowired private GroupManager groupManager;
+  @Autowired private RecordSharingManager recordSharingManager;
+
+  @Autowired private RecordGroupSharingDao recordSharingDao;
 
   @Before
   public void setup() throws Exception {
@@ -572,5 +576,59 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     mockMvc
         .perform(createBuilderForDelete(otherKey, "/share/{id}", other, shareId))
         .andExpect(status().isNotFound());
+  }
+
+  @Test
+  public void getAllSharesHandlesEmptySharedByInHistoricalDoc_SUPPORT_529() throws Exception {
+    TestGroup group = createTestGroup(2);
+    User owner = group.getPi();
+    logoutAndLoginAs(owner);
+    StructuredDocument toShare = createBasicDocumentInRootFolderWithText(owner, "test");
+    String apiKey = createNewApiKeyForUser(owner);
+
+    SharePost sharePost = createValidSharePostWithGroup(group, toShare, "READ");
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/share", owner, sharePost))
+        .andExpect(status().isCreated());
+
+    // Get all shares for the document
+    MvcResult getAllSharesResult =
+        mockMvc
+            .perform(get("/api/v1/share/document/" + toShare.getId()).header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+    DocumentShares docShares =
+        new ObjectMapper()
+            .readValue(
+                getAllSharesResult.getResponse().getContentAsString(), new TypeReference<>() {});
+
+    assertEquals(toShare.getId(), docShares.getSharedDocId());
+    assertEquals(1L, docShares.getDirectShares().size());
+    assertEquals(owner.getId(), docShares.getDirectShares().get(0).getSharerId());
+    assertEquals(owner.getDisplayName(), docShares.getDirectShares().get(0).getSharerName());
+
+    // set sharedBy to null - to replicate historical (pre-2023) shares
+    openTransaction();
+    RecordGroupSharing dbShare =
+        recordSharingDao.get(docShares.getDirectShares().get(0).getShareId());
+    dbShare.setSharedBy(null);
+    recordSharingDao.save(dbShare);
+    commitTransaction();
+
+    // get updated share info for the document (no sharedBy details)
+    getAllSharesResult =
+        mockMvc
+            .perform(get("/api/v1/share/document/" + toShare.getId()).header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+    docShares =
+        new ObjectMapper()
+            .readValue(
+                getAllSharesResult.getResponse().getContentAsString(), new TypeReference<>() {});
+
+    assertEquals(toShare.getId(), docShares.getSharedDocId());
+    assertEquals(1L, docShares.getDirectShares().size());
+    assertNull(docShares.getDirectShares().get(0).getSharerId());
+    assertNull(docShares.getDirectShares().get(0).getSharerName());
   }
 }
