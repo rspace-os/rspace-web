@@ -12,10 +12,10 @@ import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import { observable } from "mobx";
-import { render, within } from "../../../../__tests__/customQueries";
+import { render, within } from "@/__tests__/customQueries";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
-import "../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 
 const broadcastHandlers: Array<
   (e: MessageEvent<GitHubConnectedMessage>) => void

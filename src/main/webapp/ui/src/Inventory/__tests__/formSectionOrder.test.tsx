@@ -1,5 +1,5 @@
 import { test, describe, vi } from 'vitest';
-import "../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import React from "react";
 import {
   render,
@@ -29,7 +29,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
 import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
 import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
-import { assertConsistentOrderOfLists } from "../../__tests__/assertConsistentOrderOfLists";
+import { assertConsistentOrderOfLists } from "@/__tests__/assertConsistentOrderOfLists";
 import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
 
 import { IsValid } from "../../components/ValidatingSubmitButton";

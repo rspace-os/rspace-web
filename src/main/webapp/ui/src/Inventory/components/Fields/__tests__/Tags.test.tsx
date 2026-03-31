@@ -9,7 +9,7 @@ import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { Optional } from "../../../../util/optional";
-import "../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 
 window.fetch = vi.fn(() =>
   Promise.resolve({
