@@ -77,6 +77,7 @@ import com.researchspace.service.PiChangeHandler;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.UserFolderCreator;
+import com.researchspace.service.UserManager;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -97,6 +98,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
 
@@ -123,6 +125,7 @@ public class GroupManagerImpl implements GroupManager {
   private @Autowired UserGroupDao ugDao;
   private @Autowired RecordGroupSharingDao groupshareRecordDao;
   private @Autowired RecordSharingManager sharingManager;
+  private @Autowired UserManager userManager;
   private @Autowired UserDao userDao;
   private @Autowired FolderDao folderDao;
   private @Autowired GroupMembershipEventDao groupMembershipEventDao;
@@ -365,11 +368,31 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public Optional<ApiGroupInfo> getGroupInfoById(Long groupId) {
-    Set<Group> groups = this.listGroupsForUser();
-    return groups.stream()
-        .filter(g -> g.getId().equals(groupId))
-        .findFirst()
-        .map(ApiGroupInfo::new);
+    Group currentGroup;
+    try {
+      currentGroup = groupDao.get(groupId);
+    } catch (ObjectRetrievalFailureException orex) {
+      return Optional.empty();
+    }
+    String uname = (String) SecurityUtils.getSubject().getPrincipal();
+    User currentUser = userDao.getUserByUsername(uname);
+    Optional<ApiGroupInfo> candidateResult = Optional.of(new ApiGroupInfo(currentGroup));
+
+    if (currentUser.hasSysadminRole() || currentUser.isPiOrLabAdminOfGroup(currentGroup)) {
+      return candidateResult;
+    } else {
+      Set<Group> userGroups = currentUser.getGroups();
+      if (userGroups.contains(currentGroup)) {
+        return candidateResult;
+      } else {
+        userManager.populateConnectedGroupSet(currentUser);
+        if (currentUser.isConnectedToGroup(currentGroup)) {
+          return candidateResult;
+        } else {
+          return Optional.empty();
+        }
+      }
+    }
   }
 
   @Override

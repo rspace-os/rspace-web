@@ -24,9 +24,9 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -66,8 +66,10 @@ public class GroupControllerTest {
     messages.addMessage("errors.maxlength", Locale.getDefault(), "toobig");
     grpController.setMessageSource(new MessageSourceUtils(messages));
 
-    userA.setConnectedGroups(new ArrayList<>(Arrays.asList(group)));
-    userB.setConnectedGroups(new ArrayList<>());
+    Set<Group> cononectedGroups = new HashSet<>();
+    cononectedGroups.add(group);
+    userA.setConnectedGroups(cononectedGroups);
+    userB.setConnectedGroups(new HashSet<>());
   }
 
   @After
