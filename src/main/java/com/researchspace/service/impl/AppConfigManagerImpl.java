@@ -92,6 +92,8 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
       set = createAppConfigElementSetFromMap(appConfigSetData, app);
       cfg.addConfigSet(set);
       appCfgDao.save(cfg);
+      // Explicitly save the set so it gets an ID immediately
+      appCfgDao.saveAppConfigElement(set);
     } else {
       AppConfigElementSet transientSet = createAppConfigElementSetFromMap(appConfigSetData, app);
       AppConfigElementSet saved = appCfgDao.getAppConfigElementSetById(appConfigSetDataId);

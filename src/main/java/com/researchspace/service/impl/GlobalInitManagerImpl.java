@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Performs global initialisation actions on application startup. Should only be called once after
@@ -88,6 +89,7 @@ public class GlobalInitManagerImpl implements GlobalInitManager {
   }
 
   @Override
+  @Transactional
   public void onApplicationEvent(final ApplicationEvent appEvent) {
     if (!(appEvent instanceof ContextRefreshedEvent)) {
       return;

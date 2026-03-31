@@ -65,6 +65,10 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     // GlobalInitSysadminAuthenticationToken
     // being missing.
     Object realBean = AopProxyUtils.getSingletonTarget(customFormAppInitialiser);
+    if (realBean == null) {
+      // In Spring 6, bean may not be proxied; use it directly
+      realBean = customFormAppInitialiser;
+    }
     // NOTE - in these test that use TransactionalTestExecutionListener, transaction boundary is per
     // test and therefore if we use any Manager
     // classes for setupc(which have their own transaction boundaries) our test code will not see

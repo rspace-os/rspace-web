@@ -14,7 +14,6 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.GroupSearchCriteria;
 import com.researchspace.service.GroupManager;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -139,12 +138,12 @@ public class SysAdminGroupsManagerImpl extends AbstractSysadminMgr implements Sy
       }
     }
     // else rturn empty result if no files present for group.
-    return new DatabaseUsageByGroupGroupByResult(new BigInteger(grp.getId() + ""), 0d);
+    return new DatabaseUsageByGroupGroupByResult(grp.getId(), 0d);
   }
 
   private Group findGrpForUsage(List<Group> grps, DatabaseUsageByGroupGroupByResult groupUsage) {
     for (Group grp : grps) {
-      if (grp.getId().equals(groupUsage.getGroupId().longValue())) {
+      if (grp.getId().equals(groupUsage.getGroupId())) {
         return grp;
       }
     }

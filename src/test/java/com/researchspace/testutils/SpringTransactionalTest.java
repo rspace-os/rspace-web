@@ -24,6 +24,7 @@ import org.junit.After;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +33,11 @@ import org.springframework.transaction.annotation.Transactional;
  * their own @After method which invokes super.tearDown() to ensure correct tidy up after each test.
  */
 @TestExecutionListeners(
-    value = {TransactionalTestExecutionListener.class, SqlScriptsTestExecutionListener.class})
+    value = {
+      DependencyInjectionTestExecutionListener.class,
+      TransactionalTestExecutionListener.class,
+      SqlScriptsTestExecutionListener.class
+    })
 @Transactional
 public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
 

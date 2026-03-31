@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -44,7 +45,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       ChemistryService chemistryService,
       StoichiometryManager stoichiometryManager,
       IPermissionUtils permissionUtils,
-      ChemistryProvider chemistryProvider,
+      @Qualifier("chemistryProvider") ChemistryProvider chemistryProvider,
       RSChemElementManager rsChemElementManager,
       RecordManager recordManager) {
     this.chemistryService = chemistryService;

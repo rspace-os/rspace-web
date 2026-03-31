@@ -4,7 +4,6 @@ import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.chemistry.ChemistryClient;
 import com.researchspace.service.chemistry.ChemistryClientException;
-import java.math.BigInteger;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -78,7 +77,8 @@ public class ChemistrySearchIndexInitialisor implements IApplicationInitialisor 
     int totalCount = 0;
     int successCount = 0;
     for (Object[] chemIdAndSmiles : allChems) {
-      BigInteger chemId = (BigInteger) chemIdAndSmiles[0];
+      // Hibernate 6: native SQL returns Long, not BigInteger
+      Number chemId = (Number) chemIdAndSmiles[0];
       String smilesString = (String) chemIdAndSmiles[1];
       if (StringUtils.isNotEmpty(smilesString)) {
         try {

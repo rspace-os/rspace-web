@@ -58,7 +58,8 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
         ownedAndPermittedItemsFragment +=
             " or ("
                 + relatedItemPrefix
-                + "sharingMode='0' and "
+                + "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.OWNER_GROUPS"
+                + " and "
                 + relatedItemPrefix
                 + "owner.username in (:userGroupMembers)) ";
       }
@@ -66,7 +67,8 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
         ownedAndPermittedItemsFragment +=
             "or ("
                 + relatedItemPrefix
-                + "sharingMode='1' and "
+                + "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.WHITELIST"
+                + " and "
                 + relatedItemPrefix
                 + "sharingACL.acl LIKE :userGroupUniqueName"
                 + i

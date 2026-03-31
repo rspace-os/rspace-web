@@ -349,7 +349,7 @@
     </resources>
   </cache>
 
-  <cache alias="org.hibernate.cache.internal.StandardQueryCache">
+  <cache alias="default-query-results-region">
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
@@ -358,7 +358,7 @@
     </resources>
   </cache>
 
-  <cache alias="org.hibernate.cache.spi.UpdateTimestampsCache">
+  <cache alias="default-update-timestamps-region">
     <expiry>
       <none/>
     </expiry>

@@ -67,6 +67,10 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
   private T setColumnIndexAndPersist(T form, FieldForm fieldForm) {
     form.addFieldForm(fieldForm);
     fieldForm.setColumnIndex(form.getNumActiveFields() - 1);
+    // Explicitly save the fieldForm so it gets an ID immediately via persist().
+    // In Hibernate 6, cascade from the already-managed parent form won't flush
+    // until transaction commit, leaving the fieldForm without an ID.
+    fieldFormDao.save(fieldForm);
     return absFormdao.save(form);
   }
 

@@ -216,37 +216,48 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     String countQuery = "select count (distinct u) " + USERS_IN_COMMUNITY_Q;
 
     String subQuery = "";
+    Map<String, Object> dateParams = new java.util.HashMap<>();
     if (pgCrit.getSearchCriteria() != null) {
       UserSearchCriteria searchCriteria = (UserSearchCriteria) pgCrit.getSearchCriteria();
-      subQuery = applySearchRestrictionsToHQL(searchCriteria);
+      subQuery = applySearchRestrictionsToHQL(searchCriteria, dateParams);
       countQuery = countQuery + subQuery;
     }
 
-    Long userCount =
-        session.createQuery(countQuery, Long.class).setParameter("id", communityId).uniqueResult();
+    var countQ = session.createQuery(countQuery, Long.class).setParameter("id", communityId);
+    dateParams.forEach(countQ::setParameter);
+    Long userCount = countQ.uniqueResult();
     if (userCount == 0) {
       return new SearchResultsImpl<>(Collections.emptyList(), 0, 0L);
     }
     String orderBy = safeOrderBy(pgCrit);
     String listQuery = "select distinct u " + USERS_IN_COMMUNITY_Q + subQuery + orderBy;
-    List<User> rc =
+    var listQ =
         session
             .createQuery(listQuery, User.class)
             .setParameter("id", communityId)
             .setMaxResults(pgCrit.getResultsPerPage())
-            .setFirstResult(pgCrit.getFirstResultIndex())
-            .list();
+            .setFirstResult(pgCrit.getFirstResultIndex());
+    dateParams.forEach(listQ::setParameter);
+    List<User> rc = listQ.list();
     return new SearchResultsImpl<>(
         rc, pgCrit.getPageNumber().intValue(), userCount, pgCrit.getResultsPerPage());
   }
 
   private String applySearchRestrictionsToHQL(UserSearchCriteria sc) {
+    return applySearchRestrictionsToHQL(sc, null);
+  }
+
+  /**
+   * @param params if non-null, date parameters will be added to this map (key=param name,
+   *     value=Date) for use with query.setParameter()
+   */
+  private String applySearchRestrictionsToHQL(UserSearchCriteria sc, Map<String, Object> params) {
     var clauses = new ArrayList<String>();
     // this is for queries that are unreliable using Criteria. Functionality should be maintained
     // with
     // applySearchCriteria
     try {
-      applySearchTermFieldsHQL(sc, clauses);
+      applySearchTermFieldsHQL(sc, clauses, params);
     } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
       log.error("Error applying search restrictions: {0}", e);
     }
@@ -261,7 +272,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   }
 
   private void applySearchTermFieldsHQL(
-      UserSearchCriteria searchCriteria, ArrayList<String> clauses)
+      UserSearchCriteria searchCriteria, ArrayList<String> clauses, Map<String, Object> params)
       throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
     Map<String, Object> key2Value = searchCriteria.getSearchTermField2Values();
     for (Entry<String, Object> entry : key2Value.entrySet()) {
@@ -283,20 +294,22 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
       if ("creationDateEarlierThan".equals(entry.getKey())) {
         parseDate(entry)
             .ifPresent(
-                limit ->
-                    clauses.add(
-                        "and u.creationDate < '"
-                            + DateUtil.convertDateToISOFormat(limit, null)
-                            + "'"));
+                limit -> {
+                  clauses.add("and u.creationDate < :creationDateLimit");
+                  if (params != null) {
+                    params.put("creationDateLimit", limit);
+                  }
+                });
       }
       if ("lastLoginEarlierThan".equals(entry.getKey())) {
         parseDate(entry)
             .ifPresent(
-                limit ->
-                    clauses.add(
-                        "and (u.lastLogin = NULL or u.lastLogin < '"
-                            + DateUtil.convertDateToISOFormat(limit, null)
-                            + "')"));
+                limit -> {
+                  clauses.add("and (u.lastLogin = NULL or u.lastLogin < :lastLoginLimit)");
+                  if (params != null) {
+                    params.put("lastLoginLimit", limit);
+                  }
+                });
       }
     }
   }
@@ -531,7 +544,13 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
 
   @Override
   public UserProfile saveUserProfile(UserProfile profile) {
-    return (UserProfile) getSession().merge(profile);
+    Session session = getSession();
+    Object id = session.getSessionFactory().getPersistenceUnitUtil().getIdentifier(profile);
+    if (id == null) {
+      session.persist(profile);
+      return profile;
+    }
+    return (UserProfile) session.merge(profile);
   }
 
   @Override

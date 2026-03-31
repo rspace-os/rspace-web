@@ -71,8 +71,8 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
                     + " br.type, br.deleted, br.editInfo.creationDateMillis,"
                     + " br.editInfo.modificationDateMillis, emf.extension) from BaseRecord br left"
                     + " join EcatMediaFile emf on br.id=emf.id inner join RecordToFolder rtf on"
-                    + " rtf.record.id=br.id where rtf.folder.id=:folderId and br.deleted=0 and"
-                    + " rtf.recordInFolderDeleted=0 order by br.editInfo.modificationDateMillis"
+                    + " rtf.record.id=br.id where rtf.folder.id=:folderId and br.deleted=false and"
+                    + " rtf.recordInFolderDeleted=false order by br.editInfo.modificationDateMillis"
                     + " desc",
                 TreeViewItem.class)
             .setParameter("folderId", folderId);
@@ -85,7 +85,8 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
     Query<Folder> q =
         getSession()
             .createQuery(
-                "from Folder where  owner.id=:id and name=:name and type like :type", Folder.class);
+                "from Folder where  owner.id=:id and editInfo.name=:name and type like :type",
+                Folder.class);
     q.setParameter("type", "%" + RecordType.SYSTEM.name() + "%")
         .setParameter("name", systemFolderName);
     q.setParameter("id", user.getId());
@@ -96,7 +97,7 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   public List<Long> getFolderChildrenIds(Folder fd) {
     Long pid = fd.getId();
     return getSession()
-        .createQuery("SELECT rtf.record.id FROM RecordToFolder rtf WHERE folder_id = :parentId")
+        .createQuery("SELECT rtf.record.id FROM RecordToFolder rtf WHERE rtf.folder.id = :parentId")
         .setParameter("parentId", pid)
         .list();
   }

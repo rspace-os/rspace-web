@@ -148,8 +148,8 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     Query<CommunicationTarget> query =
         getSession()
             .createQuery(
-                "from CommunicationTarget where recipient_id=:recipientId and"
-                    + " communication_id=:requestId");
+                "from CommunicationTarget where recipient.id=:recipientId and"
+                    + " communication.id=:requestId");
     query.setParameter("recipientId", userId);
     query.setParameter("requestId", requestId);
 

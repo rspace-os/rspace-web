@@ -1,7 +1,6 @@
 package com.researchspace.dao;
 
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.util.Comparator;
 
 /**
@@ -10,7 +9,7 @@ import java.util.Comparator;
  */
 public class DatabaseUsageByGroupGroupByResult {
 
-  public DatabaseUsageByGroupGroupByResult(BigInteger groupId, Double fileusage) {
+  public DatabaseUsageByGroupGroupByResult(Long groupId, Double fileusage) {
     super();
     this.groupId = groupId;
     this.fileusage = fileusage;
@@ -39,11 +38,11 @@ public class DatabaseUsageByGroupGroupByResult {
     super();
   }
 
-  public BigInteger getGroupId() {
+  public Long getGroupId() {
     return groupId;
   }
 
-  void setGroupId(BigInteger groupId) {
+  void setGroupId(Long groupId) {
     this.groupId = groupId;
   }
 
@@ -89,7 +88,7 @@ public class DatabaseUsageByGroupGroupByResult {
     return true;
   }
 
-  private BigInteger groupId;
+  private Long groupId;
 
   private Double fileusage = 0d;
 

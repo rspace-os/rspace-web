@@ -6,6 +6,7 @@ import com.researchspace.model.Signature;
 import com.researchspace.model.User;
 import com.researchspace.model.Witness;
 import java.util.List;
+import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
@@ -58,7 +59,13 @@ public class SignatureDaoHibernateImpl extends GenericDaoHibernate<Signature, Lo
 
   @Override
   public Witness saveOrUpdateWitness(Witness witness) {
-    return (Witness) getSession().merge(witness);
+    Session session = getSession();
+    Object id = session.getSessionFactory().getPersistenceUnitUtil().getIdentifier(witness);
+    if (id == null) {
+      session.persist(witness);
+      return witness;
+    }
+    return (Witness) session.merge(witness);
   }
 
   @Override

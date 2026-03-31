@@ -19,7 +19,6 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.views.FormSearchCriteria;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -262,7 +261,8 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     if (searchTerm != null) {
       countQuery.setParameter("searchTerm", searchTerm);
     }
-    BigInteger count = (BigInteger) countQuery.uniqueResult();
+    // Hibernate 6: native SQL count(*) returns Long, not BigInteger
+    Number count = (Number) countQuery.uniqueResult();
 
     NativeQuery query = session.createNativeQuery(allQuery);
     if (searchTerm != null) {
@@ -279,8 +279,8 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     List<RSForm> forms = new ArrayList<>();
     if (!isSortOrderSet(pagCriteria)) {
       // there is only a single result column
-      List<BigInteger> ids = query.list(); // preserve order
-      for (BigInteger id : ids) { // for debug purpose
+      List<Number> ids = query.list(); // preserve order
+      for (Number id : ids) { // for debug purpose
         RSForm fmx = get(id.longValue());
         forms.add(fmx);
       }
@@ -289,7 +289,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
       List<Object> results = query.list();
       for (Object row : results) {
         Object[] rowData = (Object[]) row;
-        RSForm fmx = get(((BigInteger) rowData[0]).longValue());
+        RSForm fmx = get(((Number) rowData[0]).longValue());
         forms.add(fmx);
       }
     }
@@ -453,7 +453,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
 
   @Override
   public boolean removeFieldsFromForm(Long formId) {
-    Query<?> q = getSession().createQuery("delete from FieldForm where form_id=:formId");
+    Query<?> q = getSession().createQuery("delete from FieldForm where form.id=:formId");
     q.setParameter("formId", formId);
     q.executeUpdate();
     return true;
@@ -463,7 +463,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
   public Long countDocsCreatedFromForm(RSForm form) {
     List<Long> formIds =
         getSession()
-            .createQuery(" select id from RSForm where stableId=:stableId", Long.class)
+            .createQuery(" select id from RSForm where stableID=:stableId", Long.class)
             .setParameter("stableId", form.getStableID())
             .list();
     if (formIds.isEmpty()) {

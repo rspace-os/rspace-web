@@ -224,6 +224,13 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
       } else {
         query.orderBy(builder.desc(ownerJoin.get("lastName")));
       }
+    } else if ("owner.username".equals(pgCrit.getOrderBy())) {
+      Join<Group, ?> ownerJoin = root.join("owner", JoinType.LEFT);
+      if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
+        query.orderBy(builder.asc(ownerJoin.get("username")));
+      } else {
+        query.orderBy(builder.desc(ownerJoin.get("username")));
+      }
     } else if (pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
       if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
         query.orderBy(builder.asc(root.get(pgCrit.getOrderBy())));

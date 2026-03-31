@@ -44,7 +44,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
 
     return sessionFactory
         .getCurrentSession()
-        .createQuery("from Sample where name=:name and owner=:owner", Sample.class)
+        .createQuery("from Sample where editInfo.name=:name and owner=:owner", Sample.class)
         .setParameter("name", name)
         .setParameter("owner", user)
         .list();
@@ -79,7 +79,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
 
     boolean limitByParentTemplate = parentTemplateId != null;
     String parentTemplateQueryFragment =
-        limitByParentTemplate ? "and STemplate_id=:parentTemplateId " : "";
+        limitByParentTemplate ? "and STemplate.id=:parentTemplateId " : "";
 
     // get total count
     Query<Long> countQueryBase =
@@ -152,7 +152,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
         .createQuery(
             FROM_SAMPLE_WHERE
                 + " owner=:owner and template=false and deleted=false "
-                + " and STemplate_id=:parentTemplateId "
+                + " and STemplate.id=:parentTemplateId "
                 + " and STemplateLinkedVersion < :parentTemplateMaxVersion",
             Sample.class)
         .setParameter("owner", user)

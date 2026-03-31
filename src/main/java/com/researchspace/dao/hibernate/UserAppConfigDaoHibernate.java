@@ -8,6 +8,7 @@ import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
 import java.util.List;
 import java.util.Optional;
+import org.hibernate.Session;
 import org.springframework.stereotype.Repository;
 
 @Repository("userAppConfigDaoHibernate")
@@ -49,7 +50,13 @@ public class UserAppConfigDaoHibernate extends GenericDaoHibernate<UserAppConfig
 
   @Override
   public void saveAppConfigElement(AppConfigElementSet saved) {
-    getSession().merge(saved);
+    Session session = getSession();
+    Object id = session.getSessionFactory().getPersistenceUnitUtil().getIdentifier(saved);
+    if (id == null) {
+      session.persist(saved);
+    } else {
+      session.merge(saved);
+    }
   }
 
   @Override

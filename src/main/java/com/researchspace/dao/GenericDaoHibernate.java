@@ -114,7 +114,27 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   /** {@inheritDoc} */
   @SuppressWarnings("unchecked")
   public T save(T object) {
-    return (T) getSession().merge(object);
+    Session session = getSession();
+    if (session.contains(object)) {
+      return object;
+    }
+    Object id = null;
+    try {
+      id = session.getSessionFactory().getPersistenceUnitUtil().getIdentifier(object);
+    } catch (IllegalArgumentException e) {
+      // Entity type not recognized by PersistenceUnitUtil
+    }
+    if (id == null) {
+      session.persist(object);
+      return object;
+    }
+    // Entity has an ID but isn't managed. Use merge() which handles both:
+    // - Detached entities (exist in DB) → merge into managed copy
+    // - New entities with pre-assigned IDs (don't exist in DB) →
+    //   entityIsDetached falls through to entityIsTransient → INSERT
+    // The IdTransferringMergeEventListener copies the generated ID back
+    // to the original object.
+    return (T) session.merge(object);
   }
 
   /** {@inheritDoc} */

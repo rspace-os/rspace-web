@@ -65,7 +65,7 @@ public class NfsDaoHibernate implements NfsDao {
     List<NfsFileStore> fileStores =
         sessionFactory
             .getCurrentSession()
-            .createQuery("from NfsFileStore where user_id=:userId and deleted=false")
+            .createQuery("from NfsFileStore where user.id=:userId and deleted=false")
             .setParameter("userId", userId)
             .list();
     return fileStores;

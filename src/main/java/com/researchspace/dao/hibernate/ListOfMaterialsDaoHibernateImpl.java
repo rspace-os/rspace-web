@@ -26,7 +26,7 @@ public class ListOfMaterialsDaoHibernateImpl extends GenericDaoHibernate<ListOfM
     return sessionFactory
         .getCurrentSession()
         .createQuery(
-            "from ListOfMaterials where elnField_id in (:elnFieldIds)", ListOfMaterials.class)
+            "from ListOfMaterials where elnField.id in (:elnFieldIds)", ListOfMaterials.class)
         .setParameterList("elnFieldIds", elnFieldIds)
         .list();
   }

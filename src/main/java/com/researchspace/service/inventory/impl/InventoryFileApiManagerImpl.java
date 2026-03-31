@@ -184,6 +184,9 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     fileProperty.setRoot(fileStore.getCurrentLocalFileStoreRoot());
 
     URI uri = fileStore.save(fileProperty, inputStream, fileName, FileDuplicateStrategy.AS_NEW);
+    // Explicitly persist FileProperty to DB (Hibernate 6 requires this before flush)
+    // merge() returns the managed copy — must use that, not the original transient instance
+    fileProperty = fileStoreMetaManager.save(fileProperty);
     log.debug("File property {} created at URI {}", fileProperty.getId(), uri);
     log.info("URI is {}", fileProperty.getAbsolutePathUri());
 

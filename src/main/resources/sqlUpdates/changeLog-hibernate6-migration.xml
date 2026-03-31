@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="hibernate6-rename-sequence-column" author="spring6-migration">
+        <comment>Rename hibernate_sequences value column to match Hibernate 6 default TABLE generator expectations</comment>
+        <renameColumn tableName="hibernate_sequences"
+                      oldColumnName="sequence_next_hi_value"
+                      newColumnName="next_val"
+                      columnDataType="int"/>
+    </changeSet>
+
+</databaseChangeLog>

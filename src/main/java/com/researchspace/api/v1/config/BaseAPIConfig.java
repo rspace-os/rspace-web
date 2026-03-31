@@ -18,6 +18,7 @@ import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.UserApiKeyManager;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -29,9 +30,9 @@ public class BaseAPIConfig {
 
   @Bean
   APIRequestThrottlingInterceptor apiThrottlingInterceptor(
-      APIRequestThrottler userThrottler,
-      APIRequestThrottler globalThrottler,
-      APIRequestThrottler inventoryThrottler) {
+      @Qualifier("userThrottler") APIRequestThrottler userThrottler,
+      @Qualifier("globalThrottler") APIRequestThrottler globalThrottler,
+      @Qualifier("inventoryThrottler") APIRequestThrottler inventoryThrottler) {
     return new APIRequestThrottlingInterceptor(userThrottler, globalThrottler, inventoryThrottler);
   }
 

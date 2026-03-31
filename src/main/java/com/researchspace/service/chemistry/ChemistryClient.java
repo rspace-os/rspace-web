@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -23,13 +22,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
-@Service
 public class ChemistryClient {
 
   @Value("${chemistry.service.url}")
@@ -37,7 +34,6 @@ public class ChemistryClient {
 
   private final RestTemplate restTemplate;
 
-  @Autowired
   public ChemistryClient(RestTemplate restTemplate) {
     this.restTemplate = restTemplate;
   }

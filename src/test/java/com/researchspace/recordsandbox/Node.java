@@ -26,7 +26,7 @@ public class Node {
   private Long id;
 
   @Id
-  @GeneratedValue(strategy = GenerationType.TABLE)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   public Long getId() {
     return id;
   }

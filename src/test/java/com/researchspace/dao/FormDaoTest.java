@@ -81,7 +81,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     List<RSForm> allFormsCalledAA =
         sessionFactory
             .getCurrentSession()
-            .createQuery("from RSForm where name = :name")
+            .createQuery("from RSForm where editInfo.name = :name")
             .setParameter("name", "aa")
             .list();
 

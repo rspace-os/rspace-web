@@ -1,9 +1,7 @@
 package com.researchspace.dao.hibernate;
 
 import static com.researchspace.core.util.TransformerUtils.transformToString;
-import static java.lang.Long.parseLong;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -43,17 +41,13 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
   }
 
   public Long getTotalFileUsageForUser(User user) {
-    Query<String> q =
-        getSession()
-            .createQuery(
-                "select sum(fileSize) from  FileProperty where fileOwner=:owner", String.class);
-    q.setParameter("owner", user.getUsername());
-    String result = q.uniqueResult();
-    if (result != null) {
-      return Long.parseLong(result);
-    } else {
-      return null;
-    }
+    Number result =
+        (Number)
+            getSession()
+                .createQuery("select sum(fileSize) from  FileProperty where fileOwner=:owner")
+                .setParameter("owner", user.getUsername())
+                .uniqueResult();
+    return result != null ? result.longValue() : null;
   }
 
   @Override
@@ -92,13 +86,13 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
 
   @Override
   public Long getTotalFileUsage() {
-    String count =
-        (String) getSession().createQuery("select sum(fileSize) from FileProperty").uniqueResult();
-    return extractSizeFromResult(count);
+    Number count =
+        (Number) getSession().createQuery("select sum(fileSize) from FileProperty").uniqueResult();
+    return count != null ? count.longValue() : 0L;
   }
 
-  private Long extractSizeFromResult(String count) {
-    return (!isEmpty(count)) ? parseLong(count) : 0;
+  private Long extractSizeFromResult(Number count) {
+    return count != null ? count.longValue() : 0L;
   }
 
   @Override
@@ -108,13 +102,13 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
     }
     List<String> unames = transformToString(group.getMembers(), "username");
     Session session = getSession();
-    Query<String> q =
-        session
-            .createQuery(
-                "select sum(fileSize) as usage from  FileProperty where fileOwner in (:unames)",
-                String.class)
-            .setParameterList("unames", unames);
-    String count = q.uniqueResult();
+    Number count =
+        (Number)
+            session
+                .createQuery(
+                    "select sum(fileSize) as usage from  FileProperty where fileOwner in (:unames)")
+                .setParameterList("unames", unames)
+                .uniqueResult();
     return extractSizeFromResult(count);
   }
 
@@ -313,7 +307,13 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
   }
 
   public FileStoreRoot saveFileStoreRoot(FileStoreRoot root) {
-    return (FileStoreRoot) getSession().merge(root);
+    Session session = getSession();
+    Object id = session.getSessionFactory().getPersistenceUnitUtil().getIdentifier(root);
+    if (id == null) {
+      session.persist(root);
+      return root;
+    }
+    return (FileStoreRoot) session.merge(root);
   }
 
   public void resetCurrentFileStoreRoot(boolean external) {

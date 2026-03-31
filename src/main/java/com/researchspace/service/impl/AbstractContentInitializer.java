@@ -91,7 +91,7 @@ public abstract class AbstractContentInitializer
    *
    * @throws IllegalAddChildOperation
    */
-  public final InitializedContent init(Long userid) throws IllegalAddChildOperation {
+  public InitializedContent init(Long userid) throws IllegalAddChildOperation {
     log.info("in init method with user {}", userid);
     User user = userDao.get(userid);
     log.info("initialising {}", userid);

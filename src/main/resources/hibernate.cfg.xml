@@ -6,7 +6,7 @@
          <!-- these properties are internal ones that shouldn't be editable by customers
           IF we want to make a property externally configurable, add it in sessionFactory bean configuration -->
         <property name="hibernate.cache.region.factory_class">org.hibernate.cache.jcache.JCacheRegionFactory</property>
-        <property name="hibernate.javax.cache.provider">org.ehcache.jsr107.EhcacheCachingProvider</property>
+        <property name="hibernate.cache.jakarta.cache.provider">org.ehcache.jsr107.EhcacheCachingProvider</property>
         <property name="hibernate.cache.jcache.config_uri">classpath:ehcache.xml</property>
         <property name="hibernate.cache.use_second_level_cache">true</property>
         <property name="hibernate.cache.use_query_cache">true</property>
@@ -17,9 +17,7 @@
         <!-- RSPAC-22 -->
         <property name="hibernate.envers.autoRegisterListeners">false</property>
   
-        <!-- for compatibility with 3/4, see
-          http://docs.jboss.org/hibernate/orm/5.0/userguide/html_single/Hibernate_User_Guide.html#identifiers-->
-        <property name="hibernate.id.new_generator_mappings">false</property>
+        <!-- hibernate.id.new_generator_mappings removed in Hibernate 6 (always uses new generators) -->
         <property name="hibernate.connection.CharSet">utf8</property>
         <property name="hibernate.connection.characterEncoding">utf8</property>
         

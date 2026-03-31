@@ -21,7 +21,6 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -536,7 +535,8 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
                 "select REV, id  from StructuredDocument_AUD where id =? order by REV desc");
     List ids = getIds.list();
     for (Object o : ids) {
-      Long id = ((BigInteger) o).longValue();
+      // Hibernate 6: native SQL returns Long, not BigInteger
+      Long id = ((Number) o).longValue();
       getOld.setParameter(1, id);
       getOld.setFirstResult(maxToKeep);
       List res = getOld.list();

@@ -25,7 +25,6 @@
     			hibernate.search.backend.type=lucene
     			hibernate.search.backend.directory.root=${rs.hibernate.searchIndex.folder}
     			hibernate.search.backend.directory.type=local-filesystem
-    			hibernate.query.substitutions=true 'Y', false 'N'
     			hibernate.cache.use_second_level_cache=true
     		</value>
     		<!-- Turn batching off for better error messages under PostgreSQL -->

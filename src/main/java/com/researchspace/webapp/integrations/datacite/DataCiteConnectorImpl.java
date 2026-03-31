@@ -6,13 +6,15 @@ import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
-import jakarta.annotation.PostConstruct;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 public class DataCiteConnectorImpl implements DataCiteConnector {
@@ -23,7 +25,8 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
 
   private boolean dataCiteEnabled;
 
-  @PostConstruct
+  @EventListener(ContextRefreshedEvent.class)
+  @Transactional(readOnly = true)
   public void reloadDataCiteClient() {
     dataCiteClient = null;
 

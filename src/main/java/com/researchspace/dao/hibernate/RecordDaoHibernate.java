@@ -22,7 +22,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -126,7 +125,8 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     for (Object row : results) {
       // data [0] is id
       Object[] data = (Object[]) row;
-      BaseRecord rc = getSession().get(BaseRecord.class, ((BigInteger) data[0]).longValue());
+      // Hibernate 6: native SQL returns Long, not BigInteger
+      BaseRecord rc = getSession().get(BaseRecord.class, ((Number) data[0]).longValue());
       rc.getCreatedBy(); // init fields
       toReturn.add(rc);
     }
@@ -173,10 +173,18 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
   private static String makeOrderBy(PaginationCriteria<? extends BaseRecord> pgCrit) {
     String orderBy;
     if (!StringUtils.isEmpty(pgCrit.getOrderBy())) {
-      orderBy = " order by " + pgCrit.getOrderBy() + " " + pgCrit.getSortOrder();
+      // Hibernate 6: editInfo properties need explicit path prefix
+      String field = pgCrit.getOrderBy();
+      if (!field.startsWith("editInfo.")) {
+        field = "editInfo." + field;
+      }
+      orderBy = " order by " + field + " " + pgCrit.getSortOrder();
     } else {
       orderBy =
-          " order by " + SearchUtils.BASE_RECORD_ORDER_BY_LAST_MODIFIED + " " + SortOrder.DESC;
+          " order by editInfo."
+              + SearchUtils.BASE_RECORD_ORDER_BY_LAST_MODIFIED
+              + " "
+              + SortOrder.DESC;
     }
     return orderBy;
   }
