@@ -7,8 +7,8 @@ import ImageEditingDialog from "../ImageEditingDialog";
 import fc from "fast-check";
 import { sleep } from "../../util/Util";
 
-// Import image and canvas mocks for this test
-import "../../__tests__/mocks/imageCanvasMocks";
+// Import image and canvas __mocks__ for this test
+import "@/__tests__/__mocks__/imageCanvasMocks";
 
 describe("ImageEditingDialog", () => {
   test("Should have no axe violations.", async () => {

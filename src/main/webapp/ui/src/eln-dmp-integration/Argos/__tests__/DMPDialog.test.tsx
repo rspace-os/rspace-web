@@ -1,5 +1,5 @@
 import { test, describe, expect, beforeEach, vi } from 'vitest';
-import "../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import React from "react";
 import {
   screen,
@@ -9,7 +9,7 @@ import {
 import MockAdapter from "axios-mock-adapter";
 import DMPDialog from "../DMPDialog";
 import axios from "@/common/axios";
-import { render, within } from "../../../__tests__/customQueries";
+import { within } from "@/__tests__/customQueries";
 
 import userEvent from "@testing-library/user-event";
 

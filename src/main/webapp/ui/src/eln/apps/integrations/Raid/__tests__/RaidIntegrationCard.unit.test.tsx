@@ -9,7 +9,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import materialTheme from "@/theme";
 import { ThemeProvider } from "@mui/material/styles";
-import "../../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import AlertContext, { Alert } from "@/stores/contexts/Alert";
 import { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
 
