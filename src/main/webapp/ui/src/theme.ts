@@ -478,7 +478,7 @@ export default createTheme({
 export const globalStyles = makeStyles()(() => ({
   greyOut: {
     filter: "grayscale(1)",
-    pointerEvents: "none !important" as "none",
+    pointerEvents: "none",
     opacity: 0.6,
   },
 }));

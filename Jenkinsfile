@@ -49,7 +49,7 @@ pipeline {
         AWS_TOMCAT_AMI = 'ami-0a87ca4c9e75c2d8c'
         APP_VERSION = readMavenPom().getVersion()
 
-        NODE_OPTIONS="--max-old-space-size=5120"
+        NODE_OPTIONS="--max-old-space-size=5120 --conditions=require"
     }
 
     stages {
@@ -115,7 +115,9 @@ pipeline {
             steps {
                 dir('src/main/webapp/ui') {
                     echo 'Installing npm packages'
-                    sh 'npm ci --force'
+                    sh 'node -v'
+                    sh 'npx -y npm@11.11.1 -v'
+                    sh 'npx -y npm@11.11.1 ci --force'
                 }
             }
         }

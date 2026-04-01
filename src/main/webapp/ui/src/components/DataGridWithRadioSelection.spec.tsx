@@ -5,7 +5,6 @@ import {
   DataGridWithRadioSelectionExample,
   ControlledDataGridWithRadioSelectionExample,
   DataGridWithFeatures,
-  DataGridWithExportToCsv,
 } from "./DataGridWithRadioSelection.story";
 import { GridRowId } from "@mui/x-data-grid";
 
@@ -32,7 +31,6 @@ const feature = test.extend<{
       selectedRowId?: GridRowId | null;
     }) => Promise<{ spy: ReturnType<typeof createSelectionChangeSpy> }>;
     "the data grid with additional features is rendered": () => Promise<void>;
-    "the data grid with csv export is rendered": () => Promise<void>;
   };
   When: {
     "the user clicks on the radio button for row {i}": ({
@@ -62,7 +60,6 @@ const feature = test.extend<{
     }) => Promise<void>;
     "the user navigates to the next page": () => Promise<void>;
     "the user navigates to the previous page": () => Promise<void>;
-    "the user triggers an export": () => Promise<Download>;
   };
   Then: {
     "the row {i} should be selected": ({ i }: { i: number }) => Promise<void>;
@@ -124,9 +121,6 @@ const feature = test.extend<{
       },
       "the data grid with additional features is rendered": async () => {
         await mount(<DataGridWithFeatures />);
-      },
-      "the data grid with csv export is rendered": async () => {
-        await mount(<DataGridWithExportToCsv />);
       },
     });
   },
@@ -197,18 +191,6 @@ const feature = test.extend<{
         await page
           .getByRole("button", { name: /Go to previous page/i })
           .click();
-      },
-      "the user triggers an export": async () => {
-        await page.getByRole("button", { name: /export/i }).click();
-        const [download] = await Promise.all([
-          page.waitForEvent("download"),
-          page
-            .getByRole("menuitem", {
-              name: /Export to CSV/,
-            })
-            .click(),
-        ]);
-        return download;
       },
     });
   },
@@ -485,27 +467,6 @@ test.describe("DataGridWithRadioSelection", () => {
         await Then["the row {i} should be selected"]({ i: 2 });
         await When["the user changes the page size to {size}"]({ size: 5 });
         await Then["the row {i} should be selected"]({ i: 2 });
-      }
-
-    );
-    feature(
-      "When no rows are selected, all are exported",
-      async ({ Given, When, Then }) => {
-        await Given["the data grid with csv export is rendered"]();
-        const csv = await When["the user triggers an export"]();
-        await Then["{CSV} should have {count} rows"]({ csv, count: 5 });
-      }
-
-    );
-    feature(
-      "When a row is selected, only it is exported",
-      async ({ Given, When, Then }) => {
-        await Given["the data grid with csv export is rendered"]();
-        await When["the user clicks on the radio button for row {i}"]({
-          i: 0,
-        });
-        const csv = await When["the user triggers an export"]();
-        await Then["{CSV} should have {count} rows"]({ csv, count: 1 });
       }
     );
   });

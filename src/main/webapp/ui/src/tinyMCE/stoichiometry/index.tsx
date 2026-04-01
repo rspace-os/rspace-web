@@ -5,10 +5,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ACCENT_COLOR } from "../../assets/branding/chemistry";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import StoichiometryDialog from "./dialog";
+import StoichiometryDialog from "./StoichiometryDialog";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import CssBaseline from "@mui/material/CssBaseline";
+import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
 
 // Define types for external interfaces
 type ButtonConfig = {
@@ -39,7 +40,7 @@ export interface Editor {
     select: (node: HTMLElement) => void;
   };
   getDoc: () => Document;
-  getParam: (name: string) => any;
+  getParam: (name: string) => unknown;
 }
 
 // Declare the global tinymce object
@@ -52,6 +53,8 @@ declare const tinymce: {
 
 class StoichiometryPlugin {
   constructor(editor: Editor) {
+    const theme = createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR));
+
     function* renderDialog(
       domContainer: HTMLElement,
     ): Generator<
@@ -79,7 +82,7 @@ class StoichiometryPlugin {
         root.render(
           <StyledEngineProvider injectFirst>
             <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+            <ThemeProvider theme={theme}>
               <Analytics>
                 <ErrorBoundary>
                   <Alerts>
@@ -117,106 +120,151 @@ class StoichiometryPlugin {
     };
     dialogRenderer.next(initialProps);
 
-    editor.addCommand("cmdStoichiometry", function () {
+    const resetDialog = () => {
+      dialogRenderer.next({
+        open: false,
+        onClose: () => {},
+        chemId: null,
+        stoichiometryId: undefined,
+        stoichiometryRevision: undefined,
+        onTableCreated: () => {},
+      });
+    };
+
+    const getSelectedChemicalContext = () => {
       const node = editor.selection.getNode();
-      if (!/chem/.test(node.className))
-        throw new Error("Selected node is not a chemical element.");
-      const chemIdAttr = node.getAttribute("id");
-      if (!chemIdAttr) {
-        throw new Error("Chemical element is missing required id attribute.");
+      if (!/chem/.test(String(node.className))) {
+        return null;
       }
-      const chemId = parseInt(chemIdAttr, 10);
-      if (isNaN(chemId)) {
-        throw new Error(
-          "Chemical element id attribute must be a valid number.",
-        );
+
+      const chemNodeId = node.getAttribute("id");
+      if (!chemNodeId) {
+        return null;
       }
+      const parsedChemId = Number.parseInt(chemNodeId, 10);
+      const chemId = Number.isNaN(parsedChemId) ? null : parsedChemId;
 
       let stoichiometryId: number | undefined;
       let stoichiometryRevision: number | undefined;
       try {
         const { id, revision } = JSON.parse(
           node.getAttribute("data-stoichiometry-table") ?? "{}",
-        );
-        stoichiometryId = id;
-        stoichiometryRevision = revision;
+        ) as {
+          id?: unknown;
+          revision?: unknown;
+        };
+        stoichiometryId = typeof id === "number" ? id : undefined;
+        stoichiometryRevision =
+          typeof revision === "number" ? revision : undefined;
       } catch {}
 
-      const markElementWithStoichiometry = (id: number, revision: number) => {
-        const targetNode = editor.getDoc().getElementById(node.id);
-        if (!targetNode)
-          throw new Error("Could not find the target node in the document.");
+      return {
+        chemId,
+        chemNodeId,
+        stoichiometryId,
+        stoichiometryRevision,
+      };
+    };
+
+    const findChemNode = (chemNodeId?: string): HTMLElement | null => {
+      if (!chemNodeId) {
+        return null;
+      }
+      return editor.getDoc().getElementById(chemNodeId);
+    };
+
+    const updateChemicalNodeStoichiometry = (
+      chemNodeId: string | undefined,
+      stoichiometry:
+        | {
+            id: number;
+            revision: number;
+          }
+        | null,
+    ) => {
+      const targetNode = findChemNode(chemNodeId);
+      if (!targetNode) {
+        return;
+      }
+
+      if (stoichiometry) {
         targetNode.setAttribute(
           "data-stoichiometry-table",
-          JSON.stringify({ id, revision }),
+          JSON.stringify(stoichiometry),
         );
-        editor.selection.select(targetNode);
-        editor.execCommand("mceReplaceContent", false, targetNode.outerHTML);
-        editor.setDirty(true);
-      };
-
-      const updateElementWithStoichiometry = (id: number, revision: number) => {
-        const targetNode = editor.getDoc().getElementById(node.id);
-        if (!targetNode)
-          throw new Error("Could not find the target node in the document.");
-        targetNode.setAttribute(
-          "data-stoichiometry-table",
-          JSON.stringify({ id, revision }),
-        );
-        editor.selection.select(targetNode);
-        editor.execCommand("mceReplaceContent", false, targetNode.outerHTML);
-        editor.setDirty(true);
-      };
-
-      const unmarkElementWithStoichiometry = () => {
-        const targetNode = editor.getDoc().getElementById(node.id);
-        if (!targetNode)
-          throw new Error("Could not find the target node in the document.");
+      } else {
         targetNode.removeAttribute("data-stoichiometry-table");
-        editor.selection.select(targetNode);
-        editor.execCommand("mceReplaceContent", false, targetNode.outerHTML);
-        editor.setDirty(true);
-      };
+      }
+
+      editor.selection.select(targetNode);
+      editor.execCommand("mceReplaceContent", false, targetNode.outerHTML);
+      editor.setDirty(true);
+    };
+
+    const insertTemporaryStoichiometryAnchor = (): string => {
+      const temporaryNodeId = `stoich-anchor-${Date.now()}-${Math.random()
+        .toString(16)
+        .slice(2)}`;
+      const html = `<img class="chem" id="${temporaryNodeId}" src="" width="1" height="1" alt="Stoichiometry table anchor" />`;
+      editor.execCommand("mceInsertContent", false, html);
+      editor.setDirty(true);
+      return temporaryNodeId;
+    };
+
+    const openStoichiometryDialog = ({
+      chemId,
+      chemNodeId,
+      stoichiometryId,
+      stoichiometryRevision,
+    }: {
+      chemId: number | null;
+      chemNodeId?: string;
+      stoichiometryId: number | undefined;
+      stoichiometryRevision: number | undefined;
+    }) => {
+      let activeChemNodeId = chemNodeId;
+
+      if (!activeChemNodeId && stoichiometryId === undefined) {
+        activeChemNodeId = insertTemporaryStoichiometryAnchor();
+      }
 
       dialogRenderer.next({
         open: true,
-        onClose: () => {
-          dialogRenderer.next({
-            open: false,
-            onClose: () => {},
-            chemId: null,
-            stoichiometryId: undefined,
-            stoichiometryRevision: undefined,
-            onTableCreated: () => {},
-          });
-        },
+        onClose: resetDialog,
         chemId,
         stoichiometryId,
         stoichiometryRevision,
         onTableCreated: (id: number, revision) => {
-          markElementWithStoichiometry(id, revision);
+          updateChemicalNodeStoichiometry(activeChemNodeId, { id, revision });
           dialogRenderer.next({
             stoichiometryId: id,
             stoichiometryRevision: revision,
           });
         },
         onSave: (id, version) => {
-          updateElementWithStoichiometry(id, version);
+          updateChemicalNodeStoichiometry(activeChemNodeId, {
+            id,
+            revision: version,
+          });
           dialogRenderer.next({
             stoichiometryId: id,
             stoichiometryRevision: version,
           });
         },
         onDelete: () => {
-          unmarkElementWithStoichiometry();
-          dialogRenderer.next({
-            open: false,
-            onClose: () => {},
-            chemId: null,
-            stoichiometryId: undefined,
-            stoichiometryRevision: undefined,
-          });
+          updateChemicalNodeStoichiometry(activeChemNodeId, null);
+          resetDialog();
         },
+      });
+    };
+
+    editor.addCommand("cmdStoichiometry", function () {
+      const selectedChemical = getSelectedChemicalContext();
+      openStoichiometryDialog({
+        chemId: selectedChemical?.chemId ?? null,
+        chemNodeId: selectedChemical?.chemNodeId,
+        stoichiometryId: selectedChemical?.stoichiometryId,
+        stoichiometryRevision: selectedChemical?.stoichiometryRevision,
       });
     });
   }

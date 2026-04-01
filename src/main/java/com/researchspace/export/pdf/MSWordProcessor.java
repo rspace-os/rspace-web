@@ -92,7 +92,7 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
   @Override
   public void makeExport(
       File tempExportFile,
-      ExportProcesserInput exportInput,
+      ExportProcessorInput exportInput,
       IRSpaceDoc strucDoc,
       ExportToFileConfig exportConfig)
       throws IOException {
@@ -114,7 +114,7 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
 
   private File extractImagesAndReplaceSrcLinks(
       File tempExportFile,
-      ExportProcesserInput exportInput,
+      ExportProcessorInput exportInput,
       ExportToFileConfig exportConfig,
       IRSpaceDoc strucDoc)
       throws IOException, FileNotFoundException {

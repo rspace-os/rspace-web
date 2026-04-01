@@ -6,6 +6,7 @@ import static org.apache.commons.io.FileUtils.forceMkdir;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.archive.ArchiveFileNameData;
 import com.researchspace.archive.ArchiveFolder;
@@ -38,6 +39,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -83,17 +85,20 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
       logicalFolders = new ArrayList<>();
       roCrate = RoCrateHandler.startProcessRoCrate(logicalFolders, folderTree, aconfig);
     }
+    Set<String> igsnInventoryLinkedItems = new HashSet<>();
     for (GlobalIdentifier rid : exportList.getRecordsToExport()) {
-      exportRecord(
-          aconfig,
-          exportObjectGenerator,
-          exportContext,
-          archived,
-          rid,
-          folderTree,
-          exportList,
-          roCrate,
-          logicalFolders);
+      igsnInventoryLinkedItems.addAll(
+          exportRecord(
+                  aconfig,
+                  exportObjectGenerator,
+                  exportContext,
+                  archived,
+                  rid,
+                  folderTree,
+                  exportList,
+                  roCrate,
+                  logicalFolders)
+              .getIgsnInventoryLinkedItems());
       aconfig.getProgressMonitor().worked(1);
       log.debug(
           "Export is {}% complete",
@@ -105,6 +110,7 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
     exportContext.setCsum(csum);
     ArchiveResult archiveResult =
         postArchive(aconfig, exportObjectGenerator, archived, folderTree, exportContext);
+    archiveResult.setIgsnInventoryLinkedItems(igsnInventoryLinkedItems);
     return archiveResult;
   }
 
@@ -124,7 +130,7 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
     return logicalFolder.getRspaceGlobalID().equals(parent.getGlobalIdentifier());
   }
 
-  private void exportRecord(
+  private ExportRecordResult exportRecord(
       IArchiveExportConfig aconfig,
       ExportObjectGenerator exportObjecGen,
       ExportContext context,
@@ -134,6 +140,7 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
       ImmutableExportRecordList exportList,
       RoCrate roCrate,
       List<RoCrateLogicalFolder> logicalTopLevelFolders) {
+    Set<String> igsnLinkedInventoryItems = new HashSet<>();
     try {
       Record record = recordDao.get(rid.getDbId());
       List<AuditedRecord> versionsToExport =
@@ -181,18 +188,26 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
         if (roCrate != null) {
           roCrateHandler = new RoCrateHandler(roCrate, dsb, datasetId);
         }
+        ArchivalDocument archiveResult;
         if (recordToExport.isStructuredDocument()) {
-          exportObjecGen.makeRecordExport(
-              aconfig,
-              recordToExport.asStrucDoc(),
-              revision,
-              recordFolder,
-              0,
-              archived,
-              folderTree,
-              context.getNfsContext(),
-              exportList,
-              roCrateHandler);
+          archiveResult =
+              exportObjecGen
+                  .makeRecordExport(
+                      aconfig,
+                      recordToExport.asStrucDoc(),
+                      revision,
+                      recordFolder,
+                      0,
+                      archived,
+                      folderTree,
+                      context.getNfsContext(),
+                      exportList,
+                      roCrateHandler)
+                  .values()
+                  .stream()
+                  .findFirst()
+                  .orElseThrow();
+          igsnLinkedInventoryItems.addAll(archiveResult.getIgsnInventoryLinkedItems());
           writeFormIconEntityFile(record.asStrucDoc(), recordFolder);
         } else if (recordToExport.isMediaRecord()) {
           exportObjecGen.makeGalleryExport(
@@ -216,6 +231,7 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
       log.warn("Error exporting record {} : {}", rid, ex.getMessage());
       log.warn("Exception:", ex);
     }
+    return new ExportRecordResult(igsnLinkedInventoryItems);
   }
 
   private void exportLinkedMediaFiles(

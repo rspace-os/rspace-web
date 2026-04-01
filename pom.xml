@@ -923,10 +923,6 @@
           <artifactId>fontbox</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.quartz-scheduler</groupId>
-          <artifactId>quartz</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
         </exclusion>
@@ -1101,14 +1097,13 @@
     <dependency>
       <groupId>org.quartz-scheduler</groupId>
       <artifactId>quartz</artifactId>
-      <version>2.3.2</version>
+      <version>2.5.2</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
         </exclusion>
       </exclusions>
-      <!-- spring 3.0.5 does not support quartz2, spring 3.1 does -->
     </dependency>
     <dependency>
       <groupId>net.coobird</groupId>
@@ -1369,7 +1364,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dataverse-adapter</artifactId>
-      <version>3.0.1</version>
+      <version>3.0.2</version>
     </dependency>
     <dependency>
       <!-- dataverse-rspace-adaptor internally-conflicting dependency,
@@ -1445,7 +1440,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>f105e63821</version>
+      <version>4badd3d59b</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -2484,6 +2479,7 @@
             <version>1.15.1</version>
             <configuration>
               <nodeVersion>v24.13.1</nodeVersion>
+              <npmVersion>11.11.1</npmVersion>
               <workingDirectory>src/main/webapp/ui</workingDirectory>
             </configuration>
             <executions>

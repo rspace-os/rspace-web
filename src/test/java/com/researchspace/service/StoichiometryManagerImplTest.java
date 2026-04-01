@@ -414,10 +414,12 @@ public class StoichiometryManagerImplTest {
 
     Stoichiometry result = stoichiometryManager.update(stoichiometryUpdateDTO, user);
 
-    verify(stoichiometryDao, times(1)).save(any(Stoichiometry.class));
+    verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
 
-    Stoichiometry savedStoichiometry = stoichiometryCaptor.getValue();
-    assertEquals(2, savedStoichiometry.getMolecules().size());
+    List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
+    Stoichiometry lastSavedStoichiometry =
+        savedStoichiometries.get(savedStoichiometries.size() - 1);
+    assertEquals(2, lastSavedStoichiometry.getMolecules().size());
 
     StoichiometryMolecule addedMolecule =
         result.getMolecules().stream()
@@ -463,10 +465,12 @@ public class StoichiometryManagerImplTest {
 
     Stoichiometry result = stoichiometryManager.update(stoichiometryUpdateDTO, user);
 
-    verify(stoichiometryDao, times(1)).save(any(Stoichiometry.class));
+    verify(stoichiometryDao, times(2)).save(any(Stoichiometry.class));
 
-    Stoichiometry savedStoichiometry = stoichiometryCaptor.getValue();
-    assertEquals(2, savedStoichiometry.getMolecules().size());
+    List<Stoichiometry> savedStoichiometries = stoichiometryCaptor.getAllValues();
+    Stoichiometry lastSavedStoichiometry =
+        savedStoichiometries.get(savedStoichiometries.size() - 1);
+    assertEquals(2, lastSavedStoichiometry.getMolecules().size());
 
     StoichiometryMolecule updatedMolecule =
         result.getMolecules().stream()

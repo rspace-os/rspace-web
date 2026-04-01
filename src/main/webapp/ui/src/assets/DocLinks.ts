@@ -49,6 +49,7 @@ const docLinks: Record<string, URL> = {
   dmptool: mkDocLink("o0wlhlgxnr"),
   dmptoolImportingDmps: mkDocLink("o0wlhlgxnr", "importing_dm_ps_into_r_space"),
   dryad: mkDocLink("i1xvubndhm"),
+  dsw: mkDocLink("6adimrmy9m"),
   evernote: mkDocLink("9ckpmfdq8m"),
   figshare: mkDocLink("ir4ybsamcn"),
   github: mkDocLink("y2080yw30x"),

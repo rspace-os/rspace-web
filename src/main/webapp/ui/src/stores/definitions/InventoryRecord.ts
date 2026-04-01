@@ -19,6 +19,15 @@ export type State = "create" | "edit" | "preview";
 export type Action = "LIMITED_READ" | "READ" | "UPDATE" | "CHANGE_OWNER";
 export type SharingMode = "OWNER_GROUPS" | "WHITELIST" | "OWNER_ONLY";
 
+export function hasRequiredPermissions(
+  permittedActions: Set<Action>,
+  requiredPermissions?: Array<Action>,
+): boolean {
+  return !requiredPermissions?.length
+    ? true
+    : requiredPermissions.some((action) => permittedActions.has(action));
+}
+
 export type LockStatus =
   | "LOCKED_OK"
   | "WAS_ALREADY_LOCKED"

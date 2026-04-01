@@ -1,5 +1,7 @@
 package com.researchspace.service;
 
+import static com.researchspace.Constants.PI_ROLE;
+import static com.researchspace.Constants.SYSADMIN_ROLE;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.service.UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX;
 import static org.junit.Assert.assertEquals;
@@ -40,6 +42,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.TestGroup;
 import java.util.Arrays;
+import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Before;
 import org.junit.Test;
@@ -1002,5 +1005,51 @@ public class GroupManagerTest extends SpringTransactionalTest {
         grpMgr.isRecordPartOfGroup(pi1, docPartOfProject.getId(), projectGroup.getId()));
     Assertions.assertFalse(
         grpMgr.isRecordPartOfGroup(pi1, docNotPartOfProject.getId(), projectGroup.getId()));
+  }
+
+  @Test
+  public void testGetGroupInfoById() {
+    // create and save a group created by piUser
+    // and set user1 as member of a group
+    User userMember = TestFactory.createAnyUser(getRandomAlphabeticString("u1"));
+    userMgr.save(userMember);
+    User userPi = TestFactory.createAnyUserWithRole(getRandomAlphabeticString("pi"), PI_ROLE);
+    userPi.setRole(SYSADMIN_ROLE);
+    userPi.setRoles(Set.of(roleManager.getRole(SYSADMIN_ROLE)));
+    userMgr.save(userPi);
+
+    Group group = new Group(getRandomAlphabeticString("unique"), userPi);
+
+    group.addMember(userMember, RoleInGroup.DEFAULT);
+    assertTrue(userMember.hasGroup(group));
+    assertTrue(group.hasMember(userMember));
+    grpMgr.saveGroup(group, userMember);
+
+    group = grpMgr.getGroup(group.getId());
+    assertNotNull(group.getId());
+    // verify that the group is returned for user 1 being a member of the group
+    logoutAndLoginAs(userMember);
+    assertTrue(grpMgr.getGroupInfoById(group.getId()).isPresent());
+
+    // verify that the group is returned for piUser as if he is not member of the group
+    logoutAndLoginAs(userPi);
+    assertTrue(grpMgr.getGroupInfoById(group.getId()).isPresent());
+
+    /// create and save another user (not being member of the group)
+    // then verify user2 has no groups
+    User userNotMember = TestFactory.createAnyUser(getRandomAlphabeticString("u2"));
+    userMgr.save(userNotMember);
+    logoutAndLoginAs(userNotMember);
+    assertFalse(grpMgr.getGroupInfoById(group.getId()).isPresent());
+
+    // create and save a sysadmin user (not being part of the group)
+    // then verify the group is returned
+    User userSysadmin =
+        TestFactory.createAnyUserWithRole(getRandomAlphabeticString("sysadmin"), SYSADMIN_ROLE);
+    userSysadmin.setRole(SYSADMIN_ROLE);
+    userSysadmin.setRoles(Set.of(roleManager.getRole(SYSADMIN_ROLE)));
+    userMgr.save(userSysadmin);
+    logoutAndLoginAs(userSysadmin);
+    assertTrue(grpMgr.getGroupInfoById(group.getId()).isPresent());
   }
 }

@@ -3,7 +3,7 @@ package com.researchspace.service.impl;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.export.pdf.ExportProcesserInput;
+import com.researchspace.export.pdf.ExportProcessorInput;
 import com.researchspace.export.pdf.HTMLStringGenerator;
 import com.researchspace.export.pdf.StructuredDocumentHTMLViewConfig;
 import com.researchspace.model.User;
@@ -45,8 +45,8 @@ public class DocumentHTMLPreviewHandlerImplTest {
     assertEquals(anyInput().getDocumentAsHtml(), content);
   }
 
-  private ExportProcesserInput anyInput() {
-    return new ExportProcesserInput("<p>content</p>", null, null, null);
+  private ExportProcessorInput anyInput() {
+    return new ExportProcessorInput("<p>content</p>", null, null, null, null);
   }
 
   private StructuredDocument createADocument() {

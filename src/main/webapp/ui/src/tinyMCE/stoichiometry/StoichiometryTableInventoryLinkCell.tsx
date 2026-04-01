@@ -1,0 +1,199 @@
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import Stack from "@mui/material/Stack";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { RecordLink } from "@/Inventory/components/RecordLink";
+import type { InventoryLink } from "@/modules/stoichiometry/schema";
+import InventoryPicker from "@/Inventory/components/Picker/Picker";
+import Search from "@/stores/models/Search";
+import MemoisedFactory from "@/stores/models/Factory/MemoisedFactory";
+import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
+import { observer } from "mobx-react";
+import { runInAction } from "mobx";
+
+const INVENTORY_PICKER_SEARCH_PARAMS = {
+  query: "",
+  pageNumber: 0,
+  pageSize: 5,
+  orderBy: "name",
+  order: "asc" as const,
+  resultType: "SUBSAMPLE" as const,
+  deletedItems: "EXCLUDE" as const,
+  parentGlobalId: null,
+  ownedBy: null,
+  permalink: null,
+};
+
+function createInventoryPickerSearch(): Search {
+  return new Search({
+    factory: new MemoisedFactory(),
+    fetcherParams: {
+      resultType: INVENTORY_PICKER_SEARCH_PARAMS.resultType,
+      pageSize: INVENTORY_PICKER_SEARCH_PARAMS.pageSize,
+      orderBy: INVENTORY_PICKER_SEARCH_PARAMS.orderBy,
+      order: INVENTORY_PICKER_SEARCH_PARAMS.order,
+    },
+    uiConfig: {
+      allowedTypeFilters: new Set(["SUBSAMPLE"]),
+      selectionMode: "SINGLE",
+      instantConfirm: false,
+      requiredPermissions: ["UPDATE"],
+      alwaysFilteredOutReason: "The inventory item is already linked."
+    },
+  });
+}
+
+type StoichiometryTableInventoryLinkCellProps = {
+  inventoryLink: InventoryLink | null | undefined;
+  inventoryRecord?: InventoryRecord | null;
+  moleculeName: string | null;
+  editable?: boolean;
+  linkedInventoryItemGlobalIds?: string[];
+  onPickInventoryItem?: (id: number, inventoryItemGlobalId: string) => void;
+  onRemoveInventoryLink?: () => void;
+};
+
+function toLinkedSubsampleRecord(
+  inventoryLink: InventoryLink,
+  inventoryRecord?: InventoryRecord | null,
+): InventoryRecord {
+  if (inventoryRecord?.globalId === inventoryLink.inventoryItemGlobalId) {
+    return inventoryRecord;
+  }
+
+  const id = Number.parseInt(inventoryLink.inventoryItemGlobalId.slice(2), 10);
+
+  return {
+    id: Number.isNaN(id) ? inventoryLink.id : id,
+    name: inventoryLink.inventoryItemGlobalId,
+    globalId: inventoryLink.inventoryItemGlobalId,
+    iconName: "subsample",
+    recordTypeLabel: "Subsample",
+    permalinkURL: Number.isNaN(id) ? null : `/inventory/subsample/${id}`,
+    recordLinkLabel: inventoryLink.inventoryItemGlobalId,
+    showRecordOnNavigate: true,
+  } as InventoryRecord;
+}
+
+const StoichiometryTableInventoryLinkCell = ({
+  inventoryLink,
+  inventoryRecord,
+  moleculeName,
+  editable = true,
+  linkedInventoryItemGlobalIds = [],
+  onPickInventoryItem,
+  onRemoveInventoryLink,
+}: StoichiometryTableInventoryLinkCellProps) => {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerSearch] = useState(createInventoryPickerSearch);
+  const linkedInventoryItemGlobalIdSet = useMemo(
+    () => new Set(linkedInventoryItemGlobalIds),
+    [linkedInventoryItemGlobalIds],
+  );
+
+  const moleculeLabel = moleculeName ?? "molecule";
+  const pickerTitle = `Pick inventory item for ${moleculeLabel}`;
+
+  const openPicker = () => {
+    setPickerOpen(true);
+  };
+
+  const closePicker = () => {
+    setPickerOpen(false);
+  };
+
+  useEffect(() => {
+    runInAction(() => {
+      pickerSearch.alwaysFilterOut = (result) =>
+        typeof result.globalId === "string" &&
+        linkedInventoryItemGlobalIdSet.has(result.globalId);
+    });
+  }, [linkedInventoryItemGlobalIdSet, pickerSearch]);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    pickerSearch.fetcher.resetFetcher();
+    void pickerSearch.fetcher.performInitialSearch({
+      resultType: INVENTORY_PICKER_SEARCH_PARAMS.resultType,
+    });
+  }, [pickerOpen, pickerSearch]);
+
+  const handlePickerAddition = useCallback(
+    (records: Array<InventoryRecord>) => {
+      const [record] = records;
+      if (!record || !record.id) {
+        return;
+      }
+      const inventoryItemGlobalId = record.globalId;
+      if (typeof inventoryItemGlobalId !== "string") {
+        return;
+      }
+      if (linkedInventoryItemGlobalIdSet.has(inventoryItemGlobalId)) {
+        return;
+      }
+      onPickInventoryItem?.(record.id, inventoryItemGlobalId);
+      closePicker();
+    },
+    [linkedInventoryItemGlobalIdSet, onPickInventoryItem],
+  );
+
+  if (inventoryLink) {
+    const record = toLinkedSubsampleRecord(inventoryLink, inventoryRecord);
+
+    return (
+      <Stack direction="row" alignItems="center" spacing={0.5} sx={{ height: '100%' }}>
+        <RecordLink record={record} disableNavigationContext={true} newTab={true} />
+        {editable && (
+          <Tooltip title="Remove inventory link">
+            <span>
+              <IconButton
+                size="small"
+                aria-label={`Remove inventory link for ${moleculeLabel}`}
+                onClick={onRemoveInventoryLink}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
+      </Stack>
+    );
+  }
+
+  return (
+    <>
+      <Tooltip title="Add inventory link">
+        <span>
+          <IconButton
+            size="small"
+            aria-label={`Add inventory link for ${moleculeLabel}`}
+            disabled={!editable}
+            onClick={() => void openPicker()}
+          >
+            <AddCircleOutlineIcon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
+      <Dialog open={pickerOpen} onClose={closePicker} fullWidth maxWidth="lg">
+        <DialogTitle>{pickerTitle}</DialogTitle>
+        <DialogContent sx={{ height: 540 }}>
+          <InventoryPicker
+            search={pickerSearch}
+            onAddition={handlePickerAddition}
+            onCancel={closePicker}
+            showActions={true}
+            resetActiveResultOnClose
+            paddingless
+          />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+export default observer(StoichiometryTableInventoryLinkCell);

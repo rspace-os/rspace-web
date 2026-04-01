@@ -474,6 +474,8 @@ const formatDmpSource = (source: string): string => {
       return "DMP Online";
     case "ARGOS":
       return "ARGOS";
+    case "DSW":
+      return "DSW / FAIR Wizard";
     default:
       return source;
   }

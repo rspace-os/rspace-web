@@ -1,4 +1,4 @@
-import { type InventoryRecord } from "./InventoryRecord";
+import { type InventoryRecord, type Action } from "./InventoryRecord";
 import { type Username, type Person } from "./Person";
 import RsSet from "../../util/set";
 import { type TreeView } from "./TreeView";
@@ -93,6 +93,11 @@ export type UiConfig = {
   selectionMode: SelectionMode;
 
   /*
+   * If true, when a record is selected, `onAddition` will be called immediately.
+   */
+  instantConfirm: boolean;
+
+  /*
    * If true, when a record is the activeResult it will be highlighted in the
    * search results
    */
@@ -120,6 +125,19 @@ export type UiConfig = {
    * select.
    */
   selectionLimit: number;
+
+  /**
+   * If set, a record is only selectable when its permitted actions intersect
+   * with this list. Any matching action is sufficient.
+   */
+  requiredPermissions?: Array<Action>;
+
+  /**
+   * If set, this message is shown as a tooltip on items where
+   * `alwaysFilterOut` returns true. Overrides the tooltip that would otherwise
+   * be shown by `requiredPermissions`.
+   */
+  alwaysFilteredOutReason?: string;
 
   /**
    * Typically, we only allow the selection of container locations that have

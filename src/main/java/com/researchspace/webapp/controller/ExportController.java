@@ -11,7 +11,6 @@ import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.export.pdf.ExportConfigurer;
 import com.researchspace.export.pdf.ExportFormat;
 import com.researchspace.export.pdf.ExportToFileConfig;
-import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
@@ -41,6 +40,7 @@ import com.researchspace.service.archive.ImportFailureException;
 import com.researchspace.service.archive.ImportStrategy;
 import com.researchspace.service.archive.PostArchiveCompletion;
 import com.researchspace.service.archive.export.ArchiveExportPlanner;
+import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.impl.OntologyDocManager;
 import com.researchspace.session.SessionAttributeUtils;
 import java.io.File;
@@ -516,7 +516,7 @@ public class ExportController extends BaseController {
         exportToFileConfig.getSetPageSizeAsDefault(), exportToFileConfig, principal);
 
     try {
-      Future<EcatDocumentFile> futureExportDocument = null;
+      Future<ExportEcatDocumentResult> futureExportDocument = null;
       switch (exportSelection.getType()) {
         case SELECTION:
           futureExportDocument =

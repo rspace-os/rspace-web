@@ -47,6 +47,10 @@ public class DSWClient {
   public static final String DSW_PATH_API = "/wizard-api/";
   public static final String DSW_PATH_PROJECTS = "/wizard/projects/";
 
+  public static final int DSW_PROJECT_NAME_LENGTH_MAX = 255;
+  public static final int DSW_PROJECT_DESCRIPTION_LENGTH_MAX = 250;
+  public static final String TRUNCATION_SUFFIX = "...";
+
   private final RestTemplate restTemplate;
   @Autowired private UserConnectionManager source;
   @Autowired private UserManager userManager;
@@ -194,16 +198,16 @@ public class DSWClient {
     String json = plan.toString();
     InputStream is = new ByteArrayInputStream(json.getBytes());
 
-    String projectName = plan.get("name").textValue();
+    String projectName =
+        truncateDswString(plan.get("name").textValue(), DSW_PROJECT_NAME_LENGTH_MAX);
+    String projectDescription =
+        truncateDswString(
+            currentProjects.get(0).getDescription(), DSW_PROJECT_DESCRIPTION_LENGTH_MAX);
 
     try {
       EcatDocumentFile file =
           mediaManager.saveNewDMPWithDescription(
-              projectName,
-              is,
-              cfg.getUserAppConfig().getUser(),
-              null,
-              currentProjects.get(0).getDescription());
+              projectName, is, cfg.getUserAppConfig().getUser(), null, projectDescription);
 
       Optional<DMPUser> dmpUser =
           dmpManager.findByDmpId(planUuid, cfg.getUserAppConfig().getUser());
@@ -232,5 +236,17 @@ public class DSWClient {
           "Error attempting to save project with UUID " + planUuid, e);
     }
     return plan;
+  }
+
+  // Truncates a string that is past a maximum length and adds a suffix
+  // denoting that truncation has occurred to the end.
+  private String truncateDswString(String toTruncate, int maxLength) {
+    if (null == toTruncate || toTruncate.length() <= maxLength) {
+      return toTruncate;
+    } else {
+      String truncatedString =
+          toTruncate.substring(0, maxLength - TRUNCATION_SUFFIX.length()) + TRUNCATION_SUFFIX;
+      return truncatedString;
+    }
   }
 }
