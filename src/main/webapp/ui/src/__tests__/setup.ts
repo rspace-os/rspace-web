@@ -68,7 +68,7 @@ if (typeof globalThis.TextDecoder !== "function") {
   globalThis.TextDecoder = TextDecoder;
 }
 
-if (typeof globalThis.localStorage !== "object"") {
+if (typeof globalThis.localStorage !== "object") {
   Object.defineProperty(globalThis, "localStorage", {
     configurable: true,
     writable: true,
