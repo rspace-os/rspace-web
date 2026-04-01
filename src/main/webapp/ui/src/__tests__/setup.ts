@@ -68,7 +68,7 @@ if (typeof globalThis.TextDecoder !== "function") {
   globalThis.TextDecoder = TextDecoder;
 }
 
-if (typeof globalThis.localStorage === "undefined") {
+if (typeof globalThis.localStorage !== "object"") {
   Object.defineProperty(globalThis, "localStorage", {
     configurable: true,
     writable: true,
@@ -76,7 +76,7 @@ if (typeof globalThis.localStorage === "undefined") {
   });
 }
 
-if (typeof globalThis.sessionStorage?.getItem === "undefined") {
+if (typeof globalThis.sessionStorage !== "object") {
   Object.defineProperty(globalThis, "sessionStorage", {
     configurable: true,
     writable: true,
