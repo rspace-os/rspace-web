@@ -221,7 +221,11 @@ public class DSWClient {
                         projectName,
                         DMPSource.DSW,
                         null,
-                        connCfg.getRepositoryURL().get() + DSW_PATH_PROJECTS + planUuid)));
+                        UriComponentsBuilder.fromUriString(
+                                connCfg.getRepositoryURL().get() + DSW_PATH_PROJECTS + planUuid)
+                            .build()
+                            .toUri()
+                            .toString())));
       }
       if (file != null) {
         dmpUser.get().setDmpDownloadFile(file);
