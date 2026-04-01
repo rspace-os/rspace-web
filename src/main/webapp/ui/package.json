@@ -49,7 +49,7 @@
     "@types/sockjs-client": "1.5.4",
     "@typescript-eslint/eslint-plugin": "8.58.0",
     "@typescript-eslint/parser": "8.58.0",
-    "@vitejs/plugin-react": "6.0.1",
+    "@vitejs/plugin-react": "5.2.0",
     "@vitest/eslint-plugin": "1.6.14",
     "@vitest/ui": "4.1.2",
     "axios-mock-adapter": "2.1.0",
