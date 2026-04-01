@@ -10,9 +10,8 @@ import { within } from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 
 const mockAxios = new MockAdapter(axios);
-// This test suite is skipped as JSOM is generating nonsensical selectors (e.g. button,,,,Ark,,,A.MuiButtonBase-root .MuiInputAdornment-positionStart)
-// TODO: Revisit this test when we switch to Vitest or upgrade MUI
-describe.skip("DMPDialog", () => {
+
+describe("DMPDialog", () => {
   beforeEach(() => {
 
     mockAxios.resetHistory();

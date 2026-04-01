@@ -13,6 +13,7 @@ import MoveAction from "../MoveAction";
 import MoveDialog from "../../MoveToTarget/MoveDialog";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import userEvent from "@testing-library/user-event";
+import "@/__tests__/__mocks__/matchMedia";
 
 vi.mock("../../../Search/SearchView", () => ({
   default: vi.fn(() => <></>),
