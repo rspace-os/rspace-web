@@ -13,12 +13,11 @@ const mockAxios = new MockAdapter(axios);
 
 describe("DMPDialog", () => {
   beforeEach(() => {
-
     mockAxios.resetHistory();
     mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
       data: "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MzQzNDI5NTYsImV4cCI6MTczNDM0NjU1NiwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.HCKre3g_P1wmGrrrnQncvFeT9pAePFSc4UPuyP5oehI",
-
     });
+
     mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(
       200,
       {
