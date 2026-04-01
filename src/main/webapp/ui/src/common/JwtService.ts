@@ -6,15 +6,15 @@ class JwtService {
   static JWT_TOKEN_PATTERN: RegExp = /^.+\..+\..+$/;
 
   static getToken(): string | null {
-    return window.sessionStorage.getItem(JwtService.ID_TOKEN_KEY);
+    return globalThis.sessionStorage.getItem(JwtService.ID_TOKEN_KEY);
   }
 
   static saveToken(token: string): void {
-    window.sessionStorage.setItem(JwtService.ID_TOKEN_KEY, token);
+    globalThis.sessionStorage.setItem(JwtService.ID_TOKEN_KEY, token);
   }
 
   static destroyToken(): void {
-    window.sessionStorage.removeItem(JwtService.ID_TOKEN_KEY);
+    globalThis.sessionStorage.removeItem(JwtService.ID_TOKEN_KEY);
   }
 
   static secondsToExpiry(token: string): number {
