@@ -1,11 +1,7 @@
 import { test, describe, expect, beforeEach, vi } from 'vitest';
 import "@/__tests__/__mocks__/matchMedia";
 import React from "react";
-import {
-  screen,
-  waitFor,
-  fireEvent,
-} from "@testing-library/react";
+import { screen, waitFor, fireEvent, render } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import DMPDialog from "../DMPDialog";
 import axios from "@/common/axios";
