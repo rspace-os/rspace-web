@@ -149,16 +149,6 @@ jobs:
         working-directory: src/main/webapp/ui
         run: npm run depcruise | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 
-      - name: Build current webpack stats
-        if: |
-          github.event_name == 'pull_request' &&
-          needs.changed-files.outputs.frontend == 'true' &&
-          github.event.pull_request.head.repo.full_name == github.repository
-        working-directory: src/main/webapp/ui
-        run: |
-          npm run build:stats
-          mv dist/stats.json dist/current-stats.json
-
       - name: Check out base branch for bundle comparison
         if: |
           github.event_name == 'pull_request' &&
@@ -168,16 +158,38 @@ jobs:
           git fetch origin "${{ github.base_ref }}"
           git worktree add "$RUNNER_TEMP/base-frontend" "origin/${{ github.base_ref }}"
 
-      - name: Build base webpack stats
+      - name: Build webpack stats in parallel
         if: |
           github.event_name == 'pull_request' &&
           needs.changed-files.outputs.frontend == 'true' &&
           github.event.pull_request.head.repo.full_name == github.repository
-        working-directory: ${{ runner.temp }}/base-frontend/src/main/webapp/ui
         run: |
-          npm ci --force
-          npm run build:stats
-          mv dist/stats.json dist/base-stats.json
+          set -euo pipefail
+
+          (
+            cd src/main/webapp/ui
+            npm run build:stats
+            mv dist/stats.json dist/current-stats.json
+          ) &
+          current_build_pid=$!
+
+          (
+            cd "$RUNNER_TEMP/base-frontend/src/main/webapp/ui"
+            npm ci --force
+            npm run build:stats
+            mv dist/stats.json dist/base-stats.json
+          ) &
+          base_build_pid=$!
+
+          current_status=0
+          base_status=0
+
+          wait "$current_build_pid" || current_status=$?
+          wait "$base_build_pid" || base_status=$?
+
+          if [ "$current_status" -ne 0 ] || [ "$base_status" -ne 0 ]; then
+            exit 1
+          fi
 
       - name: Compare webpack bundle size
         if: |
