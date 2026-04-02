@@ -57,6 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
+      java: ${{ steps.filter.outputs.java }}
     steps:
       - uses: actions/checkout@v5
       - uses: dorny/paths-filter@v4
@@ -116,9 +117,6 @@ jobs:
   frontend-checks:
     runs-on: ubuntu-latest
     needs: changed-files
-    permissions:
-      contents: read
-      pull-requests: write
     if: |
       github.event_name == 'pull_request' || 
       inputs.frontend_tests ||
@@ -149,68 +147,112 @@ jobs:
         working-directory: src/main/webapp/ui
         run: npm run depcruise | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 
-      - name: Check out base branch for bundle comparison
-        if: |
-          github.event_name == 'pull_request' &&
-          needs.changed-files.outputs.frontend == 'true' &&
-          github.event.pull_request.head.repo.full_name == github.repository
-        run: |
-          git fetch origin "${{ github.base_ref }}"
-          git worktree add "$RUNNER_TEMP/base-frontend" "origin/${{ github.base_ref }}"
+  build-current-webpack-stats:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.changed-files.outputs.frontend == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Build webpack stats in parallel
-        if: |
-          github.event_name == 'pull_request' &&
-          needs.changed-files.outputs.frontend == 'true' &&
-          github.event.pull_request.head.repo.full_name == github.repository
-        run: |
-          set -euo pipefail
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: src/main/webapp/ui/package-lock.json
 
-          (
-            cd src/main/webapp/ui
-            npm run build:stats
-            mv dist/stats.json dist/current-stats.json
-          ) &
-          current_build_pid=$!
+      - name: Install dependencies
+        working-directory: src/main/webapp/ui
+        run: npm ci --force
 
-          (
-            cd "$RUNNER_TEMP/base-frontend/src/main/webapp/ui"
-            npm ci --force
-            npm run build:stats
-            mv dist/stats.json dist/base-stats.json
-          ) &
-          base_build_pid=$!
+      - name: Build current webpack stats
+        working-directory: src/main/webapp/ui
+        run: NODE_OPTIONS="${NODE_OPTIONS} --max-old-space-size=6144" npm run build:stats
 
-          current_status=0
-          base_status=0
+      - name: Upload current webpack stats
+        uses: actions/upload-artifact@v4
+        with:
+          name: webpack-stats-current
+          path: src/main/webapp/ui/dist/stats.json
 
-          wait "$current_build_pid" || current_status=$?
-          wait "$base_build_pid" || base_status=$?
+  build-base-webpack-stats:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.changed-files.outputs.frontend == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
 
-          if [ "$current_status" -ne 0 ] || [ "$base_status" -ne 0 ]; then
-            exit 1
-          fi
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: src/main/webapp/ui/package-lock.json
+
+      - name: Install dependencies
+        working-directory: src/main/webapp/ui
+        run: npm ci --force
+
+      - name: Build base webpack stats
+        working-directory: src/main/webapp/ui
+        run: NODE_OPTIONS="${NODE_OPTIONS} --max-old-space-size=6144" npm run build:stats
+
+      - name: Upload base webpack stats
+        uses: actions/upload-artifact@v4
+        with:
+          name: webpack-stats-base
+          path: src/main/webapp/ui/dist/stats.json
+
+  compare-webpack-stats:
+    runs-on: ubuntu-latest
+    needs:
+      - changed-files
+      - frontend-checks
+      - build-current-webpack-stats
+      - build-base-webpack-stats
+    permissions:
+      contents: read
+      pull-requests: write
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.changed-files.outputs.frontend == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Download current webpack stats
+        uses: actions/download-artifact@v4
+        with:
+          name: webpack-stats-current
+          path: ${{ runner.temp }}/webpack-stats/current
+
+      - name: Download base webpack stats
+        uses: actions/download-artifact@v4
+        with:
+          name: webpack-stats-base
+          path: ${{ runner.temp }}/webpack-stats/base
 
       - name: Compare webpack bundle size
-        if: |
-          github.event_name == 'pull_request' &&
-          needs.changed-files.outputs.frontend == 'true' &&
-          github.event.pull_request.head.repo.full_name == github.repository
         uses: github/webpack-bundlesize-compare-action@v2.1.0
         with:
-          current-stats-json-path: src/main/webapp/ui/dist/current-stats.json
-          base-stats-json-path: ${{ runner.temp }}/base-frontend/src/main/webapp/ui/dist/base-stats.json
+          current-stats-json-path: ${{ runner.temp }}/webpack-stats/current/stats.json
+          base-stats-json-path: ${{ runner.temp }}/webpack-stats/base/stats.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           title: Frontend Webpack Bundle Size
           describe-assets: changed-only
 
-      - name: Clean up base branch checkout
-        if: |
-          always() &&
-          github.event_name == 'pull_request' &&
-          needs.changed-files.outputs.frontend == 'true' &&
-          github.event.pull_request.head.repo.full_name == github.repository
-        run: git worktree remove "$RUNNER_TEMP/base-frontend" --force
 
   vitest-tests:
     runs-on: ubuntu-latest
