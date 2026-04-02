@@ -1,5 +1,5 @@
 import { test, describe, expect, vi } from 'vitest';
-import "@/__tests__/mocks/useUiPreference";
+import "@/__tests__/__mocks__/useUiPreference";
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { UsersPage } from "..";

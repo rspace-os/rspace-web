@@ -11,7 +11,7 @@ import {
   ariaValueNow,
   ariaValueMin,
   ariaValueMax,
-} from "../util/progress";
+} from "@/util/progress";
 
 const useStyles = makeStyles<{ progress: Progress }>()(
   (theme, { progress }) => ({

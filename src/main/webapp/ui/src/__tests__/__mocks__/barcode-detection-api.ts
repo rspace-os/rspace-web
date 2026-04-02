@@ -1,4 +1,4 @@
-import type { Barcode, BarcodeFormat } from "../src/util/barcode";
+import type { Barcode, BarcodeFormat } from "../../util/barcode";
 
 class BarcodeDetector {
   constructor() {}
