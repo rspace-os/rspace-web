@@ -41,7 +41,7 @@ public class AwsS3ClientTest {
     assertTrue(nodeForFolderResource.getIsFolder());
     assertEquals("1:test2.txt", nodeForFolderResource.getLogicPath());
     assertEquals("0", nodeForFolderResource.getFileSize());
-    assertNull(nodeForFolderResource.getFileSizeBytes());
+    assertEquals(0, nodeForFolderResource.getFileSizeBytes());
     assertNull(nodeForFolderResource.getModificationDateMillis());
   }
 }

@@ -66,7 +66,6 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
     node.setOrderType(order);
     node.calculateFileName(item.getName());
     node.setIsFolder(item.isFolder());
-    // node.setModificationDateMillis((new Date()).getTime());
     if (!item.isFolder()) {
       node.setFileSize("" + item.getSizeInBytes());
       node.setFileSizeBytes(item.getSizeInBytes());
