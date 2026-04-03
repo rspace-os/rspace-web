@@ -17,7 +17,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 @Slf4j
 public class AwsS3Client extends NfsAbstractClient implements NfsClient {
@@ -44,23 +45,35 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
     NfsFileTreeNode rootNode = new NfsFileTreeNode();
     NfsFileTreeOrderType order = NfsFileTreeOrderType.parseOrderTypeString(nfsOrder);
     rootNode.setOrderType(order);
+    rootNode.setIsFolder(true);
 
-    String pathToList = StringUtils.isEmpty(target) ? "" : target;
+    String path = StringUtils.isEmpty(target) ? "" : target;
     // ui may be passing '/' for root folder, but s3 paths start without it
-    if (pathToList.startsWith("/")) {
-      pathToList = pathToList.substring(1);
+    path = Strings.CS.removeStart(path, "/");
+    path = Strings.CS.removeEnd(path, "/");
+    rootNode.setNodePath(path);
+
+    String rootNodeName;
+    if (path.lastIndexOf('/') != -1) {
+      rootNodeName = StringUtils.substringAfterLast(path, "/");
+    } else {
+      rootNodeName = path;
     }
-    List<S3FolderContentItem> s3FolderContentItems = s3Utilities.listFolderContents(pathToList);
+    rootNode.calculateFileName(rootNodeName);
+
+    List<S3FolderContentItem> s3FolderContentItems = s3Utilities.listFolderContents(path);
     for (S3FolderContentItem item : s3FolderContentItems) {
-      rootNode.addNode(getNodeFromS3Item(item, order, activeFilestore));
+      rootNode.addNode(getNodeFromS3Item(item, rootNode.getNodePath(), order, activeFilestore));
     }
-    rootNode.setNodePath(target);
 
     return rootNode;
   }
 
   protected NfsFileTreeNode getNodeFromS3Item(
-      S3FolderContentItem item, NfsFileTreeOrderType order, NfsFileStore activeFilestore) {
+      S3FolderContentItem item,
+      String rootPath,
+      NfsFileTreeOrderType order,
+      NfsFileStore activeFilestore) {
 
     NfsFileTreeNode node = new NfsFileTreeNode();
     node.setOrderType(order);
@@ -72,8 +85,12 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
       node.setModificationDateMillis(item.getLastModified().toEpochMilli());
     }
 
-    node.setNodePath(item.getName());
-    node.calculateLogicPath(item.getName(), activeFilestore);
+    String fullPathToTarget =
+        StringUtils.isBlank(rootPath)
+            ? item.getName()
+            : String.format("%s/%s", rootPath, item.getName());
+    node.setNodePath(fullPathToTarget);
+    node.calculateLogicPath(fullPathToTarget, activeFilestore);
 
     return node;
   }
