@@ -4,6 +4,7 @@ import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrat
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
 
@@ -79,6 +80,14 @@ public class RepositoryConfigurationController extends BaseController {
     }
     if (isDMPEnabled(user)) {
       List<DMPUser> dmpUsers = dmpManager.findDMPsForUser(user);
+      // Filter out DMPs that belong to DSW, since that integration is not yet
+      // enabled for callbacks during save to repository.
+      // TODO:  This fix is purely for DSW DMPs for the first release of the DSW
+      // integration.  This should be revisted during work on RPD-276.
+      dmpUsers =
+          dmpUsers.stream()
+              .filter(d -> !d.getSource().name().equals(DSW_APP_NAME))
+              .collect(Collectors.toList());
       if (!dmpUsers.isEmpty()) {
         List<LinkedDMP> linkedDMPdt =
             dmpUsers.stream()
