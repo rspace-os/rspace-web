@@ -156,7 +156,7 @@ public class MessageAndRequestController extends BaseController implements Appli
 
     User subject = userManager.getUserByUsername(principal.getName());
     if (properties.isProfileHidingEnabled()) {
-      userManager.populateConnectedUserList(subject);
+      userManager.populateConnectedUserSet(subject);
     }
 
     Set<User> users =

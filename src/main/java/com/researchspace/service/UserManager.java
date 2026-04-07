@@ -250,9 +250,9 @@ public interface UserManager extends GenericManager<User, Long> {
    * </ul>
    *
    * @param subject
-   * @return List<User> User list.
+   * @return Set<User> User list.
    */
-  List<User> getViewableUserList(User subject);
+  Set<User> getViewableUserSet(User subject);
 
   /**
    * Returns list of users that has some connection to the subject and will be able to see subject's
@@ -261,8 +261,8 @@ public interface UserManager extends GenericManager<User, Long> {
    * <p>The result is the combination of two list :
    *
    * <ul>
-   *   <li>List returned by {@link #getViewableUserList(User)}, which contains users who can see
-   *       some records belonging to subject
+   *   <li>List returned by {@link #getViewableUserSet(User)}, which contains users who can see some
+   *       records belonging to subject
    *   <li>List of all group members in any group subject belongs too.
    * </ul>
    *
@@ -272,7 +272,7 @@ public interface UserManager extends GenericManager<User, Long> {
    * @param subject
    * @return
    */
-  List<User> populateConnectedUserList(User subject);
+  Set<User> populateConnectedUserSet(User subject);
 
   /**
    * Returns list of groups that user has connection to i.e. they are either a member, or are a
@@ -284,7 +284,7 @@ public interface UserManager extends GenericManager<User, Long> {
    * @param subject
    * @return
    */
-  List<Group> populateConnectedGroupList(User subject);
+  Set<Group> populateConnectedGroupSet(User subject);
 
   /**
    * Verifies that given email address is not used by another user

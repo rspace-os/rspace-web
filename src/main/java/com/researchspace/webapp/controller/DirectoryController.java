@@ -2,8 +2,18 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.model.preference.Preference.DIRECTORY_RESULTS_PER_PAGE;
 
-import com.researchspace.core.util.*;
-import com.researchspace.model.*;
+import com.researchspace.core.util.DefaultURLPaginator;
+import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.PaginationObject;
+import com.researchspace.core.util.PaginationUtil;
+import com.researchspace.core.util.SearchResultsImpl;
+import com.researchspace.core.util.SecureStringUtils;
+import com.researchspace.core.util.SortOrder;
+import com.researchspace.model.Community;
+import com.researchspace.model.Group;
+import com.researchspace.model.GroupType;
+import com.researchspace.model.PaginationCriteria;
+import com.researchspace.model.User;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.CommunitySearchCriteria;
 import com.researchspace.model.dtos.GroupSearchCriteria;
@@ -20,7 +30,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 @Controller("directoryController")
@@ -127,7 +142,7 @@ public class DirectoryController extends BaseController {
       ISearchResults<PublicUserList> users) {
 
     User subject = userManager.getUserByUsername(principal.getName());
-    userManager.populateConnectedGroupList(subject);
+    userManager.populateConnectedGroupSet(subject);
 
     DefaultURLPaginator urlGn = new DefaultURLPaginator("/directory/ajax/userlist", pgCrit);
     List<PaginationObject> pagination =
@@ -177,7 +192,7 @@ public class DirectoryController extends BaseController {
 
     User subject = userManager.getAuthenticatedUserInSession();
     updateResultsPerPageProperty(subject, pgCrit, DIRECTORY_RESULTS_PER_PAGE);
-    userManager.populateConnectedUserList(subject);
+    userManager.populateConnectedUserSet(subject);
 
     ISearchResults<Group> groups = groupManager.list(subject, pgCrit);
     List<PaginationObject> pagination =
@@ -225,7 +240,7 @@ public class DirectoryController extends BaseController {
     configureCommunityPagination(pgCrit);
     User subject = userManager.getUserByUsername(principal.getName());
     updateResultsPerPageProperty(subject, pgCrit, DIRECTORY_RESULTS_PER_PAGE);
-    userManager.populateConnectedUserList(subject);
+    userManager.populateConnectedUserSet(subject);
 
     ISearchResults<Community> communities =
         communityServiceManager.listCommunities(subject, pgCrit);
@@ -262,8 +277,8 @@ public class DirectoryController extends BaseController {
   public String viewCommunity(Principal principal, Model model, @PathVariable Long id) {
 
     User subject = userManager.getUserByUsername(principal.getName());
-    userManager.populateConnectedUserList(subject);
-    userManager.populateConnectedGroupList(subject);
+    userManager.populateConnectedUserSet(subject);
+    userManager.populateConnectedGroupSet(subject);
 
     Community comm = communityServiceManager.getCommunityWithAdminsAndGroups(id);
     model.addAttribute("community", comm);
@@ -301,7 +316,7 @@ public class DirectoryController extends BaseController {
 
     User subject = userManager.getAuthenticatedUserInSession();
     updateResultsPerPageProperty(subject, pgCrit, DIRECTORY_RESULTS_PER_PAGE);
-    userManager.populateConnectedUserList(subject);
+    userManager.populateConnectedUserSet(subject);
 
     ISearchResults<Group> groups = groupManager.list(subject, pgCrit);
     List<PaginationObject> pagination =

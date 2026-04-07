@@ -917,7 +917,7 @@ public class WorkspaceController extends BaseController {
   public AjaxReturnObject<List<UserPublicInfo>> getViewablePublicUserInfoList() {
     User userInSession = userManager.getAuthenticatedUserInSession();
     List<UserPublicInfo> userInfos = new ArrayList<>();
-    List<User> users = userManager.getViewableUserList(userInSession);
+    Set<User> users = userManager.getViewableUserSet(userInSession);
     for (User user : users) {
       userInfos.add(user.toPublicInfo());
     }

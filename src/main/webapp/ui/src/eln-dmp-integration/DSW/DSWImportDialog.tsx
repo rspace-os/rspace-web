@@ -28,6 +28,7 @@ import DOMPurify from "dompurify";
 import { ACCENT_COLOR } from "../../assets/branding/dsw";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 import {DswConfig} from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 const CustomDialog = withStyles<
   { fullScreen: boolean } & React.ComponentProps<typeof Dialog>,
@@ -71,6 +72,7 @@ function DSWImportDialogContent({
 }): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   const [DMPs, setDMPs] = React.useState<Array<DswProjectWithOrigin>>([]);
   const [selectedPlan, setSelectedPlan] = useState<DswProjectWithOrigin | null>();
@@ -160,6 +162,7 @@ function DSWImportDialogContent({
 
   const handleImport = async () => {
     try {
+      trackEvent("user:import:from_dsw:gallery");
       setImporting(true);
       if (selectedPlan) {
         await axios

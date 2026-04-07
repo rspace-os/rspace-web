@@ -4,6 +4,24 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.21.0 2026-04-02
+
+### ELN Features
+
+- RSDEV-935 Data Stewardship Wizard integration
+- RSDEV-873 Linking stoichiometry items to inventory subsamples
+- RSDEV-955 IGSN IDs included in Dataverse export metadata
+- RSDEV-296 New Gallery UI now supports Snippet sharing
+
+### ELN Bugfix
+
+- RSDEV-957 Dataverse export now handles transfer of pdf files with spaces in filename
+- SUPPORT-529 Fix for problems with opening 'Share' dialog for some historical (pre-2023) documents and notebooks
+
+### Inventory Bugfix
+
+- RSDEV-1042 update Fieldmark integration, so it works with the latest Fieldmark API
+
 # 2.20.0 2026-03-05
 
 ### ELN Features

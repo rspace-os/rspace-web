@@ -1,20 +1,36 @@
 package com.researchspace.testutils;
 
+import static com.researchspace.Constants.USER_ROLE;
 import static org.junit.Assert.assertEquals;
 
 import com.researchspace.Constants;
-import com.researchspace.dao.*;
+import com.researchspace.dao.CommunicationDao;
+import com.researchspace.dao.EcatCommentDao;
+import com.researchspace.dao.EcatImageAnnotationDao;
+import com.researchspace.dao.GroupDao;
+import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.files.service.ExternalFileStoreProvider;
 import com.researchspace.files.service.InternalFileStore;
-import com.researchspace.model.*;
+import com.researchspace.model.Community;
+import com.researchspace.model.EcatComment;
+import com.researchspace.model.EcatCommentItem;
+import com.researchspace.model.EcatImageAnnotation;
+import com.researchspace.model.Group;
+import com.researchspace.model.Role;
+import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
 import com.researchspace.model.permissions.PermissionFactory;
-import com.researchspace.model.record.*;
+import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.record.RSForm;
+import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.RecordDeletionManager;
+import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserConnectionManager;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,7 +57,7 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   protected @Autowired IContentInitializer contentInitializer;
   protected @Autowired GroupDao grpdao;
   protected @Autowired RecordDeletionManager recordDeletionMgr;
-  private @Autowired RoleDao roleDao;
+  protected @Autowired RoleManager roleManager;
 
   protected @Autowired InternalLinkDao internalLinkDao;
   protected @Autowired EcatImageAnnotationDao imageAnnotationDao;
@@ -78,7 +94,7 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   }
 
   protected void setUpPermissionsForUser(User u) {
-    u.addRole(roleDao.getRoleByName("ROLE_USER"));
+    u.addRole(roleManager.getRole(USER_ROLE));
   }
 
   /**
@@ -88,7 +104,7 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
    * @return
    */
   protected User createAndSaveUserIfNotExists(String uname) {
-    return createAndSaveUserIfNotExists(uname, Constants.USER_ROLE);
+    return createAndSaveUserIfNotExists(uname, USER_ROLE);
   }
 
   /**
@@ -113,9 +129,9 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   protected User createAndSaveUserIfNotExists(String uname, String role) {
     User user = TestFactory.createAnyUser(uname);
     user.setEmail(uname + "@m.com");
-    user.addRole(roleDao.getRoleByName(role));
+    user.addRole(roleManager.getRole(role));
     if (role.equals(Constants.PI_ROLE) || role.equals(Constants.GROUP_OWNER_ROLE)) {
-      user.addRole(roleDao.getRoleByName(Constants.USER_ROLE));
+      user.addRole(roleManager.getRole(USER_ROLE));
     }
     return createAndSaveUserIfNotExists(user);
   }
@@ -414,7 +430,7 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   }
 
   protected User doCreateAndInitUser(String username) {
-    return doCreateAndInitUser(username, Constants.USER_ROLE);
+    return doCreateAndInitUser(username, USER_ROLE);
   }
 
   protected UserConnection createAndSaveEgnyteUserConnectionWithAccessToken(

@@ -280,7 +280,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   public List<UserBasicInfo> searchPublicUserInfoList(String term) {
     User userInSession = getAuthenticatedUserInSession();
     if (properties.isProfileHidingEnabled()) {
-      populateConnectedUserList(userInSession);
+      populateConnectedUserSet(userInSession);
     }
     List<User> users = searchUsers(term);
     return getPublicOrPrivateButConnectedUserBasicInfos(userInSession, users);
@@ -520,31 +520,25 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   @Override
-  public List<User> getViewableUserList(User subject) {
-    List<User> result = new ArrayList<>();
+  public Set<User> getViewableUserSet(User subject) {
     Set<User> distinctUsers = new HashSet<>();
     distinctUsers.addAll(userDao.getViewableUsersByRole(subject));
     distinctUsers.addAll(userDao.getViewableSharedRecordOwners(subject));
-    result.addAll(distinctUsers);
-    return result;
+    return distinctUsers;
   }
 
   @Override
-  public List<User> populateConnectedUserList(User subject) {
-    List<User> result = new ArrayList<>();
-    Set<User> distinctUsers = new HashSet<>();
-    distinctUsers.addAll(getViewableUserList(subject));
+  public Set<User> populateConnectedUserSet(User subject) {
+    Set<User> distinctUsers = new HashSet<>(getViewableUserSet(subject));
     for (Group g : subject.getGroups()) {
       distinctUsers.addAll(g.getMembers());
     }
-    result.addAll(distinctUsers);
-    subject.setConnectedUsers(result);
-    return result;
+    subject.setConnectedUsers(distinctUsers);
+    return distinctUsers;
   }
 
   @Override
-  public List<Group> populateConnectedGroupList(User subject) {
-    List<Group> result = new ArrayList<>();
+  public Set<Group> populateConnectedGroupSet(User subject) {
     Set<Group> distinctGroups = new HashSet<>();
     // groups where subject is a member
     distinctGroups.addAll(subject.getGroups());
@@ -555,9 +549,8 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
         distinctGroups.addAll(c.getLabGroups());
       }
     }
-    result.addAll(distinctGroups);
-    subject.setConnectedGroups(result);
-    return result;
+    subject.setConnectedGroups(distinctGroups);
+    return distinctGroups;
   }
 
   @Override
