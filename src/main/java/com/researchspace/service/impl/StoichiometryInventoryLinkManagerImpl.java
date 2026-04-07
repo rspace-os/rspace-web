@@ -112,7 +112,6 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
         if (!link.isStockDeducted()) {
           link.setStockDeducted(true);
           linkDao.save(link);
-          generateNewStoichiometryRevision(stoichiometryMolecule);
         }
         result.addResult(new StockDeductionResult.IndividualResult(id, true));
       } catch (NotFoundException | IllegalArgumentException e) {
@@ -148,6 +147,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
                 + subSample.getGlobalIdentifier());
       }
       subSampleMgr.registerApiSubSampleUsage(inventoryRecord.getId(), quantityInfo, user);
+      generateNewStoichiometryRevision(link.getStoichiometryMolecule());
     }
   }
 

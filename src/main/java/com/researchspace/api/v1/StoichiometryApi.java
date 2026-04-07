@@ -7,8 +7,6 @@ import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import javax.validation.Valid;
-import org.springframework.validation.BindException;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/api/v1/stoichiometry")

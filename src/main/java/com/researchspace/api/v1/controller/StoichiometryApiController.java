@@ -16,8 +16,6 @@ import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.chemistry.StoichiometryException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.validation.BindException;
-import org.springframework.validation.BindingResult;
 
 @ApiController
 public class StoichiometryApiController extends BaseApiController implements StoichiometryApi {
@@ -79,8 +77,7 @@ public class StoichiometryApiController extends BaseApiController implements Sto
   }
 
   @Override
-  public StockDeductionResult deductStock(
-      StockDeductionRequest request, User user) {
+  public StockDeductionResult deductStock(StockDeductionRequest request, User user) {
     long stoichiometryId = request.getStoichiometryId();
     List<Long> linkIds = request.getLinkIds();
     StockDeductionResult result =
