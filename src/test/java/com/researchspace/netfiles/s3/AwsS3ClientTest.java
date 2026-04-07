@@ -15,7 +15,6 @@ import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 public class AwsS3ClientTest {
@@ -54,8 +53,7 @@ public class AwsS3ClientTest {
     assertNull(nodeForFolderResource.getModificationDateMillis());
   }
 
-  @Ignore
-  @Test
+  // @Test
   public void testCreateFileTree() throws IOException {
     NfsFileStore testFileStore = new NfsFileStore();
     testFileStore.setId(1L);
@@ -65,7 +63,8 @@ public class AwsS3ClientTest {
     when(s3Utilities.listFolderContents("/testTopLevelFolder/testTarget"))
         .thenReturn(Collections.singletonList(file1));
 
-    NfsFileTreeNode rootNode = client.createFileTree("/testTopLevelFolder/testTarget", null, testFileStore);
+    NfsFileTreeNode rootNode =
+        client.createFileTree("/testTopLevelFolder/testTarget", null, testFileStore);
     assertNotNull(rootNode);
     assertEquals("testTarget", rootNode.getFileName());
     assertEquals("testTarget", rootNode.getNodePath());
