@@ -85,6 +85,30 @@ const mockInventoryLink: InventoryLink = {
 };
 
 describe("StoichiometryTableInventoryLinkCell", () => {
+  it("should have no sa11y violations when the molecule has no inventory link", async () => {
+    const { baseElement } = render(
+      <StoichiometryTableInventoryLinkCell
+        inventoryLink={null}
+        moleculeName="Benzene"
+      />,
+    );
+
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
+    await expect(baseElement).toBeAccessible();
+  });
+
+  it("should have no sa11y violations when the molecule has an inventory link", async () => {
+    const { baseElement } = render(
+      <StoichiometryTableInventoryLinkCell
+        inventoryLink={mockInventoryLink}
+        moleculeName="Cyclopentadiene"
+      />,
+    );
+
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
+    await expect(baseElement).toBeAccessible();
+  });
+
   it("renders an add button when the molecule has no inventory link", () => {
     render(
       <StoichiometryTableInventoryLinkCell
