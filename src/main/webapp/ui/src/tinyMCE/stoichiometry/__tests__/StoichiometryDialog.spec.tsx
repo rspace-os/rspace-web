@@ -443,6 +443,13 @@ test.describe("Stoichiometry Dialog", () => {
 
   );
   feature(
+    "calculate dialog has no accessibility violations",
+    async ({ Given, Then }) => {
+      await Given["the dialog is open without a stoichiometry table"]();
+      await Then["there shouldn't be any axe violations"]();
+    },
+  );
+  feature(
     "displays stoichiometry table when data is available",
     async ({ Given, Then }) => {
       await Given["the dialog is open with a stoichiometry table"]();
