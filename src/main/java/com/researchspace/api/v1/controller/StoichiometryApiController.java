@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.StoichiometryApi;
+import com.researchspace.api.v1.model.stoichiometry.StockDeductionRequest;
 import com.researchspace.api.v1.model.stoichiometry.StockDeductionResult;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
@@ -15,6 +16,8 @@ import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.chemistry.StoichiometryException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
 
 @ApiController
 public class StoichiometryApiController extends BaseApiController implements StoichiometryApi {
@@ -57,10 +60,7 @@ public class StoichiometryApiController extends BaseApiController implements Sto
       stoichiometry = stoichiometryService.createEmpty(recordId, user);
     }
     // Get the latest revision number after save
-    AuditedEntity<Stoichiometry> latestRevision =
-        auditManager.getNewestRevisionForEntity(Stoichiometry.class, stoichiometry.getId());
-    Long revisionNumber = latestRevision != null ? latestRevision.getRevision().longValue() : null;
-    return StoichiometryMapper.toDTO(stoichiometry, revisionNumber);
+    return StoichiometryMapper.toDTO(stoichiometry, getLatestRevisionNumber(stoichiometry.getId()));
   }
 
   @Override
@@ -69,10 +69,7 @@ public class StoichiometryApiController extends BaseApiController implements Sto
     Stoichiometry stoichiometry =
         stoichiometryService.update(stoichiometryId, stoichiometryUpdateDTO, user);
     // Get latest revision number after updated
-    AuditedEntity<Stoichiometry> latestRevision =
-        auditManager.getNewestRevisionForEntity(Stoichiometry.class, stoichiometry.getId());
-    Long revisionNumber = latestRevision != null ? latestRevision.getRevision().longValue() : null;
-    return StoichiometryMapper.toDTO(stoichiometry, revisionNumber);
+    return StoichiometryMapper.toDTO(stoichiometry, getLatestRevisionNumber(stoichiometry.getId()));
   }
 
   @Override
@@ -82,7 +79,19 @@ public class StoichiometryApiController extends BaseApiController implements Sto
   }
 
   @Override
-  public StockDeductionResult deductStock(List<Long> linkIds, User user) {
-    return stoichiometryInventoryLinkManager.deductStock(linkIds, user);
+  public StockDeductionResult deductStock(
+      StockDeductionRequest request, User user) {
+    long stoichiometryId = request.getStoichiometryId();
+    List<Long> linkIds = request.getLinkIds();
+    StockDeductionResult result =
+        stoichiometryInventoryLinkManager.deductStock(stoichiometryId, linkIds, user);
+    result.setRevisionNumber(getLatestRevisionNumber(stoichiometryId));
+    return result;
+  }
+
+  private Long getLatestRevisionNumber(long stoichiometryId) {
+    AuditedEntity<Stoichiometry> latestRevision =
+        auditManager.getNewestRevisionForEntity(Stoichiometry.class, stoichiometryId);
+    return latestRevision != null ? latestRevision.getRevision().longValue() : null;
   }
 }

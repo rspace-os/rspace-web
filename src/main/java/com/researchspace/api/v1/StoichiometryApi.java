@@ -1,11 +1,14 @@
 package com.researchspace.api.v1;
 
+import com.researchspace.api.v1.model.stoichiometry.StockDeductionRequest;
 import com.researchspace.api.v1.model.stoichiometry.StockDeductionResult;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
-import java.util.List;
+import javax.validation.Valid;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/api/v1/stoichiometry")
@@ -39,7 +42,8 @@ public interface StoichiometryApi {
 
   @PostMapping("/link/deductStock")
   StockDeductionResult deductStock(
-      @RequestBody List<Long> linkIds, @RequestAttribute(name = "user") User user);
+      @RequestBody @Valid StockDeductionRequest request,
+      @RequestAttribute(name = "user") User user);
 
   class ChemicalDTO {
     private String chemical;
