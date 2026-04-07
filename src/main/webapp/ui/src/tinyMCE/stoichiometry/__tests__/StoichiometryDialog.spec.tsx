@@ -60,6 +60,9 @@ const feature = test.extend<{
   };
   Then: {
     "the calculate button is visible": () => Promise<void>;
+    "an inline calculate error should be displayed": (
+      message: string,
+    ) => Promise<void>;
     "the table is displayed": () => Promise<void>;
     "the callback should have been invoked": ({
       onTableCreatedSpy,
@@ -162,6 +165,12 @@ const feature = test.extend<{
           name: "Calculate Stoichiometry",
         });
         await expect(button).toBeVisible();
+      },
+      "an inline calculate error should be displayed": async (message) => {
+        const errorAlert = page.getByRole("alert").filter({
+          hasText: message,
+        });
+        await expect(errorAlert).toBeVisible();
       },
       "the table is displayed": async () => {
         const table = page.getByRole("grid");
@@ -478,6 +487,38 @@ test.describe("Stoichiometry Dialog", () => {
       ]();
     },
 
+  );
+  feature(
+    "shows an inline error when creating a new table fails",
+    async ({ Given, When, Then, page }) => {
+      const createErrorMessage = "Unable to create stoichiometry table.";
+      await page.route(
+        /\/api\/v1\/stoichiometry\?recordId=1&chemId=12345$/,
+        async (route) => {
+          await route.fulfill({
+            status: 500,
+            contentType: "application/json",
+            body: JSON.stringify({
+              status: "error",
+              httpCode: 500,
+              internalCode: 500,
+              message: createErrorMessage,
+              messageCode: null,
+              errors: [],
+              iso8601Timestamp: "2026-04-07T00:00:00Z",
+              data: null,
+            }),
+          });
+        },
+      );
+
+      await Given["the dialog is open without a stoichiometry table"]();
+      await When["the user clicks calculate"]();
+      await Then["the calculate button is visible"]();
+      await Then["an inline calculate error should be displayed"](
+        createErrorMessage,
+      );
+    },
   );
   feature(
     "does not show save button when table has not been modified",

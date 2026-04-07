@@ -1,9 +1,10 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import { Dialog, DialogBoundary } from "@/components/DialogBoundary";
 import AppBar from "../../components/AppBar";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
+import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import ValidatingSubmitButton, {
   IsValid,
@@ -13,10 +14,10 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import CircularProgress from "@mui/material/CircularProgress";
-import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
+import { useIntegrationIsAllowedAndEnabled } from "@/hooks/api/integrationHelpers";
 import * as FetchingData from "../../util/fetchingData";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import { useConfirm } from "../../components/ConfirmProvider";
+import { useConfirm } from "@/components/ConfirmProvider";
 import ConfirmProvider from "../../components/ConfirmProvider";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import useOauthToken from "@/hooks/auth/useOauthToken";
@@ -249,9 +250,13 @@ const StandaloneDialogInner = ({
 }) => {
   const titleId = React.useId();
   const { getToken } = useOauthToken();
-  const calculateStoichiometryMutation = useCalculateStoichiometryMutation({
-    getToken,
-  });
+  const {
+    mutate: mutateCalculateStoichiometry,
+    reset: resetCalculateStoichiometry,
+    isPending: isRequestInFlight,
+    isError: hasCalculateError,
+    error: calculateStoichiometryError,
+  } = useCalculateStoichiometryMutation({ getToken });
   const { addAlert } = React.useContext(AlertContext);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [currentStoichiometry, setCurrentStoichiometry] = React.useState<{
@@ -267,7 +272,12 @@ const StandaloneDialogInner = ({
     (() => Promise<void>) | null
   >(null);
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
-  const isRequestInFlight = calculateStoichiometryMutation.isPending;
+
+  React.useEffect(() => {
+    if (open) {
+      resetCalculateStoichiometry();
+    }
+  }, [open, resetCalculateStoichiometry]);
 
   React.useEffect(() => {
     if (!open) {
@@ -321,34 +331,44 @@ const StandaloneDialogInner = ({
     addAlert,
   ]);
 
-  const handleCalculate = () => {
+  const handleCalculate = React.useCallback(() => {
     if (isRequestInFlight) {
       return;
     }
-    trackEvent("user:create:stoichiometry_table:document_editor");
-    void (async () => {
-      try {
-        if (!chemId) throw new Error("chemId is required");
-        const { id, revision } = await calculateStoichiometryMutation.mutateAsync(
-          {
-            chemId: chemId || undefined,
-            recordId,
-          },
-        );
-        setCurrentStoichiometry({ id, revision });
-        onTableCreated?.(id, revision);
-      } catch (e) {
-        console.error("Calculation failed", e);
-      }
-    })();
-  };
 
-  const handleCloseWithoutTable = () => {
+    resetCalculateStoichiometry();
+    trackEvent("user:create:stoichiometry_table:document_editor");
+
+    mutateCalculateStoichiometry(
+      {
+        chemId: chemId ?? undefined,
+        recordId,
+      },
+      {
+        onSuccess: ({ id, revision }) => {
+          setCurrentStoichiometry({ id, revision });
+          onTableCreated?.(id, revision);
+        }
+      },
+    );
+  }, [
+    mutateCalculateStoichiometry,
+    chemId,
+    isRequestInFlight,
+    onTableCreated,
+    recordId,
+    resetCalculateStoichiometry,
+    trackEvent,
+  ]);
+
+  const handleCloseWithoutTable = React.useCallback(() => {
     if (isRequestInFlight) {
       return;
     }
+
+    resetCalculateStoichiometry();
     onClose();
-  };
+  }, [isRequestInFlight, onClose, resetCalculateStoichiometry]);
 
   return (
     <Dialog
@@ -395,10 +415,15 @@ const StandaloneDialogInner = ({
                 onClick={handleCalculate}
                 disabled={isRequestInFlight}
               >
-                {calculateStoichiometryMutation.isPending
+                {isRequestInFlight
                   ? "Calculating..."
                   : "Calculate Stoichiometry"}
               </Button>
+              {hasCalculateError && calculateStoichiometryError && (
+                <Alert severity="error" sx={{ width: "100%", maxWidth: 480 }}>
+                  {calculateStoichiometryError.message}
+                </Alert>
+              )}
             </Box>
           </DialogContent>
           <DialogActions>
