@@ -33,6 +33,13 @@ const queryClient = new QueryClient({
   },
 });
 
+function areSameStoichiometry(
+  left: { id: number; revision: number } | null,
+  right: { id: number; revision: number } | null,
+) {
+  return left?.id === right?.id && left?.revision === right?.revision;
+}
+
 const StoichiometryTableLoadingFallback = ({
   disableClose,
 }: {
@@ -268,10 +275,22 @@ const StandaloneDialogInner = ({
       : null,
   );
   const [actuallyOpen, setActuallyOpen] = React.useState(false);
-  const [tableCloseHandler, setTableCloseHandler] = React.useState<
-    (() => Promise<void>) | null
-  >(null);
+  const tableCloseHandlerRef = React.useRef<(() => Promise<void>) | null>(null);
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
+  const syncedStoichiometry = React.useMemo(
+    () =>
+      stoichiometryId !== undefined && stoichiometryRevision !== undefined
+        ? { id: stoichiometryId, revision: stoichiometryRevision }
+        : null,
+    [stoichiometryId, stoichiometryRevision],
+  );
+
+  const registerCloseHandler = React.useCallback(
+    (handler: (() => Promise<void>) | null) => {
+      tableCloseHandlerRef.current = handler;
+    },
+    [],
+  );
 
   React.useEffect(() => {
     if (open) {
@@ -281,17 +300,22 @@ const StandaloneDialogInner = ({
 
   React.useEffect(() => {
     if (!open) {
+      tableCloseHandlerRef.current = null;
       setActuallyOpen(false);
-      setTableCloseHandler(null);
       return;
     }
 
-    const syncedStoichiometry =
-      stoichiometryId !== undefined && stoichiometryRevision !== undefined
-        ? { id: stoichiometryId, revision: stoichiometryRevision }
-        : null;
+    setCurrentStoichiometry((previousStoichiometry) =>
+      areSameStoichiometry(previousStoichiometry, syncedStoichiometry)
+        ? previousStoichiometry
+        : syncedStoichiometry,
+    );
+  }, [open, syncedStoichiometry]);
 
-    setCurrentStoichiometry(syncedStoichiometry);
+  React.useEffect(() => {
+    if (!open) {
+      return;
+    }
 
     FetchingData.match(chemistryStatus, {
       loading: () => {
@@ -325,8 +349,6 @@ const StandaloneDialogInner = ({
     });
   }, [
     open,
-    stoichiometryId,
-    stoichiometryRevision,
     chemistryStatus,
     addAlert,
   ]);
@@ -376,7 +398,7 @@ const StandaloneDialogInner = ({
       disableEscapeKeyDown={isRequestInFlight}
       onClose={(_event, _reason) => {
         if (currentStoichiometry !== null) {
-          void tableCloseHandler?.();
+          void tableCloseHandlerRef.current?.();
           return;
         }
         handleCloseWithoutTable();
@@ -448,9 +470,7 @@ const StandaloneDialogInner = ({
             onSave={onSave}
             onDelete={onDelete}
             setCurrentStoichiometry={setCurrentStoichiometry}
-            registerCloseHandler={(handler) => {
-              setTableCloseHandler(() => handler);
-            }}
+            registerCloseHandler={registerCloseHandler}
           />
         </React.Suspense>
       )}
