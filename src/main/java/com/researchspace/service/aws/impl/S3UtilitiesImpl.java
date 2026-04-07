@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -72,8 +73,9 @@ public class S3UtilitiesImpl implements S3Utilities {
   @Override
   public boolean isFileInS3(String folderPath, String fileName) {
     try {
+      String fullPath = StringUtils.isBlank(folderPath) ? fileName : folderPath + "/" + fileName;
       HeadObjectRequest headObjectRequest =
-          HeadObjectRequest.builder().bucket(s3BucketName).key(folderPath + "/" + fileName).build();
+          HeadObjectRequest.builder().bucket(s3BucketName).key(fullPath).build();
       s3Client.headObject(headObjectRequest);
       return true;
     } catch (NoSuchKeyException e) {

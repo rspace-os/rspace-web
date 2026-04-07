@@ -40,18 +40,15 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
 
   @Override
   public NfsFileTreeNode createFileTree(
-      String target, String nfsOrder, NfsFileStore activeFilestore) throws IOException {
+      String combinedPath, String nfsOrder, NfsFileStore activeFilestore) throws IOException {
 
     NfsFileTreeNode rootNode = new NfsFileTreeNode();
     NfsFileTreeOrderType order = NfsFileTreeOrderType.parseOrderTypeString(nfsOrder);
     rootNode.setOrderType(order);
     rootNode.setIsFolder(true);
 
-    String path = StringUtils.isEmpty(target) ? "" : target;
-    // ui may be passing '/' for root folder, but s3 paths start without it
-    path = Strings.CS.removeStart(path, "/");
-    path = Strings.CS.removeEnd(path, "/");
-    rootNode.setNodePath(path);
+    String path = StringUtils.isEmpty(combinedPath) ? "" : combinedPath;
+    path = stripStartAndEndSlashFromPath(path);
 
     String rootNodeName;
     if (path.lastIndexOf('/') != -1) {
@@ -60,6 +57,7 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
       rootNodeName = path;
     }
     rootNode.calculateFileName(rootNodeName);
+    rootNode.setNodePath(path);
 
     List<S3FolderContentItem> s3FolderContentItems = s3Utilities.listFolderContents(path);
     for (S3FolderContentItem item : s3FolderContentItems) {
@@ -67,6 +65,12 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
     }
 
     return rootNode;
+  }
+
+  private static String stripStartAndEndSlashFromPath(String path) {
+    path = Strings.CS.removeStart(path, "/");
+    path = Strings.CS.removeEnd(path, "/");
+    return path;
   }
 
   protected NfsFileTreeNode getNodeFromS3Item(
@@ -90,7 +94,10 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
             ? item.getName()
             : String.format("%s/%s", rootPath, item.getName());
     node.setNodePath(fullPathToTarget);
-    node.calculateLogicPath(fullPathToTarget, activeFilestore);
+    NfsFileStore storeWithIdPath = new NfsFileStore();
+    storeWithIdPath.setId(activeFilestore.getId());
+    storeWithIdPath.setPath(activeFilestore.getPath() + "/");
+    node.calculateLogicPath("/" + fullPathToTarget, activeFilestore);
 
     return node;
   }
@@ -109,14 +116,15 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
   @Override
   public NfsFileDetails queryNfsFileForDownload(NfsTarget target) throws IOException {
     log.debug("file download request for: {}", target.getPath());
+    String pathToDownload = stripStartAndEndSlashFromPath(target.getPath());
 
-    boolean filePresent = s3Utilities.isFileInS3("", target.getPath());
+    boolean filePresent = s3Utilities.isFileInS3("", pathToDownload);
     if (!filePresent) {
-      throw new IllegalArgumentException("file not found in S3: " + target.getPath());
+      throw new IllegalArgumentException("file not found in S3: " + pathToDownload);
     }
 
     File tmpFile = File.createTempFile("downloaded", ".tmp");
-    s3Utilities.downloadFromS3(target.getPath(), tmpFile);
+    s3Utilities.downloadFromS3(pathToDownload, tmpFile);
     NfsFileDetails nfsDetails = new NfsFileDetails("downloaded.test");
     nfsDetails.setRemoteInputStream(new FileInputStream(tmpFile));
     return nfsDetails;
