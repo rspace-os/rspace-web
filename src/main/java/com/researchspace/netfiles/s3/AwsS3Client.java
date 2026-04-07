@@ -94,9 +94,6 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
             ? item.getName()
             : String.format("%s/%s", rootPath, item.getName());
     node.setNodePath(fullPathToTarget);
-    NfsFileStore storeWithIdPath = new NfsFileStore();
-    storeWithIdPath.setId(activeFilestore.getId());
-    storeWithIdPath.setPath(activeFilestore.getPath() + "/");
     node.calculateLogicPath("/" + fullPathToTarget, activeFilestore);
 
     return node;
