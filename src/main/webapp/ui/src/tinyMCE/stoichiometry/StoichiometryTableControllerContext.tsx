@@ -24,6 +24,7 @@ export type StoichiometryTableController = {
     inventoryItemGlobalId: string,
   ) => void;
   removeInventoryLink: (moleculeId: number) => void;
+  undoRemoveInventoryLink: (moleculeId: number) => void;
   selectLimitingReagent: (molecule: EditableMolecule) => void;
   processRowUpdate: (
     newRow: EditableMolecule,

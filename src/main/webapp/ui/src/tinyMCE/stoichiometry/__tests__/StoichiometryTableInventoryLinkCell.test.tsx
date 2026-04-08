@@ -28,9 +28,7 @@ vi.mock("@/stores/models/Search", () => ({
       performInitialSearch: vi.fn(async () => {}),
     };
 
-    alwaysFilterOut() {
-      return false;
-    }
+    alwaysFilterOut = () => false;
   },
 }));
 
@@ -97,8 +95,9 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    // @ts-expect-error toBeAccessible is from @sa11y/vitest
-    await expect(baseElement).toBeAccessible();
+    await (
+      expect(baseElement) as unknown as { toBeAccessible: () => Promise<void> }
+    ).toBeAccessible();
   });
 
   it("should have no sa11y violations when the molecule has an inventory link", async () => {
@@ -109,8 +108,9 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    // @ts-expect-error toBeAccessible is from @sa11y/vitest
-    await expect(baseElement).toBeAccessible();
+    await (
+      expect(baseElement) as unknown as { toBeAccessible: () => Promise<void> }
+    ).toBeAccessible();
   });
 
   it("renders an add button when the molecule has no inventory link", () => {
@@ -222,6 +222,49 @@ describe("StoichiometryTableInventoryLinkCell", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders a deleted placeholder with undo action for a soft-deleted saved link", async () => {
+    const onUndoRemoveInventoryLink = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <StoichiometryTableInventoryLinkCell
+        inventoryLink={null}
+        isDeleted
+        moleculeName="Cyclopentadiene"
+        onUndoRemoveInventoryLink={onUndoRemoveInventoryLink}
+      />,
+    );
+
+    expect(screen.getByText("Link Deleted")).toBeVisible();
+    expect(
+      screen.getByLabelText("Undo deleting inventory link for Cyclopentadiene"),
+    ).toBeVisible();
+    expect(
+      screen.queryByLabelText("Add inventory link for Cyclopentadiene"),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByLabelText("Undo deleting inventory link for Cyclopentadiene"),
+    );
+
+    expect(onUndoRemoveInventoryLink).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not show the add button while a saved link deletion is pending", () => {
+    render(
+      <StoichiometryTableInventoryLinkCell
+        inventoryLink={null}
+        isDeleted
+        moleculeName="Cyclopentadiene"
+      />,
+    );
+
+    expect(screen.getByText("Link Deleted")).toBeVisible();
+    expect(
+      screen.queryByLabelText("Add inventory link for Cyclopentadiene"),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders an insufficient stock warning when requested", () => {
     render(
       <StoichiometryTableInventoryLinkCell
@@ -281,5 +324,18 @@ describe("StoichiometryTableInventoryLinkCell", () => {
     expect(
       screen.queryByLabelText("Remove inventory link for Cyclopentadiene"),
     ).not.toBeInTheDocument();
+
+    rerender(
+      <StoichiometryTableInventoryLinkCell
+        inventoryLink={null}
+        isDeleted
+        moleculeName="Cyclopentadiene"
+        editable={false}
+      />,
+    );
+    expect(
+      screen.queryByLabelText("Undo deleting inventory link for Cyclopentadiene"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Link Deleted")).toBeVisible();
   });
 });

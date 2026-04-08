@@ -43,6 +43,12 @@ function makeMolecule(): EditableMolecule {
       inventoryItemGlobalId: "SS124",
       stockDeducted: false,
     },
+    savedInventoryLink: {
+      id: 501,
+      inventoryItemGlobalId: "SS124",
+      stockDeducted: false,
+    },
+    deletedInventoryLink: null,
     role: "REACTANT",
     formula: null,
     name: "Cyclopentane",
@@ -85,6 +91,7 @@ describe("StoichiometryTable", () => {
       updateInventoryStock,
       pickInventoryLink: vi.fn(),
       removeInventoryLink: vi.fn(),
+      undoRemoveInventoryLink: vi.fn(),
       selectLimitingReagent: vi.fn(),
       processRowUpdate: vi.fn((newRow: EditableMolecule) => newRow),
     };

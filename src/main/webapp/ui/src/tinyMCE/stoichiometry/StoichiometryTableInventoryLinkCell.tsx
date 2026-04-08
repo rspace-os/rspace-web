@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Dialog from "@mui/material/Dialog";
@@ -10,6 +11,9 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrashAlt } from "@fortawesome/free-regular-svg-icons/faTrashAlt";
+import { faClockRotateLeft } from "@fortawesome/free-solid-svg-icons/faClockRotateLeft";
 import { RecordLink } from "@/Inventory/components/RecordLink";
 import type { InventoryLink } from "@/modules/stoichiometry/schema";
 import InventoryPicker from "@/Inventory/components/Picker/Picker";
@@ -53,6 +57,7 @@ function createInventoryPickerSearch(): Search {
 
 type StoichiometryTableInventoryLinkCellProps = {
   inventoryLink: InventoryLink | null | undefined;
+  isDeleted?: boolean;
   inventoryRecord?: InventoryRecord | null;
   moleculeName: string | null;
   editable?: boolean;
@@ -60,6 +65,7 @@ type StoichiometryTableInventoryLinkCellProps = {
   linkedInventoryItemGlobalIds?: string[];
   onPickInventoryItem?: (id: number, inventoryItemGlobalId: string) => void;
   onRemoveInventoryLink?: () => void;
+  onUndoRemoveInventoryLink?: () => void;
 };
 
 function toLinkedSubsampleRecord(
@@ -86,6 +92,7 @@ function toLinkedSubsampleRecord(
 
 const StoichiometryTableInventoryLinkCell = ({
   inventoryLink,
+  isDeleted = false,
   inventoryRecord,
   moleculeName,
   editable = true,
@@ -93,6 +100,7 @@ const StoichiometryTableInventoryLinkCell = ({
   linkedInventoryItemGlobalIds = [],
   onPickInventoryItem,
   onRemoveInventoryLink,
+  onUndoRemoveInventoryLink,
 }: StoichiometryTableInventoryLinkCellProps) => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch] = useState(createInventoryPickerSearch);
@@ -146,6 +154,52 @@ const StoichiometryTableInventoryLinkCell = ({
     },
     [linkedInventoryItemGlobalIdSet, onPickInventoryItem],
   );
+
+  if (isDeleted) {
+    return (
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.5}
+        sx={{ height: "100%" }}
+      >
+        {/* Font Size for the icon is necessary as MUI overrides FA font-size */}
+        <Chip
+          size="small"
+          variant="outlined"
+          label="Link Deleted"
+          icon={
+            <FontAwesomeIcon
+              icon={faTrashAlt}
+              size="2xs"
+            />
+          }
+          sx={(theme) => ({
+            fontSize: theme.typography.caption.fontSize,
+            "& .MuiChip-label": {
+              fontSize: "inherit",
+            },
+            "& .MuiChip-icon": {
+              fontSize: "inherit",
+            },
+          })}
+        />
+        {editable && (
+          <Tooltip title="Undo deleting link">
+            <span>
+              <IconButton
+                size="small"
+                aria-label={`Undo deleting inventory link for ${moleculeLabel}`}
+                onClick={onUndoRemoveInventoryLink}
+              >
+                <FontAwesomeIcon icon={faClockRotateLeft} size="sm" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
+      </Stack>
+    );
+  }
 
   if (inventoryLink) {
     const record = toLinkedSubsampleRecord(inventoryLink, inventoryRecord);

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { inventoryQueryKeys } from "@/modules/inventory/queries";
+import type { StoichiometryRequest } from "@/modules/stoichiometry/schema";
 import { stoichiometryQueryKeys } from "@/modules/stoichiometry/queries";
 import { useEditableStoichiometryTable } from "@/tinyMCE/stoichiometry/useEditableStoichiometryTable";
 
@@ -44,6 +45,17 @@ const {
           unitId: 7,
         },
       },
+      savedInventoryLink: {
+        id: 501,
+        inventoryItemGlobalId: "SS123",
+        stockDeducted: false,
+        stoichiometryMoleculeId: 5,
+        quantity: {
+          numericValue: 10,
+          unitId: 7,
+        },
+      },
+      deletedInventoryLink: null,
       role: "REACTANT",
       formula: "C5 H6",
       name: "Cyclopentadiene",
@@ -85,6 +97,17 @@ const {
           unitId: 7,
         },
       },
+      savedInventoryLink: {
+        id: 502,
+        inventoryItemGlobalId: "SS124",
+        stockDeducted: false,
+        stoichiometryMoleculeId: 6,
+        quantity: {
+          numericValue: 10,
+          unitId: 7,
+        },
+      },
+      deletedInventoryLink: null,
       role: "PRODUCT",
       formula: "C6 H12",
       name: "Cyclopentane",
@@ -126,6 +149,17 @@ const {
           unitId: 3,
         },
       },
+      savedInventoryLink: {
+        id: 503,
+        inventoryItemGlobalId: "SS125",
+        stockDeducted: false,
+        stoichiometryMoleculeId: 7,
+        quantity: {
+          numericValue: 25,
+          unitId: 3,
+        },
+      },
+      deletedInventoryLink: null,
       role: "AGENT",
       formula: "C2 H6 O",
       name: "Ethanol",
@@ -136,6 +170,26 @@ const {
       moles: 0.109,
       actualAmount: 5,
       actualMoles: 0.109,
+      actualYield: null,
+      limitingReagent: false,
+      notes: null,
+    },
+    {
+      id: 8,
+      rsChemElement: null,
+      inventoryLink: null,
+      savedInventoryLink: null,
+      deletedInventoryLink: null,
+      role: "AGENT",
+      formula: "H2 O",
+      name: "Water",
+      smiles: "O",
+      coefficient: 1,
+      molecularWeight: 18.015,
+      mass: 1,
+      moles: null,
+      actualAmount: null,
+      actualMoles: null,
       actualYield: null,
       limitingReagent: false,
       notes: null,
@@ -276,7 +330,190 @@ describe("useEditableStoichiometryTable", () => {
       revisionNumber: 4,
       results: [{ linkId: 502, success: true }],
     });
+    mockUpdateStoichiometryMutateAsync.mockResolvedValue({ revision: 2 });
     mockGetStoichiometry.mockResolvedValue(mockRefreshedStoichiometry);
+  });
+
+  it("soft-deletes saved inventory links, blocks replacement until undo, and restores them on undo", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <HookHarness
+          onValue={(value) => {
+            latestValue = value;
+          }}
+        />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+    expect(latestValue!.hasChanges).toBe(false);
+
+    act(() => {
+      latestValue?.tableController.removeInventoryLink(5);
+    });
+
+    await waitFor(() => {
+      expect(
+        latestValue?.allMolecules.find((molecule) => molecule.id === 5),
+      ).toMatchObject({
+        inventoryLink: null,
+        deletedInventoryLink: {
+          inventoryItemGlobalId: "SS123",
+        },
+      });
+      expect(latestValue?.hasChanges).toBe(true);
+    });
+
+    act(() => {
+      latestValue?.tableController.pickInventoryLink(5, 999, "SS999");
+    });
+
+    expect(
+      latestValue!.allMolecules.find((molecule) => molecule.id === 5),
+    ).toMatchObject({
+      inventoryLink: null,
+      deletedInventoryLink: {
+        inventoryItemGlobalId: "SS123",
+      },
+    });
+
+    act(() => {
+      latestValue?.tableController.undoRemoveInventoryLink(5);
+    });
+
+    await waitFor(() => {
+      expect(
+        latestValue?.allMolecules.find((molecule) => molecule.id === 5),
+      ).toMatchObject({
+        inventoryLink: {
+          inventoryItemGlobalId: "SS123",
+        },
+        deletedInventoryLink: null,
+      });
+      expect(latestValue?.hasChanges).toBe(false);
+    });
+  });
+
+  it("removes newly added unsaved inventory links immediately without entering deleted placeholder state", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <HookHarness
+          onValue={(value) => {
+            latestValue = value;
+          }}
+        />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+    expect(latestValue!.hasChanges).toBe(false);
+
+    act(() => {
+      latestValue?.tableController.pickInventoryLink(8, 999, "SS999");
+    });
+
+    await waitFor(() => {
+      expect(
+        latestValue?.allMolecules.find((molecule) => molecule.id === 8),
+      ).toMatchObject({
+        inventoryLink: {
+          inventoryItemGlobalId: "SS999",
+        },
+        deletedInventoryLink: null,
+      });
+      expect(latestValue?.hasChanges).toBe(true);
+    });
+
+    act(() => {
+      latestValue?.tableController.removeInventoryLink(8);
+    });
+
+    await waitFor(() => {
+      expect(
+        latestValue?.allMolecules.find((molecule) => molecule.id === 8),
+      ).toMatchObject({
+        inventoryLink: null,
+        deletedInventoryLink: null,
+      });
+      expect(latestValue?.hasChanges).toBe(false);
+    });
+  });
+
+  it("serializes soft-deleted saved links as null and clears temporary deleted state after save", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <HookHarness
+          onValue={(value) => {
+            latestValue = value;
+          }}
+        />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+
+    act(() => {
+      latestValue?.tableController.removeInventoryLink(5);
+    });
+
+    await act(async () => {
+      await latestValue?.save();
+    });
+
+    const updateRequest = mockUpdateStoichiometryMutateAsync.mock.calls[0]?.[0] as
+      | {
+          stoichiometryId: number;
+          stoichiometryData: StoichiometryRequest;
+        }
+      | undefined;
+
+    expect(updateRequest?.stoichiometryId).toBe(3);
+    expect(updateRequest?.stoichiometryData.id).toBe(3);
+    expect(
+      updateRequest?.stoichiometryData.molecules.find(
+        (molecule) => "id" in molecule && molecule.id === 5,
+      ),
+    ).toMatchObject({
+      id: 5,
+      inventoryLink: null,
+    });
+    expect(
+      latestValue!.allMolecules.find((molecule) => molecule.id === 5),
+    ).toMatchObject({
+      inventoryLink: null,
+      savedInventoryLink: null,
+      deletedInventoryLink: null,
+    });
   });
 
   it("refreshes stoichiometry and seeds the returned query key after a successful stock deduction", async () => {
@@ -300,7 +537,7 @@ describe("useEditableStoichiometryTable", () => {
     );
 
     await waitFor(() => {
-      expect(latestValue?.allMolecules).toHaveLength(3);
+      expect(latestValue?.allMolecules).toHaveLength(4);
     });
 
     let result:
@@ -401,7 +638,7 @@ describe("useEditableStoichiometryTable", () => {
     );
 
     await waitFor(() => {
-      expect(latestValue?.allMolecules).toHaveLength(3);
+      expect(latestValue?.allMolecules).toHaveLength(4);
     });
 
     let result:

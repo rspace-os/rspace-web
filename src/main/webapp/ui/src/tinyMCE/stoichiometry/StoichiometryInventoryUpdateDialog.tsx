@@ -313,6 +313,7 @@ export default function StoichiometryInventoryUpdateDialog({
           <Button
             type="submit"
             variant="contained"
+            color="callToAction"
             disabled={
               selectedMoleculeIds.length === 0 || saveMutation.isPending
             }
@@ -324,5 +325,4 @@ export default function StoichiometryInventoryUpdateDialog({
     </Dialog>
   );
 }
-
 

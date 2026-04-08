@@ -32,6 +32,12 @@ const molecule: EditableMolecule = {
     inventoryItemGlobalId: "SS1200",
     stockDeducted: false,
   },
+  savedInventoryLink: {
+    id: 1200,
+    inventoryItemGlobalId: "SS1200",
+    stockDeducted: false,
+  },
+  deletedInventoryLink: null,
   role: "REACTANT",
   formula: "C2H6O",
   name: "Ethanol",

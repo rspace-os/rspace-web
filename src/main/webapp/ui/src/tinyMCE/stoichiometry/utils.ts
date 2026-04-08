@@ -247,7 +247,9 @@ export function hasDuplicateInventoryLink(
   return molecules.some(
     (molecule) =>
       molecule.id !== moleculeId &&
-      molecule.inventoryLink?.inventoryItemGlobalId === inventoryItemGlobalId,
+      (molecule.inventoryLink?.inventoryItemGlobalId === inventoryItemGlobalId ||
+        molecule.deletedInventoryLink?.inventoryItemGlobalId ===
+          inventoryItemGlobalId),
   );
 }
 

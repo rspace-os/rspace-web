@@ -42,6 +42,12 @@ function makeMolecule({
       inventoryItemGlobalId,
       stockDeducted,
     },
+    savedInventoryLink: {
+      id: 1000 + id,
+      inventoryItemGlobalId,
+      stockDeducted,
+    },
+    deletedInventoryLink: null,
     role: "REACTANT",
     formula: null,
     name,

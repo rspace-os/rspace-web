@@ -219,7 +219,8 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
               {typeof molecule.inventoryLink?.stockDeducted === "boolean" && (
                 <Chip
                   size="small"
-                  color={molecule.inventoryLink.stockDeducted ? "warning" : "default"}
+                  variant="outlined"
+                  color={molecule.inventoryLink.stockDeducted ? "warning" : "primary"}
                   label={
                     molecule.inventoryLink.stockDeducted
                       ? "Stock deducted"

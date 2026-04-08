@@ -53,6 +53,7 @@ type StoichiometryTableGridProps = {
     inventoryItemGlobalId: string,
   ) => void;
   onRemoveInventoryLink?: (moleculeId: number) => void;
+  onUndoRemoveInventoryLink?: (moleculeId: number) => void;
   onSelectLimitingReagent?: (molecule: EditableMolecule) => void;
   onProcessRowUpdate?: (
     newRow: EditableMolecule,
@@ -80,6 +81,7 @@ const StoichiometryTableGrid = ({
   onDeleteReagent,
   onPickInventoryItem,
   onRemoveInventoryLink,
+  onUndoRemoveInventoryLink,
   onSelectLimitingReagent,
   onProcessRowUpdate,
 }: StoichiometryTableGridProps) => {
@@ -90,7 +92,11 @@ const StoichiometryTableGrid = ({
 
   const linkedInventoryItemGlobalIdsByMoleculeId = React.useMemo(() => {
     const linkedIds = allMolecules
-      .map((molecule) => molecule.inventoryLink?.inventoryItemGlobalId)
+      .map(
+        (molecule) =>
+          molecule.inventoryLink?.inventoryItemGlobalId ??
+          molecule.deletedInventoryLink?.inventoryItemGlobalId,
+      )
       .filter((id): id is string => Boolean(id));
 
     return new Map(
@@ -98,7 +104,9 @@ const StoichiometryTableGrid = ({
         molecule.id,
         linkedIds.filter(
           (inventoryItemGlobalId) =>
-            inventoryItemGlobalId !== molecule.inventoryLink?.inventoryItemGlobalId,
+            inventoryItemGlobalId !==
+              (molecule.inventoryLink?.inventoryItemGlobalId ??
+                molecule.deletedInventoryLink?.inventoryItemGlobalId),
         ),
       ]),
     );
@@ -145,6 +153,7 @@ const StoichiometryTableGrid = ({
         renderCell: ({ row }) => (
           <StoichiometryTableInventoryLinkCell
             inventoryLink={row.inventoryLink}
+            isDeleted={Boolean(row.deletedInventoryLink) && !row.inventoryLink}
             moleculeName={row.name}
             editable={editable}
             showInsufficientStockWarning={
@@ -161,6 +170,9 @@ const StoichiometryTableGrid = ({
             }
             onRemoveInventoryLink={() => {
               onRemoveInventoryLink?.(row.id);
+            }}
+            onUndoRemoveInventoryLink={() => {
+              onUndoRemoveInventoryLink?.(row.id);
             }}
           />
         ),
@@ -350,6 +362,7 @@ const StoichiometryTableGrid = ({
       onDeleteReagent,
       onPickInventoryItem,
       onRemoveInventoryLink,
+      onUndoRemoveInventoryLink,
       onSelectLimitingReagent,
     ],
   );
@@ -473,6 +486,7 @@ const StoichiometryTable = ({
         onDeleteReagent={tableController.deleteReagent}
         onPickInventoryItem={tableController.pickInventoryLink}
         onRemoveInventoryLink={tableController.removeInventoryLink}
+        onUndoRemoveInventoryLink={tableController.undoRemoveInventoryLink}
         onSelectLimitingReagent={tableController.selectLimitingReagent}
         onProcessRowUpdate={tableController.processRowUpdate}
       />

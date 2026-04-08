@@ -33,6 +33,11 @@ const queryClient = new QueryClient({
   },
 });
 
+const STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX = {
+  minHeight: 36,
+  height: 36,
+} as const;
+
 function areSameStoichiometry(
   left: { id: number; revision: number } | null,
   right: { id: number; revision: number } | null,
@@ -67,8 +72,12 @@ const StoichiometryTableLoadingFallback = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button disabled={disableClose}>Delete</Button>
-        <Button disabled={disableClose}>Close</Button>
+        <Button disabled={disableClose} sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}>
+          Delete
+        </Button>
+        <Button disabled={disableClose} sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}>
+          Close
+        </Button>
       </DialogActions>
     </>
   );
@@ -119,12 +128,16 @@ const EditableStoichiometryDialogSection = ({
 
         if (result.refreshedStoichiometry) {
           setCurrentStoichiometry(result.refreshedStoichiometry);
+          onSave?.(
+            result.refreshedStoichiometry.id,
+            result.refreshedStoichiometry.revision,
+          );
         }
 
         return result;
       },
     }),
-    [setCurrentStoichiometry, tableController],
+    [onSave, setCurrentStoichiometry, tableController],
   );
 
   const handleClose = React.useCallback(async () => {
@@ -224,6 +237,7 @@ const EditableStoichiometryDialogSection = ({
             onClick={handleSave}
             loading={isSaving}
             validationResult={IsValid()}
+            sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}
           >
             Save Changes
           </ValidatingSubmitButton>
@@ -235,11 +249,13 @@ const EditableStoichiometryDialogSection = ({
           variant="outlined"
           color="error"
           disabled={isBusy}
+          sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}
         >
           Delete
         </Button>
         <Button
           disabled={isBusy}
+          sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}
           onClick={() => {
             void handleClose();
           }}
@@ -468,6 +484,7 @@ const StandaloneDialogInner = ({
           <DialogActions>
             <Button
               disabled={isRequestInFlight}
+              sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}
               onClick={handleCloseWithoutTable}
             >
               Close

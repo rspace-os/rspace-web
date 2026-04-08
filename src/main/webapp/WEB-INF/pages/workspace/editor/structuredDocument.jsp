@@ -1,5 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
-
+<script
+        crossOrigin="anonymous"
+        src="//unpkg.com/react-scan/dist/auto.global.js"
+></script>
 <script src="<c:url value='/scripts/tinymceDialogUtils.js'/>"></script>
 
 <!-- Loading jQuery TinyMCE -->

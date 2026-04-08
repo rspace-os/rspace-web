@@ -6,9 +6,6 @@ export const STOICHIOMETRY_ROLES = {
   AGENT: "AGENT",
 } as const;
 
-export type StoichiometryRole =
-  (typeof STOICHIOMETRY_ROLES)[keyof typeof STOICHIOMETRY_ROLES];
-
 export const StoichiometryRoleSchema = v.picklist(
   Object.values(STOICHIOMETRY_ROLES),
 );
