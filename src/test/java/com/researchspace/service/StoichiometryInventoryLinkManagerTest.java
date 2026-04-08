@@ -81,7 +81,7 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     StoichiometryInventoryLink createdLink = linkManager.createLink(molecule.getId(), req, user);
     assertNotNull(createdLink.getId());
 
-    linkManager.deductStock(List.of(createdLink.getId()), user);
+    linkManager.deductStock(stoich.getId(), List.of(createdLink.getId()), user);
 
     ApiSubSample after = subSampleApiMgr.getApiSubSampleById(subInfo.getId(), user);
     // 5 g - 10 mg = 4.99 g
