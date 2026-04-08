@@ -11,7 +11,7 @@ import { type AxiosResponse } from "axios";
 import { newDocument } from "../../../../stores/models/Document";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
-import { render, within } from "../../../../__tests__/customQueries";
+import { render, within } from "@/__tests__/customQueries";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {

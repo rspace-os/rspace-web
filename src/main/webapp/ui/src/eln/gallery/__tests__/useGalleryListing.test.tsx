@@ -1,5 +1,5 @@
 import { test, describe, expect, afterEach } from 'vitest';
-import "@/__tests__/mocks/useOauthToken";
+import "@/__tests__/__mocks__/useOauthToken";
 import React from "react";
 import {
   render,

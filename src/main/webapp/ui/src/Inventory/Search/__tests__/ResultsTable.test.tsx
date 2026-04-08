@@ -1,6 +1,6 @@
 import { test, describe, vi, expect } from "vitest";
-import "../../../../__mocks__/matchMedia";
-import "../../../../__mocks__/resizeObserver";
+import "@/__tests__/__mocks__/matchMedia";
+import "@/__tests__/__mocks__/resizeObserver";
 import * as React from "react";
 import {
   render,

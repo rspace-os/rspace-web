@@ -1,5 +1,5 @@
 import { test, describe, expect, vi } from 'vitest';
-import "../../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import React from "react";
 import {
   render,
@@ -19,7 +19,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import ApiService from "../../../../../common/InvApiService";
 import { sleep } from "../../../../../util/Util";
-import "__mocks__/resizeObserver";
+import "@/__tests__/__mocks__/resizeObserver";
 import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
 

@@ -1,6 +1,6 @@
 import { test, describe, expect, vi } from "vitest";
-import "../../../__mocks__/matchMedia";
-import "@/__tests__/mocks/muiTransitions";
+import "@/__tests__/__mocks__/matchMedia";
+import "@/__tests__/__mocks__/muiTransitions";
 import React,
   { useState } from "react";
 import {
