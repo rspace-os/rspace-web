@@ -53,27 +53,27 @@ public class AwsS3ClientTest {
     assertNull(nodeForFolderResource.getModificationDateMillis());
   }
 
-  // @Test
+  @Test
   public void testCreateFileTree() throws IOException {
     NfsFileStore testFileStore = new NfsFileStore();
     testFileStore.setId(1L);
     testFileStore.setPath("/testTopLevelFolder");
 
     S3FolderContentItem file1 = new S3FolderContentItem("test1.txt", false, 100L, Instant.now());
-    when(s3Utilities.listFolderContents("/testTopLevelFolder/testTarget"))
+    when(s3Utilities.listFolderContents("testTopLevelFolder/testTarget"))
         .thenReturn(Collections.singletonList(file1));
 
     NfsFileTreeNode rootNode =
         client.createFileTree("/testTopLevelFolder/testTarget", null, testFileStore);
     assertNotNull(rootNode);
     assertEquals("testTarget", rootNode.getFileName());
-    assertEquals("testTarget", rootNode.getNodePath());
+    assertEquals("testTopLevelFolder/testTarget", rootNode.getNodePath());
     assertTrue(rootNode.getIsFolder());
     assertEquals(1, rootNode.getNodes().size());
 
     NfsFileTreeNode child = rootNode.getNodes().get(0);
     assertEquals("test1.txt", child.getFileName());
-    assertEquals("testTarget/test1.txt", child.getNodePath());
+    assertEquals("testTopLevelFolder/testTarget/test1.txt", child.getNodePath());
     assertEquals("1:/testTarget/test1.txt", child.getLogicPath());
     assertFalse(child.getIsFolder());
   }

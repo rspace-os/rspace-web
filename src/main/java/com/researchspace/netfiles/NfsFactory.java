@@ -152,7 +152,7 @@ public class NfsFactory {
 
       return new IRODSClient(ia, jf);
     }
-    if (NfsClientType.AWS_S3.equals(clientType)) {
+    if (NfsClientType.S3.equals(clientType)) {
       return new AwsS3Client(nfsusername, s3UtilitiesFactory.createS3Utilities(fileSystem));
     }
 
@@ -210,7 +210,7 @@ public class NfsFactory {
   private void verifyFileSystemProperties(NfsFileSystem fileSystem) {
 
     if (StringUtils.isEmpty(fileSystem.getUrl())
-        && !fileSystem.getClientType().equals(NfsClientType.AWS_S3)) {
+        && !fileSystem.getClientType().equals(NfsClientType.S3)) {
       throw new IllegalStateException("nfsFileSystem url is empty");
     }
     if (fileSystem.getClientType() == null) {

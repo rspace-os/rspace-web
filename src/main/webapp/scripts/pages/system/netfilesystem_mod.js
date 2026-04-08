@@ -131,12 +131,12 @@ define(function() {
         var isSmbjClient = isExistingFileSystem && fileSystem.clientType === 'SMBJ';
         var isSftpClient = isExistingFileSystem && fileSystem.clientType === 'SFTP';
         var isIrodsClient = isExistingFileSystem && fileSystem.clientType === 'IRODS';
-        var isAwsS3Client = isExistingFileSystem && fileSystem.clientType === 'AWS_S3';
+        var isS3Client = isExistingFileSystem && fileSystem.clientType === 'S3';
 
         $('#fileSystemClientTypeSamba').prop('checked', isSambaClient || isSmbjClient);
         $('#fileSystemClientTypeSftp').prop('checked', isSftpClient);
         $('#fileSystemClientTypeIrods').prop('checked', isIrodsClient);
-        $('#fileSystemClientTypeAwsS3').prop('checked', isAwsS3Client);
+        $('#fileSystemClientTypeS3').prop('checked', isS3Client);
         $('#fileSystemClientTypeSambaSmbj').prop('checked', !isSambaClient);
         $('#fileSystemClientTypeSambaJcifs').prop('checked', isSambaClient);
         $('#fileSystemDetailsSftpDirChoiceYes').prop('checked', isSftpClient && fileSystemRequiresUserDirs(fileSystem));
@@ -301,11 +301,11 @@ define(function() {
             '#fileSystemClientTypeSambaSmbj').prop('checked');
         const isSftpClient = $('#fileSystemClientTypeSftp').prop('checked');
         const isIrodsClient = $('#fileSystemClientTypeIrods').prop('checked');
-        const isAwsS3Client = $('#fileSystemClientTypeAwsS3').prop('checked');
+        const isS3Client = $('#fileSystemClientTypeS3').prop('checked');
         const existingFileSystem = $('#fileSystemId').html().length;
 
-        $('.fileSystemDetailsUrlRow').toggle(!isAwsS3Client);
-        $('.fileSystemDetailsUrlRow').toggle(!isAwsS3Client);
+        $('.fileSystemDetailsUrlRow').toggle(!isS3Client);
+        $('.fileSystemDetailsUrlRow').toggle(!isS3Client);
 
         $('#fileSystemDetailsSftpDirChoiceRow').toggle(isSftpClient);
         if ($("#fileSystemDetailsSftpDirChoiceYes").length) {
@@ -330,9 +330,9 @@ define(function() {
         $('#iRODSfileSystemAuthTypeNative').prop('required', isIrodsClient);
         $('#iRODSfileSystemAuthTypePAM').prop('required', isIrodsClient);
 
-        $("label[for='fileSystemAuthTypePassword']").toggle(!isAwsS3Client);
+        $("label[for='fileSystemAuthTypePassword']").toggle(!isS3Client);
         $("label[for='fileSystemAuthTypePubKey']").toggle(isSftpClient);
-        $("label[for='fileSystemAuthTypeNone']").toggle(isAwsS3Client);
+        $("label[for='fileSystemAuthTypeNone']").toggle(isS3Client);
         if (isSambaClient || isIrodsClient) {
             $('#fileSystemAuthTypePassword').click();
         }
@@ -353,7 +353,7 @@ define(function() {
         } else {
             $('#fileSystemUrl').removeAttr('title').removeAttr('pattern');
         }
-        $('#fileSystemUrl').prop('required', !isAwsS3Client);
+        $('#fileSystemUrl').prop('required', !isS3Client);
     }
 
     function refreshAuthTypeRows() {

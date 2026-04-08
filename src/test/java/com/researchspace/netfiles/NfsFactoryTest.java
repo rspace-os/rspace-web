@@ -144,7 +144,7 @@ public class NfsFactoryTest {
 
   @Test
   public void creatingAwsS3Client() {
-    testFileSystem.setClientType(NfsClientType.AWS_S3);
+    testFileSystem.setClientType(NfsClientType.S3);
     testFileSystem.setAuthType(NfsAuthenticationType.NONE);
 
     AwsS3Client awsS3Client =

@@ -91,7 +91,7 @@
                         <spring:message code="system.netfilesystem.details.client.sftp" /></label>
                     <label><input type="radio" id="fileSystemClientTypeIrods" name="fileSystemClientType" value="IRODS">
                         <spring:message code="system.netfilesystem.details.client.irods" /></label>
-                    <label><input type="radio" id="fileSystemClientTypeAwsS3" name="fileSystemClientType" value="AWS_S3">
+                    <label><input type="radio" id="fileSystemClientTypeS3" name="fileSystemClientType" value="S3">
                         <spring:message code="system.netfilesystem.details.client.s3" /></label>
                 </td>
             </tr>
