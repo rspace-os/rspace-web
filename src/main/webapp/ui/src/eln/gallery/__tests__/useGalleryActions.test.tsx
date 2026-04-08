@@ -1,5 +1,5 @@
 import { test, describe, expect } from 'vitest';
-import "@/__tests__/mocks/useOauthToken";
+import "@/__tests__/__mocks__/useOauthToken";
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

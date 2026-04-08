@@ -1,6 +1,6 @@
 /**
  * Mocks for HTMLImageElement and HTMLCanvasElement for testing
- * These mocks provide proper behavior in JSDOM test environment
+ * These __mocks__ provide proper behavior in JSDOM test environment
  */
 
 const getMockProperty = (

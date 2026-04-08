@@ -3,6 +3,7 @@ import webpack from "webpack";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 
 const isCi = process.env.CI === "true" || process.env.CI === "1";
+const isBuildStats = Boolean(process.env.FRONTEND_BUILD_STATS);
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -100,10 +101,15 @@ const config = {
       process: { env: {} },
     }),
     new BundleAnalyzerPlugin({
-      analyzerMode: Boolean(process.env.FRONTEND_BUILD_STATS)
-        ? "server"
+      analyzerMode: isBuildStats
+        ? isCi
+          ? "static"
+          : "server"
         : "disabled",
-      generateStatsFile: isCi,
+      reportFilename: "bundle-analyzer-report.html",
+      generateStatsFile: isBuildStats,
+      openAnalyzer: !isCi,
+      logLevel: "warn",
     }),
   ],
   optimization: {

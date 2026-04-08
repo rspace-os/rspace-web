@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react";
 import ValidatingSubmitButton from "../ValidatingSubmitButton";
 import Result from "../../util/result";
-import "../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 
 import materialTheme from "../../theme";

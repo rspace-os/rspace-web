@@ -3,14 +3,14 @@ import React from "react";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import MSTeams from "../MSTeams";
 import { Optional } from "../../../../util/optional";
-import { render, within } from "../../../../__tests__/customQueries";
+import { render, within } from "@/__tests__/customQueries";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { observable } from "mobx";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
-import "../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 describe("MSTeams", () => {
   describe("Should render correctly.", () => {
     test("Channel names should be shown in a table.", async () => {
