@@ -111,6 +111,22 @@ const EditableStoichiometryDialogSection = ({
     stoichiometryRevision: currentStoichiometry.revision,
   });
 
+  const tableControllerWithRefresh = React.useMemo(
+    () => ({
+      ...tableController,
+      updateInventoryStock: async (selectedMoleculeIds: number[]) => {
+        const result = await tableController.updateInventoryStock(selectedMoleculeIds);
+
+        if (result.refreshedStoichiometry) {
+          setCurrentStoichiometry(result.refreshedStoichiometry);
+        }
+
+        return result;
+      },
+    }),
+    [setCurrentStoichiometry, tableController],
+  );
+
   const handleClose = React.useCallback(async () => {
     if (isBusy) {
       return;
@@ -184,7 +200,7 @@ const EditableStoichiometryDialogSection = ({
   }, [confirm, deleteTable, isBusy, onDelete, setCurrentStoichiometry, trackEvent]);
 
   return (
-    <StoichiometryTableControllerProvider value={tableController}>
+    <StoichiometryTableControllerProvider value={tableControllerWithRefresh}>
       <DialogContent>
         <Stack spacing={2} flexWrap="nowrap">
           <Box>
@@ -197,6 +213,7 @@ const EditableStoichiometryDialogSection = ({
               editable
               stoichiometryId={currentStoichiometry.id}
               stoichiometryRevision={currentStoichiometry.revision}
+              hasChanges={hasChanges}
             />
           </Box>
         </Stack>

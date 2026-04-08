@@ -105,6 +105,7 @@ const staticChipSx =
 
 type RecordLinkArgs = RecordChipProps & {
   newTab?: boolean;
+  hideRecordTypeTooltip?: boolean;
   /**
    * Enable this to disable using `navigate()`. Used in workspace non-Reactified context where React Router is not available.
    */
@@ -116,6 +117,7 @@ export const RecordLink = observer(
     record,
     overflow = false,
     newTab = false,
+    hideRecordTypeTooltip = false,
     disableNavigationContext = false,
   }: RecordLinkArgs) => {
     const { trackingStore, uiStore } = useStores();
@@ -149,7 +151,12 @@ export const RecordLink = observer(
         href={record.permalinkURL || undefined}
         label={record.recordLinkLabel}
         target={newTab ? "_blank" : undefined}
-        icon={<RecordTypeIcon record={record} />}
+        icon={
+          <RecordTypeIcon
+            record={record}
+            disableTooltip={hideRecordTypeTooltip}
+          />
+        }
         onClick={onClick}
       />
     );

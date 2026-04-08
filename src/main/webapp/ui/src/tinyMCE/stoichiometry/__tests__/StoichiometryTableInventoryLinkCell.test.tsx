@@ -22,12 +22,15 @@ vi.mock("@/stores/models/Factory/MemoisedFactory", () => ({
 vi.mock("@/stores/models/Search", () => ({
   default: class MockSearch {
     activeResult = null;
-    alwaysFilterOut = () => false;
     uiConfig = { selectionMode: "SINGLE" as const };
     fetcher = {
       resetFetcher: vi.fn(),
       performInitialSearch: vi.fn(async () => {}),
     };
+
+    alwaysFilterOut() {
+      return false;
+    }
   },
 }));
 
@@ -77,6 +80,7 @@ vi.mock("@/Inventory/components/Picker/Picker", () => ({
 const mockInventoryLink: InventoryLink = {
   id: 501,
   inventoryItemGlobalId: "SS123",
+  stockDeducted: false,
   stoichiometryMoleculeId: 5,
   quantity: {
     numericValue: 10,
@@ -216,6 +220,42 @@ describe("StoichiometryTableInventoryLinkCell", () => {
     expect(
       screen.queryByLabelText("Add inventory link for Cyclopentadiene"),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders an insufficient stock warning when requested", () => {
+    render(
+      <StoichiometryTableInventoryLinkCell
+        inventoryLink={mockInventoryLink}
+        moleculeName="Cyclopentadiene"
+        showInsufficientStockWarning
+      />,
+    );
+
+    expect(screen.getByTestId("WarningAmberIcon")).toBeVisible();
+  });
+
+  it("renders a stock deducted indicator and hides the insufficient stock warning when stock was already deducted", () => {
+    render(
+      <StoichiometryTableInventoryLinkCell
+        inventoryLink={{ ...mockInventoryLink, stockDeducted: true }}
+        moleculeName="Cyclopentadiene"
+        showInsufficientStockWarning
+      />,
+    );
+
+    expect(screen.getByLabelText("Stock deducted")).toBeVisible();
+    expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument();
+  });
+
+  it("does not render an insufficient stock warning by default", () => {
+    render(
+      <StoichiometryTableInventoryLinkCell
+        inventoryLink={mockInventoryLink}
+        moleculeName="Cyclopentadiene"
+      />,
+    );
+
+    expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument();
   });
 
   it("disables controls in read-only mode", () => {

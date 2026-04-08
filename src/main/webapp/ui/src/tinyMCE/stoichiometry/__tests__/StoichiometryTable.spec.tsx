@@ -3,7 +3,10 @@ import { Download, Locator, Page, Route } from "playwright-core";
 import React from "react";
 import AxeBuilder from "@axe-core/playwright";
 import fs from "fs/promises";
-import { StoichiometryTableWithDataStory } from './StoichiometryTable.story';
+import {
+  ReadOnlyStoichiometryTableStory,
+  StoichiometryTableWithDataStory,
+} from "./StoichiometryTable.story";
 
 import * as Jwt from "jsonwebtoken";
 
@@ -95,6 +98,201 @@ function fulfillJson(route: Route, body: unknown, status = 200) {
     body: JSON.stringify(body),
   });
 }
+
+async function getCompoundCell(
+  page: Page,
+  compoundName: string,
+  columnHeaderText: string,
+) {
+  const table = page.getByRole("grid");
+  const field = await getColumnFieldByHeader(table, columnHeaderText);
+  const row = await getRowByColumnValue(table, "Name", compoundName);
+  return getCellByField(row, field);
+}
+
+type MockRouteResponse = {
+  status?: number;
+  body: unknown;
+};
+
+function createMockStoichiometryResponse() {
+  return {
+    id: 3,
+    revision: 1,
+    parentReaction: {
+      id: 32769,
+      parentId: 226,
+      ecatChemFileId: null,
+      dataImage: "mock-image-data",
+      chemElements: "mock-chem-elements",
+      smilesString: "C1=CC=CC=C1.C1C=CC=C1>>C1CCCCC1",
+      chemId: null,
+      reactionId: null,
+      rgroupId: null,
+      metadata: "{}",
+      chemElementsFormat: "KET",
+      creationDate: 1753964538000,
+      imageFileProperty: {},
+    },
+    molecules: [
+      {
+        id: 4,
+        rsChemElement: {
+          id: 32770,
+          parentId: null,
+          ecatChemFileId: null,
+          dataImage: null,
+          chemElements: "C1=CC=CC=C1",
+          smilesString: null,
+          chemId: null,
+          reactionId: null,
+          rgroupId: null,
+          metadata: null,
+          chemElementsFormat: "MOL",
+          creationDate: 1753964548124,
+          imageFileProperty: null,
+        },
+        role: "REACTANT",
+        formula: "C6 H6",
+        name: "Benzene",
+        smiles: "C1=CC=CC=C1",
+        inventoryLink: null,
+        coefficient: 1.0,
+        molecularWeight: 1.0,
+        mass: 10.0,
+        moles: 10.0,
+        actualAmount: 2.0,
+        actualYield: 2.0,
+        limitingReagent: true,
+        notes: null,
+      },
+      {
+        id: 5,
+        rsChemElement: {
+          id: 32771,
+          parentId: null,
+          ecatChemFileId: null,
+          dataImage: null,
+          chemElements: "C1C=CC=C1",
+          smilesString: null,
+          chemId: null,
+          reactionId: null,
+          rgroupId: null,
+          metadata: null,
+          chemElementsFormat: "MOL",
+          creationDate: 1753964548126,
+          imageFileProperty: null,
+        },
+        role: "REACTANT",
+        formula: "C5 H6",
+        name: "Cyclopentadiene",
+        smiles: "C1C=CC=C1",
+        inventoryLink: {
+          id: 501,
+          inventoryItemGlobalId: "SS123",
+          stockDeducted: false,
+          stoichiometryMoleculeId: 5,
+          quantity: {
+            numericValue: 10,
+            unitId: 20,
+          },
+        },
+        coefficient: 2.0,
+        molecularWeight: 1.0,
+        mass: 10.0,
+        moles: 10.0,
+        actualAmount: 5.0,
+        actualYield: 5.0,
+        limitingReagent: false,
+        notes: null,
+      },
+      {
+        id: 6,
+        rsChemElement: {
+          id: 32772,
+          parentId: null,
+          ecatChemFileId: null,
+          dataImage: null,
+          chemElements: "C1CCCCC1",
+          smilesString: null,
+          chemId: null,
+          reactionId: null,
+          rgroupId: null,
+          metadata: null,
+          chemElementsFormat: "MOL",
+          creationDate: 1753964548127,
+          imageFileProperty: null,
+        },
+        role: "PRODUCT",
+        formula: "C6 H12",
+        name: "Cyclopentane",
+        smiles: "C1CCCCC1",
+        inventoryLink: {
+          id: 502,
+          inventoryItemGlobalId: "SS124",
+          stockDeducted: false,
+          stoichiometryMoleculeId: 6,
+          quantity: {
+            numericValue: 10,
+            unitId: 7,
+          },
+        },
+        coefficient: 3.0,
+        molecularWeight: 1.0,
+        mass: 10.0,
+        moles: 10.0,
+        actualAmount: 5.0,
+        actualYield: 5.0,
+        limitingReagent: false,
+        notes: null,
+      },
+      {
+        id: 7,
+        rsChemElement: {
+          id: 32773,
+          parentId: null,
+          ecatChemFileId: null,
+          dataImage: null,
+          chemElements: "CCO",
+          smilesString: null,
+          chemId: null,
+          reactionId: null,
+          rgroupId: null,
+          metadata: null,
+          chemElementsFormat: "MOL",
+          creationDate: 1753964548128,
+          imageFileProperty: null,
+        },
+        role: "AGENT",
+        formula: "C2 H6 O",
+        name: "Ethanol",
+        smiles: "CCO",
+        inventoryLink: {
+          id: 503,
+          inventoryItemGlobalId: "SS125",
+          stockDeducted: false,
+          stoichiometryMoleculeId: 7,
+          quantity: {
+            numericValue: 25,
+            unitId: 3,
+          },
+        },
+        coefficient: 1.0,
+        molecularWeight: 46.07,
+        mass: 5.0,
+        moles: 0.109,
+        actualAmount: 5.0,
+        actualYield: null,
+        limitingReagent: false,
+        notes: null,
+      },
+    ],
+  };
+}
+
+let mockStoichiometryResponse = createMockStoichiometryResponse();
+let mockSubSampleResponses = new Map<number, MockRouteResponse>();
+let inventorySubSampleRequestCount = 0;
 const feature = test.extend<{
   Given: {
     "the table is loaded with data": () => Promise<void>;
@@ -127,6 +325,7 @@ const feature = test.extend<{
     "the user adds the manual reagent": () => Promise<void>;
     "the user selects the first chemistry file from Gallery": () => Promise<void>;
     "the user adds the selected files from Gallery": () => Promise<void>;
+    "the user clicks Update Inventory Stock": () => Promise<void>;
     "the user opens inventory picker for {molecule}": ({
       molecule,
     }: {
@@ -192,6 +391,10 @@ const feature = test.extend<{
     "the PubChem dialog should open": () => Promise<void>;
     "the Gallery dialog should open": () => Promise<void>;
     "the manual SMILES dialog should open": () => Promise<void>;
+    "the inventory update dialog should open": () => Promise<void>;
+    "the inventory update dialog should list the current molecules": () => Promise<void>;
+    "the Update Inventory Stock button should be disabled": () => Promise<void>;
+    "the disabled Update Inventory Stock button should explain that saving is required": () => Promise<void>;
     "PubChem search results should be displayed": () => Promise<void>;
     "the table should contain a new row with {name}": ({
       name,
@@ -333,6 +536,11 @@ const feature = test.extend<{
       },
       "the user adds the selected files from Gallery": async () => {
         await page.getByRole("button", { name: /add/i }).click();
+      },
+      "the user clicks Update Inventory Stock": async () => {
+        await page
+          .getByRole("button", { name: "Update Inventory Stock" })
+          .click();
       },
       "the user opens inventory picker for {molecule}": async ({ molecule }) => {
         await page
@@ -535,6 +743,34 @@ const feature = test.extend<{
           page.getByRole("dialog", { name: /Add New Chemical/i }),
         ).toBeVisible();
       },
+      "the inventory update dialog should open": async () => {
+        await expect(
+          page.getByRole("dialog", { name: /Update Inventory Stock/i }),
+        ).toBeVisible();
+      },
+      "the inventory update dialog should list the current molecules": async () => {
+        const dialog = page.getByRole("dialog", {
+          name: /Update Inventory Stock/i,
+        });
+        await expect(dialog).toContainText("Benzene");
+        await expect(dialog).toContainText("Cyclopentadiene");
+        await expect(dialog).toContainText("Cyclopentane");
+        await expect(dialog).toContainText("Ethanol");
+      },
+      "the Update Inventory Stock button should be disabled": async () => {
+        await expect(
+          page.getByRole("button", { name: "Update Inventory Stock" }),
+        ).toBeDisabled();
+      },
+      "the disabled Update Inventory Stock button should explain that saving is required":
+        async () => {
+          await page
+            .getByRole("button", { name: "Update Inventory Stock" })
+            .hover({ force: true });
+          await expect(page.getByRole("tooltip")).toContainText(
+            "Save the stoichiometry table before updating inventory stock.",
+          );
+        },
       "PubChem search results should be displayed": async () => {
         await expect(page.getByText("Caffeine")).toBeVisible();
         await expect(page.getByText("C8H10N4O2")).toBeVisible();
@@ -603,164 +839,63 @@ const feature = test.extend<{
 
 });
 feature.beforeEach(async ({ router }) => {
-  await router.route("/api/v1/stoichiometry*", (route) => {
-    // Mock data based on CSV with calculation relationships
-    const mockResponse = {
-      id: 3,
-      revision: 1,
-      parentReaction: {
-        id: 32769,
-        parentId: 226,
-        ecatChemFileId: null,
-        dataImage: "mock-image-data",
-        chemElements: "mock-chem-elements",
-        smilesString: "C1=CC=CC=C1.C1C=CC=C1>>C1CCCCC1",
-        chemId: null,
-        reactionId: null,
-        rgroupId: null,
-        metadata: "{}",
-        chemElementsFormat: "KET",
-        creationDate: 1753964538000,
-        imageFileProperty: {},
+  mockStoichiometryResponse = createMockStoichiometryResponse();
+  mockSubSampleResponses = new Map<number, MockRouteResponse>([
+    [
+      123,
+      {
+        body: {
+          id: 123,
+          globalId: "SS123",
+          quantity: {
+            numericValue: 4,
+            unitId: 7,
+          },
+        },
       },
-      molecules: [
-        {
-          id: 4,
-          rsChemElement: {
-            id: 32770,
-            parentId: null,
-            ecatChemFileId: null,
-            dataImage: null,
-            chemElements: "C1=CC=CC=C1",
-            smilesString: null,
-            chemId: null,
-            reactionId: null,
-            rgroupId: null,
-            metadata: null,
-            chemElementsFormat: "MOL",
-            creationDate: 1753964548124,
-            imageFileProperty: null,
+    ],
+    [
+      124,
+      {
+        body: {
+          id: 124,
+          globalId: "SS124",
+          quantity: {
+            numericValue: 10,
+            unitId: 7,
           },
-          role: "REACTANT",
-          formula: "C6 H6",
-          name: "Benzene",
-          smiles: "C1=CC=CC=C1",
-          inventoryLink: null,
-          coefficient: 1.0,
-          molecularWeight: 1.0, // From CSV
-          mass: 10.0, // From CSV
-          moles: 10.0, // From CSV
-          actualAmount: 2.0, // From CSV actual mass
-          actualYield: 2.0, // From CSV actual moles
-          limitingReagent: true, // From CSV
-          notes: null,
         },
-        {
-          id: 5,
-          rsChemElement: {
-            id: 32771,
-            parentId: null,
-            ecatChemFileId: null,
-            dataImage: null,
-            chemElements: "C1C=CC=C1",
-            smilesString: null,
-            chemId: null,
-            reactionId: null,
-            rgroupId: null,
-            metadata: null,
-            chemElementsFormat: "MOL",
-            creationDate: 1753964548126,
-            imageFileProperty: null,
+      },
+    ],
+    [
+      125,
+      {
+        body: {
+          id: 125,
+          globalId: "SS125",
+          quantity: {
+            numericValue: 25,
+            unitId: 3,
           },
-          role: "REACTANT",
-          formula: "C5 H6",
-          name: "Cyclopentadiene",
-          smiles: "C1C=CC=C1",
-          inventoryLink: {
-            id: 501,
-            inventoryItemGlobalId: "SA123",
-            stoichiometryMoleculeId: 5,
-            quantity: {
-              numericValue: 10,
-              unitId: 20,
-            },
-          },
-          coefficient: 2.0, // From CSV equivalent
-          molecularWeight: 1.0, // From CSV
-          mass: 10.0, // From CSV
-          moles: 10.0, // From CSV
-          actualAmount: 5.0, // From CSV actual mass
-          actualYield: 5.0, // From CSV actual moles
-          limitingReagent: false, // From CSV
-          notes: null,
         },
-        {
-          id: 6,
-          rsChemElement: {
-            id: 32772,
-            parentId: null,
-            ecatChemFileId: null,
-            dataImage: null,
-            chemElements: "C1CCCCC1",
-            smilesString: null,
-            chemId: null,
-            reactionId: null,
-            rgroupId: null,
-            metadata: null,
-            chemElementsFormat: "MOL",
-            creationDate: 1753964548127,
-            imageFileProperty: null,
-          },
-          role: "PRODUCT",
-          formula: "C6 H12",
-          name: "Cyclopentane", // From CSV
-          smiles: "C1CCCCC1",
-          inventoryLink: null,
-          coefficient: 3.0, // From CSV equivalent
-          molecularWeight: 1.0, // From CSV
-          mass: 10.0, // From CSV
-          moles: 10.0, // From CSV
-          actualAmount: 5.0, // From CSV actual mass
-          actualYield: 5.0, // From CSV actual moles
-          limitingReagent: false, // From CSV
-          notes: null,
-        },
-        {
-          id: 7,
-          rsChemElement: {
-            id: 32773,
-            parentId: null,
-            ecatChemFileId: null,
-            dataImage: null,
-            chemElements: "CCO",
-            smilesString: null,
-            chemId: null,
-            reactionId: null,
-            rgroupId: null,
-            metadata: null,
-            chemElementsFormat: "MOL",
-            creationDate: 1753964548128,
-            imageFileProperty: null,
-          },
-          role: "AGENT",
-          formula: "C2 H6 O",
-          name: "Ethanol",
-          smiles: "CCO",
-          inventoryLink: null,
-          coefficient: 1.0,
-          molecularWeight: 46.07,
-          mass: 5.0,
-          moles: 0.109,
-          actualAmount: null,
-          actualYield: null,
-          limitingReagent: false,
-          notes: null,
-        },
-      ],
+      },
+    ],
+  ]);
+  inventorySubSampleRequestCount = 0;
+  await router.route("/api/v1/stoichiometry*", (route) => {
+    return fulfillJson(route, mockStoichiometryResponse);
 
-    };
-    return fulfillJson(route, mockResponse);
+  });
+  await router.route("/api/inventory/v1/subSamples/*", (route) => {
+    inventorySubSampleRequestCount += 1;
+    const id = Number(route.request().url().split("/").pop());
+    const mockResponse = mockSubSampleResponses.get(id);
 
+    if (!mockResponse) {
+      return fulfillJson(route, { message: "Not Found" }, 404);
+    }
+
+    return fulfillJson(route, mockResponse.body, mockResponse.status ?? 200);
   });
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
@@ -977,6 +1112,154 @@ test.describe("Stoichiometry Table", () => {
       await Then["the second row should NOT have a yield value"]();
     },
 
+  );
+  feature(
+    "The toolbar can open the inventory stock update dialog",
+    async ({ Given, Once, When, Then }) => {
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      await When["the user clicks Update Inventory Stock"]();
+      await Then["the inventory update dialog should open"]();
+      await Then[
+        "the inventory update dialog should list the current molecules"
+      ]();
+    },
+  );
+  feature(
+    "The inventory stock update dialog only preselects eligible molecules and explains disabled ones",
+    async ({ Given, Once, When, page }) => {
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      await When["the user clicks Update Inventory Stock"]();
+
+      const dialog = page.getByRole("dialog", {
+        name: /Update Inventory Stock/i,
+      });
+      const moleculeRow = (name: string) =>
+        dialog.locator(`[data-row-type="molecule"][data-molecule-name="${name}"]`);
+      const metric = (cardName: string, metricName: string) =>
+        moleculeRow(cardName).locator(`[data-column="${metricName}"]`);
+
+      await expect(
+        dialog.getByRole("table", { name: "Inventory stock update molecules" }),
+      ).toBeVisible();
+      await expect(
+        dialog.getByRole("columnheader", { name: "Molecule", exact: true }),
+      ).toBeVisible();
+      await expect(
+        dialog.getByRole("columnheader", { name: "Type", exact: true }),
+      ).toBeVisible();
+
+      await expect(
+        dialog.getByRole("checkbox", { name: "Cyclopentane" }),
+      ).toBeChecked();
+      await expect(
+        dialog.getByRole("checkbox", { name: "Cyclopentane" }),
+      ).toBeEnabled();
+      await expect(metric("Cyclopentane", "In Stock")).toContainText("10.0 g");
+      await expect(metric("Cyclopentane", "Will Use")).toContainText("5.0 g");
+      await expect(metric("Cyclopentane", "Remaining")).toContainText("5.0 g");
+      await expect(metric("Cyclopentane", "Remaining")).toHaveAttribute("data-status", "positive");
+
+      await expect(
+        dialog.getByRole("checkbox", { name: "Benzene" }),
+      ).toBeDisabled();
+      await expect(
+        dialog.getByText("Link an inventory item before updating stock."),
+      ).toBeVisible();
+      await expect(metric("Benzene", "In Stock")).toContainText("—");
+
+      await expect(
+        dialog.getByRole("checkbox", { name: "Cyclopentadiene" }),
+      ).toBeDisabled();
+      await expect(metric("Cyclopentadiene", "In Stock")).toContainText("4.0 g");
+      await expect(metric("Cyclopentadiene", "Will Use")).toContainText("5.0 g");
+      await expect(metric("Cyclopentadiene", "Remaining")).toContainText("-1.0 g");
+      await expect(metric("Cyclopentadiene", "Remaining")).toHaveAttribute("data-status", "negative");
+      await expect(
+        dialog.getByText("Insufficient Stock"),
+      ).toBeVisible();
+
+      await expect(
+        dialog.getByRole("checkbox", { name: "Ethanol" }),
+      ).toBeDisabled();
+      await expect(
+        dialog.getByText(
+          "Deducting inventory stock for inventory items with non-gram units is currently not supported.",
+        ),
+      ).toBeVisible();
+      await expect(metric("Ethanol", "In Stock")).toContainText("25.0 mL");
+      await expect(metric("Ethanol", "Will Use")).toContainText("—");
+      await expect(metric("Ethanol", "Remaining")).toContainText("—");
+    },
+  );
+  feature(
+    "The inventory stock update dialog disables molecules whose stock has already been deducted",
+    async ({ Given, Once, When, page }) => {
+      const cyclopentane = mockStoichiometryResponse.molecules.find(
+        ({ name }) => name === "Cyclopentane",
+      );
+      if (!cyclopentane?.inventoryLink) {
+        throw new Error("Cyclopentane inventory link is missing from mock data");
+      }
+      cyclopentane.inventoryLink.stockDeducted = true;
+
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      await When["the user clicks Update Inventory Stock"]();
+
+      const dialog = page.getByRole("dialog", {
+        name: /Update Inventory Stock/i,
+      });
+
+      await expect(
+        dialog.getByRole("checkbox", { name: "Cyclopentane" }),
+      ).toBeDisabled();
+      await expect(
+        dialog.getByText("Stock has already been deducted for this molecule."),
+      ).toBeVisible();
+    },
+  );
+  feature(
+    "The inventory stock update dialog disables molecules when fetching linked stock fails",
+    async ({ Given, Once, When, page }) => {
+      mockSubSampleResponses.set(124, {
+        status: 404,
+        body: { message: "Not Found" },
+      });
+
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      await When["the user clicks Update Inventory Stock"]();
+
+      const dialog = page.getByRole("dialog", {
+        name: /Update Inventory Stock/i,
+      });
+
+      await expect(
+        dialog.getByRole("checkbox", { name: "Cyclopentane" }),
+      ).toBeDisabled();
+      await expect(
+        dialog.getByText(
+          "Linked stock information is unavailable, so this molecule cannot be updated.",
+        ),
+      ).toBeVisible();
+    },
+  );
+  feature(
+    "The inventory stock update action is disabled while the table has unsaved changes",
+    async ({ Given, Once, When, Then }) => {
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      await When["the user edits mass in row {row} to {value}"]({
+        row: 0,
+        value: "12",
+      });
+      await Then["the Update Inventory Stock button should be disabled"]();
+      await Then[
+        "the disabled Update Inventory Stock button should explain that saving is required"
+      ]();
+    },
   );
   test.describe("Adding reagants", () => {
     feature(
@@ -1408,6 +1691,110 @@ test.describe("Stoichiometry Table", () => {
           column: "Equivalent",
           value: "2",
         });
+      },
+    );
+    feature(
+      "Shows an insufficient stock warning when actual mass exceeds linked stock",
+      async ({ Given, Once, page }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        const inventoryLinkCell = await getCompoundCell(
+          page,
+          "Cyclopentadiene",
+          "Inventory Link",
+        );
+
+        await expect(
+          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+        ).toBeVisible();
+      },
+    );
+    feature(
+      "Does not show an insufficient stock warning when stock is sufficient",
+      async ({ Given, Once, page }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        const inventoryLinkCell = await getCompoundCell(
+          page,
+          "Cyclopentane",
+          "Inventory Link",
+        );
+
+        await expect(
+          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+        ).toHaveCount(0);
+      },
+    );
+    feature(
+      "Does not show an insufficient stock warning for non-mass inventory quantities",
+      async ({ Given, Once, page }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        const inventoryLinkCell = await getCompoundCell(
+          page,
+          "Ethanol",
+          "Inventory Link",
+        );
+
+        await expect(
+          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+        ).toHaveCount(0);
+      },
+    );
+    feature(
+      "Does not show an insufficient stock warning when no inventory link exists",
+      async ({ Given, Once, page }) => {
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        const inventoryLinkCell = await getCompoundCell(page, "Benzene", "Inventory Link");
+
+        await expect(
+          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+        ).toHaveCount(0);
+      },
+    );
+    feature(
+      "Does not show an insufficient stock warning when fetching linked stock fails",
+      async ({ Given, Once, page }) => {
+        mockSubSampleResponses.set(123, {
+          status: 404,
+          body: { message: "Not Found" },
+        });
+
+        await Given["the table is loaded with data"]();
+        await Once["the table has loaded"]();
+
+        const inventoryLinkCell = await getCompoundCell(
+          page,
+          "Cyclopentadiene",
+          "Inventory Link",
+        );
+
+        await expect(
+          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+        ).toHaveCount(0);
+      },
+    );
+    feature(
+      "Does not show an insufficient stock warning in read-only mode",
+      async ({ mount, Once, page }) => {
+        await mount(<ReadOnlyStoichiometryTableStory />);
+        await Once["the table has loaded"]();
+
+        const inventoryLinkCell = await getCompoundCell(
+          page,
+          "Cyclopentadiene",
+          "Inventory Link",
+        );
+
+        await expect(
+          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+        ).toHaveCount(0);
+        expect(inventorySubSampleRequestCount).toBe(0);
       },
     );
   });

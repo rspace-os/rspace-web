@@ -1,7 +1,13 @@
 import React from "react";
+import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
+import type { InventoryStockUpdateResult } from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateDialog";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 export type StoichiometryTableController = {
   allMolecules: ReadonlyArray<EditableMolecule>;
+  linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<
+    string,
+    InventoryQuantityQueryResult
+  >;
   isGettingMoleculeInfo: boolean;
   addReagent: (
     smilesString: string,
@@ -9,6 +15,9 @@ export type StoichiometryTableController = {
     source: string,
   ) => Promise<void>;
   deleteReagent: (moleculeId: number) => void;
+  updateInventoryStock: (
+    selectedMoleculeIds: number[],
+  ) => Promise<InventoryStockUpdateResult>;
   pickInventoryLink: (
     moleculeId: number,
     inventoryItemId: number,

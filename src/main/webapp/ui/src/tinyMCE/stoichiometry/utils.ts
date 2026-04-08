@@ -1,5 +1,233 @@
 import { produce } from "immer";
+import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
+import {
+  convertFromGrams,
+  convertToGrams,
+  getQuantityUnitSymbol,
+  isMassUnit,
+} from "@/modules/inventory/utils";
 import type { EditableMolecule } from "./types";
+
+export type InventoryUpdateSelectionDisabledReason =
+  | "missingInventoryLink"
+  | "stockAlreadyDeducted"
+  | "linkedStockUnavailable"
+  | "nonMassInventoryQuantity"
+  | "missingActualMass"
+  | "insufficientStock";
+
+export type InventoryUpdateEligibility = {
+  disabledReason: InventoryUpdateSelectionDisabledReason | null;
+  helperText: string | null;
+  showInsufficientStockWarning: boolean;
+  availableStockInGrams: number | null;
+  stockDisplay: InventoryUpdateStockDisplay;
+};
+
+export type InventoryUpdateRemainingStatus =
+  | "default"
+  | "positive"
+  | "zero"
+  | "negative";
+
+export type InventoryUpdateStockMetric = {
+  rawValue: number | null;
+  displayValue: string;
+  unitLabel: string | null;
+};
+
+export type InventoryUpdateStockDisplay = {
+  inStock: InventoryUpdateStockMetric;
+  willUse: InventoryUpdateStockMetric;
+  remaining: InventoryUpdateStockMetric;
+  remainingStatus: InventoryUpdateRemainingStatus;
+  warningText: string | null;
+};
+
+function formatInventoryUpdateMetricValue(value: number | null): string {
+  if (value === null || Number.isNaN(value)) {
+    return "—";
+  }
+
+  const normalizedValue = Math.abs(value) < 0.0005 ? 0 : value;
+
+  return normalizedValue.toLocaleString(undefined, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 3,
+  });
+}
+
+function makeStockMetric(
+  rawValue: number | null,
+  unitLabel: string | null,
+): InventoryUpdateStockMetric {
+  return {
+    rawValue,
+    displayValue: formatInventoryUpdateMetricValue(rawValue),
+    unitLabel,
+  };
+}
+
+function makeEmptyStockDisplay(): InventoryUpdateStockDisplay {
+  return {
+    inStock: makeStockMetric(null, null),
+    willUse: makeStockMetric(null, null),
+    remaining: makeStockMetric(null, null),
+    remainingStatus: "default",
+    warningText: null,
+  };
+}
+
+function hideProjectedStockMetrics(
+  stockDisplay: InventoryUpdateStockDisplay,
+): InventoryUpdateStockDisplay {
+  return {
+    inStock: stockDisplay.inStock,
+    willUse: makeStockMetric(null, null),
+    remaining: makeStockMetric(null, null),
+    remainingStatus: "default",
+    warningText: null,
+  };
+}
+
+function buildInventoryUpdateStockDisplay(
+  quantity: { numericValue: number; unitId: number },
+  actualAmount: EditableMolecule["actualAmount"],
+): InventoryUpdateStockDisplay {
+  const unitLabel = getQuantityUnitSymbol(quantity.unitId);
+  const inStock = makeStockMetric(quantity.numericValue, unitLabel);
+
+  if (!isMassUnit(quantity.unitId)) {
+    return {
+      inStock,
+      willUse: makeStockMetric(null, unitLabel),
+      remaining: makeStockMetric(null, unitLabel),
+      remainingStatus: "default",
+      warningText: null,
+    };
+  }
+
+  if (actualAmount === null || actualAmount === undefined) {
+    return {
+      inStock,
+      willUse: makeStockMetric(null, unitLabel),
+      remaining: makeStockMetric(null, unitLabel),
+      remainingStatus: "default",
+      warningText: null,
+    };
+  }
+
+  const willUseValue = convertFromGrams(Number(actualAmount), quantity.unitId);
+  if (willUseValue === null) {
+    return {
+      inStock,
+      willUse: makeStockMetric(null, unitLabel),
+      remaining: makeStockMetric(null, unitLabel),
+      remainingStatus: "default",
+      warningText: null,
+    };
+  }
+
+  const rawRemainingValue = quantity.numericValue - willUseValue;
+  const remainingValue = Math.abs(rawRemainingValue) < 0.0005 ? 0 : rawRemainingValue;
+  const remainingStatus: InventoryUpdateRemainingStatus =
+    remainingValue < 0 ? "negative" : remainingValue === 0 ? "zero" : "positive";
+
+  return {
+    inStock,
+    willUse: makeStockMetric(willUseValue, unitLabel),
+    remaining: makeStockMetric(remainingValue, unitLabel),
+    remainingStatus,
+    warningText: remainingStatus === "negative" ? "Insufficient Stock" : null,
+  };
+}
+
+function getInventoryUpdateDisabledReasonText(
+  reason: InventoryUpdateSelectionDisabledReason,
+): string {
+  return {
+    missingInventoryLink: "Link an inventory item before updating stock.",
+    stockAlreadyDeducted: "Stock has already been deducted for this molecule.",
+    linkedStockUnavailable:
+      "Linked stock information is unavailable, so this molecule cannot be updated.",
+    nonMassInventoryQuantity:
+      "Deducting inventory stock for inventory items with non-gram units is currently not supported.",
+    missingActualMass:
+      "Define actual mass before updating linked inventory stock.",
+    insufficientStock:
+      "There is insufficient linked stock for this molecule's actual mass.",
+  }[reason];
+}
+
+export function getInventoryUpdateEligibility(
+  molecule: EditableMolecule,
+  linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<
+    string,
+    InventoryQuantityQueryResult
+  > = new Map<string, InventoryQuantityQueryResult>(),
+): InventoryUpdateEligibility {
+  const inventoryItemGlobalId = molecule.inventoryLink?.inventoryItemGlobalId;
+  if (!inventoryItemGlobalId) {
+    return {
+      disabledReason: "missingInventoryLink",
+      helperText: getInventoryUpdateDisabledReasonText("missingInventoryLink"),
+      showInsufficientStockWarning: false,
+      availableStockInGrams: null,
+      stockDisplay: makeEmptyStockDisplay(),
+    };
+  }
+
+  const linkedInventoryQuantityInfo = linkedInventoryQuantityInfoByGlobalId.get(
+    inventoryItemGlobalId,
+  );
+  if (
+    !linkedInventoryQuantityInfo ||
+    linkedInventoryQuantityInfo.status !== "available" ||
+    !linkedInventoryQuantityInfo.quantity
+  ) {
+    return {
+      disabledReason: "linkedStockUnavailable",
+      helperText: getInventoryUpdateDisabledReasonText("linkedStockUnavailable"),
+      showInsufficientStockWarning: false,
+      availableStockInGrams: null,
+      stockDisplay: makeEmptyStockDisplay(),
+    };
+  }
+
+  const { quantity } = linkedInventoryQuantityInfo;
+  const stockDisplay = buildInventoryUpdateStockDisplay(quantity, molecule.actualAmount);
+  const stockDeducted = molecule.inventoryLink?.stockDeducted === true;
+  const visibleStockDisplay = stockDeducted
+    ? hideProjectedStockMetrics(stockDisplay)
+    : stockDisplay;
+
+  const availableStockInGrams = convertToGrams(quantity.numericValue, quantity.unitId);
+  const showInsufficientStockWarning =
+    !stockDeducted && stockDisplay.remainingStatus === "negative";
+  const disabledReason: InventoryUpdateSelectionDisabledReason | null =
+    stockDeducted
+      ? "stockAlreadyDeducted"
+      : !isMassUnit(quantity.unitId)
+        ? "nonMassInventoryQuantity"
+        : molecule.actualAmount === null || molecule.actualAmount === undefined
+          ? "missingActualMass"
+        : availableStockInGrams === null
+          ? "linkedStockUnavailable"
+          : showInsufficientStockWarning
+            ? "insufficientStock"
+            : null;
+
+  return {
+    disabledReason,
+    helperText:
+      disabledReason === null || disabledReason === "insufficientStock"
+        ? null
+        : getInventoryUpdateDisabledReasonText(disabledReason),
+    showInsufficientStockWarning,
+    availableStockInGrams,
+    stockDisplay: visibleStockDisplay,
+  };
+}
 
 export function calculateMoles(
   mass: EditableMolecule["mass"],

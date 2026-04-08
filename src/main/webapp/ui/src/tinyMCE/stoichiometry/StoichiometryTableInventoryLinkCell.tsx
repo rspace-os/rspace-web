@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { RecordLink } from "@/Inventory/components/RecordLink";
 import type { InventoryLink } from "@/modules/stoichiometry/schema";
 import InventoryPicker from "@/Inventory/components/Picker/Picker";
@@ -53,6 +56,7 @@ type StoichiometryTableInventoryLinkCellProps = {
   inventoryRecord?: InventoryRecord | null;
   moleculeName: string | null;
   editable?: boolean;
+  showInsufficientStockWarning?: boolean;
   linkedInventoryItemGlobalIds?: string[];
   onPickInventoryItem?: (id: number, inventoryItemGlobalId: string) => void;
   onRemoveInventoryLink?: () => void;
@@ -85,6 +89,7 @@ const StoichiometryTableInventoryLinkCell = ({
   inventoryRecord,
   moleculeName,
   editable = true,
+  showInsufficientStockWarning = false,
   linkedInventoryItemGlobalIds = [],
   onPickInventoryItem,
   onRemoveInventoryLink,
@@ -144,10 +149,49 @@ const StoichiometryTableInventoryLinkCell = ({
 
   if (inventoryLink) {
     const record = toLinkedSubsampleRecord(inventoryLink, inventoryRecord);
+    const showStockDeductedIndicator = inventoryLink.stockDeducted === true;
+    const showInsufficientStockIndicator =
+      showInsufficientStockWarning && !showStockDeductedIndicator;
 
     return (
       <Stack direction="row" alignItems="center" spacing={0.5} sx={{ height: '100%' }}>
-        <RecordLink record={record} disableNavigationContext={true} newTab={true} />
+        <RecordLink
+          record={record}
+          disableNavigationContext={true}
+          hideRecordTypeTooltip={true}
+          newTab={true}
+        />
+        {showStockDeductedIndicator && (
+          <Tooltip title="Stock deducted">
+            <Box
+              component="span"
+              display="inline-flex"
+              alignItems="center"
+              gap={0.25}
+            >
+              <CheckCircleOutlineIcon
+                fontSize="small"
+                sx={{ color: "success.main" }}
+              />
+            </Box>
+          </Tooltip>
+        )}
+        {showInsufficientStockIndicator && (
+          <Tooltip title="Insufficient Stock">
+            <Box
+              component="span"
+              display="inline-flex"
+              alignItems="center"
+              gap={0.25}
+            >
+              <WarningAmberIcon
+                aria-label="Insufficient Stock"
+                fontSize="small"
+                sx={{ color: "warning.main" }}
+              />
+            </Box>
+          </Tooltip>
+        )}
         {editable && (
           <Tooltip title="Remove inventory link">
             <span>

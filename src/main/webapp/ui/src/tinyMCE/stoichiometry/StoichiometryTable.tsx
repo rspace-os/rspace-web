@@ -9,32 +9,43 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Radio from "@mui/material/Radio";
 import useOauthToken from "@/hooks/auth/useOauthToken";
+import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import { useGetStoichiometryQuery } from "@/modules/stoichiometry/queries";
 import { toEditableMolecules } from "@/tinyMCE/stoichiometry/editableMolecules";
-import { useStoichiometryTableController } from "@/tinyMCE/stoichiometry/StoichiometryTableControllerContext";
 import StoichiometryTableInventoryLinkCell from "@/tinyMCE/stoichiometry/StoichiometryTableInventoryLinkCell";
 import StoichiometryTableRoleChip from "@/tinyMCE/stoichiometry/StoichiometryTableRoleChip";
+import type { InventoryStockUpdateResult } from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateDialog";
 import StoichiometryTableToolbar from "@/tinyMCE/stoichiometry/StoichiometryTableToolbar";
 import StoichiometryTableLoadingDialog from "@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog";
 import { STOICHIOMETRY_TABLE_CLASS } from "@/tinyMCE/stoichiometry/theme";
 import type { EditableMolecule } from "./types";
-import { calculateMoles } from "./utils";
+import { calculateMoles, getInventoryUpdateEligibility } from "./utils";
+import { useStoichiometryTableController } from "@/tinyMCE/stoichiometry/StoichiometryTableControllerContext";
 
 type StoichiometryTableProps = {
   stoichiometryId: number;
   stoichiometryRevision: number;
   editable?: boolean;
+  hasChanges?: boolean;
 };
 
 type StoichiometryTableGridProps = {
   editable: boolean;
   allMolecules: ReadonlyArray<EditableMolecule>;
+  hasChanges?: boolean;
+  linkedInventoryQuantityInfoByGlobalId?: ReadonlyMap<
+    string,
+    InventoryQuantityQueryResult
+  >;
   isGettingMoleculeInfo?: boolean;
   onAddReagent?: (
     smilesString: string,
     name: string,
     source: string,
   ) => Promise<void>;
+  onUpdateInventoryStock?: (
+    selectedMoleculeIds: number[],
+  ) => Promise<InventoryStockUpdateResult>;
   onDeleteReagent?: (moleculeId: number) => void;
   onPickInventoryItem?: (
     moleculeId: number,
@@ -58,8 +69,14 @@ const getMoleculeRowId = (row: EditableMolecule) => row.id;
 const StoichiometryTableGrid = ({
   editable,
   allMolecules,
+  hasChanges = false,
+  linkedInventoryQuantityInfoByGlobalId = new Map<
+    string,
+    InventoryQuantityQueryResult
+  >(),
   isGettingMoleculeInfo = false,
   onAddReagent,
+  onUpdateInventoryStock,
   onDeleteReagent,
   onPickInventoryItem,
   onRemoveInventoryLink,
@@ -130,6 +147,12 @@ const StoichiometryTableGrid = ({
             inventoryLink={row.inventoryLink}
             moleculeName={row.name}
             editable={editable}
+            showInsufficientStockWarning={
+              getInventoryUpdateEligibility(
+                row,
+                linkedInventoryQuantityInfoByGlobalId,
+              ).showInsufficientStockWarning
+            }
             linkedInventoryItemGlobalIds={
               linkedInventoryItemGlobalIdsByMoleculeId.get(row.id) ?? []
             }
@@ -322,6 +345,7 @@ const StoichiometryTableGrid = ({
     [
       editable,
       limitingReagentId,
+      linkedInventoryQuantityInfoByGlobalId,
       linkedInventoryItemGlobalIdsByMoleculeId,
       onDeleteReagent,
       onPickInventoryItem,
@@ -349,11 +373,21 @@ const StoichiometryTableGrid = ({
     () => ({
       toolbar: {
         onAddReagent,
+        onUpdateInventoryStock,
         editable,
         allMolecules,
+        hasChanges,
+        linkedInventoryQuantityInfoByGlobalId,
       },
     }),
-    [allMolecules, editable, onAddReagent],
+    [
+      allMolecules,
+      editable,
+      hasChanges,
+      linkedInventoryQuantityInfoByGlobalId,
+      onAddReagent,
+      onUpdateInventoryStock,
+    ],
   );
 
   if (!allMolecules.length) {
@@ -420,6 +454,7 @@ const StoichiometryTable = ({
   stoichiometryId,
   stoichiometryRevision,
   editable = false,
+  hasChanges = false,
 }: StoichiometryTableProps) => {
   const tableController = useStoichiometryTableController();
 
@@ -428,8 +463,13 @@ const StoichiometryTable = ({
       <StoichiometryTableGrid
         editable
         allMolecules={tableController.allMolecules}
+        hasChanges={hasChanges}
+        linkedInventoryQuantityInfoByGlobalId={
+          tableController.linkedInventoryQuantityInfoByGlobalId
+        }
         isGettingMoleculeInfo={tableController.isGettingMoleculeInfo}
         onAddReagent={tableController.addReagent}
+        onUpdateInventoryStock={tableController.updateInventoryStock}
         onDeleteReagent={tableController.deleteReagent}
         onPickInventoryItem={tableController.pickInventoryLink}
         onRemoveInventoryLink={tableController.removeInventoryLink}
