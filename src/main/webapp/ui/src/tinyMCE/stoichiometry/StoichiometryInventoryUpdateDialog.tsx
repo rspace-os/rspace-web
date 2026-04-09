@@ -58,11 +58,17 @@ function getDefaultValues(
 ): number[] {
   return molecules
     .filter(
-      (molecule) =>
-        getInventoryUpdateEligibility(
+      (molecule) => {
+        const eligibility = getInventoryUpdateEligibility(
           molecule,
           linkedInventoryQuantityInfoByGlobalId,
-        ).disabledReason === null,
+        );
+
+        return (
+          eligibility.disabledReason === null &&
+          molecule.inventoryLink?.stockDeducted !== true
+        );
+      },
     )
     .map(({ id }) => id);
 }
@@ -243,10 +249,7 @@ export default function StoichiometryInventoryUpdateDialog({
                 borderRadius: 1,
               }}
             >
-              <Table
-                stickyHeader
-                size="small"
-              >
+              <Table stickyHeader size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell
@@ -255,14 +258,14 @@ export default function StoichiometryInventoryUpdateDialog({
                       width={52}
                       sx={{ px: 0.5 }}
                     />
-                    <TableCell width="60%">Molecule</TableCell>
+                    <TableCell width="55%">Molecule</TableCell>
                     <TableCell align="right" width="15%">
                       In Stock
                     </TableCell>
                     <TableCell align="right" width="15%">
                       Will Use
                     </TableCell>
-                    <TableCell align="right" width="14%">
+                    <TableCell align="right" width="15%">
                       Remaining
                     </TableCell>
                   </TableRow>

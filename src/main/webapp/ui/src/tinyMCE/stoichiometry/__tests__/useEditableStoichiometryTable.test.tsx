@@ -791,6 +791,47 @@ describe("useEditableStoichiometryTable", () => {
       molecules: [],
     });
   });
+
+  it("allows stock deduction to proceed even when the link was already marked as deducted", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <HookHarness
+          onValue={(value) => {
+            latestValue = value;
+          }}
+        />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+
+    act(() => {
+      const molecule = latestValue?.allMolecules.find(({ id }) => id === 6);
+      if (!molecule?.inventoryLink) {
+        throw new Error("Cyclopentane inventory link not found");
+      }
+      molecule.inventoryLink.stockDeducted = true;
+    });
+
+    await act(async () => {
+      await latestValue?.tableController.updateInventoryStock([6]);
+    });
+
+    expect(mockDeductStockMutateAsync).toHaveBeenCalledWith({
+      stoichiometryId: 3,
+      linkIds: [502],
+    });
+  });
 });
 
 

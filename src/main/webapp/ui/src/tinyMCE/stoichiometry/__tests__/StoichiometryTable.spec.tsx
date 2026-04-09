@@ -1194,7 +1194,7 @@ test.describe("Stoichiometry Table", () => {
     },
   );
   feature(
-    "The inventory stock update dialog disables molecules whose stock has already been deducted",
+    "The inventory stock update dialog warns when stock has already been deducted while still allowing reselection",
     async ({ Given, Once, When, page }) => {
       const cyclopentane = mockStoichiometryResponse.molecules.find(
         ({ name }) => name === "Cyclopentane",
@@ -1214,7 +1214,10 @@ test.describe("Stoichiometry Table", () => {
 
       await expect(
         dialog.getByRole("checkbox", { name: "Cyclopentane" }),
-      ).toBeDisabled();
+      ).toBeEnabled();
+      await expect(
+        dialog.getByRole("checkbox", { name: "Cyclopentane" }),
+      ).not.toBeChecked();
       await expect(
         dialog.getByText("Stock has already been deducted for this molecule."),
       ).toBeVisible();

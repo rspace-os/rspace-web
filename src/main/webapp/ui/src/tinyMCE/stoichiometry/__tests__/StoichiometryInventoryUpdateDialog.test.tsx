@@ -1,9 +1,11 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "@mui/material/styles";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
+import materialTheme from "@/theme";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import StoichiometryInventoryUpdateDialog from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateDialog";
 
@@ -90,7 +92,9 @@ function renderWithQueryClient(ui: React.ReactElement) {
   });
 
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+    <ThemeProvider theme={materialTheme}>
+      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    </ThemeProvider>,
   );
 }
 
@@ -245,7 +249,8 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeDisabled();
+      expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeEnabled();
+      expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).not.toBeChecked();
       expect(screen.getByRole("checkbox", { name: "Cyclopentadiene" })).toBeEnabled();
       expect(screen.getByRole("checkbox", { name: "Cyclopentadiene" })).not.toBeChecked();
     });
@@ -253,15 +258,48 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       within(getMetric("Cyclopentane", "In Stock")).getByText("5.0 g"),
     ).toBeVisible();
     expect(
-      within(getMetric("Cyclopentane", "Will Use")).getByText("—"),
+      within(getMetric("Cyclopentane", "Will Use")).getByText("5.0 g"),
     ).toBeVisible();
     expect(
-      within(getMetric("Cyclopentane", "Remaining")).getByText("—"),
+      within(getMetric("Cyclopentane", "Remaining")).getByText("0.0 g"),
     ).toBeVisible();
     expect(
       screen.getByText("Insufficient stock to perform this action."),
     ).toBeVisible();
+    expect(
+      screen.getByText(
+        "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+      ),
+    ).toBeVisible();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("shows a warning for already deducted molecules without auto-selecting them", () => {
+    renderWithQueryClient(
+      <StoichiometryInventoryUpdateDialog
+        open
+        molecules={[
+          makeMolecule({
+            id: 1,
+            name: "Cyclopentane",
+            inventoryItemGlobalId: "SS124",
+            stockDeducted: true,
+          }),
+        ]}
+        linkedInventoryQuantityInfoByGlobalId={makeQuantityMap([["SS124", 10]])}
+        onClose={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeEnabled();
+    expect(
+      screen.getByRole("checkbox", { name: "Cyclopentane" }),
+    ).not.toBeChecked();
+    expect(
+      screen.getByText(
+        "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+      ),
+    ).toBeVisible();
   });
 
   it("shows a local error message and clears selection when saving fails", async () => {
@@ -292,4 +330,3 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).not.toBeChecked();
   });
 });
-

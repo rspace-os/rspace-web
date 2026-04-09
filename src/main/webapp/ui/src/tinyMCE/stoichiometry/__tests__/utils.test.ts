@@ -162,7 +162,7 @@ describe("getInventoryUpdateEligibility", () => {
     });
   });
 
-  it("marks molecules with deducted stock as unselectable", () => {
+  it("marks molecules with deducted stock as selectable but warns that stock was already deducted", () => {
     const [molecule] = makeBaseMolecules();
     molecule.inventoryLink = {
       id: 100,
@@ -171,14 +171,14 @@ describe("getInventoryUpdateEligibility", () => {
     };
 
     expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
-      disabledReason: "stockAlreadyDeducted",
+      disabledReason: null,
       helperText: "Stock has already been deducted for this molecule.",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "10.0", unitLabel: "g" },
-        willUse: { displayValue: "—", unitLabel: null },
-        remaining: { displayValue: "—", unitLabel: null },
-        remainingStatus: "default",
+        willUse: { displayValue: "10.0", unitLabel: "g" },
+        remaining: { displayValue: "0.0", unitLabel: "g" },
+        remainingStatus: "zero",
         warningText: null,
       },
     });
@@ -238,7 +238,6 @@ describe("getInventoryUpdateEligibility", () => {
       disabledReason: "missingActualMass",
       helperText: "Define actual mass before updating linked inventory stock.",
       showInsufficientStockWarning: false,
-      availableStockInGrams: 10,
       stockDisplay: {
         inStock: { displayValue: "10.0", unitLabel: "g" },
         willUse: { displayValue: "—", unitLabel: "g" },
@@ -261,7 +260,6 @@ describe("getInventoryUpdateEligibility", () => {
       disabledReason: "insufficientStock",
       helperText: null,
       showInsufficientStockWarning: true,
-      availableStockInGrams: 10,
       stockDisplay: {
         inStock: { displayValue: "10.0", unitLabel: "g" },
         willUse: { displayValue: "11.0", unitLabel: "g" },
@@ -284,7 +282,6 @@ describe("getInventoryUpdateEligibility", () => {
       disabledReason: null,
       helperText: null,
       showInsufficientStockWarning: false,
-      availableStockInGrams: 10,
       stockDisplay: {
         inStock: { displayValue: "10.0", unitLabel: "g" },
         willUse: { displayValue: "5.0", unitLabel: "g" },

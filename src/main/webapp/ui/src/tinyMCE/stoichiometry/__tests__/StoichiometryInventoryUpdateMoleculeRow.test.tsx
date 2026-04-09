@@ -63,7 +63,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
           <TableRow>
             <TableCell aria-label="Select molecule" />
             <TableCell>Molecule</TableCell>
-            <TableCell>Type</TableCell>
             <TableCell>In Stock</TableCell>
             <TableCell>Will Use</TableCell>
             <TableCell>Remaining</TableCell>
@@ -73,24 +72,35 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       </Table>,
     );
 
+  const columnIndexes = {
+    Actions: 0,
+    Molecule: 1,
+    "In Stock": 2,
+    "Will Use": 3,
+    Remaining: 4,
+  } as const;
+
   const getMoleculeRow = (name: string) => {
-    const row = document.querySelector(
-      `[data-row-type="molecule"][data-molecule-name="${name}"]`,
+    const row = screen.getAllByRole("row").find((candidate) =>
+      within(candidate).queryByRole("checkbox", { name }) !== null,
     );
 
-    if (!(row instanceof HTMLElement)) {
+    if (!row) {
       throw new Error(`Molecule row not found: ${name}`);
     }
 
     return row;
   };
 
-  const getMetric = (moleculeName: string, name: string) => {
-    const metric = getMoleculeRow(moleculeName).querySelector(
-      `[data-column="${name}"]`,
-    );
+  const getMetric = (
+    moleculeName: string,
+    name: keyof typeof columnIndexes,
+  ) => {
+    const metric = within(getMoleculeRow(moleculeName)).getAllByRole("cell")[
+      columnIndexes[name]
+    ];
 
-    if (!(metric instanceof HTMLElement)) {
+    if (!metric) {
       throw new Error(`Metric column not found: ${moleculeName} / ${name}`);
     }
 
@@ -136,7 +146,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     expect(screen.getByText("Will Use")).toBeVisible();
     expect(screen.getByText("Remaining")).toBeVisible();
     expect(screen.getByText("Molecule")).toBeVisible();
-    expect(screen.getByText("Type")).toBeVisible();
     expect(
       screen.getByRole("checkbox", { name: "Ethanol" }),
     ).toHaveAccessibleName("Ethanol");
@@ -144,7 +153,7 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       within(getMetric("Ethanol", "Molecule")).getByText("Ethanol"),
     ).toBeVisible();
     expect(
-      within(getMetric("Ethanol", "Type")).getByText("reactant"),
+      within(getMetric("Ethanol", "Molecule")).getByText("reactant"),
     ).toBeVisible();
     expect(
       within(getMetric("Ethanol", "In Stock")).getByText("10.0 g"),
@@ -197,6 +206,57 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
+
+  it("still shows will-use and remaining metrics when stock was already deducted", () => {
+    const stockDisplay: InventoryUpdateStockDisplay = {
+      inStock: {
+        rawValue: 10,
+        displayValue: "10.0",
+        unitLabel: "g",
+      },
+      willUse: {
+        rawValue: 5,
+        displayValue: "5.0",
+        unitLabel: "g",
+      },
+      remaining: {
+        rawValue: 5,
+        displayValue: "5.0",
+        unitLabel: "g",
+      },
+      remainingStatus: "positive",
+      warningText: null,
+    };
+
+    renderInTable(
+      <StoichiometryInventoryUpdateMoleculeRow
+        molecule={{
+          ...molecule,
+          inventoryLink: {
+            id: 1200,
+            inventoryItemGlobalId: "SS1200",
+            stockDeducted: true,
+          },
+        }}
+        selected={false}
+        disabled={false}
+        helperText={"Stock has already been deducted for this molecule."}
+        stockDisplay={stockDisplay}
+        onToggle={() => {}}
+      />,
+    );
+
+    expect(
+      within(getMetric("Ethanol", "Will Use")).getByText("5.0 g"),
+    ).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "Remaining")).getByText("5.0 g"),
+    ).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "Molecule")).getByText("Stock Deducted"),
+    ).toBeVisible();
+  });
+
   it("shows a remaining warning and negative status when stock is insufficient", () => {
     const stockDisplay: InventoryUpdateStockDisplay = {
       inStock: {
@@ -230,11 +290,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     );
 
     expect(screen.getByRole("checkbox", { name: "Ethanol" })).toBeDisabled();
-    expect(
-      screen
-        .getByRole("checkbox", { name: "Ethanol" })
-        .closest("[data-dimmed]"),
-    ).toHaveAttribute("data-dimmed", "true");
     expect(getMetric("Ethanol", "Remaining")).toHaveAttribute(
       "data-status",
       "negative",
@@ -323,7 +378,7 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       <StoichiometryInventoryUpdateMoleculeRow
         molecule={molecule}
         selected={false}
-        disabled={false}
+        disabled={true}
         helperText={null}
         stockDisplay={stockDisplay}
         onToggle={() => {}}
@@ -331,11 +386,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     );
 
     expect(screen.getByRole("checkbox", { name: "Ethanol" })).toBeDisabled();
-    expect(
-      screen
-        .getByRole("checkbox", { name: "Ethanol" })
-        .closest("[data-dimmed]"),
-    ).toHaveAttribute("data-dimmed", "true");
     expect(
       within(getMetric("Ethanol", "In Stock")).getByText("—"),
     ).toBeVisible();
@@ -369,7 +419,7 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       <StoichiometryInventoryUpdateMoleculeRow
         molecule={{ ...molecule, actualAmount: null }}
         selected={false}
-        disabled={false}
+        disabled={true}
         helperText="Define actual mass before updating linked inventory stock."
         stockDisplay={stockDisplay}
         onToggle={() => {}}

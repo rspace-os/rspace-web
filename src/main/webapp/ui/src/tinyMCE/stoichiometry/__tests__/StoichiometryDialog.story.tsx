@@ -2,7 +2,7 @@ import React from "react";
 import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/chemistry";
-import StoichiometryDialog from "../StoichiometryDialog";
+import StoichiometryDialogEntrypoint from "../StoichiometryDialogEntrypoint";
 import Alerts from "../../../components/Alerts/Alerts";
 import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
 
@@ -31,7 +31,7 @@ export const StoichiometryDialogWithCalculateButtonStory = ({
         theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
       >
         <Alerts>
-          <StoichiometryDialog
+          <StoichiometryDialogEntrypoint
             open={open}
             onClose={() => setOpen(false)}
             chemId={12345}
@@ -63,7 +63,7 @@ export const StoichiometryDialogWithTableStory = ({
         theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
       >
         <Alerts>
-          <StoichiometryDialog
+          <StoichiometryDialogEntrypoint
             open={open}
             onClose={() => setOpen(false)}
             chemId={12345}
@@ -99,7 +99,7 @@ export const StoichiometryDialogClosedStory = () => {
       >
         <Alerts>
           <div>Dialog is closed</div>
-          <StoichiometryDialog
+          <StoichiometryDialogEntrypoint
             open={false}
             onClose={() => {}}
             chemId={12345}

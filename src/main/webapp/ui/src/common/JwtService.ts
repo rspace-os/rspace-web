@@ -1,5 +1,8 @@
 import { jwtDecode } from "jwt-decode";
 
+/**
+ * @deprecated Use the functions in `src/modules/common/utils/auth.ts` instead.
+ */
 class JwtService {
   // if you change this, change login.jsp and logout.jsp accordingly
   static ID_TOKEN_KEY: string = "id_token";

@@ -2,7 +2,6 @@ import { produce } from "immer";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import {
   convertFromGrams,
-  convertToGrams,
   getQuantityUnitSymbol,
   isMassUnit,
 } from "@/modules/inventory/utils";
@@ -10,7 +9,6 @@ import type { EditableMolecule } from "./types";
 
 export type InventoryUpdateSelectionDisabledReason =
   | "missingInventoryLink"
-  | "stockAlreadyDeducted"
   | "linkedStockUnavailable"
   | "nonMassInventoryQuantity"
   | "missingActualMass"
@@ -20,7 +18,6 @@ export type InventoryUpdateEligibility = {
   disabledReason: InventoryUpdateSelectionDisabledReason | null;
   helperText: string | null;
   showInsufficientStockWarning: boolean;
-  availableStockInGrams: number | null;
   stockDisplay: InventoryUpdateStockDisplay;
 };
 
@@ -71,18 +68,6 @@ function makeStockMetric(
 function makeEmptyStockDisplay(): InventoryUpdateStockDisplay {
   return {
     inStock: makeStockMetric(null, null),
-    willUse: makeStockMetric(null, null),
-    remaining: makeStockMetric(null, null),
-    remainingStatus: "default",
-    warningText: null,
-  };
-}
-
-function hideProjectedStockMetrics(
-  stockDisplay: InventoryUpdateStockDisplay,
-): InventoryUpdateStockDisplay {
-  return {
-    inStock: stockDisplay.inStock,
     willUse: makeStockMetric(null, null),
     remaining: makeStockMetric(null, null),
     remainingStatus: "default",
@@ -147,7 +132,6 @@ function getInventoryUpdateDisabledReasonText(
 ): string {
   return {
     missingInventoryLink: "Link an inventory item before updating stock.",
-    stockAlreadyDeducted: "Stock has already been deducted for this molecule.",
     linkedStockUnavailable:
       "Linked stock information is unavailable, so this molecule cannot be updated.",
     nonMassInventoryQuantity:
@@ -172,7 +156,6 @@ export function getInventoryUpdateEligibility(
       disabledReason: "missingInventoryLink",
       helperText: getInventoryUpdateDisabledReasonText("missingInventoryLink"),
       showInsufficientStockWarning: false,
-      availableStockInGrams: null,
       stockDisplay: makeEmptyStockDisplay(),
     };
   }
@@ -189,7 +172,6 @@ export function getInventoryUpdateEligibility(
       disabledReason: "linkedStockUnavailable",
       helperText: getInventoryUpdateDisabledReasonText("linkedStockUnavailable"),
       showInsufficientStockWarning: false,
-      availableStockInGrams: null,
       stockDisplay: makeEmptyStockDisplay(),
     };
   }
@@ -197,35 +179,27 @@ export function getInventoryUpdateEligibility(
   const { quantity } = linkedInventoryQuantityInfo;
   const stockDisplay = buildInventoryUpdateStockDisplay(quantity, molecule.actualAmount);
   const stockDeducted = molecule.inventoryLink?.stockDeducted === true;
-  const visibleStockDisplay = stockDeducted
-    ? hideProjectedStockMetrics(stockDisplay)
-    : stockDisplay;
 
-  const availableStockInGrams = convertToGrams(quantity.numericValue, quantity.unitId);
   const showInsufficientStockWarning =
     !stockDeducted && stockDisplay.remainingStatus === "negative";
   const disabledReason: InventoryUpdateSelectionDisabledReason | null =
-    stockDeducted
-      ? "stockAlreadyDeducted"
-      : !isMassUnit(quantity.unitId)
+    !isMassUnit(quantity.unitId)
         ? "nonMassInventoryQuantity"
         : molecule.actualAmount === null || molecule.actualAmount === undefined
           ? "missingActualMass"
-        : availableStockInGrams === null
-          ? "linkedStockUnavailable"
           : showInsufficientStockWarning
             ? "insufficientStock"
             : null;
 
   return {
     disabledReason,
-    helperText:
-      disabledReason === null || disabledReason === "insufficientStock"
+    helperText: stockDeducted
+      ? "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule."
+      : disabledReason === null || disabledReason === "insufficientStock"
         ? null
         : getInventoryUpdateDisabledReasonText(disabledReason),
     showInsufficientStockWarning,
-    availableStockInGrams,
-    stockDisplay: visibleStockDisplay,
+    stockDisplay,
   };
 }
 

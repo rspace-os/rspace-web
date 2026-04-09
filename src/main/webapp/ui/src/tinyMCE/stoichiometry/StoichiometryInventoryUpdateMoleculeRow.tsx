@@ -10,6 +10,7 @@ import Typography from "@mui/material/Typography";
 import { alpha, type Theme, useTheme } from "@mui/material/styles";
 import GlobalId from "@/components/GlobalId";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
+import StockMetricCell, { type MetricColors, type MetricState } from "@/tinyMCE/stoichiometry/inventory/StockMetricCell";
 import StoichiometryTableRoleChip from "@/tinyMCE/stoichiometry/StoichiometryTableRoleChip";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import type { InventoryUpdateStockDisplay } from "@/tinyMCE/stoichiometry/utils";
@@ -21,13 +22,6 @@ export type StoichiometryInventoryUpdateMoleculeSelectionCardProps = {
   helperText: string | null;
   stockDisplay: InventoryUpdateStockDisplay;
   onToggle: () => void;
-};
-
-type MetricState = InventoryUpdateStockDisplay["remainingStatus"];
-
-type MetricColors = {
-  valueColor: string;
-  warningColor: string;
 };
 
 function getMetricColors(
@@ -73,50 +67,6 @@ function getHelperAlertSx(theme: Theme) {
   } as const;
 }
 
-function StockMetricCell({
-  column,
-  value,
-  unitLabel,
-  colors,
-  warningText,
-  warningTextId,
-  dataStatus,
-}: {
-  column: string;
-  value: string;
-  unitLabel: string | null;
-  colors: MetricColors;
-  warningText?: string | null;
-  warningTextId?: string;
-  dataStatus?: string;
-}) {
-  return (
-    <TableCell
-      align="right"
-      data-column={column}
-      data-status={dataStatus}
-      sx={{ verticalAlign: "top", py: 1.5 }}
-    >
-      <Stack spacing={0.5} alignItems="flex-end">
-        <Typography variant="h6" fontWeight={700} color={colors.valueColor}>
-          {unitLabel ? `${value} ${unitLabel}` : value}
-        </Typography>
-        {warningText && (
-          <Typography
-            id={warningTextId}
-            variant="caption"
-            color={colors.warningColor}
-            display="block"
-            fontWeight={600}
-          >
-            {warningText}
-          </Typography>
-        )}
-      </Stack>
-    </TableCell>
-  );
-}
-
 export default function StoichiometryInventoryUpdateMoleculeRow({
   molecule,
   selected,
@@ -129,12 +79,6 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
   const nameId = React.useId();
   const helperTextId = React.useId();
   const warningTextId = React.useId();
-  const disabledForMissingLinkedQuantity =
-    Boolean(molecule.inventoryLink) && stockDisplay.inStock.rawValue === null;
-  const disabledForMissingActualMass =
-    molecule.actualAmount === null || molecule.actualAmount === undefined;
-  const effectiveDisabled =
-    disabled || disabledForMissingLinkedQuantity || disabledForMissingActualMass;
   const describedBy = [
     helperText ? helperTextId : null,
     stockDisplay.warningText ? warningTextId : null,
@@ -159,7 +103,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
   return (
     <>
       <TableRow
-        hover={!effectiveDisabled}
+        hover={!disabled}
         data-row-type="molecule"
         data-molecule-name={moleculeName}
         sx={{
@@ -177,12 +121,12 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
           sx={{ px: 0.5 }}
         >
           <Box
-            data-dimmed={effectiveDisabled ? "true" : "false"}
+            data-dimmed={disabled ? "true" : "false"}
             display="flex"
             alignItems="flex-start"
             justifyContent="center"
             sx={{
-              opacity: effectiveDisabled ? 0.5 : 1,
+              opacity: disabled ? 0.5 : 1,
               transition: theme.transitions.create("opacity", {
                 duration: theme.transitions.duration.shorter,
               }),
@@ -190,13 +134,13 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
           >
             <Checkbox
               checked={selected}
-              disabled={effectiveDisabled}
+              disabled={disabled}
               inputProps={{
                 "aria-labelledby": nameId,
                 "aria-describedby": describedBy || undefined,
               }}
               onChange={() => {
-                if (!effectiveDisabled) {
+                if (!disabled) {
                   onToggle();
                 }
               }}
@@ -219,9 +163,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
               >
                 {moleculeName}
               </Typography>
-              {molecule.role && (
-                <StoichiometryTableRoleChip role={molecule.role} />
-              )}
+              {molecule.role && <StoichiometryTableRoleChip role={molecule.role} />}
             </Stack>
             <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
               {molecule.inventoryLink ? (
@@ -234,11 +176,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
                   onClick={() => {}}
                 />
               ) : (
-                <Chip
-                  size="small"
-                  variant="outlined"
-                  label="No inventory link"
-                />
+                <Chip size="small" variant="outlined" label="No inventory link" />
               )}
               {molecule.inventoryLink?.stockDeducted && (
                 <Chip

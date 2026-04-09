@@ -58,7 +58,6 @@ function createInventoryPickerSearch(): Search {
 type StoichiometryTableInventoryLinkCellProps = {
   inventoryLink: InventoryLink | null | undefined;
   isDeleted?: boolean;
-  inventoryRecord?: InventoryRecord | null;
   moleculeName: string | null;
   editable?: boolean;
   showInsufficientStockWarning?: boolean;
@@ -70,12 +69,7 @@ type StoichiometryTableInventoryLinkCellProps = {
 
 function toLinkedSubsampleRecord(
   inventoryLink: InventoryLink,
-  inventoryRecord?: InventoryRecord | null,
 ): InventoryRecord {
-  if (inventoryRecord?.globalId === inventoryLink.inventoryItemGlobalId) {
-    return inventoryRecord;
-  }
-
   const id = Number.parseInt(inventoryLink.inventoryItemGlobalId.slice(2), 10);
 
   return {
@@ -93,7 +87,6 @@ function toLinkedSubsampleRecord(
 const StoichiometryTableInventoryLinkCell = ({
   inventoryLink,
   isDeleted = false,
-  inventoryRecord,
   moleculeName,
   editable = true,
   showInsufficientStockWarning = false,
@@ -202,7 +195,7 @@ const StoichiometryTableInventoryLinkCell = ({
   }
 
   if (inventoryLink) {
-    const record = toLinkedSubsampleRecord(inventoryLink, inventoryRecord);
+    const record = toLinkedSubsampleRecord(inventoryLink);
     const showStockDeductedIndicator = inventoryLink.stockDeducted === true;
     const showInsufficientStockIndicator =
       showInsufficientStockWarning && !showStockDeductedIndicator;

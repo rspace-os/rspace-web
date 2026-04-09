@@ -1,54 +1,19 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { jwtDecode } from "jwt-decode";
+import {
+  getStoredToken,
+  isExpiringSoon,
+  saveStoredToken,
+  secondsToExpiry,
+  TOKEN_EXPIRY_BUFFER_SECONDS,
+} from "@/modules/common/utils/auth";
 
 const queryKeys = {
   all: ["rspace.common.auth"] as const,
   oauthToken: () => [...queryKeys.all, "oauthToken"] as const,
   whoami: () => [...queryKeys.all, "whoami"] as const,
-}
+};
 
 const API_BASE_URL = "/api/v1";
-
-const ID_TOKEN_KEY = "id_token";
-const JWT_TOKEN_PATTERN = /^.+\..+\..+$/;
-const TOKEN_EXPIRY_BUFFER_SECONDS = 300; // 5 minutes
-
-/**
- * Calculate seconds until token expiry
- */
-function secondsToExpiry(token: string): number {
-  if (!token.match(JWT_TOKEN_PATTERN)) {
-    // This is an API key, not a JWT
-    return Infinity;
-  }
-
-  const decoded = jwtDecode<{ exp: number }>(token);
-  const expiresAt = decoded.exp;
-  const timeNow = Math.floor(Date.now() / 1000);
-
-  return expiresAt - timeNow;
-}
-
-/**
- * Check if token is expiring soon (within 5 minutes)
- */
-function isExpiringSoon(token: string): boolean {
-  return secondsToExpiry(token) < TOKEN_EXPIRY_BUFFER_SECONDS;
-}
-
-/**
- * Get token from session storage
- */
-function getStoredToken(): string | null {
-  return window.sessionStorage.getItem(ID_TOKEN_KEY);
-}
-
-/**
- * Save token to session storage
- */
-function saveToken(token: string): void {
-  window.sessionStorage.setItem(ID_TOKEN_KEY, token);
-}
 
 /**
  * Fetches a new OAuth token from the server.
@@ -67,7 +32,7 @@ async function fetchToken(): Promise<string> {
 
   const json = (await response.json()) as { data: string };
   const newToken = json.data;
-  saveToken(newToken);
+  saveStoredToken(newToken);
   return newToken;
 }
 
