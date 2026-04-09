@@ -17,7 +17,6 @@ export type StoichiometryTableGridProps = {
     string,
     InventoryQuantityQueryResult
   >;
-  isGettingMoleculeInfo?: boolean;
   onAddReagent?: (
     smilesString: string,
     name: string,
