@@ -46,7 +46,7 @@ vi.mock("@/modules/stoichiometry/mutations", () => ({
 vi.mock("@/tinyMCE/stoichiometry/dialog/EditableStoichiometryDialogSection", () => ({
   default: (props: unknown) => {
     mockEditableSection(props);
-    return <div data-testid="editable-section" />;
+    return <div role="region" aria-label="Editable stoichiometry section" />;
   },
 }));
 
@@ -98,7 +98,9 @@ describe("StoichiometryDialog", () => {
     expect(options?.onSuccess).toEqual(expect.any(Function));
     expect(onTableCreated).toHaveBeenCalledWith(7, 3);
     await waitFor(() => {
-      expect(screen.getByTestId("editable-section")).toBeVisible();
+      expect(
+        screen.getByRole("region", { name: "Editable stoichiometry section" }),
+      ).toBeVisible();
     });
   });
 
@@ -114,7 +116,9 @@ describe("StoichiometryDialog", () => {
       />,
     );
 
-    expect(screen.getByTestId("editable-section")).toBeVisible();
+    expect(
+      screen.getByRole("region", { name: "Editable stoichiometry section" }),
+    ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Calculate Stoichiometry" }),
     ).not.toBeInTheDocument();

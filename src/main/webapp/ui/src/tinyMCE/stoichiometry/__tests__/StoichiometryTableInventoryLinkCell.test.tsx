@@ -274,7 +274,9 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    expect(screen.getByTestId("WarningAmberIcon")).toBeVisible();
+    expect(
+      screen.getByLabelText("Insufficient Stock", { selector: "svg" }),
+    ).toBeVisible();
   });
 
   it("renders a stock deducted indicator and hides the insufficient stock warning when stock was already deducted", () => {
@@ -287,7 +289,9 @@ describe("StoichiometryTableInventoryLinkCell", () => {
     );
 
     expect(screen.getByLabelText("Stock deducted")).toBeVisible();
-    expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Insufficient Stock", { selector: "svg" }),
+    ).not.toBeInTheDocument();
   });
 
   it("does not render an insufficient stock warning by default", () => {
@@ -298,7 +302,9 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Insufficient Stock", { selector: "svg" }),
+    ).not.toBeInTheDocument();
   });
 
   it("disables controls in read-only mode", () => {

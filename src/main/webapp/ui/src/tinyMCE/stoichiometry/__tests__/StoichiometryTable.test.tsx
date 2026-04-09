@@ -14,19 +14,23 @@ const staticStoichiometryTableSpy = vi.fn();
 vi.mock("@/tinyMCE/stoichiometry/table/StoichiometryTableGrid", () => ({
   default: (props: unknown) => {
     stoichiometryTableGridSpy(props);
-    return <div data-testid="stoichiometry-grid" />;
+    return <div role="grid" aria-label="Stoichiometry table grid" />;
   },
 }));
 
 vi.mock("@/tinyMCE/stoichiometry/table/StaticStoichiometryTable", () => ({
   default: (props: unknown) => {
     staticStoichiometryTableSpy(props);
-    return <div data-testid="static-stoichiometry-table" />;
+    return <div>Static stoichiometry table</div>;
   },
 }));
 
 vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog", () => ({
-  default: () => <div data-testid="stoichiometry-loading-dialog" />,
+  default: () => (
+    <div role="dialog" aria-label="Loading molecule information">
+      Loading molecule information...
+    </div>
+  ),
 }));
 
 function makeMolecule(): EditableMolecule {
@@ -78,14 +82,16 @@ describe("StoichiometryTable", () => {
       </StoichiometryTableControllerProvider>,
     );
 
-    expect(screen.getByTestId("stoichiometry-loading-dialog")).toBeVisible();
+    expect(
+      screen.getByRole("dialog", { name: "Loading molecule information" }),
+    ).toBeVisible();
     expect(stoichiometryTableGridSpy).not.toHaveBeenCalled();
   });
 
   it("delegates read-only rendering to StaticStoichiometryTable", () => {
     render(<StoichiometryTable stoichiometryId={3} stoichiometryRevision={1} />);
 
-    expect(screen.getByTestId("static-stoichiometry-table")).toBeVisible();
+    expect(screen.getByText("Static stoichiometry table")).toBeVisible();
     expect(staticStoichiometryTableSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         stoichiometryId: 3,

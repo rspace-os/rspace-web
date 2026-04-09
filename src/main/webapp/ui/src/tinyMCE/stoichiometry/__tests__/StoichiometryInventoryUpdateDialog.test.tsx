@@ -83,7 +83,7 @@ function makeQuantityMap(
   );
 }
 
-function renderWithQueryClient(ui: React.ReactElement) {
+function renderWithProviders(ui: React.ReactElement) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -137,7 +137,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     }));
     const onClose = vi.fn();
 
-    renderWithQueryClient(
+    renderWithProviders(
       <StoichiometryInventoryUpdateDialog
         open
         molecules={[
@@ -237,7 +237,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       );
     }
 
-    renderWithQueryClient(<Wrapper />);
+    renderWithProviders(<Wrapper />);
 
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Cyclopentadiene" })).toBeChecked();
@@ -275,7 +275,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
   });
 
   it("shows a warning for already deducted molecules without auto-selecting them", () => {
-    renderWithQueryClient(
+    renderWithProviders(
       <StoichiometryInventoryUpdateDialog
         open
         molecules={[
@@ -306,7 +306,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     const user = userEvent.setup();
     const onSave = vi.fn(() => Promise.reject(new Error("Network down")));
 
-    renderWithQueryClient(
+    renderWithProviders(
       <StoichiometryInventoryUpdateDialog
         open
         molecules={[

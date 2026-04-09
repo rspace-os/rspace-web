@@ -116,6 +116,10 @@ async function getCompoundCell(
   return getCellByField(row, field);
 }
 
+function getInsufficientStockIcon(container: Locator): Locator {
+  return container.locator('svg[aria-label="Insufficient Stock"]');
+}
+
 type MockRouteResponse = {
   status?: number;
   body: unknown;
@@ -1700,7 +1704,7 @@ test.describe("Stoichiometry Table", () => {
         );
 
         await expect(
-          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+          getInsufficientStockIcon(inventoryLinkCell),
         ).toBeVisible();
       },
     );
@@ -1717,7 +1721,7 @@ test.describe("Stoichiometry Table", () => {
         );
 
         await expect(
-          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+          getInsufficientStockIcon(inventoryLinkCell),
         ).toHaveCount(0);
       },
     );
@@ -1734,7 +1738,7 @@ test.describe("Stoichiometry Table", () => {
         );
 
         await expect(
-          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+          getInsufficientStockIcon(inventoryLinkCell),
         ).toHaveCount(0);
       },
     );
@@ -1747,7 +1751,7 @@ test.describe("Stoichiometry Table", () => {
         const inventoryLinkCell = await getCompoundCell(page, "Benzene", "Inventory Link");
 
         await expect(
-          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+          getInsufficientStockIcon(inventoryLinkCell),
         ).toHaveCount(0);
       },
     );
@@ -1769,7 +1773,7 @@ test.describe("Stoichiometry Table", () => {
         );
 
         await expect(
-          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+          getInsufficientStockIcon(inventoryLinkCell),
         ).toHaveCount(0);
       },
     );
@@ -1786,7 +1790,7 @@ test.describe("Stoichiometry Table", () => {
         );
 
         await expect(
-          inventoryLinkCell.getByTestId("WarningAmberIcon"),
+          getInsufficientStockIcon(inventoryLinkCell),
         ).toHaveCount(0);
         expect(inventorySubSampleRequestCount).toBe(0);
       },

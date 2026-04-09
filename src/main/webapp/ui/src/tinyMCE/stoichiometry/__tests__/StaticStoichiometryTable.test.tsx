@@ -42,7 +42,7 @@ vi.mock("@/tinyMCE/stoichiometry/editableMolecules", () => ({
 vi.mock("@/tinyMCE/stoichiometry/table/StoichiometryTableGrid", () => ({
   default: (props: unknown) => {
     stoichiometryTableGridSpy(props);
-    return <div data-testid="static-stoichiometry-grid" />;
+    return <div role="grid" aria-label="Static stoichiometry grid" />;
   },
 }));
 
@@ -86,7 +86,9 @@ describe("StaticStoichiometryTable", () => {
       />,
     );
 
-    expect(screen.getByTestId("static-stoichiometry-grid")).toBeVisible();
+    expect(
+      screen.getByRole("grid", { name: "Static stoichiometry grid" }),
+    ).toBeVisible();
     expect(lastUseGetStoichiometryQueryArgs).toMatchObject({
       stoichiometryId: 3,
       revision: 4,

@@ -184,8 +184,9 @@ const feature = test.extend<{
           expect(hasStoichiometryRequest(networkRequests, "POST")).toBe(true);
         },
       "the save button should not be visible": async () => {
-        const saveButton = page.getByTestId("SubmitButton");
-        await expect(saveButton).not.toBeVisible();
+        await expect(
+          page.getByRole("button", { name: "Save Changes" }),
+        ).toHaveCount(0);
       },
       "the save button should be visible": async () => {
         const saveButton = page.getByRole("button", { name: "Save Changes" });
