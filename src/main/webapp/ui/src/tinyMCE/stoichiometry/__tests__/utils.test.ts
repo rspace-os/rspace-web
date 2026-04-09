@@ -175,7 +175,7 @@ describe("getInventoryUpdateEligibility", () => {
     ).toMatchObject({
       disabledReason: null,
       helperText:
-        "Stock has already been deducted for this molecule.  To reduce the stock again, select this molecule.",
+        "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "10.0", unitLabel: "g" },
