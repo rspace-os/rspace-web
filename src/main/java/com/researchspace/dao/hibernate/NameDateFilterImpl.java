@@ -12,7 +12,6 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.ObjectToIdPropertyTransformer;
 import com.researchspace.model.record.RSForm;
-import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -69,7 +68,7 @@ public class NameDateFilterImpl implements NameDateFilter {
 
     String q1 = generateCountQueryString(input, pname, pval);
 
-    Query<BigInteger> countQuery = sf.getCurrentSession().createNativeQuery(q1);
+    Query<Number> countQuery = sf.getCurrentSession().createNativeQuery(q1);
     applyNamedParameterToQuery(countQuery, pname, pval);
 
     Long totalHits = countQuery.uniqueResult().longValue();

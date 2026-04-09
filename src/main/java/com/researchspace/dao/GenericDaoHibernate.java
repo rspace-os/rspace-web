@@ -111,30 +111,86 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
     return entity != null;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * Saves or updates the entity, mirroring the semantics of the removed {@code
+   * Session.saveOrUpdate()}.
+   *
+   * <ul>
+   *   <li><b>New entities (id == null)</b>: {@link Session#persist} is used so that the
+   *       <em>same</em> Java instance becomes managed. This is important when the entity is already
+   *       present in a parent collection — a {@code merge()} copy would create two managed
+   *       instances for the same row and cause {@link jakarta.persistence.EntityExistsException} on
+   *       the next cascade.
+   *   <li><b>Entities with an id</b>: {@link Session#merge} is used. This correctly handles both
+   *       detached entities and already-managed entities (including property-access entities where
+   *       {@link jakarta.persistence.PersistenceUnitUtil#getIdentifier} incorrectly returns {@code
+   *       null} in Hibernate 6). Merge also cascades to {@code CascadeType.MERGE} child
+   *       associations, ensuring that new children added after the initial persist (e.g. {@code
+   *       StoichiometryMolecule} added to an already-persisted {@code Stoichiometry}) are
+   *       themselves inserted and assigned their database ids.
+   * </ul>
+   *
+   * <p>For new entities, the database-generated id is set on the entity immediately by the {@code
+   * IDENTITY} strategy. For entities that reach the {@code merge()} path while transient, {@link
+   * com.researchspace.dao.spring.ext.IdTransferringMergeEventListener} copies the generated id back
+   * to the original instance.
+   *
+   * <p>{@inheritDoc}
+   */
   @SuppressWarnings("unchecked")
   public T save(T object) {
     Session session = getSession();
-    if (session.contains(object)) {
-      return object;
-    }
-    Object id = null;
-    try {
-      id = session.getSessionFactory().getPersistenceUnitUtil().getIdentifier(object);
-    } catch (IllegalArgumentException e) {
-      // Entity type not recognized by PersistenceUnitUtil
-    }
+    Object id = getEntityId(object, session);
     if (id == null) {
+      // New entity: persist() keeps the same Java instance managed (no copy created).
       session.persist(object);
       return object;
     }
-    // Entity has an ID but isn't managed. Use merge() which handles both:
-    // - Detached entities (exist in DB) → merge into managed copy
-    // - New entities with pre-assigned IDs (don't exist in DB) →
-    //   entityIsDetached falls through to entityIsTransient → INSERT
-    // The IdTransferringMergeEventListener copies the generated ID back
-    // to the original object.
+    if (session.contains(object)) {
+      // For managed entities, persist() is a no-op on the entity itself but the JPA spec
+      // guarantees it cascades CascadeType.PERSIST/ALL to any new transient children reachable
+      // through cascade relationships (e.g. newly-added ExtraField, DigitalObjectIdentifier).
+      // This is intentionally preferred over merge() here: merge() on a managed entity in
+      // Hibernate 6 re-initialises lazy collection proxies from the database, which overwrites
+      // in-memory soft-deletion changes (e.g. doi.setDeleted(true)) before they can be flushed.
+      session.persist(object);
+      return object;
+    }
+    // Detached entity: merge() re-attaches it and cascades to new transient children.
     return (T) session.merge(object);
+  }
+
+  /**
+   * Returns the database identifier of {@code object}, or {@code null} if the entity is new.
+   *
+   * <p>Tries {@link jakarta.persistence.PersistenceUnitUtil#getIdentifier} first (works for
+   * field-access entities). Falls back to reflective invocation of {@code getId()} for
+   * property-access entities where Hibernate 6's {@code PersistenceUnitUtil} incorrectly returns
+   * {@code null} even when the entity has a non-null id.
+   */
+  private Object getEntityId(Object object, Session session) {
+    try {
+      Object id = session.getSessionFactory().getPersistenceUnitUtil().getIdentifier(object);
+      if (id != null) {
+        return id;
+      }
+    } catch (IllegalArgumentException e) {
+      // Entity type not registered with this persistence unit
+    }
+    // Fallback for property-access entities (e.g. BaseRecord, RecordToFolder, UserAppConfig).
+    Class<?> cls = object.getClass();
+    while (cls != null) {
+      try {
+        java.lang.reflect.Method m = cls.getDeclaredMethod("getId");
+        m.setAccessible(true);
+        return m.invoke(object);
+      } catch (NoSuchMethodException e) {
+        cls = cls.getSuperclass();
+      } catch (ReflectiveOperationException e) {
+        break;
+      }
+    }
+    return null;
   }
 
   /** {@inheritDoc} */

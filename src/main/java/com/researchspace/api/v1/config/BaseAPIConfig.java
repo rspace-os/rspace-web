@@ -16,7 +16,6 @@ import com.researchspace.api.v1.throttling.APIFileUploadThrottler;
 import com.researchspace.api.v1.throttling.APIRequestThrottler;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.UserApiKeyManager;
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -25,7 +24,6 @@ import org.springframework.context.annotation.Lazy;
 
 /** Common API bean configuration for all profiles */
 @Configuration
-@EnableBatchProcessing
 public class BaseAPIConfig {
 
   @Bean

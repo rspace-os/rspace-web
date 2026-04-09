@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
+import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public abstract class AbstractFormManagerImpl<T extends AbstractForm>
@@ -23,6 +24,7 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
   @Autowired IPermissionUtils permissionUtils;
   @Autowired FieldFormDao fieldFormDao;
   @Autowired protected RecordEditorTracker formTracker;
+  @Autowired SessionFactory sessionFactory;
 
   public AbstractFormManagerImpl(AbstractFormDao<T, Long> dao) {
     super(dao);
@@ -71,6 +73,10 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     // In Hibernate 6, cascade from the already-managed parent form won't flush
     // until transaction commit, leaving the fieldForm without an ID.
     fieldFormDao.save(fieldForm);
+    // Flush to write the INSERT to the DB immediately. This ensures the field form
+    // record exists in the DB before callers potentially modify the managed entity
+    // (e.g., setForm(null) for JSON serialization in controllers).
+    sessionFactory.getCurrentSession().flush();
     return absFormdao.save(form);
   }
 
@@ -87,6 +93,12 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
   public <F extends FieldForm, U extends FormFieldSource<F>> F updateFieldForm(
       U dto, Long fieldFormID, User subject) {
     F fieldform = (F) fieldFormDao.get(fieldFormID);
+    if (fieldform.getForm() == null) {
+      // The form reference on the cached entity may be null if the controller called
+      // setForm(null) on the managed entity for JSON serialization. Since we flush the INSERT
+      // immediately in setColumnIndexAndPersist, refreshing from DB will restore the correct state.
+      sessionFactory.getCurrentSession().refresh(fieldform);
+    }
     T form = (T) fieldform.getForm();
     if (!hasWritePermission(subject, form)) {
       throw new AuthorizationException("Updating a field");

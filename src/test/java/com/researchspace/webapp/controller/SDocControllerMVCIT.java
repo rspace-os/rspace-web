@@ -56,7 +56,6 @@ import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestGroup;
 import java.io.File;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -443,7 +442,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult res3 =
         mockMvc
             .perform(
-                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedWitnessing/")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedWitnessing")
                     .param("option", Boolean.TRUE.toString())
                     .param("recordId", setup.structuredDocument.getId() + "")
                     .param("password", TESTPASSWD)
@@ -513,7 +512,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult res1 =
         this.mockMvc
             .perform(
-                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning/")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning")
                     .param("recordId", docToSignId + "")
                     .param("statement", "any")
                     .param("witnesses[]", new String[] {setup.user.getUsername()})
@@ -556,7 +555,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result1 =
         this.mockMvc
             .perform(
-                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning/")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning")
                     .param("recordId", setup.structuredDocument.getId() + "")
                     .param("statement", "any")
                     .param("witnesses[]", new String[] {setup.user.getUsername()})
@@ -878,7 +877,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
   private int getFieldAutosaveLogRowCount() throws Exception {
     return doInTransaction(
         () -> {
-          return ((BigInteger)
+          return ((Number)
                   sessionFactory
                       .getCurrentSession()
                       .createNativeQuery("select count(*) from FieldAutosaveLog")
@@ -898,7 +897,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult res1 =
         this.mockMvc
             .perform(
-                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning/")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning")
                     .param("recordId", docToSign.getId() + "")
                     .param("statement", "any")
                     .param("username", docOwner.getUsername())

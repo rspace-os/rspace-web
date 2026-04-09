@@ -14,6 +14,7 @@ import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.subject.Subject;
+import org.apache.shiro.util.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,6 +84,9 @@ public class GlobalInitManagerImpl implements GlobalInitManager {
     realms.add(sysadminRealm);
     sn.setRealms(realms);
     SecurityUtils.setSecurityManager(sn);
+    // H6: Clear any stale ThreadContext subject from a previous Spring test context to avoid
+    // GlobalInitSysadminAuthenticationToken being rejected when run in the full test suite.
+    ThreadContext.remove();
     // creates an on-the-fly subject and session
     final Subject subject = new Subject.Builder(sn).buildSubject();
     return subject;

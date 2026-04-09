@@ -2,14 +2,32 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
 
     <changeSet id="hibernate6-rename-sequence-column" author="spring6-migration">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="hibernate_sequences" columnName="sequence_next_hi_value"/>
+        </preConditions>
         <comment>Rename hibernate_sequences value column to match Hibernate 6 default TABLE generator expectations</comment>
         <renameColumn tableName="hibernate_sequences"
                       oldColumnName="sequence_next_hi_value"
                       newColumnName="next_val"
                       columnDataType="int"/>
+    </changeSet>
+    <changeSet id="appconfigelementset-natural-id" author="spring6-migration">
+        <preConditions onFail="MARK_RAN">
+            <not><columnExists tableName="AppConfigElementSet" columnName="naturalId"/></not>
+        </preConditions>
+        <comment>Add stable UUID natural key for AppConfigElementSet so equals/hashCode are safe before and after persist</comment>
+        <addColumn tableName="AppConfigElementSet">
+            <column name="naturalId" type="varchar(36)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </addColumn>
+        <update tableName="AppConfigElementSet">
+            <column name="naturalId" valueComputed="UUID()"/>
+            <where>naturalId IS NULL OR naturalId = ''</where>
+        </update>
     </changeSet>
 
 </databaseChangeLog>

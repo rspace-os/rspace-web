@@ -89,6 +89,9 @@ public class SearchUtils {
         if (sortOrder == SortOrder.DESC) {
           Collections.reverse(list);
         }
+      } else {
+        // No orderBy specified — preserve HS7's natural BM25 score order.
+        // Only apply explicit sorting when an orderBy field is provided.
       }
     }
     return list;

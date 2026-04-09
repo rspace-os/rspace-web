@@ -164,6 +164,7 @@
       <version>3.11.0</version>
       <configuration>
         <release>17</release>
+        <parameters>true</parameters>
       </configuration>
     </plugin>
       <plugin>
@@ -280,6 +281,7 @@
           <argLine>-Xmx1536m
             --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED
             --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED
+            -Dspring.test.context.cache.maxSize=64
             ${argLine}</argLine>
         </configuration>
       </plugin>
@@ -584,6 +586,11 @@
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <!-- Exclude SLF4J JDK14 binding — we use log4j-slf4j2-impl for SLF4J→Log4j2 routing -->
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-jdk14</artifactId>
         </exclusion>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1947,6 +1954,13 @@
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-1.2-api</artifactId>
+      <version>${log4j.version}</version>
+    </dependency>
+    <!-- SLF4J 2.x bridge to Log4j2. The parent POM provides log4j-slf4j-impl (SLF4J 1.x),
+         but this project uses slf4j-api 2.x which needs log4j-slf4j2-impl via ServiceLoader. -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
       <version>${log4j.version}</version>
     </dependency>
 

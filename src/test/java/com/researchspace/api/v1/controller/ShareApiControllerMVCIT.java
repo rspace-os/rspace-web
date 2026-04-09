@@ -310,6 +310,9 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
   public void testUpdateSharePermissions() throws Exception {
     TestGroup group = createTestGroup(2);
     User user = group.getPi();
+    // Must be logged in so USER role grants FORM:READ:property_global=true for the BasicDocument
+    // form
+    logoutAndLoginAs(user);
     StructuredDocument toShare = createBasicDocumentInRootFolderWithText(user, "test");
     String apiKey = createNewApiKeyForUser(user);
 

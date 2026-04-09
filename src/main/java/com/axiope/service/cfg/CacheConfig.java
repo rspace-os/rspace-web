@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.jcache.JCacheCacheManager;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.context.annotation.Bean;
@@ -30,7 +31,7 @@ import org.springframework.core.io.ClassPathResource;
  * Runtime cache sizes can be viewed in JavaMelody Monitoring page
  */
 @Configuration
-// @EnableCaching() - TEMPORARILY DISABLED for Spring 6 migration testing
+@EnableCaching
 public class CacheConfig {
   private static final Logger log = LoggerFactory.getLogger(CacheConfig.class);
 
@@ -60,7 +61,7 @@ public class CacheConfig {
     return new EhCacheConfigurer();
   }
 
-  @Bean
+  @Bean(destroyMethod = "")
   javax.cache.CacheManager jCacheManager() {
     CachingProvider provider = Caching.getCachingProvider();
     URI configUri = getEhcacheConfigUri();

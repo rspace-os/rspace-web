@@ -305,7 +305,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
         parseDate(entry)
             .ifPresent(
                 limit -> {
-                  clauses.add("and (u.lastLogin = NULL or u.lastLogin < :lastLoginLimit)");
+                  clauses.add("and (u.lastLogin IS NULL or u.lastLogin < :lastLoginLimit)");
                   if (params != null) {
                     params.put("lastLoginLimit", limit);
                   }

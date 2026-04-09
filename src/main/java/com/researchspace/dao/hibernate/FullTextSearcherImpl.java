@@ -14,7 +14,12 @@ import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.DAOUtils;
 import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.dao.RecordUserFavoritesDao;
+import com.researchspace.model.EcatAudio;
+import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatCommentItem;
+import com.researchspace.model.EcatDocumentFile;
+import com.researchspace.model.EcatImage;
+import com.researchspace.model.EcatVideo;
 import com.researchspace.model.IFieldLinkableElement;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -29,6 +34,9 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecordAdaptable;
+import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.search.impl.LuceneSearchTermListFactory;
 import com.researchspace.search.impl.LuceneSrchCfg;
@@ -259,17 +267,33 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
    * @return List<IFieldLinkableElement> found elements
    */
   @SuppressWarnings("unchecked")
+  // All @Indexed entity types that participate in ELN full-text search.
+  // Mirrors the original HS5 scope of BaseRecord subclasses + EcatCommentItem.
+  private static final List<Class<? extends IFieldLinkableElement>> ELN_SEARCH_CLASSES =
+      List.of(
+          StructuredDocument.class,
+          Folder.class,
+          Notebook.class,
+          Snippet.class,
+          EcatCommentItem.class,
+          EcatAudio.class,
+          EcatImage.class,
+          EcatVideo.class,
+          EcatDocumentFile.class,
+          EcatChemistryFile.class);
+
   List<IFieldLinkableElement> getElnHibernateList(LuceneSrchCfg srchConfig) {
     SearchSession searchSession = getSearchSession();
-    List<Class<? extends IFieldLinkableElement>> resultClasses =
-        List.of(StructuredDocument.class, EcatCommentItem.class);
-    SearchScope<IFieldLinkableElement> scope = searchSession.scope(resultClasses);
+    SearchScope<IFieldLinkableElement> scope = searchSession.scope(ELN_SEARCH_CLASSES);
     SearchPredicate predicate = queryBuilder.getSearchPredicate(scope, srchConfig);
     if (predicate == null) {
       log.info("Field is NULL on search");
       return new ArrayList<>();
     }
-    return searchSession.search(scope).where(predicate).fetchHits(srchConfig.getMaxResults());
+    List<IFieldLinkableElement> results =
+        new ArrayList<>(
+            searchSession.search(scope).where(predicate).fetchHits(srchConfig.getMaxResults()));
+    return results;
   }
 
   /** Returns Search Session */
@@ -329,7 +353,18 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
       return new ArrayList<>();
     }
     List<InventoryRecord> result =
-        searchSession.search(scope).where(predicate).fetchHits(srchConfig.getMaxResults());
+        new ArrayList<>(
+            searchSession
+                .search(scope)
+                .where(predicate)
+                .sort(
+                    f ->
+                        f.composite(
+                            b -> {
+                              b.add(f.score());
+                              b.add(f.field("id_sort").asc());
+                            }))
+                .fetchHits(srchConfig.getMaxResults()));
 
     if (!result.isEmpty()) {
       PaginationCriteria<InventoryRecord> baseRecPgCrit =

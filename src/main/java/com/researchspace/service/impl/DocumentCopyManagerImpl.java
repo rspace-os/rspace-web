@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.dao.EcatCommentDao;
 import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.dao.FieldDao;
+import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.dao.RSMathDao;
 import com.researchspace.dao.RecordDao;
@@ -74,6 +75,7 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
   private @Autowired RichTextUpdater updater;
   private @Autowired FieldParser fieldParser;
   private @Autowired RecordDao recordDao;
+  private @Autowired FolderDao folderDao;
   private @Autowired IPermissionUtils permissionUtils;
   private @Autowired InternalLinkDao internalLinkDao;
   private @Autowired @Qualifier("compositeFileStore") FileStore fileStore;
@@ -343,8 +345,12 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
     copy = recordDao.save(copy);
 
     if (targetFolder != null && targetFolder.isFolder()) {
-      targetFolder.addChild(copy, user, true); // check this
-      copy = recordDao.save(copy);
+      // H6: use skipAddingToChildren=false so the new RecordToFolder is added to
+      // targetFolder.children (a tracked PersistentSet) and then cascade-persisted
+      // via folderDao.save(). The prior skipAddingToChildren=true relied on H5's
+      // SAVE_UPDATE cascade reachability which no longer exists in H6 JPA.
+      targetFolder.addChild(copy, user, false);
+      folderDao.save(targetFolder);
     }
 
     if (original.hasType(RecordType.MEDIA_FILE)) {

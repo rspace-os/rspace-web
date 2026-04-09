@@ -312,7 +312,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
         createResult
             .getResolvedException()
             .getMessage()
-            .contains(User.DEFAULT_MAXFIELD_LEN + 1 + ""));
+            .contains(String.valueOf(User.DEFAULT_MAXFIELD_LEN)));
   }
 
   private String tooLongMessage() {

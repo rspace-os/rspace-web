@@ -5,11 +5,10 @@
     <session-factory>
          <!-- these properties are internal ones that shouldn't be editable by customers
           IF we want to make a property externally configurable, add it in sessionFactory bean configuration -->
-        <property name="hibernate.cache.region.factory_class">org.hibernate.cache.jcache.JCacheRegionFactory</property>
-        <property name="hibernate.cache.jakarta.cache.provider">org.ehcache.jsr107.EhcacheCachingProvider</property>
-        <property name="hibernate.cache.jcache.config_uri">classpath:ehcache.xml</property>
-        <property name="hibernate.cache.use_second_level_cache">true</property>
-        <property name="hibernate.cache.use_query_cache">true</property>
+        <!-- cache region factory, JCache config, and second-level cache settings moved to applicationContext-dao.xml
+             (Spring bean hibernateProperties), so the test version (src/test/resources/applicationContext-dao.xml)
+             can override them with NoCachingRegionFactory to avoid JCache CacheManager lifecycle conflicts
+             when multiple Spring Test contexts are created in the same JVM. -->
         
         <!-- Hibernate Search 6 Lucene analyzer configuration -->
         <property name="hibernate.search.backend.analysis.configurer">com.researchspace.search.impl.RSpaceLuceneAnalysisConfigurer</property>

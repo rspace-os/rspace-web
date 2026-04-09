@@ -108,6 +108,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.shiro.authz.AuthorizationException;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -155,7 +156,12 @@ public class RecordManagerImpl implements RecordManager {
 
   @Override
   public Record get(long id) {
-    return recordDao.get(id);
+    Record record = recordDao.get(id);
+    // H6: initialize fields within the transaction so callers can access them after tx closes
+    if (record instanceof StructuredDocument) {
+      Hibernate.initialize(((StructuredDocument) record).getFields());
+    }
+    return record;
   }
 
   @Override
@@ -626,7 +632,9 @@ public class RecordManagerImpl implements RecordManager {
 
   private StructuredDocument saveTempRecord(Long recordId, User user) {
     StructuredDocument record = (StructuredDocument) getRecordWithFields(recordId, user);
-    StructuredDocument tempRecord = (StructuredDocument) record.getTempRecord();
+    // H6: getTempRecord() returns a Record proxy; Hibernate.unproxy() gives the real
+    // StructuredDocument
+    StructuredDocument tempRecord = (StructuredDocument) Hibernate.unproxy(record.getTempRecord());
     if (tempRecord == null) {
       tempRecord = record.copyNoFields();
       tempRecord.setTemporaryDoc(true);
@@ -724,7 +732,10 @@ public class RecordManagerImpl implements RecordManager {
       warningList.addErrorMsg("content.not.changed");
     }
 
-    StructuredDocument temp = (StructuredDocument) structuredDocument.getTempRecord();
+    // H6: getTempRecord() returns a Record proxy; Hibernate.unproxy() gives the real
+    // StructuredDocument
+    StructuredDocument temp =
+        (StructuredDocument) Hibernate.unproxy(structuredDocument.getTempRecord());
     if (temp != null) {
       structuredDocument.setModificationDate(temp.getModificationDate());
       structuredDocument.setModifiedBy(temp.getModifiedBy(), IActiveUserStrategy.CHECK_OPERATE_AS);
@@ -785,7 +796,10 @@ public class RecordManagerImpl implements RecordManager {
     }
     fieldContentSynchroniser.revertSyncDocumentWithEntitiesOnCancel(
         structuredDocument, fieldChanges);
-    StructuredDocument temp = (StructuredDocument) structuredDocument.getTempRecord();
+    // H6: getTempRecord() returns a Record proxy; Hibernate.unproxy() gives the real
+    // StructuredDocument
+    StructuredDocument temp =
+        (StructuredDocument) Hibernate.unproxy(structuredDocument.getTempRecord());
     if (temp != null) {
       structuredDocument.setTempRecord(null);
     }

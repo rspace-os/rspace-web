@@ -4,6 +4,9 @@ package com.axiope.search;
 public class FieldNames {
 
   public static final String FIELD_DATA = "fields.fieldData";
+  // Flat HS7 field combining description and globalIdentifier (BaseRecord.getSearchableContent())
+  // and EcatCommentItem content. Full-text search must cover both this and FIELD_DATA.
+  public static final String FLAT_FIELD_DATA = "fields_fieldData";
 
   public static final String DOC_TAG = "docTag";
 
@@ -31,6 +34,13 @@ public class FieldNames {
   public static final String BARCODE = "barcodes.barcodeData";
 
   public static final String BARCODE_FIELD_DATA = "barcodes.fieldData";
+
+  // Extra field content on Sample and SubSample (indexed via @IndexedEmbedded with "extraFields."
+  // prefix)
+  public static final String EXTRA_FIELD_DATA = "extraFields.fieldData";
+
+  // SubSample note content (indexed via @IndexedEmbedded with "notes." prefix on SubSample)
+  public static final String NOTES_FIELD_DATA = "notes.fieldData";
 
   /* for searching items by the id of the container they belong to */
   public static final String PARENT_ID = "parentId";

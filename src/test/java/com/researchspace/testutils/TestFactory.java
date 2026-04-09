@@ -75,7 +75,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.apache.commons.io.IOUtils;
@@ -180,7 +179,10 @@ public class TestFactory {
       e.printStackTrace();
     }
     Folder rtd = new Folder();
-    rtd.setId(new Random().nextLong());
+    // Do NOT pre-assign a random id here. In Hibernate 6, entities with a pre-assigned id
+    // (but not yet in the database) cause merge() to treat them as detached rather than new,
+    // potentially inserting with a spurious id or conflicting with session-managed instances.
+    // IDs are assigned by the database (IDENTITY strategy) when the entity is first persisted.
     rtd.setCreatedBy(owner.getUsername());
     rtd.setOwner(owner);
     rtd.setDescription("desc");
@@ -224,7 +226,7 @@ public class TestFactory {
 
   public static Notebook createANotebook(String name, User owner) {
     Notebook rtd = new Notebook();
-    rtd.setId(new Random().nextLong());
+    // Do NOT pre-assign a random id — see createAFolder() comment for rationale.
     rtd.setCreatedBy(owner.getUsername());
     rtd.setOwner(owner);
     rtd.setDescription("desc");

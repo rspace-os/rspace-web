@@ -613,6 +613,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
 
           /* then delete the sample */
           dbSample.setRecordDeleted(true);
+          dbSample.refreshActiveSubSamples();
           dbSample = sampleDao.save(dbSample);
           publisher.publishEvent(new InventoryDeleteEvent(dbSample, user));
         }

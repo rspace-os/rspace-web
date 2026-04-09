@@ -16,6 +16,7 @@ public class RSpaceLuceneAnalysisConfigurer implements LuceneAnalysisConfigurer 
         .analyzer("structureAnalyzer")
         .custom()
         .tokenizer("standard")
+        .charFilter("htmlStrip")
         .tokenFilter("lowercase")
         .tokenFilter("stop");
 
