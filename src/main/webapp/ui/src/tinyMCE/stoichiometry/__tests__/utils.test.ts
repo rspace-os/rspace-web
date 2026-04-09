@@ -170,9 +170,12 @@ describe("getInventoryUpdateEligibility", () => {
       stockDeducted: true,
     };
 
-    expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
+    expect(
+      getInventoryUpdateEligibility(molecule, linkedQuantityInfo),
+    ).toMatchObject({
       disabledReason: null,
-      helperText: "Stock has already been deducted for this molecule.",
+      helperText:
+        "Stock has already been deducted for this molecule.  To reduce the stock again, select this molecule.",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "10.0", unitLabel: "g" },
