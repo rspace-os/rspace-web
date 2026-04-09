@@ -334,6 +334,83 @@ describe("useEditableStoichiometryTable", () => {
     mockGetStoichiometry.mockResolvedValue(mockRefreshedStoichiometry);
   });
 
+  it("assigns distinct numeric temporary ids when reagent additions overlap", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+    let resolveFirstRequest: ((value: { molecularWeight: number; formula: string }) => void) | null = null;
+    let resolveSecondRequest: ((value: { molecularWeight: number; formula: string }) => void) | null = null;
+
+    mockGetMoleculeInfoMutateAsync
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirstRequest = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecondRequest = resolve;
+          }),
+      );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <HookHarness
+          onValue={(value) => {
+            latestValue = value;
+          }}
+        />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+
+    act(() => {
+      void latestValue?.tableController.addReagent(
+        "O",
+        "New Water",
+        "manual",
+      );
+      void latestValue?.tableController.addReagent(
+        "CC(=O)O",
+        "Acetic acid",
+        "manual",
+      );
+    });
+
+    act(() => {
+      resolveSecondRequest?.({ molecularWeight: 60.052, formula: "C2H4O2" });
+    });
+    act(() => {
+      resolveFirstRequest?.({ molecularWeight: 18.015, formula: "H2O" });
+    });
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(6);
+    });
+
+    const addedReagents = latestValue!.allMolecules.filter(
+      ({ name, id }) =>
+        (name === "New Water" || name === "Acetic acid") &&
+        typeof id === "number",
+    );
+
+    expect(addedReagents).toHaveLength(2);
+    expect(addedReagents.map(({ id }) => id)).toEqual(
+      expect.arrayContaining([expect.any(Number), expect.any(Number)]),
+    );
+    expect(new Set(addedReagents.map(({ id }) => id)).size).toBe(2);
+    expect(addedReagents.every(({ id }) => id < 0)).toBe(true);
+  });
+
   it("soft-deletes saved inventory links, blocks replacement until undo, and restores them on undo", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {

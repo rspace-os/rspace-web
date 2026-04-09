@@ -253,6 +253,55 @@ export function hasDuplicateInventoryLink(
   );
 }
 
+function calculateProductYield(
+  {
+    actualAmount,
+    coefficient,
+    molecularWeight,
+  }: Pick<EditableMolecule, "actualAmount"> & {
+    coefficient: number;
+    molecularWeight: number;
+  },
+  limitingReagentMoles: number,
+): number | null {
+  if (actualAmount === null || limitingReagentMoles <= 0) {
+    return null;
+  }
+
+  const theoreticalMoles = limitingReagentMoles * coefficient;
+  const theoreticalMass = theoreticalMoles * molecularWeight;
+
+  if (theoreticalMass <= 0) {
+    return null;
+  }
+
+  return actualAmount / theoreticalMass;
+}
+
+function calculateNonLimitingReagentExcess(
+  {
+    actualAmount,
+    coefficient,
+    molecularWeight,
+  }: Pick<EditableMolecule, "actualAmount"> & {
+    coefficient: number;
+    molecularWeight: number;
+  },
+  limitingReagentMoles: number,
+): number | null {
+  if (actualAmount === null || limitingReagentMoles <= 0) {
+    return null;
+  }
+
+  const actualMoles = calculateMoles(actualAmount, molecularWeight);
+
+  if (actualMoles === null) {
+    return null;
+  }
+
+  return actualMoles / coefficient / limitingReagentMoles - 1;
+}
+
 function calculateActualYieldOrExcess(
   molecule: EditableMolecule,
   limitingReagentMoles: number,
@@ -264,34 +313,30 @@ function calculateActualYieldOrExcess(
   }
 
   if (molecule.role === "PRODUCT") {
-    // For products, calculate yield percentage based on theoretical yield from limiting reagent
-    if (molecule.actualAmount === null || limitingReagentMoles <= 0) {
-      return null;
-    }
+    return calculateProductYield(
+      {
+        actualAmount: molecule.actualAmount,
+        coefficient: molecule.coefficient,
+        molecularWeight: molecule.molecularWeight,
+      },
+      limitingReagentMoles,
+    );
+  }
 
-    const theoreticalMoles = limitingReagentMoles * molecule.coefficient;
-
-    const theoreticalMass = theoreticalMoles * molecule.molecularWeight;
-    if (theoreticalMass <= 0) {
-      return null;
-    }
-    return molecule.actualAmount / theoreticalMass;
-  } else if (
+  if (
     (molecule.role === "REACTANT" || molecule.role === "AGENT") &&
     !molecule.limitingReagent
   ) {
-    // For non-limiting reactants, calculate excess using molar ratio formula
-    if (molecule.actualAmount === null || limitingReagentMoles <= 0) {
-      return null;
-    }
-    return (
-      (calculateMoles(molecule.actualAmount, molecule.molecularWeight) ?? 0) /
-        
-        molecule.coefficient /
-        limitingReagentMoles -
-      1
+    return calculateNonLimitingReagentExcess(
+      {
+        actualAmount: molecule.actualAmount,
+        coefficient: molecule.coefficient,
+        molecularWeight: molecule.molecularWeight,
+      },
+      limitingReagentMoles,
     );
   }
+
   return null;
 }
 

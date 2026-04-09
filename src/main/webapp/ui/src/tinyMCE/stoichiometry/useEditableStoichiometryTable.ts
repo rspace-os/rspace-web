@@ -292,27 +292,11 @@ export function useEditableStoichiometryTable({
       }
 
       try {
+        const temporaryIdBase = -Date.now();
+
         const moleculeInfo = await getMoleculeInfoMutation.mutateAsync({
           smiles: smilesString,
         });
-
-        const tempId = -(allMolecules.length + 1);
-
-        const mockRsChemElement: RsChemElement = {
-          id: tempId,
-          parentId: null,
-          ecatChemFileId: null,
-          dataImage: null,
-          chemElements: smilesString,
-          smilesString,
-          chemId: null,
-          reactionId: null,
-          rgroupId: null,
-          metadata: null,
-          chemElementsFormat: "SMILES",
-          creationDate: Date.now(),
-          imageFileProperty: null,
-        };
 
         const limitingReagent = allMolecules.find((m) => m.limitingReagent);
 
@@ -325,29 +309,52 @@ export function useEditableStoichiometryTable({
             ? null
             : limitingReagentMoles / limitingReagent.coefficient;
 
-        const newMolecule: EditableMolecule = {
-          id: tempId,
-          rsChemElement: mockRsChemElement,
-          inventoryLink: null,
-          savedInventoryLink: null,
-          deletedInventoryLink: null,
-          role: "AGENT",
-          formula: moleculeInfo.formula,
-          name,
-          smiles: smilesString,
-          coefficient: 1,
-          molecularWeight: moleculeInfo.molecularWeight,
-          mass: ratio ? ratio * moleculeInfo.molecularWeight : 0,
-          moles: null,
-          actualAmount: null,
-          actualMoles: null,
-          actualYield: null,
-          limitingReagent: false,
-          notes: null,
-        };
-
         updateAllMolecules((prevMolecules) =>
           produce(Array.from(prevMolecules), (draftMolecules) => {
+            const usedIds = new Set(draftMolecules.map(({ id }) => id));
+            let tempId = temporaryIdBase;
+
+            while (usedIds.has(tempId)) {
+              tempId -= 1;
+            }
+
+            const mockRsChemElement: RsChemElement = {
+              id: tempId,
+              parentId: null,
+              ecatChemFileId: null,
+              dataImage: null,
+              chemElements: smilesString,
+              smilesString,
+              chemId: null,
+              reactionId: null,
+              rgroupId: null,
+              metadata: null,
+              chemElementsFormat: "SMILES",
+              creationDate: Date.now(),
+              imageFileProperty: null,
+            };
+
+            const newMolecule: EditableMolecule = {
+              id: tempId,
+              rsChemElement: mockRsChemElement,
+              inventoryLink: null,
+              savedInventoryLink: null,
+              deletedInventoryLink: null,
+              role: "AGENT",
+              formula: moleculeInfo.formula,
+              name,
+              smiles: smilesString,
+              coefficient: 1,
+              molecularWeight: moleculeInfo.molecularWeight,
+              mass: ratio ? ratio * moleculeInfo.molecularWeight : 0,
+              moles: null,
+              actualAmount: null,
+              actualMoles: null,
+              actualYield: null,
+              limitingReagent: false,
+              notes: null,
+            };
+
             draftMolecules.push(newMolecule);
           }),
         );

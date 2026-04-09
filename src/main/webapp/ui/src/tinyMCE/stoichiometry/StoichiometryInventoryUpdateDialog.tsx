@@ -173,6 +173,11 @@ export default function StoichiometryInventoryUpdateDialog({
       onClose={handleClose}
       maxWidth="lg"
       fullWidth
+      PaperProps={{
+        sx: {
+          minWidth: (theme) => theme.breakpoints.values.sm,
+        },
+      }}
       aria-labelledby={titleId}
     >
       <form
@@ -241,8 +246,6 @@ export default function StoichiometryInventoryUpdateDialog({
               <Table
                 stickyHeader
                 size="small"
-                aria-label="Inventory stock update molecules"
-                sx={{ tableLayout: "fixed", minWidth: 980 }}
               >
                 <TableHead>
                   <TableRow>
@@ -252,8 +255,7 @@ export default function StoichiometryInventoryUpdateDialog({
                       width={52}
                       sx={{ px: 0.5 }}
                     />
-                    <TableCell width="45%">Molecule</TableCell>
-                    <TableCell width="15%">Type</TableCell>
+                    <TableCell width="60%">Molecule</TableCell>
                     <TableCell align="right" width="15%">
                       In Stock
                     </TableCell>
@@ -325,4 +327,3 @@ export default function StoichiometryInventoryUpdateDialog({
     </Dialog>
   );
 }
-

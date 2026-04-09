@@ -170,7 +170,12 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
           },
         }}
       >
-        <TableCell padding="checkbox" data-column="Actions" width={52} sx={{ px: 0.5 }}>
+        <TableCell
+          padding="checkbox"
+          data-column="Actions"
+          width={52}
+          sx={{ px: 0.5 }}
+        >
           <Box
             data-dimmed={effectiveDisabled ? "true" : "false"}
             display="flex"
@@ -198,11 +203,26 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
             />
           </Box>
         </TableCell>
-        <TableCell data-column="Molecule" sx={{ minWidth: 260, py: 1.5 }}>
+        <TableCell data-column="Molecule" sx={{ py: 1.5 }}>
           <Stack spacing={0.75}>
-            <Typography id={nameId} variant="subtitle1" component="h3" fontWeight={600}>
-              {moleculeName}
-            </Typography>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              flexWrap="wrap"
+            >
+              <Typography
+                id={nameId}
+                variant="subtitle1"
+                component="h3"
+                fontWeight={600}
+              >
+                {moleculeName}
+              </Typography>
+              {molecule.role && (
+                <StoichiometryTableRoleChip role={molecule.role} />
+              )}
+            </Stack>
             <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
               {molecule.inventoryLink ? (
                 <GlobalId
@@ -214,31 +234,22 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
                   onClick={() => {}}
                 />
               ) : (
-                <Chip size="small" variant="outlined" label="No inventory link" />
-              )}
-              {typeof molecule.inventoryLink?.stockDeducted === "boolean" && (
                 <Chip
                   size="small"
                   variant="outlined"
-                  color={molecule.inventoryLink.stockDeducted ? "warning" : "primary"}
-                  label={
-                    molecule.inventoryLink.stockDeducted
-                      ? "Stock deducted"
-                      : "Stock not deducted"
-                  }
+                  label="No inventory link"
+                />
+              )}
+              {molecule.inventoryLink?.stockDeducted && (
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  color="warning"
+                  label="Stock Deducted"
                 />
               )}
             </Stack>
           </Stack>
-        </TableCell>
-        <TableCell data-column="Type" sx={{ minWidth: 120, py: 1.5 }}>
-          {molecule.role ? (
-            <StoichiometryTableRoleChip role={molecule.role} />
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              —
-            </Typography>
-          )}
         </TableCell>
         <StockMetricCell
           column="In Stock"

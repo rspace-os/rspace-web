@@ -147,7 +147,7 @@ export async function deleteStoichiometry(
     },
   );
 
-  let data;
+  let data: unknown;
   try {
     data = await response.json();
   } catch {
