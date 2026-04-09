@@ -158,6 +158,18 @@
                         <label><input type="radio" id="fileSystemDetailsSftpDirChoiceNo" value="false" name="fileSystemDirChoice" />No</label></td>
                 </tr>
             </rst:hasDeploymentProperty>
+
+            <tr class="fileSystemDetailsS3Row">
+                <td><label for="fileSystemS3BucketName">
+                    <spring:message code="system.netfilesystem.details.client.s3.bucketName" /></label></td>
+                <td><input id="fileSystemS3BucketName" type="text" style="width: 20em" /></td>
+            </tr>
+            <tr class="fileSystemDetailsS3Row">
+                <td><label for="fileSystemS3Region">
+                    <spring:message code="system.netfilesystem.details.client.s3.region" /></label></td>
+                <td><input id="fileSystemS3Region" type="text" style="width: 20em" /></td>
+            </tr>
+
             <tr class="fileSystemDetailsAuthRow">
                 <td><label><spring:message code="system.netfilesystem.details.auth" /></label></td>
                 <td>

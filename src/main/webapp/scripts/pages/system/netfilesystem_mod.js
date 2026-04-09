@@ -165,6 +165,9 @@ define(function() {
             $('#fileSystemIrodsHomeDir').val(clientOptions.IRODS_HOME_DIR);
             $('#fileSystemIrodsPort').val(clientOptions.IRODS_PORT);
             $('#fileSystemIrodsCsneg').val(clientOptions.IRODS_CSNEG);
+        } else if (isS3Client) {
+            $('#fileSystemS3Region').val(clientOptions.S3_REGION);
+            $('#fileSystemS3BucketName').val(clientOptions.S3_BUCKET_NAME);
         }
         
         var isPasswordAuth = isExistingFileSystem && fileSystem.authType === 'PASSWORD';
@@ -252,7 +255,16 @@ define(function() {
                 clientOptions +="\nUSER_DIRS_REQUIRED=" + dirsRequired;
             }
         } else if (clientType === 'IRODS') {
-            clientOptions = "IRODS_ZONE=" + $('#fileSystemIrodsZone').val() + "\nIRODS_HOME_DIR=" + $('#fileSystemIrodsHomeDir').val() + "\nIRODS_PORT=" + $('#fileSystemIrodsPort').val()+"\nIRODS_CSNEG=" + $('#fileSystemIrodsCsneg').val()+"\nIRODS_AUTH=" + $('input[name="iRODSfileSystemAuthType"]:checked').val()+"\n";
+            clientOptions = "IRODS_ZONE=" + $('#fileSystemIrodsZone').val()
+                        + "\nIRODS_HOME_DIR=" + $('#fileSystemIrodsHomeDir').val()
+                        + "\nIRODS_PORT=" + $('#fileSystemIrodsPort').val()
+                        + "\nIRODS_CSNEG=" + $('#fileSystemIrodsCsneg').val()
+                        + "\nIRODS_AUTH=" + $('input[name="iRODSfileSystemAuthType"]:checked').val()+"\n";
+        } else if (clientType === 'S3') {
+            var s3Region = $('#fileSystemS3Region').val();
+            $('#fileSystemUrl').val("aws::" + s3Region);
+            clientOptions = "S3_REGION=" + s3Region
+                        + "\nS3_BUCKET_NAME=" + $('#fileSystemS3BucketName').val();
         }
 
         var fileSystem = {
@@ -265,7 +277,6 @@ define(function() {
                 clientOptions: clientOptions,
                 authOptions: authOptions
             };
-        //console.log("File System:", fileSystem);
         RS.blockPage("Saving...");
         var jqxhr = RS.sendJsonPostRequestToUrl('/system/netfilesystem/save', fileSystem);
         jqxhr.done(function() {
@@ -305,7 +316,6 @@ define(function() {
         const existingFileSystem = $('#fileSystemId').html().length;
 
         $('.fileSystemDetailsUrlRow').toggle(!isS3Client);
-        $('.fileSystemDetailsUrlRow').toggle(!isS3Client);
 
         $('#fileSystemDetailsSftpDirChoiceRow').toggle(isSftpClient);
         if ($("#fileSystemDetailsSftpDirChoiceYes").length) {
@@ -333,8 +343,15 @@ define(function() {
         $("label[for='fileSystemAuthTypePassword']").toggle(!isS3Client);
         $("label[for='fileSystemAuthTypePubKey']").toggle(isSftpClient);
         $("label[for='fileSystemAuthTypeNone']").toggle(isS3Client);
+
+        $('.fileSystemDetailsS3Row').toggle(isS3Client);
+        $('#fileSystemS3BucketName').prop('required', isS3Client);
+        $('#fileSystemS3Region').prop('required', isS3Client);
+
         if (isSambaClient || isIrodsClient) {
             $('#fileSystemAuthTypePassword').click();
+        } else if (isS3Client) {
+            $('#fileSystemAuthTypeNone').click();
         }
         $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
         $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);

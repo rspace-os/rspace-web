@@ -146,6 +146,7 @@ public class NfsFactoryTest {
   public void creatingAwsS3Client() {
     testFileSystem.setClientType(NfsClientType.S3);
     testFileSystem.setAuthType(NfsAuthenticationType.NONE);
+    testFileSystem.setClientOptions("S3_REGION=testRegion\nS3_BUCKET_NAME=testBucket");
 
     AwsS3Client awsS3Client =
         (AwsS3Client) factory.getNfsClient(testUsername, null, testFileSystem);

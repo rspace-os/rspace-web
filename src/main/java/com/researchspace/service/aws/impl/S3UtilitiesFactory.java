@@ -1,6 +1,7 @@
 package com.researchspace.service.aws.impl;
 
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.service.aws.S3Utilities;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,8 @@ public class S3UtilitiesFactory {
   }
 
   public S3Utilities createS3Utilities(NfsFileSystem fileSystem) {
-    // TODO just for testing, should retrieve from fileSystem details
-    return createS3Utilities("eu-west-2", "rspace-s3-integration-unit-tests");
+    String s3Region = fileSystem.getClientOption(NfsFileSystemOption.S3_REGION);
+    String s3BucketName = fileSystem.getClientOption(NfsFileSystemOption.S3_BUCKET_NAME);
+    return createS3Utilities(s3Region, s3BucketName);
   }
 }

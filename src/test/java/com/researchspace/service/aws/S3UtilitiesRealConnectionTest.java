@@ -48,8 +48,6 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
   private S3Utilities s3Utilities;
 
-  private File archiveToExport;
-
   @Before
   public void setup() {
     s3Utilities = s3UtilitiesFactory.createS3Utilities(s3region, s3bucketName);
