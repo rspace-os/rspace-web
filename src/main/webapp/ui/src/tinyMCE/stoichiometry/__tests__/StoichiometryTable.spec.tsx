@@ -42,6 +42,12 @@ function getCellByField(row: Locator, field: string): Locator {
   return row.locator(`[role="gridcell"][data-field="${field}"]`);
 }
 
+function getMoleculeInfoLoadingDialog(container: Page | Locator): Locator {
+  return container
+    .getByRole("dialog")
+    .filter({ hasText: "Loading molecule information..." });
+}
+
 async function getRowByColumnValue(
   table: Locator,
   columnHeaderText: string,
@@ -299,7 +305,6 @@ const feature = test.extend<{
   };
   Once: {
     "the table has loaded": () => Promise<void>;
-    "the loading dialog appears": () => Promise<void>;
     "the loading dialog disappears": () => Promise<void>;
   };
   When: {
@@ -417,9 +422,6 @@ const feature = test.extend<{
     }: {
       csv: Download;
     }) => Promise<void>;
-    "the loading dialog should be visible": () => Promise<void>;
-
-    "the loading dialog should not be visible": () => Promise<void>;
     "inventory picker should be visible for {molecule}": ({
       molecule,
     }: {
@@ -449,22 +451,20 @@ const feature = test.extend<{
       "the table has loaded": async () => {
         await page.waitForFunction(() => {
           const table = document.querySelector('[role="grid"]');
-          const loading = document.body.textContent?.includes("Loading");
+          const moleculeInfoLoadingDialog = Array.from(
+            document.querySelectorAll('[role="dialog"]'),
+          ).some((dialog) =>
+            dialog.textContent?.includes("Loading molecule information..."),
+          );
           const noData = document.body.textContent?.includes(
             "No stoichiometry data available",
           );
-          return (table && !loading) || noData;
+
+          return ((table && !moleculeInfoLoadingDialog) || noData) ?? false;
         });
       },
-      "the loading dialog appears": async () => {
-        await expect(
-          page.getByText("Loading molecule information..."),
-        ).toBeVisible();
-      },
       "the loading dialog disappears": async () => {
-        await expect(
-          page.getByText("Loading molecule information..."),
-        ).not.toBeVisible();
+        await expect(getMoleculeInfoLoadingDialog(page)).toHaveCount(0);
       },
     });
   },
@@ -793,16 +793,6 @@ const feature = test.extend<{
           const dataRows = getDataRows(page.getByRole("grid"));
         const rowCount = await dataRows.count();
         expect(rowCount).toBe(count);
-      },
-      "the loading dialog should be visible": async () => {
-        await expect(
-          page.getByText("Loading molecule information..."),
-        ).toBeVisible();
-      },
-      "the loading dialog should not be visible": async () => {
-        await expect(
-          page.getByText("Loading molecule information..."),
-        ).not.toBeVisible();
       },
       "inventory picker should be visible for {molecule}": async ({
         molecule,
@@ -1141,13 +1131,16 @@ test.describe("Stoichiometry Table", () => {
         moleculeRow(cardName).locator(`[data-column="${metricName}"]`);
 
       await expect(
-        dialog.getByRole("table", { name: "Inventory stock update molecules" }),
-      ).toBeVisible();
-      await expect(
         dialog.getByRole("columnheader", { name: "Molecule", exact: true }),
       ).toBeVisible();
       await expect(
-        dialog.getByRole("columnheader", { name: "Type", exact: true }),
+        dialog.getByRole("columnheader", { name: "In Stock", exact: true }),
+      ).toBeVisible();
+      await expect(
+        dialog.getByRole("columnheader", { name: "Will Use", exact: true }),
+      ).toBeVisible();
+      await expect(
+        dialog.getByRole("columnheader", { name: "Remaining", exact: true }),
       ).toBeVisible();
 
       await expect(
@@ -1294,7 +1287,6 @@ test.describe("Stoichiometry Table", () => {
         await Then["PubChem search results should be displayed"]();
         await When["the user clicks Insert"]();
 
-        await Then["the loading dialog should be visible"]();
         await Once["the loading dialog disappears"]();
         await Then["the table should contain a new row with {name}"]({
           name: "Caffeine",
@@ -1323,7 +1315,6 @@ test.describe("Stoichiometry Table", () => {
         });
 
         await When["the user adds the manual reagent"]();
-        await Then["the loading dialog should be visible"]();
 
         await Once["the loading dialog disappears"]();
         await Then["the table should contain a new row with {name}"]({
@@ -1352,8 +1343,6 @@ test.describe("Stoichiometry Table", () => {
         await When["the user selects the first chemistry file from Gallery"]();
 
         await When["the user adds the selected files from Gallery"]();
-        // Check loading dialog appears and disappears
-        await Then["the loading dialog should be visible"]();
 
         await Once["the loading dialog disappears"]();
         // Verify the new reagent is added correctly (using filename without extension)
