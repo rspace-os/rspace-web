@@ -36,7 +36,7 @@ This covers dependencies, database setup, building the project, running RSpace l
 
 We welcome contributions of all kinds — code, UX, documentation, templates, integrations, and more.
 
-→ **[Community Playbook](https://github.com/rspace-os/community/blob/main/the%20rspace%20project/README.md)** — your guide to the project and how to contribute
+→ **[Guide to the RSpace Project](https://github.com/rspace-os/community/blob/main/the%20rspace%20project/README.md)** — your guide to the project and how to contribute
 
 → **[Getting Started as a Contributor](https://github.com/rspace-os/community/blob/main/the%20rspace%20project/Guide/contributing/getting-started.md)** — read this before your first contribution
 
