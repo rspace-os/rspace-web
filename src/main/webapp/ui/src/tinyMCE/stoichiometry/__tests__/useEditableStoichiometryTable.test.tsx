@@ -13,8 +13,11 @@ const {
   mockDeleteStoichiometryMutateAsync,
   mockGetStoichiometry,
   mockGetMoleculeInfoMutateAsync,
+  mockGetToken,
+  mockUseOauthTokenQuery,
   mockRefreshedStoichiometry,
   mockStoichiometryQueryData,
+  mockUseSubSampleQuantitiesQuery,
   mockUpdateStoichiometryMutateAsync,
 } = vi.hoisted(() => ({
   createEditableMolecules: () => [
@@ -199,6 +202,8 @@ const {
   mockDeleteStoichiometryMutateAsync: vi.fn(),
   mockGetStoichiometry: vi.fn(),
   mockGetMoleculeInfoMutateAsync: vi.fn(),
+  mockGetToken: vi.fn(),
+  mockUseOauthTokenQuery: vi.fn(),
   mockRefreshedStoichiometry: {
     id: 9,
     revision: 4,
@@ -209,13 +214,51 @@ const {
     revision: 1,
     molecules: [],
   },
+  mockUseSubSampleQuantitiesQuery: vi.fn(() =>
+    new Map([
+      [
+        "SS123",
+        {
+          status: "available",
+          quantity: {
+            numericValue: 4,
+            unitId: 7,
+          },
+        },
+      ],
+      [
+        "SS124",
+        {
+          status: "available",
+          quantity: {
+            numericValue: 10,
+            unitId: 7,
+          },
+        },
+      ],
+      [
+        "SS125",
+        {
+          status: "available",
+          quantity: {
+            numericValue: 25,
+            unitId: 3,
+          },
+        },
+      ],
+    ]),
+  ),
   mockUpdateStoichiometryMutateAsync: vi.fn(),
 }));
 
 vi.mock("@/hooks/auth/useOauthToken", () => ({
   default: () => ({
-    getToken: vi.fn(),
+    getToken: mockGetToken,
   }),
+}));
+
+vi.mock("@/modules/common/hooks/auth", () => ({
+  useOauthTokenQuery: mockUseOauthTokenQuery,
 }));
 
 vi.mock("@/modules/inventory/queries", async () => {
@@ -225,39 +268,7 @@ vi.mock("@/modules/inventory/queries", async () => {
 
   return {
     ...actual,
-    useSubSampleQuantitiesQuery: () =>
-      new Map([
-        [
-          "SS123",
-          {
-            status: "available",
-            quantity: {
-              numericValue: 4,
-              unitId: 7,
-            },
-          },
-        ],
-        [
-          "SS124",
-          {
-            status: "available",
-            quantity: {
-              numericValue: 10,
-              unitId: 7,
-            },
-          },
-        ],
-        [
-          "SS125",
-          {
-            status: "available",
-            quantity: {
-              numericValue: 25,
-              unitId: 3,
-            },
-          },
-        ],
-      ]),
+    useSubSampleQuantitiesQuery: mockUseSubSampleQuantitiesQuery,
   };
 });
 
@@ -325,13 +336,40 @@ describe("useEditableStoichiometryTable", () => {
     mockDeleteStoichiometryMutateAsync.mockReset();
     mockGetStoichiometry.mockReset();
     mockGetMoleculeInfoMutateAsync.mockReset();
+    mockGetToken.mockReset();
+    mockUseOauthTokenQuery.mockReset();
+    mockUseSubSampleQuantitiesQuery.mockClear();
     mockDeductStockMutateAsync.mockResolvedValue({
       stoichiometryId: 9,
       revisionNumber: 4,
       results: [{ linkId: 502, success: true }],
     });
+    mockGetToken.mockResolvedValue("resolved-token");
+    mockUseOauthTokenQuery.mockReturnValue({ data: "inventory-token" });
     mockUpdateStoichiometryMutateAsync.mockResolvedValue({ revision: 2 });
     mockGetStoichiometry.mockResolvedValue(mockRefreshedStoichiometry);
+  });
+
+  it("gets the inventory token from useOauthTokenQuery before calling the sub-sample quantity hook", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <HookHarness onValue={() => {}} />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(mockUseSubSampleQuantitiesQuery).toHaveBeenLastCalledWith({
+        inventoryItemGlobalIds: ["SS123", "SS124", "SS125"],
+        token: "inventory-token",
+      });
+    });
   });
 
   it("assigns distinct numeric temporary ids when reagent additions overlap", async () => {
@@ -646,7 +684,7 @@ describe("useEditableStoichiometryTable", () => {
     expect(mockGetStoichiometry).toHaveBeenCalledWith({
       stoichiometryId: 9,
       revision: 4,
-      token: undefined,
+      token: "resolved-token",
     });
     expect(
       queryClient.getQueryData(stoichiometryQueryKeys.byId(9, 4)),
@@ -743,7 +781,7 @@ describe("useEditableStoichiometryTable", () => {
     expect(mockGetStoichiometry).toHaveBeenCalledWith({
       stoichiometryId: 11,
       revision: 7,
-      token: undefined,
+      token: "resolved-token",
     });
     expect(
       queryClient.getQueryData(stoichiometryQueryKeys.byId(11, 7)),

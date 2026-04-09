@@ -19,6 +19,7 @@ import {
   stoichiometryQueryKeys,
   useGetStoichiometryQuery,
 } from "@/modules/stoichiometry/queries";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import type {
   ExistingMoleculeUpdate,
   NewMolecule,
@@ -118,6 +119,7 @@ export function useEditableStoichiometryTable({
   stoichiometryRevision: number;
 }) {
   const { getToken } = useOauthToken();
+  const { data: inventoryToken } = useOauthTokenQuery();
   const { trackEvent } = React.useContext(AnalyticsContext);
   const queryClient = useQueryClient();
   const updateStoichiometryMutation = useUpdateStoichiometryMutation({
@@ -137,6 +139,7 @@ export function useEditableStoichiometryTable({
     revision: stoichiometryRevision,
     getToken,
   });
+
   const data = queriedStoichiometry;
   const stoichiometryVersionKey = `${queriedStoichiometry.id}:${queriedStoichiometry.revision}`;
   const initialMolecules = React.useMemo(
@@ -193,7 +196,7 @@ export function useEditableStoichiometryTable({
   );
   const subSampleQuantitiesByGlobalId = useSubSampleQuantitiesQuery({
     inventoryItemGlobalIds: linkedInventoryItemGlobalIds,
-    getToken,
+    token: inventoryToken,
   });
   const hasChanges = React.useMemo(
     () =>
