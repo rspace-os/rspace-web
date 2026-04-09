@@ -1219,7 +1219,9 @@ test.describe("Stoichiometry Table", () => {
         dialog.getByRole("checkbox", { name: "Cyclopentane" }),
       ).not.toBeChecked();
       await expect(
-        dialog.getByText("Stock has already been deducted for this molecule."),
+        dialog.getByText(
+          "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+        ),
       ).toBeVisible();
     },
   );

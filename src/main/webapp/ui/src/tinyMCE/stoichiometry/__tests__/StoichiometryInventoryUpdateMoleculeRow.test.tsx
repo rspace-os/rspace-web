@@ -240,7 +240,9 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         }}
         selected={false}
         disabled={false}
-        helperText={"Stock has already been deducted for this molecule."}
+        helperText={
+          "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule."
+        }
         stockDisplay={stockDisplay}
         onToggle={() => {}}
       />,
@@ -475,7 +477,7 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         }}
         selected={false}
         disabled={true}
-        helperText="Stock has already been deducted for this molecule."
+        helperText="Stock has already been deducted for this molecule. To reduce the stock again, select this molecule."
         stockDisplay={stockDisplay}
         onToggle={() => {}}
       />,
@@ -489,7 +491,9 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       within(getMetric("Ethanol", "Remaining")).getByText("—"),
     ).toBeVisible();
     expect(
-      screen.getByText("Stock has already been deducted for this molecule."),
+      screen.getByText(
+        "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+      ),
     ).toBeVisible();
   });
 });
