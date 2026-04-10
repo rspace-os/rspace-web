@@ -9,17 +9,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
-import com.researchspace.api.v1.model.*;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInventoryEditLock;
 import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
+import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleField.ApiInventoryFieldDef;
+import com.researchspace.api.v1.model.ApiSampleTemplate;
+import com.researchspace.api.v1.model.ApiSampleTemplatePost;
+import com.researchspace.api.v1.model.ApiSampleTemplateSearchResult;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSampleAlias;
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -57,7 +65,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     sampleTemplatePost.setName("AaaNewTemplate");
     sampleTemplatePost.setApiTagInfo("tag1,tag2");
     sampleTemplatePost.setDefaultUnitId(RSUnitDef.GRAM.getId());
-    sampleTemplatePost.setSampleSource(SampleSource.LAB_CREATED);
+    sampleTemplatePost.setSampleSource(InventoryItemSource.LAB_CREATED);
     sampleApiMgr.createSampleTemplate(sampleTemplatePost, firstUser);
 
     ApiSampleTemplateSearchResult firstUserTemplates =

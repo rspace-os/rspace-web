@@ -1,22 +1,37 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.SamplesApiControllerMVCIT.NUM_FIELDS_IN_COMPLEX_SAMPLE;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.researchspace.api.v1.model.*;
+import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
+import com.researchspace.api.v1.model.ApiLinkItem;
+import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleField.ApiInventoryFieldDef;
+import com.researchspace.api.v1.model.ApiSampleInfo;
+import com.researchspace.api.v1.model.ApiSampleTemplate;
+import com.researchspace.api.v1.model.ApiSampleTemplateInfo;
+import com.researchspace.api.v1.model.ApiSampleTemplatePost;
+import com.researchspace.api.v1.model.ApiSampleTemplateSearchResult;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSampleAlias;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
-import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
@@ -51,7 +66,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     sampleTemplatePost.setName("myNewTemplate");
     sampleTemplatePost.setApiTagInfo("tag1,tag2");
     sampleTemplatePost.setDefaultUnitId(RSUnitDef.GRAM.getId());
-    sampleTemplatePost.setSampleSource(SampleSource.LAB_CREATED);
+    sampleTemplatePost.setSampleSource(InventoryItemSource.LAB_CREATED);
     return sampleTemplatePost;
   }
 

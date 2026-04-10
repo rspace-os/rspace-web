@@ -201,7 +201,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
           userId,
           session,
           format(
-              "delete sfRelTable from %s_AUD sfRelTable left join SampleField sf on"
+              "delete sfRelTable from %s_AUD sfRelTable left join InventoryEntityField sf on"
                   + " sfRelTable.sampleField_id = sf.id left join Sample s on sf.sample_id=s.id"
                   + " where s.owner_id = :id",
               table));
@@ -209,7 +209,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
           userId,
           session,
           format(
-              "delete sfRelTable from %s sfRelTable left join SampleField sf on"
+              "delete sfRelTable from %s sfRelTable left join InventoryEntityField sf on"
                   + " sfRelTable.sampleField_id = sf.id left join Sample s on sf.sample_id=s.id"
                   + " where s.owner_id = :id",
               table));
@@ -219,8 +219,8 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     execute(
         userId,
         session,
-        "update SampleField sf left join Sample s on sf.sample_id = s.id set templateField_id ="
-            + " NULL where s.owner_id=:id");
+        "update InventoryEntityField sf left join Sample s on sf.sample_id = s.id set"
+            + " templateField_id = NULL where s.owner_id=:id");
 
     // delete sample-connected entities (including subsamples)
     List<String> sampleRelatedTables =
@@ -229,7 +229,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
             INVENTORY_FILE,
             BARCODE,
             DIGITAL_OBJECT_IDENTIFIER,
-            "SampleField",
+            "InventoryEntityField",
             "SubSample");
     for (String table : sampleRelatedTables) {
       execute(

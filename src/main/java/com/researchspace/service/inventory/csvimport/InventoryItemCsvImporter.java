@@ -15,8 +15,8 @@ import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
@@ -216,7 +216,8 @@ public abstract class InventoryItemCsvImporter {
         apiInvRec.setApiTagInfo(value);
         break;
       case "source":
-        ((ApiSampleWithFullSubSamples) apiInvRec).setSampleSource(SampleSource.valueOf(value));
+        ((ApiSampleWithFullSubSamples) apiInvRec)
+            .setSampleSource(InventoryItemSource.valueOf(value));
         break;
       case "expiry date":
         ((ApiSampleWithFullSubSamples) apiInvRec).setExpiryDate(LocalDate.parse(value));

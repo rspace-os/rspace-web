@@ -27,8 +27,8 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -235,7 +235,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
         "aTagValue__RSP_EXTONT_URL_DELIM__uriValue__RSP_EXTONT_NAME_DELIM__ontName__RSP_EXTONT_VERSION_DELIM__1",
         sampleFromSimpleRequest.getTags().get(0).toString());
     assertNull(sampleFromSimpleRequest.getTemplateId());
-    assertEquals(SampleSource.VENDOR_SUPPLIED, sampleFromSimpleRequest.getSampleSource());
+    assertEquals(InventoryItemSource.VENDOR_SUPPLIED, sampleFromSimpleRequest.getSampleSource());
     assertEquals(0, sampleFromSimpleRequest.getFields().size());
     ApiSubSampleInfo createdSubSample = sampleFromSimpleRequest.getSubSamples().get(0);
 

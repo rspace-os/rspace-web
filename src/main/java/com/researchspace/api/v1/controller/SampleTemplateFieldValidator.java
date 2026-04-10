@@ -39,7 +39,7 @@ abstract class SampleTemplateFieldValidator implements Validator {
           new Object[] {fieldName, reservedFieldNamesString},
           "reserved field name");
     }
-    // check length matches limit for SampleField.name column
+    // check length matches limit for InventoryEntityField.name column
     if (StringUtils.length(fieldName) > 50) {
       errors.rejectValue(
           "name",

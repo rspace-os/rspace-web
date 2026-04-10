@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.field.ExtraField;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -75,7 +75,7 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
   protected ApiSampleWithoutSubSamples(Sample sample) {
     super(sample);
 
-    for (SampleField field : sample.getActiveFields()) {
+    for (InventoryEntityField field : sample.getActiveFields()) {
       fields.add(new ApiSampleField(field));
     }
     for (ExtraField extraField : sample.getActiveExtraFields()) {
@@ -116,7 +116,7 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
         if (field.getId() == null) {
           throw new IllegalArgumentException("'id' property not provided for a field");
         }
-        Optional<SampleField> dbFieldOpt =
+        Optional<InventoryEntityField> dbFieldOpt =
             dbSample.getActiveFields().stream()
                 .filter(sf -> Objects.equals(sf.getId(), field.getId()))
                 .findFirst();
@@ -126,7 +126,7 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
                   + field.getId()
                   + " doesn't match any of the field ids of current sample");
         }
-        SampleField dbField = dbFieldOpt.get();
+        InventoryEntityField dbField = dbFieldOpt.get();
         if (dbSample.isTemplate()) {
           contentChanged |= field.applyChangesToDatabaseTemplateField(dbField, user);
         } else {

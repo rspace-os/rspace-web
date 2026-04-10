@@ -8,11 +8,11 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryTextField;
-import com.researchspace.model.inventory.field.SampleField;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
@@ -44,12 +44,12 @@ public class AntibodySampleTemplate extends BuiltinContent implements SampleTemp
     sample.setStorageTempMax(QuantityInfo.of(5, RSUnitDef.CELSIUS));
     sample.setStorageTempMin(QuantityInfo.of(3, RSUnitDef.CELSIUS));
 
-    SampleField id = new InventoryTextField("Identifier");
+    InventoryEntityField id = new InventoryTextField("Identifier");
     sample.addSampleField(id);
-    SampleField antigen = new InventoryStringField("Antigen");
+    InventoryEntityField antigen = new InventoryStringField("Antigen");
     sample.addSampleField(antigen);
 
-    SampleField pep = new InventoryStringField("Peptide");
+    InventoryEntityField pep = new InventoryStringField("Peptide");
     sample.addSampleField(pep);
 
     InventoryChoiceFieldDef speciesFieldChoiceDef = new InventoryChoiceFieldDef();
@@ -90,7 +90,7 @@ public class AntibodySampleTemplate extends BuiltinContent implements SampleTemp
     InventoryChoiceField apps = new InventoryChoiceField(appFieldForm, "Applications");
     sample.addSampleField(apps);
 
-    SampleField dilutions = new InventoryTextField("Dilutions");
+    InventoryEntityField dilutions = new InventoryTextField("Dilutions");
     sample.addSampleField(dilutions);
 
     InventoryRadioFieldDef raisedInDef = new InventoryRadioFieldDef();

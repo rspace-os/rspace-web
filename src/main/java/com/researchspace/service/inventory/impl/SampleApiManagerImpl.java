@@ -37,7 +37,7 @@ import com.researchspace.model.inventory.InventorySeriesNamingHelper;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryMoveHelper;
@@ -262,8 +262,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
     return apiResultSample;
   }
 
-  private void assertDefaultFieldsValid(List<SampleField> activeFields) {
-    for (SampleField field : activeFields) {
+  private void assertDefaultFieldsValid(List<InventoryEntityField> activeFields) {
+    for (InventoryEntityField field : activeFields) {
       field.assertFieldDataValid(field.getFieldData());
     }
   }
@@ -314,25 +314,27 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
   }
 
   private void saveNewApiFieldsIntoSampleFields(
-      List<? extends ApiSampleField> apiFieldList, List<SampleField> sampleFieldList, User user) {
+      List<? extends ApiSampleField> apiFieldList,
+      List<InventoryEntityField> inventoryEntityFieldList,
+      User user) {
 
-    if (apiFieldList.size() != sampleFieldList.size()) {
+    if (apiFieldList.size() != inventoryEntityFieldList.size()) {
       throw new IllegalArgumentException(
           String.format(
               "Number of incoming sample fields [%d]"
                   + " doesn't match number of template fields [%d]",
-              apiFieldList.size(), sampleFieldList.size()));
+              apiFieldList.size(), inventoryEntityFieldList.size()));
     }
 
     for (int i = 0; i < apiFieldList.size(); i++) {
       ApiSampleField apiField = apiFieldList.get(i);
       String newFieldContent = apiField.getContent();
-      SampleField sampleField = sampleFieldList.get(i);
+      InventoryEntityField inventoryEntityField = inventoryEntityFieldList.get(i);
 
-      if (sampleField.isOptionsStoringField()) {
-        sampleField.setSelectedOptions(apiField.getSelectedOptions());
+      if (inventoryEntityField.isOptionsStoringField()) {
+        inventoryEntityField.setSelectedOptions(apiField.getSelectedOptions());
       } else {
-        sampleField.setFieldData(newFieldContent);
+        inventoryEntityField.setFieldData(newFieldContent);
       }
     }
   }
@@ -758,7 +760,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
 
   private void createFields(ApiSampleTemplatePost apiSample, Sample sample) {
     for (ApiSampleField field : apiSample.getFields()) {
-      SampleField toAdd = apiFieldToModelFieldFactory.apiSampleFieldToModelField(field);
+      InventoryEntityField toAdd = apiFieldToModelFieldFactory.apiSampleFieldToModelField(field);
       sample.addSampleField(toAdd);
     }
   }
@@ -791,7 +793,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
     boolean changed = false;
     for (ApiSampleField apiField : apiSample.getFields()) {
       if (apiField.isNewFieldRequest()) {
-        SampleField toAdd = apiFieldToModelFieldFactory.apiSampleFieldToModelField(apiField);
+        InventoryEntityField toAdd =
+            apiFieldToModelFieldFactory.apiSampleFieldToModelField(apiField);
         dbTemplate.addSampleField(toAdd);
         changed = true;
       }
@@ -801,7 +804,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
               "'id' property not provided "
                   + "for a template field with 'deleteFieldRequest' flag");
         }
-        Optional<SampleField> dbFieldOpt =
+        Optional<InventoryEntityField> dbFieldOpt =
             dbTemplate.getActiveFields().stream()
                 .filter(sf -> apiField.getId().equals(sf.getId()))
                 .findFirst();

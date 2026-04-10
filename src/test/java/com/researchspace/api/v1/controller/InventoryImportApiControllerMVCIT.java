@@ -29,8 +29,8 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.ContainerApiManager;
@@ -337,7 +337,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
         (ApiSampleWithFullSubSamples) sampleResults.getResults().get(0).getRecord();
     assertEquals("Sample1", firstSample.getName());
     assertEquals("2030-12-22", firstSample.getExpiryDate().toString());
-    assertEquals(SampleSource.VENDOR_SUPPLIED, firstSample.getSampleSource());
+    assertEquals(InventoryItemSource.VENDOR_SUPPLIED, firstSample.getSampleSource());
     assertEquals("5 mg", firstSample.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(null, firstSample.getFields().get(1).getContent());
     assertEquals(List.of("monoclonal"), firstSample.getFields().get(1).getSelectedOptions());
