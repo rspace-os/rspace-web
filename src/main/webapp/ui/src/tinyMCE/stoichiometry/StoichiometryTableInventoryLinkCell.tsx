@@ -84,6 +84,11 @@ function toLinkedSubsampleRecord(
   } as InventoryRecord;
 }
 
+/*
+ * NB: This component cannot be split into subcomponents right now because there
+ * is a lot of circular dependencies coming from the InventoryPicker and Search
+ * imports.
+ */
 const StoichiometryTableInventoryLinkCell = ({
   inventoryLink,
   isDeleted = false,
