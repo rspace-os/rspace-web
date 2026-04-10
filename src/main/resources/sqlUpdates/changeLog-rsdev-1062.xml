@@ -1,0 +1,21 @@
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="RSDEV-1062-A" author="nico">
+    <comment>Add column to discriminate Instrument from Sample</comment>
+    <addColumn tableName="StoichiometryInventoryLink">
+      <column type="BIT(1)" name="stock_deducted" defaultValueBoolean="0">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+
+    <addColumn tableName="StoichiometryInventoryLink_AUD">
+      <column type="BIT(1)" name="stock_deducted">
+      </column>
+    </addColumn>
+  </changeSet>
+
+</databaseChangeLog>

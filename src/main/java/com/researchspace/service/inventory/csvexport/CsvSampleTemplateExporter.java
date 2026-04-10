@@ -2,7 +2,7 @@ package com.researchspace.service.inventory.csvexport;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.springframework.stereotype.Component;
@@ -22,7 +22,7 @@ public class CsvSampleTemplateExporter extends CsvSampleExporter {
     return TEMPLATE_EXPORTABLE_PROPS;
   }
 
-  protected String getColumnNameForSampleField(SampleField sf) {
+  protected String getColumnNameForSampleField(InventoryEntityField sf) {
     return String.format("%s (%s)", sf.getName(), sf.getType());
   }
 

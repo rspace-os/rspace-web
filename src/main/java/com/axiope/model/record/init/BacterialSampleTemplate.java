@@ -3,9 +3,9 @@ package com.axiope.model.record.init;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSampleName;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryTextField;
-import com.researchspace.model.inventory.field.SampleField;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
@@ -48,7 +48,7 @@ public class BacterialSampleTemplate extends BuiltinContent implements SampleTem
     sample.setStorageTempMin(QuantityInfo.of(-30, RSUnitDef.CELSIUS));
     sample.setDescription("Description of a bacterial culture");
     sample.setTemplate(true);
-    SampleField id = new InventoryTextField("Identifier");
+    InventoryEntityField id = new InventoryTextField("Identifier");
     sample.addSampleField(id);
 
     for (String fieldKey : stringFieldKeys1) {

@@ -12,7 +12,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FileDuplicateStrategy;
@@ -128,7 +128,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
 
     if (GlobalIdPrefix.SF.equals(globalIdToAttachTo.getPrefix())) {
       Sample sample = (Sample) invRec;
-      SampleField field = sample.getFieldById(globalIdToAttachTo.getDbId()).orElse(null);
+      InventoryEntityField field = sample.getFieldById(globalIdToAttachTo.getDbId()).orElse(null);
       if (field == null) {
         throwNotFoundException(globalIdToAttachTo.getDbId(), "Sample field");
       }

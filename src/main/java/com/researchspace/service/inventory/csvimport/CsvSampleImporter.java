@@ -14,9 +14,9 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSource;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.units.RSUnitDef;
 import java.io.IOException;
@@ -71,7 +71,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
     for (String columnName : sampleParseResult.getColumnNames()) {
       String fieldName = sampleParseResult.getFieldNameForColumnName().get(columnName);
       List<String> fieldValues = sampleParseResult.getColumnNameToValuesMap().get(columnName);
-      SampleField field =
+      InventoryEntityField field =
           importedFieldCreator.getSuggestedSampleFieldForNameAndValues(fieldName, fieldValues);
       template.addSampleField(field);
 
@@ -85,11 +85,11 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
   }
 
   private void setDefaultsInSuggestedParsedTemplate(Sample template) {
-    template.setSampleSource(SampleSource.OTHER);
+    template.setSampleSource(InventoryItemSource.OTHER);
   }
 
   private void populateResultWithRadioOptionsForColumn(
-      SampleField field,
+      InventoryEntityField field,
       String columnName,
       List<String> fieldValues,
       ApiInventoryImportSampleParseResult result) {
@@ -104,7 +104,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
   }
 
   private void populateResultWithQuantityTypeForColumn(
-      SampleField field,
+      InventoryEntityField field,
       String columnName,
       List<String> fieldValues,
       ApiInventoryImportSampleParseResult result) {

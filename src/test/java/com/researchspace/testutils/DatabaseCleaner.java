@@ -127,7 +127,7 @@ public class DatabaseCleaner {
             "Barcode",
             "DigitalObjectIdentifier",
             "ExtraField",
-            "SampleField",
+            "InventoryEntityField",
             "SubSampleNote",
             "SubSample",
             "Sample",

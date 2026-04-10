@@ -3196,7 +3196,7 @@ definitions:
       id:
         type: integer
         format: int64
-        description: Unique identifier for the SampleField
+        description: Unique identifier for the InventoryEntityField
       globalId:
         type: string
         description: A unique identifier amongst all RSpace data types.
@@ -3206,7 +3206,7 @@ definitions:
       lastModified:
         type: string
         format: date-time
-        description: The last modified time of this SampleField, in ISO-8601 format.
+        description: The last modified time of this InventoryEntityField, in ISO-8601 format.
       type:
         type: string
         description: The data type of this field
