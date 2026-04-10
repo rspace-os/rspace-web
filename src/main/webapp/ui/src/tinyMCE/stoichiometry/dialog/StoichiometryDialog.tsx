@@ -72,13 +72,10 @@ export default function StoichiometryDialog({
   const [actuallyOpen, setActuallyOpen] = React.useState(false);
   const tableCloseHandlerRef = React.useRef<(() => Promise<void>) | null>(null);
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
-  const syncedStoichiometry = React.useMemo(
-    () =>
-      stoichiometryId !== undefined && stoichiometryRevision !== undefined
-        ? { id: stoichiometryId, revision: stoichiometryRevision }
-        : null,
-    [stoichiometryId, stoichiometryRevision],
-  );
+  const syncedStoichiometry =
+    stoichiometryId !== undefined && stoichiometryRevision !== undefined
+      ? { id: stoichiometryId, revision: stoichiometryRevision }
+      : null;
 
   const registerCloseHandler = React.useCallback<RegisterCloseHandler>(
     (handler) => {
@@ -144,7 +141,7 @@ export default function StoichiometryDialog({
     });
   }, [open, chemistryStatus, addAlert]);
 
-  const handleCalculate = React.useCallback(() => {
+  const handleCalculate = () => {
     if (isRequestInFlight) {
       return;
     }
@@ -164,24 +161,16 @@ export default function StoichiometryDialog({
         },
       },
     );
-  }, [
-    mutateCalculateStoichiometry,
-    chemId,
-    isRequestInFlight,
-    onTableCreated,
-    recordId,
-    resetCalculateStoichiometry,
-    trackEvent,
-  ]);
+  };
 
-  const handleCloseWithoutTable = React.useCallback(() => {
+  const handleCloseWithoutTable = () => {
     if (isRequestInFlight) {
       return;
     }
 
     resetCalculateStoichiometry();
     onClose();
-  }, [isRequestInFlight, onClose, resetCalculateStoichiometry]);
+  };
 
   return (
     <Dialog

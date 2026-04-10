@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
@@ -102,10 +102,7 @@ const StoichiometryTableInventoryLinkCell = ({
 }: StoichiometryTableInventoryLinkCellProps) => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch] = useState(createInventoryPickerSearch);
-  const linkedInventoryItemGlobalIdSet = useMemo(
-    () => new Set(linkedInventoryItemGlobalIds),
-    [linkedInventoryItemGlobalIds],
-  );
+  const linkedInventoryItemGlobalIdSet = new Set(linkedInventoryItemGlobalIds);
 
   const moleculeLabel = moleculeName ?? "molecule";
   const pickerTitle = `Pick inventory item for ${moleculeLabel}`;
@@ -134,24 +131,21 @@ const StoichiometryTableInventoryLinkCell = ({
     });
   }, [pickerOpen, pickerSearch]);
 
-  const handlePickerAddition = useCallback(
-    (records: Array<InventoryRecord>) => {
-      const [record] = records;
-      if (!record || !record.id) {
-        return;
-      }
-      const inventoryItemGlobalId = record.globalId;
-      if (typeof inventoryItemGlobalId !== "string") {
-        return;
-      }
-      if (linkedInventoryItemGlobalIdSet.has(inventoryItemGlobalId)) {
-        return;
-      }
-      onPickInventoryItem?.(record.id, inventoryItemGlobalId);
-      closePicker();
-    },
-    [linkedInventoryItemGlobalIdSet, onPickInventoryItem],
-  );
+  const handlePickerAddition = (records: Array<InventoryRecord>) => {
+    const [record] = records;
+    if (!record || !record.id) {
+      return;
+    }
+    const inventoryItemGlobalId = record.globalId;
+    if (typeof inventoryItemGlobalId !== "string") {
+      return;
+    }
+    if (linkedInventoryItemGlobalIdSet.has(inventoryItemGlobalId)) {
+      return;
+    }
+    onPickInventoryItem?.(record.id, inventoryItemGlobalId);
+    closePicker();
+  };
 
   if (isDeleted) {
     return (

@@ -85,7 +85,7 @@ export default function EditableStoichiometryDialogSection({
     };
   }, [handleClose, registerCloseHandler]);
 
-  const handleSave = React.useCallback(() => {
+  const handleSave = () => {
     if (isBusy) {
       return;
     }
@@ -104,16 +104,9 @@ export default function EditableStoichiometryDialogSection({
         console.error("Save failed", error);
       }
     })();
-  }, [
-    currentStoichiometry.id,
-    isBusy,
-    onSave,
-    save,
-    setCurrentStoichiometry,
-    trackEvent,
-  ]);
+  };
 
-  const handleDelete = React.useCallback(async () => {
+  const handleDelete = async () => {
     if (isBusy) {
       return;
     }
@@ -137,7 +130,7 @@ export default function EditableStoichiometryDialogSection({
     } catch (error) {
       console.error("Delete failed", error);
     }
-  }, [confirm, deleteTable, isBusy, onDelete, setCurrentStoichiometry, trackEvent]);
+  };
 
   return (
     <StoichiometryTableControllerProvider value={tableController}>

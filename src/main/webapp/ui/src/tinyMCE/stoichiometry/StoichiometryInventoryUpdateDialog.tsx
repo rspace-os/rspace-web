@@ -93,15 +93,13 @@ export default function StoichiometryInventoryUpdateDialog({
     },
   });
 
-  const failedResults = React.useMemo(
-    () => saveMutation.data?.results.filter(({ success }) => !success) ?? [],
-    [saveMutation.data],
-  );
+  const failedResults =
+    saveMutation.data?.results.filter(({ success }) => !success) ?? [];
   const saveFeedback =
     saveMutation.isSuccess && failedResults.length > 0
       ? "Current stock amounts were refreshed. Re-select any remaining molecules to retry."
       : null;
-  const saveError = React.useMemo(() => {
+  const saveError = (() => {
     if (saveMutation.isError) {
       const message = saveMutation.error.message;
       return `${message} Current stock amounts were refreshed where possible.`;
@@ -120,7 +118,7 @@ export default function StoichiometryInventoryUpdateDialog({
         ),
       ).join(" ") || null
     );
-  }, [failedResults, saveMutation.error, saveMutation.isError]);
+  })();
 
   const resetDialogState = React.useCallback(() => {
     setSelectedMoleculeIds(
