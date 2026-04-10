@@ -46,27 +46,25 @@ export default function StoichiometryTableGrid({
   );
   const limitingReagentId = limitingReagent?.id;
 
-  const linkedInventoryItemGlobalIdsByMoleculeId = React.useMemo(() => {
-    const linkedIds = allMolecules
-      .map(
-        (molecule) =>
-          molecule.inventoryLink?.inventoryItemGlobalId ??
-          molecule.deletedInventoryLink?.inventoryItemGlobalId,
-      )
-      .filter((id): id is string => Boolean(id));
+  const linkedIds = allMolecules
+    .map(
+      (molecule) =>
+        molecule.inventoryLink?.inventoryItemGlobalId ??
+        molecule.deletedInventoryLink?.inventoryItemGlobalId,
+    )
+    .filter((id): id is string => Boolean(id));
 
-    return new Map(
-      allMolecules.map((molecule) => [
-        molecule.id,
-        linkedIds.filter(
-          (inventoryItemGlobalId) =>
-            inventoryItemGlobalId !==
-            (molecule.inventoryLink?.inventoryItemGlobalId ??
-              molecule.deletedInventoryLink?.inventoryItemGlobalId),
-        ),
-      ]),
-    );
-  }, [allMolecules]);
+  const linkedInventoryItemGlobalIdsByMoleculeId = new Map(
+    allMolecules.map((molecule) => [
+      molecule.id,
+      linkedIds.filter(
+        (inventoryItemGlobalId) =>
+          inventoryItemGlobalId !==
+          (molecule.inventoryLink?.inventoryItemGlobalId ??
+            molecule.deletedInventoryLink?.inventoryItemGlobalId),
+      ),
+    ]),
+  );
 
   const columns = React.useMemo<GridColDef<EditableMolecule>[]>(
     () => [
@@ -325,23 +323,20 @@ export default function StoichiometryTableGrid({
     ],
   );
 
-  const isCellEditable = React.useCallback(
-    (params: GridCellParams<EditableMolecule>) => {
-      if (!editable) {
-        return false;
-      }
+  const isCellEditable = (params: GridCellParams<EditableMolecule>) => {
+    if (!editable) {
+      return false;
+    }
 
-      const { field, row } = params;
-      if (
-        limitingReagentId !== undefined &&
-        (field === "mass" || field === "moles")
-      ) {
-        return row.id === limitingReagentId;
-      }
-      return true;
-    },
-    [editable, limitingReagentId],
-  );
+    const { field, row } = params;
+    if (
+      limitingReagentId !== undefined &&
+      (field === "mass" || field === "moles")
+    ) {
+      return row.id === limitingReagentId;
+    }
+    return true;
+  };
 
   const toolbarSlotProps = React.useMemo(
     () => ({
