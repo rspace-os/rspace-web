@@ -66,6 +66,10 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   public void disableDataCiteConnection() throws BindException {
     ApiInventorySystemSettings update = new ApiInventorySystemSettings();
     update.getDatacite().setEnabled("false");
+    update.getDatacite().setServerUrl("https://api.datacite.org");
+    update.getDatacite().setUsername("");
+    update.getDatacite().setPassword("");
+    update.getDatacite().setRepositoryPrefix("");
     settingsController.updateInventorySettings(
         new MockHttpServletRequest(), update, mockBindingResult, getSysAdminUser());
   }
