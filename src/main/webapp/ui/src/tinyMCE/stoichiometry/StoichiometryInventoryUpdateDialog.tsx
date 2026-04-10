@@ -83,7 +83,6 @@ export default function StoichiometryInventoryUpdateDialog({
   const titleId = React.useId();
   const wasOpenRef = React.useRef(false);
   const [selectedMoleculeIds, setSelectedMoleculeIds] = React.useState<number[]>([]);
-  const [selectionError, setSelectionError] = React.useState<string | null>(null);
   const saveMutation = useMutation({
     mutationFn: async (moleculeIds: number[]) => {
       if (!onSave) {
@@ -119,12 +118,28 @@ export default function StoichiometryInventoryUpdateDialog({
       ).join(" ") || null
     );
   })();
+  const hasInvalidSelectedRows = selectedMoleculeIds.some((selectedMoleculeId) => {
+    const selectedMolecule = molecules.find(({ id }) => id === selectedMoleculeId);
+
+    if (!selectedMolecule) {
+      return true;
+    }
+
+    return (
+      getInventoryUpdateEligibility(
+        selectedMolecule,
+        linkedInventoryQuantityInfoByGlobalId,
+      ).disabledReason !== null
+    );
+  });
+  const selectionError = hasInvalidSelectedRows
+    ? "Re-select any invalid molecules before saving."
+    : null;
 
   const resetDialogState = React.useCallback(() => {
     setSelectedMoleculeIds(
       getDefaultValues(molecules, linkedInventoryQuantityInfoByGlobalId),
     );
-    setSelectionError(null);
     saveMutation.reset();
   }, [linkedInventoryQuantityInfoByGlobalId, molecules, saveMutation]);
 
@@ -143,7 +158,11 @@ export default function StoichiometryInventoryUpdateDialog({
 
   const handleSubmit = React.useCallback(async () => {
     if (selectedMoleculeIds.length === 0) {
-      setSelectionError("Select at least one molecule.");
+      saveMutation.reset();
+      return;
+    }
+
+    if (hasInvalidSelectedRows) {
       saveMutation.reset();
       return;
     }
@@ -153,7 +172,6 @@ export default function StoichiometryInventoryUpdateDialog({
       return;
     }
 
-    setSelectionError(null);
     saveMutation.reset();
 
     try {
@@ -169,7 +187,13 @@ export default function StoichiometryInventoryUpdateDialog({
     } catch {
       setSelectedMoleculeIds([]);
     }
-  }, [handleClose, onSave, saveMutation, selectedMoleculeIds]);
+  }, [
+    handleClose,
+    hasInvalidSelectedRows,
+    onSave,
+    saveMutation,
+    selectedMoleculeIds,
+  ]);
 
   return (
     <Dialog
@@ -293,7 +317,6 @@ export default function StoichiometryInventoryUpdateDialog({
                             return;
                           }
 
-                          setSelectionError(null);
                           saveMutation.reset();
                           setSelectedMoleculeIds((currentIds) =>
                             selected
@@ -318,7 +341,9 @@ export default function StoichiometryInventoryUpdateDialog({
             variant="contained"
             color="callToAction"
             disabled={
-              selectedMoleculeIds.length === 0 || saveMutation.isPending
+              selectedMoleculeIds.length === 0 ||
+              hasInvalidSelectedRows ||
+              saveMutation.isPending
             }
           >
             {saveMutation.isPending ? "Saving..." : "Save"}

@@ -302,6 +302,57 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     ).toBeVisible();
   });
 
+  it("disables Save when a selected molecule becomes invalid after refresh", async () => {
+    const user = userEvent.setup();
+
+    function Wrapper() {
+      const [quantityMap, setQuantityMap] = React.useState<
+        ReadonlyMap<string, InventoryQuantityQueryResult>
+      >(makeQuantityMap([["SS124", 10]]));
+
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              setQuantityMap(makeQuantityMap([["SS124", 2]]));
+            }}
+          >
+            Invalidate selection
+          </button>
+          <StoichiometryInventoryUpdateDialog
+            open
+            molecules={[
+              makeMolecule({
+                id: 1,
+                name: "Cyclopentane",
+                inventoryItemGlobalId: "SS124",
+              }),
+            ]}
+            linkedInventoryQuantityInfoByGlobalId={quantityMap}
+            onSave={() => Promise.resolve({ results: [] })}
+            onClose={() => {}}
+          />
+        </>
+      );
+    }
+
+    renderWithProviders(<Wrapper />);
+
+    const saveButton = screen.getByRole("button", { name: "Save" });
+    expect(saveButton).toBeEnabled();
+
+    await user.click(screen.getByText("Invalidate selection"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeDisabled();
+      expect(saveButton).toBeDisabled();
+    });
+    expect(
+      screen.getByText("Re-select any invalid molecules before saving."),
+    ).toBeVisible();
+  });
+
   it("shows a local error message and clears selection when saving fails", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn(() => Promise.reject(new Error("Network down")));
