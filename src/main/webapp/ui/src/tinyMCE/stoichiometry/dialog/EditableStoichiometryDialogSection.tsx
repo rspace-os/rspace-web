@@ -12,7 +12,10 @@ import ValidatingSubmitButton, {
 } from "../../../components/ValidatingSubmitButton";
 import StoichiometryTable from "../StoichiometryTable";
 import { StoichiometryTableControllerProvider } from "../StoichiometryTableControllerContext";
-import { useEditableStoichiometryTable } from "../useEditableStoichiometryTable";
+import {
+  type RefreshedStoichiometry,
+  useEditableStoichiometryTable,
+} from "../useEditableStoichiometryTable";
 import {
   type CurrentStoichiometry,
   type RegisterCloseHandler,
@@ -49,27 +52,13 @@ export default function EditableStoichiometryDialogSection({
   } = useEditableStoichiometryTable({
     stoichiometryId: currentStoichiometry.id,
     stoichiometryRevision: currentStoichiometry.revision,
+    onStoichiometryRefreshed: (
+      refreshedStoichiometry: RefreshedStoichiometry,
+    ) => {
+      setCurrentStoichiometry(refreshedStoichiometry);
+      onSave?.(refreshedStoichiometry.id, refreshedStoichiometry.revision);
+    },
   });
-
-  const tableControllerWithRefresh = React.useMemo(
-    () => ({
-      ...tableController,
-      updateInventoryStock: async (selectedMoleculeIds: number[]) => {
-        const result = await tableController.updateInventoryStock(selectedMoleculeIds);
-
-        if (result.refreshedStoichiometry) {
-          setCurrentStoichiometry(result.refreshedStoichiometry);
-          onSave?.(
-            result.refreshedStoichiometry.id,
-            result.refreshedStoichiometry.revision,
-          );
-        }
-
-        return result;
-      },
-    }),
-    [onSave, setCurrentStoichiometry, tableController],
-  );
 
   const handleClose = React.useCallback(async () => {
     if (isBusy) {
@@ -151,7 +140,7 @@ export default function EditableStoichiometryDialogSection({
   }, [confirm, deleteTable, isBusy, onDelete, setCurrentStoichiometry, trackEvent]);
 
   return (
-    <StoichiometryTableControllerProvider value={tableControllerWithRefresh}>
+    <StoichiometryTableControllerProvider value={tableController}>
       <DialogContent>
         <Stack spacing={2} flexWrap="nowrap">
           <Box>

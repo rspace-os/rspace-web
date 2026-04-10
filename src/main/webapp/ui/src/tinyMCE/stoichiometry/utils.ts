@@ -182,14 +182,15 @@ export function getInventoryUpdateEligibility(
 
   const showInsufficientStockWarning =
     !stockDeducted && stockDisplay.remainingStatus === "negative";
-  const disabledReason: InventoryUpdateSelectionDisabledReason | null =
-    !isMassUnit(quantity.unitId)
-        ? "nonMassInventoryQuantity"
-        : molecule.actualAmount === null || molecule.actualAmount === undefined
-          ? "missingActualMass"
-          : showInsufficientStockWarning
-            ? "insufficientStock"
-            : null;
+
+  let disabledReason: InventoryUpdateSelectionDisabledReason | null = null;
+  if (!isMassUnit(quantity.unitId)) {
+    disabledReason = "nonMassInventoryQuantity";
+  } else if (molecule.actualAmount == null) {
+    disabledReason = "missingActualMass";
+  } else if (showInsufficientStockWarning) {
+    disabledReason = "insufficientStock";
+  }
 
   return {
     disabledReason,
@@ -389,6 +390,39 @@ function applyMassByRatio(
   });
 }
 
+function validateMoleculeImmutability(
+  before: EditableMolecule,
+  after: EditableMolecule,
+) {
+  if (before.id !== after.id)
+    throw new Error(
+      "ID is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (before.name !== after.name)
+    throw new Error(
+      "Name is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (before.molecularWeight !== after.molecularWeight)
+    throw new Error(
+      "Molecular weight is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (before.formula !== after.formula)
+    throw new Error(
+      "Chemical formula is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (before.smiles !== after.smiles)
+    throw new Error(
+      "The SMILES representation is an intrinsic property of the chemical and cannot be modified",
+    );
+
+  if (before.role !== after.role)
+    throw new Error("Modifying the role of a molecule is not supported");
+  if (before.rsChemElement !== after.rsChemElement)
+    throw new Error(
+      "Modifying the rsChemElement of a molecule is not supported",
+    );
+}
+
 /**
  * Calculates updated molecules based on stoichiometric relationships.
  *
@@ -419,58 +453,27 @@ export function calculateUpdatedMolecules(
   allMolecules: ReadonlyArray<EditableMolecule>,
   editedRow: EditableMolecule,
 ): ReadonlyArray<EditableMolecule> {
-  function applyChanges(
-    newProperties: Partial<EditableMolecule>,
-    molecules = allMolecules,
-  ) {
-    return produce(molecules, (draftMolecules) => {
-      const editedMolecule = draftMolecules.find((m) => m.id === editedRow.id);
-      if (!editedMolecule) {
-        return;
-      }
-      Object.assign(editedMolecule, newProperties);
-    });
-  }
-
   const beforeMolecule = allMolecules.find((m) => m.id === editedRow.id);
   if (!beforeMolecule) {
     throw new Error("Edited molecule not found");
   }
 
-  if (beforeMolecule.id !== editedRow.id)
-    throw new Error(
-      "ID is an intrinsic property of the chemical and cannot be modified",
-    );
-  if (beforeMolecule.name !== editedRow.name)
-    throw new Error(
-      "Name is an intrinsic property of the chemical and cannot be modified",
-    );
-  if (beforeMolecule.molecularWeight !== editedRow.molecularWeight)
-    throw new Error(
-      "Molecular weight is an intrinsic property of the chemical and cannot be modified",
-    );
-  if (beforeMolecule.formula !== editedRow.formula)
-    throw new Error(
-      "Chemical formula is an intrinsic property of the chemical and cannot be modified",
-    );
-  if (beforeMolecule.smiles !== editedRow.smiles)
-    throw new Error(
-      "The SMILES representation is an intrinsic property of the chemical and cannot be modified",
-    );
+  validateMoleculeImmutability(beforeMolecule, editedRow);
 
-  if (beforeMolecule.role !== editedRow.role)
-    throw new Error("Modifying the role of a molecule is not supported");
-  if (beforeMolecule.rsChemElement !== editedRow.rsChemElement)
-    throw new Error(
-      "Modifying the rsChemElement of a molecule is not supported",
-    );
+  const applyChanges = (
+    newProperties: Partial<EditableMolecule>,
+    molecules = allMolecules,
+  ) => {
+    return produce(molecules, (draftMolecules) => {
+      const editedMolecule = draftMolecules.find((m) => m.id === editedRow.id);
+      if (editedMolecule) {
+        Object.assign(editedMolecule, newProperties);
+      }
+    });
+  };
 
   if (beforeMolecule.notes !== editedRow.notes) {
-    return updateYieldAndExcess(
-      applyChanges({
-        notes: editedRow.notes,
-      }),
-    );
+    return updateYieldAndExcess(applyChanges({ notes: editedRow.notes }));
   }
 
   if (beforeMolecule.mass !== editedRow.mass) {
@@ -487,71 +490,41 @@ export function calculateUpdatedMolecules(
       const ratio =
         limitingReagentMoles === null
           ? null
-          : 
-            limitingReagentMoles / limitingReagent.coefficient;
+          : limitingReagentMoles / limitingReagent.coefficient;
       return updateYieldAndExcess(
         applyChanges(
-          {
-            mass: editedRow.mass,
-          },
+          { mass: editedRow.mass },
           applyMassByRatio(allMolecules, ratio),
         ),
       );
-    } else {
-      return updateYieldAndExcess(
-        applyChanges({
-          mass: editedRow.mass,
-        }),
-      );
     }
+    return updateYieldAndExcess(applyChanges({ mass: editedRow.mass }));
   }
 
   if (editedRow.moles !== null) {
+    if (beforeMolecule.molecularWeight === null) {
+      throw new Error("Molecular weight is undefined");
+    }
+    const mass = editedRow.moles * beforeMolecule.molecularWeight;
+
     if (editedRow.limitingReagent) {
       const limitingReagent = allMolecules.find((m) => m.limitingReagent);
       if (!limitingReagent) throw new Error("No limiting reagent defined");
       if (limitingReagent.coefficient === null) {
         throw new Error("Limiting reagent coefficient weight is undefined");
       }
-      const limitingReagentMoles = editedRow.moles;
-      const ratio =
-        limitingReagentMoles === null
-          ? null
-          : 
-            limitingReagentMoles / limitingReagent.coefficient;
-
-      if (beforeMolecule.molecularWeight === null) {
-        throw new Error("Molecular weight is undefined");
-      }
+      const ratio = editedRow.moles / limitingReagent.coefficient;
 
       return updateYieldAndExcess(
-        applyChanges(
-          {
-            
-            mass: editedRow.moles * beforeMolecule.molecularWeight,
-          },
-          applyMassByRatio(allMolecules, ratio),
-        ),
-      );
-    } else {
-      if (beforeMolecule.molecularWeight === null) {
-        throw new Error("Molecular weight is undefined");
-      }
-
-      return updateYieldAndExcess(
-        applyChanges({
-          
-          mass: editedRow.moles * beforeMolecule.molecularWeight,
-        }),
+        applyChanges({ mass }, applyMassByRatio(allMolecules, ratio)),
       );
     }
+    return updateYieldAndExcess(applyChanges({ mass }));
   }
 
   if (beforeMolecule.actualAmount !== editedRow.actualAmount) {
     return updateYieldAndExcess(
-      applyChanges({
-        actualAmount: editedRow.actualAmount,
-      }),
+      applyChanges({ actualAmount: editedRow.actualAmount }),
     );
   }
 
@@ -569,13 +542,11 @@ export function calculateUpdatedMolecules(
 
   if (beforeMolecule.limitingReagent !== editedRow.limitingReagent) {
     const updatedMolecules = applyChanges(
-      {
-        limitingReagent: editedRow.limitingReagent,
-      },
-      produce(allMolecules, (draftMolecules) => {
-        for (const molecule of draftMolecules) {
-          molecule.limitingReagent = false;
-        }
+      { limitingReagent: editedRow.limitingReagent },
+      produce(allMolecules, (draft) => {
+        draft.forEach((m) => {
+          m.limitingReagent = false;
+        });
       }),
     );
     const newLimitingReagent = updatedMolecules.find((m) => m.limitingReagent);
@@ -591,7 +562,8 @@ export function calculateUpdatedMolecules(
     if (beforeMolecule.coefficient === null || editedRow.coefficient === null) {
       throw new Error("Molecule coefficient is undefined");
     }
-    const changeInCoefficient = editedRow.coefficient / beforeMolecule.coefficient;
+    const changeInCoefficient =
+      editedRow.coefficient / beforeMolecule.coefficient;
     const updatedMolecules = applyChanges({
       coefficient: editedRow.coefficient,
       mass:

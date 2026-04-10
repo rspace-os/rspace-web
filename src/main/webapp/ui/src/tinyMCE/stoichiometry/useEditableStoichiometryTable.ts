@@ -41,6 +41,19 @@ type StoichiometryFormValues = {
   allMolecules: Array<EditableMolecule>;
 };
 
+export type RefreshedStoichiometry = {
+  id: number;
+  revision: number;
+};
+
+type UseEditableStoichiometryTableArgs = {
+  stoichiometryId: number;
+  stoichiometryRevision: number;
+  onStoichiometryRefreshed?: (
+    stoichiometry: RefreshedStoichiometry,
+  ) => void;
+};
+
 function toStoichiometryRequest(
   stoichiometryId: number,
   molecules: ReadonlyArray<EditableMolecule>,
@@ -48,39 +61,10 @@ function toStoichiometryRequest(
   return {
     id: stoichiometryId,
     molecules: molecules.map((m) => {
-      if (m.id >= 0) {
-        const existingMoleculeUpdate: ExistingMoleculeUpdate = {
-          id: m.id,
-          role: m.role,
-          smiles: m.smiles,
-          name: m.name ?? undefined,
-          formula: m.formula ?? undefined,
-          molecularWeight: m.molecularWeight ?? undefined,
-          coefficient: m.coefficient ?? undefined,
-          mass: m.mass,
-          actualAmount: m.actualAmount,
-          actualYield: m.actualYield,
-          limitingReagent: m.limitingReagent ?? undefined,
-          notes: m.notes,
-          inventoryLink: m.inventoryLink ?? null,
-        };
-        return existingMoleculeUpdate;
-      }
-
-      const smiles = m.smiles.trim();
-      if (!smiles) {
-        throw new Error("New reagents must have a SMILES string");
-      }
-
-      const name = m.name?.trim();
-      if (!name) {
-        throw new Error("New reagents must have a name");
-      }
-
-      return {
-        role: "AGENT",
-        smiles,
-        name,
+      const base = {
+        role: m.role,
+        smiles: m.smiles.trim(),
+        name: m.name?.trim() ?? null,
         coefficient: m.coefficient ?? undefined,
         mass: m.mass,
         actualAmount: m.actualAmount,
@@ -88,6 +72,27 @@ function toStoichiometryRequest(
         limitingReagent: m.limitingReagent ?? undefined,
         notes: m.notes,
         inventoryLink: m.inventoryLink ?? null,
+      };
+
+      if (m.id >= 0) {
+        return {
+          ...base,
+          id: m.id,
+          formula: m.formula ?? undefined,
+          molecularWeight: m.molecularWeight ?? undefined,
+        } as ExistingMoleculeUpdate;
+      }
+
+      if (!base.smiles) {
+        throw new Error("New reagents must have a SMILES string");
+      }
+      if (!base.name) {
+        throw new Error("New reagents must have a name");
+      }
+
+      return {
+        ...base,
+        role: "AGENT",
       } as NewMolecule;
     }),
   };
@@ -114,10 +119,8 @@ function normaliseMoleculesAfterSave(
 export function useEditableStoichiometryTable({
   stoichiometryId,
   stoichiometryRevision,
-}: {
-  stoichiometryId: number;
-  stoichiometryRevision: number;
-}) {
+  onStoichiometryRefreshed,
+}: UseEditableStoichiometryTableArgs) {
   const { getToken } = useOauthToken();
   const { data: inventoryToken } = useOauthTokenQuery();
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -151,20 +154,16 @@ export function useEditableStoichiometryTable({
   >(() => ({
     allMolecules: Array.from(initialMolecules),
   }));
-  React.useEffect(() => {
-    setFormDefaultValues({
-      allMolecules: Array.from(initialMolecules),
-    });
-  }, [stoichiometryVersionKey]);
   const versionFormDefaultValues = React.useMemo(
     () => ({
       allMolecules: Array.from(initialMolecules),
     } satisfies StoichiometryFormValues),
-    [stoichiometryVersionKey],
+    [initialMolecules],
   );
   const initialisedVersionRef = React.useRef<string | null>(null);
   const [baselineSerialisation, setBaselineSerialisation] = React.useState(
-    () => serialiseStoichiometryRequest(queriedStoichiometry.id, initialMolecules),
+    () =>
+      serialiseStoichiometryRequest(queriedStoichiometry.id, initialMolecules),
   );
   const form = useForm({
     defaultValues: formDefaultValues,
@@ -209,13 +208,15 @@ export function useEditableStoichiometryTable({
     (
       updater: (
         previousMolecules: ReadonlyArray<EditableMolecule>,
-      ) => Array<EditableMolecule>,
+      ) => ReadonlyArray<EditableMolecule>,
     ) => {
       form.setFieldValue(
         "allMolecules",
         (previousMolecules) =>
-          updater(
-            (previousMolecules ?? []) as ReadonlyArray<EditableMolecule>,
+          Array.from(
+            updater(
+              (previousMolecules ?? []) as ReadonlyArray<EditableMolecule>,
+            ),
           ),
         {
           dontValidate: true,
@@ -245,7 +246,7 @@ export function useEditableStoichiometryTable({
   ]);
 
   const save = useCallback(async () => {
-    if (!data || !data.id) {
+    if (!data?.id) {
       throw new Error("No stoichiometry data to save");
     }
 
@@ -262,12 +263,14 @@ export function useEditableStoichiometryTable({
     } satisfies StoichiometryFormValues;
     setFormDefaultValues(nextFormDefaultValues);
     form.reset(nextFormDefaultValues);
-    setBaselineSerialisation(serialiseStoichiometryRequest(data.id, savedMolecules));
+    setBaselineSerialisation(
+      serialiseStoichiometryRequest(data.id, savedMolecules),
+    );
     return updatedStoichiometry.revision;
   }, [allMolecules, data, form, updateStoichiometryMutation]);
 
   const deleteTable = useCallback(async () => {
-    if (!data || !data.id) {
+    if (!data?.id) {
       return;
     }
 
@@ -295,31 +298,25 @@ export function useEditableStoichiometryTable({
       }
 
       try {
-        const temporaryIdBase = -Date.now();
-
         const moleculeInfo = await getMoleculeInfoMutation.mutateAsync({
           smiles: smilesString,
         });
 
         const limitingReagent = allMolecules.find((m) => m.limitingReagent);
-
-        const limitingReagentMoles = limitingReagent ? calculateMoles(
-          limitingReagent.mass,
-          limitingReagent.molecularWeight,
-        ) : null;
+        const limitingReagentMoles = limitingReagent
+          ? calculateMoles(
+              limitingReagent.mass,
+              limitingReagent.molecularWeight,
+            )
+          : null;
         const ratio =
           !limitingReagent?.coefficient || limitingReagentMoles === null
             ? null
             : limitingReagentMoles / limitingReagent.coefficient;
 
         updateAllMolecules((prevMolecules) =>
-          produce(Array.from(prevMolecules), (draftMolecules) => {
-            const usedIds = new Set(draftMolecules.map(({ id }) => id));
-            let tempId = temporaryIdBase;
-
-            while (usedIds.has(tempId)) {
-              tempId -= 1;
-            }
+          produce(prevMolecules || [], (draftMolecules) => {
+            const tempId = -Date.now();
 
             const mockRsChemElement: RsChemElement = {
               id: tempId,
@@ -508,6 +505,7 @@ export function useEditableStoichiometryTable({
         throw new Error("No stoichiometry data available to update stock");
       }
 
+      const moleculesById = new Map(allMolecules.map((m) => [m.id, m]));
       const preflightResults: Array<{
         moleculeId: number;
         moleculeName: string;
@@ -522,14 +520,14 @@ export function useEditableStoichiometryTable({
       }> = [];
 
       for (const moleculeId of selectedMoleculeIds) {
-        const molecule = allMolecules.find(({ id }) => id === moleculeId);
+        const molecule = moleculesById.get(moleculeId);
         const moleculeName = molecule?.name ?? "Unnamed molecule";
-        const inventoryItemGlobalId = molecule?.inventoryLink?.inventoryItemGlobalId;
+        const inventoryLink = molecule?.inventoryLink;
 
         if (
           !molecule ||
-          !inventoryItemGlobalId ||
-          typeof molecule.inventoryLink?.id !== "number"
+          !inventoryLink?.inventoryItemGlobalId ||
+          typeof inventoryLink.id !== "number"
         ) {
           preflightResults.push({
             moleculeId,
@@ -544,7 +542,6 @@ export function useEditableStoichiometryTable({
           molecule,
           subSampleQuantitiesByGlobalId,
         );
-
         if (eligibility.disabledReason !== null) {
           preflightResults.push({
             moleculeId,
@@ -559,52 +556,40 @@ export function useEditableStoichiometryTable({
         }
 
         deductibleLinks.push({
-          linkId: molecule.inventoryLink.id,
+          linkId: inventoryLink.id,
           moleculeId,
           moleculeName,
-          inventoryItemGlobalId,
+          inventoryItemGlobalId: inventoryLink.inventoryItemGlobalId,
         });
       }
 
       if (deductibleLinks.length === 0) {
-        return {
-          results: preflightResults,
-        };
+        return { results: preflightResults };
       }
 
       const attemptedInventoryItemGlobalIds = deductibleLinks.map(
-        ({ inventoryItemGlobalId }) => inventoryItemGlobalId,
+        (l) => l.inventoryItemGlobalId,
       );
 
       try {
         const deductionResult = await deductStockMutation.mutateAsync({
           stoichiometryId: data.id,
-          linkIds: deductibleLinks.map(({ linkId }) => linkId),
+          linkIds: deductibleLinks.map((l) => l.linkId),
         });
-        const deductionResultByLinkId = new Map(
-          deductionResult.results.map((result) => [result.linkId, result]),
+        const resultByLinkId = new Map(
+          deductionResult.results.map((r) => [r.linkId, r]),
         );
+
         const batchResults = deductibleLinks.map(
           ({ linkId, moleculeId, moleculeName }) => {
-            const result = deductionResultByLinkId.get(linkId);
-
-            if (!result) {
-              return {
-                moleculeId,
-                moleculeName,
-                success: false,
-                errorMessage:
-                  "No deduction result was returned for this molecule.",
-              };
-            }
-
+            const res = resultByLinkId.get(linkId);
             return {
               moleculeId,
               moleculeName,
-              success: result.success,
-              errorMessage: result.success
+              success: !!res?.success,
+              errorMessage: res?.success
                 ? null
-                : result.errorMessage ?? "Failed to update inventory stock.",
+                : res?.errorMessage ?? "Failed to update inventory stock.",
             };
           },
         );
@@ -634,13 +619,16 @@ export function useEditableStoichiometryTable({
           refreshedStoichiometry,
         );
 
+        const summary = {
+          id: refreshedStoichiometry.id,
+          revision: refreshedStoichiometry.revision,
+        } satisfies RefreshedStoichiometry;
+        onStoichiometryRefreshed?.(summary);
+
         await invalidateLinkedInventoryAmounts(linkedInventoryItemGlobalIds);
 
         return {
-          refreshedStoichiometry: {
-            id: refreshedStoichiometry.id,
-            revision: refreshedStoichiometry.revision,
-          },
+          refreshedStoichiometry: summary,
           results: [...preflightResults, ...batchResults],
         };
       } catch (error) {
@@ -650,11 +638,12 @@ export function useEditableStoichiometryTable({
     },
     [
       allMolecules,
-      data,
+      data?.id,
       deductStockMutation,
       getToken,
       invalidateLinkedInventoryAmounts,
       linkedInventoryItemGlobalIds,
+      onStoichiometryRefreshed,
       queryClient,
       subSampleQuantitiesByGlobalId,
     ],
@@ -675,9 +664,11 @@ export function useEditableStoichiometryTable({
 
   const selectLimitingReagent = useCallback(
     (molecule: EditableMolecule) => {
-      const updatedRow = { ...molecule, limitingReagent: true };
-      const newMolecules = calculateUpdatedMolecules(allMolecules, updatedRow);
-      form.setFieldValue("allMolecules", Array.from(newMolecules), {
+      const updatedMolecules = calculateUpdatedMolecules(allMolecules, {
+        ...molecule,
+        limitingReagent: true,
+      });
+      form.setFieldValue("allMolecules", Array.from(updatedMolecules), {
         dontValidate: true,
       });
     },
@@ -687,7 +678,7 @@ export function useEditableStoichiometryTable({
   const processRowUpdate = useCallback(
     (newRow: EditableMolecule, oldRow: EditableMolecule) => {
       try {
-        const numericalFields = [
+        const numericalFields: Array<keyof EditableMolecule> = [
           "coefficient",
           "mass",
           "moles",
@@ -695,12 +686,8 @@ export function useEditableStoichiometryTable({
           "actualMoles",
         ];
         for (const field of numericalFields) {
-          const value = newRow[field as keyof EditableMolecule];
-          if (
-            value !== null &&
-            value !== undefined &&
-            Number(value) < 0
-          ) {
+          const value = newRow[field];
+          if (value !== null && value !== undefined && Number(value) < 0) {
             throw new Error(`${field} cannot be negative`);
           }
         }

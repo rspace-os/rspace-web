@@ -1,11 +1,14 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { inventoryQueryKeys } from "@/modules/inventory/queries";
 import type { StoichiometryRequest } from "@/modules/stoichiometry/schema";
 import { stoichiometryQueryKeys } from "@/modules/stoichiometry/queries";
-import { useEditableStoichiometryTable } from "@/tinyMCE/stoichiometry/useEditableStoichiometryTable";
+import {
+  type RefreshedStoichiometry,
+  useEditableStoichiometryTable,
+} from "@/tinyMCE/stoichiometry/useEditableStoichiometryTable";
 
 const {
   createEditableMolecules,
@@ -314,12 +317,15 @@ vi.mock("@/tinyMCE/stoichiometry/editableMolecules", () => ({
 
 function HookHarness({
   onValue,
+  onStoichiometryRefreshed,
 }: {
   onValue: (value: ReturnType<typeof useEditableStoichiometryTable>) => void;
+  onStoichiometryRefreshed?: (stoichiometry: RefreshedStoichiometry) => void;
 }) {
   const value = useEditableStoichiometryTable({
     stoichiometryId: 3,
     stoichiometryRevision: 1,
+    onStoichiometryRefreshed,
   });
 
   React.useEffect(() => {
@@ -372,7 +378,9 @@ describe("useEditableStoichiometryTable", () => {
     });
   });
 
-  it("assigns distinct numeric temporary ids when reagent additions overlap", async () => {
+  it("assigns numeric temporary ids when reagent additions overlap", async () => {
+    let now = 1712712000000;
+    vi.spyOn(Date, "now").mockImplementation(() => now++);
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -447,6 +455,10 @@ describe("useEditableStoichiometryTable", () => {
     );
     expect(new Set(addedReagents.map(({ id }) => id)).size).toBe(2);
     expect(addedReagents.every(({ id }) => id < 0)).toBe(true);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("soft-deletes saved inventory links, blocks replacement until undo, and restores them on undo", async () => {
@@ -639,11 +651,13 @@ describe("useEditableStoichiometryTable", () => {
       },
     });
     const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries");
+    const onStoichiometryRefreshed = vi.fn();
     let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
 
     render(
       <QueryClientProvider client={queryClient}>
         <HookHarness
+          onStoichiometryRefreshed={onStoichiometryRefreshed}
           onValue={(value) => {
             latestValue = value;
           }}
@@ -685,6 +699,10 @@ describe("useEditableStoichiometryTable", () => {
       stoichiometryId: 9,
       revision: 4,
       token: "resolved-token",
+    });
+    expect(onStoichiometryRefreshed).toHaveBeenCalledWith({
+      id: 9,
+      revision: 4,
     });
     expect(
       queryClient.getQueryData(stoichiometryQueryKeys.byId(9, 4)),
