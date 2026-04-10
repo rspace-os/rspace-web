@@ -2,12 +2,16 @@ package com.researchspace.service.inventory;
 
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
 import com.researchspace.dao.ContainerDao;
+import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SubSampleDao;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
@@ -28,6 +32,8 @@ public class InventoryRecordRetriever {
   private @Autowired @Lazy ContainerDao containerDao;
   private @Autowired SampleDao sampleDao;
   private @Autowired SubSampleDao subSampleDao;
+  private @Autowired InstrumentDao instrumentDao;
+  private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   @Autowired private InventoryPermissionUtils permissionUtils;
 
   /**
@@ -65,9 +71,61 @@ public class InventoryRecordRetriever {
         return getSubSampleIfExists(globalId.getDbId());
       case IC:
         return getContainerById(globalId.getDbId());
+      case IN:
+        return getInstrumentById(globalId.getDbId());
+      case NT:
+        return getInstrumentTemplateById(globalId.getDbId());
       default:
         return null;
     }
+  }
+
+  /** Looks for an instrument with given id. */
+  public Instrument getInstrumentById(Long id) {
+    Instrument result = null;
+    try {
+      result = getInstrumentIfExists(id);
+    } catch (NotFoundException nfe) {
+      ;
+    }
+    return result;
+  }
+
+  /** Looks for an instrument template with given id. */
+  public InstrumentTemplate getInstrumentTemplateById(Long id) {
+    InstrumentTemplate result = null;
+    try {
+      result = getInstrumentTemplateIfExists(id);
+    } catch (NotFoundException nfe) {
+      ;
+    }
+    return result;
+  }
+
+  /**
+   * Tries retrieving instrument with given id.
+   *
+   * @throws NotFoundException if there is no instrument with given id
+   */
+  public Instrument getInstrumentIfExists(Long id) {
+    boolean exists = instrumentDao.exists(id);
+    if (!exists) {
+      throw new NotFoundException("No instrument with id: " + id);
+    }
+    return instrumentDao.get(id);
+  }
+
+  /**
+   * Tries retrieving instrument template with given id.
+   *
+   * @throws NotFoundException if there is no instrument template with given id
+   */
+  public InstrumentTemplate getInstrumentTemplateIfExists(Long id) {
+    boolean exists = instrumentTemplateDao.exists(id);
+    if (!exists) {
+      throw new NotFoundException("No instrument template with id: " + id);
+    }
+    return instrumentTemplateDao.get(id);
   }
 
   /**

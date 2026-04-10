@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+
+  <changeSet id="2026-05-15-container-add-constrain" context="run" author="nico">
+    <comment>Add NOT NULL constraint on the columns canStoreInstruments and contentCountInstruments
+      of Container table
+    </comment>
+    <sql>
+      ALTER TABLE Container MODIFY canStoreInstruments BIT DEFAULT b'1' NOT NULL;
+    </sql>
+    <sql>
+      ALTER TABLE Container MODIFY contentCountInstruments INT DEFAULT 0 NOT NULL;
+    </sql>
+  </changeSet>
+
+
+</databaseChangeLog>

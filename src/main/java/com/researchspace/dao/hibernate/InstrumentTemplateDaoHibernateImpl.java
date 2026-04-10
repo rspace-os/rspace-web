@@ -1,13 +1,12 @@
 package com.researchspace.dao.hibernate;
 
-import com.researchspace.dao.InstrumentEntityDao;
+import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository(value = "instrumentTemplateDao")
 public class InstrumentTemplateDaoHibernateImpl
-    extends InventoryDaoHibernate<InstrumentTemplate, Long>
-    implements InstrumentEntityDao<InstrumentTemplate> {
+    extends InventoryDaoHibernate<InstrumentTemplate, Long> implements InstrumentTemplateDao {
 
   private String defaultTemplateOwner;
 

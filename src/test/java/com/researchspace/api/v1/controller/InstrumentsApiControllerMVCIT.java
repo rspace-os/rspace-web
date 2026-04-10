@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -9,9 +10,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
+import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -103,6 +107,63 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void verifyNonOwnerCannotModifyInstrument() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    String ownerApiKey = createNewApiKeyForUser(owner);
+    ApiInstrument instrument = createBasicInstrumentForUser(owner, "owner-instrument");
+
+    User otherUser = createInitAndLoginAnyUser();
+    String otherApiKey = createNewApiKeyForUser(otherUser);
+
+    String updateJson = "{ \"name\": \"new hacked name\" }";
+
+    // Update, Delete, duplicate, change-ownership cannot be done by non-owner → 404
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                otherApiKey, "/instruments/" + instrument.getId(), otherUser, updateJson))
+        .andExpect(status().isNotFound())
+        .andReturn();
+
+    mockMvc
+        .perform(
+            createBuilderForDelete(otherApiKey, "/instruments/" + instrument.getId(), otherUser))
+        .andExpect(status().isNotFound())
+        .andReturn();
+
+    String changeOwnerJson = "{ \"owner\": { \"username\": \"" + otherUser.getUsername() + "\" } }";
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                otherApiKey,
+                "/instruments/" + instrument.getId() + "/actions/changeOwner",
+                otherUser,
+                changeOwnerJson))
+        .andExpect(status().isNotFound())
+        .andReturn();
+
+    mockMvc
+        .perform(
+            createBuilderForPost(
+                API_VERSION.ONE,
+                otherApiKey,
+                "/instruments/" + instrument.getId() + "/actions/duplicate",
+                otherUser))
+        .andExpect(status().isNotFound())
+        .andReturn();
+
+    // verify the instrument is untouched for the owner
+    MvcResult ownerResult =
+        mockMvc
+            .perform(getInstrumentById(owner, ownerApiKey, instrument.getId()))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiInstrument unchanged = mvcUtils.getFromJsonResponseBody(ownerResult, ApiInstrument.class);
+    assertEquals("owner-instrument", unchanged.getName());
+    assertFalse(unchanged.isDeleted());
+  }
+
+  @Test
   public void createInstrumentErrors() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
@@ -168,6 +229,307 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNotNull(retrieved);
     assertEquals(created.getId(), retrieved.getId());
     assertEquals("instrument-in-grid", retrieved.getName());
+  }
+
+  @Test
+  public void listInstruments() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    createBasicInstrumentForUser(anyUser, "instr-a");
+    createBasicInstrumentForUser(anyUser, "instr-b");
+    createBasicInstrumentForUser(anyUser, "instr-c");
+
+    MvcResult result =
+        mockMvc
+            .perform(createBuilderForGet(API_VERSION.ONE, apiKey, "/instruments", anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiInstrumentSearchResult allInstruments =
+        getFromJsonResponseBody(result, ApiInstrumentSearchResult.class);
+    assertNotNull(allInstruments);
+    assertEquals(3, allInstruments.getTotalHits().intValue());
+    assertEquals(3, allInstruments.getInstruments().size());
+
+    // pagination
+    result =
+        mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/instruments", anyUser)
+                    .param("pageSize", "2")
+                    .param("pageNumber", "0"))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiInstrumentSearchResult page =
+        getFromJsonResponseBody(result, ApiInstrumentSearchResult.class);
+    assertEquals(3, page.getTotalHits().intValue());
+    assertEquals(2, page.getInstruments().size());
+    assertEquals(2, page.getLinks().size()); // self, next
+  }
+
+  @Test
+  public void validateNameForNewInstrument() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    createBasicInstrumentForUser(anyUser, "existing-instrument");
+
+    // too long name
+    String tooLong = StringUtils.leftPad("test", 256, '*');
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                        API_VERSION.ONE,
+                        apiKey,
+                        "/instruments/validateNameForNewInstrument",
+                        anyUser)
+                    .param("name", tooLong))
+            .andExpect(status().isOk())
+            .andReturn();
+    Map<?, ?> data = parseJSONObjectFromResponseStream(result);
+    assertEquals(false, data.get("valid"));
+    assertEquals("Name is too long (max 255 chars)", data.get("message"));
+
+    // already-existing name
+    result =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                        API_VERSION.ONE,
+                        apiKey,
+                        "/instruments/validateNameForNewInstrument",
+                        anyUser)
+                    .param("name", "existing-instrument"))
+            .andExpect(status().isOk())
+            .andReturn();
+    data = parseJSONObjectFromResponseStream(result);
+    assertEquals(false, data.get("valid"));
+    assertEquals("There is already an instrument named [existing-instrument]", data.get("message"));
+
+    // valid unique name
+    result =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                        API_VERSION.ONE,
+                        apiKey,
+                        "/instruments/validateNameForNewInstrument",
+                        anyUser)
+                    .param("name", "brand-new-instrument"))
+            .andExpect(status().isOk())
+            .andReturn();
+    data = parseJSONObjectFromResponseStream(result);
+    assertEquals(true, data.get("valid"));
+  }
+
+  @Test
+  public void updateInstrument() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiInstrument instrument = createBasicInstrumentForUser(anyUser, "before-update");
+
+    String updateJson = "{ \"name\": \"after-update\", \"description\": \"updated desc\" }";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/instruments/" + instrument.getId(), anyUser, updateJson))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiInstrument updated = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+    assertNotNull(updated);
+    assertEquals("after-update", updated.getName());
+    assertEquals("updated desc", updated.getDescription());
+    assertEquals(instrument.getId(), updated.getId());
+  }
+
+  @Test
+  public void deleteAndRestoreInstrument() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiInstrument instrument = createBasicInstrumentForUser(anyUser);
+
+    // delete
+    MvcResult result =
+        mockMvc
+            .perform(createBuilderForDelete(apiKey, "/instruments/" + instrument.getId(), anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiInstrument deleted = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+    assertTrue(deleted.isDeleted());
+
+    // restore
+    result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/instruments/" + instrument.getId() + "/restore", anyUser, "{}"))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiInstrument restored = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+    assertFalse(restored.isDeleted());
+    assertEquals(instrument.getId(), restored.getId());
+  }
+
+  @Test
+  public void duplicateInstrument() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiInstrument instrument = createBasicInstrumentForUser(anyUser, "original");
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPost(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/instruments/" + instrument.getId() + "/actions/duplicate",
+                    anyUser))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiInstrument copy = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+    assertNotNull(copy);
+    assertNotNull(copy.getId());
+    assertFalse(copy.getId().equals(instrument.getId()));
+    assertTrue(copy.getName().contains("original"));
+    assertEquals(anyUser.getUsername(), copy.getOwner().getUsername());
+  }
+
+  @Test
+  public void getInstrumentRevisionsAndRevisionById() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiInstrument instrument = createBasicInstrumentForUser(anyUser, "rev-test");
+
+    // update the instrument to generate a second revision
+    String updateJson = "{ \"name\": \"rev-test-updated\" }";
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey, "/instruments/" + instrument.getId(), anyUser, updateJson))
+        .andExpect(status().isOk());
+
+    // list revisions
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/instruments/" + instrument.getId() + "/revisions",
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiInventoryRecordRevisionList history =
+        getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
+    assertEquals(2, history.getRevisions().size());
+
+    Long firstRevisionId = history.getRevisions().get(0).getRevisionId();
+    assertEquals("rev-test", history.getRevisions().get(0).getRecord().getName());
+
+    // get specific revision
+    result =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/instruments/" + instrument.getId() + "/revisions/" + firstRevisionId,
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiInstrument rev1 = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+    assertNotNull(rev1);
+    assertEquals("rev-test", rev1.getName());
+    assertEquals(firstRevisionId, rev1.getRevisionId());
+    assertTrue(
+        rev1.getLinkOfType(ApiLinkItem.SELF_REL)
+            .get()
+            .getLink()
+            .endsWith("/revisions/" + firstRevisionId));
+  }
+
+  @Test
+  public void changeInstrumentOwner() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(owner);
+    ApiInstrument instrument = createBasicInstrumentForUser(owner, "transfer-me");
+
+    User newOwner = doCreateAndInitUser(getRandomName(8));
+
+    String changeOwnerJson = "{ \"owner\": { \"username\": \"" + newOwner.getUsername() + "\" } }";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey,
+                    "/instruments/" + instrument.getId() + "/actions/changeOwner",
+                    owner,
+                    changeOwnerJson))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiInstrument transferred = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+    assertNotNull(transferred);
+    assertEquals(newOwner.getUsername(), transferred.getOwner().getUsername());
+  }
+
+  @Test
+  public void getInstrumentImageAndThumbnail() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    String post = "{ \"name\": \"image-instrument\", \"newBase64Image\": \"" + BASE_64 + "\" }";
+    MvcResult createResult =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/instruments", anyUser, post))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    ApiInstrument created = mvcUtils.getFromJsonResponseBody(createResult, ApiInstrument.class);
+    assertNotNull(created);
+    assertTrue(created.getLinkOfType(ApiLinkItem.IMAGE_REL).isPresent());
+
+    // GET image
+    MvcResult imageResult =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/instruments/" + created.getId() + "/image/0",
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertTrue(imageResult.getResponse().getContentAsByteArray().length > 0);
+
+    // GET thumbnail
+    MvcResult thumbResult =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/instruments/" + created.getId() + "/thumbnail/0",
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertTrue(thumbResult.getResponse().getContentAsByteArray().length > 0);
   }
 
   private MockHttpServletRequestBuilder getInstrumentById(

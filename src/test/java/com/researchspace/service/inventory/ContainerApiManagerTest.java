@@ -247,6 +247,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
             piContainer.getId(),
             null,
             null,
+            null,
             PaginationCriteria.createDefaultForClass(InventoryRecord.class),
             testUser);
     assertEquals(2, containerContent.getRecords().size());
@@ -255,6 +256,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         containerApiMgr.searchForContentOfContainer(
             piContainer.getId(),
             testUser.getUsername(),
+            null,
             null,
             PaginationCriteria.createDefaultForClass(InventoryRecord.class),
             testUser);
@@ -436,6 +438,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
             piContainer1.getId(),
             null,
             null,
+            null,
             PaginationCriteria.createDefaultForClass(InventoryRecord.class),
             pi);
     assertEquals(2, containerContent.getTotalHits());
@@ -471,6 +474,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     ApiInventorySearchResult containerContentSeenByOtherUser =
         containerApiMgr.searchForContentOfContainer(
             piContainer1.getId(),
+            null,
             null,
             null,
             PaginationCriteria.createDefaultForClass(InventoryRecord.class),
@@ -722,6 +726,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     ApiInventorySearchResult containerChildren =
         containerApiMgr.searchForContentOfContainer(
             savedLocationsContainer.getId(),
+            null,
             null,
             null,
             PaginationCriteria.createDefaultForClass(InventoryRecord.class),

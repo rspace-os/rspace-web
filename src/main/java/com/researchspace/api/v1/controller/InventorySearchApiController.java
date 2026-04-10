@@ -162,7 +162,7 @@ public class InventorySearchApiController extends BaseApiInventoryController
     }
 
     return containerApiMgr.searchForContentOfContainer(
-        containerId, ownedBy, searchType, pgCrit, user);
+        containerId, ownedBy, searchType, deletedItemsOption, pgCrit, user);
   }
 
   private ApiInventorySearchResult findSamplesFromTemplate(
