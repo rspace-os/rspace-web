@@ -9,9 +9,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
-import com.researchspace.model.inventory.field.SampleField;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -40,7 +40,7 @@ import lombok.ToString;
       "attachment",
       "_links"
     })
-public class ApiSampleField extends ApiField {
+public class ApiInventoryEntityField extends ApiField {
 
   @JsonProperty("attachment")
   private ApiInventoryFile attachment;
@@ -102,7 +102,7 @@ public class ApiSampleField extends ApiField {
     }
   }
 
-  public ApiSampleField(SampleField field) {
+  public ApiInventoryEntityField(InventoryEntityField field) {
     setId(field.getId());
     setType(ApiFieldType.valueOf(field.getType().toString()));
     setColumnIndex(field.getColumnIndex());
@@ -139,7 +139,7 @@ public class ApiSampleField extends ApiField {
   }
 
   /** Method for modifying instance of sample field. Currently only updates field content. */
-  public boolean applyChangesToDatabaseField(SampleField dbField, User user) {
+  public boolean applyChangesToDatabaseField(InventoryEntityField dbField, User user) {
     boolean contentChanged = applyContentChangesToDbField(dbField);
     if (contentChanged) {
       dbField.setModificationDate(new Date().getTime());
@@ -148,7 +148,7 @@ public class ApiSampleField extends ApiField {
   }
 
   /** Method for modifying instance of template field. Updates field's content and meta-data. */
-  public boolean applyChangesToDatabaseTemplateField(SampleField dbField, User user) {
+  public boolean applyChangesToDatabaseTemplateField(InventoryEntityField dbField, User user) {
     boolean contentChanged = false;
     if (getName() != null) {
       if (!getName().equals(dbField.getName())) {
@@ -219,7 +219,7 @@ public class ApiSampleField extends ApiField {
     dbChoiceField.setSelectedOptions(newSelectedOptions);
   }
 
-  private boolean applyContentChangesToDbField(SampleField dbField) {
+  private boolean applyContentChangesToDbField(InventoryEntityField dbField) {
     boolean contentChanged = false;
 
     // for choice/radio the content comes/goes through selectedOptions

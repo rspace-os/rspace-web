@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.field.ExtraField;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -64,7 +64,7 @@ import lombok.ToString;
 public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
 
   @JsonProperty("fields")
-  protected List<ApiSampleField> fields = new ArrayList<>();
+  protected List<ApiInventoryEntityField> fields = new ArrayList<>();
 
   @JsonProperty("extraFields")
   protected List<ApiExtraField> extraFields = new ArrayList<>();
@@ -75,8 +75,8 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
   protected ApiSampleWithoutSubSamples(Sample sample) {
     super(sample);
 
-    for (SampleField field : sample.getActiveFields()) {
-      fields.add(new ApiSampleField(field));
+    for (InventoryEntityField field : sample.getActiveFields()) {
+      fields.add(new ApiInventoryEntityField(field));
     }
     for (ExtraField extraField : sample.getActiveExtraFields()) {
       extraFields.add(new ApiExtraField(extraField));
@@ -91,7 +91,7 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
     }
 
     List<ApiInventoryFile> allAttachments = new ArrayList<>(super.getAllAttachments());
-    for (ApiSampleField sf : getFields()) {
+    for (ApiInventoryEntityField sf : getFields()) {
       if (sf.getAttachment() != null) {
         allAttachments.add(sf.getAttachment());
       }
@@ -107,16 +107,16 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
     boolean contentChanged = super.applyChangesToDatabaseSample(dbSample);
 
     if (fields != null) {
-      List<ApiSampleField> modifiedFields =
+      List<ApiInventoryEntityField> modifiedFields =
           fields.stream()
               .filter(f -> !(f.isNewFieldRequest() || f.isDeleteFieldRequest()))
               .collect(Collectors.toList());
 
-      for (ApiSampleField field : modifiedFields) {
+      for (ApiInventoryEntityField field : modifiedFields) {
         if (field.getId() == null) {
           throw new IllegalArgumentException("'id' property not provided for a field");
         }
-        Optional<SampleField> dbFieldOpt =
+        Optional<InventoryEntityField> dbFieldOpt =
             dbSample.getActiveFields().stream()
                 .filter(sf -> Objects.equals(sf.getId(), field.getId()))
                 .findFirst();
@@ -126,7 +126,7 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
                   + field.getId()
                   + " doesn't match any of the field ids of current sample");
         }
-        SampleField dbField = dbFieldOpt.get();
+        InventoryEntityField dbField = dbFieldOpt.get();
         if (dbSample.isTemplate()) {
           contentChanged |= field.applyChangesToDatabaseTemplateField(dbField, user);
         } else {

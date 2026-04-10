@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
-import com.researchspace.model.inventory.field.SampleField;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
-public class InventoryImportSampleFieldCreatorTest {
+public class InventoryImportInventoryEntityFieldCreatorTest {
 
   InventoryImportSampleFieldCreator helper = new InventoryImportSampleFieldCreator();
 
@@ -30,7 +30,7 @@ public class InventoryImportSampleFieldCreatorTest {
     values.add("");
     values.add("yes");
     values.add("maybe");
-    SampleField field = helper.getSuggestedSampleFieldForNameAndValues("testName", values);
+    InventoryEntityField field = helper.getSuggestedSampleFieldForNameAndValues("testName", values);
     assertEquals(FieldType.RADIO, field.getType());
     assertEquals(List.of("maybe", "no", "yes"), ((InventoryRadioField) field).getAllOptions());
     assertEquals(3, ((InventoryRadioField) field).getAllOptions().size());
@@ -106,7 +106,8 @@ public class InventoryImportSampleFieldCreatorTest {
 
     // the radio options that can be handled fine by front-end and back-end
     List<String> values = List.of("A", "A", "B");
-    SampleField field = helper.getSuggestedSampleFieldForNameAndValues("Position (A,B,C)", values);
+    InventoryEntityField field =
+        helper.getSuggestedSampleFieldForNameAndValues("Position (A,B,C)", values);
     assertEquals(FieldType.RADIO, field.getType());
     assertEquals(List.of("A", "B"), ((InventoryRadioField) field).getAllOptions());
     assertEquals(2, ((InventoryRadioField) field).getAllOptions().size());
