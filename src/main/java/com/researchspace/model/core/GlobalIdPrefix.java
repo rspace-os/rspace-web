@@ -69,7 +69,7 @@ public enum GlobalIdPrefix {
 	/** Inventory SubSample */
 	SS,
 
-	/** SampleField */
+	/** Inventory Field */
 	SF,
 	
 	/** Extra (ad-hoc) Field */
@@ -87,6 +87,12 @@ public enum GlobalIdPrefix {
 	/** (Inventory) File */
 	IF,
 	
+	/** (Inventory) Instrument */
+	IN,
+
+	/** (Inventory) InstrumentTemplate */
+	NT,
+
 	/** List of Materials */
 	LM,
 	
