@@ -310,6 +310,9 @@ jobs:
   playwright-tests:
     runs-on: ubuntu-latest
     needs: changed-files
+    permissions:
+      contents: read
+      issues: write
     strategy:
       matrix:
         browser: [ chromium, firefox, webkit ]
@@ -352,7 +355,7 @@ jobs:
         with:
           report-file: src/main/webapp/ui/playwright-report/results-${{ matrix.browser }}.json
           report-tag: ${{ matrix.browser }}
-          create-comment: false
+          create-comment: ${{ github.event_name == 'pull_request' }}
           job-summary: true
           comment-title: Playwright component test results
           test-command: npm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
