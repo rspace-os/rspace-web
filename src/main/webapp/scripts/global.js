@@ -31,128 +31,6 @@ var lastTabbable = undefined;
 var bootstrapModalsContainer = undefined;
 var currentModalHandle = undefined;
 
-RS.setupExperimentalBootstrapModals = function () {
-  bootstrapModalsContainer = $('<div class="bootstrap-custom-flat experimental-bootstrap-modal">');
-  $('body').append(bootstrapModalsContainer);
-
-  /**
-   * Bring the modal to the front immediately when it is triggered
-   * (not waiting for the opening animation to finish).
-   */
-  $(document).on('show.bs.modal', function (e) {
-    var modal = $(e.target);
-    // Put the most recent backdrop overlay above all previous dialogs and keep
-    // only the newly opened dialog above it. From:
-    // https://stackoverflow.com/questions/19305821/multiple-modals-overlay
-    var zIndex = 10000 + (10 * (activeBootstrapModals.length));
-    modal.css('z-index', zIndex);
-    setTimeout(function () {
-      $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
-    }, 0);
-  });
-
-  /**
-   * Store the modal when it finished opening itself, so we
-   * can later go back to it in the modals stack.
-   */
-  $(document).on('shown.bs.modal', function (e) {
-    var modal = $(e.target);
-
-    // Attempt to sensibly focus in an element in the modal
-    var focusables = modal.find('.modal-body :focusable');
-    if (focusables.length) {
-      focusables.first().focus();
-    } else {
-      var buttons = modal.find('.modal-footer button:focusable');
-      if (buttons.length) {
-        buttons.first().focus();
-      } else {
-        var allFocusables = modal.find(':focusable');
-        if (allFocusables.length) {
-          allFocusables.first().focus();
-        } else {
-          console.log("Couldn't focus any element in the current modal.");
-        }
-      }
-    }
-
-    // Store the modal on the stack
-    activeBootstrapModals.push(modal);
-
-    // Set up the tabbing context
-    var tabbables = modal.find(':tabbable');
-    if (tabbables.length) {
-      firstTabbable = tabbables.first().get(0);
-      lastTabbable = tabbables.last().get(0);
-    } else {
-      throw Error("No tabbable elements found in modal", modal);
-    }
-
-    // Attempt to store the modal's triggering element so we can focus it back
-    // when the modal closes.
-    if ('relatedTarget' in e) {
-      bootstrapModalHandles.push(e.relatedTarget);
-    } else {
-      throw Error('You must pass a relatedTarget element when opening a modal!');
-    }
-  });
-
-  /**
-   * When a modal is closed, get the previous modal from the stack,
-   * give it focus and activate its tabbing context.
-   */
-  $(document).on('hidden.bs.modal', function (e) {
-    var relatedTarget = bootstrapModalHandles.pop();
-
-    // The triggering element of the modal might have become unfocusable
-    // in the meantime (e.g. got hidden). In such case, we'll focus the nearest
-    // previous focusable element.
-    if (relatedTarget && $(relatedTarget).is(':focusable')) {
-      relatedTarget.focus();
-    } else {
-      var elementToFocus = RS.nearestElement($(relatedTarget), ':focusable');
-      elementToFocus.focus();
-    }
-
-    // Remove the closed modal from the stack.
-    activeBootstrapModals.pop();
-
-    // Get the previous modal from the stack
-    var modal = activeBootstrapModals[activeBootstrapModals.length - 1];
-
-    // If there was a modal opened before the just closed one, activate its
-    // tabbing context, else deactivate the tabbing context variables.
-    if (modal) {
-      var tabbables = modal.find(':tabbable');
-      firstTabbable = tabbables.first().get(0);
-      lastTabbable = tabbables.last().get(0);
-      currentModalHandle = modal;
-    } else {
-      firstTabbable = undefined;
-      lastTabbable = undefined;
-      currentModalHandle = undefined;
-    }
-  });
-
-  /**
-   * Capture TAB events and, if a modal is active, control the tabbing flow such
-   * that the focus never leaves the modal (i.e. stays trapped and circulates
-   * within the modal).
-   */
-  $(document).on('keydown', function (e) {
-    if (e.which === 9) {
-      var elem = $(e.target).first().get(0);
-      if (elem == firstTabbable && e.shiftKey) {
-        e.preventDefault();
-        lastTabbable.focus();
-      } else if (elem == lastTabbable && !e.shiftKey) {
-        e.preventDefault();
-        firstTabbable.focus();
-      }
-    }
-  });
-};
-
 /**
  * Find the closest element somewhere above the current element (either a prev
  * sibling or a parent or a parent's prev sibling).
@@ -168,13 +46,6 @@ RS.nearestElement = function (elem, selector) {
 };
 
 /** Checks if the current page a the top-level page.*/
-RS.isPageEmbedded = function () {
-  try {
-    return window.self !== window.top;
-  } catch (e) {
-    return true;
-  }
-}
 
 /**
  * Shows a Bootstrap modal. Because this creates new DOM element every time,
@@ -476,12 +347,6 @@ RS.unescape = function (safe) {
  * Filter out forbidden characters from a string, useful for frontend
  * sanitizing of some fields when they are not being immediately sent to backend.
  */
-RS.removeForbiddenCharacters = function (string, forbiddenCharacters) {
-  return string.replace(/./gi, function check(c) {
-    if (forbiddenCharacters.indexOf(c) >= 0) return '';
-    return c;
-  });
-};
 
 RS.safelyParseHtmlInto$Html = function (html) {
   var $html;
@@ -683,57 +548,34 @@ function getValidationErrorString(errorList, sep, escapeResponseText) {
  * The cache is emptied when the page is  refreshed.
  * @returns
  */
-RS.Cache = function () {
+RS.webResultCache = (function () {
   var _cache = {};
-
   var DEFAULT_TIMOUT = 1000 * 5;
-  /*
-   * Takes a key value pair, and a timeout period in milliseconds
-   */
-  this.put = function (key, value, timeout) {
-    timeout = timeout || DEFAULT_TIMOUT;
-    _cache[key] = value;
-    setTimeout(function () {
-      if (_cache[key] != undefined) {
-        _cache[key] = undefined;
-      }
-    }, timeout);
-  };
 
-  /*
-   * Stores a value with no timeout period
-   */
-  this.putPermanent = function (key, value) {
-    _cache[key] = value;
-  };
+  return {
+    put: function (key, value, timeout) {
+      timeout = timeout || DEFAULT_TIMOUT;
+      _cache[key] = value;
+      setTimeout(function () {
+        if (_cache[key] !== undefined) {
+          _cache[key] = undefined;
+        }
+      }, timeout);
+    },
 
-  /*
-   * Retrives a value from the cache. Users should test this is not null before using
-   *  in case it has been timed out
-   */
-  this.get = function (key) {
-    return _cache[key];
-  };
+    get: function (key) {
+      return _cache[key];
+    },
 
-  /*
-   * Deletes the cache entry; removes key and value
-   */
-  this.clear = function (key) {
-    delete _cache[key];
-  };
+    clear: function (key) {
+      delete _cache[key];
+    },
 
-  /*
-   * Empties the cache completely.
-   */
-  this.clearAll = function () {
-    _cache = {};
+    clearAll: function () {
+      _cache = {};
+    }
   };
-};
-
-/*
- * Call and setup on page load
- */
-RS.webResultCache = new RS.Cache();
+}());
 
 /*
  * Class to hold functions that are called at interval. When user goes idle the interval increases.
@@ -849,59 +691,6 @@ RS._resetInactivityTimer = function () {
   RS.pollRegistry.restartPollingIntervals();
 };
 
-/*
- * Increments _idleTimerTicks and after some idle time increases poll functions intervals
- */
-RS._timerIncrement = function () {
-
-  var MAX_DELAY_INCREASES_NUM = 10; /* stops multiplying poll delay indefinitely */
-
-  if (RS._idleTimerTicks >= MAX_DELAY_INCREASES_NUM) {
-    return;
-  }
-
-  RS._idleTimerTicks++;
-  console.log("RS.pollRegistry incrementing _idleTimerTicks to " + RS._idleTimerTicks);
-
-  if (RS._idleTimerTicks > 1 && RS._idleTimerTicks < MAX_DELAY_INCREASES_NUM) {
-    RS.pollRegistry.increasePollingIntervals();
-  }
-};
-
-RS._setIncomingMaintenanceMsg = function (nextMaint) {
-
-  var headerInfoMsg = 'Scheduled maintenance will start on ' + nextMaint.formattedStartDate;
-  var warningMsg = 'Scheduled maintenance is about to start on ' + nextMaint.formattedStartDate +
-    '. Please finish your work and log off';
-  var noticeMsg = 'RSpace will be down for a scheduled maintenance from ' +
-    nextMaint.formattedStartDate + ' until ' +
-    nextMaint.formattedEndDate + '. ' +
-    RS.escapeHtml(nextMaint.message);
-
-  if (!nextMaint.canUserLoginNow) {
-    RS.maintenanceMsg(warningMsg);
-  }
-
-  $('#incomingMaintenanceDiv').show();
-  $('#incomingMaintenanceDiv').prepend(headerInfoMsg);
-
-  $('#maintenanceDetailsLink').click(function () {
-    RS.confirm(noticeMsg, "notice", 8000);
-  });
-};
-
-RS._checkIncomingMaintenace = function () {
-  var jqxhr = $.get('/system/maintenance/ajax/nextMaintenance');
-  jqxhr.done(function (nextMaint) {
-    if (nextMaint) {
-      RS._setIncomingMaintenanceMsg(nextMaint);
-    }
-  });
-  jqxhr.fail(function () {
-    console.warn("Couldn't retrieve info about incoming downtime");
-  });
-};
-
 $(function () {
 
   if (typeof currentUser === 'undefined') {
@@ -910,9 +699,142 @@ $(function () {
     return;
   }
 
-  RS.setupExperimentalBootstrapModals();
+  (function () {
+    bootstrapModalsContainer = $('<div class="bootstrap-custom-flat experimental-bootstrap-modal">');
+    $('body').append(bootstrapModalsContainer);
 
-  var idleInterval = setInterval(RS._timerIncrement, RS._idleCheckInterval);
+    /**
+     * Bring the modal to the front immediately when it is triggered
+     * (not waiting for the opening animation to finish).
+     */
+    $(document).on('show.bs.modal', function (e) {
+      var modal = $(e.target);
+      // Put the most recent backdrop overlay above all previous dialogs and keep
+      // only the newly opened dialog above it. From:
+      // https://stackoverflow.com/questions/19305821/multiple-modals-overlay
+      var zIndex = 10000 + (10 * (activeBootstrapModals.length));
+      modal.css('z-index', zIndex);
+      setTimeout(function () {
+        $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
+      }, 0);
+    });
+
+    /**
+     * Store the modal when it finished opening itself, so we
+     * can later go back to it in the modals stack.
+     */
+    $(document).on('shown.bs.modal', function (e) {
+      var modal = $(e.target);
+
+      // Attempt to sensibly focus in an element in the modal
+      var focusables = modal.find('.modal-body :focusable');
+      if (focusables.length) {
+        focusables.first().focus();
+      } else {
+        var buttons = modal.find('.modal-footer button:focusable');
+        if (buttons.length) {
+          buttons.first().focus();
+        } else {
+          var allFocusables = modal.find(':focusable');
+          if (allFocusables.length) {
+            allFocusables.first().focus();
+          } else {
+            console.log("Couldn't focus any element in the current modal.");
+          }
+        }
+      }
+
+      // Store the modal on the stack
+      activeBootstrapModals.push(modal);
+
+      // Set up the tabbing context
+      var tabbables = modal.find(':tabbable');
+      if (tabbables.length) {
+        firstTabbable = tabbables.first().get(0);
+        lastTabbable = tabbables.last().get(0);
+      } else {
+        throw Error("No tabbable elements found in modal", modal);
+      }
+
+      // Attempt to store the modal's triggering element so we can focus it back
+      // when the modal closes.
+      if ('relatedTarget' in e) {
+        bootstrapModalHandles.push(e.relatedTarget);
+      } else {
+        throw Error('You must pass a relatedTarget element when opening a modal!');
+      }
+    });
+
+    /**
+     * When a modal is closed, get the previous modal from the stack,
+     * give it focus and activate its tabbing context.
+     */
+    $(document).on('hidden.bs.modal', function (e) {
+      var relatedTarget = bootstrapModalHandles.pop();
+
+      // The triggering element of the modal might have become unfocusable
+      // in the meantime (e.g. got hidden). In such case, we'll focus the nearest
+      // previous focusable element.
+      if (relatedTarget && $(relatedTarget).is(':focusable')) {
+        relatedTarget.focus();
+      } else {
+        var elementToFocus = RS.nearestElement($(relatedTarget), ':focusable');
+        elementToFocus.focus();
+      }
+
+      // Remove the closed modal from the stack.
+      activeBootstrapModals.pop();
+
+      // Get the previous modal from the stack
+      var modal = activeBootstrapModals[activeBootstrapModals.length - 1];
+
+      // If there was a modal opened before the just closed one, activate its
+      // tabbing context, else deactivate the tabbing context variables.
+      if (modal) {
+        var tabbables = modal.find(':tabbable');
+        firstTabbable = tabbables.first().get(0);
+        lastTabbable = tabbables.last().get(0);
+        currentModalHandle = modal;
+      } else {
+        firstTabbable = undefined;
+        lastTabbable = undefined;
+        currentModalHandle = undefined;
+      }
+    });
+
+    /**
+     * Capture TAB events and, if a modal is active, control the tabbing flow such
+     * that the focus never leaves the modal (i.e. stays trapped and circulates
+     * within the modal).
+     */
+    $(document).on('keydown', function (e) {
+      if (e.which === 9) {
+        var elem = $(e.target).first().get(0);
+        if (elem == firstTabbable && e.shiftKey) {
+          e.preventDefault();
+          lastTabbable.focus();
+        } else if (elem == lastTabbable && !e.shiftKey) {
+          e.preventDefault();
+          firstTabbable.focus();
+        }
+      }
+    });
+  }());
+
+  var idleInterval = setInterval(function () {
+    var MAX_DELAY_INCREASES_NUM = 10; /* stops multiplying poll delay indefinitely */
+
+    if (RS._idleTimerTicks >= MAX_DELAY_INCREASES_NUM) {
+      return;
+    }
+
+    RS._idleTimerTicks++;
+    console.log("RS.pollRegistry incrementing _idleTimerTicks to " + RS._idleTimerTicks);
+
+    if (RS._idleTimerTicks > 1 && RS._idleTimerTicks < MAX_DELAY_INCREASES_NUM) {
+      RS.pollRegistry.increasePollingIntervals();
+    }
+  }, RS._idleCheckInterval);
   // this overrides defaults to provide a mechanism where 'a' tags can avoid being buttonized by use of 'nobutton' class
   // see rspac-892
   $(".toolbar").buttonset({
@@ -935,7 +857,46 @@ $(function () {
     RS._resetInactivityTimer();
   });
 
-  RS._checkIncomingMaintenace();
+  (function () {
+    var jqxhr = $.get('/system/maintenance/ajax/nextMaintenance');
+    jqxhr.done(function (nextMaint) {
+      if (nextMaint) {
+        var headerInfoMsg = 'Scheduled maintenance will start on ' + nextMaint.formattedStartDate;
+        var warningMsg = 'Scheduled maintenance is about to start on ' + nextMaint.formattedStartDate +
+          '. Please finish your work and log off';
+        var noticeMsg = 'RSpace will be down for a scheduled maintenance from ' +
+          nextMaint.formattedStartDate + ' until ' +
+          nextMaint.formattedEndDate + '. ' +
+          RS.escapeHtml(nextMaint.message);
+
+        if (!nextMaint.canUserLoginNow) {
+          var event = new CustomEvent('show-toast-message', {
+            'detail': {
+              message: warningMsg,
+              variant: 'warning',
+              infinite: true
+            }
+          });
+
+          if (window.parent) {
+            window.parent.document.dispatchEvent(event);
+          } else {
+            document.dispatchEvent(event);
+          }
+        }
+
+        $('#incomingMaintenanceDiv').show();
+        $('#incomingMaintenanceDiv').prepend(headerInfoMsg);
+
+        $('#maintenanceDetailsLink').click(function () {
+          RS.confirm(noticeMsg, "notice", 8000);
+        });
+      }
+    });
+    jqxhr.fail(function () {
+      console.warn("Couldn't retrieve info about incoming downtime");
+    });
+  }());
 
   $(document).on('keyup', '.dynamicWidthInputField', function (e) {
     RS.resizeInputFieldToContent($(this));
@@ -1239,20 +1200,6 @@ RS.tinymceInsertInternalLink = function (id, globalId, name, ed, callback) {
  *
  */
 RS.appendMustacheGeneratedHtmlToElement = function (mustacheContent, element) {
-
-  var updatedHTML = RS._replaceMustacheDataSrcWithSrcForImage(mustacheContent);
-  var appnded = $(element).append(updatedHTML);
-  return appnded;
-};
-
-/*
- * Helper function that replace data-src attribute of images to src attribute,
- * this way images are lazy loaded.
- *
- * Also, if data-try-replace-with-src attribute of an image is defined, then img pointed
- * by this attribute is preloaded, and when available it swaps src of the image.
- */
-RS._replaceMustacheDataSrcWithSrcForImage = function (mustacheContent) {
   var $content = $("<div/>").append(mustacheContent);
   $content.find('img').each(function () {
     var $thisImg = $(this);
@@ -1266,7 +1213,8 @@ RS._replaceMustacheDataSrcWithSrcForImage = function (mustacheContent) {
       RS.preloadImage(tryImgSrc, $thisImg);
     }
   });
-  return $content.children();
+  var updatedHTML = $content.children();
+  return $(element).append(updatedHTML);
 };
 
 // Get file extension for icon when files are selected from Box, Dropbox and Google Drive in Tiny MCE
@@ -1400,53 +1348,6 @@ RS.confirmAndNavigateTo = function (message, variant, duration, url) {
 
 RS.navigateTo = function (url) {
   window.location = createURL(url);
-};
-
-RS.maintenanceMsg = function (warningMsg) {
-  var event = new CustomEvent('show-toast-message', {
-    'detail': {
-      message: warningMsg,
-      variant: 'warning',
-      infinite: true
-    }
-  });
-
-  // Tell React to display a toest message
-  if (window.parent) { // if in an iframe
-    window.parent.document.dispatchEvent(event);
-  } else {
-    document.dispatchEvent(event);
-  }
-};
-
-RS.requestMsg = function (notificationMsg) {
-  var toastDiv = $().toastmessage('showToast', {
-    text: notificationMsg,
-    sticky: true,
-    type: 'notice'
-  });
-  $('.toast-position-top-right').css('top', '35px');
-  $('.toast-type-notice').css('padding-top', '35px');
-  $('.toast-item-close').css('background-image', 'url(/images/close.gif)');
-  $(toastDiv).find('.toast-item-image-notice').css('background', 'url(/images/yesNo.png)');
-};
-
-RS.notificationMsg = function (notificationMsg, showCloseButton) {
-  var closeAvailable = showCloseButton || false;
-  var toastDiv = $().toastmessage('showToast', {
-    text: notificationMsg,
-    sticky: true,
-    type: 'notice',
-    close: function () { return closeAvailable; }
-  });
-  $('.toast-position-top-right').css('top', '35px');
-  $('.toast-type-notice').css('padding-top', '35px');
-  var $toastCloseBtn = $(toastDiv).find('.toast-item-close');
-  if (closeAvailable) {
-    $toastCloseBtn.css('background-image', 'url(/images/close.gif)');
-  } else {
-    $toastCloseBtn.remove();
-  }
 };
 
 /**
@@ -1821,18 +1722,6 @@ RS.addBreadcrumbElement = function (bcrumbTagId, elemId, safeDisplayName) {
   $bcrumbTag.data('bcrumb', bcrumb);
 };
 
-RS.getBreadcrumbIds = function (bcrumbTagId) {
-  var $bcrumbTag = $("#breadcrumbTag_" + bcrumbTagId);
-  var $bcrumElemsDiv = $bcrumbTag.children('.breadcrumbElems');
-  var bcrumb = $bcrumbTag.data('bcrumb') || [];
-
-  var breadcrumbIds = [];
-  $.each(bcrumb, function (i, elem) {
-    breadcrumbIds.push(elem.id);
-  });
-  return breadcrumbIds;
-};
-
 RS.refreshBreadcrumbElems = function (bcrumbTagId) {
 
   var $bcrumbTag = $("#breadcrumbTag_" + bcrumbTagId);
@@ -1861,35 +1750,28 @@ RS.refreshBreadcrumbElems = function (bcrumbTagId) {
 
 /* to add an element to breadcrumb trail. displayName has to be escaped. */
 RS.addBreadcrumbAndRefresh = function (bcrumbTagId, elemId, safeDisplayName) {
-
-  var foundInBreadcrumbs = RS._resetToBreadcrumb(bcrumbTagId, elemId);
-  if (!foundInBreadcrumbs) {
-    RS.addBreadcrumbElement(bcrumbTagId, elemId, safeDisplayName);
-  }
-  RS.refreshBreadcrumbElems(bcrumbTagId);
-};
-
-/* if element with given id is among breadcrumbs all following elements will be removed */
-RS._resetToBreadcrumb = function (bcrumbTagId, id) {
-
   var $bcrumbTag = $("#breadcrumbTag_" + bcrumbTagId);
   var bcrumb = $bcrumbTag.data('bcrumb') || [];
-  var found = false;
+  var foundInBreadcrumbs = false;
 
   var breadcrumbsLength = bcrumb.length;
   if (breadcrumbsLength > 0) {
     for (var i = 0; i < breadcrumbsLength; i++) {
       var bcrumbElem = bcrumb[i];
-      if (bcrumbElem.id === id) {
+      if (bcrumbElem.id === elemId) {
         var removed = bcrumb.splice(i + 1);
         // saving shortened breadcrumb back into element
         $bcrumbTag.data('bcrumb', bcrumb);
-        found = true;
+        foundInBreadcrumbs = true;
         break;
       }
     }
   }
-  return found;
+
+  if (!foundInBreadcrumbs) {
+    RS.addBreadcrumbElement(bcrumbTagId, elemId, safeDisplayName);
+  }
+  RS.refreshBreadcrumbElems(bcrumbTagId);
 };
 
 /**
@@ -1966,39 +1848,36 @@ RS.addOnClickPopoverToElement = function ($element) {
   $element.popover();
 };
 
-/*
- * execute passed function if user's browser supports media devices,
- * and user has at least one videoinput device
- */
-RS.onVideoInputAvailable = function (videoAvailableCallback) {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !navigator.mediaDevices.enumerateDevices) {
-    console.log('browser doesn\'t support enumerateDevices()');
-    return;
-  }
-
-  navigator.mediaDevices.enumerateDevices()
-    .then(function (devices) {
-      var videoInputAvailable = false;
-      devices.forEach(function (device) {
-        if (device.kind == 'videoinput') {
-          videoInputAvailable = true;
-          return false;
-        }
-      });
-      if (videoInputAvailable) {
-        videoAvailableCallback();
-      } else {
-        console.log('no videoinput device available');
-      }
-    });
-};
-
 RS.isNullOrUndefined = function (value) {
   return (typeof value === "undefined" || value === null);
 };
 
 /* show nfs file info panel */
-RS._populateNfsFileInfoPanelAndOpen = function ($link) {
+var netFileInfoDialogInitialised = false;
+
+RS.initAndOpenNetFileInfoDialog = function ($link) {
+  if (!netFileInfoDialogInitialised) {
+    $(document).ready(function () {
+      RS.switchToBootstrapButton();
+      $('#nfsFileInfoDialog').dialog({
+        title: 'Filestore link details',
+        autoOpen: false,
+        modal: true,
+        minWidth: 350,
+        open: function () {
+          $('.ui-dialog-buttonset button').focus();
+        },
+        buttons: {
+          "OK": function () {
+            $(this).dialog("close");
+          }
+        }
+      });
+      RS.switchToJQueryUIButton();
+    });
+
+    netFileInfoDialogInitialised = true;
+  }
 
   var relPath = $link.attr('rel');
   var name = $link.text();
@@ -2058,43 +1937,6 @@ RS._populateNfsFileInfoPanelAndOpen = function ($link) {
       apprise('An error occured on filestore info retrieval' + result.responseText);
     });
   }
-};
-
-var netFileInfoDialogInitialised = false;
-
-RS.initAndOpenNetFileInfoDialog = function ($link) {
-  if (!netFileInfoDialogInitialised) {
-    $(document).ready(function () {
-      RS.switchToBootstrapButton();
-      $('#nfsFileInfoDialog').dialog({
-        title: 'Filestore link details',
-        autoOpen: false,
-        modal: true,
-        minWidth: 350,
-        open: function () {
-          $('.ui-dialog-buttonset button').focus();
-        },
-        buttons: {
-          "OK": function () {
-            $(this).dialog("close");
-          }
-        }
-      });
-      RS.switchToJQueryUIButton();
-    });
-
-    netFileInfoDialogInitialised = true;
-  }
-
-  RS._populateNfsFileInfoPanelAndOpen($link);
-};
-
-RS.addNetFileClickHandler = function () {
-  $(document).on("click", ".nfs_file, .samba_file", function () {
-    var $link = $(this);
-    RS.initAndOpenNetFileInfoDialog($link);
-    return false;
-  });
 };
 
 RS.downloadNetFile = function (relPath, nfsId, fileSystemId) {
@@ -2224,12 +2066,6 @@ RS.checkToolbarDividers = function (selector) {
   }
 };
 
-RS.addOrderByTooltips = function () {
-  $(".orderByLink").each(function () {
-    $(this).attr("title", "Order by " + $(this).text().trim());
-  });
-};
-
 /* initially both set to jquery button */
 $.fn.bootstrapButton = $.fn.button;
 $.fn.jqueryUIButton = $.fn.button;
@@ -2346,21 +2182,6 @@ RS.getJsonParamsFromUrl = function (url) {
   return result;
 };
 
-/*
- * Needed for retrieving text properties of an element. Not all browsers support
- * .css("font"); also, we might want to get other relevant properties, e.g. "letter-spacing"
- */
-RS.getFontProperties = function (elem) {
-  var names = ["font-style", "font-variant", "font-weight", "font-size",
-    "line-height", "font-family", "letter-spacing"
-  ];
-  var properties = {};
-  $.each(names, function (i, name) {
-    properties[name] = elem.css(name);
-  });
-  return properties;
-};
-
 RS.sendJsonPostRequestToUrl = function (url, jsonObject) {
   return $.ajax({
     type: 'POST',
@@ -2389,10 +2210,6 @@ $(this).click(function (e) {
   }
 });
 
-RS.getGlobalIdWithoutVersionId = function (globalId) {
-  return globalId.split('v')[0];
-}
-
 RS.getVersionIdFromGlobalId = function (globalId) {
   if (globalId.indexOf('v') > 0) {
     return globalId.split('v')[1];
@@ -2411,43 +2228,4 @@ function getDocumentViewUrl(notebookId, recordId, grandParentId, withSettingsKey
     return "/workspace/editor/structuredDocument/" + recordId +
       (withSettingsKey ? "?settingsKey=" + settingsKey : "");
   }
-}
-
-RS.checkSnapgeneAvailablity = function () {
-  var requests = {
-    snapgene_available: {
-      url: '/deploymentproperties/ajax/property',
-      type: 'GET',
-      data: { name: 'snapgene.available' }
-    },
-    snapgene_running: {
-        url: '/molbiol/dna/serviceStatus',
-      type: 'GET'
-    }
-  }
-
-  // array of ajax promises
-  var reqPromises = Object.keys(requests).map(function (key) {
-    return $.ajax({
-      url: requests[key].url,
-      type: requests[key].type,
-      data: requests[key].data
-    });
-  });
-
-  Promise.all(reqPromises).then(function (res) {
-    var isAvailable = false;
-    res.map(function (item) {
-      isAvailable = isAvailable || item == "ALLOWED";
-    });
-
-    if (isAvailable) {
-      RS.saveUserSetting('snapgene-available', "true");
-      $('.snapGenePanel .previewActionLink').removeClass('hidden');
-    } else {
-    	RS.saveUserSetting('snapgene-available', "false");
-    }
-  }).catch(function (error) {
-	  RS.saveUserSetting('snapgene-available', "false");
-  });
 }

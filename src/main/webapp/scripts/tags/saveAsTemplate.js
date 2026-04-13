@@ -69,7 +69,10 @@ function openSaveAsTemplateDlg(){
     $("#template_name").removeAttr("disabled");
     
     if (nameEditMode) {
-        var name = RS.removeForbiddenCharacters($(nameFeatureSelectors.editorSelector).val(), nameForbiddenCharacters);
+        var name = $(nameFeatureSelectors.editorSelector).val().replace(/./gi, function check(c) {
+            if (nameForbiddenCharacters.indexOf(c) >= 0) return '';
+            return c;
+        });
         $("#saveAsTemplateDlg #template_name").val(name + "_template");
     }
 

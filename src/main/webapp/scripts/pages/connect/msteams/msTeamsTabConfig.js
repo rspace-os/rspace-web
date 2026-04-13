@@ -6,7 +6,14 @@ var selectedFileName;
 $(document).ready(function() {
 
     // tabs page must be top level, otherwise save action doesn't work. don't even show if it's not top level
-    if (RS.isPageEmbedded()) {
+    var isEmbedded;
+    try {
+        isEmbedded = window.self !== window.top;
+    } catch (e) {
+        isEmbedded = true;
+    }
+
+    if (isEmbedded) {
         try {
             parent.document; // may throw exception
             console.log("parent accessible, assuming displayed inside RSpace authentication page, hiding");

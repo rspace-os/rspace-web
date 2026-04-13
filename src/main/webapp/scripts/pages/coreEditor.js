@@ -1938,7 +1938,11 @@ $(document).ready(function () {
     }
   });
 
-  RS.addNetFileClickHandler();
+  $(document).on("click", ".nfs_file, .samba_file", function () {
+    var $link = $(this);
+    RS.initAndOpenNetFileInfoDialog($link);
+    return false;
+  });
 });
 
 $(document).ready(function () {
