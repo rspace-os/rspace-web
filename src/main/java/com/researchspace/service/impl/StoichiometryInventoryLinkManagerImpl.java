@@ -85,12 +85,19 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   }
 
   @Override
-  public StockDeductionResult deductStock(List<Long> linkIds, User user) {
+  public StockDeductionResult deductStock(long stoichiometryId, List<Long> linkIds, User user) {
     StockDeductionResult result = new StockDeductionResult();
+    result.setStoichiometryId(stoichiometryId);
     for (Long id : linkIds) {
       try {
         StoichiometryInventoryLink link = getLinkOrThrowNotFound(id);
         StoichiometryMolecule stoichiometryMolecule = link.getStoichiometryMolecule();
+        if (stoichiometryMolecule.getStoichiometry().getId() != stoichiometryId) {
+          throw new IllegalArgumentException(
+              String.format(
+                  "Link with id %d does not belong to stoichiometry with id %d",
+                  id, stoichiometryId));
+        }
         verifyStoichiometryPermissions(stoichiometryMolecule, PermissionType.WRITE, user);
         invPermissionUtils.assertUserCanEditInventoryRecord(link.getInventoryRecord(), user);
 
@@ -105,9 +112,8 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
         if (!link.isStockDeducted()) {
           link.setStockDeducted(true);
           linkDao.save(link);
-          generateNewStoichiometryRevision(stoichiometryMolecule);
         }
-        result.addResult(new StockDeductionResult.IndividualResult(id, true, null));
+        result.addResult(new StockDeductionResult.IndividualResult(id, true));
       } catch (NotFoundException | IllegalArgumentException e) {
         result.addResult(new StockDeductionResult.IndividualResult(id, false, e.getMessage()));
       } catch (Exception e) {
@@ -141,6 +147,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
                 + subSample.getGlobalIdentifier());
       }
       subSampleMgr.registerApiSubSampleUsage(inventoryRecord.getId(), quantityInfo, user);
+      generateNewStoichiometryRevision(link.getStoichiometryMolecule());
     }
   }
 

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import {
   calculateMoles,
   calculateUpdatedMolecules,
+  getInventoryUpdateEligibility,
   hasDuplicateInventoryLink,
 } from "@/tinyMCE/stoichiometry/utils";
 
@@ -30,6 +32,8 @@ const makeBaseMolecules = (): [EditableMolecule, EditableMolecule, EditableMolec
     id: 1,
     rsChemElement: createRsChemElement(11, "A"),
     inventoryLink: null,
+    savedInventoryLink: null,
+    deletedInventoryLink: null,
     role: "REACTANT",
     formula: "A",
     name: "Reactant A",
@@ -49,6 +53,8 @@ const makeBaseMolecules = (): [EditableMolecule, EditableMolecule, EditableMolec
     id: 2,
     rsChemElement: createRsChemElement(12, "B"),
     inventoryLink: null,
+    savedInventoryLink: null,
+    deletedInventoryLink: null,
     role: "REACTANT",
     formula: "B",
     name: "Reactant B",
@@ -68,6 +74,8 @@ const makeBaseMolecules = (): [EditableMolecule, EditableMolecule, EditableMolec
     id: 3,
     rsChemElement: createRsChemElement(13, "P"),
     inventoryLink: null,
+    savedInventoryLink: null,
+    deletedInventoryLink: null,
     role: "PRODUCT",
     formula: "P",
     name: "Product P",
@@ -99,6 +107,263 @@ describe("calculateMoles", () => {
     expect(calculateMoles(20, null as unknown as number)).toBeNull();
     expect(calculateMoles(20, 0)).toBeNull();
     expect(calculateMoles(20, -1)).toBeNull();
+  });
+});
+
+describe("getInventoryUpdateEligibility", () => {
+  const linkedQuantityInfo = new Map<string, InventoryQuantityQueryResult>([
+    [
+      "SS101",
+      {
+        status: "available",
+        quantity: {
+          numericValue: 10,
+          unitId: 7,
+        },
+      },
+    ],
+    [
+      "SS102",
+      {
+        status: "available",
+        quantity: {
+          numericValue: 25,
+          unitId: 3,
+        },
+      },
+    ],
+    [
+      "SS103",
+      {
+        status: "error",
+      },
+    ],
+    [
+      "SS104",
+      {
+        status: "available",
+        quantity: null,
+      },
+    ],
+  ]);
+
+  it("marks molecules without an inventory link as unselectable", () => {
+    const [molecule] = makeBaseMolecules();
+
+    expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
+      disabledReason: "missingInventoryLink",
+      helperText: "Link an inventory item before updating stock.",
+      showInsufficientStockWarning: false,
+      stockDisplay: {
+        inStock: { displayValue: "—", unitLabel: null },
+        willUse: { displayValue: "—", unitLabel: null },
+        remaining: { displayValue: "—", unitLabel: null },
+      },
+    });
+  });
+
+  it("marks molecules with deducted stock as selectable but warns that stock was already deducted", () => {
+    const [molecule] = makeBaseMolecules();
+    molecule.inventoryLink = {
+      id: 100,
+      inventoryItemGlobalId: "SS101",
+      stockDeducted: true,
+    };
+
+    expect(
+      getInventoryUpdateEligibility(molecule, linkedQuantityInfo),
+    ).toMatchObject({
+      disabledReason: null,
+      helperText:
+        "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+      showInsufficientStockWarning: false,
+      stockDisplay: {
+        inStock: { displayValue: "10.0", unitLabel: "g" },
+        willUse: { displayValue: "10.0", unitLabel: "g" },
+        remaining: { displayValue: "0.0", unitLabel: "g" },
+        remainingStatus: "zero",
+        warningText: null,
+      },
+    });
+  });
+
+  it("marks molecules with unavailable linked stock as unselectable", () => {
+    const [molecule] = makeBaseMolecules();
+    molecule.inventoryLink = {
+      id: 101,
+      inventoryItemGlobalId: "SS103",
+    };
+
+    expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
+      disabledReason: "linkedStockUnavailable",
+      helperText:
+        "Linked stock information is unavailable, so this molecule cannot be updated.",
+      showInsufficientStockWarning: false,
+      stockDisplay: {
+        inStock: { displayValue: "—", unitLabel: null },
+        willUse: { displayValue: "—", unitLabel: null },
+        remaining: { displayValue: "—", unitLabel: null },
+      },
+    });
+  });
+
+  it("marks molecules with non-mass linked quantities as unselectable", () => {
+    const [molecule] = makeBaseMolecules();
+    molecule.inventoryLink = {
+      id: 102,
+      inventoryItemGlobalId: "SS102",
+    };
+
+    expect(
+      getInventoryUpdateEligibility(molecule, linkedQuantityInfo),
+    ).toMatchObject({
+      disabledReason: "nonMassInventoryQuantity",
+      helperText:
+        "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
+      showInsufficientStockWarning: false,
+      stockDisplay: {
+        inStock: { displayValue: "25.0", unitLabel: "mL" },
+        willUse: { displayValue: "—", unitLabel: "mL" },
+        remaining: { displayValue: "—", unitLabel: "mL" },
+        remainingStatus: "default",
+        warningText: null,
+      },
+    });
+  });
+
+  it("marks molecules without actual mass as unselectable", () => {
+    const [molecule] = makeBaseMolecules();
+    molecule.inventoryLink = {
+      id: 102,
+      inventoryItemGlobalId: "SS101",
+    };
+    molecule.actualAmount = null;
+
+    expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
+      disabledReason: "missingActualMass",
+      helperText: "Define actual mass before updating linked inventory stock.",
+      showInsufficientStockWarning: false,
+      stockDisplay: {
+        inStock: { displayValue: "10.0", unitLabel: "g" },
+        willUse: { displayValue: "—", unitLabel: "g" },
+        remaining: { displayValue: "—", unitLabel: "g" },
+        remainingStatus: "default",
+        warningText: null,
+      },
+    });
+  });
+
+  it("marks molecules with insufficient stock as unselectable and exposes stock metrics in the inventory unit", () => {
+    const [molecule] = makeBaseMolecules();
+    molecule.inventoryLink = {
+      id: 103,
+      inventoryItemGlobalId: "SS101",
+    };
+    molecule.actualAmount = 11;
+
+    expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
+      disabledReason: "insufficientStock",
+      helperText: null,
+      showInsufficientStockWarning: true,
+      stockDisplay: {
+        inStock: { displayValue: "10.0", unitLabel: "g" },
+        willUse: { displayValue: "11.0", unitLabel: "g" },
+        remaining: { displayValue: "-1.0", unitLabel: "g" },
+        remainingStatus: "negative",
+        warningText: "Insufficient Stock",
+      },
+    });
+  });
+
+  it("allows molecules with available mass stock to remain selectable", () => {
+    const [molecule] = makeBaseMolecules();
+    molecule.inventoryLink = {
+      id: 104,
+      inventoryItemGlobalId: "SS101",
+    };
+    molecule.actualAmount = 5;
+
+    expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
+      disabledReason: null,
+      helperText: null,
+      showInsufficientStockWarning: false,
+      stockDisplay: {
+        inStock: { displayValue: "10.0", unitLabel: "g" },
+        willUse: { displayValue: "5.0", unitLabel: "g" },
+        remaining: { displayValue: "5.0", unitLabel: "g" },
+        remainingStatus: "positive",
+        warningText: null,
+      },
+    });
+  });
+
+  it("harmonises stock display into the inventory mass unit", () => {
+    const [molecule] = makeBaseMolecules();
+    molecule.inventoryLink = {
+      id: 106,
+      inventoryItemGlobalId: "SS105",
+    };
+    molecule.actualAmount = 0.5;
+
+    const result = getInventoryUpdateEligibility(
+      molecule,
+      new Map<string, InventoryQuantityQueryResult>([
+        [
+          "SS105",
+          {
+            status: "available",
+            quantity: {
+              numericValue: 2000,
+              unitId: 6,
+            },
+          },
+        ],
+      ]),
+    );
+
+    expect(result.stockDisplay).toMatchObject({
+      inStock: { displayValue: "2,000.0", unitLabel: "mg" },
+      willUse: { displayValue: "500.0", unitLabel: "mg" },
+      remaining: { displayValue: "1,500.0", unitLabel: "mg" },
+      remainingStatus: "positive",
+      warningText: null,
+    });
+  });
+
+  it("highlights exact depletion with a zero remaining status", () => {
+    const [molecule] = makeBaseMolecules();
+    molecule.inventoryLink = {
+      id: 107,
+      inventoryItemGlobalId: "SS101",
+    };
+
+    const result = getInventoryUpdateEligibility(molecule, linkedQuantityInfo);
+
+    expect(result.stockDisplay).toMatchObject({
+      remaining: { displayValue: "0.0", unitLabel: "g" },
+      remainingStatus: "zero",
+      warningText: null,
+    });
+  });
+
+  it("treats missing quantity data as unavailable linked stock", () => {
+    const [molecule] = makeBaseMolecules();
+    molecule.inventoryLink = {
+      id: 105,
+      inventoryItemGlobalId: "SS104",
+    };
+
+    expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
+      disabledReason: "linkedStockUnavailable",
+      helperText:
+        "Linked stock information is unavailable, so this molecule cannot be updated.",
+      showInsufficientStockWarning: false,
+      stockDisplay: {
+        inStock: { displayValue: "—", unitLabel: null },
+        willUse: { displayValue: "—", unitLabel: null },
+        remaining: { displayValue: "—", unitLabel: null },
+      },
+    });
   });
 });
 

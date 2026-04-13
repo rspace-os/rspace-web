@@ -14,6 +14,8 @@ export function toEditableMolecules(
      */
     moles: null,
     actualMoles: null,
+    savedInventoryLink: molecule.inventoryLink ?? null,
+    deletedInventoryLink: null,
   }));
   const hasLimitingReagent = molecules.some(
     (m) => m.limitingReagent && m.role.toLowerCase() === "reactant",

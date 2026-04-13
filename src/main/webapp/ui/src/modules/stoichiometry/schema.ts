@@ -6,9 +6,6 @@ export const STOICHIOMETRY_ROLES = {
   AGENT: "AGENT",
 } as const;
 
-export type StoichiometryRole =
-  (typeof STOICHIOMETRY_ROLES)[keyof typeof STOICHIOMETRY_ROLES];
-
 export const StoichiometryRoleSchema = v.picklist(
   Object.values(STOICHIOMETRY_ROLES),
 );
@@ -183,3 +180,36 @@ export const DeleteStoichiometryResponseSchema = v.union([
 export type DeleteStoichiometryResponse = v.InferOutput<
   typeof DeleteStoichiometryResponseSchema
 >;
+
+export const StockDeductionRequestSchema = v.object({
+  stoichiometryId: v.number(),
+  linkIds: v.pipe(v.array(v.number()), v.minLength(1)),
+});
+export type StockDeductionRequest = v.InferOutput<
+  typeof StockDeductionRequestSchema
+>;
+
+export const StockDeductionIndividualResultSchema = v.objectWithRest(
+  {
+    linkId: v.number(),
+    success: v.boolean(),
+    errorMessage: v.optional(v.nullable(v.string())),
+  },
+  v.unknown(),
+);
+export type StockDeductionIndividualResult = v.InferOutput<
+  typeof StockDeductionIndividualResultSchema
+>;
+
+export const StockDeductionResultSchema = v.objectWithRest(
+  {
+    stoichiometryId: v.number(),
+    revisionNumber: v.number(),
+    results: v.array(StockDeductionIndividualResultSchema),
+  },
+  v.unknown(),
+);
+export type StockDeductionResult = v.InferOutput<
+  typeof StockDeductionResultSchema
+>;
+

@@ -3072,21 +3072,27 @@ paths:
       description: |
         Attempts to deduct stock for each stoichiometry-inventory link ID provided. This is a batch operation that can partially succeed.
         For each link, if it points to a SubSample and has not been fully deducted, the SubSample stock is reduced according to the molecule amount in the stoichiometry.
+        The response includes the update stoichiometry revision number created by this operation.
       parameters:
         - in: body
-          name: linkIds
-          description: List of stoichiometry-inventory link IDs to deduct stock for.
+          name: body
+          description: The stoichiometry ID and list of link IDs to deduct stock for.
           required: true
           schema:
-            type: array
-            items:
-              type: integer
-              format: int64
+            $ref: '#/definitions/StockDeductionRequest'
       responses:
         '200':
           description: Batch operation result
           schema:
             $ref: '#/definitions/StockDeductionResult'
+        '400':
+          description: Invalid request — stoichiometryId or linkIds missing or empty
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "linkIds may not be empty"
         '401':
           description: Authentication error
           schema:
@@ -3468,14 +3474,47 @@ definitions:
         example: 'SS456'
     example:
       inventoryItemGlobalId: 'SS456'
+  StockDeductionRequest:
+    description: Request body for a batch stock deduction operation
+    required:
+      - stoichiometryId
+      - linkIds
+    properties:
+      stoichiometryId:
+        type: integer
+        format: int64
+        description: ID of the stoichiometry the links belong to.
+        example: 42
+      linkIds:
+        type: array
+        description: List of stoichiometry-inventory link IDs to deduct stock for. Must contain at least one entry.
+        items:
+          type: integer
+          format: int64
+        example: [1234, 1235]
+    example:
+      stoichiometryId: 42
+      linkIds: [1234, 1235]
   StockDeductionResult:
     description: Result of a batch stock deduction operation
     properties:
+      stoichiometryId:
+        type: integer
+        format: int64
+        description: ID of the stoichiometry the deduction was performed for.
+        example: 42
+      revisionNumber:
+        type: integer
+        format: int64
+        description: The new Envers audit revision number created by this operation. May be null if no changes were persisted.
+        example: 101
       results:
         type: array
         items:
           $ref: '#/definitions/StockDeductionIndividualResult'
     example:
+      stoichiometryId: 42
+      revisionNumber: 101
       results:
         - linkId: 1234
           success: true
