@@ -3,7 +3,7 @@ package com.researchspace.api.v1.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSampleName;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ public class ApiSampleTemplatePost extends ApiSampleTemplateInfo {
 
   public ApiSampleTemplatePost(Sample template) {
     super(template);
-    for (SampleField f : template.getActiveFields()) {
+    for (InventoryEntityField f : template.getActiveFields()) {
       fields.add(new ApiSampleField(f));
     }
   }

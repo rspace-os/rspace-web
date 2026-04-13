@@ -5,7 +5,7 @@ import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.List;
 import java.util.function.Consumer;
@@ -73,7 +73,7 @@ public class SampleApiPostFullValidator implements Validator {
   private void validateFieldsAndTemplateFields(Errors errors, ApiSampleFullPost apiSamplePost) {
     if (apiSamplePost.getTemplate() != null) {
       List<ApiSampleField> incomingApiFields = apiSamplePost.getApiSample().getFields();
-      List<SampleField> templateFields = apiSamplePost.getTemplate().getActiveFields();
+      List<InventoryEntityField> templateFields = apiSamplePost.getTemplate().getActiveFields();
 
       if (!incomingApiFields.isEmpty()) {
         // run validation against template fields
@@ -89,10 +89,12 @@ public class SampleApiPostFullValidator implements Validator {
   }
 
   private void validateMandatoryFieldsForSamplePost(
-      List<ApiSampleField> incomingApiFields, List<SampleField> templateFields, Errors errors) {
+      List<ApiSampleField> incomingApiFields,
+      List<InventoryEntityField> templateFields,
+      Errors errors) {
 
     for (int i = 0; i < templateFields.size(); i++) {
-      SampleField templateField = templateFields.get(i);
+      InventoryEntityField templateField = templateFields.get(i);
       if (templateField.isMandatory()) {
         boolean hasApiFieldForTemplateField = incomingApiFields.size() > i;
         boolean isOptionsStoringField = templateField.isOptionsStoringField();

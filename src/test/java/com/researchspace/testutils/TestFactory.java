@@ -45,9 +45,9 @@ import com.researchspace.model.inventory.Barcode;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.InventoryFile;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraNumberField;
 import com.researchspace.model.inventory.field.ExtraTextField;
@@ -755,7 +755,7 @@ public class TestFactory {
     sample.addBarcode(new Barcode("testData", user.getUsername()));
     FileProperty f1 = createAnyTransientFileProperty(user);
     FileProperty f2 = createAnyTransientFileProperty(user);
-    sample.setSampleSource(SampleSource.OTHER);
+    sample.setSampleSource(InventoryItemSource.OTHER);
     sample.setImageFileProperty(f1);
     sample.setThumbnailFileProperty(f2);
     sample.setStorageTempMax(QuantityInfo.of(BigDecimal.TEN, RSUnitDef.CELSIUS));
@@ -820,7 +820,7 @@ public class TestFactory {
    * @throws IOException
    */
   public static Container createListContainer(User owner) throws IOException {
-    Container listContainer = Container.createListContainer(true, true);
+    Container listContainer = Container.createListContainer(true, true, true);
     setContainerData(owner, listContainer);
     return listContainer;
   }
@@ -833,7 +833,7 @@ public class TestFactory {
    * @throws IOException
    */
   public static Container createGridContainer(User owner, int cols, int rows) throws IOException {
-    Container gridContainer = Container.createGridContainer(cols, rows, true, true);
+    Container gridContainer = Container.createGridContainer(cols, rows, true, true, true);
     setContainerData(owner, gridContainer);
     return gridContainer;
   }
@@ -846,7 +846,7 @@ public class TestFactory {
    * @throws IOException
    */
   public static Container createImageContainer(User owner) throws IOException {
-    Container imageContainer = Container.createImageContainer(true, true);
+    Container imageContainer = Container.createImageContainer(true, true, true);
     setContainerData(owner, imageContainer);
     imageContainer.createNewImageContainerLocation(3, 4);
     imageContainer.createNewImageContainerLocation(8, 10);

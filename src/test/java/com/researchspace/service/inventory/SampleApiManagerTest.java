@@ -637,7 +637,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   public void duplicateSample() throws Exception {
     ApiSampleWithFullSubSamples newSample = createComplexSampleForUser(testUser);
     assertNotNull(newSample.getTemplateId());
-    final Long initialSampleFieldCount = getCountOfEntityTable("SampleField");
+    final Long initialSampleFieldCount = getCountOfEntityTable("InventoryEntityField");
 
     ApiContainer workbench = getWorkbenchForUser(testUser);
     int initialWorkbenchContentCount = workbench.getContentSummary().getTotalCount();
@@ -648,7 +648,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // all extra fields are created ok
     assertEquals(
         initialSampleFieldCount + duplicate.getFields().size(),
-        getCountOfEntityTable("SampleField"));
+        getCountOfEntityTable("InventoryEntityField"));
     assertFalse(duplicate.getId().equals(newSample.getId()));
 
     // duplicated subsample lives in workbench
