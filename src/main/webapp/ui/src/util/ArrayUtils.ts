@@ -62,17 +62,6 @@ export function last<T>(array: ReadonlyArray<T>): Result<T> {
 }
 
 /**
- * Take a copy of an array but without the last element.
- * Returns Result.Error if the array is empty.
- */
-export function dropLast<T>(array: ReadonlyArray<T>): Result<ReadonlyArray<T>> {
-  if (array.length === 0) return Result.Error([new Error("Array is empty")]);
-  const copy = [...array];
-  copy.pop();
-  return Result.Ok(copy);
-}
-
-/**
  * Calculates the outer product of two arrays, with the provided function
  *  applying the values
  * Usage:
