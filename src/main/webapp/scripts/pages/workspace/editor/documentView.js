@@ -154,7 +154,7 @@ function reloadPhotoswipeImageArray() {
 }
 
 function toggleMobilePhotoField(toggleFlag, textFieldId) {
-  if (DeviceMeta.isMobileOrTablet()) {
+  if (window.matchMedia("(pointer: coarse)").matches) {
     $('#mobilePhoto_' + textFieldId).toggle(toggleFlag);
   }
 }

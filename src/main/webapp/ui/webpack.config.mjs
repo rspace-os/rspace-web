@@ -48,7 +48,6 @@ const config = {
     notebookToolbar: "./src/Toolbar/Notebook/Toolbar.js",
     structuredDocumentToolbar: "./src/Toolbar/StructuredDocument/Toolbar.js",
     fileTreeToolbar: "./src/Toolbar/FileTreeToolbar.js",
-    galleryToolbar: "./src/Toolbar/Gallery/Toolbar.tsx",
     newLabGroup: "./src/system-groups/NewLabGroup.js",
     tinymceSidebarInfo: "./src/tinyMCE/sidebarInfo.js",
     PreviewInfo: "./src/tinyMCE/PreviewInfo.tsx",
@@ -76,7 +75,6 @@ const config = {
     tinymceGallery: "./src/tinyMCE/gallery/index.tsx",
     baseSearch: "./src/components/BaseSearch.tsx",
     confirmationDialog: "./src/components/ConfirmationDialog.tsx",
-    imageEditor: "./src/Gallery/imageEditorDialog.js",
     materialsListing:
       "./src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
     externalWorkFlows: "./src/eln/eln-external-workflows/index.tsx",

@@ -2004,6 +2004,7 @@ function initGalleryFileUpload() {
     progressFunction: RS.blockingProgressBar,
     formData: function () {
       // if uploading new version of existing attachment
+      debugger;
       if (this.fileInput.hasClass("fileReplaceInput")) {
         return [{ name: 'selectedMediaId', value: this.fileInput.attr('mediaFileId') }];
       }
@@ -2052,7 +2053,25 @@ function insertChemElement(ecatChemFileId, fieldId, fileName) {
     previewHeight: 300
   };
   var result = $.Deferred();
-  RS.postData('/chemical/ajax/createChemElement/', chemDto)
+  fetch('/chemical/ajax/createChemElement/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(chemDto)
+  })
+    .then(function (response) {
+      return response.json()
+        .then(function (jsonResponse) {
+          if (!response.ok && !jsonResponse.error) {
+            jsonResponse.error = { errorMessages: [response.statusText || 'Request failed'] };
+          }
+          return jsonResponse;
+        })
+        .catch(function () {
+          throw new Error(response.statusText || 'Invalid response while creating chemical element');
+        });
+    })
     .then((response) => {
       var data = response.data;
       if (data) {
@@ -2073,10 +2092,18 @@ function insertChemElement(ecatChemFileId, fieldId, fileName) {
         result.resolve();
       } else if (response.error) {
         handleChemistryError(response, fileName);
-        result.reject()
+        result.reject();
+      } else {
+        handleChemistryError(response, fileName);
+        result.reject(new Error('Unexpected response while creating chemical element'));
       }
+    })
+    .catch(function (error) {
+      console.error('Error creating chemical element', error);
+      handleChemistryError({ error: { errorMessages: [error.message] } }, fileName);
+      result.reject(error);
     });
-    return result;
+  return result;
 }
 
 function handleChemistryError(response, fileName) {

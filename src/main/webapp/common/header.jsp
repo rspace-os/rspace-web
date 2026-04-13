@@ -72,9 +72,6 @@
 </c:if>
 
 <div class="header-wrapper">
-  <!--[if IE]>
-    <link rel="stylesheet" type="text/css" href="/styles/ie.css" />
-  <![endif]-->
   <div id="browser-warning" class="bootstrap-custom-flat">
     <h4>Browser upgrade recommended to use RSpace</h4>
     <p>It looks like you are using a Microsoft browser - sorry, we don't support either Internet Explorer or Edge. Some

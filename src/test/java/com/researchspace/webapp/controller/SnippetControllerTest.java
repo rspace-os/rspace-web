@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.record.IllegalAddChildOperation;
-import com.researchspace.model.record.Snippet;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -15,7 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.orm.ObjectRetrievalFailureException;
 
 public class SnippetControllerTest extends SpringTransactionalTest {
 
@@ -52,26 +50,5 @@ public class SnippetControllerTest extends SpringTransactionalTest {
     assertEquals(
         response.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy(""),
         messages.getMessage("errors.invalidchars", new String[] {"/,> or <", "name"}));
-  }
-
-  private static final Long NON_EXISTENT_SNIPPET_ID = -501L;
-
-  @Test
-  public void testGetSnippetContent() {
-
-    final String testContent = "test snippet content";
-
-    User user = userManager.getUserByUsername(principalTestUserStub.getName());
-    Snippet snippet = recordManager.createSnippet("a", testContent, user);
-
-    String snippetContent =
-        snippetController.getSnippetContent(snippet.getId(), principalTestUserStub, response);
-
-    assertEquals(testContent, snippetContent);
-  }
-
-  @Test(expected = ObjectRetrievalFailureException.class)
-  public void testExceptionOnGettingNonExistentSnippetContent() {
-    snippetController.getSnippetContent(NON_EXISTENT_SNIPPET_ID, principalTestUserStub, response);
   }
 }

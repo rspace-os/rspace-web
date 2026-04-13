@@ -19,8 +19,6 @@
 <link rel="stylesheet" href="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" />
 <link rel="stylesheet" href="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
 <link rel="stylesheet" href="<c:url value='/styles/messages.css'/>" />
-<link rel="stylesheet" href="<c:url value='/styles/mediaGallery.css'/>" />
-<link rel="stylesheet" href="<c:url value='/styles/rs-widgets.css'/>" />
 <link rel="stylesheet" href="<c:url value='/scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css'/>" />
 <link rel="stylesheet" href="<c:url value='/styles/tinymce_rs.css'/>" />
 <link rel="stylesheet" href="<c:url value='/styles/plugins/autocomplete.css'/>" />

@@ -52,6 +52,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
               `/workspace/getRecordInformation?recordId=${file.id}`,
             )
             .then((response) => {
+              debugger;
               window.addFromGallery(
                 (response.data as { data: unknown }).data,
               );
@@ -156,8 +157,8 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
 
   return {
     getMetadata: () => ({
-      name: 'Example plugin',
-      url: 'http://exampleplugindocsurl.com'
+      name: 'RSpace Gallery Plugin',
+      url: 'https://www.researchspace.com/',
     })
   };
 });

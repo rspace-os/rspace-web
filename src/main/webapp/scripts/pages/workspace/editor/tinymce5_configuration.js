@@ -1,4 +1,3 @@
-
 var tinymcesetup = {
 	theme: "silver",
 	width: "100%",
@@ -60,8 +59,8 @@ var tinymcesetup = {
 		"sketch": "/scripts/externalTinymcePlugins/sketch/plugin.min.js",
 		"snip": "/scripts/externalTinymcePlugins/snip/plugin.min.js",
 		"mention": "/scripts/externalTinymcePlugins/mention/plugin.min.js",
-		"contexttoolbars": "/scripts/externalTinymcePlugins/contexttoolbars/plugin.min.js",
-		"resizeimage": "/scripts/externalTinymcePlugins/resizeimage/plugin.min.js"
+		// "contexttoolbars": "/scripts/externalTinymcePlugins/contexttoolbars/plugin.min.js",
+		// "resizeimage": "/scripts/externalTinymcePlugins/resizeimage/plugin.min.js"
 	},
 
 	table_default_attributes: { width: '300', border: '1', cellpadding: '5' },

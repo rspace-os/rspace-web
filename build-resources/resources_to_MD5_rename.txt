@@ -32,13 +32,10 @@ scripts/pages/apps/integration-static-data.json
 scripts/pages/apps/util/dispatcher.js
 scripts/pages/audit.js
 scripts/pages/coreEditor.js
-scripts/pages/gallery/gallery.js
 scripts/pages/gallery/galleryFileUpload.js
 scripts/pages/journal.js
 scripts/pages/messaging/notifications.js
-scripts/pages/nextCloud.js
 scripts/pages/notebookEditor.js
-scripts/pages/ownCloud.js
 scripts/pages/photoswipe.js
 scripts/pages/recordInfoPanel.js
 scripts/pages/rspace/directory.js
@@ -71,7 +68,6 @@ scripts/pages/workspace/mediaGalleryManager.js
 scripts/segment.js
 scripts/tags/createFromTemplateDlg.js
 scripts/tags/export.js
-scripts/tags/exportOtherDialogs.js
 scripts/tags/fileTreeBrowser.js
 scripts/tags/fileTreeBrowserSorter.js
 scripts/tags/folderChooser.js
@@ -85,11 +81,9 @@ styles/authentication/login.css
 styles/displaytag.css
 styles/forms.css
 styles/gallery.css
-styles/ie.css
 styles/journal.css
 styles/mediaGallery.css
 styles/messages.css
-styles/ownCloud.css
 styles/pages/groups/viewGroup.css
 styles/pages/searchableRecordPicker.css
 styles/pages/workspace/workspace.css
@@ -123,8 +117,6 @@ ui/dist/exportModal.js
 ui/dist/externalWorkFlows.js
 ui/dist/jupyterNotebooks.js
 ui/dist/fileTreeToolbar.js
-ui/dist/gallery.js
-ui/dist/galleryToolbar.js
 ui/dist/groupActivity.js
 ui/dist/groupEditBar.js
 ui/dist/groupUserActivity.js

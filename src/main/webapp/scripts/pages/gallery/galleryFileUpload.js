@@ -1,3 +1,5 @@
+// GalleryFileUpload - still used by Workspace.
+
 var cancelRequested = false;
 var currFileJxQr = null;
 var fileCount = 0;
@@ -18,6 +20,9 @@ function setUpFileUpload(config) {
   var postDone = config.postDone || function (data) {};
   var postStop = config.postStop || function (event) {};
   var formData = config.formData || [];
+
+  // This variable is loaded from JSPs
+  const maxFileSize = RS_MAX_FILE_SIZE;
 
   $(document).on("click", cancelButtonId, function (e) {
     RS.confirm("File upload cancellation attempted...", "success", 3000);

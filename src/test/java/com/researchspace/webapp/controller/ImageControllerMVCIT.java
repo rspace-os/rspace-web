@@ -11,8 +11,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatImageAnnotation;
@@ -22,14 +20,12 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
-import com.researchspace.webapp.controller.ImageController.RotationConfig;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -41,7 +37,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
@@ -175,72 +170,6 @@ public class ImageControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void rotateImage() throws Exception {
-    mockPrincipal = new MockPrincipal(testUser.getUsername());
-    EcatImage smallImage = addImageToGallery(testUser, "Picture1_small.png");
-    rotateAndExpectSuccess(smallImage);
-
-    EcatImage largeImage = addImageToGallery(testUser, "Picture1.png");
-    rotateAndExpectSuccess(largeImage);
-
-    MvcResult res;
-    Map response;
-    // now try with too many ids
-    Long[] ids = new Long[200]; // too many
-    Arrays.fill(ids, 1L);
-
-    res = doPostRotateImage(Arrays.asList(ids), 2);
-    response = parseJSONObjectFromResponseStream(res);
-    assertNotNull(response.get("errorMsg"));
-    assertNull(response.get("data"));
-    // invalid number of rotations
-    res = doPostRotateImage(Arrays.asList(smallImage.getId()), 35);
-    response = parseJSONObjectFromResponseStream(res);
-    assertNotNull(response.get("errorMsg"));
-    assertNull(response.get("data"));
-
-    User other = createInitAndLoginAnyUser();
-    mockPrincipal = new MockPrincipal(other.getUsername());
-    res = doPostRotateImage(Arrays.asList(smallImage.getId()), 1);
-    assertNotNull(response.get("errorMsg"));
-    assertNull(response.get("data"));
-    assertAuthorizationException(res);
-  }
-
-  private MvcResult doPostRotateImage(List<Long> values, int timesToRotate) throws Exception {
-    RotationConfig cfg = new RotationConfig();
-    cfg.setIdsToRotate(values);
-    cfg.setTimesToRotate((byte) timesToRotate);
-    return mockMvc
-        .perform(
-            post("/image/ajax/rotateImageGalleries")
-                .content(JacksonUtil.toJson(cfg))
-                .contentType(MediaType.APPLICATION_JSON)
-                .principal(mockPrincipal))
-        .andReturn();
-  }
-
-  private void rotateAndExpectSuccess(EcatImage image)
-      throws Exception, JsonProcessingException, IOException {
-    RotationConfig cfg = new RotationConfig();
-    cfg.setIdsToRotate(Arrays.asList(image.getId()));
-    cfg.setTimesToRotate((byte) 2);
-    MvcResult res =
-        mockMvc
-            .perform(
-                post("/image/ajax/rotateImageGalleries")
-                    .content(JacksonUtil.toJson(cfg))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .principal(mockPrincipal))
-            .andExpect(status().is2xxSuccessful())
-            .andReturn();
-    assertNull(res.getResolvedException());
-    Map response = parseJSONObjectFromResponseStream(res);
-    assertTrue(Boolean.parseBoolean(response.get("data").toString()));
-    assertNull(response.get("errorsMsg"));
-  }
-
-  @Test
   public void getImageToAnnotate() throws Exception {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(testUser, "any");
     final Field fld = doc.getFields().get(0);
@@ -268,7 +197,6 @@ public class ImageControllerMVCIT extends MVCTestBase {
 
   @Test
   public void getUploadedImageInfo() throws Exception {
-
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(testUser, "any");
     final Field fld = doc.getFields().get(0);
     EcatImage image = addImageToField(fld, testUser);

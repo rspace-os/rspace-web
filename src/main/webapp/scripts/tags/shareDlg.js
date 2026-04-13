@@ -118,6 +118,10 @@ const getSharedFolderTarget = (type) => {
 function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelector='#share-dialog',
                            type= SHARE_DOCS_TYPE) {
     onshare = onshare || function(sharedIds) {};
+    if (dialogTitle !== "Publish") {
+        throw new Error("Legacy share dialog triggered, please remove");
+    }
+
     dialogValues.sharingType = type;
     $('body').on('click', '.shareSelection', function (){
         _updateShareIntoFolderView();
@@ -145,7 +149,6 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
             $groupSelectRow.find('.sharingPermissionSelect').toggle(!notebookSelected);
             $('#shareIntoNotebookSelectedMsg').toggle(notebookSelected);
             $('#folderChooserFolderCreation-share').toggle(!notebookSelected);
-        
         });
     }
 

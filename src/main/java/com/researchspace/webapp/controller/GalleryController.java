@@ -7,14 +7,7 @@ import com.researchspace.core.util.PaginationObject;
 import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.SearchResultsImpl;
-import com.researchspace.model.EcatChemistryFile;
-import com.researchspace.model.EcatImage;
-import com.researchspace.model.EcatMediaFile;
-import com.researchspace.model.FileProperty;
-import com.researchspace.model.Group;
-import com.researchspace.model.PaginationCriteria;
-import com.researchspace.model.RSChemElement;
-import com.researchspace.model.User;
+import com.researchspace.model.*;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
 import com.researchspace.model.field.ErrorList;
@@ -34,13 +27,10 @@ import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordDeletionManager;
-import com.researchspace.service.SystemPropertyPermissionManager;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Date;
@@ -69,9 +59,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-/** This controller handle all the operations in the gallery. */
+/** This controller handles all the operations in the gallery. */
 @Controller
-@RequestMapping({"/gallery", "/public/publicView/gallery", "/oldGallery"})
+@RequestMapping({"/gallery"})
 public class GalleryController extends BaseController {
 
   public static final String GALLERY_VIEW = "gallery";
@@ -82,8 +72,6 @@ public class GalleryController extends BaseController {
   /** URL to gallery item */
   public static final String GALLERY_ITEM_URL = "/gallery/item";
 
-  private static final String NETFILES_GALLERY_MEDIA_TYPE = "NetworkFiles";
-
   private static final int NUMBER_OF_RECORDS_ON_GALERY_PAGE = 20;
   private static final int MAX_FOLDER_NAME_LENGTH = 100;
   private static final int MAX_IDS_TO_PROCESS = 50;
@@ -92,43 +80,6 @@ public class GalleryController extends BaseController {
   private @Autowired MediaManager mediaManager;
   private @Autowired DetailedRecordInformationProvider infoProvider;
   private @Autowired RSChemElementManager rsChemElementManager;
-  @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
-
-  /**
-   * Gets plain HTML template for mediaGallery
-   *
-   * @return
-   */
-  @GetMapping("/ajax/galleryDialog")
-  public String getDialog(Model model) {
-    User currUser = userManager.getAuthenticatedUserInSession();
-    boolean rc = isDMPEnabled(currUser);
-    model.addAttribute("dmpEnabled", rc);
-    return "mediaGallery";
-  }
-
-  @GetMapping()
-  public String gallery(Model model) {
-
-    User user = userManager.getAuthenticatedUserInSession();
-    model.addAttribute("dmpEnabled", isDMPEnabled(user));
-    setPublicationAllowed(model, user);
-    addGroupAttributes(model, user);
-    return GALLERY_VIEW;
-  }
-
-  private void addGroupAttributes(Model model, User usr) {
-    Set<Group> groups = groupManager.listGroupsForUser();
-    model.addAttribute("groups", groups);
-    List<User> users = Group.getUniqueUsersInGroups(groups, User.LAST_NAME_COMPARATOR, usr);
-    model.addAttribute("uniqueUsers", users);
-  }
-
-  private void setPublicationAllowed(Model model, User user) {
-    model.addAttribute(
-        "publish_allowed",
-        systemPropertyPermissionManager.isPropertyAllowed(user, "public_sharing"));
-  }
 
   /** List Gallery folder by id of Gallery item: */
   @GetMapping("/item/{itemId}")
@@ -146,11 +97,6 @@ public class GalleryController extends BaseController {
   /**
    * Gets gallery view for specific folder id. Sets up mediaType in model, so front-end can select
    * correct subgallery.
-   *
-   * @param folderId
-   * @param model
-   * @param principal
-   * @return
    */
   @GetMapping("/{folderId}")
   public ModelAndView listGalleryFolderById(
@@ -188,16 +134,6 @@ public class GalleryController extends BaseController {
       model.addAttribute("galleryBcrumb", bcrumb);
     }
 
-    return new ModelAndView(GALLERY_VIEW);
-  }
-
-  /**
-   * Handling links to 'netfiles' subgallery. This is a pseudo-gallery that doesn't exist in folder
-   * structure, so it can't be opened by providing folder id.
-   */
-  @GetMapping("/netfiles")
-  public ModelAndView listFilestoresSubgallery(Model model) {
-    model.addAttribute("mediaType", NETFILES_GALLERY_MEDIA_TYPE);
     return new ModelAndView(GALLERY_VIEW);
   }
 
@@ -270,7 +206,7 @@ public class GalleryController extends BaseController {
       return new AjaxReturnObject<>(galleryData, null);
     }
 
-    List<RecordInformation> results = new ArrayList<RecordInformation>();
+    List<RecordInformation> results = new ArrayList<>();
     for (BaseRecord baseRecord : records.getResults()) {
       RecordInformation recordInfo = baseRecord.toRecordInfo();
       recordInfo =
@@ -280,7 +216,7 @@ public class GalleryController extends BaseController {
     }
 
     ISearchResults<RecordInformation> result =
-        new SearchResultsImpl<RecordInformation>(
+        new SearchResultsImpl<>(
             results, records.getPageNumber(), records.getTotalHits(), numberOfRecords);
     log.debug("Returned data size=" + result.getResults().size());
 
@@ -291,7 +227,7 @@ public class GalleryController extends BaseController {
             new DefaultURLPaginator("/filesUploaded/", null));
     result.setLinkPages(linkPages);
     galleryData.setItems(result);
-    return new AjaxReturnObject<GalleryData>(galleryData, null);
+    return new AjaxReturnObject<>(galleryData, null);
   }
 
   /**
@@ -307,13 +243,13 @@ public class GalleryController extends BaseController {
     Folder galleryItemParent =
         recordManager.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
 
-    PaginationCriteria<BaseRecord> pg = new PaginationCriteria<BaseRecord>();
+    PaginationCriteria<BaseRecord> pg = new PaginationCriteria<>();
     pg.setResultsPerPage(Integer.MAX_VALUE);
 
     ISearchResults<BaseRecord> records =
         recordManager.getGalleryItems(
             galleryItemParent.getId(), pg, null, RecordTypeFilter.GALLERY_FILTER, user);
-    List<Long> results = new ArrayList<Long>();
+    List<Long> results = new ArrayList<>();
     for (BaseRecord baseRecord : records.getResults()) {
       if (baseRecord instanceof EcatImage) {
         RecordInformation recordInfo = baseRecord.toRecordInfo();
@@ -341,13 +277,9 @@ public class GalleryController extends BaseController {
    * unless we're adding this to the Gallery as a side effect of DnDing into a editor, in which case
    * we assert that the subject has write permission on the field's document.
    *
-   * @param xfile
    * @param selectedMediaId (optional) id of EcatMediaFile that this upload updated. if provided,
    *     fieldId should be null, as gallery updates are field-independent.
    * @param fieldId (optional) field to which the new file is uploaded
-   * @return
-   * @throws IOException
-   * @throws URISyntaxException
    */
   @PostMapping("/ajax/uploadFile")
   @ResponseBody
@@ -408,63 +340,11 @@ public class GalleryController extends BaseController {
   }
 
   /**
-   * Method imports a file to the Media Gallery from URL. Currently, this is used to import file
-   * contents from Box/Dropbox
-   *
-   * <h3>Authorisation notes </h3>
-   *
-   * This will be saved in the subject's Gallery folder, so does not need explicit access control
-   *
-   * @return AjaxReturnObject<RecordInformation>
-   * @throws IOException, URISyntaxException
-   */
-  @PostMapping("/ajax/importFromURL")
-  @ResponseBody
-  @Deprecated
-  public AjaxReturnObject<RecordInformation> importFromURL(
-      @RequestParam("url") String urlString,
-      @RequestParam(value = "targetFolderId", required = false) Long targetFolderId,
-      @RequestParam(value = "filename", required = false) String fileName,
-      @RequestParam(value = "username", required = false) String username,
-      @RequestParam(value = "password", required = false) String password,
-      @RequestParam(value = "accessToken", required = false) String accessToken)
-      throws IOException, URISyntaxException {
-    // rspac-2263
-    throw new UnsupportedOperationException("Upload from URL is not supported");
-  }
-
-  /**
-   * Method uploads an image file to the Media Gallery from URL.
-   *
-   * <h3>Authorisation notes </h3>
-   *
-   * This will be saved in the subject's Gallery folder, so does not need explicit access control
-   *
-   * @param urlImage
-   * @param filenameURL
-   * @param mediaType
-   * @return AjaxReturnObject<RecordInformation>
-   * @throws NoSuchAlgorithmException
-   * @throws IOException
-   */
-  @PostMapping("/ajax/uploadFileFromURL")
-  @ResponseBody
-  public AjaxReturnObject<RecordInformation> uploadImageFromURL(
-      @RequestParam("url") String urlImage,
-      @RequestParam("filename") String filenameURL,
-      @RequestParam("mediatype") String mediaType)
-      throws NoSuchAlgorithmException, IOException {
-    throw new UnsupportedOperationException("Upload from URL is not supported");
-  }
-
-  /**
    * Called when annotating image or sketching, and loads the Gallery images into RHS of sketcher
    * bar.
    *
    * @param id the image ID
-   * @return
-   * @throws IOException
-   * @throws {@link AuthorizationException} if not resource access not authorized
+   * @throws AuthorizationException if not resource access not authorized
    */
   @GetMapping("/getViewerImage/{id}")
   public ResponseEntity<byte[]> getViewerImage(@PathVariable("id") String id) throws IOException {
@@ -480,14 +360,14 @@ public class GalleryController extends BaseController {
       setCacheTimeInBrowser(ResponseUtil.YEAR, ecatImage.getModificationDateAsDate(), headers);
       log.info("Loading viewer picture " + id);
       byte[] data = IOUtils.toByteArray(is);
-      return new ResponseEntity<byte[]>(data, headers, HttpStatus.CREATED);
+      return new ResponseEntity<>(data, headers, HttpStatus.CREATED);
     }
   }
 
   // tries in order:
   // WorkingImageFP, Working ImageBlob, OriginalImage
   private InputStream getWorkingOrOriginalImgInputStream(EcatImage ecatImage) {
-    InputStream is = null;
+    InputStream is;
     if (ecatImage.getWorkingImageFP() != null) {
       is = getFPInputStream(ecatImage.getWorkingImageFP());
     } else if (ecatImage.getWorkingImage() != null) {
@@ -522,11 +402,7 @@ public class GalleryController extends BaseController {
   /**
    * Creates a new folder in the Gallery
    *
-   * @param parentId
-   * @param folderName
-   * @param isMedia
-   * @return
-   * @throws {@link AuthorizationException} if no create permission in folder identified by folderId
+   * @throws AuthorizationException if no create permission in folder identified by folderId
    */
   @PostMapping("/ajax/createFolder")
   @ResponseBody
@@ -540,7 +416,7 @@ public class GalleryController extends BaseController {
     Folder newRecord = folderManager.createNewFolder(parentId, folderName, user);
     newRecord.setName(folderName);
     folderManager.save(newRecord, user);
-    return new AjaxReturnObject<Boolean>(true, null);
+    return new AjaxReturnObject<>(true, null);
   }
 
   private String validateFolderName(String folderName) {
@@ -551,41 +427,9 @@ public class GalleryController extends BaseController {
   }
 
   /**
-   * This gets called from a Drag and drop operation in the Media Gallery
-   *
-   * @param targetFolderId The target folder id
-   * @param filesId The list of files/folders to move
-   * @param mediatype
-   * @return
-   */
-  @PostMapping("/ajax/moveFiles")
-  @ResponseBody
-  public AjaxReturnObject<Boolean> moveFiles(
-      @RequestParam("folderId") Long targetFolderId,
-      @RequestParam("filesId[]") Long[] filesId,
-      @RequestParam("mediaType") String mediatype) {
-
-    if (filesId.length > MAX_IDS_TO_PROCESS) {
-      return generateTooManyItemsFailureMsg();
-    }
-    User user = userManager.getAuthenticatedUserInSession();
-    Folder target = folderManager.getFolder(targetFolderId, user);
-
-    for (Long id : filesId) {
-      if (!target.getId().equals(id)) {
-        doMove(user, target, id);
-      }
-    }
-    return new AjaxReturnObject<Boolean>(true, null);
-  }
-
-  /**
    * This gets called from a move in the media gallery using the file tree navigator
    *
-   * @param filesId
-   * @param mediatype
-   * @param targetFolderId
-   * @return <code>true</code> on success
+   * @return bool
    */
   @PostMapping("/ajax/moveGalleriesElements")
   @ResponseBody
@@ -611,7 +455,7 @@ public class GalleryController extends BaseController {
         doMove(user, target, id);
       }
     }
-    return new AjaxReturnObject<Boolean>(true, null);
+    return new AjaxReturnObject<>(true, null);
   }
 
   private static boolean isOnGalleryRoot(long currentFolderId, Folder galleryItemParent) {
@@ -620,7 +464,7 @@ public class GalleryController extends BaseController {
   }
 
   private AjaxReturnObject<Boolean> generateTooManyItemsFailureMsg() {
-    return new AjaxReturnObject<Boolean>(
+    return new AjaxReturnObject<>(
         null, ErrorList.of(getText("errors.too.manyitems", MAX_IDS_TO_PROCESS + "")));
   }
 
@@ -634,12 +478,6 @@ public class GalleryController extends BaseController {
     }
   }
 
-  /**
-   * @param idsToDelete
-   * @return
-   * @throws DocumentAlreadyEditedException
-   * @throws IllegalAddChildOperation
-   */
   @PostMapping("/ajax/deleteElementFromGallery")
   @ResponseBody
   public AjaxReturnObject<Boolean> deleteElementFromGallery(
@@ -658,7 +496,7 @@ public class GalleryController extends BaseController {
         deletionManager.deleteFolder(null, id, user);
       }
     }
-    return new AjaxReturnObject<Boolean>(true, null);
+    return new AjaxReturnObject<>(true, null);
   }
 
   /**
@@ -668,8 +506,7 @@ public class GalleryController extends BaseController {
    * @param unused this is the modification date of the file to get a thumbnail for, its important
    *     this is set to get the latest image for files which have been updated with a new version
    * @return the byte array of the image
-   * @throws IOException
-   * @throws {@link AuthorizationException} if not resource access not authorized
+   * @throws AuthorizationException if not resource access not authorized
    */
   @GetMapping("/getThumbnail/{id}/{unused}")
   public ResponseEntity<byte[]> getThumbnail(
@@ -718,12 +555,17 @@ public class GalleryController extends BaseController {
   }
 
   private void setHttpContentTypeHeader(EcatImage ecatImage, final HttpHeaders headers) {
-    if (ecatImage.getExtension().equals("jpeg") || ecatImage.getExtension().equals("jpg")) {
-      headers.setContentType(MediaType.IMAGE_JPEG);
-    } else if (ecatImage.getExtension().equals("gif")) {
-      headers.setContentType(MediaType.IMAGE_GIF);
-    } else if (ecatImage.getExtension().equals("png")) {
-      headers.setContentType(MediaType.IMAGE_PNG);
+    switch (ecatImage.getExtension()) {
+      case "jpeg":
+      case "jpg":
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        break;
+      case "gif":
+        headers.setContentType(MediaType.IMAGE_GIF);
+        break;
+      case "png":
+        headers.setContentType(MediaType.IMAGE_PNG);
+        break;
     }
   }
 
@@ -733,8 +575,7 @@ public class GalleryController extends BaseController {
    * @param idToCopy A Long [] of record ids of records to copy
    * @param newnames A String of new names for the records
    * @return A
-   * @throws {@link AuthorizationException} if not resource access not authorized with 'Copy'
-   *     permission
+   * @throws AuthorizationException if not resource access not authorized with 'Copy' permission
    */
   @PostMapping("/ajax/copyGalleries")
   @ResponseBody
@@ -767,22 +608,19 @@ public class GalleryController extends BaseController {
         folderManager.copy(id, user, newName);
       }
     }
-    return new AjaxReturnObject<Boolean>(true, null);
+    return new AjaxReturnObject<>(true, null);
   }
 
   @GetMapping("/ajax/getLinkedDocuments/{mediaId}")
   @ResponseBody
   public AjaxReturnObject<List<RecordInformation>> getDocumentsLinkedToAttachment(
       @PathVariable("mediaId") Long mediaId) {
-    return new AjaxReturnObject<List<RecordInformation>>(
-        mediaManager.getIdsOfLinkedDocuments(mediaId), null);
+    return new AjaxReturnObject<>(mediaManager.getIdsOfLinkedDocuments(mediaId), null);
   }
 
   /**
    * Gets record information for a list of IDs (and revision numbers) of EcatMediaFiles
    *
-   * @param ids
-   * @param revisions
    * @return a map with keys in "$id-$revision" format
    */
   @ResponseBody
@@ -808,7 +646,7 @@ public class GalleryController extends BaseController {
     info.entrySet().stream()
         .filter(e -> e.getValue() == null)
         .map(e -> String.format("Could not retrieve information for id-revision [%s]", e.getKey()))
-        .forEach(msg -> el.addErrorMsg(msg));
+        .forEach(el::addErrorMsg);
     return new AjaxReturnObject<>(info, el);
   }
 }

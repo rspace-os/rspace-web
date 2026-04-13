@@ -14,10 +14,7 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
-import com.researchspace.model.audittrail.AuditAction;
-import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.dto.ImageInfo;
-import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
@@ -39,11 +36,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Date;
@@ -52,16 +44,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Constraint;
-import javax.validation.Payload;
-import javax.validation.Valid;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -73,18 +55,16 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Controller;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 /** This controller returns an image so that it may be displayed within an image tag or CSS */
 @Controller
-@RequestMapping({"/image", "/public/publicView/image"})
+@RequestMapping({"/image"})
 public class ImageController extends BaseController {
 
   private @Autowired EcatImageAnnotationManager ecatImageAnnotationManager;
@@ -656,124 +636,5 @@ public class ImageController extends BaseController {
     imageInfo.setName(r.getName());
     imageInfo.setId(r.getId());
     return imageInfo;
-  }
-
-  @Max(3)
-  @Min(0)
-  @NotNull
-  @Target({ElementType.FIELD, ElementType.METHOD})
-  @Retention(RetentionPolicy.RUNTIME)
-  @Constraint(validatedBy = {})
-  @Documented
-  public @interface ValidRotation {
-
-    String message() default "Image rotation must be an integer  0 <= i < 4";
-
-    Class<?>[] groups() default {};
-
-    Class<? extends Payload>[] payload() default {};
-  }
-
-  @Data
-  public static class RotationConfig {
-    static final int MAX_IDS_TO_PROCESS = 50;
-
-    @Size(min = 1, max = MAX_IDS_TO_PROCESS, message = "{errors.collection.range} image ids")
-    private List<Long> idsToRotate = new ArrayList<>();
-
-    @ValidRotation Byte timesToRotate;
-  }
-
-  /**
-   * Rotates one or more EcatImage from Gallery, all with the same parent.
-   *
-   * @param rotationConfig a Long [] of record ids of records to rotate and an Integer of
-   *     90*timesToRotate
-   * @return A {@link @ResponseBody}
-   * @throws IOException
-   */
-  @PostMapping("/ajax/rotateImageGalleries")
-  @ResponseBody
-  public AjaxReturnObject<Boolean> rotateGalleries(
-      @Valid @RequestBody RotationConfig rotationConfig, BindingResult errors, Principal principal)
-      throws IOException {
-    if (errors.hasErrors()) {
-      ErrorList el = new ErrorList();
-      inputValidator.populateErrorList(errors, el);
-      return new AjaxReturnObject<>(null, el);
-    }
-    User subject = getUserByUsername(principal.getName());
-    for (Long id : rotationConfig.getIdsToRotate()) {
-      boolean isRecord = isRecord(id);
-      if (isRecord) {
-        doImageRotation(rotationConfig.getTimesToRotate(), subject, id);
-      }
-    }
-    return new AjaxReturnObject<>(true, null);
-  }
-
-  private Optional<EcatImage> doImageRotation(byte timesToRotate, User subject, Long id)
-      throws IOException {
-    EcatImage ecatImage = recordManager.getEcatImage(id, true);
-    assertAuthorisation(subject, ecatImage, PermissionType.READ);
-    return imgProcesser.rotate(ecatImage, timesToRotate, subject);
-  }
-
-  /*
-   * Front-end image editing methods
-   */
-
-  /**
-   * Gets fullsize gallery image in a format that can be displayed in the browser.
-   *
-   * <p>For example: jpg will be streamed directly from filestore, but tiff will be converted to png
-   * first.
-   *
-   * @param imageId
-   */
-  @GetMapping("/getImageForEdit/{id}/{unused}")
-  public ResponseEntity<byte[]> getImageForEdit(@PathVariable("id") Long imageId)
-      throws IOException {
-
-    User user = userManager.getAuthenticatedUserInSession();
-    return returnImageBytes(imageId, true, true, user);
-  }
-
-  /**
-   * Saves image provided in PNG/base64 format as a new Gallery item. Also creates a link to the
-   * original source image.
-   *
-   * @param data object with id of original image and new base64
-   * @return id of a newly created image
-   */
-  @PostMapping("ajax/saveEditedImage")
-  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"imageBase64"})
-  @ResponseBody
-  public AjaxReturnObject<Long> saveEditedImage(@RequestBody EditedImageData data)
-      throws IOException {
-
-    User user = userManager.getAuthenticatedUserInSession();
-    EcatImage editedSrcImage = recordManager.getEcatImage(data.getImageId(), false);
-    assertAuthorisation(user, editedSrcImage, PermissionType.READ);
-
-    EcatImage newImage = mediaManager.saveEditedImage(editedSrcImage, data.getImageBase64(), user);
-    logToAuditTrail(user, editedSrcImage, newImage);
-    return new AjaxReturnObject<>(newImage.getId(), null);
-  }
-
-  private void logToAuditTrail(User user, EcatImage editedSrcImage, EcatImage newImage) {
-    String logMessageString =
-        String.format(
-            "Edited image GL%d created from source image GL%d",
-            newImage.getId(), editedSrcImage.getId());
-    auditService.notify(new GenericEvent(user, newImage, AuditAction.CREATE, logMessageString));
-  }
-
-  @Data
-  @NoArgsConstructor
-  @AllArgsConstructor
-  protected static class EditedImageData {
-    private Long imageId;
-    private String imageBase64;
   }
 }

@@ -6,7 +6,6 @@
         <pattern>/*ajax=true*</pattern>
         <pattern>/resources/*</pattern>
         <pattern>/image/getImage/**</pattern>
-        <pattern>/image/getImageForEdit/**</pattern>
         <pattern>/Streamfile/*</pattern>
         <pattern>/public/status</pattern>
         <pattern>/public/version</pattern>

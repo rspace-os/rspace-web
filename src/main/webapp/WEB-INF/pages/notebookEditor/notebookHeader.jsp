@@ -19,8 +19,6 @@
 
     <link rel="stylesheet" href="<c:url value='/styles/journal.css'/>" />
     <link rel="stylesheet" href="<c:url value='/styles/messages.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/styles/mediaGallery.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/styles/rs-widgets.css'/>" />
     <script src="<c:url value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
     <script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
     <script src="<c:url value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>
