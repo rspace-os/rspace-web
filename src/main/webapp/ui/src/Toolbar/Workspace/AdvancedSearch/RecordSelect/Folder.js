@@ -1,7 +1,7 @@
 "use strict";
 import React from "react";
 import axios from "@/common/axios";
-import update from "immutability-helper";
+import { produce } from "immer";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -102,11 +102,11 @@ class Folder extends React.Component {
   updateSubfilesSelect = (file_id, selected) => {
     if (selected && this.state.selectedFiles.indexOf(file_id) == -1) {
       this.setState(
-        {
-          selectedFiles: update(this.state.selectedFiles, {
-            $push: [file_id],
+        (prevState) => ({
+          selectedFiles: produce(prevState.selectedFiles, (draft) => {
+            draft.push(file_id);
           }),
-        },
+        }),
         () => {
           if (this.state.subfiles.length == this.state.selectedFiles.length) {
             this.props.onSelectChange(this.props.folder.globalId, true);
@@ -124,11 +124,14 @@ class Folder extends React.Component {
       );
     } else if (!selected) {
       this.setState(
-        {
-          selectedFiles: update(this.state.selectedFiles, {
-            $splice: [[this.state.selectedFiles.indexOf(file_id), 1]],
+        (prevState) => ({
+          selectedFiles: produce(prevState.selectedFiles, (draft) => {
+            const idx = draft.indexOf(file_id);
+            if (idx !== -1) {
+              draft.splice(idx, 1);
+            }
           }),
-        },
+        }),
         () => {
           if (this.props.selected) {
             this.props.onSelectChange(this.props.folder.globalId, false);

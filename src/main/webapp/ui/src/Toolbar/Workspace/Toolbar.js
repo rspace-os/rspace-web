@@ -1,7 +1,7 @@
 "use strict";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import update from "immutability-helper";
+import { produce } from "immer";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../theme";
@@ -146,22 +146,22 @@ class WorkspaceToolbar extends React.Component {
   };
 
   handleOpen = (idx, event) => {
-    this.setState({
-      open: update(this.state.open, {
-        [idx]: { $set: true },
+    this.setState((prevState) => ({
+      open: produce(prevState.open, (draft) => {
+        draft[idx] = true;
       }),
-      anchorEl: update(this.state.anchorEl, {
-        [idx]: { $set: event.currentTarget },
+      anchorEl: produce(prevState.anchorEl, (draft) => {
+        draft[idx] = event.currentTarget;
       }),
-    });
+    }));
   };
 
   handleClose = (idx) => {
-    this.setState({
-      open: update(this.state.open, {
-        [idx]: { $set: false },
+    this.setState((prevState) => ({
+      open: produce(prevState.open, (draft) => {
+        draft[idx] = false;
       }),
-    });
+    }));
   };
 
   toggleAdvanced = (filter, term, from, to) => {

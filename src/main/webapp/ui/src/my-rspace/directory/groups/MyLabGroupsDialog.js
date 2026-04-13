@@ -1,6 +1,6 @@
 "use strict";
 import React from "react";
-import update from "immutability-helper";
+import { produce } from "immer";
 import UserList from "./UserList";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -140,27 +140,25 @@ class MyLabGroupsDialog extends React.Component {
   };
 
   handleSelected = (action) => (user) => {
-    let idx = this.findUser(this.state.selectedUsers[action], user),
-      new_selected;
-    if (idx == -1) {
-      new_selected = update(this.state.selectedUsers, {
-        [action]: { $push: [user] },
-      });
-    } else {
-      new_selected = update(this.state.selectedUsers, {
-        [action]: { $splice: [[idx, 1]] },
-      });
-    }
-    this.setState({ selectedUsers: new_selected });
+    this.setState((prevState) => ({
+      selectedUsers: produce(prevState.selectedUsers, (draft) => {
+        const idx = this.findUser(draft[action], user);
+        if (idx == -1) {
+          draft[action].push(user);
+        } else {
+          draft[action].splice(idx, 1);
+        }
+      }),
+    }));
   };
 
   addUsers = () => {
     this.setState(
-      {
-        chosenUsers: update(this.state.chosenUsers, {
-          $push: this.state.selectedUsers.add,
+      (prevState) => ({
+        chosenUsers: produce(prevState.chosenUsers, (draft) => {
+          draft.push(...prevState.selectedUsers.add);
         }),
-      },
+      }),
       this.updateAvailableUsers,
     );
   };
@@ -202,9 +200,9 @@ class MyLabGroupsDialog extends React.Component {
 
   resetSelection = () => {
     this.setState({
-      selectedUsers: update(this.state.selectedUsers, {
-        add: { $set: [] },
-        remove: { $set: [] },
+      selectedUsers: produce(this.state.selectedUsers, (draft) => {
+        draft.add = [];
+        draft.remove = [];
       }),
     });
   };

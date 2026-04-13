@@ -1,7 +1,7 @@
 "use strict";
 import React from "react";
 import axios from "@/common/axios";
-import update from "immutability-helper";
+import { produce } from "immer";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import styled from "@emotion/styled";
@@ -321,12 +321,14 @@ class SimpleSearch extends React.Component {
   };
 
   removeRecord = (record_id) => {
-    const idx = this.state.selectedRecords.findIndex((r) => r == record_id);
-    this.setState({
-      selectedRecords: update(this.state.selectedRecords, {
-        $splice: [[idx, 1]],
+    this.setState((prevState) => ({
+      selectedRecords: produce(prevState.selectedRecords, (draft) => {
+        const idx = draft.findIndex((r) => r == record_id);
+        if (idx !== -1) {
+          draft.splice(idx, 1);
+        }
       }),
-    });
+    }));
   };
 
   render() {
