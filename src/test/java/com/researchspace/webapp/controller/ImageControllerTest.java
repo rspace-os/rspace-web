@@ -55,12 +55,6 @@ public class ImageControllerTest extends JavaxValidatorTest {
   @After
   public void tearDown() throws Exception {}
 
-  EcatImage makeImage(long id) {
-    EcatImage img = TestFactory.createEcatImage(id);
-    img.setOwner(anyUser);
-    return img;
-  }
-
   @Test
   public void generateThumbnailNotCalledAfterMaxRetriesExceeeded() throws IOException {
     EcatDocumentFile doc = setUpThumbnailMocks();
