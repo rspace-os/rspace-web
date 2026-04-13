@@ -1182,7 +1182,7 @@ test.describe("Stoichiometry Table", () => {
       ).toBeDisabled();
       await expect(
         dialog.getByText(
-          "Deducting inventory stock for inventory items with non-gram units is currently not supported.",
+          "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
         ),
       ).toBeVisible();
       await expect(metric("Ethanol", "In Stock")).toContainText("25.0 mL");

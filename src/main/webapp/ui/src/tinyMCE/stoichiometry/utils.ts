@@ -135,7 +135,7 @@ function getInventoryUpdateDisabledReasonText(
     linkedStockUnavailable:
       "Linked stock information is unavailable, so this molecule cannot be updated.",
     nonMassInventoryQuantity:
-      "Deducting inventory stock for inventory items with non-gram units is currently not supported.",
+      "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
     missingActualMass:
       "Define actual mass before updating linked inventory stock.",
     insufficientStock:
