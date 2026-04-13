@@ -1,0 +1,25 @@
+name: Greetings
+
+on:
+  pull_request:
+    types:
+      - opened
+  issues:
+    types:
+      - opened
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  greeting:
+    name: Greet First-Time Contributors
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/first-interaction@v3.1.0
+      with:
+        issue_message: |
+            Welcome to the RSpace open-source project! We're excited to have you here! To get started and learn more about the project, our code of conduct and contributor guidelines, please visit https://github.com/rspace-os/rspace-web/wiki
+        pr_message: |
+            Welcome to the RSpace open-source project! We're excited to have you here! To get started and learn more about the project, our code of conduct and contributor guidelines, please visit https://github.com/rspace-os/rspace-web/wiki
