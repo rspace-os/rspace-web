@@ -1,4 +1,3 @@
-/* jshint maxerr: 100 */
 /* global RS: true */
 // TODO identify methods just used in Gallery/Editor to move into separate js file
 
