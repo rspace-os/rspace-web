@@ -26,10 +26,6 @@ export default defineConfig({
         replacement: path.resolve(__dirname, "src/util/styles.ts"),
       },
       {
-        find: /^__mocks__\//,
-        replacement: `${path.resolve(__dirname, "__mocks__")}/`,
-      },
-      {
         find: /^.+\.css$/,
         replacement: path.resolve(__dirname, "src/test-stubs/CSSStub.js"),
       },

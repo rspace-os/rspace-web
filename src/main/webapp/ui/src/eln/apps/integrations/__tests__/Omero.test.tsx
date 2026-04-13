@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react";
 import Omero from "../Omero";
 
-import "../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 describe("Omero", () => {
   test("Should have no axe violations.", async () => {
     const { baseElement } = render(

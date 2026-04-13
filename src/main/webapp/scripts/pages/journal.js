@@ -23,7 +23,7 @@ const default_extensions = {
   //dont know why default behaviour is to show last entry in notebook. Public notebook will show first entry instead
   useFirstRecord: false
 }
-/* jshint maxerr: 100 */
+
 function journal($, extensions = default_extensions) {
   var $plugin;
   var journalSettings;

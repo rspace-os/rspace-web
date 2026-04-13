@@ -1,5 +1,3 @@
-/* jshint maxerr: 200 */
-
 /**
  * Constants for media types
  */

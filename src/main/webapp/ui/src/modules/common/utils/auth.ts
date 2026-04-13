@@ -5,10 +5,10 @@ export type TokenParams = {
 
 export const resolveToken = async ({ token, getToken }: TokenParams) => {
   if (token) {
-	return token;
+	  return token;
   }
   if (getToken) {
-	return getToken();
+	  return getToken();
   }
   throw new Error("Token is required to perform this operation");
 };

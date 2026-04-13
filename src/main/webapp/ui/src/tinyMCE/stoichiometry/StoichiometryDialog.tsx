@@ -1,9 +1,10 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import { Dialog, DialogBoundary } from "@/components/DialogBoundary";
 import AppBar from "../../components/AppBar";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
+import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import ValidatingSubmitButton, {
   IsValid,
@@ -13,10 +14,10 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import CircularProgress from "@mui/material/CircularProgress";
-import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
+import { useIntegrationIsAllowedAndEnabled } from "@/hooks/api/integrationHelpers";
 import * as FetchingData from "../../util/fetchingData";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import { useConfirm } from "../../components/ConfirmProvider";
+import { useConfirm } from "@/components/ConfirmProvider";
 import ConfirmProvider from "../../components/ConfirmProvider";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import useOauthToken from "@/hooks/auth/useOauthToken";
@@ -31,6 +32,13 @@ const queryClient = new QueryClient({
     mutations: { retry: false },
   },
 });
+
+function areSameStoichiometry(
+  left: { id: number; revision: number } | null,
+  right: { id: number; revision: number } | null,
+) {
+  return left?.id === right?.id && left?.revision === right?.revision;
+}
 
 const StoichiometryTableLoadingFallback = ({
   disableClose,
@@ -249,9 +257,13 @@ const StandaloneDialogInner = ({
 }) => {
   const titleId = React.useId();
   const { getToken } = useOauthToken();
-  const calculateStoichiometryMutation = useCalculateStoichiometryMutation({
-    getToken,
-  });
+  const {
+    mutate: mutateCalculateStoichiometry,
+    reset: resetCalculateStoichiometry,
+    isPending: isRequestInFlight,
+    isError: hasCalculateError,
+    error: calculateStoichiometryError,
+  } = useCalculateStoichiometryMutation({ getToken });
   const { addAlert } = React.useContext(AlertContext);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [currentStoichiometry, setCurrentStoichiometry] = React.useState<{
@@ -263,25 +275,47 @@ const StandaloneDialogInner = ({
       : null,
   );
   const [actuallyOpen, setActuallyOpen] = React.useState(false);
-  const [tableCloseHandler, setTableCloseHandler] = React.useState<
-    (() => Promise<void>) | null
-  >(null);
+  const tableCloseHandlerRef = React.useRef<(() => Promise<void>) | null>(null);
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
-  const isRequestInFlight = calculateStoichiometryMutation.isPending;
+  const syncedStoichiometry = React.useMemo(
+    () =>
+      stoichiometryId !== undefined && stoichiometryRevision !== undefined
+        ? { id: stoichiometryId, revision: stoichiometryRevision }
+        : null,
+    [stoichiometryId, stoichiometryRevision],
+  );
+
+  const registerCloseHandler = React.useCallback(
+    (handler: (() => Promise<void>) | null) => {
+      tableCloseHandlerRef.current = handler;
+    },
+    [],
+  );
+
+  React.useEffect(() => {
+    if (open) {
+      resetCalculateStoichiometry();
+    }
+  }, [open, resetCalculateStoichiometry]);
 
   React.useEffect(() => {
     if (!open) {
+      tableCloseHandlerRef.current = null;
       setActuallyOpen(false);
-      setTableCloseHandler(null);
       return;
     }
 
-    const syncedStoichiometry =
-      stoichiometryId !== undefined && stoichiometryRevision !== undefined
-        ? { id: stoichiometryId, revision: stoichiometryRevision }
-        : null;
+    setCurrentStoichiometry((previousStoichiometry) =>
+      areSameStoichiometry(previousStoichiometry, syncedStoichiometry)
+        ? previousStoichiometry
+        : syncedStoichiometry,
+    );
+  }, [open, syncedStoichiometry]);
 
-    setCurrentStoichiometry(syncedStoichiometry);
+  React.useEffect(() => {
+    if (!open) {
+      return;
+    }
 
     FetchingData.match(chemistryStatus, {
       loading: () => {
@@ -315,40 +349,48 @@ const StandaloneDialogInner = ({
     });
   }, [
     open,
-    stoichiometryId,
-    stoichiometryRevision,
     chemistryStatus,
     addAlert,
   ]);
 
-  const handleCalculate = () => {
+  const handleCalculate = React.useCallback(() => {
     if (isRequestInFlight) {
       return;
     }
-    trackEvent("user:create:stoichiometry_table:document_editor");
-    void (async () => {
-      try {
-        if (!chemId) throw new Error("chemId is required");
-        const { id, revision } = await calculateStoichiometryMutation.mutateAsync(
-          {
-            chemId: chemId || undefined,
-            recordId,
-          },
-        );
-        setCurrentStoichiometry({ id, revision });
-        onTableCreated?.(id, revision);
-      } catch (e) {
-        console.error("Calculation failed", e);
-      }
-    })();
-  };
 
-  const handleCloseWithoutTable = () => {
+    resetCalculateStoichiometry();
+    trackEvent("user:create:stoichiometry_table:document_editor");
+
+    mutateCalculateStoichiometry(
+      {
+        chemId: chemId ?? undefined,
+        recordId,
+      },
+      {
+        onSuccess: ({ id, revision }) => {
+          setCurrentStoichiometry({ id, revision });
+          onTableCreated?.(id, revision);
+        }
+      },
+    );
+  }, [
+    mutateCalculateStoichiometry,
+    chemId,
+    isRequestInFlight,
+    onTableCreated,
+    recordId,
+    resetCalculateStoichiometry,
+    trackEvent,
+  ]);
+
+  const handleCloseWithoutTable = React.useCallback(() => {
     if (isRequestInFlight) {
       return;
     }
+
+    resetCalculateStoichiometry();
     onClose();
-  };
+  }, [isRequestInFlight, onClose, resetCalculateStoichiometry]);
 
   return (
     <Dialog
@@ -356,7 +398,7 @@ const StandaloneDialogInner = ({
       disableEscapeKeyDown={isRequestInFlight}
       onClose={(_event, _reason) => {
         if (currentStoichiometry !== null) {
-          void tableCloseHandler?.();
+          void tableCloseHandlerRef.current?.();
           return;
         }
         handleCloseWithoutTable();
@@ -395,10 +437,15 @@ const StandaloneDialogInner = ({
                 onClick={handleCalculate}
                 disabled={isRequestInFlight}
               >
-                {calculateStoichiometryMutation.isPending
+                {isRequestInFlight
                   ? "Calculating..."
                   : "Calculate Stoichiometry"}
               </Button>
+              {hasCalculateError && calculateStoichiometryError && (
+                <Alert severity="error" sx={{ width: "100%", maxWidth: 480 }}>
+                  {calculateStoichiometryError.message}
+                </Alert>
+              )}
             </Box>
           </DialogContent>
           <DialogActions>
@@ -423,9 +470,7 @@ const StandaloneDialogInner = ({
             onSave={onSave}
             onDelete={onDelete}
             setCurrentStoichiometry={setCurrentStoichiometry}
-            registerCloseHandler={(handler) => {
-              setTableCloseHandler(() => handler);
-            }}
+            registerCloseHandler={registerCloseHandler}
           />
         </React.Suspense>
       )}

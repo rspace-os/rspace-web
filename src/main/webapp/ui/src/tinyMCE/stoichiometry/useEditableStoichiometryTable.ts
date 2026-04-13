@@ -51,15 +51,26 @@ export function useEditableStoichiometryTable({
     getToken,
   });
   const data = queriedStoichiometry;
+  const stoichiometryVersionKey = `${queriedStoichiometry.id}:${queriedStoichiometry.revision}`;
+  const initialMolecules = React.useMemo(
+    () => toEditableMolecules(queriedStoichiometry),
+    [stoichiometryVersionKey],
+  );
+  const initialisedVersionRef = React.useRef<string | null>(null);
   const isSaving = updateStoichiometryMutation.isPending;
   const isDeleting = deleteStoichiometryMutation.isPending;
   const isGettingMoleculeInfo = getMoleculeInfoMutation.isPending;
   const isBusy = isSaving || isDeleting || isGettingMoleculeInfo || isFetching;
 
   React.useEffect(() => {
-    setAllMolecules(toEditableMolecules(queriedStoichiometry));
+    if (initialisedVersionRef.current === stoichiometryVersionKey) {
+      return;
+    }
+
+    initialisedVersionRef.current = stoichiometryVersionKey;
+    setAllMolecules(initialMolecules);
     setHasChanges(false);
-  }, [queriedStoichiometry.id, queriedStoichiometry.revision, queriedStoichiometry]);
+  }, [initialMolecules, stoichiometryVersionKey]);
 
   const markChanged = useCallback(() => {
     setHasChanges(true);

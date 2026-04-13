@@ -8,7 +8,7 @@ import {
 import Figshare from "../Figshare";
 import { Optional } from "../../../../util/optional";
 
-import "../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 describe("Figshare", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
