@@ -57,7 +57,8 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
                 (response.data as { data: unknown }).data,
               );
             })
-            .catch(() => {
+            .catch((e) => {
+              console.error(e);
               window.RS.confirm?.(
                 `Could not insert file "${file.name}"`,
                 "error",

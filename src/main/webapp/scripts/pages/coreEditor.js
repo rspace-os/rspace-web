@@ -1949,18 +1949,6 @@ $(document).ready(function () {
   setUpMessagingButtonsAndDialog();
 });
 
-
-window.addEventListener("ReactToolbarMounted", () => {
-  // if share button visible
-  if ($('#shareRecord').length) {
-    var dialogTitle = isDocumentEditor ? "Share Document" : "Share Entry";
-    var idsToShareGetter = function () {
-      return [getDocumentOrEntryId()];
-    };
-    createShareDialog(dialogTitle, idsToShareGetter);
-  }
-});
-
 /*
  * file tree browser setup for editor/notebook page
  */
