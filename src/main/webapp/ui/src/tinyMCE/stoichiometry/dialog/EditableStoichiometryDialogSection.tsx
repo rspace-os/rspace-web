@@ -1,4 +1,5 @@
 import React from "react";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
@@ -32,6 +33,13 @@ export type EditableStoichiometryDialogSectionProps = {
   registerCloseHandler?: RegisterCloseHandler;
 };
 
+function getMutationErrorMessage(
+  error: unknown,
+  fallbackMessage: string,
+): string {
+  return error instanceof Error ? error.message : fallbackMessage;
+}
+
 export default function EditableStoichiometryDialogSection({
   currentStoichiometry,
   onClose,
@@ -42,6 +50,7 @@ export default function EditableStoichiometryDialogSection({
 }: EditableStoichiometryDialogSectionProps): React.ReactNode {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const confirm = useConfirm();
+  const [mutationError, setMutationError] = React.useState<string | null>(null);
   const {
     hasChanges,
     isBusy,
@@ -91,6 +100,7 @@ export default function EditableStoichiometryDialogSection({
     }
     trackEvent("user:save:stoichiometry_table:document_editor");
     void (async () => {
+      setMutationError(null);
       try {
         const revision = await save();
         const updatedStoichiometry = {
@@ -101,6 +111,12 @@ export default function EditableStoichiometryDialogSection({
         onSave?.(updatedStoichiometry.id, updatedStoichiometry.revision);
         console.log("Stoichiometry data saved successfully");
       } catch (error) {
+        setMutationError(
+          getMutationErrorMessage(
+            error,
+            "Failed to save stoichiometry changes. Please try again.",
+          ),
+        );
         console.error("Save failed", error);
       }
     })();
@@ -123,11 +139,18 @@ export default function EditableStoichiometryDialogSection({
     }
 
     trackEvent("user:delete:stoichiometry_table:document_editor");
+    setMutationError(null);
     try {
       await deleteTable();
       onDelete?.();
       setCurrentStoichiometry(null);
     } catch (error) {
+      setMutationError(
+        getMutationErrorMessage(
+          error,
+          "Failed to delete this stoichiometry table. Please try again.",
+        ),
+      );
       console.error("Delete failed", error);
     }
   };
@@ -149,6 +172,7 @@ export default function EditableStoichiometryDialogSection({
               hasChanges={hasChanges}
             />
           </Box>
+          {mutationError && <Alert severity="error">{mutationError}</Alert>}
         </Stack>
       </DialogContent>
       <DialogActions>

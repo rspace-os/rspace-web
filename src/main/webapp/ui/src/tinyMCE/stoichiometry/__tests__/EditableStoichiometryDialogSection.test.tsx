@@ -47,11 +47,29 @@ vi.mock("@/tinyMCE/stoichiometry/useEditableStoichiometryTable", () => ({
       stoichiometryId,
       stoichiometryRevision,
       onStoichiometryRefreshed,
-    }) as MockEditableStoichiometryTableResult,
+    }),
 }));
 
 vi.mock("@/components/ConfirmProvider", () => ({
   useConfirm: () => vi.fn(() => Promise.resolve(true)),
+}));
+
+vi.mock("@/components/ValidatingSubmitButton", () => ({
+  __esModule: true,
+  default: ({
+    children,
+    onClick,
+    loading,
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+    loading?: boolean;
+  }) => (
+    <button type="button" onClick={onClick} disabled={loading}>
+      {children}
+    </button>
+  ),
+  IsValid: () => ({ isValid: true }),
 }));
 
 vi.mock("@/tinyMCE/stoichiometry/StoichiometryTable", async () => {
@@ -162,5 +180,123 @@ describe("EditableStoichiometryDialogSection", () => {
       expect(setCurrentStoichiometry).toHaveBeenCalledWith({ id: 1, revision: 2 });
       expect(onSave).toHaveBeenCalledWith(1, 2);
     });
+  });
+
+  it("shows an inline error alert when save fails", async () => {
+    const user = userEvent.setup();
+    const saveError = new Error("Save mutation failed");
+
+    mockUseEditableStoichiometryTable.mockImplementation(
+      ({ onStoichiometryRefreshed }: MockUseEditableStoichiometryTableArgs) => {
+        mockUpdateInventoryStock.mockImplementation(() => {
+          const refreshedStoichiometry = {
+            id: 1,
+            revision: 2,
+          };
+
+          onStoichiometryRefreshed?.(refreshedStoichiometry);
+
+          return Promise.resolve({
+            refreshedStoichiometry,
+            results: [],
+          });
+        });
+
+        return {
+          hasChanges: true,
+          isBusy: false,
+          isSaving: false,
+          save: vi.fn().mockRejectedValue(saveError),
+          deleteTable: vi.fn(),
+          tableController: {
+            allMolecules: [],
+            linkedInventoryQuantityInfoByGlobalId: new Map(),
+            isGettingMoleculeInfo: false,
+            addReagent: vi.fn(async () => {}),
+            deleteReagent: vi.fn(),
+            updateInventoryStock: mockUpdateInventoryStock,
+            pickInventoryLink: vi.fn(),
+            removeInventoryLink: vi.fn(),
+            undoRemoveInventoryLink: vi.fn(),
+            selectLimitingReagent: vi.fn(),
+            processRowUpdate: vi.fn(),
+          },
+        };
+      },
+    );
+
+    render(
+      <EditableStoichiometryDialogSection
+        currentStoichiometry={{ id: 1, revision: 1 }}
+        onClose={() => {}}
+        onDelete={() => {}}
+        setCurrentStoichiometry={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Save mutation failed",
+    );
+  });
+
+  it("shows an inline error alert when delete fails", async () => {
+    const user = userEvent.setup();
+    const deleteError = new Error("Delete mutation failed");
+
+    mockUseEditableStoichiometryTable.mockImplementation(
+      ({ onStoichiometryRefreshed }: MockUseEditableStoichiometryTableArgs) => {
+        mockUpdateInventoryStock.mockImplementation(() => {
+          const refreshedStoichiometry = {
+            id: 1,
+            revision: 2,
+          };
+
+          onStoichiometryRefreshed?.(refreshedStoichiometry);
+
+          return Promise.resolve({
+            refreshedStoichiometry,
+            results: [],
+          });
+        });
+
+        return {
+          hasChanges: false,
+          isBusy: false,
+          isSaving: false,
+          save: vi.fn(),
+          deleteTable: vi.fn().mockRejectedValue(deleteError),
+          tableController: {
+            allMolecules: [],
+            linkedInventoryQuantityInfoByGlobalId: new Map(),
+            isGettingMoleculeInfo: false,
+            addReagent: vi.fn(async () => {}),
+            deleteReagent: vi.fn(),
+            updateInventoryStock: mockUpdateInventoryStock,
+            pickInventoryLink: vi.fn(),
+            removeInventoryLink: vi.fn(),
+            undoRemoveInventoryLink: vi.fn(),
+            selectLimitingReagent: vi.fn(),
+            processRowUpdate: vi.fn(),
+          },
+        };
+      },
+    );
+
+    render(
+      <EditableStoichiometryDialogSection
+        currentStoichiometry={{ id: 1, revision: 1 }}
+        onClose={() => {}}
+        onDelete={() => {}}
+        setCurrentStoichiometry={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Delete mutation failed",
+    );
   });
 });
