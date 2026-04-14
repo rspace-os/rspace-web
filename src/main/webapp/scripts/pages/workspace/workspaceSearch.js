@@ -1,5 +1,3 @@
-/* jshint maxerr: 100 */
-
 /**
  * Contains browser scripting for search dialog in workspace
  * Will only work in workspace
