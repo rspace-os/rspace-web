@@ -13,8 +13,8 @@ This document is written in Markdown format.
 - Explicitly set charset and collation:  `character set utf8mb4 collate  utf8mb4_unicode_ci`.
   (As an example, see src/main/resources/sqlUpdates/changeLog-1.76.xml : ```<sql>alter table ClustermarketEquipment engine=InnoDB, CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</sql>```)
   This is to overcome variations in collation between different OS/MariaDB countries.
-- Does it need an accompanying _AUD table to record revision history?   
-- If it has FK references to any BaseRecord or User/Group table, we need to update UserDeletionManagerImpl to support the 'Delete User' use case.
+- Does it need an accompanying _AUD table to record revision history? 
+- If it has FK references to any BaseRecord or User/Group table, we need to update `UserDeletionManagerImpl to support the 'Delete User' use case.
 - If you've written some JUnit tests that extend from RealTRansactionSpringTestBase (i.e. test  cases that run real transactions) then remember to add to the 'DatabaseCleaner.cleanUp' method
   the table name in the list of tables to delete after a test run -  this keeps the database clean between test runs. The order in which rows are removed is important, to avoid FK constraint errors.
 - Is this a table that is defined as a Hibernate entity? Sometimes a 3rd party library (e.g. liquibase, spring-social, chemistry tables) requires its own table that is not created or managed by Hibernate. In this case you may need to edit scripts in the *maven* folder.

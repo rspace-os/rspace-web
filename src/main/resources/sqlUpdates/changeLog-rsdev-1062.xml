@@ -1,21 +1,446 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-  <changeSet id="RSDEV-1062-A" author="nico">
-    <comment>Add column to discriminate Instrument from Sample</comment>
-    <addColumn tableName="StoichiometryInventoryLink">
-      <column type="BIT(1)" name="stock_deducted" defaultValueBoolean="0">
+  <!--
+      ChangeSet 1: Create InstrumentEntity table (including all columns and inline FK definitions)
+  -->
+  <changeSet id="RSDEV-1062-instrumentEntity-2026-04-14" context="run" author="nico">
+    <createTable tableName="InstrumentEntity" schemaName="rspace">
+      <column name="id" type="bigint">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="createdBy" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="creationDate" type="datetime">
+        <constraints nullable="false"/>
+      </column>
+      <column name="creationDateMillis" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="description" type="varchar(250)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="modificationDate" type="datetime">
+        <constraints nullable="false"/>
+      </column>
+      <column name="modificationDateMillis" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="modifiedBy" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="deleted" type="bit" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="iconId" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="tags" type="varchar(8000)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="deletedDate" type="datetime">
+        <constraints nullable="true"/>
+      </column>
+      <column name="imageFileProperty_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="thumbnailFileProperty_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="currMaxColIndex" type="int">
+        <constraints nullable="true"/>
+      </column>
+      <column name="version" type="bigint">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sharingMode" type="int" defaultValueNumeric="0">
+        <constraints nullable="true"/>
+      </column>
+      <column name="acl" type="longtext">
+        <constraints nullable="true"/>
+      </column>
+      <column name="tagMetaData" type="longtext">
+        <constraints nullable="true"/>
+      </column>
+      <column name="owner_id" type="bigint">
+        <constraints nullable="false"/>
+      </column>
+      <column name="isInstrumentTemplate" type="char">
+        <constraints nullable="false"/>
+      </column>
+      <column name="instrumentSource" type="varchar(20)" defaultValue="LAB_CREATED">
+        <constraints nullable="false"/>
+      </column>
+      <column name="instrumentTemplate_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="templateLinkedVersion" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="parentLocation_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="lastNonWorkbenchParent_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="lastMoveDate" type="datetime(6)">
+        <constraints nullable="true"/>
+      </column>
+    </createTable>
+
+    <addForeignKeyConstraint
+      constraintName="FK_Instr_to_ImgFileProp"
+      baseTableName="InstrumentEntity"
+      baseColumnNames="imageFileProperty_id"
+      referencedTableName="FileProperty"
+      referencedColumnNames="id"/>
+
+    <addForeignKeyConstraint
+      constraintName="FK_Instr_to_InstrTemplate"
+      baseTableName="InstrumentEntity"
+      baseColumnNames="instrumentTemplate_id"
+      referencedTableName="InstrumentEntity"
+      referencedColumnNames="id"/>
+
+    <addForeignKeyConstraint
+      constraintName="FK_Instr_to_ThumbFileProp"
+      baseTableName="InstrumentEntity"
+      baseColumnNames="thumbnailFileProperty_id"
+      referencedTableName="FileProperty"
+      referencedColumnNames="id"/>
+
+    <addForeignKeyConstraint
+      constraintName="FK_Instr_to_User"
+      baseTableName="InstrumentEntity"
+      baseColumnNames="owner_id"
+      referencedTableName="User"
+      referencedColumnNames="id"/>
+
+    <addForeignKeyConstraint
+      constraintName="FK_Instr_to_LastNonWorkbCont"
+      baseTableName="InstrumentEntity"
+      baseColumnNames="lastNonWorkbenchParent_id"
+      referencedTableName="Container"
+      referencedColumnNames="id"/>
+
+    <addForeignKeyConstraint
+      constraintName="FK_Instr_to_ContLocation"
+      baseTableName="InstrumentEntity"
+      baseColumnNames="parentLocation_id"
+      referencedTableName="ContainerLocation"
+      referencedColumnNames="id"/>
+  </changeSet>
+
+  <!--
+      ChangeSet 2: Create InstrumentEntity_AUD table (Audit table for InstrumentEntity)
+  -->
+  <changeSet id="RSDEV-1062-instrumententity-aud-2026-06-14" author="nico">
+
+    <createTable tableName="InstrumentEntity_AUD" schemaName="rspace">
+
+      <!-- Primary Key columns -->
+      <column name="id" type="bigint">
+        <constraints nullable="false"/>
+      </column>
+      <column name="REV" type="int">
+        <constraints nullable="false"/>
+      </column>
+      <column name="REVTYPE" type="tinyint">
+        <constraints nullable="true"/>
+      </column>
+
+      <!-- Regular columns (all nullable in audit tables) -->
+      <column name="createdBy" type="varchar(255)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="creationDate" type="datetime">
+        <constraints nullable="true"/>
+      </column>
+      <column name="creationDateMillis" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="description" type="varchar(250)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="modificationDate" type="datetime">
+        <constraints nullable="true"/>
+      </column>
+      <column name="modificationDateMillis" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="modifiedBy" type="varchar(255)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="deleted" type="bit">
+        <constraints nullable="true"/>
+      </column>
+      <column name="name" type="varchar(255)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="iconId" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="tags" type="varchar(8000)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="deletedDate" type="datetime">
+        <constraints nullable="true"/>
+      </column>
+      <column name="imageFileProperty_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="thumbnailFileProperty_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="currMaxColIndex" type="int">
+        <constraints nullable="true"/>
+      </column>
+      <column name="version" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="sharingMode" type="int">
+        <constraints nullable="true"/>
+      </column>
+      <column name="acl" type="longtext">
+        <constraints nullable="true"/>
+      </column>
+      <column name="tagMetaData" type="longtext">
+        <constraints nullable="true"/>
+      </column>
+      <column name="owner_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="isInstrumentTemplate" type="varchar(1)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="instrumentSource" type="varchar(20)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="instrumentTemplate_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="templateLinkedVersion" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="parentLocation_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="lastNonWorkbenchParent_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="lastMoveDate" type="datetime(6)">
+        <constraints nullable="true"/>
+      </column>
+
+    </createTable>
+
+    <!-- Set composite primary key -->
+    <addPrimaryKey tableName="InstrumentEntity_AUD"
+      schemaName="rspace"
+      columnNames="id, REV"
+      constraintName="PK_InstrumentEntity_AUD"/>
+
+    <!-- Foreign key to REVINFO table -->
+    <addForeignKeyConstraint
+      constraintName="FK_InstrEntityRev_to_RevInfo"
+      baseTableName="InstrumentEntity_AUD"
+      baseColumnNames="REV"
+      referencedTableName="REVINFO"
+      referencedColumnNames="REV" />
+
+  </changeSet>
+
+
+  <!--
+      ChangeSet 3: Rename SampleField → InventoryEntityField and its AUDIT table
+  -->
+  <changeSet id="RSDEV-1062-renameSampleField-2026-04-14" context="run" author="nico">
+    <renameTable oldTableName="SampleField"
+      newTableName="InventoryEntityField"
+      schemaName="rspace"/>
+
+    <renameTable oldTableName="SampleField_AUD"
+      newTableName="InventoryEntityField_AUD"
+      schemaName="rspace"/>
+  </changeSet>
+
+  <!--
+      ChangeSet 4: Modifications to InventoryEntityField (and AUDIT table)
+      - Add instrumentEntity_id column + FK
+      - Make sample_id nullable
+      - Add deleteOnInstrumentUpdate column
+  -->
+  <changeSet id="RSDEV-1062-inventoryEntityField-2026-04-14" author="nico">
+    <!-- Add instrumentEntity_id to main table -->
+    <addColumn tableName="InventoryEntityField" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+
+    <!-- Add instrumentEntity_id to AUDIT table -->
+    <addColumn tableName="InventoryEntityField_AUD" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+
+    <!-- FK on main table -->
+    <addForeignKeyConstraint
+      constraintName="FK_InvEntField_to_InstrEntity"
+      baseTableName="InventoryEntityField"
+      baseColumnNames="instrumentEntity_id"
+      referencedTableName="InstrumentEntity"
+      referencedColumnNames="id"/>
+
+    <!-- Modify sample_id field to allow NULL values -->
+<!--    <dropNotNullConstraint columnDataType="bigint(20)" columnName="sample_id" schemaName="rsapce"-->
+<!--      tableName="InventoryEntityField"/>-->
+    <sql dbms="mysql">
+      ALTER TABLE rspace.InventoryEntityField MODIFY sample_id bigint NULL;
+    </sql>
+
+
+    <!-- Add deleteOnInstrumentUpdate column (only on main table) -->
+    <addColumn tableName="InventoryEntityField" schemaName="rspace">
+      <column name="deleteOnInstrumentUpdate" type="bit" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <!--
+      ChangeSet 5: Add instrumentEntity_id + FK to all InventoryRecordConnectedEntity tables
+      (Barcode, BasketItem, DigitalObjectIdentifier, ExtraField, InventoryFile,
+      MaterialUsage, StoichiometryInventoryLink)
+  -->
+  <changeSet id="RSDEV-1062-inventoryConnectedEntities-2026-04-14" author="nico">
+
+    <!-- Barcode + AUDIT -->
+    <addColumn tableName="Barcode" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addColumn tableName="Barcode_AUD" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addForeignKeyConstraint
+      constraintName="FK_Barcode_to_InstrEntity"
+      baseTableName="Barcode"
+      baseColumnNames="instrumentEntity_id"
+      referencedTableName="InstrumentEntity"
+      referencedColumnNames="id" />
+
+    <!-- BasketItem (no AUDIT in original script) -->
+    <addColumn tableName="BasketItem" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addForeignKeyConstraint
+      constraintName="FK_BasketItem_to_InstrEntity"
+      baseTableName="BasketItem"
+      baseColumnNames="instrumentEntity_id"
+      referencedTableName="InstrumentEntity"
+      referencedColumnNames="id" />
+
+    <!-- DigitalObjectIdentifier + AUDIT -->
+    <addColumn tableName="DigitalObjectIdentifier" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addColumn tableName="DigitalObjectIdentifier_AUD" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addForeignKeyConstraint
+      constraintName="FK_DigitObjIdent_to_InstrEntity"
+      baseTableName="DigitalObjectIdentifier"
+      baseColumnNames="instrumentEntity_id"
+      referencedTableName="InstrumentEntity"
+      referencedColumnNames="id" />
+
+    <!-- ExtraField + AUDIT -->
+    <addColumn tableName="ExtraField" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addColumn tableName="ExtraField_AUD" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addForeignKeyConstraint
+      constraintName="FK_ExtraField_to_InstrEntity"
+      baseTableName="ExtraField"
+      baseColumnNames="instrumentEntity_id"
+      referencedTableName="InstrumentEntity"
+      referencedColumnNames="id" />
+
+    <!-- InventoryFile + AUDIT -->
+    <addColumn tableName="InventoryFile" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addColumn tableName="InventoryFile_AUD" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addForeignKeyConstraint
+      constraintName="FK_InventoryFile_to_InstrEntity"
+      baseTableName="InventoryFile"
+      baseColumnNames="instrumentEntity_id"
+      referencedTableName="InstrumentEntity"
+      referencedColumnNames="id" />
+
+    <!-- MaterialUsage + AUDIT -->
+    <addColumn tableName="MaterialUsage" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addColumn tableName="MaterialUsage_AUD" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addForeignKeyConstraint
+      constraintName="FK_MaterialUsage_to_InstrEntity"
+      baseTableName="MaterialUsage"
+      baseColumnNames="instrumentEntity_id"
+      referencedTableName="InstrumentEntity"
+      referencedColumnNames="id" />
+
+    <!-- StoichiometryInventoryLink + AUDIT -->
+    <addColumn tableName="StoichiometryInventoryLink" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addColumn tableName="StoichiometryInventoryLink_AUD" schemaName="rspace">
+      <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+    <addForeignKeyConstraint
+      constraintName="FK_StoichInvLink_to_InstrEntity"
+      baseTableName="StoichiometryInventoryLink"
+      baseColumnNames="instrumentEntity_id"
+      referencedTableName="InstrumentEntity"
+      referencedColumnNames="id" />
+  </changeSet>
+
+  <!--
+      ChangeSet 6: Container / Container_AUD changes
+      Adding canStoreInstruments and contentCountInstruments columns
+  -->
+  <changeSet id="RSDEV-1062-container-2026-04-14" author="nico">
+    <!-- Container table -->
+    <addColumn tableName="Container" schemaName="rspace">
+      <column name="canStoreInstruments" type="bit" defaultValueNumeric="1">
+        <constraints nullable="false"/>
+      </column>
+      <column name="contentCountInstruments" type="int" defaultValueNumeric="0">
         <constraints nullable="false"/>
       </column>
     </addColumn>
 
-    <addColumn tableName="StoichiometryInventoryLink_AUD">
-      <column type="BIT(1)" name="stock_deducted">
+    <!-- Container_AUD table -->
+    <addColumn tableName="Container_AUD" schemaName="rspace">
+      <column name="canStoreInstruments" type="bit" defaultValueNumeric="1">
+        <constraints nullable="false"/>
+      </column>
+      <column name="contentCountInstruments" type="int" defaultValueNumeric="0">
+        <constraints nullable="false"/>
       </column>
     </addColumn>
   </changeSet>
+
 
 </databaseChangeLog>

@@ -86,11 +86,14 @@ public class DatabaseCleaner {
     jdbcTemplate.update("update Container set lastNonWorkbenchParent_id = NULL");
     jdbcTemplate.update("update SubSample set parentLocation_id = NULL");
     jdbcTemplate.update("update SubSample set lastNonWorkbenchParent_id = NULL");
+    jdbcTemplate.update("update InstrumentEntity set parentLocation_id = NULL");
+    jdbcTemplate.update("update InstrumentEntity set lastNonWorkbenchParent_id = NULL");
+    jdbcTemplate.update("update InstrumentEntity set instrumentTemplate_id = NULL");
     jdbcTemplate.update("delete from ContainerLocation");
 
-    jdbcTemplate.update("update SampleField set choiceDef_id = NULL");
-    jdbcTemplate.update("update SampleField set radioDef_id = NULL");
-    jdbcTemplate.update("update SampleField set templateField_id = NULL");
+    jdbcTemplate.update("update InventoryEntityField set choiceDef_id = NULL");
+    jdbcTemplate.update("update InventoryEntityField set radioDef_id = NULL");
+    jdbcTemplate.update("update InventoryEntityField set templateField_id = NULL");
     jdbcTemplate.update("update Sample set STemplate_id = NULL");
 
     jdbcTemplate.update("delete from BasketItem");
@@ -131,6 +134,7 @@ public class DatabaseCleaner {
             "SubSampleNote",
             "SubSample",
             "Sample",
+            "InstrumentEntity",
             "Container",
             "FieldForm",
             "RSForm",
