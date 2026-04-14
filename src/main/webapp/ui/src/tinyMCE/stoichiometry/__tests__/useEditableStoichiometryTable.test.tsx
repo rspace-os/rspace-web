@@ -5,6 +5,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { inventoryQueryKeys } from "@/modules/inventory/queries";
 import type { StoichiometryRequest } from "@/modules/stoichiometry/schema";
 import { stoichiometryQueryKeys } from "@/modules/stoichiometry/queries";
+import AnalyticsContext from "@/stores/contexts/Analytics";
 import {
   type RefreshedStoichiometry,
   useEditableStoichiometryTable,
@@ -254,6 +255,8 @@ const {
   mockUpdateStoichiometryMutateAsync: vi.fn(),
 }));
 
+const mockTrackEvent = vi.fn();
+
 vi.mock("@/hooks/auth/useOauthToken", () => ({
   default: () => ({
     getToken: mockGetToken,
@@ -335,6 +338,32 @@ function HookHarness({
   return null;
 }
 
+function renderWithProviders({
+  queryClient,
+  onValue,
+  onStoichiometryRefreshed,
+}: {
+  queryClient: QueryClient;
+  onValue: (value: ReturnType<typeof useEditableStoichiometryTable>) => void;
+  onStoichiometryRefreshed?: (stoichiometry: RefreshedStoichiometry) => void;
+}) {
+  return render(
+    <AnalyticsContext.Provider
+      value={{
+        isAvailable: true,
+        trackEvent: mockTrackEvent,
+      }}
+    >
+      <QueryClientProvider client={queryClient}>
+        <HookHarness
+          onValue={onValue}
+          onStoichiometryRefreshed={onStoichiometryRefreshed}
+        />
+      </QueryClientProvider>
+    </AnalyticsContext.Provider>,
+  );
+}
+
 describe("useEditableStoichiometryTable", () => {
   beforeEach(() => {
     mockUpdateStoichiometryMutateAsync.mockReset();
@@ -354,6 +383,7 @@ describe("useEditableStoichiometryTable", () => {
     mockUseOauthTokenQuery.mockReturnValue({ data: "inventory-token" });
     mockUpdateStoichiometryMutateAsync.mockResolvedValue({ revision: 2 });
     mockGetStoichiometry.mockResolvedValue(mockRefreshedStoichiometry);
+    mockTrackEvent.mockReset();
   });
 
   it("gets the inventory token from useOauthTokenQuery before calling the sub-sample quantity hook", async () => {
@@ -586,6 +616,83 @@ describe("useEditableStoichiometryTable", () => {
     });
   });
 
+  it("tracks analytics when a new inventory link is added", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+    renderWithProviders({
+      queryClient,
+      onValue: (value) => {
+        latestValue = value;
+      },
+    });
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+
+    act(() => {
+      latestValue?.tableController.pickInventoryLink(8, 999, "SS999");
+    });
+
+    expect(mockTrackEvent).toHaveBeenCalledWith(
+      "user:add:stoichiometry:inventory_link",
+      expect.objectContaining({
+        stoichiometryId: 3,
+        moleculeId: 8,
+        moleculeName: "Water",
+        moleculeRole: "AGENT",
+        inventoryItemGlobalId: "SS999",
+        inventoryLinkId: 999,
+        previousInventoryItemGlobalId: null,
+      }),
+    );
+  });
+
+  it("tracks analytics when an inventory link is removed", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+    renderWithProviders({
+      queryClient,
+      onValue: (value) => {
+        latestValue = value;
+      },
+    });
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+
+    act(() => {
+      latestValue?.tableController.removeInventoryLink(5);
+    });
+
+    expect(mockTrackEvent).toHaveBeenCalledWith(
+      "user:remove:stoichiometry:inventory_link",
+      expect.objectContaining({
+        stoichiometryId: 3,
+        moleculeId: 5,
+        moleculeName: "Cyclopentadiene",
+        moleculeRole: "REACTANT",
+        inventoryItemGlobalId: "SS123",
+        inventoryLinkId: 501,
+        wasSavedLink: true,
+        stockDeducted: false,
+      }),
+    );
+  });
+
   it("serializes soft-deleted saved links as null and clears temporary deleted state after save", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -654,16 +761,13 @@ describe("useEditableStoichiometryTable", () => {
     const onStoichiometryRefreshed = vi.fn();
     let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <HookHarness
-          onStoichiometryRefreshed={onStoichiometryRefreshed}
-          onValue={(value) => {
-            latestValue = value;
-          }}
-        />
-      </QueryClientProvider>,
-    );
+    renderWithProviders({
+      queryClient,
+      onStoichiometryRefreshed,
+      onValue: (value) => {
+        latestValue = value;
+      },
+    });
 
     await waitFor(() => {
       expect(latestValue?.allMolecules).toHaveLength(4);
@@ -731,6 +835,19 @@ describe("useEditableStoichiometryTable", () => {
     );
     expect(matchesQueryFilter(inventoryQueryKeys.subSampleQuantity("SS999"))).toBe(
       false,
+    );
+    expect(mockTrackEvent).toHaveBeenCalledWith(
+      "user:decrement:stoichiometry:inventory_stock",
+      expect.objectContaining({
+        stoichiometryId: 3,
+        moleculeId: 6,
+        moleculeName: "Cyclopentane",
+        moleculeRole: "PRODUCT",
+        inventoryItemGlobalId: "SS124",
+        inventoryLinkId: 502,
+        success: true,
+        errorMessage: null,
+      }),
     );
   });
 

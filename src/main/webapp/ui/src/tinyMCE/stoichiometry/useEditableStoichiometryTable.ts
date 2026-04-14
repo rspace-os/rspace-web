@@ -54,6 +54,20 @@ type UseEditableStoichiometryTableArgs = {
   ) => void;
 };
 
+function getStoichiometryLinkAnalyticsProperties(
+  stoichiometryId: number,
+  revisionId: number,
+  molecule: Pick<EditableMolecule, "id" | "name" | "role">,
+) {
+  return {
+    stoichiometryId,
+    revisionId,
+    moleculeId: molecule.id,
+    moleculeName: molecule.name ?? "Unnamed molecule",
+    moleculeRole: molecule.role,
+  };
+}
+
 function toStoichiometryRequest(
   stoichiometryId: number,
   molecules: ReadonlyArray<EditableMolecule>,
@@ -398,6 +412,8 @@ export function useEditableStoichiometryTable({
         return;
       }
 
+      const existingLink = molecule.inventoryLink;
+
       updateAllMolecules((prevMolecules) =>
         produce(Array.from(prevMolecules), (draftMolecules) => {
           const draftMolecule = draftMolecules.find((m) => m.id === moleculeId);
@@ -405,7 +421,6 @@ export function useEditableStoichiometryTable({
             return;
           }
 
-          const existingLink = draftMolecule.inventoryLink;
           draftMolecule.inventoryLink = {
             id: existingLink?.id ?? inventoryItemId,
             inventoryItemGlobalId,
@@ -416,8 +431,20 @@ export function useEditableStoichiometryTable({
           draftMolecule.deletedInventoryLink = null;
         }),
       );
+
+      trackEvent("user:add:stoichiometry:inventory_link", {
+        ...getStoichiometryLinkAnalyticsProperties(
+          stoichiometryId,
+          stoichiometryRevision,
+          molecule,
+        ),
+        inventoryItemGlobalId,
+        inventoryLinkId: existingLink?.id ?? inventoryItemId,
+        previousInventoryItemGlobalId:
+          existingLink?.inventoryItemGlobalId ?? null,
+      });
     },
-    [allMolecules, updateAllMolecules],
+    [allMolecules, stoichiometryId, trackEvent, updateAllMolecules],
   );
 
   const removeInventoryLink = useCallback(
@@ -430,6 +457,7 @@ export function useEditableStoichiometryTable({
       const shouldSoftDeleteSavedLink =
         molecule.savedInventoryLink?.inventoryItemGlobalId ===
         molecule.inventoryLink.inventoryItemGlobalId;
+      const removedInventoryLink = molecule.inventoryLink;
 
       updateAllMolecules((prevMolecules) =>
         produce(Array.from(prevMolecules), (draftMolecules) => {
@@ -447,8 +475,20 @@ export function useEditableStoichiometryTable({
           draftMolecule.inventoryLink = null;
         }),
       );
+
+      trackEvent("user:remove:stoichiometry:inventory_link", {
+        ...getStoichiometryLinkAnalyticsProperties(
+          stoichiometryId,
+          stoichiometryRevision,
+          molecule,
+        ),
+        inventoryItemGlobalId: removedInventoryLink.inventoryItemGlobalId,
+        inventoryLinkId: removedInventoryLink.id,
+        wasSavedLink: shouldSoftDeleteSavedLink,
+        stockDeducted: removedInventoryLink.stockDeducted === true,
+      });
     },
-    [allMolecules, updateAllMolecules],
+    [allMolecules, stoichiometryId, trackEvent, updateAllMolecules],
   );
 
   const undoRemoveInventoryLink = useCallback(
@@ -594,6 +634,25 @@ export function useEditableStoichiometryTable({
           },
         );
 
+        for (const { linkId, moleculeId, inventoryItemGlobalId } of deductibleLinks) {
+          const molecule = moleculesById.get(moleculeId);
+          if (!molecule) {
+            continue;
+          }
+
+          const res = resultByLinkId.get(linkId);
+          trackEvent("user:decrement:stoichiometry:inventory_stock", {
+            ...getStoichiometryLinkAnalyticsProperties(data.id, molecule),
+            inventoryItemGlobalId,
+            inventoryLinkId: linkId,
+            success: res?.success === true,
+            errorMessage:
+              res?.success === true
+                ? null
+                : res?.errorMessage ?? "Failed to update inventory stock.",
+          });
+        }
+
         await queryClient.invalidateQueries({
           queryKey: stoichiometryQueryKeys.all,
         });
@@ -646,6 +705,7 @@ export function useEditableStoichiometryTable({
       onStoichiometryRefreshed,
       queryClient,
       subSampleQuantitiesByGlobalId,
+      trackEvent,
     ],
   );
 
