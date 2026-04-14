@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import EditableStoichiometryDialogSection from "@/tinyMCE/stoichiometry/dialog/EditableStoichiometryDialogSection";
 import type { RefreshedStoichiometry } from "@/tinyMCE/stoichiometry/useEditableStoichiometryTable";
 
@@ -36,6 +36,7 @@ const mockUpdateInventoryStock = vi.fn();
 const mockUseEditableStoichiometryTable = vi.fn<
   (args: MockUseEditableStoichiometryTableArgs) => MockEditableStoichiometryTableResult
 >();
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
 vi.mock("@/tinyMCE/stoichiometry/useEditableStoichiometryTable", () => ({
   useEditableStoichiometryTable: ({
@@ -98,6 +99,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTable", async () => {
 describe("EditableStoichiometryDialogSection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     mockUseEditableStoichiometryTable.mockImplementation(
       ({ onStoichiometryRefreshed }: MockUseEditableStoichiometryTableArgs) => {
@@ -137,6 +139,10 @@ describe("EditableStoichiometryDialogSection", () => {
         };
       },
     );
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it("passes a stoichiometry refresh callback to the hook", () => {
