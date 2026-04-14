@@ -199,9 +199,6 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
       setDeletedDate(invRecord.getDeletedDate().getTime());
     }
     setIconId(invRecord.getIconId());
-    if (invRecord.getQuantityInfo() != null) {
-      setQuantity(new ApiQuantityInfo(invRecord));
-    }
     setApiTagInfo(invRecord.getTagMetaData());
     setType(ApiInventoryRecordType.valueOf(invRecord.getType().toString()));
     setSharingMode(ApiInventorySharingMode.valueOf(invRecord.getSharingMode().toString()));

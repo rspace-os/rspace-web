@@ -33,6 +33,8 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
   private static final String COM_ID = "com_id";
   private static final String ECAT_COMM = "ecat_comm";
   private static final String FIELD = "Field";
+  private static final String INVENTORY_ENTITY_FIELD = "InventoryEntityField";
+  private static final String SUB_SAMPLE = "SubSample";
   private @Autowired SessionFactory sessionFactory;
   private @Autowired UserDao userDao;
 
@@ -161,7 +163,6 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
   }
 
   private void deleteInventoryItems(Long userId, Session session) {
-
     /* start with baskets deletion */
     execute(
         userId,
@@ -202,16 +203,16 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
           session,
           format(
               "delete sfRelTable from %s_AUD sfRelTable left join InventoryEntityField sf on"
-                  + " sfRelTable.sampleField_id = sf.id left join Sample s on sf.sample_id=s.id"
-                  + " where s.owner_id = :id",
+                  + " sfRelTable.inventoryEntityField_id = sf.id left join Sample s on"
+                  + " sf.sample_id=s.id where s.owner_id = :id",
               table));
       execute(
           userId,
           session,
           format(
               "delete sfRelTable from %s sfRelTable left join InventoryEntityField sf on"
-                  + " sfRelTable.sampleField_id = sf.id left join Sample s on sf.sample_id=s.id"
-                  + " where s.owner_id = :id",
+                  + " sfRelTable.inventoryEntityField_id = sf.id left join Sample s on"
+                  + " sf.sample_id=s.id where s.owner_id = :id",
               table));
     }
 
@@ -229,8 +230,8 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
             INVENTORY_FILE,
             BARCODE,
             DIGITAL_OBJECT_IDENTIFIER,
-            "InventoryEntityField",
-            "SubSample");
+            INVENTORY_ENTITY_FIELD,
+            SUB_SAMPLE);
     for (String table : sampleRelatedTables) {
       execute(
           userId,
@@ -254,8 +255,75 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     execute(userId, session, "delete from Sample_AUD where owner_id = :id");
     execute(userId, session, "delete from Sample where owner_id = :id");
 
-    /* start container deletion */
+    /* start Instrument deletion */
+    // delete Instrument field connected entities
+    List<String> instrumentFieldRelatedTables = toList(INVENTORY_FILE);
+    for (String table : instrumentFieldRelatedTables) {
+      execute(
+          userId,
+          session,
+          format(
+              "delete sfRelTable from %s_AUD sfRelTable left join InventoryEntityField sf on"
+                  + " sfRelTable.inventoryEntityField_id = sf.id"
+                  + " where s.owner_id = :id",
+              table));
+      execute(
+          userId,
+          session,
+          format(
+              "delete sfRelTable from %s sfRelTable left join InventoryEntityField sf on"
+                  + " sfRelTable.inventoryEntityField_id = sf.id"
+                  + " where s.owner_id = :id",
+              table));
+    }
+    // set instrument field FKs to null before deleting
+    execute(
+        userId,
+        session,
+        "update InventoryEntityField sf left join InstrumentEntity s"
+            + " on sf.instrumentEntity_id = s.id"
+            + " set templateField_id = NULL where s.owner_id=:id");
 
+    // delete instrument-connected entities
+    List<String> instrumentRelatedTables =
+        toList(
+            EXTRA_FIELD,
+            INVENTORY_FILE,
+            BARCODE,
+            DIGITAL_OBJECT_IDENTIFIER,
+            INVENTORY_ENTITY_FIELD);
+    for (String table : instrumentRelatedTables) {
+      execute(
+          userId,
+          session,
+          format(
+              "delete instrConnTable from %s_AUD instrConnTable left join InstrumentEntity s on "
+                  + " instrConnTable.instrumentEntity_id=s.id where s.owner_id = :id",
+              table));
+      execute(
+          userId,
+          session,
+          format(
+              "delete instrConnTable from %s instrConnTable left join InstrumentEntity s "
+                  + " on instrConnTable.instrumentEntity_id=s.id "
+                  + " where s.owner_id = :id",
+              table));
+    }
+
+    // set sample template FKs to null before deleting samples
+    execute(
+        userId,
+        session,
+        "update InstrumentEntity set instrumentTemplate_id = NULL where owner_id=:id");
+    execute(
+        userId,
+        session,
+        "update InstrumentEntity_AUD set instrumentTemplate_id = NULL where owner_id=:id");
+    execute(userId, session, "delete from InstrumentEntity_AUD where owner_id = :id");
+    execute(userId, session, "delete from InstrumentEntity where owner_id = :id");
+    /* end Instrument deletion */
+
+    /* start container deletion */
     // reset parent locations before removing locations, but just for containers as subsamples are
     // deleted at this point
     execute(userId, session, "update Container set parentLocation_id = NULL where owner_id = :id");

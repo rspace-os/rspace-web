@@ -277,6 +277,7 @@
       - Add instrumentEntity_id column + FK
       - Make sample_id nullable
       - Add deleteOnInstrumentUpdate column
+      - drop and recreate foreignkey to InventoryEntityField
   -->
   <changeSet id="RSDEV-1062-inventoryEntityField-2026-04-14" author="nico">
     <!-- Add instrumentEntity_id to main table -->
@@ -304,19 +305,32 @@
       ALTER TABLE rspace.InventoryEntityField MODIFY sample_id bigint NULL;
     </sql>
 
-
     <!-- Add deleteOnInstrumentUpdate column (only on main table) -->
     <addColumn tableName="InventoryEntityField" schemaName="rspace">
       <column name="deleteOnInstrumentUpdate" type="bit" defaultValueNumeric="0">
         <constraints nullable="false"/>
       </column>
     </addColumn>
+
+    <!-- Drop old foreign key from InventoryEntityField -->
+    <dropForeignKeyConstraint
+      constraintName="FK_3y0km9bpfi2oxanow35t16fdq"
+      baseTableName="InventoryEntityField" />
+    <!-- Add new foreign key on InventoryEntityField.templateField_id -->
+    <addForeignKeyConstraint
+      constraintName="FK_templField_to_InvEntityField"
+      baseTableName="InventoryEntityField"
+      baseColumnNames="templateField_id"
+      referencedTableName="InventoryEntityField"
+      referencedColumnNames="id" />
+
   </changeSet>
+
 
   <!--
       ChangeSet 5: Add instrumentEntity_id + FK to all InventoryRecordConnectedEntity tables
-      (Barcode, BasketItem, DigitalObjectIdentifier, ExtraField, InventoryFile,
-      MaterialUsage, StoichiometryInventoryLink)
+      (Barcode, BasketItem, DigitalObjectIdentifier, ExtraField, InventoryFile (for this dropping
+      and recreating the FK as well), MaterialUsage, StoichiometryInventoryLink)
   -->
   <changeSet id="RSDEV-1062-inventoryConnectedEntities-2026-04-14" author="nico">
 
@@ -386,6 +400,31 @@
       baseColumnNames="instrumentEntity_id"
       referencedTableName="InstrumentEntity"
       referencedColumnNames="id" />
+    <!-- Drop old foreign key from InventoryFile -->
+    <dropForeignKeyConstraint
+      constraintName="FK_qy05jb7phinbki3tip3q5okdj"
+      baseTableName="InventoryFile" />
+    <!-- Add new foreign key on InventoryFile.sampleField_id -->
+    <addForeignKeyConstraint
+      constraintName="FK_InvFile_to_InventoryEntityField"
+      baseTableName="InventoryFile"
+      baseColumnNames="sampleField_id"
+      referencedTableName="InventoryEntityField"
+      referencedColumnNames="id" />
+    <!-- Rename sampleField_id to inventoryEntityField_id -->
+    <renameColumn
+      tableName="InventoryFile"
+      schemaName="rspace"
+      oldColumnName="sampleField_id"
+      newColumnName="inventoryEntityField_id"
+      columnDataType="bigint" />
+    <renameColumn
+      tableName="InventoryFile_AUD"
+      schemaName="rspace"
+      oldColumnName="sampleField_id"
+      newColumnName="inventoryEntityField_id"
+      columnDataType="bigint"/>
+
 
     <!-- MaterialUsage + AUDIT -->
     <addColumn tableName="MaterialUsage" schemaName="rspace">
@@ -430,7 +469,8 @@
         <constraints nullable="false"/>
       </column>
     </addColumn>
-
+    <dropColumn tableName="Container" schemaName="rspace" columnName="quantityNumericValue" />
+    <dropColumn tableName="Container" schemaName="rspace" columnName="quantityUnitId" />
     <!-- Container_AUD table -->
     <addColumn tableName="Container_AUD" schemaName="rspace">
       <column name="canStoreInstruments" type="bit" defaultValueNumeric="1">
@@ -440,6 +480,8 @@
         <constraints nullable="false"/>
       </column>
     </addColumn>
+    <dropColumn tableName="Container_AUD" schemaName="rspace" columnName="quantityNumericValue" />
+    <dropColumn tableName="Container_AUD" schemaName="rspace" columnName="quantityUnitId" />
   </changeSet>
 
 
