@@ -642,7 +642,7 @@ export function useEditableStoichiometryTable({
 
           const res = resultByLinkId.get(linkId);
           trackEvent("user:decrement:stoichiometry:inventory_stock", {
-            ...getStoichiometryLinkAnalyticsProperties(data.id, molecule),
+            ...getStoichiometryLinkAnalyticsProperties(data.id, stoichiometryRevision, molecule),
             inventoryItemGlobalId,
             inventoryLinkId: linkId,
             success: res?.success === true,
