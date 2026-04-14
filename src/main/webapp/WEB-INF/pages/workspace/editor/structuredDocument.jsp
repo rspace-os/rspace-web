@@ -95,7 +95,7 @@
   <script src="<c:url value='/ui/dist/structuredDocumentToolbar.js'/>"></script>
   <script src="<c:url value='/ui/dist/fileTreeToolbar.js'/>"></script>
   <script src="<c:url value='/ui/dist/tinymceSidebarInfo.js'/>"></script>
-  <script src="<c:url value='/ui/dist/internalLink.js'/>"></script>
+  <script src="<c:url value='/ui/dist/InternalLink.js'/>"></script>
   <script src="<c:url value='/ui/dist/materialsListing.js'/>"></script>
     <script src="<c:url value='/ui/dist/externalWorkFlows.js'/>"></script>
     <script src="<c:url value='/ui/dist/jupyterNotebooks.js'/>"></script>

@@ -78,7 +78,12 @@ describe("StoichiometryTable", () => {
 
     render(
       <StoichiometryTableControllerProvider value={controller}>
-        <StoichiometryTable editable stoichiometryId={3} stoichiometryRevision={1} />
+        <StoichiometryTable
+          editable
+          stoichiometryId={3}
+          stoichiometryRevision={1}
+          activeChemId={123}
+        />
       </StoichiometryTableControllerProvider>,
     );
 

@@ -26,6 +26,7 @@ export type StandaloneDialogInnerProps = {
   open: boolean;
   onClose: () => void;
   chemId: number | null;
+  autoCreateTableOnOpen?: boolean;
   recordId: number;
   stoichiometryId: number | undefined;
   stoichiometryRevision: number | undefined;
@@ -45,6 +46,7 @@ export default function StoichiometryDialog({
   open,
   onClose,
   chemId,
+  autoCreateTableOnOpen = false,
   recordId,
   stoichiometryId,
   stoichiometryRevision,
@@ -162,6 +164,25 @@ export default function StoichiometryDialog({
       },
     );
   };
+
+  React.useEffect(() => {
+    if (
+      actuallyOpen &&
+      currentStoichiometry === null &&
+      autoCreateTableOnOpen &&
+      !isRequestInFlight &&
+      !hasCalculateError
+    ) {
+      handleCalculate();
+    }
+  }, [
+    actuallyOpen,
+    currentStoichiometry,
+    autoCreateTableOnOpen,
+    isRequestInFlight,
+    hasCalculateError,
+    handleCalculate,
+  ]);
 
   const handleCloseWithoutTable = () => {
     if (isRequestInFlight) {
@@ -281,6 +302,7 @@ export default function StoichiometryDialog({
         >
           <EditableStoichiometryDialogSection
             currentStoichiometry={currentStoichiometry}
+            chemId={chemId}
             onClose={onClose}
             onSave={onSave}
             onDelete={onDelete}
