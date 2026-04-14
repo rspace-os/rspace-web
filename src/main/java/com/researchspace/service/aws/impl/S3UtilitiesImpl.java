@@ -164,6 +164,55 @@ public class S3UtilitiesImpl implements S3Utilities {
     }
   }
 
+  @Override
+  public S3FolderContentItem getObjectDetails(String path) {
+    if (StringUtils.isBlank(path)) {
+      return new S3FolderContentItem("", true, null, null);
+    }
+    try {
+      HeadObjectRequest headObjectRequest =
+          HeadObjectRequest.builder().bucket(s3BucketName).key(path).build();
+      software.amazon.awssdk.services.s3.model.HeadObjectResponse response =
+          s3Client.headObject(headObjectRequest);
+      String fileName = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
+      return new S3FolderContentItem(
+          fileName, false, response.contentLength(), response.lastModified());
+    } catch (NoSuchKeyException e) {
+      // It might be a folder
+      String folderPrefix = getFolderPrefixToQuery(path);
+      ListObjectsV2Request listRequest =
+          ListObjectsV2Request.builder()
+              .bucket(s3BucketName)
+              .prefix(folderPrefix)
+              .delimiter("/")
+              .maxKeys(1)
+              .build();
+      ListObjectsV2Response listResponse = s3Client.listObjectsV2(listRequest);
+      if (!listResponse.commonPrefixes().isEmpty()
+          || !listResponse.contents().isEmpty()
+          || isFolderPlaceholderExists(path)) {
+        String folderName = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
+        return new S3FolderContentItem(folderName, true, null, null);
+      }
+      return null;
+    } catch (Exception e) {
+      log.error("Error while getting object details for bucket {} and path {}", s3BucketName, path);
+      throw e;
+    }
+  }
+
+  private boolean isFolderPlaceholderExists(String path) {
+    try {
+      String folderKey = path.endsWith("/") ? path : path + "/";
+      HeadObjectRequest headObjectRequest =
+          HeadObjectRequest.builder().bucket(s3BucketName).key(folderKey).build();
+      s3Client.headObject(headObjectRequest);
+      return true;
+    } catch (NoSuchKeyException e) {
+      return false;
+    }
+  }
+
   @NotNull
   private String getFolderPrefixToQuery(String folderPath) {
     if (!folderPath.isEmpty() && !folderPath.endsWith("/")) {

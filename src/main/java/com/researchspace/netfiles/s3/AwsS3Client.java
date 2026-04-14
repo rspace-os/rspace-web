@@ -8,6 +8,7 @@ import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
 import com.researchspace.netfiles.NfsFileTreeOrderType;
 import com.researchspace.netfiles.NfsFolderDetails;
+import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
@@ -18,7 +19,6 @@ import java.net.MalformedURLException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 
 @Slf4j
@@ -64,16 +64,27 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
   }
 
   private static String stripStartAndEndSlashFromPath(String path) {
-    path = Strings.CS.removeStart(path, "/");
-    path = Strings.CS.removeEnd(path, "/");
+    if (path == null) {
+      return "";
+    }
+    while (path.startsWith("/")) {
+      path = path.substring(1);
+    }
+    while (path.endsWith("/")) {
+      path = path.substring(0, path.length() - 1);
+    }
     return path;
   }
 
   private String getFileNameFromPath(String path) {
-    if (path.lastIndexOf('/') == -1) {
-      return path;
+    if (path == null || path.isEmpty()) {
+      return "";
     }
-    return StringUtils.substringAfterLast(path, "/");
+    String stripped = stripStartAndEndSlashFromPath(path);
+    if (stripped.lastIndexOf('/') == -1) {
+      return stripped;
+    }
+    return StringUtils.substringAfterLast(stripped, "/");
   }
 
   protected NfsFileTreeNode getNodeFromS3Item(
@@ -104,13 +115,63 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
 
   @Override
   public NfsFileDetails queryForNfsFile(NfsTarget nfsTarget) {
-
+    String path = stripStartAndEndSlashFromPath(nfsTarget.getPath());
+    S3FolderContentItem item = s3Utilities.getObjectDetails(path);
+    if (item != null && !item.isFolder()) {
+      NfsFileDetails details = new NfsFileDetails(item.getName());
+      details.setFileSystemFullPath(path);
+      details.setFileSystemParentPath(getParentPath(path));
+      details.setSize(item.getSizeInBytes());
+      return details;
+    }
     return null;
   }
 
   @Override
   public NfsFolderDetails queryForNfsFolder(NfsTarget nfsTarget) throws IOException {
+    String path = stripStartAndEndSlashFromPath(nfsTarget.getPath());
+    S3FolderContentItem item = s3Utilities.getObjectDetails(path);
+    if (item != null && item.isFolder()) {
+      NfsFolderDetails folderDetails = new NfsFolderDetails(item.getName());
+      folderDetails.setFileSystemFullPath(path);
+      folderDetails.setFileSystemParentPath(getParentPath(path));
+
+      List<S3FolderContentItem> contents = s3Utilities.listFolderContents(path);
+      for (S3FolderContentItem contentItem : contents) {
+        NfsResourceDetails resource = getNfsResourceDetailsFromContentItem(contentItem, path);
+        folderDetails.getContent().add(resource);
+      }
+      return folderDetails;
+    }
     return null;
+  }
+
+  @NotNull
+  private static NfsResourceDetails getNfsResourceDetailsFromContentItem(
+      S3FolderContentItem contentItem, String path) {
+    NfsResourceDetails resource;
+    String fullPath = path.isEmpty() ? contentItem.getName() : path + "/" + contentItem.getName();
+    if (contentItem.isFolder()) {
+      resource = new NfsFolderDetails(contentItem.getName());
+    } else {
+      NfsFileDetails fileDetails = new NfsFileDetails(contentItem.getName());
+      fileDetails.setSize(contentItem.getSizeInBytes());
+      resource = fileDetails;
+    }
+    resource.setFileSystemFullPath(fullPath);
+    resource.setFileSystemParentPath(path);
+    return resource;
+  }
+
+  private static String getParentPath(String path) {
+    if (StringUtils.isBlank(path)) {
+      return "";
+    }
+    String stripped = stripStartAndEndSlashFromPath(path);
+    if (!stripped.contains("/")) {
+      return "";
+    }
+    return stripped.substring(0, stripped.lastIndexOf('/'));
   }
 
   @Override

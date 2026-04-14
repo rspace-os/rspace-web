@@ -49,6 +49,14 @@ public interface S3Utilities {
   List<S3FolderContentItem> listFolderContents(String folderPath);
 
   /**
+   * Gets details for a single item in S3.
+   *
+   * @param path the path to the item
+   * @return S3FolderContentItem or null if not found
+   */
+  S3FolderContentItem getObjectDetails(String path);
+
+  /**
    * Deletes an object from s3 using the aws sdk, this is a blocking method and wont return until it
    * completes.
    *

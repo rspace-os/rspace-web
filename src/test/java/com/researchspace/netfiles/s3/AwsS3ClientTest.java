@@ -4,17 +4,31 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
+import com.researchspace.netfiles.NfsFolderDetails;
+import com.researchspace.netfiles.NfsResourceDetails;
+import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
 public class AwsS3ClientTest {
@@ -78,5 +92,102 @@ public class AwsS3ClientTest {
     assertFalse(child.getIsFolder());
   }
 
-  // TODO download test
+  @Test
+  public void testQueryNfsFileForDownload() throws IOException {
+    String testPath = "/test/file.txt";
+    String expectedS3Path = "test/file.txt";
+
+    when(s3Utilities.isFileInS3("", expectedS3Path)).thenReturn(true);
+    doAnswer(
+            invocation -> {
+              File file = invocation.getArgument(1);
+              FileUtils.writeStringToFile(file, "test content", StandardCharsets.UTF_8);
+              return null;
+            })
+        .when(s3Utilities)
+        .downloadFromS3(eq(expectedS3Path), any(File.class));
+
+    NfsFileDetails details = client.queryNfsFileForDownload(new NfsTarget(testPath));
+
+    assertNotNull(details);
+    assertEquals("file.txt", details.getName());
+    try (InputStream is = details.getRemoteInputStream()) {
+      assertNotNull(is);
+      String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+      assertEquals("test content", content);
+    }
+    verify(s3Utilities).isFileInS3("", expectedS3Path);
+    verify(s3Utilities).downloadFromS3(eq(expectedS3Path), any(File.class));
+  }
+
+  @Test
+  public void testQueryNfsFileForDownloadFileNotFound() {
+    String testPath = "non-existent.txt";
+    NfsTarget target = new NfsTarget(testPath);
+
+    when(s3Utilities.isFileInS3("", testPath)).thenReturn(false);
+    assertThrows(IllegalArgumentException.class, () -> client.queryNfsFileForDownload(target));
+  }
+
+  @Test
+  public void testQueryNfsFileForDownloadWithLeadingSlashes() throws IOException {
+    String testPath = "//leading/slashes.txt/";
+    NfsTarget target = new NfsTarget(testPath);
+    String expectedS3Path = "leading/slashes.txt";
+
+    when(s3Utilities.isFileInS3("", expectedS3Path)).thenReturn(true);
+
+    NfsFileDetails details = client.queryNfsFileForDownload(target);
+
+    assertNotNull(details);
+    assertEquals("slashes.txt", details.getName());
+    verify(s3Utilities).isFileInS3("", expectedS3Path);
+  }
+
+  @Test
+  public void testQueryForNfsFile() {
+    String testPath = "test/file.txt";
+    S3FolderContentItem item = new S3FolderContentItem("file.txt", false, 100L, Instant.now());
+    when(s3Utilities.getObjectDetails("test/file.txt")).thenReturn(item);
+
+    NfsFileDetails details = client.queryForNfsFile(new NfsTarget(testPath));
+
+    assertNotNull(details);
+    assertEquals("file.txt", details.getName());
+    assertEquals("test/file.txt", details.getFileSystemFullPath());
+    assertEquals("test", details.getFileSystemParentPath());
+    assertEquals(100L, details.getSize());
+  }
+
+  @Test
+  public void testQueryForNfsFolder() throws IOException {
+    String testPath = "test/folder";
+    S3FolderContentItem folderItem = new S3FolderContentItem("folder", true, null, null);
+    when(s3Utilities.getObjectDetails("test/folder")).thenReturn(folderItem);
+
+    S3FolderContentItem file1 = new S3FolderContentItem("file1.txt", false, 50L, Instant.now());
+    S3FolderContentItem subfolder = new S3FolderContentItem("subfolder", true, null, null);
+    when(s3Utilities.listFolderContents("test/folder")).thenReturn(List.of(file1, subfolder));
+
+    NfsFolderDetails details = client.queryForNfsFolder(new NfsTarget(testPath));
+
+    assertNotNull(details);
+    assertEquals("folder", details.getName());
+    assertEquals("test/folder", details.getFileSystemFullPath());
+    assertEquals("test", details.getFileSystemParentPath());
+    assertEquals(2, details.getContent().size());
+
+    NfsResourceDetails res1 = details.getContent().get(0);
+    assertEquals("file1.txt", res1.getName());
+    assertEquals("test/folder/file1.txt", res1.getFileSystemFullPath());
+    assertEquals("test/folder", res1.getFileSystemParentPath());
+    assertTrue(res1 instanceof NfsFileDetails);
+    assertEquals(50L, res1.getSize());
+
+    NfsResourceDetails res2 = details.getContent().get(1);
+    assertEquals("subfolder", res2.getName());
+    assertEquals("test/folder/subfolder", res2.getFileSystemFullPath());
+    assertEquals("test/folder", res2.getFileSystemParentPath());
+    assertTrue(res2 instanceof NfsFolderDetails);
+  }
 }
