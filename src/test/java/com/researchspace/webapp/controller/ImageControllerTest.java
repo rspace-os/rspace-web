@@ -8,8 +8,8 @@ import static org.mockito.Mockito.when;
 import com.researchspace.core.testutil.JavaxValidatorTest;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
+import com.researchspace.files.service.FileStore;
 import com.researchspace.model.EcatDocumentFile;
-import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.IMediaFactory;
@@ -39,6 +39,7 @@ public class ImageControllerTest extends JavaxValidatorTest {
   @Mock UserManager usrMgr;
   @Mock RecordManager recordMgr;
   @Mock BaseRecordManager baseRecordManager;
+  @Mock FileStore fStore;
   @Mock IMediaFactory mediaFactory;
   @Mock DocumentConversionService docConverter;
   @InjectMocks private ImageController imgController;
