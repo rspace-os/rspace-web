@@ -49,6 +49,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
   private @Autowired DeletedUserResourcesListHelper deletedUserResourcesHelper;
 
   private @Autowired @Qualifier("formTransferService") TransferService formTransferService;
+  private @Autowired @Qualifier("templateTransferService") TransferService templateTransferService;
 
   @Override
   public ServiceOperationResult<User> removeUser(
@@ -63,6 +64,12 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     if (saveResourcesListError.isPresent()) {
       return new ServiceOperationResult<>(null, false, saveResourcesListError.get());
     }
+
+    //    List<BaseRecord> sharedRecords = recordGroupSharingDao.getTemplatesSharedByUser(toDelete);
+    //    if (!sharedRecords.isEmpty()) {
+    //      System.out.println("@@@ We probably want to deal with some shared stuff");
+    //    }
+    templateTransferService.transferOwnership(toDelete, subject);
 
     if (formDao.hasUserPublishedFormsUsedInOtherRecords(toDelete)) {
       formTransferService.transferOwnership(toDelete, subject);

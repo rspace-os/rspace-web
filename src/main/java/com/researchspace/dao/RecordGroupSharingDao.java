@@ -8,6 +8,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -91,6 +92,24 @@ public interface RecordGroupSharingDao extends GenericDao<RecordGroupSharing, Lo
    * @return
    */
   List<BaseRecord> getSharedTemplatesWithUser(User u);
+
+  /**
+   * Gets all templates shared from a specific user.
+   *
+   * @param u user
+   * @return
+   */
+  List<BaseRecord> getTemplatesSharedByUser(User u);
+
+  /**
+   * Transfer a list of template documents from one user to another
+   *
+   * @param originalOwner - user who previously owned the forms
+   * @param newOwner - user that the ownership of those forms will be transferred to
+   * @param templateIds - list of ids of the template documents being transferred
+   */
+  void transferOwnershipOfTemplates(
+      User originalOwner, User newOwner, List<Long> templateIds, Folder destination);
 
   ISearchResults<RecordGroupSharing> listAllPublishedRecordsForInternet(
       PaginationCriteria<RecordGroupSharing> pcg);

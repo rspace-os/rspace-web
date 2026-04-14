@@ -17,6 +17,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserGroup;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -42,6 +44,8 @@ import org.springframework.stereotype.Repository;
 @Repository("recordGroupSharingDao")
 public class RecordGroupSharingDaoHibernateImpl
     extends GenericDaoHibernate<RecordGroupSharing, Long> implements RecordGroupSharingDao {
+
+  private String DELETED_SUFFIX = "(Deleted)";
 
   public RecordGroupSharingDaoHibernateImpl() {
     super(RecordGroupSharing.class);
@@ -184,6 +188,125 @@ public class RecordGroupSharingDaoHibernateImpl
     or.add(Subqueries.propertyIn("sharee.id", subquery));
     query.add(or);
     return query;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public List<BaseRecord> getTemplatesSharedByUser(User user) {
+    System.out.println("@@@ Getting shared records from user: " + user.getUsername());
+    List<RecordGroupSharing> sharedRecords = getRecordsSharedByUser(user);
+    System.out.println("@@@ Found this many shared records: " + sharedRecords.size());
+    List<BaseRecord> templates =
+        sharedRecords.stream()
+            .map(RecordGroupSharing::getShared)
+            .filter(b -> b.hasType(RecordType.TEMPLATE))
+            .collect(toList());
+    System.out.println("@@@ Which yields this many templates: " + templates.size());
+    return templates;
+  }
+
+  public void transferOwnershipOfTemplates(
+      User originalOwner, User newOwner, List<Long> templateIds, Folder destination) {
+    System.out.println("@@@ About to transfer templates with IDs: " + templateIds);
+    System.out.println(
+        "@@@ To destination: " + destination.getId() + " : " + destination.getName());
+    // Need to consider:  BaseRecord; RecordGroupSharing
+    Query<?> query;
+
+    query =
+        getSession()
+            .createQuery(
+                "UPDATE RecordGroupSharing rgs SET sharedBy=:newOwner WHERE"
+                    + " sharedBy.id IN :ids")
+            .setParameter("newOwner", newOwner)
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+    System.out.println("@@@ Transferred RGS");
+
+    //    query =
+    //        getSession()
+    //            .createQuery(
+    //                "UPDATE BaseRecord b SET owner=:newOwner,"
+    //                    + " originalCreatorUsername=:createdByWithDeleted WHERE id IN :ids")
+    //            .setParameter("newOwner", newOwner)
+    //            .setParameter("createdByWithDeleted", originalOwner.getUsername() + "(Deleted)")
+    //            .setParameter("ids", templateIds);
+    //    query.executeUpdate();
+    //    System.out.println("@@@ Transferred base record");
+
+    String deletedUsername = originalOwner.getUsername() + "(Deleted)";
+    query =
+        getSession()
+            .createQuery("UPDATE BaseRecord b SET owner=:newOwner WHERE id IN :ids")
+            .setParameter("newOwner", newOwner)
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+    System.out.println("@@@ Transferred base record");
+    query =
+        getSession()
+            .createQuery(
+                "UPDATE BaseRecord b SET originalCreatorUsername=:createdByWithDeleted WHERE id IN"
+                    + " :ids AND originalCreatorUsername=:originalName")
+            .setParameter("createdByWithDeleted", deletedUsername)
+            .setParameter("originalName", originalOwner.getUsername())
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+    System.out.println("@@@ Changed base record original creator user names");
+    query =
+        getSession()
+            .createQuery(
+                "UPDATE BaseRecord b SET editInfo.createdBy=:createdByWithDeleted WHERE id IN :ids"
+                    + " AND editInfo.createdBy=:originalName")
+            .setParameter("createdByWithDeleted", deletedUsername)
+            .setParameter("originalName", originalOwner.getUsername())
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+    System.out.println("@@@ Changed base record created by user names");
+    query =
+        getSession()
+            .createQuery(
+                "UPDATE BaseRecord b SET editInfo.modifiedBy=:createdByWithDeleted WHERE id IN :ids"
+                    + " AND editInfo.modifiedBy=:originalName")
+            .setParameter("createdByWithDeleted", deletedUsername)
+            .setParameter("originalName", originalOwner.getUsername())
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+    System.out.println("@@@ Changed base record created by user names");
+
+    query =
+        getSession()
+            .createNativeQuery(
+                "UPDATE BaseRecord_AUD b SET owner_id=:newOwner_id, createdBy=:createdByWithDeleted"
+                    + " WHERE id IN :ids")
+            .setParameter("newOwner_id", newOwner.getId())
+            .setParameter("createdByWithDeleted", deletedUsername)
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+    System.out.println("@@@ Transferred base record audit");
+
+    Query<RecordToFolder> query2 =
+        getSession()
+            .createQuery(
+                "from RecordToFolder where record.id IN :ids AND folder.owner=:originalOwner",
+                RecordToFolder.class);
+    query2.setParameter("ids", templateIds);
+    query2.setParameter("originalOwner", originalOwner);
+    List<RecordToFolder> rtfs = query2.list();
+    System.out.println("@@@ This many records 2 queries: " + rtfs.size());
+
+    // Note the format of the below query, with the nested select.  This is because
+    // MariaDB was giving an exception when attempting to simply use a WHERE clause
+    // with two parameters...
+    query =
+        getSession()
+            .createQuery(
+                "UPDATE RecordToFolder rtf SET folder=:destination WHERE id IN (SELECT id FROM"
+                    + " RecordToFolder WHERE folder.owner=:originalOwner AND record.id IN :ids)")
+            .setParameter("destination", destination)
+            .setParameter("ids", templateIds)
+            .setParameter("originalOwner", originalOwner);
+    query.executeUpdate();
+    System.out.println("@@@ Changed where template lives");
   }
 
   public List<String> getTagsMetaDataForRecordsSharedWithUser(User subject, String tagFilter) {
@@ -431,6 +554,18 @@ public class RecordGroupSharingDaoHibernateImpl
     }
   }
 
+  public List<RecordGroupSharing> getRecordsSharedByUser(User user) {
+    Session session = getSession();
+    Query<RecordGroupSharing> query =
+        session
+            .createQuery(
+                " from RecordGroupSharing rgs where rgs.shared.owner.id=:userId ",
+                RecordGroupSharing.class)
+            .setParameter("userId", user.getId());
+    List<RecordGroupSharing> rc = query.list();
+    return rc;
+  }
+
   @Override
   public List<RecordGroupSharing> getRecordsSharedByUserToGroup(User user, Group grp) {
     Session session = getSession();
@@ -441,7 +576,7 @@ public class RecordGroupSharingDaoHibernateImpl
                     + " and rgs.sharee.id=:grpId",
                 RecordGroupSharing.class)
             .setParameter("userId", user.getId())
-            .setParameter("grpId", grp.getId());
+            .setParameter("grpId", null != grp.getId() ? grp.getId() : "*");
     List<RecordGroupSharing> rc = query.list();
     return rc;
   }

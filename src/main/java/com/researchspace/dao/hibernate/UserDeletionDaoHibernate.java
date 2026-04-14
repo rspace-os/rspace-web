@@ -6,6 +6,7 @@ import static java.lang.String.format;
 import com.researchspace.dao.UserDao;
 import com.researchspace.dao.UserDeletionDao;
 import com.researchspace.model.User;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.UserDeletionPolicy;
 import java.util.LinkedHashMap;
@@ -489,7 +490,54 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     executeDeleteByRecordOwner(userId, session, "RecordGroupSharing", "shared_id");
     executeDeleteByRecordOwner(userId, session, "Notification", RECORD_ID);
 
+    System.out.println("@@@ About to get base records for user: " + userId);
+    List<BaseRecord> records =
+        session
+            .createSQLQuery("select * from BaseRecord where owner_id=:id")
+            .setParameter("id", userId)
+            .list();
+    System.out.println("@@@ got this many base records: " + records.size());
+
     execute(userId, session, "delete from BaseRecord where owner_id=:id");
+
+    System.out.println("@@@ About to get base records AGAIN for user: " + userId);
+    records =
+        session
+            .createSQLQuery("select * from BaseRecord where owner_id=:id")
+            .setParameter("id", userId)
+            .list();
+    System.out.println("@@@ NOW have this many base records: " + records.size());
+
+    System.out.println("@@@ About to get base record AUDITS for user: " + userId);
+    List<Object> baseAudits =
+        session
+            .createSQLQuery("select * from BaseRecord_AUD where owner_id=:id")
+            .setParameter("id", userId)
+            .list();
+    System.out.println("@@@ NOW have this many base record AUDITS: " + baseAudits.size());
+
+    System.out.println(
+        "@@@ About to get base record AUDITS JOINED with record audits for user: " + userId);
+    //    List<Object> recordAudits =
+    //        session
+    //            .createSQLQuery(
+    //                "select * from Record_AUD ra LEFT JOIN BaseRecord_AUD bra ON bra.id = ra.id
+    // where"
+    //                    + " owner_id=:id")
+    //            .setParameter("id", userId)
+    //            .list();
+    List<Object> recordAudits =
+        session
+            .createSQLQuery(
+                "SELECT ra.id AS ra_id, ra.REV AS ra_REV, bra.name, bra.owner_id, bra.createdBy"
+                    + " FROM Record_AUD ra LEFT JOIN BaseRecord_AUD bra ON bra.id = ra.id WHERE"
+                    + " owner_id=:id")
+            .setParameter("id", userId)
+            .list();
+    System.out.println(
+        "@@@ NOW have this many base record AUDITS JOINED with record audits: "
+            + recordAudits.size());
+
     execute(userId, session, "delete from BaseRecord_AUD where owner_id=:id");
   }
 

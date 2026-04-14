@@ -68,7 +68,8 @@ public class RevisionHistoryController extends BaseController {
       PaginationCriteria<AuditedRecord> pgCrit,
       RevisionSearchCriteria srchCrit) {
     doPaginatedRevisionList(id, model, principal, pgCrit, srchCrit, settingsKey);
-    return new ModelAndView(REVISION_HISTORY_VIEW);
+    ModelAndView modelNView = new ModelAndView(REVISION_HISTORY_VIEW);
+    return modelNView;
   }
 
   @GetMapping("/ajax/list/{recordId}")
