@@ -77,4 +77,6 @@ public class AwsS3ClientTest {
     assertEquals("1:/testTarget/test1.txt", child.getLogicPath());
     assertFalse(child.getIsFolder());
   }
+
+  // TODO download test
 }

@@ -45,6 +45,8 @@ public class NfsFactory {
 
   @Autowired private NfsPublicKeyAuthentication publicKeyAuthentication;
 
+  @Autowired private NfsRSpaceProvidedAuthentication rspaceProvidedAuthentication;
+
   @Setter(AccessLevel.PROTECTED)
   @Autowired
   private S3UtilitiesFactory s3UtilitiesFactory;
@@ -203,6 +205,9 @@ public class NfsFactory {
     }
     if (NfsAuthenticationType.PASSWORD.equals(authType)) {
       return userPasswordAuthentication;
+    }
+    if (NfsAuthenticationType.NONE.equals(authType)) {
+      return rspaceProvidedAuthentication;
     }
     return null;
   }

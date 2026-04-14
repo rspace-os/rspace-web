@@ -19,6 +19,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public class AwsS3Client extends NfsAbstractClient implements NfsClient {
@@ -50,12 +51,7 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
     String path = StringUtils.isEmpty(combinedPath) ? "" : combinedPath;
     path = stripStartAndEndSlashFromPath(path);
 
-    String rootNodeName;
-    if (path.lastIndexOf('/') != -1) {
-      rootNodeName = StringUtils.substringAfterLast(path, "/");
-    } else {
-      rootNodeName = path;
-    }
+    String rootNodeName = getFileNameFromPath(path);
     rootNode.calculateFileName(rootNodeName);
     rootNode.setNodePath(path);
 
@@ -71,6 +67,13 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
     path = Strings.CS.removeStart(path, "/");
     path = Strings.CS.removeEnd(path, "/");
     return path;
+  }
+
+  private String getFileNameFromPath(String path) {
+    if (path.lastIndexOf('/') == -1) {
+      return path;
+    }
+    return StringUtils.substringAfterLast(path, "/");
   }
 
   protected NfsFileTreeNode getNodeFromS3Item(
@@ -122,7 +125,8 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
 
     File tmpFile = File.createTempFile("downloaded", ".tmp");
     s3Utilities.downloadFromS3(pathToDownload, tmpFile);
-    NfsFileDetails nfsDetails = new NfsFileDetails("downloaded.test");
+
+    NfsFileDetails nfsDetails = new NfsFileDetails(getFileNameFromPath(pathToDownload));
     nfsDetails.setRemoteInputStream(new FileInputStream(tmpFile));
     return nfsDetails;
   }
