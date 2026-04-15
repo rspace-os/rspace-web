@@ -277,14 +277,22 @@
       - drop and recreate foreignkey to InventoryEntityField
   -->
   <changeSet id="RSDEV-1062-inventoryEntityField-2026-04-14" context="run" author="nico">
-    <!-- Add instrumentEntity_id to main table -->
+    <!-- Add instrumentEntity_id to main table and AUDIT -->
     <addColumn tableName="InventoryEntityField">
       <column name="instrumentEntity_id" type="bigint"/>
     </addColumn>
-
-    <!-- Add instrumentEntity_id to AUDIT table -->
     <addColumn tableName="InventoryEntityField_AUD">
       <column name="instrumentEntity_id" type="bigint"/>
+    </addColumn>
+
+    <!-- Add deleteOnInstrumentUpdate column  -->
+    <addColumn tableName="InventoryEntityField">
+      <column name="deleteOnInstrumentUpdate" type="bit" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="InventoryEntityField_AUD">
+      <column name="deleteOnInstrumentUpdate" type="bit"/>
     </addColumn>
 
     <!-- FK on main table -->
@@ -301,13 +309,6 @@
     <sql dbms="mysql">
       ALTER TABLE rspace.InventoryEntityField MODIFY sample_id bigint NULL;
     </sql>
-
-    <!-- Add deleteOnInstrumentUpdate column (only on main table) -->
-    <addColumn tableName="InventoryEntityField">
-      <column name="deleteOnInstrumentUpdate" type="bit" defaultValueNumeric="0">
-        <constraints nullable="false"/>
-      </column>
-    </addColumn>
 
     <!-- Drop old foreign key from InventoryEntityField -->
     <dropForeignKeyConstraint
