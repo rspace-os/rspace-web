@@ -135,7 +135,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     InventoryEntityField field =
         sessionFactory
             .getCurrentSession()
-            .createQuery("from InventoryItemField where id=:fieldId", InventoryEntityField.class)
+            .createQuery("from InventoryEntityField where id=:fieldId", InventoryEntityField.class)
             .setParameter("fieldId", fieldId)
             .getSingleResult();
     if (field == null) {
