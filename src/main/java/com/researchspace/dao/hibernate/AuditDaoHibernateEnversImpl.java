@@ -71,9 +71,16 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
     AuditReader auditReader = getAuditReader();
     String orderBy;
     if (!StringUtils.isEmpty(pgCrit.getOrderBy())) {
-      orderBy = " order by " + pgCrit.getOrderBy() + " " + pgCrit.getSortOrder();
+      // Hibernate 6 requires fully-qualified HQL paths; map logical sort field names to HQL paths
+      Map<String, String> orderByFieldMap =
+          Map.of(
+              "name", "rtf.record.editInfo.name",
+              "creationDate", "rtf.record.editInfo.creationDate",
+              "modificationDate", "rtf.record.editInfo.modificationDate");
+      String orderByField = orderByFieldMap.getOrDefault(pgCrit.getOrderBy(), pgCrit.getOrderBy());
+      orderBy = " order by " + orderByField + " " + pgCrit.getSortOrder();
     } else {
-      orderBy = " order by deletedDate " + SortOrder.DESC;
+      orderBy = " order by rtf.deletedDate " + SortOrder.DESC;
     }
 
     // Query for all user's deleted folders; we will then exclude their contents from the final

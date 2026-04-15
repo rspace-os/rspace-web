@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.AccessControl;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.Group;
@@ -206,6 +207,9 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
 
     // counting initial forms visible to 'user'
     PaginationCriteria<RSForm> pg = new PaginationCriteria<>(RSForm.class);
+    // Use id DESC so newly-created forms appear first, independent of DB insertion order
+    pg.setOrderBy("id");
+    pg.setSortOrder(SortOrder.DESC);
     FormSearchCriteria tsc = new FormSearchCriteria(PermissionType.READ);
     int userInitFormNumber = formMgr.searchForms(piUser, tsc, pg).getTotalHits().intValue();
 

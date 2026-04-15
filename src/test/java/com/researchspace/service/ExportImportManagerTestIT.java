@@ -145,6 +145,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.shiro.authz.AuthorizationException;
 import org.hibernate.HibernateException;
 import org.hibernate.query.NativeQuery;
 import org.jsoup.Jsoup;
@@ -253,8 +254,10 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     return new URI("http://a.url.com");
   }
 
-  // Ideally, should be AuthorizationException, but failing async method throws ExecutionException
-  @Test(expected = ExecutionException.class)
+  // In Spring 6, interface-level @Async is not propagated to concrete class; method runs
+  // synchronously so AuthorizationException propagates directly rather than wrapped in
+  // ExecutionException.
+  @Test(expected = AuthorizationException.class)
   public void RSPAC1129_LabAdminWithoutViewAllCannotExportGroupsWork() throws Exception {
     User userPI = createAndSaveUser(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
     User user = createAndSaveUser(getRandomAlphabeticString("user"));
@@ -2055,6 +2058,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     Folder importedFolder =
         (Folder) newDocs.stream().filter(BaseRecord::isFolder).findFirst().get();
 
+    // Reload with fields to avoid LazyInitializationException on detached entity in Hibernate 6
+    importedDoc = recordMgr.getRecordWithFields(importedDoc.getId(), user).asStrucDoc();
     String importedFieldData = importedDoc.getFirstFieldData();
 
     /* internal links should point to newly created folder and notebook, and not to old ids */

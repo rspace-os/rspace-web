@@ -131,6 +131,7 @@ public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public void updateExportListWithLinkedRecords(
       ExportRecordList exportList, IArchiveExportConfig aconfig) {
 

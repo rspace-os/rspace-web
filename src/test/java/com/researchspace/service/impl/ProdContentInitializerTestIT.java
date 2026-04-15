@@ -87,9 +87,16 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
 
     user = createAndSaveUser(getRandomAlphabeticString("any"));
     logoutAndLoginAs(user);
-    InitializedContent content = doInTransaction(() -> initializer.init(user.getId()));
+    // Run init() and assertions in the same transaction to avoid cross-transaction visibility
+    // issues with Hibernate 6 when using a non-Spring-proxy initializer.
+    // After init(), flush pending SQL then clear the first-level cache so assertions
+    // read fresh DB state (not stale in-memory entity state from the init session).
     doInTransaction(
         () -> {
+          InitializedContent content = initializer.init(user.getId());
+          long mediaImgExamplesId = content.getFolder().getMediaImgExamples().getId();
+          sessionFactory.getCurrentSession().flush();
+          sessionFactory.getCurrentSession().clear();
           assertEquals(
               4,
               folderDao
@@ -98,8 +105,7 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
                   .size()); // shared + templates + examples + media
           // 3 + 4 in chem images
           assertEquals(
-              EXPECTED_EXAMPLE_IMG_COUNT,
-              getRecordCountInFolderForUser(content.getFolder().getMediaImgExamples().getId()));
+              EXPECTED_EXAMPLE_IMG_COUNT, getRecordCountInFolderForUser(mediaImgExamplesId));
         });
   }
 
@@ -108,10 +114,15 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
 
     user = createAndSaveUser(getRandomAlphabeticString("any"));
     logoutAndLoginAs(user);
-    doInTransaction(() -> initializer.init(user.getId()));
-
+    // Run init() and assertions in the same transaction to avoid cross-transaction visibility
+    // issues with Hibernate 6 when using a non-Spring-proxy initializer.
+    // After init(), flush pending SQL then clear the first-level cache so assertions
+    // read fresh DB state (not stale in-memory entity state from the init session).
     doInTransaction(
         () -> {
+          initializer.init(user.getId());
+          sessionFactory.getCurrentSession().flush();
+          sessionFactory.getCurrentSession().clear();
           Folder imagesFolder =
               recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user);
           assertNotNull(imagesFolder);

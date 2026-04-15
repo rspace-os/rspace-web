@@ -15,13 +15,19 @@ import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.GroupSharedSnippetsFolderAppInitialiser;
 import com.researchspace.webapp.controller.MVCTestBase;
+import java.util.Collections;
 import java.util.List;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.mgt.DefaultSecurityManager;
+import org.apache.shiro.realm.Realm;
 import org.apache.shiro.subject.Subject;
+import org.apache.shiro.util.ThreadContext;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.web.WebAppConfiguration;
 
@@ -35,9 +41,27 @@ public class RunConfigWiringTestIT extends MVCTestBase {
   @Autowired private FolderManager folderManager;
   @Autowired private UserManager userManager;
 
+  @Autowired
+  @Qualifier("globalInitSysadminRealm")
+  private Realm sysadminRealm;
+
   @BeforeClass
   public static void BeforeClass() throws Exception {
     TestRunnerController.ignoreIfFastRun();
+  }
+
+  /**
+   * Override base-class reset to use a security manager that includes the GlobalInitSysadminRealm.
+   * The run-profile security manager may have other realms (e.g. ShiroRealm) that would interfere
+   * with GlobalInitSysadminAuthenticationToken authentication.
+   */
+  @Before
+  @Override
+  public void resetSecurityManager() {
+    DefaultSecurityManager sm =
+        new DefaultSecurityManager(Collections.singletonList(sysadminRealm));
+    SecurityUtils.setSecurityManager(sm);
+    ThreadContext.unbindSubject();
   }
 
   @Test

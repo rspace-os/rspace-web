@@ -37,6 +37,7 @@ public class SecurityRunProdConfig extends SecurityBaseConfig {
     }
     realms.add(apiRealm());
     realms.add(slackRealm());
+    realms.add(globalInitSysadminRealm());
 
     if (deploymentPropertyConfig.isCloud()) {
       realms.add(externalOAuthRealm());

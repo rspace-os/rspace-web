@@ -42,7 +42,7 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
     Query<Folder> q =
         getSession()
             .createQuery(
-                "from Folder f join fetch f.owner owner where owner.id=:userId and"
+                "select f from Folder f where f.owner.id=:userId and"
                     + " f.editInfo.name=:folderName and f.type like :type",
                 Folder.class);
     q.setParameter("type", "%" + RecordType.ROOT.name() + "%");
@@ -54,7 +54,8 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   public Folder getGalleryRootFolderForUser(User user) {
     Query<Folder> q =
         getSession()
-            .createQuery("from Folder where type like :type and owner.id=:id", Folder.class);
+            .createQuery(
+                "select f from Folder f where f.type like :type and f.owner.id=:id", Folder.class);
     q.setParameter("type", "%" + RecordType.ROOT_MEDIA.name() + "%");
     q.setParameter("id", user.getId());
     return getFirstResultOrNull(q);

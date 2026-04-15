@@ -88,6 +88,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
   public void setUp() throws Exception {
     super.setUp();
     mockPrincipal = piUser::getUsername;
+    logoutAndLoginAs(piUser);
   }
 
   @After

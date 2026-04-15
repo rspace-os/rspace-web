@@ -35,6 +35,7 @@ public class ShiroRealm extends RSpaceRealm implements SessionControl {
     setName(DEFAULT_USER_PASSWD_REALM); // This name must match the name in the User class's
     // getPrincipals() method
     setCredentialsMatcher(new HashedCredentialsMatcher(Sha256Hash.ALGORITHM_NAME));
+    setAuthenticationTokenClass(UsernamePasswordToken.class);
   }
 
   public void setIgnoreSession(boolean ignoreSession) {
