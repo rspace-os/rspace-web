@@ -12,11 +12,11 @@ import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
 import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiSample;
-import com.researchspace.api.v1.model.ApiSampleField;
-import com.researchspace.api.v1.model.ApiSampleField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleTemplateSearchResult;
@@ -244,7 +244,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     sampleTemplatePost
         .getFields()
         .add(createBasicApiSampleField("string", ApiFieldType.STRING, "string value"));
-    ApiSampleField radioField =
+    ApiInventoryEntityField radioField =
         createBasicApiSampleOptionsField("radio", ApiFieldType.RADIO, List.of("r2{2.2}"));
     ApiInventoryFieldDef radioDef =
         new ApiInventoryFieldDef(List.of("r1[1,1]", "r2{2.2}", "r3(=3&3)"), false);
@@ -266,14 +266,14 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertEquals(3, retrievedTemplate.getPermittedActions().size());
     assertEquals(1, retrievedTemplate.getVersion());
     assertEquals(3, retrievedTemplate.getFields().size());
-    ApiSampleField firstField = retrievedTemplate.getFields().get(0);
+    ApiInventoryEntityField firstField = retrievedTemplate.getFields().get(0);
     assertEquals("text", firstField.getName());
     assertEquals("text value", firstField.getContent());
-    ApiSampleField secondField = retrievedTemplate.getFields().get(1);
+    ApiInventoryEntityField secondField = retrievedTemplate.getFields().get(1);
     assertEquals("string", secondField.getName());
     assertEquals("string value", secondField.getContent());
     assertFalse(secondField.getMandatory());
-    ApiSampleField thirdField = retrievedTemplate.getFields().get(2);
+    ApiInventoryEntityField thirdField = retrievedTemplate.getFields().get(2);
     assertEquals("radio", thirdField.getName());
     assertEquals(null, thirdField.getContent());
     assertEquals(
@@ -309,18 +309,19 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     templateUpdates.setDefaultUnitId(RSUnitDef.GRAM.getId());
 
     // prepare fields update (delete first, modify second and third, add fourth)
-    ApiSampleField toDeleteField = new ApiSampleField();
+    ApiInventoryEntityField toDeleteField = new ApiInventoryEntityField();
     toDeleteField.setId(firstField.getId());
     toDeleteField.setDeleteFieldRequest(true);
-    ApiSampleField toModifyField = new ApiSampleField();
+    ApiInventoryEntityField toModifyField = new ApiInventoryEntityField();
     toModifyField.setId(secondField.getId());
     toModifyField.setName("updated string");
     toModifyField.setMandatory(true);
-    ApiSampleField toModifyField2 = new ApiSampleField();
+    ApiInventoryEntityField toModifyField2 = new ApiInventoryEntityField();
     toModifyField2.setId(thirdField.getId());
     toModifyField2.setDefinition(
         new ApiInventoryFieldDef(List.of("r2{2.2}", "r3(=3&3)", "r4(!4)"), false));
-    ApiSampleField newField = createBasicApiSampleField("number", ApiFieldType.NUMBER, "3.14");
+    ApiInventoryEntityField newField =
+        createBasicApiSampleField("number", ApiFieldType.NUMBER, "3.14");
     newField.setColumnIndex(1); // set it as a first field of the template
     newField.setNewFieldRequest(true);
     templateUpdates.getFields().add(toDeleteField);
@@ -499,12 +500,12 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     templateUpdates.setId(createdTemplate.getId());
     templateUpdates.setName("test template updated");
     // add a new text field
-    ApiSampleField newTextField =
+    ApiInventoryEntityField newTextField =
         createBasicApiSampleField("my text", ApiFieldType.TEXT, "default text");
     newTextField.setNewFieldRequest(true);
     templateUpdates.getFields().add(newTextField);
     // delete number field but only from future samples
-    ApiSampleField numberFieldUpdates = new ApiSampleField();
+    ApiInventoryEntityField numberFieldUpdates = new ApiInventoryEntityField();
     numberFieldUpdates.setId(createdTemplate.getFields().get(1).getId());
     numberFieldUpdates.setDeleteFieldRequest(true);
     templateUpdates.getFields().add(numberFieldUpdates);
@@ -579,13 +580,13 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     templateUpdates.setId(createdTemplate.getId());
     templateUpdates.setName("test template updated");
     // delete radio field but only for future samples
-    ApiSampleField radioFieldDeletion = new ApiSampleField();
+    ApiInventoryEntityField radioFieldDeletion = new ApiInventoryEntityField();
     radioFieldDeletion.setId(createdTemplate.getFields().get(0).getId());
     radioFieldDeletion.setDeleteFieldRequest(true);
     templateUpdates.getFields().add(radioFieldDeletion);
 
     // delete number field & delete from pre-existing samples
-    ApiSampleField numberFieldDeletion = new ApiSampleField();
+    ApiInventoryEntityField numberFieldDeletion = new ApiInventoryEntityField();
     numberFieldDeletion.setId(createdTemplate.getFields().get(1).getId());
     numberFieldDeletion.setDeleteFieldRequest(true);
     numberFieldDeletion.setDeleteFieldOnSampleUpdate(true);
@@ -632,12 +633,12 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     ApiSampleTemplatePost sampleTemplatePost = new ApiSampleTemplatePost();
     sampleTemplatePost.setName("test template");
     // add radio field
-    ApiSampleField radioField =
+    ApiInventoryEntityField radioField =
         createBasicApiSampleOptionsField("my radio", ApiFieldType.RADIO, List.of("r1"));
     ApiInventoryFieldDef radioDef = new ApiInventoryFieldDef(List.of("r1", "r2", "r3"), false);
     radioField.setDefinition(radioDef);
     sampleTemplatePost.getFields().add(radioField);
-    ApiSampleField numberField =
+    ApiInventoryEntityField numberField =
         createBasicApiSampleField("my number", ApiFieldType.NUMBER, "3.14");
     sampleTemplatePost.getFields().add(numberField);
 
@@ -666,7 +667,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     templateUpdates.setId(createdTemplate.getId());
     templateUpdates.setName("test template updated");
     // add a new option to radio field, and set it as a default
-    ApiSampleField radioFieldUpdates = new ApiSampleField();
+    ApiInventoryEntityField radioFieldUpdates = new ApiInventoryEntityField();
     radioFieldUpdates.setId(createdTemplate.getFields().get(0).getId());
     radioFieldUpdates.setName("updated radio");
     ApiInventoryFieldDef updatedRadioDef =
@@ -703,7 +704,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     ApiSample sampleUpdates = new ApiSample();
     sampleUpdates.setId(retrievedSample.getId());
     // add a new option to radio field, and set it as a default
-    ApiSampleField radioFieldUpdate = new ApiSampleField();
+    ApiInventoryEntityField radioFieldUpdate = new ApiInventoryEntityField();
     radioFieldUpdate.setId(retrievedSample.getFields().get(0).getId());
     radioFieldUpdate.setSelectedOptions(List.of("r2"));
     sampleUpdates.setFields(Collections.singletonList(radioFieldUpdate));
@@ -731,11 +732,11 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     ApiSampleTemplatePost sampleTemplatePost = new ApiSampleTemplatePost();
     sampleTemplatePost.setName("test template with radio and choice");
     // add number field
-    ApiSampleField numberField =
+    ApiInventoryEntityField numberField =
         createBasicApiSampleField("my number", ApiFieldType.NUMBER, "3.14");
     sampleTemplatePost.getFields().add(numberField);
     // add choice field
-    ApiSampleField choiceField =
+    ApiInventoryEntityField choiceField =
         createBasicApiSampleOptionsField("my choice", ApiFieldType.CHOICE, List.of("c1", "c2"));
     ApiInventoryFieldDef def = new ApiInventoryFieldDef(List.of("c1", "c2", "c3"), true);
     choiceField.setDefinition(def);
@@ -751,7 +752,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.getApiSampleTemplateById(createdTemplate.getId(), testUser);
     assertEquals(2, retrievedTemplate.getFields().size());
     assertEquals("my number", retrievedTemplate.getFields().get(0).getName());
-    ApiSampleField retrievedTemplateChoiceField = retrievedTemplate.getFields().get(1);
+    ApiInventoryEntityField retrievedTemplateChoiceField = retrievedTemplate.getFields().get(1);
     assertEquals("my choice", retrievedTemplateChoiceField.getName());
     assertEquals(
         List.of("c1", "c2", "c3"), retrievedTemplateChoiceField.getDefinition().getOptions());
@@ -780,7 +781,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     ApiSampleTemplate templateUpdates = new ApiSampleTemplate();
     templateUpdates.setId(retrievedTemplate.getId());
     // add a new option to choice field, and set it as a default
-    ApiSampleField choiceFieldUpdates = new ApiSampleField();
+    ApiInventoryEntityField choiceFieldUpdates = new ApiInventoryEntityField();
     choiceFieldUpdates.setId(retrievedTemplateChoiceField.getId());
     choiceFieldUpdates.setName("updated choice");
     ApiInventoryFieldDef updatedChoiceDef =
@@ -848,7 +849,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     ApiSample sampleUpdates = new ApiSample();
     sampleUpdates.setId(createdSample1.getId());
     // add a new option to radio field, and set it as a default
-    ApiSampleField choiceFieldUpdate = new ApiSampleField();
+    ApiInventoryEntityField choiceFieldUpdate = new ApiInventoryEntityField();
     choiceFieldUpdate.setId(retrievedSample1.getFields().get(1).getId());
     choiceFieldUpdate.setSelectedOptions(List.of("c2", "c3"));
     sampleUpdates.setFields(Collections.singletonList(choiceFieldUpdate));

@@ -12,9 +12,9 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
-import com.researchspace.api.v1.model.ApiSampleField;
-import com.researchspace.api.v1.model.ApiSampleField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -72,7 +72,7 @@ public class FieldmarkToRSpaceApiConverter {
   private static int createSampleTemplateFieldFromDTO(
       Entry<String, FieldmarkTypeExtractor> fieldDTO,
       int columnIndex,
-      List<ApiSampleField> fieldsPost) {
+      List<ApiInventoryEntityField> fieldsPost) {
     switch (fieldDTO.getValue().getSimpleTypeName()) {
       case "String":
         columnIndex = addFieldToSampleTemplate(fieldDTO.getKey(), TEXT, columnIndex, fieldsPost);
@@ -117,8 +117,8 @@ public class FieldmarkToRSpaceApiConverter {
       String name,
       ApiFieldType type,
       int columnIndex,
-      List<ApiSampleField> sampleTemplateFieldList) {
-    ApiSampleField fieldRSpace = new ApiSampleField();
+      List<ApiInventoryEntityField> sampleTemplateFieldList) {
+    ApiInventoryEntityField fieldRSpace = new ApiInventoryEntityField();
     fieldRSpace.setName(name);
     fieldRSpace.setType(type);
     fieldRSpace.setColumnIndex(columnIndex++);
@@ -175,11 +175,11 @@ public class FieldmarkToRSpaceApiConverter {
             recordDTO.getIdentifier() + " - " + recordDTO.getTimestamp());
 
     Map<String, Long> idsByFieldName = new HashMap<>();
-    for (ApiSampleField field : sampleTemplate.getFields()) {
+    for (ApiInventoryEntityField field : sampleTemplate.getFields()) {
       idsByFieldName.put(field.getName(), field.getId());
     }
 
-    List<ApiSampleField> currentFieldList = new LinkedList<>();
+    List<ApiInventoryEntityField> currentFieldList = new LinkedList<>();
     int columnIndex = 1;
     for (Entry<String, FieldmarkTypeExtractor> currentFieldDTO : recordDTO.getFields().entrySet()) {
       if (!currentFieldDTO.getValue().isDoiIdentifier()) {
@@ -205,7 +205,7 @@ public class FieldmarkToRSpaceApiConverter {
 
   private static int createSampleFieldFromDTO(
       Entry<String, FieldmarkTypeExtractor> currentFieldDTO,
-      List<ApiSampleField> currentFieldList,
+      List<ApiInventoryEntityField> currentFieldList,
       Map<String, Long> idsByFieldName,
       int columnIndex) {
     switch (currentFieldDTO.getValue().getSimpleTypeName()) {
@@ -325,8 +325,8 @@ public class FieldmarkToRSpaceApiConverter {
       String content,
       ApiFieldType type,
       int columnIndex,
-      List<ApiSampleField> sampleTemplateFieldList) {
-    ApiSampleField fieldRSpace = new ApiSampleField();
+      List<ApiInventoryEntityField> sampleTemplateFieldList) {
+    ApiInventoryEntityField fieldRSpace = new ApiInventoryEntityField();
     fieldRSpace.setDeleteFieldRequest(false);
     fieldRSpace.setDeleteFieldOnSampleUpdate(false);
     fieldRSpace.setMandatory(false);

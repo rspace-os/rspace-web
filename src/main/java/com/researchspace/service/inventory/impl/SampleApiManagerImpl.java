@@ -2,10 +2,10 @@ package com.researchspace.service.inventory.impl;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.api.v1.model.ApiSample;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
@@ -57,7 +57,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service("sampleApiManager")
-public class SampleApiManagerImpl extends InventoryApiManagerImpl implements SampleApiManager {
+public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
+    implements SampleApiManager {
 
   public static final String SAMPLE_DEFAULT_NAME = "Generic Sample";
 
@@ -135,13 +136,13 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
   }
 
   @Override
-  public Sample assertUserCanReadSampleField(Long id, User user) {
+  public Sample assertUserCanReadInventoryEntityField(Long id, User user) {
     GlobalIdentifier sampleOid = getSampleGlobalIdByFieldIdIfExists(id);
     return assertUserCanReadSample(sampleOid.getDbId(), user);
   }
 
   @Override
-  public Sample assertUserCanEditSampleField(Long id, User user) {
+  public Sample assertUserCanEditInventoryEntityField(Long id, User user) {
     GlobalIdentifier sampleOid = getSampleGlobalIdByFieldIdIfExists(id);
     return assertUserCanEditSample(sampleOid.getDbId(), user);
   }
@@ -314,7 +315,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
   }
 
   private void saveNewApiFieldsIntoSampleFields(
-      List<? extends ApiSampleField> apiFieldList,
+      List<? extends ApiInventoryEntityField> apiFieldList,
       List<InventoryEntityField> inventoryEntityFieldList,
       User user) {
 
@@ -327,7 +328,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
     }
 
     for (int i = 0; i < apiFieldList.size(); i++) {
-      ApiSampleField apiField = apiFieldList.get(i);
+      ApiInventoryEntityField apiField = apiFieldList.get(i);
       String newFieldContent = apiField.getContent();
       InventoryEntityField inventoryEntityField = inventoryEntityFieldList.get(i);
 
@@ -472,7 +473,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
 
   @Override
   @SuppressWarnings("unchecked")
-  Sample getIfExists(Long id) {
+  protected Sample getIfExists(Long id) {
     return getIfExists(id, false);
   }
 
@@ -759,8 +760,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
   }
 
   private void createFields(ApiSampleTemplatePost apiSample, Sample sample) {
-    for (ApiSampleField field : apiSample.getFields()) {
-      InventoryEntityField toAdd = apiFieldToModelFieldFactory.apiSampleFieldToModelField(field);
+    for (ApiInventoryEntityField field : apiSample.getFields()) {
+      InventoryEntityField toAdd = apiFieldToModelFieldFactory.apiInvenotryFieldToModelField(field);
       sample.addSampleField(toAdd);
     }
   }
@@ -791,10 +792,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
   private boolean createDeleteRequestedFieldsInDbSampleTemplate(
       ApiSampleWithoutSubSamples apiSample, Sample dbTemplate) {
     boolean changed = false;
-    for (ApiSampleField apiField : apiSample.getFields()) {
+    for (ApiInventoryEntityField apiField : apiSample.getFields()) {
       if (apiField.isNewFieldRequest()) {
         InventoryEntityField toAdd =
-            apiFieldToModelFieldFactory.apiSampleFieldToModelField(apiField);
+            apiFieldToModelFieldFactory.apiInvenotryFieldToModelField(apiField);
         dbTemplate.addSampleField(toAdd);
         changed = true;
       }

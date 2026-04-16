@@ -2,8 +2,8 @@ package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
@@ -102,7 +102,7 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
 
     // re-run validation with the 'fields' array, but with empty field content
     apiSamplePost.setFields(
-        Stream.generate(ApiSampleField::new).limit(6).collect(Collectors.toList()));
+        Stream.generate(ApiInventoryEntityField::new).limit(6).collect(Collectors.toList()));
     e = new BeanPropertyBindingResult(apiSamplePost, "apiSample");
     validator.validate(fullPost, e);
     assertEquals(4, e.getErrorCount());

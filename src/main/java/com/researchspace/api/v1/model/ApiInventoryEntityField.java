@@ -40,7 +40,7 @@ import lombok.ToString;
       "attachment",
       "_links"
     })
-public class ApiSampleField extends ApiField {
+public class ApiInventoryEntityField extends ApiField {
 
   @JsonProperty("attachment")
   private ApiInventoryFile attachment;
@@ -102,7 +102,7 @@ public class ApiSampleField extends ApiField {
     }
   }
 
-  public ApiSampleField(InventoryEntityField field) {
+  public ApiInventoryEntityField(InventoryEntityField field) {
     setId(field.getId());
     setType(ApiFieldType.valueOf(field.getType().toString()));
     setColumnIndex(field.getColumnIndex());

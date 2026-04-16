@@ -29,7 +29,7 @@ public class ApiSampleTemplatePost extends ApiSampleTemplateInfo {
   private Integer defaultUnitId = RSUnitDef.MILLI_LITRE.getId();
 
   @JsonProperty("fields")
-  protected List<ApiSampleField> fields = new ArrayList<>();
+  protected List<ApiInventoryEntityField> fields = new ArrayList<>();
 
   @JsonProperty(value = "sharedWith")
   private List<ApiGroupInfoWithSharedFlag> sharedWith;
@@ -37,7 +37,7 @@ public class ApiSampleTemplatePost extends ApiSampleTemplateInfo {
   public ApiSampleTemplatePost(Sample template) {
     super(template);
     for (InventoryEntityField f : template.getActiveFields()) {
-      fields.add(new ApiSampleField(f));
+      fields.add(new ApiInventoryEntityField(f));
     }
   }
 }

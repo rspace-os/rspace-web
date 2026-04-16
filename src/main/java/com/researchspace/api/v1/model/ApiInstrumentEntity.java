@@ -4,7 +4,7 @@ package com.researchspace.api.v1.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.ArrayList;
@@ -17,11 +17,11 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-/** API representation of an Inventory Sample with all data apart from SubSamples. */
+/** API representation of an Inventory Sample */
 @Data
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-@NoArgsConstructor
 @JsonPropertyOrder({
   "id",
   "globalId",
@@ -56,12 +56,9 @@ import lombok.ToString;
   "storageTempMax",
   "sampleSource",
   "expiryDate",
-  "sharedWith",
-  "fields",
-  "extraFields",
   "_links"
 })
-public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
+public abstract class ApiInstrumentEntity extends ApiInstrumentEntityInfo {
 
   @JsonProperty("fields")
   protected List<ApiInventoryEntityField> fields = new ArrayList<>();
@@ -72,39 +69,26 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
   @JsonProperty(value = "sharedWith")
   private List<ApiGroupInfoWithSharedFlag> sharedWith;
 
-  protected ApiSampleWithoutSubSamples(Sample sample) {
-    super(sample);
+  @JsonProperty(value = "canBeDeleted")
+  private Boolean canBeDeleted;
 
-    for (InventoryEntityField field : sample.getActiveFields()) {
+  public ApiInstrumentEntity(InstrumentEntity instrumentEntity) {
+    super(instrumentEntity);
+    for (InventoryEntityField field : instrumentEntity.getActiveFields()) {
       fields.add(new ApiInventoryEntityField(field));
     }
-    for (ExtraField extraField : sample.getActiveExtraFields()) {
+    for (ExtraField extraField : instrumentEntity.getActiveExtraFields()) {
       extraFields.add(new ApiExtraField(extraField));
     }
     sharedWith = new ArrayList<>();
   }
 
-  @Override
-  public List<ApiInventoryFile> getAllAttachments() {
-    if (super.getAllAttachments() == null) {
-      return null; // must be record view that doesn't include attachments
-    }
-
-    List<ApiInventoryFile> allAttachments = new ArrayList<>(super.getAllAttachments());
-    for (ApiInventoryEntityField sf : getFields()) {
-      if (sf.getAttachment() != null) {
-        allAttachments.add(sf.getAttachment());
-      }
-    }
-    return allAttachments;
-  }
-
   /**
-   * @param dbSample db entity to which incoming changes should be applied
+   * @param dbInstrumentEntity db entity to which incoming changes should be applied
    * @return if any change was applied
    */
-  public boolean applyChangesToDatabaseSample(Sample dbSample, User user) {
-    boolean contentChanged = super.applyChangesToDatabaseSample(dbSample);
+  public boolean applyChangesToDatabaseInstrument(InstrumentEntity dbInstrumentEntity, User user) {
+    boolean contentChanged = super.applyChangesToDatabaseInstrument(dbInstrumentEntity);
 
     if (fields != null) {
       List<ApiInventoryEntityField> modifiedFields =
@@ -117,30 +101,32 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
           throw new IllegalArgumentException("'id' property not provided for a field");
         }
         Optional<InventoryEntityField> dbFieldOpt =
-            dbSample.getActiveFields().stream()
+            dbInstrumentEntity.getActiveFields().stream()
                 .filter(sf -> Objects.equals(sf.getId(), field.getId()))
                 .findFirst();
         if (!dbFieldOpt.isPresent()) {
           throw new IllegalArgumentException(
               "Field id: "
                   + field.getId()
-                  + " doesn't match any of the field ids of current sample");
+                  + " doesn't match any of the field ids of current instrument");
         }
         InventoryEntityField dbField = dbFieldOpt.get();
-        if (dbSample.isTemplate()) {
+        if (dbInstrumentEntity.isTemplate()) {
           contentChanged |= field.applyChangesToDatabaseTemplateField(dbField, user);
         } else {
           contentChanged |= field.applyChangesToDatabaseField(dbField, user);
         }
       }
-      // applyFieldOrderingChanges(modifiedFields, dbSample);
     }
     contentChanged |=
-        applyChangesToDatabaseExtraFields(extraFields, dbSample.getActiveExtraFields(), user);
-    contentChanged |= applyChangesToDatabaseBarcodes(getBarcodes(), dbSample.getActiveBarcodes());
+        applyChangesToDatabaseExtraFields(
+            extraFields, dbInstrumentEntity.getActiveExtraFields(), user);
     contentChanged |=
-        applyChangesToDatabaseIdentifiers(getIdentifiers(), dbSample.getActiveIdentifiers(), user);
-    contentChanged |= applyChangesToSharingMode(dbSample, user);
+        applyChangesToDatabaseBarcodes(getBarcodes(), dbInstrumentEntity.getActiveBarcodes());
+    contentChanged |=
+        applyChangesToDatabaseIdentifiers(
+            getIdentifiers(), dbInstrumentEntity.getActiveIdentifiers(), user);
+    contentChanged |= applyChangesToSharingMode(dbInstrumentEntity, user);
 
     return contentChanged;
   }
@@ -148,9 +134,9 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
   @Override
   protected void nullifyListsForLimitedView(ApiInventoryRecordInfo apiInvRec) {
     super.nullifyListsForLimitedView(apiInvRec);
-    ApiSampleWithoutSubSamples apiSample = (ApiSampleWithoutSubSamples) apiInvRec;
-    apiSample.setExtraFields(null);
-    apiSample.setFields(null);
-    apiSample.setSharedWith(null);
+    ApiInstrument apiInstrument = (ApiInstrument) apiInvRec;
+    apiInstrument.setFields(null);
+    apiInstrument.setExtraFields(null);
+    apiInstrument.setSharedWith(null);
   }
 }

@@ -2,7 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
-import com.researchspace.api.v1.model.ApiSampleField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.model.inventory.Sample;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -51,12 +51,12 @@ abstract class SampleTemplateFieldValidator implements Validator {
 
   /** Checks if incoming field content is valid for the field type. */
   protected void validateIncomingTemplateFieldContent(
-      Errors errors, ApiSampleField apiTemplateField) {
+      Errors errors, ApiInventoryEntityField apiTemplateField) {
     // check field content - this requires type to be provided
     if (apiTemplateField.getType() != null) {
       try {
         // this internally calls model.validate
-        apiFieldToModelFieldFactory.apiSampleFieldToModelField(apiTemplateField);
+        apiFieldToModelFieldFactory.apiInvenotryFieldToModelField(apiTemplateField);
       } catch (IllegalArgumentException e) {
         errors.rejectValue(
             "content",

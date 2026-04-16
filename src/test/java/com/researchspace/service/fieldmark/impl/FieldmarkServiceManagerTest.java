@@ -253,7 +253,7 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
     verify(inputValidator).validate(any(), any(SampleApiPostFullValidator.class), any());
     verify(inputValidator).validate(any(), any(InventoryFilePostValidator.class), any());
     verify(sampleApiMgr).createNewApiSample(any(), any());
-    verify(sampleApiMgr).assertUserCanEditSampleField(any(), any());
+    verify(sampleApiMgr).assertUserCanEditInventoryEntityField(any(), any());
 
     verify(apiHandler, times(2)).assertInventoryAndDataciteEnabled(goodUser);
     verify(inventoryIdentifierApiManager)

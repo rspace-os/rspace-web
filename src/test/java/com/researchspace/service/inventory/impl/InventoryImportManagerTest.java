@@ -15,6 +15,8 @@ import com.researchspace.api.v1.controller.SamplesApiController;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiInventoryImportPartialResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleImportResult;
@@ -23,8 +25,6 @@ import com.researchspace.api.v1.model.ApiInventoryImportSubSampleImportResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
 import com.researchspace.api.v1.model.ApiSample;
-import com.researchspace.api.v1.model.ApiSampleField;
-import com.researchspace.api.v1.model.ApiSampleField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -127,14 +127,17 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     templatePost.setName("3-field template");
     templatePost.setSampleSource(InventoryItemSource.VENDOR_SUPPLIED);
     templatePost.setDefaultUnitId(RSUnitDef.GRAM.getId());
-    ApiSampleField textField = createBasicApiSampleField("textField", ApiFieldType.TEXT, "");
+    ApiInventoryEntityField textField =
+        createBasicApiSampleField("textField", ApiFieldType.TEXT, "");
     templatePost.getFields().add(textField);
-    ApiSampleField radioField = createBasicApiSampleField("radioField", ApiFieldType.RADIO, "");
+    ApiInventoryEntityField radioField =
+        createBasicApiSampleField("radioField", ApiFieldType.RADIO, "");
     ApiInventoryFieldDef radioDef = new ApiInventoryFieldDef();
     radioDef.setOptions(List.of("no", "yes"));
     radioField.setDefinition(radioDef);
     templatePost.getFields().add(radioField);
-    ApiSampleField choiceField = createBasicApiSampleField("choiceField", ApiFieldType.CHOICE, "");
+    ApiInventoryEntityField choiceField =
+        createBasicApiSampleField("choiceField", ApiFieldType.CHOICE, "");
     ApiInventoryFieldDef def = new ApiInventoryFieldDef();
     def.setOptions(List.of("opt1", "opt2", "opt3"));
     choiceField.setDefinition(def);

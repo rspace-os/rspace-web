@@ -88,9 +88,11 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
 
   public enum ApiInventoryRecordType {
     SAMPLE,
+    SAMPLE_TEMPLATE,
     SUBSAMPLE,
     CONTAINER,
-    SAMPLE_TEMPLATE
+    INSTRUMENT,
+    INSTRUMENT_TEMPLATE
   }
 
   @JsonProperty(value = "attachments")

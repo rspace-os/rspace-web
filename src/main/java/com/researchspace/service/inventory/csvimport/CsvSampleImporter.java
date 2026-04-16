@@ -1,12 +1,12 @@
 package com.researchspace.service.inventory.csvimport;
 
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleParseResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -246,8 +246,9 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
               setDefaultFieldFromMappedColumn(apiSample, fieldName, value, user);
             }
           } else {
-            ApiSampleField sampleField = new ApiSampleField();
-            ApiSampleField templateField = template.getFields().get(apiSample.getFields().size());
+            ApiInventoryEntityField sampleField = new ApiInventoryEntityField();
+            ApiInventoryEntityField templateField =
+                template.getFields().get(apiSample.getFields().size());
             sampleField.setName(templateField.getName());
             sampleField.setType(templateField.getType());
             if (!StringUtils.isBlank(value)) {

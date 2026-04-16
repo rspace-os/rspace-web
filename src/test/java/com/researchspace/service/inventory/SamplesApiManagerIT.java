@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiSample;
-import com.researchspace.api.v1.model.ApiSampleField;
-import com.researchspace.api.v1.model.ApiSampleField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
@@ -73,7 +73,7 @@ public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
     ApiSample retrievedTemplate =
         sampleApiMgr.getApiSampleTemplateById(createdTemplate.getId(), testUser);
     assertEquals(2, retrievedTemplate.getFields().size());
-    ApiSampleField retrievedTemplateRadioField = retrievedTemplate.getFields().get(0);
+    ApiInventoryEntityField retrievedTemplateRadioField = retrievedTemplate.getFields().get(0);
 
     // prepare & run simple template update (v2)
     ApiSampleTemplate templateUpdates = new ApiSampleTemplate();
@@ -86,7 +86,7 @@ public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
     templateUpdates.setId(createdTemplate.getId());
     templateUpdates.setName("test template with radio v3");
     // add a new option to radio field, and set it as a default
-    ApiSampleField radioFieldUpdates = new ApiSampleField();
+    ApiInventoryEntityField radioFieldUpdates = new ApiInventoryEntityField();
     radioFieldUpdates.setId(retrievedTemplateRadioField.getId());
     radioFieldUpdates.setName("updated radio");
     ApiInventoryFieldDef updatedRadioDef =

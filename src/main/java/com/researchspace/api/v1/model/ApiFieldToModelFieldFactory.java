@@ -8,11 +8,14 @@ import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-/** Maps incoming template ApiField to InventoryEntityField based on value of 'type' property */
+/**
+ * Maps incoming template ApiInventoryEntityField to InventoryEntityField based on value of 'type'
+ * property
+ */
 @Component
 public class ApiFieldToModelFieldFactory {
 
-  public InventoryEntityField apiSampleFieldToModelField(ApiSampleField field) {
+  public InventoryEntityField apiInvenotryFieldToModelField(ApiInventoryEntityField field) {
     InventoryEntityField toAdd = null;
     switch (field.getType()) {
       case STRING:
@@ -61,7 +64,7 @@ public class ApiFieldToModelFieldFactory {
     return toAdd;
   }
 
-  private boolean definitionIsEmpty(ApiSampleField field) {
+  private boolean definitionIsEmpty(ApiInventoryEntityField field) {
     return field.getDefinition() == null
         || CollectionUtils.isEmpty(field.getDefinition().getOptions());
   }

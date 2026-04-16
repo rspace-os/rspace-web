@@ -20,7 +20,7 @@ import org.springframework.validation.Validator;
 
 /** Validator for creating a new sample */
 @Component
-public class SampleApiPostFullValidator implements Validator {
+public class InstrumentApiPostFullValidator implements Validator {
 
   @Autowired private ApiFieldsHelper fieldHelper;
 

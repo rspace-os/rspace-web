@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import com.researchspace.api.v1.model.ApiSampleField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiSubSampleAlias;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.units.RSUnitDef;
@@ -18,11 +18,11 @@ public abstract class SampleTemplateValidator extends SampleApiPostValidator {
   protected @Autowired SampleTemplateFieldPostValidator templateFieldPostValidator;
   protected @Autowired SampleTemplateFieldPutValidator templateFieldPutValidator;
 
-  protected abstract Validator getIncomingFieldValidator(ApiSampleField incomingField);
+  protected abstract Validator getIncomingFieldValidator(ApiInventoryEntityField incomingField);
 
-  protected void validateFields(Errors errors, List<ApiSampleField> incomingFields) {
+  protected void validateFields(Errors errors, List<ApiInventoryEntityField> incomingFields) {
     int k = 0;
-    for (ApiSampleField aef : incomingFields) {
+    for (ApiInventoryEntityField aef : incomingFields) {
       errors.pushNestedPath(String.format("fields[%d]", k++));
       ValidationUtils.invokeValidator(getIncomingFieldValidator(aef), aef, errors);
       errors.popNestedPath();
