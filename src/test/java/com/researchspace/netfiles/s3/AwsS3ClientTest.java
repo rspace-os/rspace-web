@@ -181,13 +181,13 @@ public class AwsS3ClientTest {
     assertEquals("file1.txt", res1.getName());
     assertEquals("test/folder/file1.txt", res1.getFileSystemFullPath());
     assertEquals("test/folder", res1.getFileSystemParentPath());
-    assertTrue(res1 instanceof NfsFileDetails);
+    assertTrue(res1.isFile());
     assertEquals(50L, res1.getSize());
 
     NfsResourceDetails res2 = details.getContent().get(1);
     assertEquals("subfolder", res2.getName());
     assertEquals("test/folder/subfolder", res2.getFileSystemFullPath());
     assertEquals("test/folder", res2.getFileSystemParentPath());
-    assertTrue(res2 instanceof NfsFolderDetails);
+    assertTrue(res2.isFolder());
   }
 }

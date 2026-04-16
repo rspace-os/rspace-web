@@ -11,14 +11,16 @@
 		    <spring:message code="system.netfilesystem.filestores.disabled.msg" />
 		</p>
 	</rst:hasDeploymentProperty>
-	<p class="bg-success" style="padding: 5px 10px">
-		<rst:hasDeploymentProperty name="netFileStoresExportEnabled" value="true">
-		    <spring:message code="system.netfilesystem.filestores.export.enabled.msg" />
-		</rst:hasDeploymentProperty>
-		<rst:hasDeploymentProperty name="netFileStoresExportEnabled" value="false">
-		    <spring:message code="system.netfilesystem.filestores.export.disabled.msg" />
-		</rst:hasDeploymentProperty>
-	</p>
+    <rst:hasDeploymentProperty name="netFileStoresExportEnabled" value="true">
+        <p class="bg-success" style="padding: 5px 10px">
+            <spring:message code="system.netfilesystem.filestores.export.enabled.msg" />
+        </p>
+    </rst:hasDeploymentProperty>
+    <rst:hasDeploymentProperty name="netFileStoresExportEnabled" value="false">
+        <p class="bg-warning" style="padding: 5px 10px">
+            <spring:message code="system.netfilesystem.filestores.export.disabled.msg" />
+        </p>
+    </rst:hasDeploymentProperty>
 </div>
 
 <div id="fileSystemsList">
