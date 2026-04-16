@@ -51,7 +51,7 @@ const config = {
     newLabGroup: "./src/system-groups/NewLabGroup.js",
     tinymceSidebarInfo: "./src/tinyMCE/sidebarInfo.js",
     PreviewInfo: "./src/tinyMCE/PreviewInfo.tsx",
-    userDetails: "./src/components/UserDetails_deprecated.js",
+    userDetails: "./src/components/UserDetailsEntrypoint.tsx",
     groupUserActivity: "./src/my-rspace/directory/groups/GroupUserActivity.js",
     groupActivity: "./src/my-rspace/profile/GroupActivity.js",
     accountActivity: "./src/my-rspace/profile/AccountActivity.js",

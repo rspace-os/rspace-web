@@ -1,13 +1,14 @@
 "use strict";
 import React, { useEffect } from "react";
+import PropTypes from "prop-types";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
-import UserDetails from "./../../../components/UserDetails_deprecated";
+import UserDetails from "./../../../components/UserDetails";
 import EnhancedTableHead from "../../../components/EnhancedTableHead";
-import { desc, stableSort, getSorting } from "../../../util/table";
+import { stableSort, getSorting } from "@/util/table";
 import axios from "@/common/axios";
 import { createRoot } from "react-dom/client";
 
@@ -17,13 +18,16 @@ const headCells = [
   { id: "timestamp", numeric: true, label: "Time" },
 ];
 
-export default function GroupActivity(props) {
+/**
+ * @param {{ groupId: string }} props
+ */
+function GroupActivity({ groupId }) {
   const [activities, setActivities] = React.useState([]);
   const [order, setOrder] = React.useState("desc");
   const [orderBy, setOrderBy] = React.useState("timestamp");
 
   useEffect(() => {
-    const url = `/groups/ajax/membershipEventsByGroup/${props.groupId}`;
+    const url = `/groups/ajax/membershipEventsByGroup/${groupId}`;
     axios
       .get(url)
       .then((response) => {
@@ -34,9 +38,9 @@ export default function GroupActivity(props) {
         }
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
       });
-  }, []);
+  }, [groupId]);
 
   const handleRequestSort = (event, property) => {
     const isDesc = orderBy === property && order === "desc";
@@ -63,7 +67,7 @@ export default function GroupActivity(props) {
                     position={["top", "right"]}
                     userId={row.userId}
                     fullName={row.userFullName}
-                    uniqueId={row.timestamp}
+                    variant="outlined"
                   />
                 </TableCell>
                 <TableCell>
@@ -82,6 +86,12 @@ export default function GroupActivity(props) {
     </>
   );
 }
+
+GroupActivity.propTypes = {
+  groupId: PropTypes.string.isRequired,
+};
+
+export default GroupActivity;
 
 const domContainer = document.getElementById("groupActivity");
 const root = createRoot(domContainer);

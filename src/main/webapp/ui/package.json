@@ -70,6 +70,7 @@
     "get-port": "7.2.0",
     "jsonwebtoken": "9.0.3",
     "prettier": "3.8.2",
+    "prop-types": "15.8.1",
     "react-ipynb-renderer": "2.3.0",
     "style-loader": "4.0.0",
     "ts-loader": "9.5.7",
