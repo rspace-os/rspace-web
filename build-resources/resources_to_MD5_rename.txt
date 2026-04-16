@@ -115,6 +115,7 @@ ui/dist/connectedApps.js
 ui/dist/createGroup.js
 ui/dist/exportModal.js
 ui/dist/externalWorkFlows.js
+ui/dist/gallery.js
 ui/dist/jupyterNotebooks.js
 ui/dist/fileTreeToolbar.js
 ui/dist/groupActivity.js
@@ -133,12 +134,15 @@ ui/dist/newLabGroup.js
 ui/dist/notebookToolbar.js
 ui/dist/oAuth.js
 ui/dist/PreviewInfo.js
+ui/dist/raidConnections.js
 ui/dist/rorIntegration.js
 ui/dist/runtime.js
 ui/dist/snapGeneDialog.js
 ui/dist/structuredDocumentToolbar.js
 ui/dist/sysadminUsers.js
 ui/dist/tinymceClustermarket.js
+ui/dist/tinymceGallery.js
+ui/dist/tinymceGalleryUtils.js
 ui/dist/tinymceGalaxy.js
 ui/dist/tinymceIdentifiers.js
 ui/dist/tinymceJove.js

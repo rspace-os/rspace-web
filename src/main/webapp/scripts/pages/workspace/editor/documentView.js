@@ -75,10 +75,6 @@ function getTextFieldId(fieldId) {
   return "rtf_" + fieldId;
 }
 
-function getFieldIdFromTextFieldId(textFieldId) {
-  return textFieldId.substr("rtf_".length);
-}
-
 function get$textField(fieldId) {
   return $("#" + getTextFieldId(fieldId));
 }

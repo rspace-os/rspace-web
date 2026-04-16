@@ -7,6 +7,10 @@ type JQueryWithTestDoubles = JQueryStatic & {
   post: ReturnType<typeof vi.fn>;
 };
 
+type JQueryFnWithFileUpload = JQueryStatic["fn"] & {
+  fileupload: (this: JQuery, ...args: Array<unknown>) => JQuery;
+};
+
 type JQueryRequestChain = {
   fail: (handler: (...args: Array<unknown>) => void) => JQueryRequestChain;
   done: (handler: (...args: Array<unknown>) => void) => JQueryRequestChain;
@@ -135,12 +139,24 @@ export function bootstrapLegacyEditorHarness(): LegacyEditorHarness {
   const ajaxFailed = vi.fn();
   const getFieldIdFromTextFieldId = vi.fn(() => "11");
 
-  ($ as any).get = vi.fn();
-  ($ as any).post = vi.fn();
-  ($.fn as any).fileupload = function (...args: Array<unknown>) {
-    fileUpload(...args);
-    return this;
-  };
+  Object.defineProperty($, "get", {
+    configurable: true,
+    writable: true,
+    value: vi.fn(),
+  });
+  Object.defineProperty($, "post", {
+    configurable: true,
+    writable: true,
+    value: vi.fn(),
+  });
+  Object.defineProperty($.fn as JQueryFnWithFileUpload, "fileupload", {
+    configurable: true,
+    writable: true,
+    value: function (this: JQuery, ...args: Array<unknown>) {
+      fileUpload(...args);
+      return this;
+    },
+  });
 
   const RS = {
     createAbsoluteUrl(relPath = "") {

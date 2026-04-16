@@ -10,6 +10,7 @@
 <script src="<c:url value='/scripts/tinymce/tinymce5109/dompurify.min.js'/>"></script>
 <script src="<c:url value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
 <script src="<c:url value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
+<script src="<c:url value='/ui/dist/tinymceGalleryUtils.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymce5_configuration.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_pasteHandler.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_scrollHandler.js'/>"></script>

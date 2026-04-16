@@ -73,6 +73,7 @@ const config = {
     tinymcePubchem: "./src/tinyMCE/pubchem/index.tsx",
     tinymceStoichiometry: "./src/tinyMCE/stoichiometry/index.tsx",
     tinymceGallery: "./src/tinyMCE/gallery/index.tsx",
+    tinymceGalleryUtils: "./src/tinyMCE/gallery/GalleryUtilsEntrypoint.ts",
     baseSearch: "./src/components/BaseSearch.tsx",
     confirmationDialog: "./src/components/ConfirmationDialog.tsx",
     materialsListing:
