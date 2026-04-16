@@ -14,7 +14,7 @@
     </script>
     <%@ include file="/common/meta.jsp"%>
     <title>
-        <decorator:title /> | <fmt:message key="webapp.name" />
+        <sitemesh:write property='title'/> | <fmt:message key="webapp.name" />
     </title>
     <link rel="stylesheet" href="<c:url value='/styles/bootstrap-custom-flat.css'/>" />
     <link media="all" href="<c:url value='/styles/simplicity/theme.css'/>" rel="stylesheet" />
@@ -34,7 +34,7 @@
     <jsp:include page="/scripts/templates/blockUI.html"/>
     <link rel="stylesheet" href="<c:url value='/styles/jquery.toastmessage.css'/>" />
     
-    <decorator:head />
+    <sitemesh:write property='head'/>
 
     <script defer src="<c:url value='/scripts/segment.js'/>"></script>
 
@@ -56,15 +56,13 @@
         </script>
 
 </head>
-<body
-    <decorator:getProperty property="body.id" writeEntireProperty="true"/>
-    <decorator:getProperty property="body.class" writeEntireProperty="true"/>>
+<body id="<sitemesh:write property='body.id'/>" class="<sitemesh:write property='body.class'/>">
 
     <div id="page" style="display:none">
         <jsp:include page="/common/header.jsp" />
         <div id="content" class="clearfix">
             <div id="main">
-                <decorator:body />
+                <sitemesh:write property='body'/>
             </div>
 
         </div>

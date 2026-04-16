@@ -1,0 +1,49 @@
+<sitemesh>
+    <!-- Excludes: these paths will not be decorated (evaluated before decorator mappings) -->
+    <mapping path="*/ajax/*" exclude="true"/>
+    <mapping path="/scripts/**" exclude="true"/>
+    <mapping path="/resources/*" exclude="true"/>
+    <mapping path="/image/getImage/**" exclude="true"/>
+    <mapping path="/image/getImageForEdit/**" exclude="true"/>
+    <mapping path="/Streamfile/*" exclude="true"/>
+    <mapping path="/public/status" exclude="true"/>
+    <mapping path="/public/version" exclude="true"/>
+    <mapping path="/public/bannerImageName" exclude="true"/>
+    <mapping path="/public/apiDocs" exclude="true"/>
+    <mapping path="/slack/callbacks/*" exclude="true"/>
+    <mapping path="/msteams/rspaceAuth*" exclude="true"/>
+    <mapping path="/officeOnline/*" exclude="true"/>
+    <mapping path="/collaboraOnline/*" exclude="true"/>
+    <mapping path="/wopi/*" exclude="true"/>
+    <mapping path="/oauth/*" exclude="true"/>
+    <mapping path="/messaging/get_calendar_event" exclude="true"/>
+    <mapping path="/tools/*" exclude="true"/>
+    <mapping path="/externalTinymcePlugins/*" exclude="true"/>
+    <mapping path="*/public/publishedView/publishedDocuments/*" exclude="true"/>
+    <mapping path="/molbiol/*" exclude="true"/>
+    <mapping path="/inventory" exclude="true"/>
+    <mapping path="/inventory/**" exclude="true"/>
+    <mapping path="/listOfMaterials/**" exclude="true"/>
+    <mapping path="*/public/inventory/**" exclude="true"/>
+    <mapping path="/apps" exclude="true"/>
+    <mapping path="/Gallery" exclude="true"/>
+    <mapping path="/Gallery*" exclude="true"/>
+    <mapping path="/Gallery/**" exclude="true"/>
+    <mapping path="/about" exclude="true"/>
+    <mapping path="/about/**" exclude="true"/>
+
+    <!-- Public/external pages decorator -->
+    <mapping path="*/signup*" decorator="externalPages.jsp"/>
+    <mapping path="*/cloud/verifysignup*" decorator="externalPages.jsp"/>
+    <mapping path="*/cloud/verifyEmailChange*" decorator="externalPages.jsp"/>
+    <mapping path="*/cloud/resendConfirmationEmail*" decorator="externalPages.jsp"/>
+    <mapping path="*/login*" decorator="externalPages.jsp"/>
+    <mapping path="*/adminLogin*" decorator="externalPages.jsp"/>
+    <mapping path="*/passwordReset*" decorator="externalPages.jsp"/>
+    <mapping path="*/vfpwd/verificationPasswordResetReply*" decorator="externalPages.jsp"/>
+    <mapping path="*/public/*" decorator="externalPages.jsp"/>
+    <mapping path="/msteams/*" decorator="externalPages.jsp"/>
+
+    <!-- Default decorator (catch-all) -->
+    <mapping decorator="default.jsp"/>
+</sitemesh>

@@ -7,7 +7,7 @@
 
 	<head>
 		<title>
-			<decorator:title /> |
+			<sitemesh:write property='title'/> |
 			<fmt:message key="webapp.name" />
 		</title>
 
@@ -32,14 +32,12 @@
 				$('#timezone_field').val(tz.name());
 			});
 		</script>
-		<decorator:head />
+		<sitemesh:write property='head'/>
 	</head>
 
-	<body>
-		<decorator:getProperty property="body.id" writeEntireProperty="true" />
-		<decorator:getProperty property="body.class" writeEntireProperty="true" />
+	<body id="<sitemesh:write property='body.id'/>" class="<sitemesh:write property='body.class'/>">
 		<div id="content" class="clearfix">
-			<decorator:body />
+			<sitemesh:write property='body'/>
 			<div class="container" style="max-width:960px;padding:0 5% 0 5%;">
 				<div class="row footerVersionRow">
 					<div class="col-md-4" style="text-align:center;">

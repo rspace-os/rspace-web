@@ -109,7 +109,7 @@
 
     <filter>
         <filter-name>sitemesh</filter-name>
-        <filter-class>com.opensymphony.module.sitemesh.filter.PageFilter</filter-class>
+        <filter-class>org.sitemesh.config.ConfigurableSiteMeshFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter>
