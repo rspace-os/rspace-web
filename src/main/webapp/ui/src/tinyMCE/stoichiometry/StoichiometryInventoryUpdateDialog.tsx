@@ -234,28 +234,21 @@ export default function StoichiometryInventoryUpdateDialog({
               }
             >
               <AlertTitle>WARNING: This action is irreversible</AlertTitle>
-              <Box>
+
+              <Typography variant="body2" gutterBottom>
                 <strong>
                   This will permanently reduce inventory quantities.
-                </strong>{" "}
-                Stock cannot be automatically replenished if you:
-                <List dense disablePadding sx={{ listStyle: "disc inside" }}>
-                  <ListItem sx={{ display: "list-item", lineHeight: 1 }}>
-                    Change quantities later
-                  </ListItem>
-                  <ListItem sx={{ display: "list-item", lineHeight: 1 }}>
-                    Delete this stoichiometry table
-                  </ListItem>
-                  <ListItem sx={{ display: "list-item", lineHeight: 1 }}>
-                    Delete the document
-                  </ListItem>
-                  <ListItem sx={{ display: "list-item", lineHeight: 1 }}>
-                    Unlink samples
-                  </ListItem>
-                </List>
+                </strong>
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                Stock cannot be automatically replenished if you change
+                quantities later, delete this stoichiometry table, delete the
+                document, or unlink samples.
+              </Typography>
+              <Typography variant="body2">
                 Only proceed if you have actually used these materials in your
                 experiment.
-              </Box>
+              </Typography>
             </Alert>
             {selectionError && (
               <Alert severity="warning">{selectionError}</Alert>

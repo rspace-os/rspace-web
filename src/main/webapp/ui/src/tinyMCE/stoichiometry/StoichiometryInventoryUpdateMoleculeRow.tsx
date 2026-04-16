@@ -163,10 +163,12 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
               >
                 {moleculeName}
               </Typography>
-              {molecule.role && <StoichiometryTableRoleChip role={molecule.role} />}
+              {molecule.role && (
+                <StoichiometryTableRoleChip role={molecule.role} />
+              )}
             </Stack>
-            <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-              {molecule.inventoryLink ? (
+            {molecule.inventoryLink && (
+              <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
                 <GlobalId
                   record={
                     new LinkableRecordFromGlobalId(
@@ -175,18 +177,16 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
                   }
                   onClick={() => {}}
                 />
-              ) : (
-                <Chip size="small" variant="outlined" label="No inventory link" />
-              )}
-              {molecule.inventoryLink?.stockDeducted && (
-                <Chip
-                  size="small"
-                  variant="outlined"
-                  color="warning"
-                  label="Stock Deducted"
-                />
-              )}
-            </Stack>
+                {molecule.inventoryLink.stockDeducted && (
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    color="warning"
+                    label="Stock Deducted"
+                  />
+                )}
+              </Stack>
+            )}
           </Stack>
         </TableCell>
         <StockMetricCell
@@ -222,7 +222,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
           }}
         >
           <TableCell padding="checkbox" sx={{ px: 0.5 }} />
-          <TableCell colSpan={5} sx={{ pt: 1, pb: 1.25 }}>
+          <TableCell colSpan={5} sx={{ pt: 0, pb: 1.25 }}>
             <Alert
               id={helperTextId}
               severity="warning"
