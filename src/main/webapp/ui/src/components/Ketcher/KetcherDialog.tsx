@@ -1,6 +1,6 @@
 import "ketcher-react/dist/index.css";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -9,7 +9,7 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { Editor, InfoModal } from "ketcher-react";
 import { StandaloneStructServiceProvider } from "ketcher-standalone";
-import { styled, ThemeProvider } from "@mui/material/styles";
+import { styled, ThemeProvider, useTheme } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { Ketcher } from "ketcher-core";
@@ -39,23 +39,21 @@ const KetcherThemeProvider = ({
 }: {
   children: React.ReactNode;
 }): React.ReactNode => {
-  return (
-    <ThemeProvider
-      theme={(outerTheme) =>
-        createTheme(outerTheme, {
-          components: {
-            MuiButton: {
-              defaultProps: {
-                color: "primary",
-              },
+  const outerTheme = useTheme();
+  const theme = useMemo(
+    () =>
+      createTheme(outerTheme, {
+        components: {
+          MuiButton: {
+            defaultProps: {
+              color: "primary",
             },
           },
-        })
-      }
-    >
-      {children}
-    </ThemeProvider>
+        },
+      }),
+    [outerTheme],
   );
+  return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
 };
 
 type KetcherDialogArgs = {
