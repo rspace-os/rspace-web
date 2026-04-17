@@ -263,26 +263,28 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
           userId,
           session,
           format(
-              "delete sfRelTable from %s_AUD sfRelTable left join InventoryEntityField sf on"
-                  + " sfRelTable.inventoryEntityField_id = sf.id"
-                  + " where s.owner_id = :id",
+              "delete sfRelTable from %s_AUD sfRelTable left join InventoryEntityField ief on"
+                  + " sfRelTable.inventoryEntityField_id = ief.id left join InstrumentEntity ins on"
+                  + " ief.sample_id = ins.id"
+                  + " where ins.owner_id = :id",
               table));
       execute(
           userId,
           session,
           format(
-              "delete sfRelTable from %s sfRelTable left join InventoryEntityField sf on"
-                  + " sfRelTable.inventoryEntityField_id = sf.id"
-                  + " where s.owner_id = :id",
+              "delete sfRelTable from %s sfRelTable left join InventoryEntityField ief on"
+                  + " sfRelTable.inventoryEntityField_id = ief.id left join InstrumentEntity ins on"
+                  + " ief.sample_id = ins.id"
+                  + " where ins.owner_id = :id",
               table));
     }
     // set instrument field FKs to null before deleting
     execute(
         userId,
         session,
-        "update InventoryEntityField sf left join InstrumentEntity s"
-            + " on sf.instrumentEntity_id = s.id"
-            + " set templateField_id = NULL where s.owner_id=:id");
+        "update InventoryEntityField ief left join InstrumentEntity ins"
+            + " on ief.instrumentEntity_id = ins.id"
+            + " set templateField_id = NULL where ins.owner_id=:id");
 
     // delete instrument-connected entities
     List<String> instrumentRelatedTables =
@@ -297,16 +299,17 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
           userId,
           session,
           format(
-              "delete instrConnTable from %s_AUD instrConnTable left join InstrumentEntity s on "
-                  + " instrConnTable.instrumentEntity_id=s.id where s.owner_id = :id",
+              "delete instrConnTable from %s_AUD instrConnTable left join InstrumentEntity ie on "
+                  + " instrConnTable.instrumentEntity_id = ie.id"
+                  + " where ie.owner_id = :id",
               table));
       execute(
           userId,
           session,
           format(
-              "delete instrConnTable from %s instrConnTable left join InstrumentEntity s "
-                  + " on instrConnTable.instrumentEntity_id=s.id "
-                  + " where s.owner_id = :id",
+              "delete instrConnTable from %s instrConnTable left join InstrumentEntity ie "
+                  + " on instrConnTable.instrumentEntity_id = ie.id "
+                  + " where ie.owner_id = :id",
               table));
     }
 
