@@ -26,35 +26,54 @@ public class ContainerApiManagerIT extends RealTransactionSpringTestBase {
         containerApiMgr.getContainerById(newListContainer.getId(), testUser);
 
     /*
-     *  test changing canStoreContainers/canStoreSamples flags
+     *  test changing canStoreContainers/canStoreSamples/canStoreInstuments flags
      */
     ApiContainer storageFlagsUpdate = new ApiContainer();
     storageFlagsUpdate.setId(savedListContainer.getId());
-    storageFlagsUpdate.setCanStoreContainers(false);
-    containerApiMgr.updateApiContainer(storageFlagsUpdate, testUser);
 
+    // revert the flags pt1
+    storageFlagsUpdate.setCanStoreSamples(true);
+    storageFlagsUpdate.setCanStoreContainers(false);
+    storageFlagsUpdate.setCanStoreInstruments(false);
+    containerApiMgr.updateApiContainer(storageFlagsUpdate, testUser);
     ApiContainer updatedContainer =
         containerApiMgr.getApiContainerById(savedListContainer.getId(), testUser);
     assertTrue(updatedContainer.getCanStoreSamples());
     assertFalse(updatedContainer.getCanStoreContainers());
+    assertFalse(updatedContainer.getCanStoreInstruments());
 
-    // revert the flags
+    // revert the flags pt2
     storageFlagsUpdate.setCanStoreSamples(false);
     storageFlagsUpdate.setCanStoreContainers(true);
+    storageFlagsUpdate.setCanStoreInstruments(false);
+    containerApiMgr.updateApiContainer(storageFlagsUpdate, testUser);
+    updatedContainer = containerApiMgr.getApiContainerById(savedListContainer.getId(), testUser);
+    assertFalse(updatedContainer.getCanStoreSamples());
+    assertTrue(updatedContainer.getCanStoreContainers());
+    assertFalse(updatedContainer.getCanStoreInstruments());
+
+    // revert the flags pt3
+    storageFlagsUpdate.setCanStoreSamples(false);
+    storageFlagsUpdate.setCanStoreContainers(false);
+    storageFlagsUpdate.setCanStoreInstruments(true);
     containerApiMgr.updateApiContainer(storageFlagsUpdate, testUser);
 
     updatedContainer = containerApiMgr.getApiContainerById(savedListContainer.getId(), testUser);
     assertFalse(updatedContainer.getCanStoreSamples());
-    assertTrue(updatedContainer.getCanStoreContainers());
+    assertFalse(updatedContainer.getCanStoreContainers());
+    assertTrue(updatedContainer.getCanStoreInstruments());
 
-    // try setting both to false
+    // try setting all to false
+    storageFlagsUpdate.setCanStoreSamples(false);
     storageFlagsUpdate.setCanStoreContainers(false);
+    storageFlagsUpdate.setCanStoreInstruments(false);
     ConstraintViolationException cve =
         assertThrows(
             ConstraintViolationException.class,
             () -> containerApiMgr.updateApiContainer(storageFlagsUpdate, testUser));
     assertEquals(
-        "Container cannot have both canStoreSamples and canStoreContainers set to false",
+        "Container cannot have all \"canStoreSamples\", \"canStoreContainers\" and "
+            + "\"canStoreSamples\" set to false",
         cve.getMessage());
   }
 }
