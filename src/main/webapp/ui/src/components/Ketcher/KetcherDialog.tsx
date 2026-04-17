@@ -17,7 +17,7 @@ import ValidatingSubmitButton, {
   IsValid,
   ValidationResult,
 } from "../ValidatingSubmitButton";
-import { createTheme } from "@mui/material";
+import { createTheme, ThemeOptions } from "@mui/material";
 
 declare global {
   interface Window {
@@ -42,7 +42,7 @@ const KetcherThemeProvider = ({
   const outerTheme = useTheme();
   const theme = useMemo(
     () =>
-      createTheme(outerTheme, {
+      createTheme(outerTheme as unknown as ThemeOptions, {
         components: {
           MuiButton: {
             defaultProps: {
