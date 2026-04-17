@@ -74,48 +74,96 @@ public class TemplateTransferService implements TransferService {
               originalOwner.getUsername(), newOwner.getUsername());
 
       for (BaseRecord template : sharedRecords) {
-        // Update the ACL to point at the new owner.
-        // This is pretty horrible, but the current permission classes simply
-        // don't allow us to change users nicely.
-        RecordSharingACL templateACL = template.getSharingACL();
-        String acl = templateACL.getAcl();
-        System.out.println("@@@ ACL for template: " + template.getName() + " : " + acl);
-        String newAcl = acl.replace(originalOwner.getUsername(), newOwner.getUsername());
-        System.out.println("@@@ New ACL: " + newAcl);
-        System.out.println("@@@ And ACL: " + acl);
-
-        List<ACLElement> toAdd = new ArrayList<>();
-        List<ACLElement> toRemove = new ArrayList<>();
-        for (ACLElement aclElement : templateACL.getAclElements()) {
-          System.out.println(
-              "@@@ ACL element: "
-                  + aclElement.getUserOrGrpUniqueName()
-                  + " , "
-                  + aclElement.getAsString());
-
-          if (aclElement.getUserOrGrpUniqueName().equals(originalOwner.getUsername())) {
-            toRemove.add(aclElement);
-            ConstraintBasedPermission cbp = constraintPermissionResolver.resolvePermission(aclElement);
-            ACLElement newElement = new ACLElement(newOwner.getUsername(), cbp);
-            toAdd.add(newElement);
-            System.out.println(
-                "@@@ Replacing with element: "
-                    + newElement.getUserOrGrpUniqueName()
-                    + " , "
-                    + newElement.getAsString());
-          }
-        }
-        for (ACLElement remove : toRemove) {
-          templateACL.removeACLElement(remove);
-        }
-        for (ACLElement add : toAdd) {
-          templateACL.addACLElement(add);
-        }
-        baseRecordManager.save(template, newOwner);
-
+        //        // Update the ACL to point at the new owner.
+        //        //        // This is pretty horrible, but the current permission classes simply
+        //        //        // don't allow us to change users nicely.
+        //        RecordSharingACL templateACL = template.getSharingACL();
+        //        //        String acl = templateACL.getAcl();
+        //        //        System.out.println("@@@ ACL for template: " + template.getName() + " : "
+        // + acl);
+        //        //        String newAcl = acl.replace(originalOwner.getUsername(),
+        // newOwner.getUsername());
+        //        //        System.out.println("@@@ New ACL: " + newAcl);
+        //        //        System.out.println("@@@ And ACL: " + acl);
+        //        //
+        //        List<ACLElement> toAdd = new ArrayList<>();
+        //        List<ACLElement> toRemove = new ArrayList<>();
+        //        for (ACLElement aclElement : templateACL.getAclElements()) {
+        //          System.out.println(
+        //              "@@@ ACL element: "
+        //                  + aclElement.getUserOrGrpUniqueName()
+        //                  + " , "
+        //                  + aclElement.getAsString());
+        //
+        //          if (aclElement.getUserOrGrpUniqueName().equals(originalOwner.getUsername())) {
+        //            toRemove.add(aclElement);
+        //            ConstraintBasedPermission cbp =
+        //                constraintPermissionResolver.resolvePermission(aclElement);
+        //            ACLElement newElement = new ACLElement(newOwner.getUsername(), cbp);
+        //            toAdd.add(newElement);
+        //            System.out.println(
+        //                "@@@ Replacing with element: "
+        //                    + newElement.getUserOrGrpUniqueName()
+        //                    + " , "
+        //                    + newElement.getAsString());
+        //          }
+        //        }
+        //        System.out.println("@@@ Cheesey puffins");
+        //        for (ACLElement remove : toRemove) {
+        //          templateACL.removeACLElement(remove);
+        //        }
+        //        for (ACLElement add : toAdd) {
+        //          templateACL.addACLElement(add);
+        //        }
+        //        // baseRecordManager.save(template, newOwner);
+        //        //        System.out.println("@@@ Orange puffin bits!");
+        //
         auditTrailService.notify(
             new GenericEvent(newOwner, template, AuditAction.TRANSFER, description));
       }
     }
   }
+
+//  @Override
+//  public void updateACLs(User originalOwner, User newOwner) {
+//    List<BaseRecord> sharedRecords = recordGroupSharingDao.getTemplatesSharedByUser(newOwner);
+//
+//    for (BaseRecord template : sharedRecords) {
+//      // Update the ACL to point at the new owner.
+//      RecordSharingACL templateACL = template.getSharingACL();
+//      List<ACLElement> toAdd = new ArrayList<>();
+//      List<ACLElement> toRemove = new ArrayList<>();
+//      for (ACLElement aclElement : templateACL.getAclElements()) {
+//        System.out.println(
+//            "@@@ ACL element: "
+//                + aclElement.getUserOrGrpUniqueName()
+//                + " , "
+//                + aclElement.getAsString());
+//
+//        if (aclElement.getUserOrGrpUniqueName().equals(originalOwner.getUsername())) {
+//          toRemove.add(aclElement);
+//          ConstraintBasedPermission cbp =
+//              constraintPermissionResolver.resolvePermission(aclElement);
+//          ACLElement newElement = new ACLElement(newOwner.getUsername(), cbp);
+//          toAdd.add(newElement);
+//          System.out.println(
+//              "@@@ Replacing with element: "
+//                  + newElement.getUserOrGrpUniqueName()
+//                  + " , "
+//                  + newElement.getAsString());
+//        }
+//      }
+//      System.out.println("@@@ Scooby doo!");
+//      for (ACLElement remove : toRemove) {
+//        templateACL.removeACLElement(remove);
+//      }
+//      for (ACLElement add : toAdd) {
+//        templateACL.addACLElement(add);
+//      }
+//
+//      auditTrailService.notify(
+//          new GenericEvent(
+//              newOwner, template, AuditAction.TRANSFER, "Transferring ACLs UPDATE THIS"));
+//    }
+//  }
 }

@@ -111,6 +111,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -140,6 +141,8 @@ public class UserProfileController extends BaseController {
   private static final String ERRORS_MAXLENGTH = "errors.maxlength";
   private static final String AFFILIATION = "affiliation";
   public static final String API_KEY_IS_ACTIVE = "apiKey is ACTIVE";
+  private static final String USER_NOT_FOUND =
+      "User could not be found.  The user may have been deleted.";
 
   private @Autowired IReauthenticator reauthenticator;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissionUtils;
@@ -196,7 +199,7 @@ public class UserProfileController extends BaseController {
       @RequestParam(value = "userId", required = false) Long userId,
       Principal principal,
       Model model)
-      throws RecordAccessDeniedException {
+      throws RecordAccessDeniedException, Exception {
 
     User sessionUser = userManager.getUserByUsername(principal.getName(), true);
     User user;
@@ -204,7 +207,12 @@ public class UserProfileController extends BaseController {
     if (userId == null) {
       user = sessionUser; // own profile by default
     } else {
-      user = userManager.getUser(userId + "");
+      try {
+        user = userManager.getUser(userId + "");
+      } catch (ObjectRetrievalFailureException e) {
+        System.out.println("@@@ Exception!: " + e.getMessage());
+        throw new Exception(USER_NOT_FOUND);  //TODO New exception type..?
+      }
     }
 
     if (properties.isProfileHidingEnabled()) {

@@ -307,6 +307,17 @@ public class RecordGroupSharingDaoHibernateImpl
             .setParameter("originalOwner", originalOwner);
     query.executeUpdate();
     System.out.println("@@@ Changed where template lives");
+
+    query =
+        getSession()
+            .createNativeQuery(
+                "UPDATE BaseRecord br SET acl = (SELECT REPLACE(br.acl, :originalOwner, :newOwner)"
+                    + " ) WHERE id IN :ids")
+            .setParameter("originalOwner", originalOwner.getUsername())
+            .setParameter("newOwner", newOwner.getUsername())
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+    System.out.println("@@@ Updated ACLs");
   }
 
   public List<String> getTagsMetaDataForRecordsSharedWithUser(User subject, String tagFilter) {

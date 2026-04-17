@@ -26,6 +26,7 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
   private @Autowired CommunityDao commDao;
   private @Autowired RecordDao recordDao;
   private @Autowired FormDao formDao;
+  private @Autowired RecordGroupSharingDao recordGroupSharingDao;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
@@ -161,6 +162,9 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
         .signupSource(user.getSignupSource().toString())
         .lastLogin(user.getLastLogin())
         .hasFormsUsedByOtherUsers(formDao.hasUserPublishedFormsUsedInOtherRecords(user))
+        .hasTemplatesUsedByOtherUsers(
+            recordGroupSharingDao.getTemplatesSharedByUser(user).size()
+                > 0)
         .build();
   }
 

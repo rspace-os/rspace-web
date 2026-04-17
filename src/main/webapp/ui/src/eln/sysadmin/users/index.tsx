@@ -862,7 +862,7 @@ const DeleteAction = ({
                     User deletion is irreversible, and all documents will be
                     deleted.
                   </Typography>
-                  {user.hasFormsUsedByOtherUsers && (
+                  {(user.hasFormsUsedByOtherUsers && !user.hasTemplatesUsedByOtherUsers) && (
                     <Typography variant="body2" sx={{ mb: 1 }}>
                       The user you are trying to delete is{" "}
                       <strong>
@@ -873,6 +873,30 @@ const DeleteAction = ({
                       <strong> this System Administrator</strong> account. Forms
                       that are not used by others will be deleted.
                     </Typography>
+                  )}
+                  {(user.hasTemplatesUsedByOtherUsers && !user.hasFormsUsedByOtherUsers) && (
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        The user you are trying to delete is{" "}
+                        <strong>
+                          the owner of Templates that are used by other users.
+                        </strong>
+                        To ensure continued access to these Templates, the system
+                        <strong> will transfer ownership</strong> of the Templates to
+                        <strong> this System Administrator</strong> account. Templates
+                        that are not used by others will be deleted.
+                      </Typography>
+                  )}
+                  {(user.hasFormsUsedByOtherUsers && user.hasTemplatesUsedByOtherUsers) && (
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        The user you are trying to delete is{" "}
+                        <strong>
+                          the owner of Forms and Templates that are used by other users.
+                        </strong>
+                        To ensure continued access to these Forms and Templates, the system
+                        <strong> will transfer ownership</strong> of the Forms and Templates to
+                        <strong> this System Administrator</strong> account. Forms and Templates
+                        that are not used by others will be deleted.
+                      </Typography>
                   )}
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     An XML archive will be made of the user&apos;s work which
@@ -911,9 +935,10 @@ const DeleteAction = ({
                   loading={false}
                   disabled={false}
                   label={
-                    user.hasFormsUsedByOtherUsers
-                      ? "Transfer Forms And Delete"
-                      : "Delete"
+                    (user.hasFormsUsedByOtherUsers && !user.hasTemplatesUsedByOtherUsers) ? "Transfer Forms And Delete"
+                        : (user.hasTemplatesUsedByOtherUsers && !user.hasFormsUsedByOtherUsers) ? "Transfer Templates And Delete"
+                            : (user.hasFormsUsedByOtherUsers && user.hasTemplatesUsedByOtherUsers) ? "Transfer Forms And Templates And Delete"
+                                : "Delete"
                   }
                 />
               </DialogActions>
