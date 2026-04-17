@@ -5,6 +5,24 @@ import { describe, expect, it, vi } from "vitest";
 import StoichiometryTableTypeDropdown from "@/tinyMCE/stoichiometry/table/StoichiometryTableTypeDropdown";
 
 describe("StoichiometryTableTypeDropdown", () => {
+  it("has no accessibility violations", async () => {
+    const onChangeValue = vi.fn(() => Promise.resolve());
+    const onClose = vi.fn();
+
+    const { baseElement } = render(
+      <StoichiometryTableTypeDropdown
+        rowName="Cyclopentane"
+        value="REACTANT"
+        onChangeValue={onChangeValue}
+        onClose={onClose}
+      />,
+    );
+
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    await expect(baseElement).toBeAccessible();
+  });
+
   it("commits the selected type through its change callback", async () => {
     const user = userEvent.setup();
     const onChangeValue = vi.fn(() => Promise.resolve());
