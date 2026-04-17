@@ -4,6 +4,9 @@ import {
   DeleteStoichiometryResponseSchema,
   MoleculeInfo,
   MoleculeInfoSchema,
+  StockDeductionRequestSchema,
+  StockDeductionResult,
+  StockDeductionResultSchema,
   StoichiometryRequest,
   StoichiometryRequestSchema,
   StoichiometryResponse,
@@ -34,6 +37,11 @@ export type DeleteStoichiometryParams = {
   stoichiometryId: number;
 };
 
+export type DeductStockParams = {
+  stoichiometryId: number;
+  linkIds: number[];
+};
+
 export type GetMoleculeInfoParams = {
   smiles: string;
 };
@@ -41,6 +49,7 @@ export type GetMoleculeInfoParams = {
 export type CalculateStoichiometryMutationParams = CalculateStoichiometryParams;
 export type UpdateStoichiometryMutationParams = UpdateStoichiometryParams;
 export type DeleteStoichiometryMutationParams = DeleteStoichiometryParams;
+export type DeductStockMutationParams = DeductStockParams;
 export type GetMoleculeInfoMutationParams = GetMoleculeInfoParams;
 
 export async function calculateStoichiometry(
@@ -138,7 +147,7 @@ export async function deleteStoichiometry(
     },
   );
 
-  let data: unknown = null;
+  let data: unknown;
   try {
     data = await response.json();
   } catch {
@@ -158,6 +167,43 @@ export async function deleteStoichiometry(
 
   const parsed = parseOrThrow(DeleteStoichiometryResponseSchema, data);
   return typeof parsed === "boolean" ? parsed : parsed.success;
+}
+
+export async function deductStock(
+  {
+    stoichiometryId,
+    linkIds,
+  }: DeductStockParams,
+  token: string,
+): Promise<StockDeductionResult> {
+  const requestBody = parseOrThrow(StockDeductionRequestSchema, {
+    stoichiometryId,
+    linkIds,
+  });
+
+  const response = await fetch(
+    `${STOICHIOMETRY_API_BASE_URL}/stoichiometry/link/deductStock`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestBody),
+    },
+  );
+
+  const data: unknown = await response.json();
+
+  if (!response.ok) {
+    throw toStoichiometryError(
+      data,
+      `Failed to deduct stock: ${response.statusText}`,
+    );
+  }
+
+  return parseOrThrow(StockDeductionResultSchema, data);
 }
 
 export async function getMoleculeInfo(
@@ -262,6 +308,19 @@ export function useDeleteStoichiometryMutation(tokenParams: TokenParams) {
         queryKey: stoichiometryQueryKeys.all,
       });
     },
+  });
+}
+
+export function useDeductStockMutation(tokenParams: TokenParams) {
+  return useMutation({
+    mutationFn: async ({ stoichiometryId, linkIds }: DeductStockMutationParams) =>
+      deductStock(
+        {
+          stoichiometryId,
+          linkIds,
+        },
+        await resolveToken(tokenParams),
+      ),
   });
 }
 

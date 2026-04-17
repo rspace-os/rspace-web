@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.controller.API_MVC_TestBase;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.stoichiometry.StockDeductionRequest;
 import com.researchspace.api.v1.model.stoichiometry.StockDeductionResult;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
 import com.researchspace.model.ChemElementsFormat;
@@ -758,17 +759,16 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .inventoryItemGlobalId(sample.getGlobalId())
             .build());
 
+    long stoichiometryId = createdStoichiometry.getId();
+
     StoichiometryUpdateDTO updateDTO =
-        StoichiometryUpdateDTO.builder()
-            .id(createdStoichiometry.getId())
-            .molecules(List.of(molUpdate))
-            .build();
+        StoichiometryUpdateDTO.builder().id(stoichiometryId).molecules(List.of(molUpdate)).build();
 
     MvcResult updateResult =
         mockMvc
             .perform(
                 put(URL)
-                    .param("stoichiometryId", createdStoichiometry.getId().toString())
+                    .param("stoichiometryId", String.valueOf(stoichiometryId))
                     .contentType(APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(updateDTO))
                     .principal(principal)
@@ -779,12 +779,17 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     StoichiometryDTO stoichWithLink = getFromJsonResponseBody(updateResult, StoichiometryDTO.class);
     Long linkId = stoichWithLink.getMolecules().get(0).getInventoryLink().getId();
 
+    long revisionBeforeDeduct = getLatestStoichiometryRevisionId(createdStoichiometry.getId());
+
     MvcResult deductResult =
         mockMvc
             .perform(
                 post(URL + "/link/deductStock")
                     .contentType(APPLICATION_JSON)
-                    .content(new ObjectMapper().writeValueAsString(List.of(linkId)))
+                    .content(
+                        new ObjectMapper()
+                            .writeValueAsString(
+                                new StockDeductionRequest(stoichiometryId, List.of(linkId))))
                     .principal(principal)
                     .header("apiKey", apiKey))
             .andExpect(status().isOk())
@@ -792,6 +797,12 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
     StockDeductionResult result = getFromJsonResponseBody(deductResult, StockDeductionResult.class);
     assertTrue(result.getResults().get(0).isSuccess());
+
+    // Verify revision number is returned and was incremented by the deduction
+    assertNotNull(result.getRevisionNumber());
+    assertTrue(
+        result.getRevisionNumber() > revisionBeforeDeduct,
+        "Revision number should be greater than the pre-deduction revision");
 
     // Verify stockDeducted flag is set
     MvcResult getResult =

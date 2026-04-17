@@ -21,6 +21,7 @@ type RecordTypeIconArgs = {
   record: RecordIconData;
   color?: string | null;
   "aria-hidden"?: boolean;
+  disableTooltip?: boolean;
   style?: FontAwesomeIconProps['style'];
 };
 
@@ -28,6 +29,7 @@ export default function RecordTypeIcon({
   record,
   color, // Empty string signifies default styling
   ["aria-hidden"]: ariaHidden,
+  disableTooltip = false,
   style,
 }: RecordTypeIconArgs): React.ReactNode {
   const theme = useTheme();
@@ -107,7 +109,7 @@ export default function RecordTypeIcon({
       throw new Error("Unknown icon " + record.iconName);
   }
 
-  if (record.recordTypeLabel === "") return icon;
+  if (disableTooltip || record.recordTypeLabel === "") return icon;
   return (
     <CustomTooltip
       title={toTitleCase(record.recordTypeLabel)}

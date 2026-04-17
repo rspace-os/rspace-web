@@ -43,7 +43,7 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
           // @ts-ignore
           $(wrapperDiv).append('<div id='+rootDivId+' />');
           // @ts-ignore
-          const rootDiv = $('#' + rootDivId)[0] as HTMLElement;
+          const rootDiv = $('#' + rootDivId)[0];
           // @ts-ignore
           (async () => {
             const {data} = await axios.get<IpynbType>(
