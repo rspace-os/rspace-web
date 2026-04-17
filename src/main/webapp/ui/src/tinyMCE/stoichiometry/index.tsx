@@ -5,7 +5,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ACCENT_COLOR } from "../../assets/branding/chemistry";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import StoichiometryDialog from "./StoichiometryDialog";
+import StoichiometryDialogEntrypoint from "./StoichiometryDialogEntrypoint";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -60,10 +60,10 @@ class StoichiometryPlugin {
     ): Generator<
       void,
       void,
-      Partial<React.ComponentProps<typeof StoichiometryDialog>>
+      Partial<React.ComponentProps<typeof StoichiometryDialogEntrypoint>>
     > {
       const root = createRoot(domContainer);
-      let props: React.ComponentProps<typeof StoichiometryDialog> = {
+      let props: React.ComponentProps<typeof StoichiometryDialogEntrypoint> = {
         open: false,
         onClose: () => {},
         chemId: null,
@@ -86,7 +86,7 @@ class StoichiometryPlugin {
               <Analytics>
                 <ErrorBoundary>
                   <Alerts>
-                    <StoichiometryDialog {...props} />
+                    <StoichiometryDialogEntrypoint {...props} />
                   </Alerts>
                 </ErrorBoundary>
               </Analytics>
@@ -109,7 +109,7 @@ class StoichiometryPlugin {
     const recordId = editor.getParam("recordId") as number;
     const dialogRenderer = renderDialog(container);
     dialogRenderer.next();
-    const initialProps: React.ComponentProps<typeof StoichiometryDialog> = {
+    const initialProps: React.ComponentProps<typeof StoichiometryDialogEntrypoint> = {
       open: false,
       onClose: () => {},
       chemId: null,

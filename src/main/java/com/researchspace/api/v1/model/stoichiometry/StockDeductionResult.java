@@ -18,9 +18,16 @@ public class StockDeductionResult {
     private Long linkId;
     private boolean success;
     private String errorMessage;
+
+    public IndividualResult(Long linkId, boolean success) {
+      this.linkId = linkId;
+      this.success = success;
+    }
   }
 
   private List<IndividualResult> results = new ArrayList<>();
+  private Long stoichiometryId;
+  private Long revisionNumber;
 
   public void addResult(IndividualResult result) {
     this.results.add(result);

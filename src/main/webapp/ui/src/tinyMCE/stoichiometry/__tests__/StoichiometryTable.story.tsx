@@ -12,15 +12,21 @@ import { StoichiometryTableControllerProvider } from "@/tinyMCE/stoichiometry/St
 import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
 import { useEditableStoichiometryTable } from "@/tinyMCE/stoichiometry/useEditableStoichiometryTable";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { retry: false },
-    mutations: { retry: false },
-  },
-});
+function TestProviders({ children }: { children: React.ReactNode }) {
+  const [queryClient] = React.useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      }),
+  );
 
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+}
 const StoichiometryTableWithQueryData = () => {
-  const { tableController } = useEditableStoichiometryTable({
+  const { hasChanges, tableController } = useEditableStoichiometryTable({
     stoichiometryId: 1,
     stoichiometryRevision: 1,
   });
@@ -31,6 +37,7 @@ const StoichiometryTableWithQueryData = () => {
         stoichiometryId={1}
         stoichiometryRevision={1}
         editable
+        hasChanges={hasChanges}
       />
     </StoichiometryTableControllerProvider>
   );
@@ -42,7 +49,7 @@ export const StoichiometryTableWithDataStory = () => {
       <ThemeProvider
         theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
       >
-        <QueryClientProvider client={queryClient}>
+        <TestProviders>
           <Alerts>
             <React.Suspense
               fallback={
@@ -68,7 +75,45 @@ export const StoichiometryTableWithDataStory = () => {
               <StoichiometryTableWithQueryData />
             </React.Suspense>
           </Alerts>
-        </QueryClientProvider>
+        </TestProviders>
+      </ThemeProvider>
+    </StyledEngineProvider>
+  );
+}
+
+export function ReadOnlyStoichiometryTableStory(): React.ReactNode {
+  return (
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider
+        theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
+      >
+        <TestProviders>
+          <Alerts>
+            <React.Suspense
+              fallback={
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  justifyContent="center"
+                  alignItems="center"
+                  minHeight={100}
+                  my={2}
+                  gap={1}
+                >
+                  <CircularProgress
+                    size={24}
+                    aria-label="Loading stoichiometry table"
+                  />
+                  <Typography variant="body2" color="textSecondary">
+                    Loading stoichiometry table...
+                  </Typography>
+                </Box>
+              }
+            >
+              <StoichiometryTable stoichiometryId={1} stoichiometryRevision={1} />
+            </React.Suspense>
+          </Alerts>
+        </TestProviders>
       </ThemeProvider>
     </StyledEngineProvider>
   );

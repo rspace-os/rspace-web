@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   calculateStoichiometry,
+  deductStock,
   deleteStoichiometry,
   getMoleculeInfo,
   updateStoichiometry,
@@ -330,6 +331,97 @@ describe("deleteStoichiometry", () => {
 
     await expect(
       deleteStoichiometry({ stoichiometryId: 3 }, token),
+    ).rejects.toThrow("Network down");
+  });
+});
+
+describe("deductStock", () => {
+  const token = "test-token";
+
+  it("posts link ids to the stoichiometry deductStock endpoint", async () => {
+    fetchMock.mockResponseOnce(
+      JSON.stringify({
+        stoichiometryId: 9,
+        revisionNumber: 12,
+        results: [
+          { linkId: 501, success: true },
+          {
+            linkId: 502,
+            success: false,
+            errorMessage: "Insufficient stock",
+          },
+        ],
+      }),
+    );
+
+    const result = await deductStock(
+      {
+        stoichiometryId: 9,
+        linkIds: [501, 502],
+      },
+      token,
+    );
+
+    expect(result).toEqual({
+      stoichiometryId: 9,
+      revisionNumber: 12,
+      results: [
+        { linkId: 501, success: true },
+        {
+          linkId: 502,
+          success: false,
+          errorMessage: "Insufficient stock",
+        },
+      ],
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${API_BASE_URL}/stoichiometry/link/deductStock`,
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          Authorization: `Bearer ${token}`,
+        }) as Record<string, string>,
+        body: JSON.stringify({
+          stoichiometryId: 9,
+          linkIds: [501, 502],
+        }),
+      }),
+    );
+  });
+
+  it("throws API message when deductStock fails", async () => {
+    fetchMock.mockResponseOnce(
+      JSON.stringify({ message: "Unable to deduct stock" }),
+      {
+        status: 500,
+        statusText: "Internal Server Error",
+      },
+    );
+
+    await expect(
+      deductStock(
+        {
+          stoichiometryId: 9,
+          linkIds: [501],
+        },
+        token,
+      ),
+    ).rejects.toThrow("Unable to deduct stock");
+  });
+
+  it("bubbles up network failures during deductStock", async () => {
+    fetchMock.mockRejectOnce(new Error("Network down"));
+
+    await expect(
+      deductStock(
+        {
+          stoichiometryId: 9,
+          linkIds: [501],
+        },
+        token,
+      ),
     ).rejects.toThrow("Network down");
   });
 });
