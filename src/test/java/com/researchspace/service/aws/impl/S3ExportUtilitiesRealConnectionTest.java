@@ -1,4 +1,4 @@
-package com.researchspace.service.aws;
+package com.researchspace.service.aws.impl;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -6,8 +6,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
-import com.researchspace.service.aws.impl.S3ExportUtilitiesImpl;
-import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;

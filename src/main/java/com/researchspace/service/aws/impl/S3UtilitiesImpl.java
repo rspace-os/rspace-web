@@ -4,6 +4,7 @@ import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.aws.S3Utilities;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
@@ -20,10 +21,14 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
@@ -53,14 +58,35 @@ public class S3UtilitiesImpl implements S3Utilities {
 
   @Getter private S3Client s3Client;
 
+  protected void initializeS3ClientWithAwsDefaults(String s3Region, String s3BucketName) {
+    initializeS3Client(null, s3Region, s3BucketName,
+        false, null, null);
+  }
+
   /** Initializes s3 client used by this S3Utilities instance */
-  protected void initializeS3Client(String s3Region, String s3BucketName) {
+  protected void initializeS3Client(String s3url, String s3Region, String s3BucketName,
+      boolean pathStyleAccessEnabled, String accessKeyId, String secretAccessKey) {
+
     Validate.notBlank(s3BucketName, "s3BucketName must be set for initialization");
     Validate.notBlank(s3Region, "s3Region must be set for initialization");
     this.s3BucketName = s3BucketName;
 
     try {
-      s3Client = S3Client.builder().region(Region.of(s3Region)).build();
+      S3ClientBuilder s3ClientBuilder = S3Client.builder().region(Region.of(s3Region));
+      if (StringUtils.isNotBlank(s3url) && !s3url.startsWith("AWS::")) {
+        s3ClientBuilder.endpointOverride(URI.create(s3url));
+      }
+      if (StringUtils.isNotBlank(accessKeyId) && StringUtils.isNotBlank(secretAccessKey)) {
+        s3ClientBuilder.credentialsProvider(
+            StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(accessKeyId, secretAccessKey)));
+      }
+      if (pathStyleAccessEnabled) {
+        s3ClientBuilder.serviceConfiguration(
+            S3Configuration.builder().pathStyleAccessEnabled(true).build());
+      }
+
+      s3Client = s3ClientBuilder.build();
       HeadBucketRequest headBucketRequest =
           HeadBucketRequest.builder().bucket(s3BucketName).build();
       s3Client.headBucket(headBucketRequest);
