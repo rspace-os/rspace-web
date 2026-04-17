@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentEntity;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
@@ -9,7 +10,9 @@ import com.researchspace.model.inventory.InstrumentEntity;
 public interface InstrumentApiManager extends InventoryApiManager<InstrumentEntity> {
 
   /** Checks if instrument with given id exists */
-  boolean exists(long id);
+  boolean instrumentExists(long id);
+
+  boolean instrumentTemplateExists(long id);
 
   /**
    * Creates the Instrument according to provided apiInstrument definition, including fields, extra
@@ -24,10 +27,7 @@ public interface InstrumentApiManager extends InventoryApiManager<InstrumentEnti
    */
   ApiInstrument getApiInstrumentById(Long id, User user);
 
-  ApiInstrument getApiInstrumentTemplateById(Long id, User user);
-
-  //
-  //  InstrumentTemplate getInstrumentTemplateByIdWithPopulatedFields(Long id, User user);
+  ApiInstrumentEntity getApiInstrumentTemplateById(Long id, User user);
 
   Instrument assertUserCanEditInstrument(Long dbId, User user);
 

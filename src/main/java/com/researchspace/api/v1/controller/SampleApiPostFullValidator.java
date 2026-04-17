@@ -23,6 +23,7 @@ import org.springframework.validation.Validator;
 public class SampleApiPostFullValidator implements Validator {
 
   @Autowired private ApiFieldsHelper fieldHelper;
+  private static final String SAMPLE_ENTITY_NAME_TYPE = "sample";
 
   @Data
   @AllArgsConstructor
@@ -84,46 +85,8 @@ public class SampleApiPostFullValidator implements Validator {
             new ErrorAggregator(errors));
       }
 
-      validateMandatoryFieldsForSamplePost(incomingApiFields, templateFields, errors);
-    }
-  }
-
-  private void validateMandatoryFieldsForSamplePost(
-      List<ApiInventoryEntityField> incomingApiFields,
-      List<InventoryEntityField> templateFields,
-      Errors errors) {
-
-    for (int i = 0; i < templateFields.size(); i++) {
-      InventoryEntityField templateField = templateFields.get(i);
-      if (templateField.isMandatory()) {
-        boolean hasApiFieldForTemplateField = incomingApiFields.size() > i;
-        boolean isOptionsStoringField = templateField.isOptionsStoringField();
-        if (isOptionsStoringField) {
-          List<String> selectedOptions =
-              hasApiFieldForTemplateField
-                  ? incomingApiFields.get(i).getSelectedOptions()
-                  : templateField.getSelectedOptions();
-          if (CollectionUtils.isEmpty(selectedOptions)) {
-            errors.rejectValue(
-                "fields",
-                "errors.inventory.sample.mandatory.field.no.selection",
-                new Object[] {templateField.getName()},
-                "no option selected for mandatory field");
-          }
-        } else {
-          String incomingContent =
-              hasApiFieldForTemplateField
-                  ? incomingApiFields.get(i).getContent()
-                  : templateField.getFieldData();
-          if (!templateField.isValidValueForMandatoryField(incomingContent)) {
-            errors.rejectValue(
-                "fields",
-                "errors.inventory.sample.mandatory.field.empty",
-                new Object[] {templateField.getName()},
-                "no content for mandatory field");
-          }
-        }
-      }
+      fieldHelper.validateMandatoryFieldsForEntityPost(
+          SAMPLE_ENTITY_NAME_TYPE, incomingApiFields, templateFields, errors);
     }
   }
 

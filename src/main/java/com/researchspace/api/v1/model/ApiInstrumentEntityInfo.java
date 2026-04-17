@@ -36,7 +36,6 @@ import org.springframework.web.util.UriComponentsBuilder;
   "deleted",
   "deletedDate",
   "iconId",
-  "quantity",
   "tags",
   "type",
   "attachments",
@@ -51,12 +50,7 @@ import org.springframework.web.util.UriComponentsBuilder;
   "revisionId",
   "version",
   "historicalVersion",
-  "subSampleAlias",
-  "subSamplesCount",
-  "storageTempMin",
-  "storageTempMax",
-  "sampleSource",
-  "expiryDate",
+  "instrumentSource",
   "_links"
 })
 public class ApiInstrumentEntityInfo extends ApiInventoryRecordInfo {

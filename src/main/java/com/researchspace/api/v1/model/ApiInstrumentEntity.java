@@ -17,7 +17,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-/** API representation of an Inventory Sample */
+/** API representation of an Inventory ApiInstrumentEntity */
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -32,10 +32,10 @@ import lombok.ToString;
   "lastModified",
   "modifiedBy",
   "modifiedByFullName",
+  "canBeDeleted",
   "deleted",
   "deletedDate",
   "iconId",
-  "quantity",
   "tags",
   "type",
   "attachments",
@@ -50,12 +50,10 @@ import lombok.ToString;
   "revisionId",
   "version",
   "historicalVersion",
-  "subSampleAlias",
-  "subSamplesCount",
-  "storageTempMin",
-  "storageTempMax",
-  "sampleSource",
   "expiryDate",
+  "sharedWith",
+  "fields",
+  "extraFields",
   "_links"
 })
 public abstract class ApiInstrumentEntity extends ApiInstrumentEntityInfo {

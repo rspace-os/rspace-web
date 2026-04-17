@@ -1,6 +1,5 @@
 package com.researchspace.service.inventory.impl;
 
-import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentEntity;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
@@ -10,9 +9,9 @@ import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.service.inventory.InstrumentApiManager;
-import com.researchspace.service.inventory.InventoryAuditApiManager;
 import java.io.IOException;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
@@ -26,32 +25,35 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
 
   public static final String INSTRUMENT_DEFAULT_NAME = "Generic Instrument";
 
-  private @Autowired InstrumentEntityDao instrumentEntityDao;
-  private @Autowired InventoryAuditApiManager inventoryAuditMgr;
-  private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
+  private @Autowired InstrumentEntityDao<Instrument> instrumentDao;
+  private @Autowired InstrumentEntityDao<InstrumentTemplate> instrumentTemplateDao;
 
   @Override
-  public boolean exists(long id) {
-    return instrumentEntityDao.exists(id);
+  public boolean instrumentExists(long id) {
+    return instrumentDao.exists(id);
+  }
+
+  @Override
+  public boolean instrumentTemplateExists(long id) {
+    return instrumentTemplateDao.exists(id);
   }
 
   @Override
   public ApiInstrument createNewApiInstrument(ApiInstrument apiInstrument, User user) {
 
-    InstrumentEntity instrumentTemplate = getInstrumentTemplateIfExists(apiInstrument);
+    InstrumentEntity instrumentTemplate = getInstrumentTemplateIfPresentOnRequest(apiInstrument);
 
     String instrumentName = getNameForIncomingApiInstrument(apiInstrument);
     return createInstrument(instrumentName, apiInstrument, instrumentTemplate, user);
   }
 
-  private InstrumentEntity getInstrumentTemplateIfExists(ApiInstrument apiInstrument) {
+  private InstrumentEntity getInstrumentTemplateIfPresentOnRequest(ApiInstrument apiInstrument) {
     InstrumentEntity template = null;
     Long templateId = apiInstrument.getTemplateId();
-    // if templateId is null(we're creating a new instrument), that's ok, but if not null, we expect
-    // it
-    // to exist
+    // if templateId is null (we're creating a new instrument),
+    // but if not null, we expect it to exist
     if (templateId != null) {
-      template = instrumentEntityDao.getInstrumentTemplate(templateId);
+      template = instrumentTemplateDao.get(templateId);
     }
     return template;
   }
@@ -67,21 +69,22 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
       ApiInstrument apiInstrument,
       InstrumentEntity instrTemplate,
       User user) {
-    Instrument instrument = recordFactory.createInstrument(instrumentName, user, instrTemplate);
+    Instrument instrumentToSave =
+        recordFactory.createInstrument(instrumentName, user, instrTemplate);
 
-    setBasicFieldsFromNewIncomingApiInventoryRecord(instrument, apiInstrument, user);
+    setBasicFieldsFromNewIncomingApiInventoryRecord(instrumentToSave, apiInstrument, user);
     if (instrTemplate != null) {
       // might be null from incoming API request, but here we want to reference template icon id
-      instrument.setIconId(instrTemplate.getIconId());
+      instrumentToSave.setIconId(instrTemplate.getIconId());
     }
     if (!apiInstrument.getFields().isEmpty()) {
       saveNewApiFieldsIntoInstrumentFields(
-          apiInstrument.getFields(), instrument.getActiveFields(), user);
+          apiInstrument.getFields(), instrumentToSave.getActiveFields(), user);
     } else {
-      assertDefaultFieldsValid(instrument.getActiveFields());
+      assertDefaultFieldsValid(instrumentToSave.getActiveFields());
     }
 
-    Instrument savedInstrument = instrumentEntityDao.persistNewInstrument(instrument);
+    Instrument savedInstrument = instrumentDao.save(instrumentToSave);
     saveIncomingInstrumentImage(savedInstrument, apiInstrument, user);
 
     publisher.publishEvent(new InventoryCreationEvent(savedInstrument, user));
@@ -129,12 +132,12 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
 
   @Override
   public ApiInstrument getApiInstrumentById(Long id, User user) {
-    return doGetInstrument(id, user, false);
+    return getInstrumentById(id, user);
   }
 
   @Override
-  public ApiInstrument getApiInstrumentTemplateById(Long id, User user) {
-    return doGetInstrument(id, user, true);
+  public ApiInstrumentEntity getApiInstrumentTemplateById(Long id, User user) {
+    return getInstrumentTemplateById(id, user);
   }
 
   @Override
@@ -149,19 +152,21 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
     return null;
   }
 
-  private ApiInstrument doGetInstrument(Long id, User user, boolean asTemplate) {
-    Instrument instrument = (Instrument) getIfExists(id);
-    if (asTemplate != instrument.isTemplate()) {
-      throw new IllegalArgumentException(
-          String.format("Instrument template flag doesn't match the request (id %d)", id));
-    }
+  private ApiInstrument getInstrumentById(Long id, User user) {
+    InstrumentEntity instrument = instrumentDao.get(id);
     publisher.publishEvent(new InventoryAccessEvent(instrument, user));
     return getOutgoingApiInstrument(instrument, user);
   }
 
-  private ApiInstrument getOutgoingApiInstrument(Instrument instrument, User user) {
-    ApiInstrument result = new ApiInstrument(instrument);
-    populateOutgoingApiInstrument(result, instrument, user);
+  private ApiInstrumentEntity getInstrumentTemplateById(Long id, User user) {
+    InstrumentEntity instrumentTemplate = instrumentTemplateDao.get(id);
+    publisher.publishEvent(new InventoryAccessEvent(instrumentTemplate, user));
+    return getOutgoingApiInstrument(instrumentTemplate, user);
+  }
+
+  private ApiInstrument getOutgoingApiInstrument(InstrumentEntity instrumentEntity, User user) {
+    ApiInstrument result = new ApiInstrument(instrumentEntity);
+    populateOutgoingApiInstrument(result, instrumentEntity, user);
     return result;
   }
 
@@ -177,7 +182,7 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
    * Save incoming instrument image.
    *
    * @throws IOException
-   * @returns true if any images were saved
+   * @returns true if any i mages were saved
    */
   private boolean saveIncomingInstrumentImage(
       InstrumentEntity dbInstrument, ApiInstrumentEntity apiInstrument, User user) {
@@ -185,25 +190,17 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
         dbInstrument,
         apiInstrument,
         user,
-        InstrumentEntity.class,
-        instrument -> instrumentEntityDao.save(instrument));
+        Instrument.class,
+        instrument -> instrumentDao.save(instrument));
   }
 
   @Override
   public InstrumentEntity getIfExists(Long id) {
-    return getIfExists(id, false);
-  }
-
-  private InstrumentEntity getIfExists(Long id, boolean onlyIfTemplate) {
-    boolean exists = instrumentEntityDao.exists(id);
-    if (!exists) {
-      throw new NotFoundException(
-          "No instrument " + (onlyIfTemplate ? "template " : "") + "with id: " + id);
+    if (instrumentExists(id)) {
+      return instrumentDao.get(id);
+    } else if (instrumentTemplateExists(id)) {
+      return instrumentTemplateDao.get(id);
     }
-    InstrumentEntity instrumentEntity = instrumentEntityDao.get(id);
-    if (onlyIfTemplate && !instrumentEntity.isTemplate()) {
-      throw new NotFoundException("No instrument template with id: " + id);
-    }
-    return instrumentEntity;
+    throw new NotFoundException("No Instrument or InstrumentTemplate found with id: " + id);
   }
 }

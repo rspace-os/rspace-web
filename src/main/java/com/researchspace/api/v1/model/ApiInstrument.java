@@ -2,7 +2,7 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -52,9 +52,7 @@ import lombok.ToString;
   "subSamples",
   "_links"
 })
-public class ApiInstrument
-    extends ApiInstrumentEntity { // TODO[nik]: IN PROGRESS----> fix the inheritance (check with
-  // Samples)
+public class ApiInstrument extends ApiInstrumentEntity {
 
   /** default constructor used by jackson deserializer */
   public ApiInstrument() {
@@ -64,7 +62,7 @@ public class ApiInstrument
     super.setCanBeDeleted(true);
   }
 
-  public ApiInstrument(Instrument instrument) {
+  public ApiInstrument(InstrumentEntity instrument) {
     super(instrument);
     super.setCanBeDeleted(!instrument.isStoredInContainer());
   }

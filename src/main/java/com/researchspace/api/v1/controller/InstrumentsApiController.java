@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.InstrumentsApi;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentEntity;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import javax.validation.Valid;
@@ -19,14 +20,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 @ApiController
 public class InstrumentsApiController extends BaseApiInventoryController implements InstrumentsApi {
 
-  @Autowired private InstrumentApiPostValidator sampleApiPostValidator;
-  @Autowired private InstrumentApiPutValidator sampleApiPutValidator;
-  @Autowired private InstrumentApiPostFullValidator sampleApiPostFullValidator;
+  @Autowired private InstrumentApiPostValidator instrumentApiPostValidator;
+  @Autowired private InstrumentApiPostFullValidator instrumentApiPostFullValidator;
 
   @Data
   @AllArgsConstructor
   @NoArgsConstructor
   public static class ApiInstrumentFullPost {
+
     ApiInstrument apiInstrument;
     User user;
     // may be null
@@ -40,7 +41,7 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       @RequestAttribute(name = "user") User user)
       throws BindException {
 
-    assertNotInstrumentTemplate(apiInstrument.isTemplate());
+    assertIsNotInstrumentTemplate(apiInstrument);
     validateCreateInstrumentInput(apiInstrument, errors, user);
 
     ApiInstrument result = instrumentApiMgr.createNewApiInstrument(apiInstrument, user);
@@ -49,10 +50,10 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     return result;
   }
 
-  private void assertNotInstrumentTemplate(boolean sampleTemplateFlag) {
-    if (sampleTemplateFlag) {
+  private void assertIsNotInstrumentTemplate(ApiInstrumentEntity instrumentEntity) {
+    if (instrumentEntity.isTemplate()) {
       throw new IllegalArgumentException(
-          "Please use /sampleTemplates endpoint for template actions");
+          "Please use /instrumentTemplates endpoint for template actions");
     }
   }
 
@@ -62,18 +63,19 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       ApiInstrument apiInstrument, BindingResult errors, User user) throws BindException {
 
     // TODO[nik]: implement this on RSDEV-1059, until that, it will be always null
-    //    InstrumentTemplate instrumentTemplate = verifyTemplate(apiInstrument, errors, user);
+    // reinstate this: InstrumentTemplate instrumentTemplate =
+    //                                            verifyTemplate(apiInstrument, errors, user);
     InstrumentTemplate instrumentTemplate = null;
 
     // we validate the posted object. We can set errors on individual fields in this validator (
     // doesn't need template)
-    inputValidator.validate(apiInstrument, sampleApiPostValidator, errors);
+    inputValidator.validate(apiInstrument, instrumentApiPostValidator, errors);
 
     // here we validate using other information as well as what's posted. errors are 'global' errors
     ApiInstrumentFullPost allData =
         new ApiInstrumentFullPost(apiInstrument, user, instrumentTemplate);
 
-    inputValidator.validate(allData, sampleApiPostFullValidator, errors);
+    inputValidator.validate(allData, instrumentApiPostFullValidator, errors);
     // this will collate all errors together.
     throwBindExceptionIfErrors(errors);
   }
@@ -82,13 +84,13 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   public ApiInstrument getInstrumentById(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
 
-    ApiInstrument sample = retrieveApiInstrumentIfExists(id, user);
-    buildAndAddInventoryRecordLinks(sample);
-    return sample;
+    ApiInstrument instrument = retrieveApiInstrumentIfExists(id, user);
+    buildAndAddInventoryRecordLinks(instrument);
+    return instrument;
   }
 
   private ApiInstrument retrieveApiInstrumentIfExists(Long id, User user) {
-    boolean exists = instrumentApiMgr.exists(id);
+    boolean exists = instrumentApiMgr.instrumentExists(id);
     if (!exists) {
       throw new NotFoundException(createNotFoundMessage("Inventory record", id));
     }
