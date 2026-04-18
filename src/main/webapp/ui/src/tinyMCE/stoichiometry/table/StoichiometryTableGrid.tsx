@@ -23,6 +23,24 @@ const STOICHIOMETRY_TABLE_SLOTS = {
 
 const getMoleculeRowId = (row: EditableMolecule) => row.id;
 
+const getInventoryLinkExportValue = (row: EditableMolecule): string =>
+  row.inventoryLink?.inventoryItemGlobalId ??
+  row.deletedInventoryLink?.inventoryItemGlobalId ??
+  "";
+
+const getRoleExportValue = (role: string | null | undefined): string => {
+  if (!role) {
+    return "";
+  }
+
+  switch (role.toUpperCase()) {
+    case "AGENT":
+      return "Reagent";
+    default:
+      return `${role.slice(0, 1)}${role.slice(1).toLowerCase()}`;
+  }
+};
+
 export default function StoichiometryTableGrid({
   editable,
   allMolecules,
@@ -117,6 +135,7 @@ export default function StoichiometryTableGrid({
         headerName: "Inventory Link",
         sortable: false,
         minWidth: 200,
+        valueGetter: (_value, row) => getInventoryLinkExportValue(row),
         renderCell: ({ row }) => (
           <StoichiometryTableInventoryLinkCell
             inventoryLink={row.inventoryLink}
@@ -149,6 +168,7 @@ export default function StoichiometryTableGrid({
         headerName: "Type",
         sortable: false,
         minWidth: 130,
+        valueFormatter: (value) => getRoleExportValue(value as string | null | undefined),
         renderCell: ({ row }) => {
           if (!roleColumnEditable) {
             return <StoichiometryTableRoleChip role={row.role || ""} />;

@@ -1,15 +1,45 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Blob as NodeBlob } from "node:buffer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useGridApiContext } from "@mui/x-data-grid";
 import StoichiometryTableGrid from "@/tinyMCE/stoichiometry/table/StoichiometryTableGrid";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 
 vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableToolbar", () => ({
-  default: () => <div role="toolbar">Stoichiometry toolbar</div>,
+  default: ({
+    allMolecules = [],
+  }: {
+    allMolecules?: Array<{ id: number }>;
+  }) => {
+    const apiRef = useGridApiContext();
+
+    return (
+      <div role="toolbar">
+        <button
+          type="button"
+          onClick={() => {
+            apiRef.current?.exportDataAsCsv({
+              allColumns: true,
+              getRowsToExport: () => allMolecules.map((molecule) => molecule.id),
+            });
+          }}
+        >
+          Export CSV
+        </button>
+      </div>
+    );
+  },
 }));
 
-function makeMolecule(): EditableMolecule {
+vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableInventoryLinkCell", () => ({
+  default: () => <div>Inventory link cell</div>,
+}));
+
+globalThis.Blob = NodeBlob as unknown as typeof Blob;
+
+function makeMolecule(overrides: Partial<EditableMolecule> = {}): EditableMolecule {
   return {
     id: 1,
     rsChemElement: null,
@@ -29,6 +59,7 @@ function makeMolecule(): EditableMolecule {
     actualYield: null,
     limitingReagent: false,
     notes: null,
+    ...overrides,
   };
 }
 
@@ -54,6 +85,7 @@ function makeProductMolecule(): EditableMolecule {
 
 describe("StoichiometryTableGrid", () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     vi.clearAllMocks();
   });
 
@@ -179,6 +211,79 @@ describe("StoichiometryTableGrid", () => {
       expect(screen.getByRole("button", { name: buttonName })).toBeEnabled();
     },
   );
+
+  it("exports linked inventory items as global IDs instead of object strings", async () => {
+    const user = userEvent.setup();
+    let blob: Blob | undefined;
+
+    const createObjectURLSpy = vi.spyOn(window.URL, "createObjectURL").mockImplementation(
+      (object: Blob | MediaSource) => {
+        blob = object as Blob;
+        return "blob:stoichiometry-export";
+      },
+    );
+
+    render(
+      <StoichiometryTableGrid
+        editable
+        allMolecules={[
+          makeMolecule({
+            inventoryLink: {
+              id: 101,
+              inventoryItemGlobalId: "SS123",
+              stockDeducted: false,
+            },
+          }),
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Export CSV" }));
+
+    expect(createObjectURLSpy).toHaveBeenCalledOnce();
+    expect(blob).toBeDefined();
+
+    const csv = await blob!.text();
+
+    expect(csv).toContain("Inventory Link");
+    expect(csv).toContain("SS123");
+    expect(csv).toContain("Reactant");
+    expect(csv).not.toContain("[object Object]");
+  });
+
+  it("exports deleted inventory links using their previous global ID", async () => {
+    const user = userEvent.setup();
+    let blob: Blob | undefined;
+
+    const createObjectURLSpy = vi.spyOn(window.URL, "createObjectURL").mockImplementation(
+      (object: Blob | MediaSource) => {
+        blob = object as Blob;
+        return "blob:stoichiometry-export";
+      },
+    );
+
+    render(
+      <StoichiometryTableGrid
+        editable
+        allMolecules={[
+          makeMolecule({
+            inventoryLink: null,
+            deletedInventoryLink: {
+              id: 202,
+              inventoryItemGlobalId: "SS999",
+              stockDeducted: false,
+            },
+          }),
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Export CSV" }));
+
+    expect(createObjectURLSpy).toHaveBeenCalledOnce();
+    expect(blob).toBeDefined();
+    await expect(blob!.text()).resolves.toContain("SS999");
+  });
 });
 
 
