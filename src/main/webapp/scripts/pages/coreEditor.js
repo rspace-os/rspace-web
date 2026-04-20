@@ -1996,7 +1996,6 @@ function initGalleryFileUpload() {
     progressFunction: RS.blockingProgressBar,
     formData: function () {
       // if uploading new version of existing attachment
-      debugger;
       if (this.fileInput.hasClass("fileReplaceInput")) {
         return [{ name: 'selectedMediaId', value: this.fileInput.attr('mediaFileId') }];
       }

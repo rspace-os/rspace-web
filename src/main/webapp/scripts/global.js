@@ -1004,6 +1004,16 @@ function _checkIfFlashAvailable() {
   return flashAvailable;
 }
 
+function getMediaPlayerHTML(id, name, extension) {
+  var html = ""
+  var milliseconds = new Date().getTime();
+  if (isPlayableOnJWPlayer(extension)) {
+    html = '<div class="mediaDiv" style="border:1px solid; padding:3px; margin: 3px"><div class="videoTemp" id="videoContainer_' +
+        id + '_' + milliseconds + '">Loading the player ...</div></div>';
+  }
+  return html;
+}
+
 /**
  * Given an id,name and extension, creates a JD media player
  * @param id - a DB id of an ECatVideo or EcatAudio
@@ -1012,7 +1022,6 @@ function _checkIfFlashAvailable() {
  * @returns the HTML for the player, that can be inserted where appropriate by the calling code.
  */
 function setUpJWMediaPlayer(id, name, extension) {
-
   //it has got the HTML code needed to generate the player code from the plugin
   var videoHTML = getMediaPlayerHTML(id, name, extension);
 
