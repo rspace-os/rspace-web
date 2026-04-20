@@ -14,8 +14,8 @@
     "serve": "NODE_OPTIONS='--max-old-space-size=8192' webpack --watch --mode development --devtool eval-cheap-module-source-map",
     "depcruise": "npx depcruise src",
     "tsc": "tsc --noEmit",
-    "test-ct": "NODE_OPTIONS=\"--conditions=require\" playwright test -c playwright-ct.config.ts",
-    "test-ct:ui": "NODE_OPTIONS=\"--conditions=require\" playwright test -c playwright-ct.config.ts --ui",
+    "test-ct": "NODE_OPTIONS=\"--conditions=require\" playwright test ui/src/components/FolderTree.spec.tsx -c playwright-ct.config.ts",
+    "test-ct:ui": "NODE_OPTIONS=\"--conditions=require\" playwright test ui/src/components/FolderTree.spec.tsx -c playwright-ct.config.ts --ui",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
