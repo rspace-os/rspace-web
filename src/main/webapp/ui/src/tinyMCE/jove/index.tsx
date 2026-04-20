@@ -3,49 +3,67 @@ import Jove, { getSelectedResults, getOrder, getOrderBy } from "./Jove";
 import { getArticle, type Article } from "./JoveClient";
 import { getSorting, stableSort } from "../../util/table";
 import { createRoot } from "react-dom/client";
+import Analytics from "../../components/Analytics";
+import AnalyticsContext from "../../stores/contexts/Analytics";
+
+function JoveApp() {
+  const { trackEvent } = React.useContext(AnalyticsContext);
+
+  React.useEffect(() => {
+    const editor = parent.tinymce.activeEditor;
+    const handleInsert = () => {
+      if (parent && parent.tinymce) {
+        const selectedResults = stableSort<Article>(
+          getSelectedResults(),
+          // @ts-expect-error TS doesn't like indexing by ""
+          getSorting(getOrder(), getOrderBy())
+        );
+        if (selectedResults.length > 0) {
+          const ed = parent.tinymce.activeEditor;
+          const promises = selectedResults.map((article) => {
+            return getArticle(article.id);
+          });
+
+          void Promise.all(promises).then((data) => {
+            const articles = data.map((index) => {
+              return index.data;
+            });
+            const joveContentToInsert = createJoveContent(articles);
+            // @ts-expect-error global
+            RS.tinymceInsertContent(joveContentToInsert.outerHTML, ed); //eslint-disable-line
+            ed?.windowManager.close();
+          });
+          trackEvent("JoveContentInserted", { selectedResults });
+        }
+      }
+    };
+
+    editor?.on("jove-insert", handleInsert);
+
+    return () => {
+      editor?.off("jove-insert", handleInsert);
+    };
+  }, [trackEvent]);
+
+  return <Jove />;
+}
 
 document.addEventListener("DOMContentLoaded", function () {
   const domContainer = document.getElementById("tinymce-jove");
   if (domContainer) {
     const root = createRoot(domContainer);
-    root.render(<Jove />);
-  }
-});
-
-parent.tinymce.activeEditor?.on("jove-insert", function () {
-  if (parent && parent.tinymce) {
-    let selectedResults = stableSort<Article>(
-      getSelectedResults(),
-      // @ts-expect-error TS doesn't like indexing by ""
-      getSorting(getOrder(), getOrderBy())
+    root.render(
+      <Analytics>
+        <JoveApp />
+      </Analytics>,
     );
-    if (selectedResults.length > 0) {
-      const ed = parent.tinymce.activeEditor;
-      // Get each of the articles from the backend/jove API
-      const promises = selectedResults.map((article) => {
-        return getArticle(article.id);
-      });
-      // Once all the data is collected created the content to be inserted.
-
-      void Promise.all(promises).then((data) => {
-        let articles = data.map((index) => {
-          return index.data;
-        });
-        let joveContentToInsert = createJoveContent(articles);
-        // @ts-expect-error global
-        RS.tinymceInsertContent(joveContentToInsert.outerHTML, ed); //eslint-disable-line
-        ed?.windowManager.close();
-      });
-      // @ts-expect-error global
-      RS.trackEvent("JoveContentInserted", { selectedResults }); //eslint-disable-line
-    }
   }
 });
 
 function createJoveContent(articles: Array<Article>) {
-  let pTag = document.createElement("p");
+  const pTag = document.createElement("p");
   articles.forEach((joveArticle) => {
-    let embedDiv = document.createElement("div");
+    const embedDiv = document.createElement("div");
     embedDiv.classList.add("embedIframeDiv");
     embedDiv.classList.add("mceNonEditable");
 
@@ -57,7 +75,7 @@ function createJoveContent(articles: Array<Article>) {
 }
 
 function getIframeAndInnerContent(joveArticle: Article) {
-  var iframe = document.createElement("iframe");
+  const iframe = document.createElement("iframe");
   iframe.setAttribute("id", "embed-iframe");
   iframe.allow = "encrypted-media *";
   iframe.src = joveArticle.embed_url;

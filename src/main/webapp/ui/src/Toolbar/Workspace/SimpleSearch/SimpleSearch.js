@@ -23,6 +23,7 @@ import UserSelect from "../AdvancedSearch/UserSelect/UserSelect";
 import TagSelect from "../AdvancedSearch/TagSelect/TagSelect";
 import ScopeDialog from "./SimpleSearchScopeDialog";
 import ChemicalSearcher from "./ChemicalSearcher";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 function formatDateForTooltip(date /*: ?Date*/) /*: string*/ {
   if (date === null) return "";
@@ -266,9 +267,9 @@ class SimpleSearch extends React.Component {
     doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
 
     if (scopedSearch) {
-      RS.trackEvent("user:search:scoped:workspace");
+      this.context.trackEvent("user:search:scoped:workspace");
     } else {
-      RS.trackEvent("user:search:simple:workspace");
+      this.context.trackEvent("user:search:simple:workspace");
     }
   };
 
@@ -502,5 +503,7 @@ class SimpleSearch extends React.Component {
     );
   }
 }
+
+SimpleSearch.contextType = AnalyticsContext;
 
 export default SimpleSearch;

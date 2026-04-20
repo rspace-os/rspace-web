@@ -32,6 +32,7 @@ import SocialActions from "../ToolbarSocial";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
 import Analytics from "../../components/Analytics";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 class WorkspaceToolbar extends React.Component {
   constructor(props) {
@@ -190,26 +191,26 @@ class WorkspaceToolbar extends React.Component {
     tree_view();
     this.setState({ treeView: true });
     this.handleClose(0);
-    RS.trackEvent("user:view:tree:workspace");
+    this.context.trackEvent("user:view:tree:workspace");
   };
 
   openListView = () => {
     list_view();
     this.setState({ treeView: false });
     this.handleClose(0);
-    RS.trackEvent("user:view:list:workspace");
+    this.context.trackEvent("user:view:list:workspace");
   };
 
   openFolderView = () => {
     this.setState({ viewableItemsFilter: false }, this.displayWorkspace);
     this.handleClose(1);
-    RS.trackEvent("user:view:folder:workspace");
+    this.context.trackEvent("user:view:folder:workspace");
   };
 
   openViewAll = () => {
     this.setState({ viewableItemsFilter: true }, this.displayWorkspace);
     this.handleClose(1);
-    RS.trackEvent("user:view:all:workspace");
+    this.context.trackEvent("user:view:all:workspace");
   };
 
   toggleFilter = (filter) => {
@@ -225,7 +226,7 @@ class WorkspaceToolbar extends React.Component {
     const callback = () => {
       this.setWorkspaceSettings();
       getAndDisplayWorkspaceResults(workspaceSettings.url, workspaceSettings);
-      RS.trackEvent("user:view:labgroup:workspace");
+      this.context.trackEvent("user:view:labgroup:workspace");
     };
 
     this.setWorkspaceSettingsUrl();
@@ -435,7 +436,7 @@ class WorkspaceToolbar extends React.Component {
               <IconButton
                 onClick={() => {
                   this.toggleFilter("favoritesFilter");
-                  RS.trackEvent("user:filter:favorites:workspace");
+                  this.context.trackEvent("user:filter:favorites:workspace");
                 }}
                 id="favoritesFilter_1"
                 color={this.state.favoritesFilter ? "default" : "inherit"}
@@ -450,7 +451,9 @@ class WorkspaceToolbar extends React.Component {
               <IconButton
                 onClick={() => {
                   this.toggleFilter("sharedFilter");
-                  RS.trackEvent("user:filter:shared_with_me:workspace");
+                  this.context.trackEvent(
+                    "user:filter:shared_with_me:workspace",
+                  );
                 }}
                 id="sharedFilter_1"
                 color={this.state.sharedFilter ? "default" : "inherit"}
@@ -465,7 +468,7 @@ class WorkspaceToolbar extends React.Component {
               <IconButton
                 onClick={() => {
                   this.toggleFilter("templatesFilter");
-                  RS.trackEvent("user:filter:templates:workspace");
+                  this.context.trackEvent("user:filter:templates:workspace");
                 }}
                 id="templatesFilter_1"
                 color={this.state.templatesFilter ? "default" : "inherit"}
@@ -491,7 +494,7 @@ class WorkspaceToolbar extends React.Component {
               <IconButton
                 onClick={() => {
                   this.toggleFilter("ontologiesFilter");
-                  RS.trackEvent("user:filter:ontologies:workspace");
+                  this.context.trackEvent("user:filter:ontologies:workspace");
                 }}
                 id="ontologiesFilter_1"
                 color={this.state.ontologiesFilter ? "default" : "inherit"}
@@ -551,6 +554,8 @@ class WorkspaceToolbar extends React.Component {
     );
   }
 }
+
+WorkspaceToolbar.contextType = AnalyticsContext;
 
 let rootNode;
 let domContainer;

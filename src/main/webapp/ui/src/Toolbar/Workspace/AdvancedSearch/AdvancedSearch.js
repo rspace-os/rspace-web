@@ -26,6 +26,7 @@ import FilePicker from "./RecordSelect/FilePicker";
 import UserSelect from "./UserSelect/UserSelect";
 import TagSelect from "./TagSelect/TagSelect";
 import Searchbox from "./Searchbox";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 const QueryRow = styled.tr`
   td {
@@ -176,7 +177,7 @@ class AdvancedSearch extends React.Component {
     workspaceSettings.pageNumber = 0;
 
     doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
-    RS.trackEvent("user:search:advanced:workspace", {
+    this.context.trackEvent("user:search:advanced:workspace", {
       options: workspaceSettings.options,
       operator: workspaceSettings.operator,
     });
@@ -500,5 +501,7 @@ class AdvancedSearch extends React.Component {
     );
   }
 }
+
+AdvancedSearch.contextType = AnalyticsContext;
 
 export default AdvancedSearch;

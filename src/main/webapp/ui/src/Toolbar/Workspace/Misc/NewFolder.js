@@ -11,12 +11,14 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import TextField from "@mui/material/TextField";
 import axios from "@/common/axios";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 export default function NewNotebook() {
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const [navigateAfterCreate, setNavigateAfterCreate] = React.useState(false);
   const [error, setError] = React.useState(null);
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   useEffect(() => {
     $(document).on("click", "#createFolder", () => {
@@ -67,7 +69,7 @@ export default function NewNotebook() {
           );
           RS.unblockPage();
         }
-        RS.trackEvent("user:create:folder:workspace");
+        trackEvent("user:create:folder:workspace");
       })
       .catch((error) => {
         RS.unblockPage();

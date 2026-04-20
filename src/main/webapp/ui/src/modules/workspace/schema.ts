@@ -62,7 +62,7 @@ export const WorkspaceRecordInformationSchema = v.objectWithRest(
     status: v.optional(WorkspaceRecordEditStatusSchema),
     currentEditor: v.optional(v.nullable(v.string())),
     signed: v.optional(v.boolean()),
-    signatureStatus: v.nullable(WorkspaceRecordSignatureStatusSchema),
+    signatureStatus: v.optional(WorkspaceRecordSignatureStatusSchema),
     linkedByCount: v.optional(v.number()),
     templateFormName: v.optional(v.nullable(v.string())),
     templateFormId: v.optional(v.nullable(WorkspaceRecordOidSchema)),

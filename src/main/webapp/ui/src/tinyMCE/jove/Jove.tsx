@@ -13,6 +13,7 @@ import { type Cell } from "../../components/EnhancedTableHead";
 import { type Order as OrderType } from "../../util/types";
 import { InvalidLocalStorageState } from "../../util/error";
 import { mapNullable } from "../../util/Util";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 const TABLE_HEADER_CELLS: Array<Cell<"" | "thumbnail" | "title" | "section">> =
   [
@@ -55,6 +56,7 @@ export const getOrderBy = (): keyof Article | "" => {
 };
 
 export default function Jove(): React.ReactNode {
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const [searchResults, setSearchResults] = useState<Array<Article>>([]);
   const [searchDone, setSearchDone] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -120,6 +122,7 @@ export default function Jove(): React.ReactNode {
         searchQuery,
         page,
         rowsPerPage,
+        trackEvent,
       );
       if (searchResult) {
         // Only populate the search results array with results that have videos.

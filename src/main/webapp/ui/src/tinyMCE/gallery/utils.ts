@@ -14,7 +14,6 @@ type RSGalleryUtils = {
   insertTemplateIntoTinyMCE: (templateName: string, data: unknown) => void;
   blockPage: (message: string) => void;
   unblockPage: () => void;
-  trackEvent: (event: string, properties?: Record<string, unknown>) => void;
   tinymceInsertContent: (html: string) => void;
 };
 
@@ -42,7 +41,6 @@ declare global {
     insertTemplateIntoTinyMCE?: RSGalleryUtils["insertTemplateIntoTinyMCE"];
     blockPage?: RSGalleryUtils["blockPage"];
     unblockPage?: RSGalleryUtils["unblockPage"];
-    trackEvent?: RSGalleryUtils["trackEvent"];
     tinymceInsertContent?: RSGalleryUtils["tinymceInsertContent"];
   }
 
@@ -56,7 +54,6 @@ type RequiredRSGalleryUtils = RSGlobal & {
   insertTemplateIntoTinyMCE: NonNullable<RSGlobal["insertTemplateIntoTinyMCE"]>;
   blockPage: NonNullable<RSGlobal["blockPage"]>;
   unblockPage: NonNullable<RSGlobal["unblockPage"]>;
-  trackEvent: NonNullable<RSGlobal["trackEvent"]>;
   tinymceInsertContent: NonNullable<RSGlobal["tinymceInsertContent"]>;
 };
 
@@ -254,7 +251,6 @@ async function insertChemistryFileFromGallery(data: WorkspaceRecordInformation) 
   try {
     // defined in coreEditor.js
     await insertChemElement(data.id, getActiveFieldId(), data.name);
-    getRS().trackEvent("user:add:chemistry_object:document", { from: "gallery" });
   } catch (error) {
     console.error("Error while inserting chemicals from Gallery:", error);
   } finally {

@@ -8,7 +8,6 @@ type MockedRS = {
   insertTemplateIntoTinyMCE: ReturnType<typeof vi.fn>;
   blockPage: ReturnType<typeof vi.fn>;
   unblockPage: ReturnType<typeof vi.fn>;
-  trackEvent: ReturnType<typeof vi.fn>;
   tinymceInsertContent: ReturnType<typeof vi.fn>;
 };
 
@@ -60,7 +59,6 @@ describe("addFromGallery", () => {
       insertTemplateIntoTinyMCE: vi.fn(),
       blockPage: vi.fn(),
       unblockPage: vi.fn(),
-      trackEvent: vi.fn(),
       tinymceInsertContent: vi.fn(),
     };
     generateIconSrc = vi.fn(() => "/icons/file.svg");
@@ -151,10 +149,6 @@ describe("addFromGallery", () => {
     await waitFor(() => {
       expect(RS.blockPage).toHaveBeenCalledWith("Inserting Chemical...");
       expect(insertChemElement).toHaveBeenCalledWith(21, "11", "Gallery asset");
-      expect(RS.trackEvent).toHaveBeenCalledWith(
-        "user:add:chemistry_object:document",
-        { from: "gallery" },
-      );
       expect(RS.unblockPage).toHaveBeenCalled();
     });
   });
