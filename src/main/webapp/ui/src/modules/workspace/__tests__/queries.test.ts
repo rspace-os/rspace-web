@@ -14,6 +14,7 @@ const mockRecordInformation: WorkspaceRecordInformation = {
   ownerFullName: "Alice Example",
   ownerUsername: "alice",
   description: "Microscope image",
+  signatureStatus: "UNSIGNABLE",
   extension: "png",
   size: 1024,
   version: 2,
