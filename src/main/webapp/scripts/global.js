@@ -31,6 +31,42 @@ var lastTabbable = undefined;
 var bootstrapModalsContainer = undefined;
 var currentModalHandle = undefined;
 
+function generateIconSrc(type, extension, thumbnailId, id) {
+  if (type == 'Video' || type == 'Videos' || type == 'Audios' || type == 'Audio') {
+    var iconSrc = RS.getIconPathForExtension(extension);
+    if (iconSrc == "" && type == 'Video') {
+      iconSrc = "/images/icons/video.png";
+    }
+    if (iconSrc == "" && type == 'Audio') {
+      iconSrc = "/images/icons/audioIcon.png";
+    }
+  } else if (type == 'Document' || type == 'Documents' || type == 'Miscellaneous' || type == 'DMPs') {
+    var iconSrc = "";
+    if((type == 'Document' || type == 'Documents') & id != null) {
+      let suffix = (thumbnailId!=null)?thumbnailId:"none";
+      iconSrc = createURL("/image/docThumbnail/" + id + "/" + suffix);
+    } else {
+      iconSrc = RS.getIconPathForExtension(extension) || "/images/icons/textBig.png";
+    }
+  } else if (type == "PdfDocuments") {
+    var iconSrc = "";
+    // use generated thumbnail if possible, else use default image
+    if (id != null) {
+      let suffix = (thumbnailId!=null)?thumbnailId:"none";
+      iconSrc = createURL("/image/docThumbnail/" + id + "/" + suffix);
+    } else {
+      iconSrc = RS.getIconPathForExtension(extension);
+    }
+  } else if (type =="Chemistry") {
+    if (chemistryAvailable) {
+      iconSrc = createURL("/gallery/getChemThumbnail/" + id);
+    } else {
+      iconSrc = RS.getIconPathForExtension(extension);
+    }
+  }
+  return iconSrc;
+}
+
 /**
  * Find the closest element somewhere above the current element (either a prev
  * sibling or a parent or a parent's prev sibling).
