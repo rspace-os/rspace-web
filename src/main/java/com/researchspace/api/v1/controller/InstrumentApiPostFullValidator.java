@@ -21,6 +21,11 @@ public class InstrumentApiPostFullValidator implements Validator {
   @Autowired private ApiFieldsHelper fieldHelper;
   private static final String INSTRUMENT_ENTITY_NAME_TYPE = "instrument";
 
+  @Override
+  public boolean supports(Class<?> clazz) {
+    return clazz.isAssignableFrom(ApiInstrumentFullPost.class);
+  }
+
   @Data
   @AllArgsConstructor
   public static class ErrorAggregator implements Consumer<String> {
@@ -32,11 +37,6 @@ public class InstrumentApiPostFullValidator implements Validator {
         errors.reject("", errorMessage);
       }
     }
-  }
-
-  @Override
-  public boolean supports(Class<?> clazz) {
-    return clazz.isAssignableFrom(ApiInstrumentFullPost.class);
   }
 
   @Override

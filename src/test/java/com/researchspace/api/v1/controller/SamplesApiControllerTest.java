@@ -32,11 +32,11 @@ import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
-import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples.ApiSampleSubSampleTargetLocation;
 import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
+import com.researchspace.api.v1.model.ApiTargetLocation;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
@@ -508,13 +508,11 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples newSample =
         new ApiSampleWithFullSubSamples("sample with 3 subsamples and default quantity");
     newSample.setNewSampleSubSamplesCount(3);
-    List<ApiSampleSubSampleTargetLocation> targetLocations =
+    List<ApiTargetLocation> targetLocations =
         List.of(
-            new ApiSampleSubSampleTargetLocation(listContainer.getId(), new ApiContainerLocation()),
-            new ApiSampleSubSampleTargetLocation(
-                gridContainer.getId(), new ApiContainerLocation(1, 2)),
-            new ApiSampleSubSampleTargetLocation(
-                imageContainer.getId(), imageContainer.getLocations().get(1)));
+            new ApiTargetLocation(listContainer.getId(), new ApiContainerLocation()),
+            new ApiTargetLocation(gridContainer.getId(), new ApiContainerLocation(1, 2)),
+            new ApiTargetLocation(imageContainer.getId(), imageContainer.getLocations().get(1)));
     newSample.setNewSampleSubSampleTargetLocations(targetLocations);
 
     ApiSampleWithFullSubSamples sampleWithSubSamples =

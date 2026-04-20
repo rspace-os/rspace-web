@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.InstrumentsApi;
+import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentEntity;
 import com.researchspace.model.User;
@@ -43,6 +44,13 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
 
     assertIsNotInstrumentTemplate(apiInstrument);
     validateCreateInstrumentInput(apiInstrument, errors, user);
+
+    if (apiInstrument.getNewTargetLocation() != null) {
+      ApiContainerInfo parentContainer = new ApiContainerInfo();
+      parentContainer.setId(apiInstrument.getNewTargetLocation().getContainerId());
+      apiInstrument.setParentContainer(parentContainer);
+      apiInstrument.setParentLocation(apiInstrument.getNewTargetLocation().getContainerLocation());
+    }
 
     ApiInstrument result = instrumentApiMgr.createNewApiInstrument(apiInstrument, user);
     buildAndAddInventoryRecordLinks(result);

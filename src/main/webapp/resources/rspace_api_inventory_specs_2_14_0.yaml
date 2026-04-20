@@ -1,11 +1,10 @@
-
 swagger: '2.0'
 info:
   title: RSpace Inventory API
   description: >
     Welcome to the RSpace Inventory API.
 
-  version: "2.13"
+  version: "2.14"
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit headers.
   license:
@@ -20,8 +19,8 @@ produces:
 consumes:
   - application/json
 security:
-  - ApiKeySecurity: []
-  - OAuthJWT: []
+  - ApiKeySecurity: [ ]
+  - OAuthJWT: [ ]
 securityDefinitions:
   ApiKeySecurity:
     description: Authentication system based on API Key.
@@ -74,6 +73,81 @@ paths:
         '404':
           $ref: '#/responses/NotFound'
 
+  /instruments:
+    post:
+      summary: Create a new Instrument
+      description: >-
+
+        Creates a new Instrument in RSpace Inventory.
+        
+        Content body is a JSON object defining properties of the instrument:
+                 - `name` is the only required property.
+                 - `fields` array contains values for fields coming from the instrument template. The ordering is important as the content is assigned to  subsequent template fields.
+                 - All fields except Choice and Radio fields, fields are defined as `{"content": <value>}` objects, where `<value>` is appropriate for the field type. Radio and Choice fields are defined as `"selectedOptions": ["<option1>", "<option2>"...]`
+                 - If `templateId` is set, `fields` can be omitted, in which case the instrument will be created using default values supplied by the instrument template (if any).
+                 - For Attachment fields, the `content` field is used to describe the attached file, and it is not possible to attach the actual file in this request. To attach the file, use `/files POST` setting `parentGlobalId` to the Id of the field once this instrument is created.
+                 - `extraFields` array contains values for additional fields that can be added independently from template fields. The order of the fields in array is not important, but each field need to specify `type` and `name`.
+
+        ## Examples of the request body
+        
+        | Body | Explanation |
+
+        | --- | --- |
+
+        `{ "name": "Generic instrument" }` | Creates a Instrument named "Generic instrument", based on Basic Instrument template, with empty content, and `instrumentSource` default of `LAB_CREATED`. 
+
+        `{ "name": "Instrument with image", "newBase64Image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQIAAAESAQMAAAAsV 0mIAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAGUExURf///wAAAFXC034AAAAJcEhZcwAADsMAAA7 DAcdvqGQAAABWSURBVGje7dUhDsAgEETR5VYcv8fCgUEg1rXdhOR9/ZKRE5LO2kwbH4snHe8EQRAEQWxR88g+m yAIgiDeCo9MEARBEP+Lmr/1yARBEARxhyj5fSktYgFPS1k85Tqe JQAAAABJRU5ErkJggg==" }` | As previous example, but includes an image of the instrument in Base64. 
+
+        `{ "name": "Instrument stored ina LIST container", "newTargetLocation": { "containerId": 11, "location": {} } }` | Creates an instrument placed into a `LIST` container (with `id=11`), location MUST be empty.
+
+        `{ "name": "Instrument stored ina GRID container", "newTargetLocation": { "containerId": 21, "location": { "coordX": 1, "coordY": 1} }` | Creates an instrument placed into a `GRID` container (with `id=21`), grid coordinates MUST be provided.
+
+        `{ "name": "Instrument stored ina LIST container", "newTargetLocation": { "containerId": 31, "location": { "id": 32 } } }` | Creates an instrument placed into a `VISUAL` container (with `id=31`), the id of a target location MUST be provided.
+        
+        `{ "name": "My Instrument", "instrumentSource": "VENDOR_SUPPLIED", "templateId": 1 }` | Creates a new Instrument based on Instrument Template with `id = 1`, non-default value for `instrumentSource`, with default field values 
+
+        `{ "name": "My Instrument",  "templateId": 22, "fields": [{}, {}, {"content": "some data"}] }` | Creates a new Instrument based on template with `id = 22`, with default field values for the first two fields and explicit value for the 3rd field. 
+
+        `{ "name": "My Complex API Instrument #1", "description": "my description", "templateId": 2, "fields": [{ "content": "5.0" }, { "content": "2020-05-13" }, { "content": "a string"}, { "content": "<p>MyText content</p>" }, { "content": "https://www.researchspace.com" }, { "content": "SD12345" }, { "content": "description of an attached file" }, { "selectedOptions": ["option1"] }, { "selectedOptions": ["optionA"] }], "extraFields": [ { "name": "my instrument extra field", "type": "text", "content" :"extra instrument content (text)" } ] }` | Creates a complex Instrument based on a specific template (with id `2`) which contains 9 fields of various types. In order these are number, date, string, text, uri, reference, attachment, radio, choice.
+
+
+      tags:
+        - Instruments
+      parameters:
+        - in: body
+          name: instrument
+          description: 'An instrument, with optional fields'
+          required: true
+          schema:
+            $ref: '#/definitions/Instrument'
+      responses:
+        '201':
+          description: >-
+            Success. Returned object represents a created instrument.
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+        '500':
+          $ref: '#/responses/LicenseProblem'
+  '/instruments/{instrumentId}':
+    get:
+      summary: Retrieve a complete Instrument by ID
+      description: |
+        Gets a complete Instrument
+      produces:
+        - application/json
+      tags:
+        - Instruments
+      parameters:
+        - $ref: '#/parameters/instrumentIdParam'
+      responses:
+        '200':
+          description: An Instrument
+          schema:
+            $ref: '#/definitions/Instrument'
+        '404':
+          $ref: '#/responses/NotFound'
+
+
   /samples:
     get:
       summary: Get all Samples visible to the current User
@@ -124,7 +198,7 @@ paths:
 
         | --- | --- |
 
-        `{ "name": "Generic sample" }` | Creates a Sample named "Generic sample", based on Basic Sample template, with empty content, and `sampleSource` default of 'LAB_CREATED'.
+        `{ "name": "Generic sample" }` | Creates a Sample named "Generic sample", based on Basic Sample template, with empty content, and `sampleSource` default of `LAB_CREATED`.
 
         `{ "name": "Sample with image", "newBase64Image":
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQIAAAESAQMAAAAsV 0mIAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAGUExURf///wAAAFXC034AAAAJcEhZcwAADsMAAA7 DAcdvqGQAAABWSURBVGje7dUhDsAgEETR5VYcv8fCgUEg1rXdhOR9/ZKRE5LO2kwbH4snHe8EQRAEQWxR88g+m yAIgiDeCo9MEARBEP+Lmr/1yARBEARxhyj5fSktYgFPS1k85Tqe JQAAAABJRU5ErkJggg==" }` | As previous example, but includes an image of the sample in Base64.
@@ -132,47 +206,27 @@ paths:
         `{ "name": "Sample with default subsamples", "newSampleSubSamplesCount": 3, "newSampleSubSampleTargetLocations":
         [ { "containerId": 11, "location": {} }, { "containerId": 21, "location": { "coordX": 1, "coordY": 1} }, { "containerId": 31, "location": { "id": 32 } } ] }`
         | Creates a sample with three default subsamples, each placed within a different container. When placing into LIST container (with id=11) location should be empty;
-        when placing within GRID container (with id=21) grid coordinates have to be provided; when placing in VISUAL container (with id=31), the id of a target location must be provided.
+        when placing within GRID container (with `id=21`) grid coordinates have to be provided; when placing in VISUAL container (with id=31), the id of a target location must be provided.
 
-        `{ "name": "My Sample", "tags": [{"value":"api"}], "quantity": { "unitId" : "3", "numericValue" : "50" }, "subSamples": [ { "name": "subSample A", "parentContainers": [ { "id": 11 } ] },
-                          { "name": "subSample B", "parentContainers": [ { "id": 11 } ] } ] }`
-        | Creates a sample named "My Sample", with 50ml quantity and a non-ontology 'api' tag, with two subsamples placed inside a container with id = 11.
+        `{ "name": "My Sample", "tags": [{"value":"api"}], "quantity": { "unitId" : "3", "numericValue" : "50" }, "subSamples": [ { "name": "subSample A", "parentContainers": [ { "id": 11 } ] }, { "name": "subSample B", "parentContainers": [ { "id": 11 } ] } ] }`
+        | Creates a sample named "My Sample", with 50ml quantity and a non-ontology 'api' tag, with two subsamples placed inside a container with `id = 11`.
 
-        `{ "name": "My Sample", "tags": [{"value":"api","uri":"http://uri","ontologyName":"name","ontologyVersion":"version"}], "quantity": { "unitId" : "3", "numericValue" : "50" }, "subSamples": [ { "name": "subSample A", "parentContainers": [ { "id": 11 } ] },
-                          { "name": "subSample B", "parentContainers": [ { "id": 11 } ] } ] }`
-        | Creates a sample named "My Sample", with 50ml quantity and an 'api' tag from uploaded ontology (with uri/name/version), with two subsamples placed inside a container with id = 11.
+        `{ "name": "My Sample", "tags": [{"value":"api","uri":"http://uri","ontologyName":"name","ontologyVersion":"version"}], "quantity": { "unitId" : "3", "numericValue" : "50" }, "subSamples": [ { "name": "subSample A", "parentContainers": [ { "id": 11 } ] }, { "name": "subSample B", "parentContainers": [ { "id": 11 } ] } ] }`
+        | Creates a sample named "My Sample", with 50ml quantity and an 'api' tag from uploaded ontology (with uri/name/version), with two subsamples placed inside a container with `id = 11`.
 
         `{ "name": "My Sample", "quantity": { "unitId" : "3", "numericValue" : "50" },"expiryDate":"2021-06-30", "subSamples": [ { "name": "subSample A", "parentLocation": { "id": 21 } } ] }`
-        | Creates a sample named "My Sample", with 50ml quantity and an expiration date, with one subsample named "subSample A" placed inside a container location with id = 21.
+        | Creates a sample named "My Sample", with 50ml quantity and an expiration date, with one subsample named "subSample A" placed inside a container location with `id = 21`.
 
-        `{ "name": "My Refrigerated Sample", "quantity": { "unitId" : "3", "numericValue" : "10" }, "newSampleSubSamplesCount": 2,
-          "storageTempMin" : { "numericValue" : 3.00, "unitId" : 8 },
-          "storageTempMax" : { "numericValue" : 5.00, "unitId" : 8 }
-        }`
+        `{ "name": "My Refrigerated Sample", "quantity": { "unitId" : "3", "numericValue" : "10" }, "newSampleSubSamplesCount": 2, "storageTempMin" : { "numericValue" : 3.00, "unitId" : 8 }, "storageTempMax" : { "numericValue" : 5.00, "unitId" : 8 } }`
         | Creates 10ml sample with a specified storage temperature. The sample will contain two subsamples, 5ml each.
 
-        `{ "name": "My Sample", "sampleSource": "VENDOR_SUPPLIED", "templateId": 1 }` | Creates a new Sample based on template with id = 1, non-default value for 'sampleSource', with default field values and no subsamples.
+        `{ "name": "My Sample", "sampleSource": "VENDOR_SUPPLIED", "templateId": 1 }` | Creates a new Sample based on template with `id = 1`, non-default value for `sampleSource`, with default field values and no subsamples.
 
-        `{ "name": "My Sample",  "templateId": 22, "fields": [{}, {}, {"content": "some data"}] }` | Creates a new Sample based on template with id = 22, with default field values  for the first two fields and explicit value for the 3rd field.
+        `{ "name": "My Sample",  "templateId": 22, "fields": [{}, {}, {"content": "some data"}] }` | Creates a new Sample based on template with `id = 22`, with default field values  for the first two fields and explicit value for the 3rd field.
 
-
-        `{ "name": "My Complex API Sample #1", "description": "my description", "templateId": 2,
-          "fields": [
-              { "content": "5.0" },
-              { "content": "2020-05-13" },
-              { "content": "a string"},
-              { "content": "<p>MyText content</p>" },
-              { "content": "https://www.researchspace.com" },
-              { "content": "SD12345" },
-              { "content": "description of an attached file" },
-              { "selectedOptions": ["option1"] },
-              { "selectedOptions": ["optionA"] }
-          ],
-          "extraFields": [ { "name": "my sample extra field", "type": "text", "content" :"extra sample content (text)" } ],
-          "subSamples": [ { "name": "Subsample of My Complex Api Sample",
-            "extraFields": [ { "name": "my subsample extra field", "type": "number", "content": "5.15" } ],
-            "notes": [ { "content": "my note" } ] } ] }`
-         | Creates a complex Sample based on a specific template (with id `2`) which contains 9 fields of various types. In order these are number,date,string,text,uri,reference,attachment,radio,choice.
+        `{ "name": "My Complex API Sample #1", "description": "my description", "templateId": 2, 
+        "fields": [ { "content": "5.0" }, { "content": "2020-05-13" }, { "content": "a string"}, { "content": "<p>MyText content</p>" }, { "content": "https://www.researchspace.com" }, { "content": "SD12345" }, { "content": "description of an attached file" }, { "selectedOptions": ["option1"] }, { "selectedOptions": ["optionA"] }], "extraFields": [ { "name": "my sample extra field", "type": "text", "content" :"extra sample content (text)" } ], "subSamples": [ { "name": "Subsample of My Complex Api Sample", "extraFields": [ { "name": "my subsample extra field", "type": "number", "content": "5.15" } ], "notes": [ { "content": "my note" } ] } ] }`
+        | Creates a complex Sample based on a specific template (with id `2`) which contains 9 fields of various types. In order these are number,date,string,text,uri,reference,attachment,radio,choice.
       tags:
         - Samples
       parameters:
@@ -918,13 +972,13 @@ paths:
                 - name: A choice field
                   type: choice
                   definition:
-                    options: [ '4', '6', '8']
+                    options: [ '4', '6', '8' ]
                     multiple: true
                   selectedOptions: [ '4', '8' ]
                 - name: A radio field
                   type: radio
                   definition:
-                    options: [ '4,', '6', '8']
+                    options: [ '4,', '6', '8' ]
               _links:
                 - link: 'https://myrspace.com/api/inventory/v1/sampleTemplates/1867776'
                   rel: self
@@ -2842,9 +2896,9 @@ definitions:
             description: Alias to use for describing a single or multiple subsamples of this sample
             properties:
               alias:
-                type : string
+                type: string
               plural:
-                type : string
+                type: string
           subSampleCount:
             type: number
             description: Number of subsamples belonging to the sample
@@ -2880,6 +2934,50 @@ definitions:
           subSamples:
             $ref: '#/definitions/SubSampleList'
 
+
+
+  InstrumentInfo:
+    description: Basic information about RSpace Inventory Instrument.
+    allOf:
+      - $ref: '#/definitions/InventoryRecordInfo'
+      - properties:
+          templateId:
+            type: number
+            description: Identifier of the template used to create this instrument. May be unset if this instrument was not created from  a Template
+            example: 1
+          templateVersion:
+            type: number
+            description: Version of the connected template
+          revisionId:
+            type: number
+            description: Revision id of the instrument
+          version:
+            type: number
+            description: Version number
+          historicalVersion:
+            type: boolean
+            description: Whether object represents a historical, or latest, version of the sample
+          sampleSource:
+            type: string
+            description: The source of the sample, must be one of allowed values.
+            enum:
+              - LAB_CREATED
+              - VENDOR_SUPPLIED
+              - OTHER
+
+  Instrument:
+    example:
+      name: Generic Instrument
+    description: The complete information on a Sample
+    allOf:
+      - $ref: '#/definitions/SampleInfo'
+      - properties:
+          sharedWith:
+            $ref: '#/definitions/GroupShareInfoList'
+          fields:
+            $ref: '#/definitions/SampleFieldList'
+          extraFields:
+            $ref: '#/definitions/ExtraFieldList'
 
 
   ApiTagInfo:
@@ -3020,14 +3118,14 @@ definitions:
             description: Summary information about content of the container
             properties:
               totalCount:
-                type : number
+                type: number
                 description: Total number of items stored directly in this container
               subSamplesCount:
-                type : number
+                type: number
                 description: Number of subsamples stored directly in this container
               containerCount:
-                type : number
-                description:  Number of containers stored directly in this container
+                type: number
+                description: Number of containers stored directly in this container
           cType:
             type: string
             description: container type, one of LIST / GRID / IMAGE
@@ -3035,10 +3133,10 @@ definitions:
             description: Information about the grid layout (GRID containers only)
             properties:
               columnsNumber:
-                type : number
+                type: number
                 description: Number of subsamples stored directly in this container
               rowsNumber:
-                type : number
+                type: number
                 description: Number of subsamples stored directly in this container
               columnsLabelType:
                 type: string
@@ -3141,9 +3239,9 @@ definitions:
         description: Alias to use for describing a single or multiple subsamples of this sample
         properties:
           alias:
-            type : string
+            type: string
           plural:
-            type : string
+            type: string
       tags:
         $ref: '#/definitions/TagList'
       fields:
@@ -3151,7 +3249,7 @@ definitions:
     example:
       name: Restriction enzyme.
       description: A template for commercial restriction enzymes used in our lab
-      tags: [{"value":"enzyme"}, {"value":"molbiol"}]
+      tags: [ { "value": "enzyme" }, { "value": "molbiol" } ]
       subSampleAlias:
         alias: subsample
         plural: subsamples
@@ -3161,7 +3259,7 @@ definitions:
         - name: Recognition sequence length
           type: Radio
           definition:
-            options: [ '4', '6', '8', 'other']
+            options: [ '4', '6', '8', 'other' ]
         - name: Incubation Temperature (C)
           type: Number
           content: 37
@@ -3174,8 +3272,8 @@ definitions:
         - name: Vendor
           type: Radio
           definition:
-            options: [ 'Invitrogen', 'NEB', 'Amersham', 'Sigma']
-          selectedOptions: ['Amersham']
+            options: [ 'Invitrogen', 'NEB', 'Amersham', 'Sigma' ]
+          selectedOptions: [ 'Amersham' ]
         - name: Webpage
           type: URI
 
@@ -3226,7 +3324,7 @@ definitions:
         description: |
           The content as a string. For SampleFields of type 'text' this will be HTML.
       definition:
-        type : object
+        type: object
         description: Some field types require a definition - e.g. radio/choice fields must show what are valid choice options
         properties:
           options:
@@ -3428,7 +3526,7 @@ definitions:
         type: string
         description: Email address for User.
         pattern: \S+@\S+
-        example:  bloggs@uni.edu
+        example: bloggs@uni.edu
       firstName:
         type: string
         description: First name of the User.
@@ -3461,7 +3559,7 @@ definitions:
       name:
         type: string
         description: Name of the group.
-        example:  "userGroup 1"
+        example: "userGroup 1"
       uniqueName:
         type: string
         description: Unique (RSpace-generated) name of the group.
@@ -3520,6 +3618,13 @@ parameters:
     format: int64
     required: true
     description: A unique identifier of the sample.
+  instrumentIdParam:
+    name: instrumentId
+    in: path
+    type: integer
+    format: int64
+    required: true
+    description: A unique identifier of the instrument.
   sampleBodyParam:
     name: sample
     in: body

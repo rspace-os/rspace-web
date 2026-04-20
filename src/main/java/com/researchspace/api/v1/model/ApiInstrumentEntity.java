@@ -50,10 +50,9 @@ import lombok.ToString;
   "revisionId",
   "version",
   "historicalVersion",
-  "expiryDate",
-  "sharedWith",
   "fields",
   "extraFields",
+  "sharedWith",
   "_links"
 })
 public abstract class ApiInstrumentEntity extends ApiInstrumentEntityInfo {

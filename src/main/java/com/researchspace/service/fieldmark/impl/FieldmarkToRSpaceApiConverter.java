@@ -18,7 +18,7 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
-import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples.ApiSampleSubSampleTargetLocation;
+import com.researchspace.api.v1.model.ApiTargetLocation;
 import com.researchspace.fieldmark.model.FieldmarkNotebookMetadata;
 import com.researchspace.fieldmark.model.utils.FieldmarkDateExtractor;
 import com.researchspace.fieldmark.model.utils.FieldmarkDatetimeExtractor;
@@ -194,7 +194,7 @@ public class FieldmarkToRSpaceApiConverter {
     samplePost.setNewSampleSubSamplesCount(1);
     samplePost.setQuantity(new ApiQuantityInfo(BigDecimal.valueOf(1), RSUnitDef.DIMENSIONLESS));
     samplePost.setNewSampleSubSampleTargetLocations(
-        List.of(new ApiSampleSubSampleTargetLocation(containerId, null)));
+        List.of(new ApiTargetLocation(containerId, null)));
     samplePost.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(-15), RSUnitDef.CELSIUS));
     samplePost.setStorageTempMax(new ApiQuantityInfo(BigDecimal.valueOf(30), RSUnitDef.CELSIUS));
 

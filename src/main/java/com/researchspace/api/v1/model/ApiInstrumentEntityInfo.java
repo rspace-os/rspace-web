@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.springframework.web.util.UriComponentsBuilder;
 
-/** API representation of an Inventory Sample */
+/** API representation of an Inventory Instrument */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -99,11 +99,11 @@ public class ApiInstrumentEntityInfo extends ApiInventoryRecordInfo {
     this.setVersion(instrumentEntity.getVersion());
   }
 
-  protected boolean applyChangesToDatabaseInstrument(InstrumentEntity sample) {
-    boolean contentChanged = super.applyChangesToDatabaseInventoryRecord(sample);
+  protected boolean applyChangesToDatabaseInstrument(InstrumentEntity instrument) {
+    boolean contentChanged = super.applyChangesToDatabaseInventoryRecord(instrument);
 
-    if (instrumentSource != null && !instrumentSource.equals(sample.getInstrumentSource())) {
-      sample.setInstrumentSource(instrumentSource);
+    if (instrumentSource != null && !instrumentSource.equals(instrument.getInstrumentSource())) {
+      instrument.setInstrumentSource(instrumentSource);
       contentChanged = true;
     }
     return contentChanged;
@@ -115,7 +115,7 @@ public class ApiInstrumentEntityInfo extends ApiInventoryRecordInfo {
 
     if (getIconId() != null) {
       String iconPath =
-          BaseApiInventoryController.SAMPLE_TEMPLATES_ENDPOINT
+          BaseApiInventoryController.INSTRUMENT_TEMPLATES_ENDPOINT
               + "/"
               + getId()
               + "/icon/"
@@ -154,7 +154,7 @@ public class ApiInstrumentEntityInfo extends ApiInventoryRecordInfo {
   }
 
   /**
-   * Boolean test for whether this sample has a non-default templateIcon id (non-null, > 0)
+   * Boolean test for whether this instrument has a non-default templateIcon id (non-null, > 0)
    *
    * @return
    */

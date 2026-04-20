@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentEntityInfo;
-import com.researchspace.model.inventory.Instrument;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -12,7 +12,7 @@ public class InstrumentApiPostValidator extends InstrumentApiValidator implement
 
   @Override
   public boolean supports(Class<?> clazz) {
-    return Instrument.class.isAssignableFrom(clazz);
+    return ApiInstrument.class.isAssignableFrom(clazz);
   }
 
   @Override

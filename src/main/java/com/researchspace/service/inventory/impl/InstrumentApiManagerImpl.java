@@ -7,11 +7,13 @@ import com.researchspace.dao.InstrumentEntityDao;
 import com.researchspace.model.User;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
+import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.service.inventory.InstrumentApiManager;
+import com.researchspace.service.inventory.InventoryMoveHelper;
 import java.io.IOException;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
@@ -27,6 +29,7 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
 
   private @Autowired InstrumentEntityDao<Instrument> instrumentDao;
   private @Autowired InstrumentEntityDao<InstrumentTemplate> instrumentTemplateDao;
+  private @Autowired InventoryMoveHelper inventoryMoveHelper;
 
   @Override
   public boolean instrumentExists(long id) {
@@ -83,6 +86,7 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
     } else {
       assertDefaultFieldsValid(instrumentToSave.getActiveFields());
     }
+    setLocationForNewInstrument(apiInstrument, instrumentToSave, user);
 
     Instrument savedInstrument = instrumentDao.save(instrumentToSave);
     saveIncomingInstrumentImage(savedInstrument, apiInstrument, user);
@@ -96,6 +100,21 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
     populateOutgoingApiInstrument(apiResultInstrument, savedInstrument, user);
 
     return apiResultInstrument;
+  }
+
+  private void setLocationForNewInstrument(
+      ApiInstrument apiInstrument, Instrument instrumentToSave, User user) {
+    inventoryMoveHelper.moveRecordToTargetParentAndLocation(
+        instrumentToSave,
+        apiInstrument.getParentContainer(),
+        apiInstrument.getParentLocation(),
+        user);
+    setWorkbenchAsParentForNewInstrument(instrumentToSave, user);
+  }
+
+  private void setWorkbenchAsParentForNewInstrument(Instrument instrument, User user) {
+    Container workbench = containerDao.getWorkbenchForUser(user);
+    setWorkbenchAsParentForNewInventoryRecord(workbench, instrument);
   }
 
   private void assertDefaultFieldsValid(List<InventoryEntityField> activeFields) {
