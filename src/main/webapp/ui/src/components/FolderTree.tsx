@@ -200,7 +200,7 @@ const TreeItemContent = ({
     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       <span>{folder.name}</span>
       {folder.type !== 'NOTEBOOK' && (<IconButtonWithTooltip
-        title={`Add rollox subfolder to ${folder.name}`}
+        title={`Add subfolder to ${folder.name}`}
         icon={<AddIcon fontSize="small" />}
         size="small"
         onClick={(e) => {
