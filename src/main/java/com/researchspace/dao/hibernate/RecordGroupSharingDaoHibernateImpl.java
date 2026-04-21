@@ -223,17 +223,6 @@ public class RecordGroupSharingDaoHibernateImpl
     query.executeUpdate();
     System.out.println("@@@ Transferred RGS");
 
-    //    query =
-    //        getSession()
-    //            .createQuery(
-    //                "UPDATE BaseRecord b SET owner=:newOwner,"
-    //                    + " originalCreatorUsername=:createdByWithDeleted WHERE id IN :ids")
-    //            .setParameter("newOwner", newOwner)
-    //            .setParameter("createdByWithDeleted", originalOwner.getUsername() + "(Deleted)")
-    //            .setParameter("ids", templateIds);
-    //    query.executeUpdate();
-    //    System.out.println("@@@ Transferred base record");
-
     String deletedUsername = originalOwner.getUsername() + "(Deleted)";
     query =
         getSession()

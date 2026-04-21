@@ -106,6 +106,14 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    */
   Folder getSystemFolderForUserByName(User user, String folderName);
 
+  /**
+   * Returns all sub-folders of the given folder
+   *
+   * @param rootFolder
+   * @return
+   */
+  List<Folder> getSubFolders(Folder rootFolder);
+
   Optional<Folder> getApiFolderForContentType(String contentType, User subject);
 
   /**

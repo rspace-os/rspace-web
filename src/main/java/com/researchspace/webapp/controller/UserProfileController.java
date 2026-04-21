@@ -211,7 +211,7 @@ public class UserProfileController extends BaseController {
         user = userManager.getUser(userId + "");
       } catch (ObjectRetrievalFailureException e) {
         System.out.println("@@@ Exception!: " + e.getMessage());
-        throw new Exception(USER_NOT_FOUND);  //TODO New exception type..?
+        throw new Exception(USER_NOT_FOUND); // TODO New exception type..?
       }
     }
 

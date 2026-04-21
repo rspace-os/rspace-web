@@ -163,8 +163,7 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
         .lastLogin(user.getLastLogin())
         .hasFormsUsedByOtherUsers(formDao.hasUserPublishedFormsUsedInOtherRecords(user))
         .hasTemplatesUsedByOtherUsers(
-            recordGroupSharingDao.getTemplatesSharedByUser(user).size()
-                > 0)
+            recordGroupSharingDao.getTemplatesSharedByUser(user).size() > 0)
         .build();
   }
 

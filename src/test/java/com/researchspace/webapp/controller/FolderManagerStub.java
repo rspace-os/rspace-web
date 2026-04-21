@@ -164,6 +164,11 @@ public class FolderManagerStub implements FolderManager {
   }
 
   @Override
+  public List<Folder> getSubFolders(Folder rootFolder) {
+    return null;
+  }
+
+  @Override
   public Folder getFromURLPath(String path, User user, CollectionFilter<BaseRecord> filter) {
     Folder f = TestFactory.createAFolder("f1", user);
     try {
