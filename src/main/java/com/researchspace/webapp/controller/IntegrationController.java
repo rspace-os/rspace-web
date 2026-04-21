@@ -1,7 +1,6 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.service.IntegrationsHandler.ARGOS_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.ASCENSCIA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.CLUSTERMARKET_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
@@ -150,7 +149,6 @@ public class IntegrationController extends BaseController {
     rc.put(
         DIGITAL_COMMONS_DATA_APP_NAME,
         integrationsHandler.getIntegration(user, DIGITAL_COMMONS_DATA_APP_NAME));
-    rc.put(ASCENSCIA_APP_NAME, integrationsHandler.getIntegration(user, ASCENSCIA_APP_NAME));
     rc.put(DSW_APP_NAME, integrationsHandler.getIntegration(user, DSW_APP_NAME));
 
     return rc;

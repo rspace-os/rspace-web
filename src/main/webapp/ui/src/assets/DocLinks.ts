@@ -76,7 +76,6 @@ const docLinks: Record<string, URL> = {
   taggingUsers: mkDocLink("zw6o5uh4qv"),
   irods: mkDocLink("xt21074dln"),
   dcd: mkDocLink("jj6grnzbdl"),
-  ascenscia: mkDocLink("8ftzyor8mi"),
   fieldmark: mkDocLink("idbaaggghu"),
   orcid: mkDocLink("yhkbtnj61a"),
   gallery: mkDocLink("sl6mo1i9do"),

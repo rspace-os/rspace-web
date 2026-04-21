@@ -218,9 +218,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DMPONLINE_APP_NAME:
         setSingleUserToken(info, user, DMPONLINE_APP_NAME, DMPONLINE_USER_TOKEN);
         return;
-      case ASCENSCIA_APP_NAME:
-        setSingleUserToken(info, user, ASCENSCIA_APP_NAME, ASCENSCIA_USER_TOKEN);
-        return;
+
       case DSW_APP_NAME:
         setMultipleUserTokens(info, user, DSW_APP_NAME, DSW_ALIAS, DSW_APIKEY);
         return;
@@ -664,7 +662,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DMPONLINE_APP_NAME:
       case FIELDMARK_APP_NAME:
       case GALAXY_APP_NAME:
-      case ASCENSCIA_APP_NAME:
       case DSW_APP_NAME:
         return true;
     }
