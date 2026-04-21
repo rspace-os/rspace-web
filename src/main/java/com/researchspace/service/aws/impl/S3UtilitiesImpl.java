@@ -96,7 +96,9 @@ public class S3UtilitiesImpl implements S3Utilities {
       s3Client.headBucket(headBucketRequest);
 
     } catch (Exception e) {
-      log.error("Error building S3 client with region {} and bucket {}", s3Region, s3BucketName, e);
+      s3Client = null;
+      log.error("Error building S3 client with region {} and bucket {}", s3Region, s3BucketName);
+      throw e;
     }
   }
 

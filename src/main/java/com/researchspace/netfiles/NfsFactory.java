@@ -12,6 +12,7 @@ import com.researchspace.netfiles.samba.JcifsClient;
 import com.researchspace.netfiles.samba.JcifsSmbjClient;
 import com.researchspace.netfiles.samba.SmbjClient;
 import com.researchspace.netfiles.sftp.SftpClient;
+import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import lombok.AccessLevel;
 import lombok.Setter;
@@ -155,8 +156,12 @@ public class NfsFactory {
       return new IRODSClient(ia, jf);
     }
     if (NfsClientType.S3.equals(clientType)) {
-      return new AwsS3Client(
-          nfsusername, s3UtilitiesFactory.createS3UtilitiesForNfsConnector(fileSystem));
+      try {
+        S3Utilities s3Utilities = s3UtilitiesFactory.createS3UtilitiesForNfsConnector(fileSystem);
+        return new AwsS3Client(nfsusername, s3Utilities);
+      } catch (Exception e) {
+        throw new IllegalStateException("Couldn't initialize s3 client for selected filesystem", e);
+      }
     }
 
     throw new IllegalArgumentException("unknown client type: " + clientType);
