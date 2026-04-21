@@ -124,6 +124,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
+          comment_mode: off
           files: target/surefire-reports/*.xml
 
   frontend-checks:
@@ -305,6 +306,7 @@ jobs:
         if: always()
         with:
           check_name: Vitest Tests
+          comment_mode: off
           files: src/main/webapp/ui/junit.xml
 
   playwright-tests:
