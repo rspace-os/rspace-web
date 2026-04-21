@@ -157,7 +157,7 @@ class StoichiometryPlugin {
       id: number;
       revision: number;
     }): string => {
-      return `Stoichiometry Table ID ${stoichiometry.id}, revision ${stoichiometry.revision}`;
+      return `Stoichiometry Table ID ${stoichiometry.id} (click to edit)`;
     };
 
     const syncStoichiometryTableOnlyNodePresentation = (node: HTMLElement) => {

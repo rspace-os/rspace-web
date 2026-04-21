@@ -72,6 +72,7 @@ type DialogProps = {
   recordId?: number;
   onClose?: () => void;
   onDelete?: () => void;
+  onSave?: (id: number, revision: number) => void;
   onTableCreated?: (id: number, revision: number) => void;
 };
 
@@ -389,7 +390,7 @@ describe("TinyMCE stoichiometry plugin", () => {
       JSON.stringify({ id: 9, revision: 2 }),
     );
     expect(insertedTableOnly?.textContent).toBe(
-      "Stoichiometry Table ID 9, revision 2",
+      "Stoichiometry Table ID 9 (click to edit)",
     );
 
     view = getLastRenderedDialogProps();
@@ -457,7 +458,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     new StoichiometryPlugin(editor);
     // eslint-disable-next-line jest-dom/prefer-to-have-text-content
     expect(tableOnlyNode.textContent).toBe(
-      "Stoichiometry Table ID 12, revision 4",
+      "Stoichiometry Table ID 12 (click to edit)",
     );
     selectionState.current = tableOnlyNode;
     commands.get("cmdStoichiometry")?.();
@@ -596,9 +597,52 @@ describe("TinyMCE stoichiometry plugin", () => {
       '[data-stoichiometry-table-only="true"]',
     );
     expect(tableOnlyNode?.textContent).toBe(
-      "Stoichiometry Table ID 15, revision 6",
+      "Stoichiometry Table ID 15 (click to edit)",
     );
     expect(tableOnlyNode?.children.length).toBe(0);
+  });
+
+  it("updates stoichiometry table text when data is saved through plugin callbacks", async () => {
+    const registeredPlugins = registerTinymcePlugins();
+    const editorDocument = document.implementation.createHTMLDocument("editor");
+    const initialSelectionNode: HTMLElement = editorDocument.createElement("p");
+    editorDocument.body.appendChild(initialSelectionNode);
+    const { editor, menuItems } = createEditorHarness({
+      editorDocument,
+      initialSelectionNode,
+    });
+
+    await instantiateStoichiometryPlugin();
+    const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
+    new StoichiometryPlugin(editor);
+    menuItems.get("stoichiometryMenuItem")?.onAction();
+
+    await waitFor(() => {
+      expect(getLastRenderedDialogProps()).toEqual(
+        expect.objectContaining({
+          open: true,
+          chemId: null,
+        }),
+      );
+    });
+
+    let view = getLastRenderedDialogProps();
+    expect(view).not.toBeNull();
+    view?.onTableCreated?.(15, 6);
+
+    view = getLastRenderedDialogProps();
+    expect(view).not.toBeNull();
+    view?.onSave?.(15, 7);
+
+    const tableOnlyNode = editorDocument.querySelector(
+      '[data-stoichiometry-table-only="true"]',
+    );
+    expect(tableOnlyNode?.getAttribute("data-stoichiometry-table")).toBe(
+      JSON.stringify({ id: 15, revision: 7 }),
+    );
+    expect(tableOnlyNode?.textContent).toBe(
+      "Stoichiometry Table ID 15 (click to edit)",
+    );
   });
 
   it("does not crash when the editor document is unavailable", async () => {
