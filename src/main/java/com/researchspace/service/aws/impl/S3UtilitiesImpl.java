@@ -59,13 +59,17 @@ public class S3UtilitiesImpl implements S3Utilities {
   @Getter private S3Client s3Client;
 
   protected void initializeS3ClientWithAwsDefaults(String s3Region, String s3BucketName) {
-    initializeS3Client(null, s3Region, s3BucketName,
-        false, null, null);
+    initializeS3Client(null, s3Region, s3BucketName, false, null, null);
   }
 
   /** Initializes s3 client used by this S3Utilities instance */
-  protected void initializeS3Client(String s3url, String s3Region, String s3BucketName,
-      boolean pathStyleAccessEnabled, String accessKeyId, String secretAccessKey) {
+  protected void initializeS3Client(
+      String s3url,
+      String s3Region,
+      String s3BucketName,
+      boolean pathStyleAccessEnabled,
+      String accessKeyId,
+      String secretAccessKey) {
 
     Validate.notBlank(s3BucketName, "s3BucketName must be set for initialization");
     Validate.notBlank(s3Region, "s3Region must be set for initialization");
@@ -73,7 +77,7 @@ public class S3UtilitiesImpl implements S3Utilities {
 
     try {
       S3ClientBuilder s3ClientBuilder = S3Client.builder().region(Region.of(s3Region));
-      if (StringUtils.isNotBlank(s3url) && !s3url.startsWith("AWS::")) {
+      if (StringUtils.isNotBlank(s3url) && !s3url.startsWith("aws::")) {
         s3ClientBuilder.endpointOverride(URI.create(s3url));
       }
       if (StringUtils.isNotBlank(accessKeyId) && StringUtils.isNotBlank(secretAccessKey)) {

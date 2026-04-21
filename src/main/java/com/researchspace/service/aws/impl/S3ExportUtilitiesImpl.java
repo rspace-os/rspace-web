@@ -41,13 +41,13 @@ public class S3ExportUtilitiesImpl implements S3ExportUtilities {
    * Post-construct method which builds s3 client objects and also checks whether connection to S3
    * can be made by making a head bucket request to determine if S3 parameters are configured
    * correctly on the RSpace side.
-   *
-   *
    */
   @PostConstruct
   public void init() {
     try {
-      s3Utilities = s3UtilitiesFactory.createS3UtilitiesForAwsArchiveExport(s3ExportRegion, s3ExportBucketName);
+      s3Utilities =
+          s3UtilitiesFactory.createS3UtilitiesForAwsArchiveExport(
+              s3ExportRegion, s3ExportBucketName);
       s3Presigner = S3Presigner.builder().region(Region.of(s3ExportRegion)).build();
     } catch (Exception e) {
       log.error(

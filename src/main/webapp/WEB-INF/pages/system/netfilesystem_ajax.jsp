@@ -97,6 +97,7 @@
                         <spring:message code="system.netfilesystem.details.client.s3" /></label>
                 </td>
             </tr>
+
             <tr class="fileSystemDetailsSambaRow">
                 <td><label><spring:message code="system.netfilesystem.details.client.samba.type" /></label></td>
                 <td>
@@ -106,6 +107,16 @@
                         <spring:message code="system.netfilesystem.details.client.samba.jcifs" /></label>
                 </td>
             </tr>
+            <tr class="fileSystemDetailsS3Row">
+                <td><label><spring:message code="system.netfilesystem.details.client.s3.type" /></label></td>
+                <td>
+                    <label><input type="radio" id="fileSystemClientTypeS3AWS" name="fileSystemClientTypeS3" value="AWS">
+                        <spring:message code="system.netfilesystem.details.client.s3.type.aws" /></label>
+                    <label><input type="radio" id="fileSystemClientTypeS3Other" name="fileSystemClientTypeS3" value="OTHER">
+                        <spring:message code="system.netfilesystem.details.client.s3.type.other" /></label>
+                </td>
+            </tr>
+
             <tr>
                 <td style="width: 120px"><label for="fileSystemName"><spring:message code="system.netfilesystem.details.name" /></label></td>
                 <td><input id="fileSystemName" type="text" style="width: 20em" required /></td>

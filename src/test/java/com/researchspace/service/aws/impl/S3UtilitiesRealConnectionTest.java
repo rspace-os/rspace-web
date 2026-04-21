@@ -19,15 +19,14 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
- * The tests running a real connection to AWS and Cloudflare S3 buckets,
- * require bucket details and iam authentication secrets in deployment properties.
+ * The tests running a real connection to AWS and Cloudflare S3 buckets, require bucket details and
+ * iam authentication secrets in deployment properties.
  */
 @RunWith(ConditionalTestRunner.class)
 @Slf4j
@@ -116,7 +115,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
     // switch from default cloudflare credentials, if provided
     if (StringUtils.isNotEmpty(cloudflareAccessKey)) {
-      s3UtilitiesFactory.updateNfsS3Credentials(cloudflareAccessKey,cloudflareSecretKey);
+      s3UtilitiesFactory.updateNfsS3Credentials(cloudflareAccessKey, cloudflareSecretKey);
     }
 
     s3Utilities = s3UtilitiesFactory.createS3UtilitiesForNfsConnector(testFileSystem);
@@ -182,5 +181,4 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     assertEquals(
         "Unexpected test image size", testS3PngFileSize, testS3File.get().getSizeInBytes());
   }
-
 }

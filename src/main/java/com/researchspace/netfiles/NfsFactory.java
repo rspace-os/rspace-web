@@ -155,7 +155,8 @@ public class NfsFactory {
       return new IRODSClient(ia, jf);
     }
     if (NfsClientType.S3.equals(clientType)) {
-      return new AwsS3Client(nfsusername, s3UtilitiesFactory.createS3UtilitiesForNfsConnector(fileSystem));
+      return new AwsS3Client(
+          nfsusername, s3UtilitiesFactory.createS3UtilitiesForNfsConnector(fileSystem));
     }
 
     throw new IllegalArgumentException("unknown client type: " + clientType);

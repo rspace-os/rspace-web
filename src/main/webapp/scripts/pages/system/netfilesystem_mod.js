@@ -131,12 +131,15 @@ define(function() {
         var isSmbjClient = isExistingFileSystem && fileSystem.clientType === 'SMBJ';
         var isSftpClient = isExistingFileSystem && fileSystem.clientType === 'SFTP';
         var isIrodsClient = isExistingFileSystem && fileSystem.clientType === 'IRODS';
-        var isS3Client = isExistingFileSystem && fileSystem.clientType === 'S3';
+        var isS3AWSClient = isExistingFileSystem && fileSystem.clientType === 'S3' && fileSystem.url.startsWith('aws::');
+        var isS3OtherClient = isExistingFileSystem && fileSystem.clientType === 'S3' && !isS3AWSClient;
 
         $('#fileSystemClientTypeSamba').prop('checked', isSambaClient || isSmbjClient);
         $('#fileSystemClientTypeSftp').prop('checked', isSftpClient);
         $('#fileSystemClientTypeIrods').prop('checked', isIrodsClient);
-        $('#fileSystemClientTypeS3').prop('checked', isS3Client);
+        $('#fileSystemClientTypeS3').prop('checked', isS3AWSClient || isS3OtherClient);
+        $('#fileSystemClientTypeS3AWS').prop('checked', isS3AWSClient);
+        $('#fileSystemClientTypeS3Other').prop('checked', isS3OtherClient);
         $('#fileSystemClientTypeSambaSmbj').prop('checked', !isSambaClient);
         $('#fileSystemClientTypeSambaJcifs').prop('checked', isSambaClient);
         $('#fileSystemDetailsSftpDirChoiceYes').prop('checked', isSftpClient && fileSystemRequiresUserDirs(fileSystem));
@@ -152,7 +155,6 @@ define(function() {
         $('#fileSystemSftpServerPublicKey').val("");
 
         var clientOptions = parseClientOptions(fileSystem.clientOptions);
-        // $('#fileSystemDetailsSftpDirChoiceRow').hide();
         if (isSambaClient) {
             $('#fileSystemSambaDomain').val(clientOptions.SAMBA_DOMAIN);
         } else if (isSmbjClient) {
@@ -165,7 +167,7 @@ define(function() {
             $('#fileSystemIrodsHomeDir').val(clientOptions.IRODS_HOME_DIR);
             $('#fileSystemIrodsPort').val(clientOptions.IRODS_PORT);
             $('#fileSystemIrodsCsneg').val(clientOptions.IRODS_CSNEG);
-        } else if (isS3Client) {
+        } else if (isS3AWSClient || isS3OtherClient) {
             $('#fileSystemS3Region').val(clientOptions.S3_REGION);
             $('#fileSystemS3BucketName').val(clientOptions.S3_BUCKET_NAME);
         }
@@ -262,9 +264,11 @@ define(function() {
                         + "\nIRODS_AUTH=" + $('input[name="iRODSfileSystemAuthType"]:checked').val()+"\n";
         } else if (clientType === 'S3') {
             var s3Region = $('#fileSystemS3Region').val();
-            $('#fileSystemUrl').val("aws::" + s3Region);
-            clientOptions = "S3_REGION=" + s3Region
-                        + "\nS3_BUCKET_NAME=" + $('#fileSystemS3BucketName').val();
+            var s3BucketName = $('#fileSystemS3BucketName').val();
+            if ($('#fileSystemClientTypeS3AWS').prop('checked')) {
+                $('#fileSystemUrl').val("aws::" + s3Region);
+            }
+            clientOptions = "S3_REGION=" + s3Region + "\nS3_BUCKET_NAME=" + s3BucketName;
         }
 
         var fileSystem = {
@@ -313,9 +317,10 @@ define(function() {
         const isSftpClient = $('#fileSystemClientTypeSftp').prop('checked');
         const isIrodsClient = $('#fileSystemClientTypeIrods').prop('checked');
         const isS3Client = $('#fileSystemClientTypeS3').prop('checked');
+        const isS3AWSClient = isS3Client && $('#fileSystemClientTypeS3AWS').prop('checked');
         const existingFileSystem = $('#fileSystemId').html().length;
 
-        $('.fileSystemDetailsUrlRow').toggle(!isS3Client);
+        $('.fileSystemDetailsUrlRow').toggle(!isS3AWSClient);
 
         $('#fileSystemDetailsSftpDirChoiceRow').toggle(isSftpClient);
         if ($("#fileSystemDetailsSftpDirChoiceYes").length) {
@@ -387,6 +392,7 @@ define(function() {
         $(document).on('click', '.fileSystemDeleteButton', deleteFileSystem);
         $(document).on('change', 'input[name="fileSystemClientType"]', refreshClientTypeRows);
         $(document).on('change', 'input[name="fileSystemClientTypeSamba"]', refreshClientTypeRows);
+        $(document).on('change', 'input[name="fileSystemClientTypeS3"]', refreshClientTypeRows);
         $(document).on('change', 'input[name="fileSystemAuthType"]', refreshAuthTypeRows);
         $(document).on('click','#addNewFileSystem', addNewFileSystem);
         $(document).on('submit', '#fileSystemDetailsForm', saveFileSystem);
