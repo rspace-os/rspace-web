@@ -19,6 +19,7 @@ import com.researchspace.netfiles.sftp.SftpClient;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class NfsFactoryTest {
 
@@ -33,7 +34,7 @@ public class NfsFactoryTest {
 
   @Before
   public void setUp() {
-    factory.setS3UtilitiesFactory(new S3UtilitiesFactory());
+    factory.setS3UtilitiesFactory(Mockito.mock(S3UtilitiesFactory.class));
 
     // dummy key pair
     testUserKeyPair = new UserKeyPair();
