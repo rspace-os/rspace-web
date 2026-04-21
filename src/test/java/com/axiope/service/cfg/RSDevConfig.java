@@ -184,7 +184,7 @@ public class RSDevConfig extends BaseConfig {
   }
 
   @Bean
-  @Override
+  @Primary
   public InternalFileStore internalFileStore() throws IOException {
     File tempDir = FileUtils.getTempDirectory();
     File root = new File(tempDir, "rs-test-fs");

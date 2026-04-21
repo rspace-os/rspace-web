@@ -12,9 +12,11 @@ import org.hibernate.NonUniqueResultException;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Performs various checks on DB data integrity */
+@Component("dBDataIntegrityChecker")
 @Transactional
 public class DBDataIntegrityChecker extends AbstractAppInitializor {
 

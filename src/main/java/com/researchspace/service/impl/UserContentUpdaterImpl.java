@@ -8,12 +8,14 @@ import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserFolderCreator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 // Use this to update all users with new content, for an EXISTING RSpace. There
 // should ALSO be code that does the creation of this new content in DefaultUserFolderCreator.
 // This class should just check whether the code in DefaultUserFolderCreator needs to be run
 // NOTE - this class is called in the postlogin hook.
+@Service
 @Transactional
 public class UserContentUpdaterImpl implements UserContentUpdater {
   @Autowired

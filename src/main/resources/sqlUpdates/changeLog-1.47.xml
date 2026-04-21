@@ -9,7 +9,6 @@
 		new changesets ! -->
 	<!-- Add changesets here... -->
 	<changeSet id="17-09-10z" author="richard">
-		<validCheckSum>9:2b7a7695c325267749a60db7f56668ef</validCheckSum>
 		<preConditions
 			onErrorMessage="Tables exist or is not mysql" onError="CONTINUE"
 			onFail="CONTINUE" onFailMessage="Tables exist or is not mysql">

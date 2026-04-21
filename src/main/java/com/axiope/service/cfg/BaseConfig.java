@@ -131,8 +131,6 @@ import com.researchspace.service.archive.TimeLimitedExportRemovalPolicy;
 import com.researchspace.service.archive.UserImporter;
 import com.researchspace.service.archive.UserImporterImpl;
 import com.researchspace.service.archive.export.ArchiveDataHandler;
-import com.researchspace.service.archive.export.ArchiveExportPlanner;
-import com.researchspace.service.archive.export.ArchiveExportPlannerImpl;
 import com.researchspace.service.archive.export.ArchiveNamingStrategy;
 import com.researchspace.service.archive.export.ArchiveRemover;
 import com.researchspace.service.archive.export.ExportObjectGenerator;
@@ -172,7 +170,6 @@ import com.researchspace.service.impl.CollabGroupShareRequestCreateHandler;
 import com.researchspace.service.impl.CollabGroupShareRequestUpdateHandler;
 import com.researchspace.service.impl.ContentInitialiserUtilsImpl;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
-import com.researchspace.service.impl.DBDataIntegrityChecker;
 import com.researchspace.service.impl.DMPUpdateHandler;
 import com.researchspace.service.impl.DefaultUserFolderCreator;
 import com.researchspace.service.impl.DefaultUserSignupPolicy;
@@ -195,7 +192,6 @@ import com.researchspace.service.impl.GroupSharedSnippetsFolderAppInitialiser;
 import com.researchspace.service.impl.ImageProcessorImpl;
 import com.researchspace.service.impl.IntegrationsHandlerImpl;
 import com.researchspace.service.impl.IntegrationsHandlerInitialisor;
-import com.researchspace.service.impl.InternalFileStoreImpl;
 import com.researchspace.service.impl.JoinExistingCollGroupRequestUpdateHandler;
 import com.researchspace.service.impl.JoinGroupRequestUpdateHandler;
 import com.researchspace.service.impl.LoadUsersFromCSVOnStartUpInitialisor;
@@ -219,8 +215,6 @@ import com.researchspace.service.impl.StrictEmailContentGenerator;
 import com.researchspace.service.impl.SysadminUserCreationHandlerImpl;
 import com.researchspace.service.impl.SystemConfigurationInitialisor;
 import com.researchspace.service.impl.SystemPropertyPermissionManagerImpl;
-import com.researchspace.service.impl.UserContentUpdater;
-import com.researchspace.service.impl.UserContentUpdaterImpl;
 import com.researchspace.service.impl.UserExternalIdResolverImpl;
 import com.researchspace.slack.SlackMessageSender;
 import com.researchspace.snapgene.wclient.SnapgeneWSClient;
@@ -554,11 +548,6 @@ public abstract class BaseConfig {
     return new SampleTemplateAppInitialiser();
   }
 
-  @Bean
-  public IApplicationInitialisor dBDataIntegrityChecker() {
-    return new DBDataIntegrityChecker();
-  }
-
   @Bean(name = "sharedSnippetsFolderCreator")
   public IApplicationInitialisor sharedSnippetsFolderCreator() {
     return new GroupSharedSnippetsFolderAppInitialiser();
@@ -777,9 +766,9 @@ public abstract class BaseConfig {
   }
 
   @Bean("compositeFileStore")
-  public FileStore compositeFileStore() throws IOException {
+  public FileStore compositeFileStore(InternalFileStore internalFileStore) throws IOException {
     FileStoreImpl impl =
-        new FileStoreImpl(internalFileStore(), externalFileStoreLocator(), externalFileService());
+        new FileStoreImpl(internalFileStore, externalFileStoreLocator(), externalFileService());
     return impl;
   }
 
@@ -791,11 +780,6 @@ public abstract class BaseConfig {
       log.info("Creating real external file service");
       return new ExternalFileServiceImpl();
     }
-  }
-
-  @Bean
-  public InternalFileStore internalFileStore() throws IOException {
-    return new InternalFileStoreImpl();
   }
 
   @Bean
@@ -940,11 +924,6 @@ public abstract class BaseConfig {
   @Bean(name = "customFormAppInitialiser")
   public IApplicationInitialisor customForms() {
     return new CustomFormAppInitialiser();
-  }
-
-  @Bean
-  public UserContentUpdater userContentUpdater() {
-    return new UserContentUpdaterImpl();
   }
 
   @Bean()
@@ -1303,11 +1282,6 @@ public abstract class BaseConfig {
   @Bean
   OriginRefererChecker originRefererChecker() {
     return new OriginRefererCheckerImpl();
-  }
-
-  @Bean
-  ArchiveExportPlanner ArchiveExportPlannerImpl() {
-    return new ArchiveExportPlannerImpl();
   }
 
   @Bean

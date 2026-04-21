@@ -52,6 +52,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 
 @Service
@@ -150,6 +151,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   }
 
   @Override
+  @Transactional
   public void updateShare(SharePermissionUpdate permissionUpdate, User user) throws BindException {
     Long id = permissionUpdate.getShareId();
     assertUserHasSharePermission(id, user);
@@ -193,6 +195,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   }
 
   @Override
+  @Transactional(readOnly = true)
   public DocumentShares getAllSharesForDoc(Long docId, User user) {
     if (docId == null) {
       throw new IllegalArgumentException("Document id cannot be null");

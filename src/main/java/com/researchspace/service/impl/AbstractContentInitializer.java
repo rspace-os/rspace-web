@@ -44,11 +44,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Abstract implementation of an {@link IContentInitializer} to provide default setup of user folder
  * tree, gallery etc.
  */
+@Transactional
 public abstract class AbstractContentInitializer
     implements IContentInitializer, ApplicationContextAware, SampleTemplateInitializer {
 
@@ -91,6 +93,7 @@ public abstract class AbstractContentInitializer
    *
    * @throws IllegalAddChildOperation
    */
+  @Transactional
   public InitializedContent init(Long userid) throws IllegalAddChildOperation {
     log.info("in init method with user {}", userid);
     User user = userDao.get(userid);
