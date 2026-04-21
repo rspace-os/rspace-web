@@ -70,6 +70,7 @@ import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserApiKeyManager;
+import com.researchspace.service.UserNotFoundException;
 import com.researchspace.service.UserProfileManager;
 import com.researchspace.service.UserRoleHandler;
 import com.researchspace.service.cloud.CommunityUserManager;
@@ -199,7 +200,7 @@ public class UserProfileController extends BaseController {
       @RequestParam(value = "userId", required = false) Long userId,
       Principal principal,
       Model model)
-      throws RecordAccessDeniedException, Exception {
+      throws RecordAccessDeniedException, UserNotFoundException {
 
     User sessionUser = userManager.getUserByUsername(principal.getName(), true);
     User user;
@@ -210,8 +211,7 @@ public class UserProfileController extends BaseController {
       try {
         user = userManager.getUser(userId + "");
       } catch (ObjectRetrievalFailureException e) {
-        System.out.println("@@@ Exception!: " + e.getMessage());
-        throw new Exception(USER_NOT_FOUND); // TODO New exception type..?
+        throw new UserNotFoundException(USER_NOT_FOUND);
       }
     }
 
