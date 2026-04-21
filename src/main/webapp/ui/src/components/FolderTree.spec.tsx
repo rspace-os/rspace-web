@@ -48,6 +48,9 @@ const feature = test.extend<{
     "the add folder button should be visible": (params: {
       folderName: string;
     }) => Promise<void>;
+    "the add folder button should not be visible": (params: {
+      folderName: string;
+    }) => Promise<void>;
     "the create folder dialog should be open": () => Promise<void>;
     "the new folder should appear in the tree": (params: {
       folderName: string;
@@ -113,6 +116,28 @@ const feature = test.extend<{
                       lastModified: "2025-01-15T14:00:00.000Z",
                       parentFolderId: null,
                       type: "FOLDER",
+                      _links: [],
+                      owner: {
+                        id: 1,
+                        username: "researcher",
+                        email: "researcher@example.com",
+                        firstName: "Research",
+                        lastName: "User",
+                        homeFolderId: 124,
+                        workbenchId: null,
+                        hasPiRole: true,
+                        hasSysAdminRole: false,
+                        _links: [],
+                      },
+                    },
+                    {
+                      id: 1001,
+                      globalId: "NB1001",
+                      name: "A Notebook",
+                      created: "2025-01-01T10:00:00.000Z",
+                      lastModified: "2025-01-15T14:00:00.000Z",
+                      parentFolderId: null,
+                      type: "NOTEBOOK",
                       _links: [],
                       owner: {
                         id: 1,
@@ -385,6 +410,16 @@ const feature = test.extend<{
         });
         await expect(addButton).toBeVisible();
       },
+      "the add folder button should not be visible": async ({ folderName }) => {
+        const treeItem = page.getByRole("treeitem", {
+          name: new RegExp(folderName),
+        });
+        await treeItem.hover();
+        const addButton = treeItem.getByRole("button", {
+          name: `Add subfolder to ${folderName}`,
+        });
+        await expect(addButton).not.toBeVisible();
+      },
       "the create folder dialog should be open": async () => {
         const dialog = page.getByRole("dialog", { name: "Create New Folder" });
         await expect(dialog).toBeVisible();
@@ -485,6 +520,18 @@ test.describe("FolderTree", () => {
     });
     await Then["the add folder button should be visible"]({
       folderName: "Research Projects",
+    });
+
+  });
+  feature("Shows no add folder button on hover if notebook", async ({ Given, When, Then }) => {
+    await Given[
+        "the FolderTree component is rendered with mocked API responses"
+        ]();
+    await When["the user hovers over a folder"]({
+      folderName: "A Notebook",
+    });
+    await Then["the add folder button should not be visible"]({
+      folderName: "A Notebook",
     });
 
   });
