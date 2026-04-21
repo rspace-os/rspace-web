@@ -10,6 +10,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.Constants;
 import com.researchspace.core.testutil.CoreTestUtils;
@@ -38,25 +41,42 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.impl.UserContentUpdater;
+import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.TestGroup;
+import com.researchspace.webapp.controller.FolderManagerStub;
 import java.util.Arrays;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class GroupManagerTest extends SpringTransactionalTest {
 
   @Autowired SystemPropertyManager systemPropertyManager;
   @Autowired SharingHandler sharingHandler;
-
+  @Mock
+  private UserContentUpdater userContentUpdaterMock;
+  @Autowired
+  private UserContentUpdater userContentUpdaterBean;
   @Before
   public void setUp() throws Exception {
     super.setUp();
+    openMocks(this);
+    ReflectionTestUtils.setField(
+        grpMgr, "userContentUpdater", userContentUpdaterMock);
+  }
+  @After
+  public void tearDown() throws Exception {
+    ReflectionTestUtils.setField(
+        grpMgr, "userContentUpdater", userContentUpdaterBean);
   }
 
   @Test
@@ -445,6 +465,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     grpMgr.addUserToGroup(user.getUsername(), g1.getId(), RoleInGroup.DEFAULT);
     String expectedName = new DefaultGroupNamingStrategy().getSharedGroupSnippetName(g1);
     assertAllGroupMembersHaveSharedSnippetFolder(g1, expectedName);
+    verify(userContentUpdaterMock).doUserContentUpdates(eq(user));
   }
 
   @Test
