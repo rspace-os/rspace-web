@@ -164,13 +164,11 @@ public class BaseApiInventoryController extends BaseApiController {
       case IC:
         return containerApiMgr.assertUserCanEditContainer(recordOid.getDbId(), user);
       case II:
-      case NS:
-        // TODO[nik]: change to be assert for Instrument
         return instrumentApiMgr.assertUserCanEditInstrument(recordOid.getDbId(), user);
+      case NS:
+        return instrumentApiMgr.assertUserCanEditInstrumentTemplate(recordOid.getDbId(), user);
       case SF:
-        // TODO[nik]: make sure this is returning the object Instrumnent or Sample according to the
-        // type
-        return sampleApiMgr.assertUserCanEditInventoryEntityField(recordOid.getDbId(), user);
+        return instrumentApiMgr.assertUserCanEditInventoryEntityField(recordOid.getDbId(), user);
       default:
         throw new IllegalArgumentException(
             "unsupported global id type: " + recordOid.getIdString());
@@ -188,13 +186,11 @@ public class BaseApiInventoryController extends BaseApiController {
       case IC:
         return containerApiMgr.assertUserCanReadContainer(recordOid.getDbId(), user);
       case II:
-      case NS:
-        // TODO[nik]: change to be assert for Instyrument
         return instrumentApiMgr.assertUserCanReadInstrument(recordOid.getDbId(), user);
+      case NS:
+        return instrumentApiMgr.assertUserCanReadInstrumentTemplate(recordOid.getDbId(), user);
       case SF:
-        // TODO[nik]: make sure this is returning the object Instrumnent or Sample according to the
-        // type
-        return sampleApiMgr.assertUserCanReadInventoryEntityField(recordOid.getDbId(), user);
+        return instrumentApiMgr.assertUserCanReadInventoryEntityField(recordOid.getDbId(), user);
       default:
         throw new IllegalArgumentException(
             "unsupported global id type: " + recordOid.getIdString());

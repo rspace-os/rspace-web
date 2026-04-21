@@ -5,6 +5,8 @@ import com.researchspace.api.v1.model.ApiInstrumentEntity;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
+import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.inventory.InventoryRecord;
 
 /** Handles API actions around Inventory Instrument. */
 public interface InstrumentApiManager extends InventoryApiManager<InstrumentEntity> {
@@ -32,4 +34,12 @@ public interface InstrumentApiManager extends InventoryApiManager<InstrumentEnti
   Instrument assertUserCanEditInstrument(Long dbId, User user);
 
   Instrument assertUserCanReadInstrument(Long dbId, User user);
+
+  InstrumentTemplate assertUserCanEditInstrumentTemplate(Long dbId, User user);
+
+  InstrumentTemplate assertUserCanReadInstrumentTemplate(Long dbId, User user);
+
+  InventoryRecord assertUserCanEditInventoryEntityField(Long id, User user);
+
+  InventoryRecord assertUserCanReadInventoryEntityField(Long id, User user);
 }

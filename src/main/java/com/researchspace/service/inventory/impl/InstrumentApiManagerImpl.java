@@ -2,18 +2,23 @@ package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentEntity;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.dao.InstrumentEntityDao;
+import com.researchspace.dao.InventoryEntityFieldDao;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.service.inventory.InstrumentApiManager;
 import com.researchspace.service.inventory.InventoryMoveHelper;
+import com.researchspace.service.inventory.SampleApiManager;
 import java.io.IOException;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
@@ -29,6 +34,8 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
 
   private @Autowired InstrumentEntityDao<Instrument> instrumentDao;
   private @Autowired InstrumentEntityDao<InstrumentTemplate> instrumentTemplateDao;
+  private @Autowired InventoryEntityFieldDao inventoryEntityFieldDao;
+  private @Autowired SampleApiManager sampleApiManager;
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
 
   @Override
@@ -97,7 +104,7 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
     if (instrTemplate != null) {
       apiResultInstrument.setTemplateId(instrTemplate.getId());
     }
-    populateOutgoingApiInstrument(apiResultInstrument, savedInstrument, user);
+    populateOutgoingApiInstrumentEntity(apiResultInstrument, savedInstrument, user);
 
     return apiResultInstrument;
   }
@@ -161,36 +168,84 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
 
   @Override
   public Instrument assertUserCanEditInstrument(Long dbId, User user) {
-    // TODO[nik]: implement this on RSDEV-1059
-    return null;
+    Instrument instrument = instrumentDao.get(dbId);
+    invPermissions.assertUserCanEditInventoryRecord(instrument, user);
+    return instrument;
   }
 
   @Override
   public Instrument assertUserCanReadInstrument(Long dbId, User user) {
-    // TODO[nik]: implement this on RSDEV-1059
-    return null;
+    Instrument instrument = instrumentDao.get(dbId);
+    invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(instrument, user);
+    return instrument;
+  }
+
+  @Override
+  public InstrumentTemplate assertUserCanEditInstrumentTemplate(Long dbId, User user) {
+    InstrumentTemplate instrumentTemplate = instrumentTemplateDao.get(dbId);
+    invPermissions.assertUserCanEditInventoryRecord(instrumentTemplate, user);
+    return instrumentTemplate;
+  }
+
+  @Override
+  public InstrumentTemplate assertUserCanReadInstrumentTemplate(Long dbId, User user) {
+    InstrumentTemplate instrumentTemplate = instrumentTemplateDao.get(dbId);
+    invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(instrumentTemplate, user);
+    return instrumentTemplate;
+  }
+
+  @Override
+  public InventoryRecord assertUserCanReadInventoryEntityField(Long id, User user) {
+    InventoryRecord parentEntity = inventoryEntityFieldDao.getParentInventoryEntityFromFieldId(id);
+    GlobalIdentifier entityGlobalId = parentEntity.getOid();
+    switch (parentEntity.getType()) {
+      case SAMPLE:
+        return sampleApiManager.assertUserCanReadSample(entityGlobalId.getDbId(), user);
+      case INSTRUMENT:
+        return this.assertUserCanReadInstrument(entityGlobalId.getDbId(), user);
+      case INSTRUMENT_TEMPLATE:
+        return this.assertUserCanReadInstrumentTemplate(entityGlobalId.getDbId(), user);
+      default:
+        throw new IllegalArgumentException(
+            "unsupported global id type: " + entityGlobalId.getIdString());
+    }
+  }
+
+  @Override
+  public InventoryRecord assertUserCanEditInventoryEntityField(Long id, User user) {
+    InventoryRecord parentEntity = inventoryEntityFieldDao.getParentInventoryEntityFromFieldId(id);
+    GlobalIdentifier entityGlobalId = parentEntity.getOid();
+    switch (parentEntity.getType()) {
+      case SAMPLE:
+        return sampleApiManager.assertUserCanEditSample(entityGlobalId.getDbId(), user);
+      case INSTRUMENT:
+        return this.assertUserCanEditInstrument(entityGlobalId.getDbId(), user);
+      case INSTRUMENT_TEMPLATE:
+        return this.assertUserCanEditInstrumentTemplate(entityGlobalId.getDbId(), user);
+      default:
+        throw new IllegalArgumentException(
+            "unsupported global id type: " + entityGlobalId.getIdString());
+    }
   }
 
   private ApiInstrument getInstrumentById(Long id, User user) {
-    InstrumentEntity instrument = instrumentDao.get(id);
+    Instrument instrument = instrumentDao.get(id);
     publisher.publishEvent(new InventoryAccessEvent(instrument, user));
-    return getOutgoingApiInstrument(instrument, user);
-  }
-
-  private ApiInstrumentEntity getInstrumentTemplateById(Long id, User user) {
-    InstrumentEntity instrumentTemplate = instrumentTemplateDao.get(id);
-    publisher.publishEvent(new InventoryAccessEvent(instrumentTemplate, user));
-    return getOutgoingApiInstrument(instrumentTemplate, user);
-  }
-
-  private ApiInstrument getOutgoingApiInstrument(InstrumentEntity instrumentEntity, User user) {
-    ApiInstrument result = new ApiInstrument(instrumentEntity);
-    populateOutgoingApiInstrument(result, instrumentEntity, user);
+    ApiInstrument result = new ApiInstrument(instrument);
+    populateOutgoingApiInstrumentEntity(result, instrument, user);
     return result;
   }
 
-  private void populateOutgoingApiInstrument(
-      ApiInstrument apiInstrument, InstrumentEntity instrument, User user) {
+  private ApiInstrumentEntity getInstrumentTemplateById(Long id, User user) {
+    InstrumentTemplate instrumentTemplate = instrumentTemplateDao.get(id);
+    publisher.publishEvent(new InventoryAccessEvent(instrumentTemplate, user));
+    ApiInstrumentTemplate result = new ApiInstrumentTemplate(instrumentTemplate);
+    populateOutgoingApiInstrumentEntity(result, instrumentTemplate, user);
+    return result;
+  }
+
+  private void populateOutgoingApiInstrumentEntity(
+      ApiInstrumentEntity apiInstrument, InstrumentEntity instrument, User user) {
     if (apiInstrument != null) { // populate only if it is already created
       setOtherFieldsForOutgoingApiInventoryRecord(apiInstrument, instrument, user);
       populateSharingPermissions(apiInstrument.getSharedWith(), instrument);

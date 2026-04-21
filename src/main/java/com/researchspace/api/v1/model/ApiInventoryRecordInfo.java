@@ -1,6 +1,4 @@
-/**
- * RSpace Inventory API Access your RSpace Inventory programmatically.
- */
+/** RSpace Inventory API Access your RSpace Inventory programmatically. */
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -152,14 +150,11 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   }
 
   /* to use when generating image/thumbnail links on controller level, but not sent to front-end */
-  @JsonIgnore
-  private boolean customImage;
+  @JsonIgnore private boolean customImage;
 
-  @JsonIgnore
-  private FileProperty imageFileProperty;
+  @JsonIgnore private FileProperty imageFileProperty;
 
-  @JsonIgnore
-  private FileProperty thumbnailFileProperty;
+  @JsonIgnore private FileProperty thumbnailFileProperty;
 
   @Size(max = 10_000_000, message = "Image cannot be larger than 10MB")
   @JsonProperty(value = "newBase64Image", access = Access.WRITE_ONLY)

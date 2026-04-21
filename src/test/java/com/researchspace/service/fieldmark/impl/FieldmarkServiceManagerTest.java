@@ -30,6 +30,7 @@ import com.researchspace.model.dtos.fieldmark.FieldmarkNotebookDTO;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.fieldmark.FieldmarkServiceClientAdapter;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InstrumentApiManager;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -82,6 +83,7 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
   private @Mock InventoryFileApiManager inventoryFileManager;
   private @Mock ContainerApiManager containerApiMgr;
   private @Mock SampleApiManager sampleApiMgr;
+  private @Mock InstrumentApiManager instrumentApiManager;
   private @Mock User goodUser;
   private @Mock User wrongUser;
   private BindingResult bindingResult;
@@ -253,7 +255,7 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
     verify(inputValidator).validate(any(), any(SampleApiPostFullValidator.class), any());
     verify(inputValidator).validate(any(), any(InventoryFilePostValidator.class), any());
     verify(sampleApiMgr).createNewApiSample(any(), any());
-    verify(sampleApiMgr).assertUserCanEditInventoryEntityField(any(), any());
+    verify(instrumentApiManager).assertUserCanEditInventoryEntityField(any(), any());
 
     verify(apiHandler, times(2)).assertInventoryAndDataciteEnabled(goodUser);
     verify(inventoryIdentifierApiManager)

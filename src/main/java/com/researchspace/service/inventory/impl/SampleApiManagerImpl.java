@@ -136,18 +136,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   @Override
-  public Sample assertUserCanReadInventoryEntityField(Long id, User user) {
-    GlobalIdentifier sampleOid = getSampleGlobalIdByFieldIdIfExists(id);
-    return assertUserCanReadSample(sampleOid.getDbId(), user);
-  }
-
-  @Override
-  public Sample assertUserCanEditInventoryEntityField(Long id, User user) {
-    GlobalIdentifier sampleOid = getSampleGlobalIdByFieldIdIfExists(id);
-    return assertUserCanEditSample(sampleOid.getDbId(), user);
-  }
-
-  @Override
   public Sample assertUserCanDeleteSample(Long id, User user) {
     Sample sample = getIfExists(id);
     invPermissions.assertUserCanDeleteInventoryRecord(sample, user);

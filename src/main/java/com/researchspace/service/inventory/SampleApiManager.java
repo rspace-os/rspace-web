@@ -69,18 +69,6 @@ public interface SampleApiManager extends InventoryApiManager<Sample> {
    */
   Sample assertUserCanEditSample(Long id, User user);
 
-  /** Returns Sample that has a field with given id if it exists and user has read permission */
-  Sample assertUserCanReadInventoryEntityField(Long id, User user);
-
-  /**
-   * Returns Sample that has a field with given id if it exists and user has edit permission
-   *
-   * @param id id of a sample field
-   * @param user
-   * @return
-   */
-  Sample assertUserCanEditInventoryEntityField(Long id, User user);
-
   /**
    * Retuns Sample entity if it exists and user can delete/restore it
    *
