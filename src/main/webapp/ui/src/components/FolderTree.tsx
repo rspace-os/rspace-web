@@ -199,7 +199,7 @@ const TreeItemContent = ({
   const labelContent = (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       <span>{folder.name}</span>
-      <IconButtonWithTooltip
+      {folder.type !== 'NOTEBOOK' && (<IconButtonWithTooltip
         title={`Add subfolder to ${folder.name}`}
         icon={<AddIcon fontSize="small" />}
         size="small"
@@ -208,7 +208,7 @@ const TreeItemContent = ({
           setIsDialogOpen(true);
         }}
         sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}
-      />
+      />)}
     </Box>
   );
 
