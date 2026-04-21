@@ -53,7 +53,7 @@ declare const tinymce: {
   };
 };
 
-// This function replaces `node instanceof HTMLElement` because for some reason it can be false
+// As TinyMCE Elements are cross-realm, normal `instanceof` checks would fail here
 const isHTMLElement = (node: unknown): node is HTMLElement => {
   if (typeof node !== "object" || node === null) {
     return false;

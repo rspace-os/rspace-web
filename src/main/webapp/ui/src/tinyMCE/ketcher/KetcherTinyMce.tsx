@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import { blobToBase64 } from "@/util/files";
 import axios from "@/common/axios";
 import AnalyticsContext from "../../stores/contexts/Analytics";
@@ -31,17 +31,32 @@ type TinyMceEditor = {
   };
 };
 
-declare const tinymceDialogUtils: {
+type TinyMceDialogUtils = {
   showErrorAlert: (message: string) => void;
 };
 
-declare const Mustache: {
+type MustacheRenderer = {
   render: <T extends object>(template: string, data: T) => string;
 };
 
 const CHEM_CLASS_NAME = "chem";
+const KETCHER_DIALOG_CONTAINER_ID = "tinymce-ketcher";
+const OPEN_KETCHER_DIALOG_EVENT = "OPEN_KETCHER_DIALOG";
 const EMPTY_MOLECULE_MESSAGE =
   "Please draw, paste, or open a molecule to insert into the document";
+
+const ketcherDialogRoots = new WeakMap<HTMLElement, Root>();
+
+let ketcherDialogListenerRegistered = false;
+
+function getTinyMceDialogUtils(): TinyMceDialogUtils | undefined {
+  return (globalThis as { tinymceDialogUtils?: TinyMceDialogUtils })
+    .tinymceDialogUtils;
+}
+
+function getMustacheRenderer(): MustacheRenderer | undefined {
+  return (globalThis as { Mustache?: MustacheRenderer }).Mustache;
+}
 
 function getActiveEditor(): TinyMceEditor | null {
   return (window.tinymce?.activeEditor as TinyMceEditor | undefined) ?? null;
@@ -51,8 +66,17 @@ function getSelectedNode(editor: TinyMceEditor | null): Node | null {
   return editor?.selection.getNode() ?? null;
 }
 
+function isElementNode(node: EventTarget | Node | null): node is Element {
+  return (
+    typeof node === "object" &&
+    node !== null &&
+    "nodeType" in node &&
+    node.nodeType === Node.ELEMENT_NODE
+  );
+}
+
 function isChemicalElement(node: Node | null): node is Element {
-  return node instanceof Element && node.classList.contains(CHEM_CLASS_NAME);
+  return isElementNode(node) && node.classList.contains(CHEM_CLASS_NAME);
 }
 
 function getSelectedChemicalElement(editor: TinyMceEditor | null): Element | null {
@@ -61,7 +85,9 @@ function getSelectedChemicalElement(editor: TinyMceEditor | null): Element | nul
 }
 
 function getFieldId(editor: TinyMceEditor | null): string | null {
-  return editor?.id.replace(/^\D+/g, "") ?? null;
+  const fieldId = editor?.id.replace(/^\D+/g, "") ?? "";
+
+  return fieldId === "" ? null : fieldId;
 }
 
 function containsMolecule(ketData: string): boolean {
@@ -82,6 +108,50 @@ const KetcherDialog = React.lazy(
   () => import("../../components/Ketcher/KetcherDialog"),
 );
 
+function showErrorAlert(message: string): void {
+  getTinyMceDialogUtils()?.showErrorAlert(message);
+}
+
+function renderTemplate<T extends object>(template: string, data: T): string {
+  return getMustacheRenderer()?.render(template, data) ?? "";
+}
+
+function getKetcherMountContainer(): HTMLElement | null {
+  const rootDocument = window.top?.document ?? document;
+  const container = rootDocument.getElementById(KETCHER_DIALOG_CONTAINER_ID);
+
+  return container instanceof HTMLElement ? container : null;
+}
+
+function renderKetcherDialog(): void {
+  const wrapperDiv = getKetcherMountContainer();
+
+  if (!wrapperDiv) {
+    return;
+  }
+
+  const root = ketcherDialogRoots.get(wrapperDiv) ?? createRoot(wrapperDiv);
+  ketcherDialogRoots.set(wrapperDiv, root);
+  root.render(
+    <ThemeProvider theme={theme}>
+      <Analytics>
+        <Alerts>
+          <KetcherTinyMce />
+        </Alerts>
+      </Analytics>
+    </ThemeProvider>,
+  );
+}
+
+function registerKetcherDialogListener(): void {
+  if (ketcherDialogListenerRegistered) {
+    return;
+  }
+
+  window.addEventListener(OPEN_KETCHER_DIALOG_EVENT, renderKetcherDialog);
+  ketcherDialogListenerRegistered = true;
+}
+
 export const KetcherTinyMce = (): React.ReactNode => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [existingChemical, setExistingChemical] = useState("");
@@ -93,41 +163,48 @@ export const KetcherTinyMce = (): React.ReactNode => {
   const selectedChemicalElement = getSelectedChemicalElement(activeEditor);
 
   useEffect(() => {
+    let isCurrent = true;
     const editor = getActiveEditor();
     const chemicalElement = getSelectedChemicalElement(editor);
 
     if (!chemicalElement) {
-      return;
+      return undefined;
     }
 
     const chemElemId = chemicalElement.getAttribute("id");
 
     if (!chemElemId) {
-      return;
+      return undefined;
     }
 
     const revision = chemicalElement.getAttribute("data-rsrevision");
 
-    void axios
-      .get<{ data: { chemElements: string } } | null>(
-        "/chemical/ajax/loadChemElements",
-        {
-        params: {
-          chemId: chemElemId,
-          ...(revision === null ? {} : { revision }),
-        },
-        },
-      )
-      .then((response) => {
-        if (response.data !== null) {
+    void (async () => {
+      try {
+        const response = await axios.get<{ data: { chemElements: string } } | null>(
+          "/chemical/ajax/loadChemElements",
+          {
+            params: {
+              chemId: chemElemId,
+              ...(revision === null ? {} : { revision }),
+            },
+          },
+        );
+
+        if (isCurrent && response.data !== null) {
           setExistingChemical(response.data.data.chemElements);
         }
-      })
-      .catch(() => {
-        tinymceDialogUtils.showErrorAlert(
-          "Loading chemical elements failed.",
-        );
-      });
+
+      } catch {
+        if (isCurrent) {
+          showErrorAlert("Loading chemical elements failed.");
+        }
+      }
+    })();
+
+    return () => {
+      isCurrent = false;
+    };
   }, []);
 
   const saveFullSizeImage = async (
@@ -187,7 +264,7 @@ export const KetcherTinyMce = (): React.ReactNode => {
     const url = "/fieldTemplates/ajax/chemElementLink";
 
     const { data: template } = await axios.get<string>(url);
-    const html = Mustache.render(template, templateData);
+    const html = renderTemplate(template, templateData);
 
     if (html !== "") {
       editor.execCommand("mceInsertContent", false, html);
@@ -231,7 +308,7 @@ export const KetcherTinyMce = (): React.ReactNode => {
         await saveChemicalAndInsert(chemical);
         setDialogIsOpen(false);
         setExistingChemical("");
-        void window.ketcher.setMolecule("");
+        await window.ketcher.setMolecule("");
       } catch {
         // Ignore failed insert attempts; save() already reports API errors.
       }
@@ -300,23 +377,11 @@ export const KetcherTinyMce = (): React.ReactNode => {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  window.addEventListener("OPEN_KETCHER_DIALOG", () => {
-    // todo: check if the root container already exists before createRoot()
-    const wrapperDiv = window.top?.document.getElementById("tinymce-ketcher");
-
-    if (wrapperDiv) {
-      const root = createRoot(wrapperDiv);
-      root.render(
-        <ThemeProvider theme={theme}>
-          <Analytics>
-            <Alerts>
-              <KetcherTinyMce />
-            </Alerts>
-          </Analytics>
-        </ThemeProvider>,
-      );
-    }
-  });
+  registerKetcherDialogListener();
 });
+
+if (document.readyState !== "loading") {
+  registerKetcherDialogListener();
+}
 
 export default KetcherTinyMce;

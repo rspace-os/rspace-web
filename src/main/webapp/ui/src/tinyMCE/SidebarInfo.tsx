@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ChemCard from "./ChemCard";
 import styled from "@emotion/styled";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import materialTheme from "../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
@@ -17,11 +17,11 @@ interface SidebarInfoProps {
   iframe: HTMLIFrameElement;
 }
 
-declare const tinymce: {
-  activeEditor: {
-    execCommand: (command: string, ui: boolean, value?: string) => void;
-  };
+type TinyMCEEditor = {
+  execCommand: (command: string, ui: boolean, value?: string) => void;
 };
+
+const sidebarRoots = new WeakMap<HTMLElement, Root>();
 
 const SidebarWrapper = styled.div`
   display: flex;
@@ -34,8 +34,20 @@ const SidebarWrapper = styled.div`
   }
 `;
 
+function isElementNode(node: EventTarget | Node | null): node is Element {
+  return (
+    typeof node === "object" &&
+    node !== null &&
+    "nodeType" in node &&
+    node.nodeType === Node.ELEMENT_NODE
+  );
+}
+
 function isChemImage(element: Element | null): element is HTMLImageElement {
-  return element instanceof HTMLImageElement && element.classList.contains("chem");
+  return (
+    element?.tagName.toLowerCase() === "img" &&
+    element.classList.contains("chem")
+  );
 }
 
 function getIframeDocument(iframe: HTMLIFrameElement): Document | null {
@@ -45,17 +57,35 @@ function getIframeDocument(iframe: HTMLIFrameElement): Document | null {
 function getRemovedChemElements(node: Node): HTMLImageElement[] {
   const removedChemElements: HTMLImageElement[] = [];
 
-  if (node instanceof HTMLImageElement && node.classList.contains("chem")) {
+  if (isElementNode(node) && isChemImage(node)) {
     removedChemElements.push(node);
   }
 
-  if (node instanceof Element) {
+  if (isElementNode(node)) {
     removedChemElements.push(
       ...Array.from(node.querySelectorAll<HTMLImageElement>("img.chem")),
     );
   }
 
   return removedChemElements;
+}
+
+function getCustomEventDetail(event: Event): unknown {
+  return "detail" in event ? event.detail : undefined;
+}
+
+function getActiveEditor(): TinyMCEEditor | undefined {
+  return (globalThis as { tinymce?: { activeEditor?: TinyMCEEditor } }).tinymce
+    ?.activeEditor;
+}
+
+function findSidebarContainer(iframe: HTMLIFrameElement): HTMLElement | null {
+  const editorContainer = iframe.closest(".tox-tinymce");
+  const container =
+    editorContainer?.querySelector<HTMLElement>(".tox-sidebar__pane-container") ??
+    document.querySelector<HTMLElement>(".tox-sidebar__pane-container");
+
+  return container instanceof HTMLElement ? container : null;
 }
 
 export default function SidebarInfo({ iframe }: SidebarInfoProps) {
@@ -98,7 +128,7 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
 
     const handleChemClick = (event: MouseEvent): void => {
       const chemElement =
-        event.target instanceof Element
+        isElementNode(event.target)
           ? event.target.closest("img.chem")
           : null;
 
@@ -108,7 +138,11 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
     };
 
     const handleChemInserted = (event: Event): void => {
-      const chemId = (event as CustomEvent<string | number>).detail;
+      const chemId = getCustomEventDetail(event);
+      if (typeof chemId !== "string" && typeof chemId !== "number") {
+        return;
+      }
+
       const chemElement = iframeDocument.getElementById(String(chemId));
 
       if (isChemImage(chemElement)) {
@@ -121,7 +155,10 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
     };
 
     const handleSidebarToggle = (event: Event): void => {
-      setOpen(Boolean((event as CustomEvent<boolean>).detail));
+      const nextOpen = getCustomEventDetail(event);
+      if (typeof nextOpen === "boolean") {
+        setOpen(nextOpen);
+      }
     };
 
     iframeDocument.addEventListener("click", handleChemClick);
@@ -144,11 +181,13 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
   }, [addItem, closeAll, iframe, removeItem]);
 
   useEffect(() => {
+    const activeEditor = getActiveEditor();
+
     if (items.length === 1 && !open) {
-      tinymce.activeEditor.execCommand("togglesidebar", false, "cheminfo");
+      activeEditor?.execCommand("togglesidebar", false, "cheminfo");
       setOpen(true);
     } else if (items.length === 0 && open) {
-      tinymce.activeEditor.execCommand("togglesidebar", false, "cheminfo");
+      activeEditor?.execCommand("togglesidebar", false, "cheminfo");
       setOpen(false);
     }
   }, [items.length, open]);
@@ -186,15 +225,21 @@ function SidebarInfoEntrypoint(props: SidebarInfoProps) {
 }
 
 document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
-  const iframeSelector = (event as CustomEvent<string>).detail;
+  const iframeSelector = getCustomEventDetail(event);
+  if (typeof iframeSelector !== "string") {
+    return;
+  }
+
   const iframe = document.querySelector(iframeSelector);
-  const container = document.querySelector(".tox-sidebar__pane-container");
+  const container =
+    iframe instanceof HTMLIFrameElement ? findSidebarContainer(iframe) : null;
 
   if (!(iframe instanceof HTMLIFrameElement) || !(container instanceof HTMLElement)) {
     return;
   }
 
-  const root = createRoot(container);
+  const root = sidebarRoots.get(container) ?? createRoot(container);
+  sidebarRoots.set(container, root);
   root.render(<SidebarInfoEntrypoint iframe={iframe} />);
 });
 
