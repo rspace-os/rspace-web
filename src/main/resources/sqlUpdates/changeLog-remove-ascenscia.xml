@@ -1,0 +1,60 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="remove-ascenscia-a" context="run" author="copilot">
+        <comment>Remove Ascenscia integration data: UserConnection tokens</comment>
+        <sql>
+            delete from UserConnection where providerId = 'ASCENSCIA';
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-ascenscia-b" context="run" author="copilot">
+        <comment>Remove Ascenscia integration data: AppConfigElement, AppConfigElementSet, UserAppConfig</comment>
+        <sql>
+            delete from AppConfigElement where appConfigElementDescriptor_id in (
+                select id from AppConfigElementDescriptor where app_id = (
+                    select id from App where name = 'app.ascenscia'));
+
+            delete from AppConfigElementSet where userAppConfig_id in (
+                select id from UserAppConfig where app_id = (
+                    select id from App where name = 'app.ascenscia'));
+
+            delete from UserAppConfig where app_id = (
+                select id from App where name = 'app.ascenscia');
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-ascenscia-c" context="run" author="copilot">
+        <comment>Remove Ascenscia integration data: AppConfigElementDescriptor</comment>
+        <sql>
+            delete from AppConfigElementDescriptor where app_id = (
+                select id from App where name = 'app.ascenscia');
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-ascenscia-d" context="run" author="copilot">
+        <comment>Remove Ascenscia integration data: SystemPropertyValue and SystemProperty for ascenscia.available</comment>
+        <sql>
+            delete from SystemPropertyValue where property_id = (
+                select sp.id from SystemProperty sp
+                inner join PropertyDescriptor pd on sp.descriptor_id = pd.id
+                where pd.name = 'ascenscia.available');
+
+            delete from SystemProperty where descriptor_id = (
+                select id from PropertyDescriptor where name = 'ascenscia.available');
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-ascenscia-e" context="run" author="copilot">
+        <comment>Remove Ascenscia integration data: PropertyDescriptors and App</comment>
+        <sql>
+            delete from PropertyDescriptor where name in ('ascenscia.available', 'ASCENSCIA_APIKEY');
+
+            delete from App where name = 'app.ascenscia';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
