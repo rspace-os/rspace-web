@@ -320,7 +320,7 @@
 <!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
 <script src="<c:url value='/ui/dist/exportModal.js'/>"></script>
-<script src="<c:url value='/ui/dist/previewInfo.js'/>"></script>
+<script src="<c:url value='/ui/dist/PreviewInfo.js'/>"></script>
 <script src="<c:url value='/ui/dist/snapGeneDialog.js'/>"></script>
 <script src="<c:url value='/scripts/tinymceDialogUtils.js'/>"></script>
 <!--End React Scripts -->

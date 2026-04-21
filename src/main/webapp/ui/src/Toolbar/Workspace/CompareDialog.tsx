@@ -199,7 +199,7 @@ const Toolbar = ({
             return Promise.resolve();
           }}
         >
-          Export {rowSelectionModel.length > 0 ? "selected" : "all"} rows to CSV
+          Export {rowSelectionModel.ids.size > 0 ? "selected" : "all"} rows to CSV
         </ExportMenuItem>
       </GridToolbarExportContainer>
     </GridToolbarContainer>
@@ -216,7 +216,10 @@ function CompareDialog(): React.ReactNode {
     pageSize: 100,
   });
   const [rowSelectionModel, setRowSelectionModel] =
-    React.useState<GridRowSelectionModel>([]);
+    React.useState<GridRowSelectionModel>({
+      type: 'include',
+      ids: new Set([]),
+    });
   const [documentCount, setDocumentCount] = React.useState(0);
   const [loadedCount, setLoadedCount] = React.useState(0);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
@@ -461,10 +464,10 @@ function CompareDialog(): React.ReactNode {
                   documentCount,
                 },
                 panel: {
-                  anchorEl: columnsMenuAnchorEl,
+                  target: columnsMenuAnchorEl,
                 },
               }}
-            />
+              showToolbar />
           </Grid>
         </Grid>
       </DialogContent>

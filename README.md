@@ -1,35 +1,62 @@
 # 👋 Welcome to RSpace 
-<picture>
- <img alt="Map of how the RSpace platform creates an ecosystem of digital tools to support workflows for preparing, conducting and reporting on research." src="https://github.com/rspace-os/rspace-marketing-resources/blob/main/main_graphic.png" width = 400 align = right>
-</picture>
-RSpace is an open-source collaborative research data management platform that interoperates with many tools and services researchers and their research organizations already use. It is designed to enable frictionless workflows when researchers plan their research, record experimental data, keep track of physical samples, manage their digital research objects, report on their work and share it with their communities. 
-<P>
 
-**🚧 Construction ahead!**
-Thank you for your interest in the RSpace open-source project! We're excited to have you here!
-[Releasing RSpace as an open-source project](http://www.researchspace.com/blog/research-space-embraces-open-source-to-empower-fair-data-workflows) is huge step for us and we likely won't have everything as polished as we'd like it to be in the beginning. Please bear with us as we're taking one step at a time to build an inclusive and efficient contributor experience. If you have any questions, concerns, or ideas how we can improve, don't hesitate to reach out to us 🙏.
-<br clear="right"/>
+RSpace is an open-source research data management platform designed to be a user-friendly and integrated frontend for researchers to efficiently connect and utilize research infrastructure in sustainable FAIR research workflows across the entire research lifecycle.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rspace-os/rspace-marketing-resources/main/main_graphic.svg" alt="RSpace" width="800">
+</p>
+
+## What RSpace Does
+
+- **Electronic Lab Notebook** — document experiments, protocols, and observations with rich media, templates, version control, and full auditability
+- **Inventory Management** — track samples, reagents, and equipment with customizable metadata, locations, and relationships
+- **Infrastructure Orchestration** — connect research workflows with the tools and services your institution uses
+- **FAIR Data** — built-in features and persistent identifiers to make research data Findable, Accessible, Interoperable, and Reusable
+
+---
+
+## Getting Started
+
+### Try RSpace
+
+- [Run locally with Docker](https://github.com/rspace-os/rspace-docker) — quickest way to get RSpace running on your own machine
+- [Request a demo](https://www.researchspace.com/request-a-demo) 
+
+### Developer Setup
+
+Everything you need to build and run RSpace from source:
+
+→ **[Developer Getting Started Guide](https://github.com/rspace-os/rspace-web/tree/main/DevDocs/DeveloperNotes/GettingStarted)**
+
+This covers dependencies, database setup, building the project, running RSpace locally, and IDE configuration.
+
+---
+
+## Contributing
+
+We welcome contributions of all kinds — code, UX, documentation, templates, integrations, and more.
+
+→ **[Guide to the RSpace Project](https://github.com/rspace-os/community/blob/main/the%20rspace%20project/README.md)** — your guide to the project and how to contribute
+
+→ **[Getting Started as a Contributor](https://github.com/rspace-os/community/blob/main/the%20rspace%20project/Guide/contributing/getting-started.md)** — read this before your first contribution
+
+→ **[Roadmap](https://github.com/orgs/rspace-os/projects/4?pane=info)** — where we're headed and where to get involved
+
+---
+
+## Community
+
+- 📅 **[Office Hours](https://github.com/rspace-os/community/blob/main/the%20rspace%20project/Guide/calendar.md)** — bi-monthly community call, open to all
+- 📬 **[Stay in touch](https://github.com/rspace-os/community/blob/main/the%20rspace%20project/Guide/contact.md)** — newsletter, Mastodon, LinkedIn, Bluesky, and more
+
+---
+
+## Documentation
+
+- **[User Documentation](https://documentation.researchspace.com)** — guides and reference for researchers using RSpace
+- **[API Reference](https://community.researchspace.com/public/apiDocs)** — REST API documentation and interactive explorer
+- **[DevDocs](https://github.com/rspace-os/rspace-web/tree/main/DevDocs)** — developer documentation: architecture, coding standards, development workflows
 
 
-
-# About the RSpace open-source project
-🗺️ You are currently on the main repository for developers building RSpace
-- The RSpace open-source project maintained by [Research Space](https://www.researchspace.com).
-- The central hub for project and community related information is the [Wiki](https://github.com/rspace-os/rspace-web/wiki/) located on this repository.
-  
-## Getting started
-- Please make sure you've read and understood our [code of conduct](https://github.com/rspace-os/.github/blob/1be658989ec362844d1f8b2ef590f28bbc989a1e/CODE_OF_CONDUCT.md) for maintaining an inclusive and productive community.
-- A good starting point to learn about RSpace, its features, and integrations with third party services is the [documentation](https://documentation.researchspace.com/).
-- Please read our [contributor information](https://github.com/rspace-os/.github/blob/main/CONTRIBUTING.md) for a general overview on how to contribute to this project.
-- Developer documentation can be found [here](DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md).
-
-## Running RSpace via docker
-- Information on how to run RSpace via docker can be found in the [rspace-docker repository](https://github.com/rspace-os/rspace-docker).
-
-## Getting in touch
-- Various ways of connecting and communicating with the RSpace open source project can be found on this [wiki page](https://github.com/rspace-os/rspace-web/wiki/Contact).
-- For inquiries about Research Space's enterprise solutions, please visit the Research Space website [here](https://www.researchspace.com/pricing).
-
-<HR>
 
 [![DOI](https://zenodo.org/badge/809392922.svg)](https://doi.org/10.5281/zenodo.14628345)

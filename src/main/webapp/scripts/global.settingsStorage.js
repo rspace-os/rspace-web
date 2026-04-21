@@ -1,4 +1,3 @@
-/* jshint maxerr: 100 */
 /* global RS: true */
 
 /**

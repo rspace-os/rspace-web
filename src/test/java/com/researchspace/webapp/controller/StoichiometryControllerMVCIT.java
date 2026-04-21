@@ -10,6 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.controller.API_MVC_TestBase;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.stoichiometry.StockDeductionRequest;
+import com.researchspace.api.v1.model.stoichiometry.StockDeductionResult;
+import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
@@ -23,6 +27,8 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.record.DeltaType;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
+import com.researchspace.model.stoichiometry.Stoichiometry;
+import com.researchspace.service.AuditManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
 import java.security.Principal;
@@ -31,6 +37,7 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -48,6 +55,8 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
   private User user;
   private StructuredDocument doc1;
   private String apiKey;
+
+  @Autowired private AuditManager auditManager;
 
   private static final String URL = "/api/v1/stoichiometry";
 
@@ -663,6 +672,157 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
         body.contains(
             "Object of class [com.researchspace.model.RSChemElement] with identifier [-999]: not"
                 + " found"));
+  }
+
+  @Test
+  public void testInventoryLinkManagement() throws Exception {
+    doc1 = createBasicDocumentInRootFolderWithText(user, "any");
+    Field docField = doc1.getFields().get(0);
+    RSChemElement reaction = addReactionToField(docField, user);
+    MvcResult createResult = createStoichiometry(reaction);
+    StoichiometryDTO createdStoichiometry =
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
+
+    StoichiometryMoleculeDTO molecule = createdStoichiometry.getMolecules().get(0);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+
+    // 1. Create link via PUT
+    StoichiometryInventoryLinkRequest linkReq =
+        StoichiometryInventoryLinkRequest.builder()
+            .inventoryItemGlobalId(sample.getGlobalId())
+            .build();
+
+    StoichiometryMoleculeUpdateDTO moleculeUpdate = StoichiometryMapper.toUpdateDTO(molecule);
+    moleculeUpdate.setInventoryLink(linkReq);
+
+    StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+    updateDTO.setId(createdStoichiometry.getId());
+    updateDTO.setMolecules(List.of(moleculeUpdate));
+
+    long revisionBeforeCreate = getLatestStoichiometryRevisionId(createdStoichiometry.getId());
+
+    MvcResult updateResult =
+        mockMvc
+            .perform(
+                put(URL)
+                    .param("stoichiometryId", createdStoichiometry.getId().toString())
+                    .contentType(APPLICATION_JSON)
+                    .content(new ObjectMapper().writeValueAsString(updateDTO))
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    StoichiometryDTO updatedStoich = getFromJsonResponseBody(updateResult, StoichiometryDTO.class);
+    StoichiometryMoleculeDTO updatedMol = updatedStoich.getMolecules().get(0);
+    assertNotNull(updatedMol.getInventoryLink());
+    assertEquals(sample.getGlobalId(), updatedMol.getInventoryLink().getInventoryItemGlobalId());
+
+    long revisionAfterCreate = getLatestStoichiometryRevisionId(createdStoichiometry.getId());
+    assertTrue(revisionAfterCreate > revisionBeforeCreate);
+
+    // 2. Remove link via PUT
+    moleculeUpdate.setInventoryLink(null);
+    updateResult =
+        mockMvc
+            .perform(
+                put(URL)
+                    .param("stoichiometryId", createdStoichiometry.getId().toString())
+                    .contentType(APPLICATION_JSON)
+                    .content(new ObjectMapper().writeValueAsString(updateDTO))
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    updatedStoich = getFromJsonResponseBody(updateResult, StoichiometryDTO.class);
+    updatedMol = updatedStoich.getMolecules().get(0);
+    assertNull(updatedMol.getInventoryLink());
+  }
+
+  @Test
+  public void testDeductStock() throws Exception {
+    doc1 = createBasicDocumentInRootFolderWithText(user, "deduct");
+    Field docField = doc1.getFields().get(0);
+    RSChemElement reaction = addReactionToField(docField, user);
+    MvcResult createResult = createStoichiometry(reaction);
+    StoichiometryDTO createdStoichiometry =
+        getFromJsonResponseBody(createResult, StoichiometryDTO.class);
+
+    StoichiometryMoleculeDTO molecule = createdStoichiometry.getMolecules().get(0);
+    // Set actual amount for deduction
+    StoichiometryMoleculeUpdateDTO molUpdate = StoichiometryMapper.toUpdateDTO(molecule);
+    molUpdate.setActualAmount(1.0);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    molUpdate.setInventoryLink(
+        StoichiometryInventoryLinkRequest.builder()
+            .inventoryItemGlobalId(sample.getGlobalId())
+            .build());
+
+    long stoichiometryId = createdStoichiometry.getId();
+
+    StoichiometryUpdateDTO updateDTO =
+        StoichiometryUpdateDTO.builder().id(stoichiometryId).molecules(List.of(molUpdate)).build();
+
+    MvcResult updateResult =
+        mockMvc
+            .perform(
+                put(URL)
+                    .param("stoichiometryId", String.valueOf(stoichiometryId))
+                    .contentType(APPLICATION_JSON)
+                    .content(new ObjectMapper().writeValueAsString(updateDTO))
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    StoichiometryDTO stoichWithLink = getFromJsonResponseBody(updateResult, StoichiometryDTO.class);
+    Long linkId = stoichWithLink.getMolecules().get(0).getInventoryLink().getId();
+
+    long revisionBeforeDeduct = getLatestStoichiometryRevisionId(createdStoichiometry.getId());
+
+    MvcResult deductResult =
+        mockMvc
+            .perform(
+                post(URL + "/link/deductStock")
+                    .contentType(APPLICATION_JSON)
+                    .content(
+                        new ObjectMapper()
+                            .writeValueAsString(
+                                new StockDeductionRequest(stoichiometryId, List.of(linkId))))
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    StockDeductionResult result = getFromJsonResponseBody(deductResult, StockDeductionResult.class);
+    assertTrue(result.getResults().get(0).isSuccess());
+
+    // Verify revision number is returned and was incremented by the deduction
+    assertNotNull(result.getRevisionNumber());
+    assertTrue(
+        result.getRevisionNumber() > revisionBeforeDeduct,
+        "Revision number should be greater than the pre-deduction revision");
+
+    // Verify stockDeducted flag is set
+    MvcResult getResult =
+        mockMvc
+            .perform(
+                get(URL)
+                    .param("stoichiometryId", createdStoichiometry.getId().toString())
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+    StoichiometryDTO finalStoich = getFromJsonResponseBody(getResult, StoichiometryDTO.class);
+    assertTrue(finalStoich.getMolecules().get(0).getInventoryLink().isStockDeducted());
+  }
+
+  private long getLatestStoichiometryRevisionId(long stoichiometryId) {
+    return auditManager
+        .getNewestRevisionForEntity(Stoichiometry.class, stoichiometryId)
+        .getRevision()
+        .longValue();
   }
 
   private MvcResult createStoichiometry(RSChemElement reaction) throws Exception {

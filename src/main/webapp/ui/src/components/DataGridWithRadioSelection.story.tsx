@@ -1,15 +1,20 @@
 import React from "react";
 import { DataGridWithRadioSelection } from "./DataGridWithRadioSelection";
 import {
+  ExportCsv,
   GridColDef,
   GridRowId,
-  GridToolbarContainer,
-  GridToolbarExportContainer,
-  useGridApiContext,
+  Toolbar,
 } from "@mui/x-data-grid";
-import MenuItem from "@mui/material/MenuItem";
 
-const rows = [
+type DemoRow = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  age: number;
+};
+
+const rows: DemoRow[] = [
   { id: 1, firstName: "John", lastName: "Doe", age: 35 },
   { id: 2, firstName: "Jane", lastName: "Smith", age: 28 },
   { id: 3, firstName: "Bob", lastName: "Johnson", age: 42 },
@@ -17,7 +22,7 @@ const rows = [
   { id: 5, firstName: "Charlie", lastName: "Brown", age: 45 },
 ];
 
-const columns: GridColDef[] = [
+const columns: GridColDef<DemoRow>[] = [
   { field: "firstName", headerName: "First Name", width: 150 },
   { field: "lastName", headerName: "Last Name", width: 150 },
   { field: "age", headerName: "Age", type: "number", width: 90 },
@@ -136,43 +141,3 @@ export function DataGridWithFeatures() {
   );
 }
 
-const CsvExportToolbar = () => {
-  const apiRef = useGridApiContext();
-
-  return (
-    <GridToolbarContainer sx={{ width: "100%" }}>
-      <GridToolbarExportContainer>
-        <MenuItem
-          onClick={() => {
-            apiRef.current?.exportDataAsCsv({
-              allColumns: true,
-            });
-          }}
-        >
-          Export to CSV
-        </MenuItem>
-      </GridToolbarExportContainer>
-    </GridToolbarContainer>
-  );
-};
-
-/**
- * For testing how export to CSV export works with the custom selection
- */
-export function DataGridWithExportToCsv() {
-  return (
-    <div style={{ height: 400, width: "100%" }}>
-      <DataGridWithRadioSelection
-        rows={rows}
-        columns={columns}
-        onSelectionChange={() => {}}
-        selectRadioAriaLabelFunc={(row) =>
-          `Select ${row.firstName} ${row.lastName}`
-        }
-        slots={{
-          toolbar: CsvExportToolbar,
-        }}
-      />
-    </div>
-  );
-}

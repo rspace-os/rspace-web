@@ -14,7 +14,7 @@ import Searchbar from "../Searchbar";
 import Search from "../../../../stores/models/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 
-import "__mocks__/resizeObserver";
+import "@/__tests__/__mocks__/resizeObserver";
 describe("Searchbar", () => {
   test("If lots of text is entered then the expanded field dialog it available.", () => {
     const handleSearch = vi.fn<(query: string) => void>();

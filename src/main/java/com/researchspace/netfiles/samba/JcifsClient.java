@@ -42,10 +42,9 @@ public class JcifsClient extends NfsAbstractClient implements NfsClient {
           @Override
           protected NtlmPasswordAuthentication getNtlmPasswordAuthentication() {
             log.warn(
-                "ntlm exception: "
-                    + getRequestingException().getMessage()
-                    + " for "
-                    + getRequestingURL());
+                "ntlm exception: {} for {}",
+                getRequestingException().getMessage(),
+                getRequestingURL());
             return null; // don't retry
           }
         };
@@ -82,14 +81,13 @@ public class JcifsClient extends NfsAbstractClient implements NfsClient {
 
     try {
       connectionTarget.listFiles();
-      log.debug("connected to: " + connectionTarget.getPath());
+      log.debug("connected to: {}", connectionTarget.getPath());
     } catch (SmbAuthException auth) {
       if (getAuthenticationPrincipal() != null) {
         log.warn(
-            "smb authorisation exception for user: "
-                + getAuthenticationPrincipal().getUsername()
-                + " and domain: "
-                + getAuthenticationPrincipal().getDomain());
+            "smb authorisation exception for user: {} and domain: {}",
+            getAuthenticationPrincipal().getUsername(),
+            getAuthenticationPrincipal().getDomain());
       }
       throw new NfsAuthException(auth.getMessage(), auth);
     } catch (SmbException e) {
@@ -119,7 +117,7 @@ public class JcifsClient extends NfsAbstractClient implements NfsClient {
       nfsFileDetails.setFileSystemParentPath(
           getParentPathFromFullPath(nfsTarget.getPath(), smbFile.getName()));
     } catch (MalformedURLException e) {
-      log.warn("MalformedURLException for " + pathWithDomain);
+      log.warn("MalformedURLException for {}", pathWithDomain);
     }
     return nfsFileDetails;
   }
@@ -163,7 +161,7 @@ public class JcifsClient extends NfsAbstractClient implements NfsClient {
         SmbFile[] smbFileList = targetFolder.listFiles();
         for (SmbFile child : smbFileList) {
 
-          NfsResourceDetails childResource = null;
+          NfsResourceDetails childResource;
           if (child.isDirectory()) {
             childResource = new NfsFolderDetails(getNameOfSmbFolder(child));
           } else {
@@ -193,9 +191,9 @@ public class JcifsClient extends NfsAbstractClient implements NfsClient {
   }
 
   private String getPathWithDomainFromFilePath(String fpath) {
-    String pathWithDomain = null;
+    String pathWithDomain;
     String fdomain = sambaServerUrl; // never endWith /
-    if (fpath == null || fpath.trim().length() < 1) {
+    if (fpath == null || fpath.trim().isEmpty()) {
       pathWithDomain = fdomain;
     } else {
       String fpth = fpath;
@@ -211,7 +209,7 @@ public class JcifsClient extends NfsAbstractClient implements NfsClient {
   protected SmbFile getConnectionTarget(String target) throws MalformedURLException {
 
     String connectionPath = SambaUtils.getSmbFilePathForTarget(sambaServerUrl, target);
-    log.info("connecting to: " + connectionPath);
+    log.info("connecting to: {}", connectionPath);
     SmbFile connectionTarget = new SmbFile(connectionPath, getAuthenticationPrincipal());
     connectionTarget.setReadTimeout(SAMBA_READ_TIMEOUT_MS);
 

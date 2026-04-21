@@ -14,7 +14,7 @@ import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
 import ApiServiceBase from "../../../common/ApiServiceBase";
 import { AxiosResponse } from "axios";
 
-import "../../../__tests__/assertUrlSearchParams";
+import "@/__tests__/assertUrlSearchParams";
 type TriggersSearchNavigateArgs = {
   skipToParentContext?: boolean;
 

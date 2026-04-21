@@ -4,7 +4,7 @@ import CoreFetcher from "../../CoreFetcher";
 import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";
 import { type Factory } from "../../../../definitions/Factory";
 import InvApiService from "../../../../../common/InvApiService";
-import "../../../../../__tests__/assertUrlSearchParams";
+import "@/__tests__/assertUrlSearchParams";
 import { AxiosResponse } from "axios";
 
 vi.mock("../../../../stores/RootStore", () => ({

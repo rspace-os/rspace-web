@@ -1,17 +1,17 @@
 import { test, describe, expect, beforeEach, vi } from 'vitest';
-import "@/__tests__/mocks/useOauthToken";
-import "@/__tests__/mocks/useWhoAmI";
-import "@/__tests__/mocks/useWebSocketNotifications";
+import "@/__tests__/__mocks__/useOauthToken";
+import "@/__tests__/__mocks__/useWhoAmI";
+import "@/__tests__/__mocks__/useWebSocketNotifications";
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import App from "../App";
-import "../../../__tests__/assertSemanticHeadings";
+import "@/__tests__/assertSemanticHeadings";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 
-import "../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 const mockAxios = new MockAdapter(axios);
 
 const uiNavigationData = {

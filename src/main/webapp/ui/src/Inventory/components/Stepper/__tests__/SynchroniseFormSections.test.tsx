@@ -1,5 +1,5 @@
 import { test, describe, expect } from 'vitest';
-import "@/__tests__/mocks/useUiPreference";
+import "@/__tests__/__mocks__/useUiPreference";
 import React,
   { useEffect,
   useContext } from "react";

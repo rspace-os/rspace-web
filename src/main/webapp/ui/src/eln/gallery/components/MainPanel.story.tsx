@@ -40,7 +40,11 @@ export function BunchOfImages(): React.ReactNode {
               modificationDate: new Date("2023-01-01T00:00:00Z"),
               description: Description.Empty(),
               type: "Image",
+                  isSystemFolder: false,
+                  isSharedFolder: false,
+                  ownerId: 1,
               ownerName: "user1",
+                  ownerUsername: "user1",
               path: [],
               gallerySection: "Images",
               size: 0,
@@ -122,7 +126,11 @@ export function NestedFoldersWithImageFile(): React.ReactNode {
           modificationDate: new Date("2023-01-01T00:00:00Z"),
           description: Description.Empty(),
           type: "Folder",
+          isSystemFolder: false,
+          isSharedFolder: false,
+          ownerId: 1,
           ownerName: "user1",
+          ownerUsername: "user1",
           path: [],
           gallerySection: "Images",
           size: 0,
@@ -153,7 +161,11 @@ export function NestedFoldersWithImageFile(): React.ReactNode {
           modificationDate: new Date("2023-01-01T00:00:00Z"),
           description: Description.Empty(),
           type: "Folder",
+          isSystemFolder: false,
+          isSharedFolder: false,
+          ownerId: 1,
           ownerName: "user1",
+          ownerUsername: "user1",
           path: [MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0]],
           gallerySection: "Images",
           size: 0,
@@ -184,7 +196,11 @@ export function NestedFoldersWithImageFile(): React.ReactNode {
           modificationDate: new Date("2023-01-01T00:00:00Z"),
           description: Description.Empty(),
           type: "Image",
+          isSystemFolder: false,
+          isSharedFolder: false,
+          ownerId: 1,
           ownerName: "user1",
+          ownerUsername: "user1",
           path: [
             MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0],
             MOCK_OUTER_FOLDER_LISTING.value.list[0],
@@ -232,6 +248,12 @@ export function NestedFoldersWithImageFile(): React.ReactNode {
                                 setGalleryListing(MOCK_OUTER_FOLDER_LISTING);
                                 setPath([
                                   MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0],
+                                ]);
+                              } else if (newPath.length === 2) {
+                                setGalleryListing(MOCK_INNER_FOLDER_LISTING);
+                                setPath([
+                                  MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0],
+                                  MOCK_OUTER_FOLDER_LISTING.value.list[0],
                                 ]);
                               }
                             }}

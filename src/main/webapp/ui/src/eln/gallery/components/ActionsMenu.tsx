@@ -3,8 +3,7 @@ import ChecklistIcon from "@mui/icons-material/Checklist";
 import Button from "@mui/material/Button";
 import { type GallerySection } from "../common";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
-import { styled, useTheme, darken, lighten } from "@mui/material/styles";
-import Menu from "@mui/material/Menu";
+import { useTheme, darken, lighten } from "@mui/material/styles";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import OpenWithIcon from "@mui/icons-material/OpenWith";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
@@ -14,6 +13,7 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import EditIcon from "@mui/icons-material/Edit";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import ShareIcon from "@mui/icons-material/Share";
 import { observer } from "mobx-react-lite";
 import { computed } from "mobx";
 import {
@@ -69,6 +69,9 @@ import { Optional } from "../../../util/optional";
 import LogoutIcon from "@mui/icons-material/Logout";
 import useFilestoresEndpoint from "../useFilestoresEndpoint";
 import { useSnippetPreview } from "./CallableSnippetPreview";
+import { ShareDialog } from "@/components/ShareDialog";
+import { Menu } from "@/components/DialogBoundary";
+import useWhoAmI from "@/hooks/api/useWhoAmI";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -280,17 +283,6 @@ const RenameDialog = ({
   );
 };
 
-const StyledMenu = styled(Menu)(({ open }) => ({
-  "& .MuiPaper-root": {
-    minWidth: "212px",
-    ...(open
-      ? {
-          transform: "translate(0px, 4px) !important",
-        }
-      : {}),
-  },
-}));
-
 type ActionsMenuArgs = {
   refreshListing: () => Promise<void>;
   section: GallerySection | null;
@@ -323,11 +315,16 @@ function ActionsMenu({
   const { openSnapGenePreview } = useSnapGenePreview();
   const { openFolder } = useFolderOpen();
   const { openSnippetPreview } = useSnippetPreview();
+  const fetchedCurrentUser = useWhoAmI();
+
+  const currentUser =
+    FetchingData.getSuccessValue(fetchedCurrentUser).orElse(null);
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
   const [irodsOpen, setIrodsOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
+  const [shareOpen, setShareOpen] = React.useState(false);
   const [imageEditorBlob, setImageEditorBlob] = React.useState<null | Blob>(
     null,
   );
@@ -468,6 +465,72 @@ function ActionsMenu({
     );
   });
 
+  const getShareDialogSelection = (): Result<{
+    globalIds: ReadonlyArray<string>;
+    names: ReadonlyArray<string>;
+  }> => {
+    if (fetchedCurrentUser.tag === "loading") {
+      return Result.Error([new Error("Loading user information...")]);
+    }
+    if (fetchedCurrentUser.tag === "error") {
+      return Result.Error([
+        new Error(
+          "Unable to load user information. Sharing is temporarily unavailable.",
+        ),
+      ]);
+    }
+    if (selection.isEmpty)
+      return Result.Error([new Error("At least one snippet must be selected.")]);
+    if (selection.asSet().some((f) => !f.isSnippet))
+      return Result.Error([new Error("Only snippets can be shared.")]);
+
+    const selectedFiles = selection.asSet().toArray();
+    const globalIds = selectedFiles
+      .map((file) => file.globalId)
+      .filter((globalId): globalId is string => typeof globalId === "string");
+    if (globalIds.length !== selectedFiles.length) {
+      // This should never happen, but currently the typing allows for `string | undefined` so it's here as a safeguard
+      return Result.Error([
+        new Error("Cannot share snippets that are missing global IDs."),
+      ]);
+    }
+
+    /*
+     * This is a workaround to disable the Share button when the snippet is
+     * selected in a shared folder. Shared snippets have a different ID to the
+     * original and changing share settings
+     */
+    for (const file of selectedFiles) {
+      const currentFolder = file.path.at(-1);
+      if (!currentFolder) {
+        continue;
+      }
+
+      if (currentFolder.isSharedFolder) {
+        /*
+         * This is a workaround as we don't currently expose granular permissions
+         * in /gallery/getUploadedFiles.
+         */
+        if (currentUser?.id !== file.ownerId) {
+          return Result.Error([
+            new Error(
+              "Only owners of the snippet can change its share settings.",
+            ),
+          ]);
+        }
+      }
+    }
+
+    return Result.Ok({
+      globalIds,
+      names: selectedFiles.map(({ name }) => name),
+    });
+  };
+
+  const shareAllowed = computed((): Result<null> => {
+    return getShareDialogSelection().map(() => null);
+  });
+
   const downloadAllowed = computed((): Result<null> => {
     if (selection.asSet().some((f) => f.isFolder))
       return Result.Error([new Error("Cannot download folders.")]);
@@ -518,10 +581,22 @@ function ActionsMenu({
         Actions
       </Button>
       {Boolean(section) && (
-        <StyledMenu
+        <Menu
           open={Boolean(actionsMenuAnchorEl)}
           anchorEl={actionsMenuAnchorEl}
           onClose={() => setActionsMenuAnchorEl(null)}
+          slotProps={{
+            paper: {
+              sx: {
+                minWidth: "212px",
+                ...(actionsMenuAnchorEl
+                  ? {
+                      transform: "translate(0px, 4px) !important",
+                    }
+                  : {}),
+              },
+            },
+          }}
           MenuListProps={{
             disablePadding: true,
             "aria-label": "actions",
@@ -740,6 +815,42 @@ function ActionsMenu({
             disabled={downloadAllowed.get().isError}
           />
           <AccentMenuItem
+            title="Share"
+            subheader={shareAllowed
+              .get()
+              .map(() => "")
+              .orElseGet(([e]) => e.message)}
+            avatar={<ShareIcon />}
+            onClick={() => {
+              setShareOpen(true);
+              trackEvent("user:opens:share_dialog:gallery", {
+                count: selection.size,
+              });
+            }}
+            compact
+            disabled={shareAllowed.get().isError}
+            aria-haspopup="dialog"
+          />
+          <EventBoundary>
+            {getShareDialogSelection()
+              .map(({ globalIds, names }) => (
+                <ShareDialog
+                  key={globalIds.join(",")}
+                  open={shareOpen}
+                  onClose={() => {
+                    setShareOpen(false);
+                    setActionsMenuAnchorEl(null);
+                  }}
+                  globalIds={globalIds}
+                  names={names}
+                  singularName="snippet"
+                  pluralName="snippets"
+                  isSnippet={selection.asSet().some((f) => f.isSnippet)}
+                />
+              ))
+              .orElse(null)}
+          </EventBoundary>
+          <AccentMenuItem
             title="Export"
             subheader={exportAllowed
               .get()
@@ -873,7 +984,7 @@ function ActionsMenu({
             compact
             disabled={deleteAllowed.get().isError}
           />
-        </StyledMenu>
+        </Menu>
       )}
       <ImageEditingDialog
         imageFile={imageEditorBlob}

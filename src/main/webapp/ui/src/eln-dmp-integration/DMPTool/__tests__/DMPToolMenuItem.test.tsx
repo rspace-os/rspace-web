@@ -1,5 +1,5 @@
 import { test, describe, expect } from 'vitest';
-import "../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import React from "react";
 import {
   render,

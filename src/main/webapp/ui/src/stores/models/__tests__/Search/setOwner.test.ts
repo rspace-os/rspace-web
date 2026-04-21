@@ -2,7 +2,7 @@ import { test, describe, expect, vi } from 'vitest';
 import Search from "../../Search";
 import ApiServiceBase from "../../../../common/ApiServiceBase";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
-import "../../../../__tests__/assertUrlSearchParams";
+import "@/__tests__/assertUrlSearchParams";
 
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({

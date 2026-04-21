@@ -1,6 +1,10 @@
 import axios from "@/common/axios";
-import JwtService from "../../common/JwtService";
 import React from "react";
+import {
+  getStoredToken,
+  saveStoredToken,
+  secondsToExpiry,
+} from "@/modules/common/utils/auth";
 
 /**
  * This custom hook allows us to get a token for making calls to the API
@@ -64,7 +68,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
       "/userform/ajax/inventoryOauthToken",
     );
     const newToken = response.data.data;
-    JwtService.saveToken(newToken);
+    saveStoredToken(newToken);
     return newToken;
   }
 
@@ -80,7 +84,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
       () => {
         void refreshToken();
       },
-      JwtService.secondsToExpiry(newToken) * 1000,
+      secondsToExpiry(newToken) * 1000,
     );
   }
 
@@ -97,7 +101,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
      * If this hook has not been previously called then we preferably get the
      * token from session storage or else get it from the API endpoint.
      */
-    const savedToken = JwtService.getToken() ?? (await fetchToken());
+    const savedToken = getStoredToken() ?? (await fetchToken());
     tokenRef.current = savedToken;
 
     /*
@@ -113,7 +117,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
       () => {
         void refreshToken();
       },
-      JwtService.secondsToExpiry(savedToken) * 1000,
+      secondsToExpiry(savedToken) * 1000,
     );
     return savedToken;
   }, []);

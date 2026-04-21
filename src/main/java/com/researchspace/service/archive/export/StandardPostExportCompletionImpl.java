@@ -67,7 +67,7 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
   private void handleS3Export(IArchiveExportConfig expCfg, File fileToExport) {
     if (hasS3Access) {
 
-      SdkHttpResponse response = s3Utilities.getS3Uploader(fileToExport).apply(fileToExport);
+      SdkHttpResponse response = s3Utilities.uploadToS3(fileToExport);
       if (response == null || response.statusCode() != 200) {
 
         log.error(

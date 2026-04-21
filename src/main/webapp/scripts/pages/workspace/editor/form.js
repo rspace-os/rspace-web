@@ -1,5 +1,3 @@
-/* jshint maxerr: 100 */
-
 var fieldId = -1;
 var LISTFORMS_BY_MODFICATIONDATE_DESC = "/workspace/editor/form/list?orderBy=modificationDate&sortOrder=DESC&userFormsOnly=true";
 function createEditDeleteButtons(id) {

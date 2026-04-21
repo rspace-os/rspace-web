@@ -16,6 +16,7 @@ export type Group = {
   name: string;
   type: string;
   sharedFolderId: number;
+  sharedSnippetFolderId: number;
   members: GroupMember[];
   uniqueName: string;
   _links: Array<{
@@ -30,6 +31,7 @@ export type GroupDetail = {
   name: string;
   type: string;
   sharedFolderId: number;
+  sharedSnippetFolderId: number;
   members: Array<{
     id: number;
     username: string;

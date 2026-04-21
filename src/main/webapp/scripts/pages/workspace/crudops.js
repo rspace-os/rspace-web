@@ -1,5 +1,3 @@
-/* jshint maxerr: 100 */
-
 /**
  * Provides JS for the crudops.tag file which contains the 'options' menu -
  * delete, rename, move,share etc

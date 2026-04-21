@@ -33,7 +33,15 @@ public interface GroupApi {
   List<ApiGroupInfo> searchGroups(String query, User user);
 
   /**
-   * Get details of a specific group by ID
+   * Get details of a specific group by ID. The method returns a GroupInfo if the active current
+   * user:
+   *
+   * <ul>
+   *   <li>is a member of the group
+   *   <li>is a Pi or a Lab Admin of the group
+   *   <li>is connected to the group
+   *   <li>is sysadmin (also if not part of the group)
+   * </ul>
    *
    * @param id the group ID
    * @param user current user

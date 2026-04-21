@@ -18,16 +18,16 @@
 
   <repositories>
     <repository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-    </repository>
-    <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
       <id>central</id>
       <name>Maven Repository Switchboard</name>
       <url>https://repo1.maven.org/maven2</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
     </repository>
     <repository>
       <id>dice.repository</id>
@@ -281,7 +281,6 @@
           <argLine>-Xmx1536m
             --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED
             --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED
-            -Dspring.test.context.cache.maxSize=64
             ${argLine}</argLine>
         </configuration>
       </plugin>
@@ -1064,10 +1063,6 @@
           <artifactId>fontbox</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.quartz-scheduler</groupId>
-          <artifactId>quartz</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
         </exclusion>
@@ -1256,14 +1251,13 @@
     <dependency>
       <groupId>org.quartz-scheduler</groupId>
       <artifactId>quartz</artifactId>
-      <version>2.3.2</version>
+      <version>2.5.2</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
         </exclusion>
       </exclusions>
-      <!-- spring 3.0.5 does not support quartz2, spring 3.1 does -->
     </dependency>
     <dependency>
       <groupId>net.coobird</groupId>
@@ -2056,7 +2050,6 @@
       <version>1.0.0</version>
     </dependency>
     <!-- transitive dependency used by tika, this forces the most up-to-date version  -->
-
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
@@ -2128,6 +2121,12 @@
       <groupId>org.springframework</groupId>
       <artifactId>spring-messaging</artifactId>
       <version>${spring.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20240303</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -2667,6 +2666,7 @@
             <version>1.15.1</version>
             <configuration>
               <nodeVersion>v24.13.1</nodeVersion>
+              <npmVersion>11.11.1</npmVersion>
               <workingDirectory>src/main/webapp/ui</workingDirectory>
             </configuration>
             <executions>

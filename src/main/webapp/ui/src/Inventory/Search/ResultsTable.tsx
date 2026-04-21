@@ -16,6 +16,7 @@ import { withStyles } from "Styles";
 import ScrollBox from "./ScrollBox";
 import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
+import { hasRequiredPermissions } from "../../stores/definitions/InventoryRecord";
 
 const ResultRowSkeleton = () => {
   const { isViewportSmall, isViewportLarge } = useViewportDimensions();
@@ -54,6 +55,21 @@ type ResultsTableArgs = {
 function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
 
+  const canSelectResult = React.useCallback(
+    (record: (typeof search.filteredResults)[number]) =>
+      !search.alwaysFilterOut(record) &&
+      hasRequiredPermissions(
+        record.permittedActions,
+        search.uiConfig?.requiredPermissions,
+      ),
+    [search],
+  );
+
+  const selectableResults = React.useCallback(
+    () => search.filteredResults.filter(canSelectResult),
+    [canSelectResult, search],
+  );
+
   const handleChangePageSize = (value: number) => {
     search.setPageSize(value);
   };
@@ -63,10 +79,8 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
   };
 
   const toggleAll = () => {
-    const results = search.filteredResults.filter(
-      (r) => !search.alwaysFilterOut(r),
-    );
-    const selected = search.filteredResults.some((r) => r.selected === false);
+    const results = selectableResults();
+    const selected = results.some((r) => r.selected === false);
     results.forEach((r) => r.toggleSelected(selected));
   };
 
@@ -74,7 +88,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
     {
       text: "All",
       selection: () => {
-        search.filteredResults.forEach((r) => r.toggleSelected(true));
+        selectableResults().forEach((r) => r.toggleSelected(true));
       },
     },
     {
@@ -86,35 +100,47 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
     {
       text: "Invert",
       selection: () => {
-        search.filteredResults.forEach((r) => r.toggleSelected());
+        search.filteredResults.forEach((r) => {
+          if (canSelectResult(r)) {
+            r.toggleSelected();
+            return;
+          }
+          r.toggleSelected(false);
+        });
       },
     },
     {
       text: "Mine",
       selection: () => {
-        search.filteredResults.forEach((r) =>
-          r.toggleSelected(r.currentUserIsOwner ?? false),
-        );
+        search.filteredResults.forEach((r) => {
+          r.toggleSelected(canSelectResult(r) && (r.currentUserIsOwner ?? false));
+        });
       },
     },
     {
       text: "Not Mine",
       selection: () => {
-        search.filteredResults.forEach(
-          (r) => r.toggleSelected(r.currentUserIsOwner === false), // if currentUserIsOwner cannot be determined then don't select
-        );
+        search.filteredResults.forEach((r) => {
+          r.toggleSelected(
+            canSelectResult(r) && r.currentUserIsOwner === false,
+          ); // if currentUserIsOwner cannot be determined then don't select
+        });
       },
     },
     {
       text: "Current",
       selection: () => {
-        search.filteredResults.forEach((r) => r.toggleSelected(!r.deleted));
+        search.filteredResults.forEach((r) => {
+          r.toggleSelected(canSelectResult(r) && !r.deleted);
+        });
       },
     },
     {
       text: "In Trash",
       selection: () => {
-        search.filteredResults.forEach((r) => r.toggleSelected(r.deleted));
+        search.filteredResults.forEach((r) => {
+          r.toggleSelected(canSelectResult(r) && r.deleted);
+        });
       },
     },
   ];

@@ -1,5 +1,3 @@
-/* jshint maxerr: 100 */
-
 /* coreEditor.js -> Common functions in structuredDocument and notebookEditor */
 var fadeTime = 400;
 var recordName = '';

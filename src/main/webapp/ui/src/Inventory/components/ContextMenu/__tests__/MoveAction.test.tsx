@@ -11,9 +11,9 @@ import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mo
 import Search from "../../../../stores/models/Search";
 import MoveAction from "../MoveAction";
 import MoveDialog from "../../MoveToTarget/MoveDialog";
-import "__mocks__/matchMedia";
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import userEvent from "@testing-library/user-event";
+import "@/__tests__/__mocks__/matchMedia";
 
 vi.mock("../../../Search/SearchView", () => ({
   default: vi.fn(() => <></>),

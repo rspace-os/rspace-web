@@ -22,7 +22,7 @@ import Typography from "@mui/material/Typography";
 import RsSet from "../../../../util/set";
 import { LOGO_COLOR } from "@/assets/branding/raid";
 import Link from "@mui/material/Link";
-import { useBroadcastChannel } from "use-broadcast-channel";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 
 type RaidArgs = {
   integrationState: IntegrationStates["RAID"];

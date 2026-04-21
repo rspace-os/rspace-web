@@ -9,7 +9,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import materialTheme from "@/theme";
 import { ThemeProvider } from "@mui/material/styles";
-import "../../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import AlertContext, { Alert } from "@/stores/contexts/Alert";
 import { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
 
@@ -25,11 +25,13 @@ vi.mock("@/eln/apps/useIntegrationsEndpoint", () => ({
 
 }));
 const broadcastHandlers: Array<(e: MessageEvent<RaidConnectedMessage>) => void> = [];
-vi.mock("use-broadcast-channel", () => ({
-  useBroadcastChannel: (_channel: string, handler: (e: MessageEvent<RaidConnectedMessage>) => void) => {
+vi.mock("@/modules/common/hooks/broadcast", () => ({
+  useBroadcastChannel: (
+    _channel: string,
+    handler: (e: MessageEvent<RaidConnectedMessage>) => void,
+  ) => {
     broadcastHandlers.push(handler);
   },
-
 }));
 const renderWithProviders = (
   integrationState: IntegrationStates["RAID"],

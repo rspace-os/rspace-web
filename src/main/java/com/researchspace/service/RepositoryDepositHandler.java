@@ -1,13 +1,13 @@
 package com.researchspace.service;
 
 import com.researchspace.archive.ArchiveResult;
-import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.repository.spi.RepositoryOperationResult;
+import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Optional;
@@ -31,7 +31,7 @@ public interface RepositoryDepositHandler {
       RepoDepositConfig archiveConfig,
       Optional<AppConfigElementSet> cfg,
       App app,
-      Future<EcatDocumentFile> document)
+      Future<ExportEcatDocumentResult> document)
       throws IOException, ExecutionException, InterruptedException;
 
   /**

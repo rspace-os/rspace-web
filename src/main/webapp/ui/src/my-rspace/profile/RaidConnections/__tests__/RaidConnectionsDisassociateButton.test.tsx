@@ -10,7 +10,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "@/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RaidConnectionsDisassociateButton from "../RaidConnectionsDisassociateButton";
-import "../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 
 // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
 const mockMutateAsync = vi.fn();

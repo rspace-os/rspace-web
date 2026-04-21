@@ -1,9 +1,12 @@
 package com.researchspace.api.v1;
 
+import com.researchspace.api.v1.model.stoichiometry.StockDeductionRequest;
+import com.researchspace.api.v1.model.stoichiometry.StockDeductionResult;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
+import javax.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/api/v1/stoichiometry")
@@ -33,6 +36,11 @@ public interface StoichiometryApi {
   @DeleteMapping
   Boolean deleteStoichiometry(
       @RequestParam("stoichiometryId") long stoichiometryId,
+      @RequestAttribute(name = "user") User user);
+
+  @PostMapping("/link/deductStock")
+  StockDeductionResult deductStock(
+      @RequestBody @Valid StockDeductionRequest request,
       @RequestAttribute(name = "user") User user);
 
   class ChemicalDTO {

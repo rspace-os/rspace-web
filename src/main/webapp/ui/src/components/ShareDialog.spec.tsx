@@ -4,7 +4,10 @@ import {
   DocumentThatHasBeenSharedIntoANotebook,
   MultipleDocuments,
   NoPreviousShares,
+  SharedSnippetWithAGroup,
+  SharedWithAControlledOpenState,
   SharedWithAGroup,
+  SharedWithAnalyticsCapture,
   SharedWithAnotherUser,
 } from "./ShareDialog.story";
 import { type emptyObject } from "../util/types";
@@ -48,7 +51,7 @@ const feature = test.extend<{
       newPermission,
     }: {
       newPermission: "EDIT" | "READ";
-    }) => void;
+    }) => Promise<void>;
     "a POST request should have been made to move the document to the new folder": () => void;
   };
   networkRequests: Array<{ url: URL; postData: string | null; method: string }>;
@@ -180,10 +183,8 @@ const feature = test.extend<{
           });
 
           await expect(folderDialog).toBeVisible();
-          // Wait for the folder tree to load
 
-          await page.waitForTimeout(1000);
-          // Click on the existing tree item (alice-bob)
+          // Wait for folder record to appear instead of using a fixed timeout.
           const treeItem = folderDialog.getByText("alice-bob").first();
           await expect(treeItem).toBeVisible();
 
@@ -191,9 +192,8 @@ const feature = test.extend<{
           const selectButton = folderDialog.getByRole("button", {
             name: /Select/i,
           });
-
+          await expect(selectButton).toBeEnabled();
           await selectButton.click();
-          // Wait for the folder dialog to close
           await expect(folderDialog).not.toBeVisible();
         },
     });
@@ -247,7 +247,7 @@ const feature = test.extend<{
         },
       "no table should be visible": async () => {
         const dialog = page.getByRole("dialog", {
-          name: /Share \d+ items/i,
+          name: /Share \d+ documents/i,
         });
         await expect(dialog).toBeVisible();
         const table = dialog.getByRole("table");
@@ -380,7 +380,19 @@ const feature = test.extend<{
           }
         },
       "a PUT request should have been made to update the group's permission to {newPermission}":
-        ({ newPermission }: { newPermission: "EDIT" | "READ" }) => {
+        async ({ newPermission }: { newPermission: "EDIT" | "READ" }) => {
+          await expect
+            .poll(
+              () =>
+                networkRequests.find(
+                  (request) =>
+                    request.url.pathname === "/api/v1/share" &&
+                    request.method === "PUT" &&
+                    request.postData !== null,
+                )?.postData,
+            )
+            .toBeTruthy();
+
           const updateRequest = networkRequests.find(
             (request) =>
               request.url.pathname === "/api/v1/share" &&
@@ -595,7 +607,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       ]),
     });
   });
-  await router.route("api/v1/userDetails/groupMembers", async (route) => {
+  await router.route(/\/?api\/v1\/userDetails\/groupMembers.*/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -724,14 +736,18 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
       return;
     }
+
+    await route.fulfill({ status: 405 });
   });
   await router.route("/api/v1/share", async (route) => {
     const request = route.request();
     if (request.method() === "POST") {
-      const body: any = (await request.postDataJSON());
-      const itemId = body.itemsToShare[0] as number;
-
-      const permission = body.users[0]?.permission as string;
+      const body = (await request.postDataJSON()) as {
+        itemsToShare?: number[];
+        users?: Array<{ permission?: string }>;
+      };
+      const itemId = body.itemsToShare?.[0] ?? 0;
+      const permission = body.users?.[0]?.permission ?? "READ";
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -742,7 +758,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
               sharedItemId: itemId,
               shareItemName: "Untitled document",
               sharedTargetType: "USER",
-              permission: permission,
+              permission,
               _links: [],
             },
           ],
@@ -753,9 +769,12 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       return;
     }
     if (request.method() === "PUT") {
-      const body: any = (await request.postDataJSON());
-      const shareId = body.shareId as number;
-      const permission = body.permission as string;
+      const body = (await request.postDataJSON()) as {
+        shareId?: number;
+        permission?: string;
+      };
+      const shareId = body.shareId ?? 0;
+      const permission = body.permission ?? "READ";
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -765,7 +784,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
             sharedItemId: 2,
             shareItemName: "A shared document",
             sharedTargetType: "USER",
-            permission: permission,
+            permission,
             _links: [],
           },
           _links: [],
@@ -773,12 +792,14 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
       return;
     }
-    if (request.method() !== "DELETE") {
+    if (request.method() === "DELETE") {
       await route.fulfill({
         status: 204,
       });
       return;
     }
+
+    await route.fulfill({ status: 405 });
   });
 
 });
@@ -943,7 +964,7 @@ test.describe("ShareDialog", () => {
           "the user changes Alice and Bob's Group permission from EDIT to read"
         ]();
         await When["the user saves the new share"]();
-        Then[
+        await Then[
           "a PUT request should have been made to update the group's permission to {newPermission}"
         ]({ newPermission: "READ" });
       },
@@ -965,6 +986,114 @@ test.describe("ShareDialog", () => {
         Then[
           "a POST request should have been made to move the document to the new folder"
         ]();
+      },
+    );
+  });
+
+  test.describe("Dialog lifecycle and analytics", () => {
+    feature(
+      "The snippet share dialog story should render successfully",
+      async ({ mount, page }) => {
+        await mount(<SharedSnippetWithAGroup />);
+
+        const dialog = page.getByRole("dialog", {
+          name: /Share Another shared snippet/i,
+        });
+
+        await expect(dialog).toBeVisible();
+        await expect(dialog.getByText("Another shared snippet")).toBeVisible();
+        await expect(
+          page.getByRole("alert").getByText(/SNIPPETS_Shared/i),
+        ).toBeVisible();
+      },
+    );
+
+    feature(
+      "Closing and reopening should reset transient dialog state",
+      async ({ mount, page }) => {
+        await mount(<SharedWithAControlledOpenState />);
+
+        const dialog = page.getByRole("dialog", {
+          name: /Share Sample Document 1/i,
+        });
+        const recipientDropdown = dialog.getByRole("combobox", {
+          name: /Add RSpace users or groups/i,
+        });
+
+        await recipientDropdown.click();
+        await page.getByRole("option", { name: /^Bob/ }).click();
+        await expect(dialog.getByRole("table")).toBeVisible();
+
+        await page.keyboard.press("Escape");
+        await expect(dialog).not.toBeVisible();
+
+        await page.getByRole("button", { name: /Open share dialog/i }).click();
+        await expect(dialog).toBeVisible();
+        await expect(
+          dialog.getByText("This document is not directly shared with anyone."),
+        ).toBeVisible();
+        await expect(dialog.getByRole("table")).toHaveCount(0);
+        await expect(recipientDropdown).toHaveValue("");
+      },
+    );
+
+    feature(
+      "Saving outside workspace should still close and show success alert",
+      async ({ mount, page }) => {
+        await page.evaluate(() => {
+          delete (window as Window & { getAndDisplayWorkspaceResults?: unknown })
+            .getAndDisplayWorkspaceResults;
+          delete (window as Window & { workspaceSettings?: unknown })
+            .workspaceSettings;
+        });
+        await mount(<SharedWithAControlledOpenState />);
+
+        const dialog = page.getByRole("dialog", {
+          name: /Share Sample Document 1/i,
+        });
+        const recipientDropdown = dialog.getByRole("combobox", {
+          name: /Add RSpace users or groups/i,
+        });
+        await recipientDropdown.click();
+        await page.getByRole("option", { name: /^Bob/ }).click();
+        await dialog.getByRole("button", { name: /Save/i }).click();
+
+        await expect(dialog).not.toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("alert")).toContainText(
+          /Shares updated successfully\./i,
+        );
+      },
+    );
+
+    feature(
+      "Saving with no changes should track the close event with the expected name",
+      async ({ mount, page }) => {
+        await page.evaluate(() => {
+          (window as Window & { __trackedEvents?: string[] }).__trackedEvents =
+            [];
+        });
+        await mount(<SharedWithAnalyticsCapture />);
+
+        const dialog = page.getByRole("dialog", {
+          name: /Share Sample Document 1/i,
+        });
+        const saveButton = dialog.getByRole("button", { name: /Save/i });
+        const doneButton = dialog.getByRole("button", { name: /Done/i });
+        if (await saveButton.isVisible()) {
+          await saveButton.click();
+        } else if (await doneButton.isVisible()) {
+          await doneButton.click();
+        } else {
+          throw new Error("Neither Save nor Done button is visible in share dialog");
+        }
+        await expect(dialog).not.toBeVisible();
+
+        const trackedEvents = await page.evaluate(
+          () =>
+            (window as Window & { __trackedEvents?: string[] }).__trackedEvents ??
+            [],
+        );
+        expect(trackedEvents).toContain("user:close:share_dialog");
       },
     );
   });

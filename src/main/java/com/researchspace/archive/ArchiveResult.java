@@ -19,6 +19,7 @@ public class ArchiveResult {
   private List<Record> archivedRecords;
   private List<ArchiveFolder> archivedFolders;
   private Set<ArchivalNfsFile> archivedNfsFiles;
+  private Set<String> igsnInventoryLinkedItems;
 
   private File exportFile;
   private IArchiveExportConfig archiveConfig;

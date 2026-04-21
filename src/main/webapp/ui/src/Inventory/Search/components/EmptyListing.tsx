@@ -2,7 +2,7 @@ import React, { type ComponentType } from "react";
 import Box from "@mui/material/Box";
 import { withStyles } from "Styles";
 import Typography from "@mui/material/Typography";
-import EmptyListingSvg from "/src/assets/graphics/EmptyListing.svg";
+import EmptyListingSvg from "@/assets/graphics/EmptyListing.svg";
 import {
   globalIdToInventoryRecordTypeLabel,
   type GlobalId,

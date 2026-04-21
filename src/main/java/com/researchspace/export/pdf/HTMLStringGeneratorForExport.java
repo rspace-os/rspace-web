@@ -31,8 +31,10 @@ import com.researchspace.session.SessionTimeZoneUtils;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -61,7 +63,7 @@ import org.springframework.beans.factory.annotation.Value;
  *
  * <h3>Implementation note</h3>
  *
- * Pdf generator expects XHTML input. JSoup by default generates HTML (e.g. &lt;img&gt; tags lack
+ * <p>Pdf generator expects XHTML input. JSoup by default generates HTML (e.g. &lt;img&gt; tags lack
  * closing tags in HTML). <br>
  * So any code in this process that converts a JSoup document to string must set OutputFormatter to
  * Syntax.xml, e.g.
@@ -71,7 +73,7 @@ import org.springframework.beans.factory.annotation.Value;
  * jsoupDoc.outputSettings(output);
  * </pre>
  *
- * before calling jsoupDoc.html()
+ * <p>before calling jsoupDoc.html()
  *
  * <p>SECURITY NOTE: Make sure to `escapeHtml()` any strings with user input in this class, because
  * we return the final HTML here.
@@ -118,7 +120,7 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
    * @see com.researchspace.export.pdf.HTMLStringGenerator#extractHtmlStr(com.researchspace.model.record.StructuredDocument, com.researchspace.export.pdf.StructuredDocumentHTMLViewConfig)
    */
   @Override
-  public ExportProcesserInput extractHtmlStr(
+  public ExportProcessorInput extractHtmlStr(
       StructuredDocument strucDoc, StructuredDocumentHTMLViewConfig exportConfig) {
     StringBuffer sbf = new StringBuffer();
     String docName = escapeHtml4(strucDoc.getName());
@@ -126,6 +128,7 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     String nameLink = "<p>" + docName + "&nbsp;" + globalidLink + "</p>";
     sbf.append(nameLink);
     List<Field> flds = strucDoc.getFields();
+    Set<String> igsnInventoryLinkedItems = new HashSet<>();
     for (Field field : flds) {
       try {
         String fieldName = escapeHtml4(field.getName());
@@ -148,7 +151,7 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
         }
 
         if (!field.getListsOfMaterials().isEmpty()) {
-          appendListsOfMaterials(sbf, field.getListsOfMaterials());
+          igsnInventoryLinkedItems.addAll(appendListsOfMaterials(sbf, field.getListsOfMaterials()));
         }
 
       } catch (Exception ex) {
@@ -178,7 +181,8 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
       revisionInfo = getAuditHistory(strucDoc);
     }
     htmlStr = new SvgToPngConverter().replaceSvgObjectWithImg(htmlStr);
-    return new ExportProcesserInput(htmlStr, comments, revisionInfo, nfsLinks);
+    return new ExportProcessorInput(
+        htmlStr, comments, revisionInfo, nfsLinks, igsnInventoryLinkedItems);
   }
 
   /*
@@ -201,7 +205,9 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     }
   }
 
-  private void appendListsOfMaterials(StringBuffer sbf, List<ListOfMaterials> listsOfMaterials) {
+  private Set<String> appendListsOfMaterials(
+      StringBuffer sbf, List<ListOfMaterials> listsOfMaterials) {
+    Set<String> igsnInventoryLinkedItems = new HashSet<>();
     for (ListOfMaterials lom : listsOfMaterials) {
       sbf.append(
           String.format(
@@ -214,11 +220,19 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
                 makeGlobalIdLink(mu.getInventoryRecord().getGlobalIdentifier()),
                 mu.getInventoryRecord().getType().toString(),
                 mu.getInventoryRecord().getName()));
+        if (!mu.getInventoryRecord().getActiveIdentifiers().isEmpty()) {
+          String igsn =
+              "https://doi.org/"
+                  + mu.getInventoryRecord().getActiveIdentifiers().get(0).getIdentifier();
+          sbf.append(String.format(", igsn: <a href=\"%s\">%s</a>", igsn, igsn));
+          igsnInventoryLinkedItems.add(igsn);
+        }
         if (mu.getUsedQuantity() != null) {
           sbf.append(", usage: " + mu.getUsedQuantityPlainString());
         }
       }
     }
+    return igsnInventoryLinkedItems;
   }
 
   private void replaceIframesWithEmbedCodeLink(Document doc) {

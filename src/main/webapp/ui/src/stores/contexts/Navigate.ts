@@ -74,7 +74,7 @@ const DEFAULT_NAVIGATION_CONTEXT: NavigateContextType = {
     search: "",
     state: {},
     key: "",
-  }),
+  } as Location),
 };
 
 const NavigateContext: Context<NavigateContextType> = React.createContext(

@@ -1,4 +1,3 @@
-/* jshint maxerr: 100 */
 // notebookName is added in notebookEditor.jsp and is already escaped
 /**
  * Modifications for public/published documents that re-route urls so that SSO will allow them and also hide parts of document not intended for public view

@@ -41,10 +41,10 @@ public class ShareLocationResolver {
    * Returns the RSPath of the record within the shared folder context of the RecordGroupSharing.
    */
   public RSPath resolvePath(RecordGroupSharing share, BaseRecord record) {
-    Folder sharedRoot;
+    Folder sharedRoot = null;
     if (share.getSharee().isGroup()) {
       sharedRoot = folderDao.getSharedFolderForGroup(share.getSharee().asGroup());
-    } else {
+    } else if (share.getSharedBy() != null) {
       sharedRoot =
           folderDao.getIndividualSharedFolderForUsers(
               share.getSharedBy(), share.getSharee().asUser(), share.getShared());
@@ -107,9 +107,11 @@ public class ShareLocationResolver {
     if (parts.length != 2) {
       return false;
     }
-    String sharerUsername = share.getSharedBy().getUsername();
+    String sharerUsername = share.getSharedBy() == null ? null : share.getSharedBy().getUsername();
     String recipientUsername = share.getSharee().asUser().getUsername();
     Set<String> users = Set.of(parts[0], parts[1]);
-    return users.contains(sharerUsername) && users.contains(recipientUsername);
+    return sharerUsername != null
+        && users.contains(sharerUsername)
+        && users.contains(recipientUsername);
   }
 }

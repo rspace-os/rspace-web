@@ -33,7 +33,7 @@ import { useIntegrationIsAllowedAndEnabled } from "../../../hooks/api/integratio
 import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import { observer } from "mobx-react-lite";
-import { autorun } from "mobx";
+import {autorun} from "mobx";
 import EventBoundary from "../../../components/EventBoundary";
 import ValidatingSubmitButton, {
   IsValid,
@@ -47,6 +47,9 @@ import * as Parsers from "../../../util/parsers";
 import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 import AddFilestoreDialog from "./AddFilestoreDialog";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
+import DSWAccentMenuItem from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import {DswConfig} from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import {Integration, FetchedState} from "../../apps/useIntegrationsEndpoint";
 
 const StyledMenu = styled(Menu)(({ open }) => ({
   "& .MuiPaper-root": {
@@ -390,6 +393,9 @@ const DmpMenuSection = ({
   onDialogClose,
   showDmpPanel,
 }: DmpMenuSectionArgs) => {
+
+  const [dswConnections, setDswConnections] = React.useState<null | DswConfig[]>(null);
+
   const showArgos = FetchingData.getSuccessValue(
     useIntegrationIsAllowedAndEnabled("ARGOS"),
   ).orElse(false);
@@ -398,6 +404,9 @@ const DmpMenuSection = ({
   ).orElse(false);
   const showDmptool = FetchingData.getSuccessValue(
     useIntegrationIsAllowedAndEnabled("DMPTOOL"),
+  ).orElse(false);
+  const showDsw = FetchingData.getSuccessValue(
+    useIntegrationIsAllowedAndEnabled("DSW"),
   ).orElse(false);
 
   React.useEffect(() => {
@@ -409,10 +418,46 @@ const DmpMenuSection = ({
      */
     // @ts-expect-error gallery is a global function
     window.gallery = showDmpPanel;
+  }, [showDmpPanel]);
 
+  React.useEffect(() => {
+    void (async () => {
+
+      const ONE_MINUTE_IN_MS = 60 * 1000;
+
+      const api = axios.create({
+        baseURL: "/integration",
+        timeout: ONE_MINUTE_IN_MS,
+      });
+
+      try {
+        const states = await api.get<
+            | {
+          success: true;
+          data: { [integration in Integration]: FetchedState };
+          error: null;
+        }
+            | {
+          success: false;
+          data: null;
+          error: string;
+        }
+        >("allIntegrations");
+        if (states.data.success) {
+          const data = states.data.data;
+          const configs = Object.entries(data.DSW.options).map(([optionsId, config]) => {
+            return config as DswConfig;
+          });
+          setDswConnections(configs);
+        }
+      } catch (e) {
+        console.error(e);
+        setDswConnections([]);
+      }
+    })();
   }, []);
 
-  if (!showArgos && !showDmponline && !showDmptool) return null;
+  if (!showArgos && !showDmponline && !showDmptool && !showDsw) return null;
   return (
     <>
       <Divider textAlign="left" aria-label="DMPs">
@@ -423,6 +468,12 @@ const DmpMenuSection = ({
         <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />
       )}
       {showDmptool && <DMPToolAccentMenuItem onDialogClose={onDialogClose} />}
+      {
+        showDsw && dswConnections &&
+        dswConnections.map((connection, index) => {
+          return <DSWAccentMenuItem onDialogClose={onDialogClose} connection={connection}/>
+        })
+      }
     </>
   );
 };

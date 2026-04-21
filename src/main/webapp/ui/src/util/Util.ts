@@ -24,18 +24,6 @@ export const preventEventBubbling =
   };
 
 /**
- * Wrap an event handler function to prevent the default action of the event.
- */
-export const preventEventDefault =
-  <E extends { preventDefault: () => void }>(
-    f: (e: E) => void = () => {}
-  ): ((e: E) => void) =>
-  (e: E): void => {
-    e.preventDefault();
-    return f(e);
-  };
-
-/**
  * Remove all null, undefined, and empty string values from an object.
  * @deprecated
  */

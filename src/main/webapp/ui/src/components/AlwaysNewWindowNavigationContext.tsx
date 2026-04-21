@@ -1,5 +1,6 @@
 import React from "react";
 import NavigateContext from "../stores/contexts/Navigate";
+import type { Location } from "react-router-dom";
 
 type AlwaysNewWindowNavigationContextArgs = {
   children: React.ReactNode;
@@ -33,13 +34,14 @@ export default function AlwaysNewWindowNavigationContext({
     <NavigateContext.Provider
       value={{
         useNavigate,
-        useLocation: () => ({
-          hash: "",
-          pathname: "",
-          search: "",
-          state: {},
-          key: "",
-        }),
+        useLocation: () =>
+          ({
+            hash: "",
+            pathname: "",
+            search: "",
+            state: {},
+            key: "",
+          }) as Location,
       }}
     >
       {children}

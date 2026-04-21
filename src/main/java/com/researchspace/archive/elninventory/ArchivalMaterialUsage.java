@@ -24,6 +24,7 @@ public class ArchivalMaterialUsage {
 
   private Long invRecId;
   private String invRecType;
+  private String igsn;
   private BigDecimal usageValue;
   private Integer usageUnitId;
   private String usagePlainText;
@@ -31,6 +32,12 @@ public class ArchivalMaterialUsage {
   public ArchivalMaterialUsage(MaterialUsage mu) {
     setInvRecId(mu.getInventoryRecord().getId());
     setInvRecType(mu.getInventoryRecord().getType().name());
+    if (mu.getInventoryRecord().getActiveIdentifiers() != null
+        && !mu.getInventoryRecord().getActiveIdentifiers().isEmpty()) {
+      setIgsn(
+          "https://doi.org/"
+              + mu.getInventoryRecord().getActiveIdentifiers().get(0).getIdentifier());
+    }
     if (mu.getUsedQuantity() != null) {
       setUsageValue(mu.getUsedQuantity().getNumericValue());
       setUsageUnitId(mu.getUsedQuantity().getUnitId());

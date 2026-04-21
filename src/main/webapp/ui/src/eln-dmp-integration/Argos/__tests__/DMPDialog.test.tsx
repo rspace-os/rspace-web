@@ -1,29 +1,23 @@
 import { test, describe, expect, beforeEach, vi } from 'vitest';
-import "../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import React from "react";
-import {
-  screen,
-  waitFor,
-  fireEvent,
-} from "@testing-library/react";
+import { screen, waitFor, fireEvent, render } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import DMPDialog from "../DMPDialog";
 import axios from "@/common/axios";
-import { render, within } from "../../../__tests__/customQueries";
+import { within } from "@/__tests__/customQueries";
 
 import userEvent from "@testing-library/user-event";
 
 const mockAxios = new MockAdapter(axios);
-// This test suite is skipped as JSOM is generating nonsensical selectors (e.g. button,,,,Ark,,,A.MuiButtonBase-root .MuiInputAdornment-positionStart)
-// TODO: Revisit this test when we switch to Vitest or upgrade MUI
-describe.skip("DMPDialog", () => {
-  beforeEach(() => {
 
+describe("DMPDialog", () => {
+  beforeEach(() => {
     mockAxios.resetHistory();
     mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
       data: "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MzQzNDI5NTYsImV4cCI6MTczNDM0NjU1NiwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.HCKre3g_P1wmGrrrnQncvFeT9pAePFSc4UPuyP5oehI",
-
     });
+
     mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(
       200,
       {

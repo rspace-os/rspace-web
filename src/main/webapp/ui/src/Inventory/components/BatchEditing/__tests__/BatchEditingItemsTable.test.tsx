@@ -9,7 +9,7 @@ import fc from "fast-check";
 import { arbRsSet } from "../../../../util/__tests__/set/helpers";
 import { arbitraryRecord } from "../../../../stores/definitions/__tests__/Record/helper";
 import BatchEditingItemsTable from "../BatchEditingItemsTable";
-import "../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 

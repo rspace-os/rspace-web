@@ -29,6 +29,8 @@ import lombok.NoArgsConstructor;
       "lastModified",
       "parentFolderId",
       "notebook",
+      "systemFolder",
+      "sharedFolder",
       "mediaType",
       "pathToRootFolder",
       "_links"
@@ -54,6 +56,12 @@ public class ApiFolder extends IdentifiableNameableApiObject {
    */
   private boolean notebook;
 
+  @JsonProperty("systemFolder")
+  private boolean systemFolder;
+
+  @JsonProperty("sharedFolder")
+  private boolean sharedFolder;
+
   @JsonProperty("mediaType")
   private String mediaType;
 
@@ -72,6 +80,8 @@ public class ApiFolder extends IdentifiableNameableApiObject {
     setCreatedMillis(folderOrNotebook.getCreationDateMillis());
     setLastModifiedMillis(folderOrNotebook.getModificationDateMillis());
     setNotebook(folderOrNotebook.isNotebook());
+    setSystemFolder(folderOrNotebook.isSystemFolder());
+    setSharedFolder(folderOrNotebook.isSharedFolder());
     if (authorisedSubject.equals(folderOrNotebook.getOwner()) && folderOrNotebook.hasParents()) {
       if (folderOrNotebook.getOwnerParent().isPresent()) {
         setParentFolderId(folderOrNotebook.getOwnerParent().get().getId());

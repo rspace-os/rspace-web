@@ -9,6 +9,23 @@ import {
 import { setup, toBeAccessible } from "@sa11y/vitest";
 import { cleanup } from "@testing-library/react";
 
+function createStorageMock() {
+  const storage = new Map<string, string>();
+
+  return {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      storage.set(key, String(value));
+    },
+    removeItem: (key: string) => {
+      storage.delete(key);
+    },
+    clear: () => {
+      storage.clear();
+    },
+  };
+}
+
 setup();
 
 expect.extend({ toBeAccessible });
@@ -21,6 +38,8 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 afterEach(() => {
   cleanup();
+  globalThis.localStorage?.clear?.();
+  globalThis.sessionStorage?.clear?.();
 });
 
 const restoreConsole = silenceConsole(
@@ -49,22 +68,18 @@ if (typeof globalThis.TextDecoder !== "function") {
   globalThis.TextDecoder = TextDecoder;
 }
 
-if (typeof globalThis.localStorage?.getItem !== "function") {
-  const storage = new Map<string, string>();
+if (typeof globalThis.localStorage !== "object") {
   Object.defineProperty(globalThis, "localStorage", {
     configurable: true,
     writable: true,
-    value: {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        storage.set(key, String(value));
-      },
-      removeItem: (key: string) => {
-        storage.delete(key);
-      },
-      clear: () => {
-        storage.clear();
-      },
-    },
+    value: createStorageMock(),
+  });
+}
+
+if (typeof globalThis.sessionStorage !== "object") {
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    writable: true,
+    value: createStorageMock(),
   });
 }

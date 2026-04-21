@@ -1,5 +1,3 @@
-/* jshint maxerr: 200 */
-
 /* Script file with methods used when editing a document. */
 
 var fieldsSynchronized = false;

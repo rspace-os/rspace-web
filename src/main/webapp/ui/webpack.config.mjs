@@ -3,6 +3,7 @@ import webpack from "webpack";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 
 const isCi = process.env.CI === "true" || process.env.CI === "1";
+const isBuildStats = Boolean(process.env.FRONTEND_BUILD_STATS);
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -50,7 +51,7 @@ const config = {
     galleryToolbar: "./src/Toolbar/Gallery/Toolbar.tsx",
     newLabGroup: "./src/system-groups/NewLabGroup.js",
     tinymceSidebarInfo: "./src/tinyMCE/sidebarInfo.js",
-    previewInfo: "./src/tinyMCE/previewInfo.js",
+    PreviewInfo: "./src/tinyMCE/PreviewInfo.tsx",
     userDetails: "./src/components/UserDetails_deprecated.js",
     groupUserActivity: "./src/my-rspace/directory/groups/GroupUserActivity.js",
     groupActivity: "./src/my-rspace/profile/GroupActivity.js",
@@ -100,10 +101,15 @@ const config = {
       process: { env: {} },
     }),
     new BundleAnalyzerPlugin({
-      analyzerMode: Boolean(process.env.FRONTEND_BUILD_STATS)
-        ? "server"
+      analyzerMode: isBuildStats
+        ? isCi
+          ? "static"
+          : "server"
         : "disabled",
-      generateStatsFile: isCi,
+      reportFilename: "bundle-analyzer-report.html",
+      generateStatsFile: isBuildStats,
+      openAnalyzer: !isCi,
+      logLevel: "warn",
     }),
   ],
   optimization: {
@@ -118,6 +124,7 @@ const config = {
     fallback: {
       url: import.meta.resolve("url/"),
     },
+    conditionNames: ["require", "..."],
   },
   module: {
     rules: [

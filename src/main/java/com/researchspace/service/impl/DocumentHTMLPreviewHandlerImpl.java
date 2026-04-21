@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import com.researchspace.export.pdf.ExportProcesserInput;
+import com.researchspace.export.pdf.ExportProcessorInput;
 import com.researchspace.export.pdf.HTMLStringGenerator;
 import com.researchspace.export.pdf.StructuredDocumentHTMLViewConfig;
 import com.researchspace.model.User;
@@ -24,7 +24,7 @@ public class DocumentHTMLPreviewHandlerImpl implements DocumentHTMLPreviewHandle
   public DocHtmlPreview generateHtmlPreview(Long docId, User subject) {
     StructuredDocument structuredDocument =
         recordManager.getRecordWithFields(docId, subject).asStrucDoc();
-    ExportProcesserInput htmlConcat =
+    ExportProcessorInput htmlConcat =
         htmlGenerator.extractHtmlStr(structuredDocument, new StructuredDocumentHTMLViewConfig() {});
     String html = htmlConcat.getDocumentAsHtml();
     return new DocHtmlPreview(Jsoup.parse(html).body().html());

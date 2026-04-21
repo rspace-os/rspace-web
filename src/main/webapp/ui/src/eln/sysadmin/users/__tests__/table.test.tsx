@@ -1,5 +1,5 @@
 import { test, describe, expect, vi } from "vitest";
-import "@/__tests__/mocks/useUiPreference";
+import "@/__tests__/__mocks__/useUiPreference";
 import React from "react";
 import {
   screen,
@@ -12,7 +12,7 @@ import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import USER_LISTING from "./userListing.json";
 import PDF_CONFIG from "./pdfConfig.json";
-import { render, within } from "../../../../__tests__/customQueries";
+import { render, within } from "@/__tests__/customQueries";
 import { UsersPage } from "@/eln/sysadmin/users";
 
 vi.mock("@/modules/common/hooks/auth", () => ({

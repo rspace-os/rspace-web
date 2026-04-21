@@ -114,6 +114,7 @@ const useWrapperClasses = (
   ]);
   if (location.parentContainer.cType === "GRID") ret.add(classes.gridCell);
   if (location.parentContainer.cType === "IMAGE") ret.add(classes.imageCell);
+  // TODO: requiredPermissions tooltips are not supported in grid/image views yet.
   if (location.isGreyedOut(search)) ret.add(globalClasses.greyOut);
   return [...ret].filter(Boolean).join(" ");
 };

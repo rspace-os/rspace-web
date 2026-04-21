@@ -7,57 +7,26 @@ import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables
 import TableCell from "./TableCell";
 import TableRow from "@mui/material/TableRow";
 import Checkbox from "@mui/material/Checkbox";
-import { makeStyles } from "tss-react/mui";
 import NameWithBadge from "../../components/NameWithBadge";
-import clsx from "clsx";
-import { globalStyles } from "../../../theme";
 import AdjustableCell from "../../components/Tables/AdjustableCell";
 import { match } from "../../../util/Util";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import {
+  hasRequiredPermissions,
+  type InventoryRecord,
+} from "../../../stores/definitions/InventoryRecord";
 import { UserCancelledAction } from "../../../util/error";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 import { alpha } from "@mui/material/styles";
 import Radio from "@mui/material/Radio";
+import Tooltip from "@mui/material/Tooltip";
 
 type ResultRowArgs = {
   result: InventoryRecord;
   adjustableColumns: Array<AdjustableTableRowLabel>;
 };
 
-const useStyles = makeStyles()((theme) => {
-  const prefersMoreContrast = window.matchMedia(
-    "(prefers-contrast: more)",
-  ).matches;
-  return {
-    tableRow: {
-      transition: theme.transitions.filterToggle,
-      "&.Mui-selected": {
-        backgroundColor: theme.palette.primary.background,
-        color: theme.palette.primary.contrastText,
-        "& .MuiTableCell-root": {
-          color: theme.palette.primary.contrastText,
-        },
-        "& .MuiCheckbox-root": {
-          color: prefersMoreContrast
-            ? theme.palette.primary.contrastText
-            : undefined,
-        },
-      },
-      "&.Mui-selected:hover": {
-        backgroundColor: `${alpha(theme.palette.primary.background, 0.8)} !important`,
-      },
-      "&:hover": {
-        backgroundColor: `${alpha(theme.palette.primary.background, 0.2)} !important`,
-      },
-    },
-    checkbox: {
-      padding: `${theme.spacing(0.25)} !important`,
-    },
-    defaultCursor: {
-      cursor: "default",
-    },
-  };
-});
+const REQUIRED_PERMISSIONS_TOOLTIP =
+  "You do not have permission to select this item.";
 
 function ResultRow({
   result,
@@ -76,8 +45,23 @@ function ResultRow({
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
-  const { classes: globalClasses } = globalStyles();
-  const { classes } = useStyles();
+  const isFilteredOut = search.alwaysFilterOut(result);
+  const hasPermission = hasRequiredPermissions(
+    result.permittedActions,
+    search.uiConfig?.requiredPermissions,
+  );
+  const rowIsFilteredOut = isFilteredOut || !hasPermission;
+  const filteredOutReason = isFilteredOut
+    ? search.uiConfig?.alwaysFilteredOutReason
+    : undefined;
+  const tooltipText =
+    filteredOutReason ??
+    (!hasPermission ? REQUIRED_PERMISSIONS_TOOLTIP : undefined);
+  const rowIsSelected = Boolean(
+    search.activeResult &&
+      result.globalId === search.activeResult.globalId &&
+      search.uiConfig.highlightActiveResult,
+  );
 
   /*
    * Here we use `differentSearchForSettingActiveResult` because there are
@@ -119,52 +103,91 @@ function ResultRow({
     activateResult();
   };
 
-  return (
+  const tableRow = (
     <TableRow
-      hover={!isSingleColumnLayout}
+      hover={!isSingleColumnLayout && !rowIsFilteredOut}
       tabIndex={-1}
-      className={clsx(
-        classes.tableRow,
-        search.alwaysFilterOut(result) && globalClasses.greyOut,
-      )}
+      aria-disabled={rowIsFilteredOut || undefined}
+      sx={(theme) => ({
+        transition: theme.transitions.filterToggle,
+        ...(rowIsFilteredOut && {
+          filter: "grayscale(1)",
+          opacity: 0.6,
+          ...(!tooltipText && {
+            pointerEvents: "none !important",
+          }),
+        }),
+        "&.Mui-selected": {
+          backgroundColor: theme.palette.primary.background,
+          color: theme.palette.primary.contrastText,
+          "& .MuiTableCell-root": {
+            color: theme.palette.primary.contrastText,
+          },
+        },
+        "@media (prefers-contrast: more)": {
+          "&.Mui-selected .MuiCheckbox-root, &.Mui-selected .MuiRadio-root": {
+            color: theme.palette.primary.contrastText,
+          },
+        },
+        ...(!rowIsFilteredOut && {
+          "&.Mui-selected:hover": {
+            backgroundColor: `${alpha(theme.palette.primary.background, 0.8)} !important`,
+          },
+          "&:hover": {
+            backgroundColor: `${alpha(theme.palette.primary.background, 0.2)} !important`,
+          },
+        }),
+      })}
       onClick={match<void, () => void>([
+        [() => rowIsFilteredOut, () => {}],
         [() => noSelection, () => {}],
         [() => Boolean(isChild), navigateToResult],
         [() => true, activateResult],
       ])()}
-      selected={Boolean(
-        search.activeResult &&
-          result.globalId === search.activeResult.globalId &&
-          search.uiConfig.highlightActiveResult,
-      )}
+      selected={rowIsSelected}
     >
       {multiSelect && (
-        <TableCell scope="row" align="left" className={classes.checkbox}>
+        <TableCell
+          scope="row"
+          align="left"
+          sx={(theme) => ({
+            padding: `${theme.spacing(0.25)} !important`,
+          })}
+        >
           <Checkbox
             checked={result.selected}
+            disabled={rowIsFilteredOut}
             onChange={() => result.toggleSelected()}
             onClick={(e) => e.stopPropagation()}
             name={`Select result ${result.globalId}`}
             inputProps={{ "aria-label": "Select result item" }}
-            className={classes.defaultCursor}
+            sx={{ cursor: "default" }}
           />
         </TableCell>
       )}
       {singleSelect && (
-        <TableCell scope="row" align="left" className={classes.checkbox}>
+        <TableCell
+          scope="row"
+          align="left"
+          sx={(theme) => ({
+            padding: `${theme.spacing(0.25)} !important`,
+          })}
+        >
           <Radio
             checked={Boolean(
               search.activeResult &&
                 result.globalId === search.activeResult.globalId,
             )}
+            disabled={rowIsFilteredOut}
             onChange={() => activateResult()}
             onClick={(e) => e.stopPropagation()}
             name={`Select result ${result.globalId}`}
             inputProps={{ "aria-label": "Select result item" }}
+            sx={{ cursor: "default" }}
           />
         </TableCell>
       )}
-      <TableCell align="left" className={classes.defaultCursor}>
+      <TableCell align="left" sx={{ cursor: "default" }}>
         <NameWithBadge record={result} />
       </TableCell>
       <AdjustableCell
@@ -184,6 +207,14 @@ function ResultRow({
         />
       )}
     </TableRow>
+  );
+
+  return tooltipText ? (
+    <Tooltip title={tooltipText} describeChild>
+      {tableRow}
+    </Tooltip>
+  ) : (
+    tableRow
   );
 }
 

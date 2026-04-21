@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository.IGSN_INVENTORY_LINKED_ITEMS;
 import static com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository.RAID_METADATA_PROPERTY;
 import static com.researchspace.model.apps.App.APP_DATAVERSE;
 import static com.researchspace.model.apps.App.APP_ZENODO;
@@ -35,6 +36,8 @@ import com.researchspace.service.IAsyncArchiveDepositor;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.archive.export.ExportEcatDocumentResult;
+import com.researchspace.service.archive.export.ExportFileResult;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import java.io.File;
 import java.io.IOException;
@@ -52,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -99,20 +103,45 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
 
   private @Autowired DMPUpdateHandler dmpUpdateHandler;
 
-  private RepositoryOperationResult doDeposit(
+  private RepositoryOperationResult doDepositArchive(
       User subject,
       IRepository repository,
       RepoDepositConfig repoDepositCfg,
       RepositoryConfig repoCfg,
-      File file)
+      ArchiveResult archiveResult)
       throws IOException {
     RepositoryOperationResult result = null;
+    File file = archiveResult.getExportFile();
     try {
-      SubmissionMetadata metadata = generateSubmissionMetaData(subject, repoDepositCfg);
+      SubmissionMetadata metadata =
+          generateArchiveSubmissionMetaData(subject, archiveResult, repoDepositCfg);
       result = repository.submitDeposit(new UserDepositorAdapter(subject), file, metadata, repoCfg);
     } catch (Exception e) {
       result =
-          new RepositoryOperationResult(false, "Submitting deposit failed:" + e.getMessage(), null);
+          new RepositoryOperationResult(
+              false, "Submitting archive deposit failed:" + e.getMessage(), null, null);
+    }
+    return result;
+  }
+
+  private RepositoryOperationResult doDepositEcatDocument(
+      User subject,
+      IRepository repository,
+      RepoDepositConfig repoDepositCfg,
+      RepositoryConfig repoCfg,
+      ExportFileResult exportFileResult)
+      throws IOException {
+    RepositoryOperationResult result = null;
+    try {
+      SubmissionMetadata metadata =
+          generateSubmissionMetaData(subject, exportFileResult, repoDepositCfg);
+      result =
+          repository.submitDeposit(
+              new UserDepositorAdapter(subject), exportFileResult.getFile(), metadata, repoCfg);
+    } catch (Exception e) {
+      result =
+          new RepositoryOperationResult(
+              false, "Submitting document deposit failed:" + e.getMessage(), null, null);
     }
     return result;
   }
@@ -134,29 +163,22 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       User subject,
       RepoDepositConfig repoDepositConfig) {
     boolean updateSucceed = false;
-    String relatedObjectLink = "";
+    String doiLink = "";
     if (result.isSucceeded()) {
       try { // only supports DATAVERSE and ZENODO
         if (APP_DATAVERSE.equals(repoDepositConfig.getAppName())
             || APP_ZENODO.equals(repoDepositConfig.getAppName())) {
-          URL resultUrl = result.getUrl();
-          if (resultUrl != null) {
-            relatedObjectLink = resultUrl.toString();
-            log.info(
-                "Updating related object link: \""
-                    + relatedObjectLink
-                    + "\" to the RelatedObject section of the RAiD \""
-                    + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
-                    + "\"");
-            updateSucceed =
-                raIDServiceClientAdapter.addRaIDRelatedObject(
-                    subject.getUsername(),
-                    repoDepositConfig.getRaidAssociated().getRaid(),
-                    relatedObjectLink);
-          } else {
-            log.warn("No repository URL available for RaID related object update.");
-          }
+          doiLink = result.getDoiUrl().toString();
         }
+        log.info(
+            "Updating DOI link: \""
+                + doiLink
+                + "\" to the RelatedObject section of the RAiD \""
+                + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
+                + "\"");
+        updateSucceed =
+            raIDServiceClientAdapter.addRaIDRelatedObject(
+                subject.getUsername(), repoDepositConfig.getRaidAssociated().getRaid(), doiLink);
       } catch (Exception e) {
         log.error(
             "Impossible to report the RelatedObject to the RAiD \""
@@ -166,8 +188,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       } finally {
         if (updateSucceed) {
           log.info(
-              "The following related object link: \""
-                  + relatedObjectLink
+              "The following DOI link: \""
+                  + doiLink
                   + "\" has been successfully reported to the RelatedObject section of the RAiD \""
                   + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
                   + "\"");
@@ -176,7 +198,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
               "RelatedObject to the RAiD \""
                   + repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier()
                   + "\" has not been updated correctly.");
-          relatedObjectLink = "";
+          doiLink = "";
         }
       }
     }
@@ -185,7 +207,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         app.getLabel(),
         repoDepositConfig.getRaidAssociated().getRaid().getRaidIdentifier(),
         repoDepositConfig.getRaidAssociated().getRaid().getRaidAgencyUrl(),
-        relatedObjectLink);
+        doiLink);
   }
 
   /**
@@ -202,7 +224,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       // here to send to DMP
       if (repoDepositConfig.getAppName().equals(App.APP_DRYAD)) {
         RepositoryOperationResult newResultWithPublicLink =
-            new RepositoryOperationResult(true, result.getMessage(), getDryadPublicUrl(result));
+            new RepositoryOperationResult(
+                true, result.getMessage(), getDryadPublicUrl(result), result.getDoiUrl());
         dmpUpdateHandler.updateDMPS(
             newResultWithPublicLink::getUrl, subject, repoDepositConfig.getSelectedDMPs());
       } else {
@@ -264,11 +287,12 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       IRepository repository,
       RepoDepositConfig repoDepositConfig,
       RepositoryConfig repoCfg,
-      Future<EcatDocumentFile> documentFuture)
+      Future<ExportEcatDocumentResult> documentFuture)
       throws InterruptedException, ExecutionException {
 
     RepositoryOperationResult repoDepositResult;
-    EcatDocumentFile document = documentFuture.get();
+    ExportEcatDocumentResult exportResult = documentFuture.get();
+    EcatDocumentFile document = exportResult.getEcatDocumentFile();
     try {
       if (document != null) {
         File fileInFileStore = new File(new URI(document.getFileProperty().getAbsolutePathUri()));
@@ -281,15 +305,21 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
                 tempDir.toString(), document.getName().replaceAll(NOT_ALLOWED_FILENAME_CHARS, ""));
         Files.createSymbolicLink(symbolicLinkPath, fileInFileStore.toPath());
         repoDepositResult =
-            doDeposit(subject, repository, repoDepositConfig, repoCfg, symbolicLinkPath.toFile());
+            doDepositEcatDocument(
+                subject,
+                repository,
+                repoDepositConfig,
+                repoCfg,
+                new ExportFileResult(
+                    symbolicLinkPath.toFile(), exportResult.getIgsnInventoryLinkedItems()));
         Files.delete(symbolicLinkPath);
         Files.delete(tempDir);
       } else {
-        repoDepositResult = new RepositoryOperationResult(false, "No file to deposit", null);
+        repoDepositResult = new RepositoryOperationResult(false, "No file to deposit", null, null);
       }
     } catch (IOException | URISyntaxException e) {
       log.error("Submitting deposit failed: {}", e.getMessage());
-      repoDepositResult = new RepositoryOperationResult(false, e.getMessage(), null);
+      repoDepositResult = new RepositoryOperationResult(false, e.getMessage(), null, null);
     }
     postDeposit(repoDepositResult, app, subject, null, repoDepositConfig);
     return new AsyncResult<>(repoDepositResult);
@@ -304,16 +334,15 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       RepositoryConfig repoCfg,
       Future<ArchiveResult> archive)
       throws InterruptedException, ExecutionException {
-
     RepositoryOperationResult result;
+    ArchiveResult archiveResult = archive.get();
     try {
-      result =
-          doDeposit(subject, repository, repoDepositConfig, repoCfg, archive.get().getExportFile());
+      result = doDepositArchive(subject, repository, repoDepositConfig, repoCfg, archiveResult);
     } catch (Exception e) {
       log.error("Submitting deposit failed: {}", e.getMessage());
-      result = new RepositoryOperationResult(false, e.getMessage(), null);
+      result = new RepositoryOperationResult(false, e.getMessage(), null, null);
     }
-    postDeposit(result, app, subject, archive.get().getExportFile(), repoDepositConfig);
+    postDeposit(result, app, subject, archiveResult.getExportFile(), repoDepositConfig);
     return new AsyncResult<>(result);
   }
 
@@ -454,7 +483,22 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   }
 
   private SubmissionMetadata generateSubmissionMetaData(
-      User subject, RepoDepositConfig archiveConfig) throws IOException, IllegalStateException {
+      User subject, ExportFileResult exportFileResult, RepoDepositConfig archiveConfig)
+      throws IOException, IllegalStateException {
+    return generateArchiveSubmissionMetaData(
+        subject, exportFileResult.getIgsnInventoryLinkedItems(), archiveConfig);
+  }
+
+  private SubmissionMetadata generateArchiveSubmissionMetaData(
+      User subject, ArchiveResult archiveResult, RepoDepositConfig archiveConfig)
+      throws IOException, IllegalStateException {
+    return generateArchiveSubmissionMetaData(
+        subject, archiveResult.getIgsnInventoryLinkedItems(), archiveConfig);
+  }
+
+  private SubmissionMetadata generateArchiveSubmissionMetaData(
+      User subject, Set<String> igsnInventoryLinkedItems, RepoDepositConfig archiveConfig)
+      throws IOException, IllegalStateException {
     SubmissionMetadata metadata = new SubmissionMetadata();
     addOrcidIdsForAuthorsIfAvailable(archiveConfig);
     List<IDepositor> authors = new ArrayList<>(archiveConfig.getMeta().getAuthors());
@@ -491,12 +535,18 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
               .build());
     }
     metadata.setTerms(terms);
-
+    metadata.setOtherProperties(new HashMap<>());
     if (archiveConfig.getRaidAssociated() != null) {
-      metadata.setOtherProperties(
-          Map.of(
+      metadata
+          .getOtherProperties()
+          .put(
               RAID_METADATA_PROPERTY,
-              archiveConfig.getRaidAssociated().getRaid().getRaidIdentifier()));
+              archiveConfig.getRaidAssociated().getRaid().getRaidIdentifier());
+    }
+    if (igsnInventoryLinkedItems != null && !igsnInventoryLinkedItems.isEmpty()) {
+      metadata
+          .getOtherProperties()
+          .put(IGSN_INVENTORY_LINKED_ITEMS, String.join(",", igsnInventoryLinkedItems));
     }
 
     return setDmpOnlineDmpToolOnSubmissionMetadata(

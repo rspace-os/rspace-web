@@ -140,6 +140,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
   adjustableColumns: ["Global ID", "Owner", "Last Modified"],
   selectionMode: "MULTIPLE",
+  instantConfirm: true,
   highlightActiveResult: true,
   hideContentsOfChip: false,
   selectionLimit: Infinity,

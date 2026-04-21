@@ -245,8 +245,8 @@ public class GroupController extends BaseController {
     User subject = userManager.getUserByUsername(principal.getName());
     subject = getUserWithRefreshedPermissions(subject);
 
-    userManager.populateConnectedGroupList(subject);
-    userManager.populateConnectedUserList(subject);
+    userManager.populateConnectedGroupSet(subject);
+    userManager.populateConnectedUserSet(subject);
 
     if (properties.isProfileHidingEnabled()) {
       if (group.isPrivateProfile()) {

@@ -1,5 +1,4 @@
 <%@ include file="/common/taglibs.jsp"%>
-
 <script src="<c:url value='/scripts/tinymceDialogUtils.js'/>"></script>
 
 <!-- Loading jQuery TinyMCE -->

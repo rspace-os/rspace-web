@@ -6,7 +6,7 @@ import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import { Optional } from "../../../util/optional";
 
-import "../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 describe("useIntegrationsEndpoint", () => {
   describe("saveAppOptions", () => {
     function Wrapper() {

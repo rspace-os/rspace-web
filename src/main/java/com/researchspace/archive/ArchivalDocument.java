@@ -1,5 +1,7 @@
 package com.researchspace.archive;
 
+import com.researchspace.archive.elninventory.ArchivalListOfMaterials;
+import com.researchspace.archive.elninventory.ArchivalMaterialUsage;
 import com.researchspace.model.record.ImportOverride;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
@@ -11,12 +13,15 @@ import jakarta.xml.bind.annotation.XmlTransient;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 
 /** XML representation of a StructuredDocument */
 @XmlRootElement
@@ -108,5 +113,19 @@ public class ArchivalDocument {
     String originalOwner = getCreatedBy() != null ? getCreatedBy() : "n/a";
     return new ImportOverride(
         created, modified, originalOwner, allowCreationDateAfterModificationDate);
+  }
+
+  public Set<String> getIgsnInventoryLinkedItems() {
+    Set<String> igsnSet = new HashSet<>();
+    for (ArchivalField field : this.listFields) {
+      for (ArchivalListOfMaterials listsOfMaterial : field.getListsOfMaterials()) {
+        for (ArchivalMaterialUsage material : listsOfMaterial.getMaterials()) {
+          if (StringUtils.isNotBlank(material.getIgsn())) {
+            igsnSet.add(material.getIgsn());
+          }
+        }
+      }
+    }
+    return igsnSet;
   }
 }

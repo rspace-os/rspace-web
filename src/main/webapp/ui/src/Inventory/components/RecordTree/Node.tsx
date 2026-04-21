@@ -96,6 +96,7 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
               title={<NameWithBadge record={node} />}
               className={clsx(
                 classes.cardHeader,
+                // TODO: requiredPermissions tooltips are not supported in tree view yet.
                 search.alwaysFilterOut(node) && globalClasses.greyOut
               )}
               data-testid={`recordTreeNode_${node.globalId ?? "NEW"}`}

@@ -10,31 +10,41 @@ import Alerts from "@/components/Alerts/Alerts";
 import { GalleryFile } from "@/eln/gallery/useGalleryListing";
 import RsSet from "@/util/set";
 import Result from "@/util/result";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const GalleryEntrypoint = ({ open, onClose = () => {}, onSubmit, validateSelection }: {
+const queryClient = new QueryClient();
+
+const GalleryEntrypoint = ({
+  open,
+  onClose = () => {},
+  onSubmit,
+  validateSelection,
+}: {
   open: boolean;
   onClose?: () => void;
   onSubmit: (selection: RsSet<GalleryFile>) => void;
   validateSelection?: (file: GalleryFile) => Result<null>;
 }) => (
-  <StyledEngineProvider injectFirst>
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <Alerts>
-        <DialogBoundary>
-          <MemoryRouter>
-            <LandmarksProvider>
-              <GalleryPicker
-                open={open}
-                onClose={onClose ?? (() => {})}
-                onSubmit={onSubmit}
-                validateSelection={validateSelection}
-              />
-            </LandmarksProvider>
-          </MemoryRouter>
-        </DialogBoundary>
-      </Alerts>
-    </ThemeProvider>
-  </StyledEngineProvider>
-)
+  <QueryClientProvider client={queryClient}>
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+        <Alerts>
+          <DialogBoundary>
+            <MemoryRouter>
+              <LandmarksProvider>
+                <GalleryPicker
+                  open={open}
+                  onClose={onClose ?? (() => {})}
+                  onSubmit={onSubmit}
+                  validateSelection={validateSelection}
+                />
+              </LandmarksProvider>
+            </MemoryRouter>
+          </DialogBoundary>
+        </Alerts>
+      </ThemeProvider>
+    </StyledEngineProvider>
+  </QueryClientProvider>
+);
 
 export default GalleryEntrypoint

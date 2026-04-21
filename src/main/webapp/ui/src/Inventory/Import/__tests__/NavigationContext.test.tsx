@@ -12,6 +12,7 @@ import { storesContext } from "../../../stores/stores-context";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
 
 import userEvent from "@testing-library/user-event";
+import type { Location } from "react-router-dom";
 type NavigateToProps = {
   url: string;
 
@@ -62,7 +63,7 @@ describe("NavigationContext", () => {
           search: "",
           state: {},
           key: "",
-        };
+        } as Location;
         const navFn = vi.fn();
         render(
           <storesContext.Provider

@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "@/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import "../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import type { GroupInfo } from "@/modules/groups/schema";
 import type { UseSuspenseQueryResult } from "@tanstack/react-query";
 

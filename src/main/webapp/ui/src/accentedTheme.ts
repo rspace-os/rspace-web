@@ -219,6 +219,9 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
   return createTheme(
     mergeThemes(baseTheme, {
       palette: {
+        DataGrid: {
+          bg: mainBackground,
+        },
         primary: {
           main: mainAccentColor,
           contrastText: contrastTextColor,
@@ -233,7 +236,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
         standardIcon: {
           main: darken(interactiveColor, 0.5),
         } as PaletteColorOptions,
-      } as PaletteOptions,
+      } as unknown as PaletteOptions,
       borders: {
         card: accentedBorder,
         section: accentedBorder,

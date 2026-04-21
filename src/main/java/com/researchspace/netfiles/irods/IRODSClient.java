@@ -130,7 +130,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
 
   @Override
   public NfsFileDetails queryNfsFileForDownload(NfsTarget nfsTarget) throws NfsException {
-    NfsFileDetails fileDetails = null;
+    NfsFileDetails fileDetails;
     try {
       DataObject irodsDataObject = getIrodsDataObject(nfsTarget);
       fileDetails = new NfsFileDetails(irodsDataObject.getDataName());
@@ -153,7 +153,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
 
   @Override
   public NfsFolderDetails queryForNfsFolder(NfsTarget nfsTarget) throws NfsException {
-    NfsFolderDetails folderDetails = null;
+    NfsFolderDetails folderDetails;
     try {
       Collection irodsFolder = getIrodsCollection(nfsTarget);
       folderDetails = new NfsFolderDetails(irodsFolder.getCollectionName());
@@ -166,7 +166,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
               irodsFolder.getAbsolutePath(), irodsAccount);
       for (CollectionAndDataObjectListingEntry child : folderEntries) {
 
-        NfsResourceDetails childResource = null;
+        NfsResourceDetails childResource;
         if (child.isCollection()) {
           childResource = new NfsFolderDetails(child.getPathOrName());
         } else {
@@ -209,7 +209,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
       IRODSAccessObjectFactory accessObjectFactory = iRodsFileSystem.getIRODSAccessObjectFactory();
       IRODSFileFactory irodsFileFactory = accessObjectFactory.getIRODSFileFactory(irodsAccount);
 
-      IRODSFile iRodsFile = null;
+      IRODSFile iRodsFile;
       File currentFile;
       Long currentRecordId;
       String iRODSAbsolutePathFilename;
@@ -274,7 +274,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
       IRODSAccessObjectFactory accessObjectFactory = iRodsFileSystem.getIRODSAccessObjectFactory();
       IRODSFileFactory irodsFileFactory = accessObjectFactory.getIRODSFileFactory(irodsAccount);
 
-      IRODSFile iRodsFile = null;
+      IRODSFile iRodsFile;
       for (String absolutePathName : absolutePathFilenames) {
         iRodsFile = irodsFileFactory.instanceIRODSFile(absolutePathName);
         if (iRodsFile.exists()) {
@@ -313,7 +313,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
   }
 
   private DataObject getIrodsDataObject(NfsTarget nfsTarget) throws JargonException {
-    DataObject irodsDataObject = null;
+    DataObject irodsDataObject;
     if (nfsTarget.getNfsId() != null) {
       irodsDataObject = jargonFacade.getIRODSDataObjectById(nfsTarget.getNfsId(), irodsAccount);
     } else {
@@ -323,7 +323,7 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
   }
 
   private Collection getIrodsCollection(NfsTarget nfsTarget) throws JargonException {
-    Collection irodsCollection = null;
+    Collection irodsCollection;
     if (nfsTarget.getNfsId() != null) {
       irodsCollection = jargonFacade.getIRODSCollectionById(nfsTarget.getNfsId(), irodsAccount);
     } else {

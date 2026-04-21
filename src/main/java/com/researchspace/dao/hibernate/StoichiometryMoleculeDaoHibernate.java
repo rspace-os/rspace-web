@@ -20,11 +20,10 @@ public class StoichiometryMoleculeDaoHibernate
     Query<Record> query =
         getSession()
             .createQuery(
-                "select s.record from StoichiometryMolecule m "
-                    + " join m.stoichiometry s "
-                    + " where m = :molecule",
+                "select stoich.record from StoichiometryMolecule mol join mol.stoichiometry stoich "
+                    + " where mol.id = :moleculeId",
                 Record.class);
-    query.setParameter("molecule", molecule);
+    query.setParameter("moleculeId", molecule.getId());
     return query.uniqueResult().asStrucDoc();
   }
 }

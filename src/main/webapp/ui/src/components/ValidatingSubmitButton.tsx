@@ -4,8 +4,8 @@ import React from "react";
 import Popover from "@mui/material/Popover";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
-import { styled } from "@mui/material/styles";
-import type { Progress } from "../util/progress";
+import { styled, type SxProps, type Theme } from "@mui/material/styles";
+import type { Progress } from "@/util/progress";
 import Fade from "@mui/material/Fade";
 
 export type ValidationResult = Result<null>;
@@ -33,6 +33,7 @@ type ValidatingSubmitButtonArgs = {
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   progress?: Progress;
   color?: "primary" | "callToAction";
+  sx?: SxProps<Theme>;
 };
 
 const StyledPopover = styled(Popover)(() => ({
@@ -90,6 +91,7 @@ export default function ValidatingSubmitButton({
   onClick,
   progress,
   color = "callToAction",
+  sx,
 }: ValidatingSubmitButtonArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
   const [playAnimation, setPlayAnimation] = React.useState(false);
@@ -123,6 +125,7 @@ export default function ValidatingSubmitButton({
         }}
         animating={playAnimation}
         color={color}
+        sx={sx}
       />
       <StyledPopover
         open={Boolean(anchorEl)}

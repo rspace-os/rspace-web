@@ -15,7 +15,7 @@ import funders from "./funders.json";
 import zenodoRepoList from "./zenodoRepoList.json";
 import fc, { type Arbitrary } from "fast-check";
 import { mkValidator } from "../../util/Validator";
-import "../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import { type Tag } from "../repositories/Tags";
 import { DEFAULT_STATE } from "@/Export/constants";
 

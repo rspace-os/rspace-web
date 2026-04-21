@@ -1,5 +1,3 @@
-/* jshint maxerr: 200 */
-
 var lastTextEdited = -1;
 var lastCheckboxEdited = -1;
 var lastRadioEdited = -1;

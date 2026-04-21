@@ -14,7 +14,7 @@ import invalidRoR from "./json/invalidRor.json";
 import rorNotFound from "./json/rorNotFound.json";
 import rorUpdateSucess from "./json/rorUpdateSuccess.json";
 
-import "__mocks__/resizeObserver";
+import "@/__tests__/__mocks__/resizeObserver";
 const mockAxios = new MockAdapter(axios);
 const getWrapper = () => {
   return render(<RoRIntegration />);

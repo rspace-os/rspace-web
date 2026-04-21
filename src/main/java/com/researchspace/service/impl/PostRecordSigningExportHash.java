@@ -22,7 +22,7 @@ import com.researchspace.service.FileDuplicateStrategy;
 import com.researchspace.service.PostSigningManager;
 import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.PostArchiveCompletion;
-import java.io.File;
+import com.researchspace.service.archive.export.ExportFileResult;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -113,7 +113,7 @@ public class PostRecordSigningExportHash implements PostSigningManager {
     public Optional<ArchiveResult> archiveAndSign()
         throws InterruptedException, ExecutionException {
       try {
-        File result =
+        ExportFileResult result =
             exportImport
                 .asyncExportSelectionToPdfForSigning(
                     new Long[] {exported.getId()},
@@ -123,7 +123,7 @@ public class PostRecordSigningExportHash implements PostSigningManager {
                     exported.getOwner())
                 .get();
         ArchiveResult ar = new ArchiveResult();
-        ar.setExportFile(result);
+        ar.setExportFile(result.getFile());
         ar.setArchivedRecords(TransformerUtils.toList(exported));
         return Optional.ofNullable(ar);
       } catch (IOException e) {

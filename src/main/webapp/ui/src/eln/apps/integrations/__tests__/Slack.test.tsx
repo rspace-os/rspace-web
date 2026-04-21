@@ -14,7 +14,7 @@ import Alerts from "../../../../components/Alerts/Alerts";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 import { Optional } from "../../../../util/optional";
 
-import "../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 describe("Slack", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {

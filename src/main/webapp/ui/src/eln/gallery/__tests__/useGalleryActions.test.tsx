@@ -1,5 +1,5 @@
 import { test, describe, expect } from 'vitest';
-import "@/__tests__/mocks/useOauthToken";
+import "@/__tests__/__mocks__/useOauthToken";
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -27,7 +27,11 @@ describe("useGalleryActions", () => {
                   creationDate: new Date(),
                   modificationDate: new Date(),
                   type: "image",
+                  isSystemFolder: false,
+                  isSharedFolder: false,
+                  ownerId: 1,
                   ownerName: "Joe Bloggs",
+                  ownerUsername: "joebloggs",
                   description: new Description({ key: "empty" }),
                   version: 1,
                   size: 1024,
@@ -111,7 +115,11 @@ describe("useGalleryActions", () => {
                   creationDate: new Date(),
                   modificationDate: new Date(),
                   type: "image",
+                  isSystemFolder: false,
+                  isSharedFolder: false,
+                  ownerId: 1,
                   ownerName: "Joe Bloggs",
+                  ownerUsername: "joebloggs",
                   description: new Description({ key: "empty" }),
                   version: 1,
                   size: 1024,
@@ -197,7 +205,11 @@ describe("useGalleryActions", () => {
                   creationDate: new Date(),
                   modificationDate: new Date(),
                   type: "image",
+                  isSystemFolder: false,
+                  isSharedFolder: false,
+                  ownerId: 1,
                   ownerName: "Joe Bloggs",
+                  ownerUsername: "joebloggs",
                   description: new Description({ key: "empty" }),
                   version: 1,
                   size: 1024,
@@ -284,7 +296,11 @@ describe("useGalleryActions", () => {
                 creationDate: new Date(),
                 modificationDate: new Date(),
                 type: "image",
+                isSystemFolder: false,
+                isSharedFolder: false,
+                ownerId: 1,
                 ownerName: "Joe Bloggs",
+                ownerUsername: "joebloggs",
                 description: new Description({
                   key: "present",
                   value: "current description",

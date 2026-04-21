@@ -31,6 +31,11 @@ import ContainerModel from "../../../stores/models/ContainerModel";
 import SampleModel from "../../../stores/models/SampleModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
 import { emptyObject, type BlobUrl } from "../../../util/types";
+import CustomTooltip from "../../../components/CustomTooltip";
+import { hasRequiredPermissions } from "../../../stores/definitions/InventoryRecord";
+
+const REQUIRED_PERMISSIONS_TOOLTIP =
+  "You do not have permission to select this item.";
 
 const CustomCardStructure = withStyles<
   {
@@ -262,6 +267,18 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   };
 
   const { classes } = useStyles({ fetching });
+  const isFilteredOut = search.alwaysFilterOut(record);
+  const hasPermission = hasRequiredPermissions(
+    record.permittedActions,
+    search.uiConfig?.requiredPermissions,
+  );
+  const cardIsGreyedOut = isFilteredOut || !hasPermission;
+  const filteredOutReason = isFilteredOut
+    ? search.uiConfig?.alwaysFilteredOutReason
+    : undefined;
+  const tooltipText =
+    filteredOutReason ??
+    (!hasPermission ? REQUIRED_PERMISSIONS_TOOLTIP : undefined);
 
   const menuItems = contextActions({
     selectedResults: [record],
@@ -270,6 +287,82 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
     forceDisabled: search.processingContextActions ? "Action in Progress" : "",
     basketSearch: search.fetcher.basketSearch,
   })("menuitem");
+
+  const card = (
+    <CustomCardStructure
+      deleted={record.deleted}
+      greyOut={cardIsGreyedOut && !tooltipText}
+      image={
+        record.thumbnail ? (
+          <CardMedia
+            className={classes.preview}
+            title={record.name}
+            image={record.thumbnail}
+            onClick={openPreview}
+          />
+        ) : (
+          <ImagePlaceholder />
+        )
+      }
+      headerAvatar={
+        <RecordTypeIcon
+          record={record}
+          color={record.deleted ? theme.palette.deletedGrey : undefined}
+        />
+      }
+      title={record.name}
+      subheader={record.cardTypeLabel}
+      headerAction={
+        <>
+          <IconButton
+            className={classes.menuButton}
+            onClick={preventEventBubbling(
+              (e: React.MouseEvent<HTMLButtonElement>) => {
+                const { currentTarget } = e;
+                if (currentTarget instanceof HTMLElement) {
+                  setAnchorEl(currentTarget);
+                }
+              },
+            )}
+          >
+            <MoreHorizIcon fontSize="small" />
+          </IconButton>
+          <StyledMenu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={() => setAnchorEl(null)}
+            disableAutoFocusItem={true}
+          >
+            {menuItems
+              .filter(({ hidden }) => !hidden)
+              .map(
+                ({
+                  component,
+                }: {
+                  hidden: boolean;
+                  component: React.ReactNode;
+                }) => component,
+              )}
+          </StyledMenu>
+        </>
+      }
+      content={<Details record={record} />}
+      contentFooter={
+        record.readAccessLevel === "full" ? <Modified record={record} /> : null
+      }
+      onClick={() => {
+        if (disabled || Boolean(anchorEl) || cardIsGreyedOut) {
+          return;
+        }
+        if (isChild ?? false) {
+          navigateToResult(record);
+        } else {
+          activateResult(record);
+        }
+      }}
+      navigateOnClick={!disabled && !anchorEl && !cardIsGreyedOut && Boolean(isChild)}
+    />
+  );
 
   return (
     <>
@@ -283,81 +376,18 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
           />
         </Portal>
       )}
-      <CustomCardStructure
-        deleted={record.deleted}
-        greyOut={search.alwaysFilterOut(record)}
-        image={
-          record.thumbnail ? (
-            <CardMedia
-              className={classes.preview}
-              title={record.name}
-              image={record.thumbnail}
-              onClick={openPreview}
-            />
-          ) : (
-            <ImagePlaceholder />
-          )
-        }
-        headerAvatar={
-          <RecordTypeIcon
-            record={record}
-            color={record.deleted ? theme.palette.deletedGrey : undefined}
-          />
-        }
-        title={record.name}
-        subheader={record.cardTypeLabel}
-        headerAction={
-          <>
-            <IconButton
-              className={classes.menuButton}
-              onClick={preventEventBubbling(
-                (e: React.MouseEvent<HTMLButtonElement>) => {
-                  const { currentTarget } = e;
-                  if (currentTarget instanceof HTMLElement) {
-                    setAnchorEl(currentTarget);
-                  }
-                },
-              )}
-            >
-              <MoreHorizIcon fontSize="small" />
-            </IconButton>
-            <StyledMenu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={() => setAnchorEl(null)}
-              disableAutoFocusItem={true}
-            >
-              {menuItems
-                .filter(({ hidden }) => !hidden)
-                .map(
-                  ({
-                    component,
-                  }: {
-                    hidden: boolean;
-                    component: React.ReactNode;
-                  }) => component,
-                )}
-            </StyledMenu>
-          </>
-        }
-        content={<Details record={record} />}
-        contentFooter={
-          record.readAccessLevel === "full" ? (
-            <Modified record={record} />
-          ) : null
-        }
-        onClick={() => {
-          if (disabled || Boolean(anchorEl)) {
-            return;
-          }
-          if (isChild ?? false) {
-            navigateToResult(record);
-          } else {
-            activateResult(record);
-          }
-        }}
-        navigateOnClick={!disabled && !anchorEl && Boolean(isChild)}
-      />
+      {tooltipText ? (
+        <CustomTooltip title={tooltipText}>
+          <div
+            aria-disabled="true"
+            style={{ filter: "grayscale(1)", opacity: 0.6 }}
+          >
+            <div style={{ pointerEvents: "none" }}>{card}</div>
+          </div>
+        </CustomTooltip>
+      ) : (
+        card
+      )}
     </>
   );
 }

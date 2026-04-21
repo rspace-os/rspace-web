@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import org.apache.commons.codec.binary.Base64;
@@ -98,7 +97,7 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
           publicKey.getBytes(StandardCharsets.UTF_8),
           passphrase.getBytes(StandardCharsets.UTF_8));
     } catch (JSchException e) {
-      log.warn("problem when adding identity for " + username, e);
+      log.warn("problem when adding identity for {}", username, e);
       throw new IllegalArgumentException("wrong arguments for setting identity", e);
     }
   }
@@ -146,10 +145,8 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
 
     String lsPath = sanitiseLsPath(target);
     List<LsEntry> lsResult = getLsResult(lsPath);
-    if (lsResult != null) {
-      for (LsEntry lsEntry : lsResult) {
-        rootNode.addNode(getNodeFromLsEntry(lsEntry, lsPath, order, activeUserFolder));
-      }
+    for (LsEntry lsEntry : lsResult) {
+      rootNode.addNode(getNodeFromLsEntry(lsEntry, lsPath, order, activeUserFolder));
     }
 
     String rootNodePath = CURRENT_DIR_PATH.equals(lsPath) ? getCurrentDirectory() : lsPath;
@@ -220,23 +217,20 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
 
       } else {
         log.warn(
-            "unexpected number of ls results: "
-                + lsResult.size()
-                + " when querying path: "
-                + lsPath);
+            "unexpected number of ls results: {} when querying path: {}", lsResult.size(), lsPath);
       }
 
     } catch (NfsException e) {
-      log.warn("NfsException when querying '" + nfsTarget + "': " + e.getMessage());
+      log.warn("NfsException when querying '{}': {}", nfsTarget, e.getMessage());
     }
     return nfsFileDetails;
   }
 
   @Override
   public NfsFileDetails queryNfsFileForDownload(NfsTarget target) throws NfsException {
-    log.debug("file download request for: " + target.getPath());
+    log.debug("file download request for: {}", target.getPath());
 
-    InputStream inputStream = null;
+    InputStream inputStream;
     try {
       synchronized (this) {
         inputStream = getSftpChannel().get(target.getPath());
@@ -277,27 +271,25 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
   @Override
   public NfsFolderDetails queryForNfsFolder(NfsTarget nfsTarget) throws NfsException {
 
-    NfsFolderDetails folderDetails = null;
+    NfsFolderDetails folderDetails;
     String lsPath = sanitiseLsPath(nfsTarget.getPath());
     List<LsEntry> lsResult = getLsResult(lsPath);
 
     folderDetails = new NfsFolderDetails(getResourceNameFromLsPath(lsPath));
     folderDetails.setFileSystemFullPath(nfsTarget.getPath());
     folderDetails.setFileSystemParentPath(getParentPathFromFullPath(nfsTarget.getPath()));
-    if (lsResult != null) {
-      for (LsEntry lsEntry : lsResult) {
-        SftpATTRS attrs = lsEntry.getAttrs();
-        NfsResourceDetails resource = null;
-        if (attrs.isDir()) {
-          resource = new NfsFolderDetails(lsEntry.getFilename());
-        } else {
-          resource = new NfsFileDetails(lsEntry.getFilename());
-          resource.setSize(attrs.getSize());
-        }
-        resource.setFileSystemFullPath(nfsTarget.getPath() + "/" + lsEntry.getFilename());
-        resource.setFileSystemParentPath(nfsTarget.getPath());
-        folderDetails.getContent().add(resource);
+    for (LsEntry lsEntry : lsResult) {
+      SftpATTRS attrs = lsEntry.getAttrs();
+      NfsResourceDetails resource;
+      if (attrs.isDir()) {
+        resource = new NfsFolderDetails(lsEntry.getFilename());
+      } else {
+        resource = new NfsFileDetails(lsEntry.getFilename());
+        resource.setSize(attrs.getSize());
       }
+      resource.setFileSystemFullPath(nfsTarget.getPath() + "/" + lsEntry.getFilename());
+      resource.setFileSystemParentPath(nfsTarget.getPath());
+      folderDetails.getContent().add(resource);
     }
     return folderDetails;
   }
@@ -347,15 +339,15 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
 
   @SuppressWarnings("rawtypes")
   private List<LsEntry> getLsResult(String safePath) throws NfsException {
-    log.debug("sftp ls on: " + safePath);
+    log.debug("sftp ls on: {}", safePath);
 
-    Vector lsVector = null;
+    Vector lsVector;
     try {
       synchronized (this) {
         lsVector = getSftpChannel().ls(safePath);
       }
     } catch (SftpException e) {
-      log.warn("error on sftp channel ls: " + e.getMessage());
+      log.warn("error on sftp channel ls: {}", e.getMessage());
       throw new NfsException("couldn't retrieve path: " + safePath, e);
     }
 
@@ -365,7 +357,7 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
       if (lsElement instanceof LsEntry) {
         lsEntryList.add((LsEntry) lsElement);
       } else {
-        log.warn("got ls result of unknown type: " + lsElement);
+        log.warn("got ls result of unknown type: {}", lsElement);
       }
     }
 
@@ -373,15 +365,9 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
     return lsEntryList;
   }
 
-  private List<LsEntry> filterLsEntries(List<LsEntry> lsEntryList) {
-    for (Iterator<LsEntry> iterator = lsEntryList.iterator(); iterator.hasNext(); ) {
-      LsEntry entry = iterator.next();
-      if (StringUtils.startsWith(entry.getFilename(), CURRENT_DIR_PATH)) {
-        // removes '.', '..' and hidden files
-        iterator.remove();
-      }
-    }
-    return lsEntryList;
+  private void filterLsEntries(List<LsEntry> lsEntryList) {
+    // removes '.', '..' and hidden files
+    lsEntryList.removeIf(entry -> StringUtils.startsWith(entry.getFilename(), CURRENT_DIR_PATH));
   }
 
   protected String sanitiseLsPath(String target) {

@@ -17,9 +17,13 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.archive.ArchivalDocument;
+import com.researchspace.archive.model.ArchiveModelFactory;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.IPagination;
 import com.researchspace.core.util.ISearchResults;
@@ -78,6 +82,7 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.TestGroup;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
@@ -130,6 +135,8 @@ public class RecordManagerTest extends SpringTransactionalTest {
     parent.setId(1L);
     notebook = TestFactory.createANotebook("notebook", user);
     notebook.setId(2L);
+
+    inventoryIdentifierApiMgr.setDataCiteConnector(new DataCiteConnectorDummy());
   }
 
   @After
@@ -618,14 +625,66 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void createDocumentAndListOfMaterialsWithIgsn() {
+    StructuredDocument basicDoc = createBasicDocumentInRootFolderWithText(user, "Igns in lom test");
+    Field basicField = basicDoc.getFields().get(0);
+
+    ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(user);
+
+    ApiInventoryRecordInfo sampleRecord =
+        inventoryIdentifierApiMgr.registerNewIdentifier(basicSample.getOid(), user);
+    String expectedSampleDoi = "https://doi.org/" + sampleRecord.getIdentifiers().get(0).getDoi();
+
+    ApiSubSample basicApiSubSample =
+        (ApiSubSample)
+            inventoryIdentifierApiMgr.registerNewIdentifier(
+                basicSample.getSubSamples().get(0).getOid(), user);
+    String expectedSubSampleDoi =
+        "https://doi.org/" + basicApiSubSample.getIdentifiers().get(0).getDoi();
+
+    ApiMaterialUsage subSampleUsage = new ApiMaterialUsage(basicApiSubSample, null);
+    ApiMaterialUsage sampleUsage = new ApiMaterialUsage(sampleRecord, null);
+    createBasicListOfMaterialsForUserAndDocField(
+        user, basicField, List.of(subSampleUsage, sampleUsage));
+
+    basicDoc = recordMgr.getRecordWithFields(basicDoc.getId(), user).asStrucDoc();
+    ArchiveModelFactory factory = new ArchiveModelFactory();
+    ArchivalDocument archivalDocument = factory.createArchivalDocument(basicDoc);
+    assertEquals(
+        expectedSubSampleDoi,
+        archivalDocument
+            .getListFields()
+            .get(0)
+            .getListsOfMaterials()
+            .get(0)
+            .getMaterials()
+            .get(0)
+            .getIgsn());
+    assertEquals(
+        expectedSampleDoi,
+        archivalDocument
+            .getListFields()
+            .get(0)
+            .getListsOfMaterials()
+            .get(0)
+            .getMaterials()
+            .get(1)
+            .getIgsn());
+  }
+
+  @Test
   public void createDocumentAndListOfMaterials() {
 
     StructuredDocument basicDoc = createBasicDocumentInRootFolderWithText(user, "lom test");
     Field basicField = basicDoc.getFields().get(0);
 
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(user);
-    ApiMaterialUsage subSampleUsage =
-        new ApiMaterialUsage(basicSample.getSubSamples().get(0), null);
+    ApiSubSample basicApiSubSumple =
+        (ApiSubSample)
+            inventoryIdentifierApiMgr.registerNewIdentifier(
+                basicSample.getSubSamples().get(0).getOid(), user);
+    String expectedDoi = basicApiSubSumple.getIdentifiers().get(0).getDoi();
+    ApiMaterialUsage subSampleUsage = new ApiMaterialUsage(basicApiSubSumple, null);
 
     // create list of materials through lomManager
     ApiListOfMaterials basicLom =
@@ -645,6 +704,17 @@ public class RecordManagerTest extends SpringTransactionalTest {
             .get(0)
             .getInventoryRecord()
             .getName());
+    assertEquals( // verify the identifier is copied to the list of materials
+        expectedDoi,
+        latestField
+            .getListsOfMaterials()
+            .get(0)
+            .getMaterials()
+            .get(0)
+            .getInventoryRecord()
+            .getActiveIdentifiers()
+            .get(0)
+            .getIdentifier());
 
     // update list of materials
     ApiListOfMaterials lomUpdate = new ApiListOfMaterials();

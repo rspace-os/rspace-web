@@ -477,7 +477,11 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   public void saveConfigOptionsForAppsWithMultipleOptionSet(
-      User user, Long optionsId, String appName, Map<String, String> options) {
+      User user,
+      Long optionsId,
+      String appName,
+      Map<String, String> options,
+      String existingAlias) {
     if (PYRAT_APP_NAME.equals(appName) && optionsId != null) {
       saveNewUserConnectionForMultipleOptionApp(
           options.get(PYRAT_APIKEY), user, PYRAT_APP_NAME, options.get(PYRAT_ALIAS));
@@ -485,8 +489,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       saveNewUserConnectionForMultipleOptionApp(
           options.get(GALAXY_APIKEY), user, GALAXY_APP_NAME, options.get(GALAXY_ALIAS));
     } else if (DSW_APP_NAME.equals(appName)) {
-      saveNewUserConnectionForMultipleOptionApp(
-          options.get(DSW_APIKEY), user, DSW_APP_NAME, options.get(DSW_ALIAS));
+      updateUserConnectionForMultipleOptionApp(
+          options.get(DSW_APIKEY), user, DSW_APP_NAME, options.get(DSW_ALIAS), existingAlias);
     }
   }
 
@@ -494,7 +498,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     saveNewUserConnectionForMultipleOptionApp(token, user, appName, appName);
   }
 
-  private void saveNewUserConnectionForMultipleOptionApp(
+  protected void saveNewUserConnectionForMultipleOptionApp(
       String token, User user, String appName, String discriminant) {
     Optional<UserConnection> existingConnection =
         userConnManager.findByUserNameProviderName(user.getUsername(), appName, discriminant);
@@ -514,6 +518,39 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     // These user tokens do not expire, and the expiry time isn't checked, i.e api keys
     conn.setExpireTime(0L);
     userConnManager.save(conn);
+  }
+
+  // To update the connection we need to delete the existing connection
+  // and create a brand new one with the appropriate details copied over.
+  // This is because if we're updating the discriminant (which in the
+  // case of DSW is the server alias) then that is part of the ID, and
+  // Hibernate cannot perform an update if that is changed.
+  protected void updateUserConnectionForMultipleOptionApp(
+      String token, User user, String appName, String discriminant, String existingDiscriminant) {
+    // The main elements that can be edited by the user are the server
+    // alias (discriminant) and the API key (token), so do nothing if
+    // these have not been updated.
+    if (!discriminant.equals(existingDiscriminant) || !MASKED_TOKEN.equals(token)) {
+      Optional<UserConnection> existingConnection =
+          userConnManager.findByUserNameProviderName(
+              user.getUsername(), appName, existingDiscriminant);
+      if (!existingConnection.isEmpty()) {
+        UserConnection existingConn = existingConnection.get();
+        UserConnection updatedConn = new UserConnection();
+
+        updatedConn.setDisplayName(existingConn.getDisplayName());
+        updatedConn.setRank(existingConn.getRank());
+        updatedConn.setId(new UserConnectionId(user.getUsername(), appName, discriminant));
+        updatedConn.setExpireTime(existingConn.getExpireTime());
+        updatedConn.setAccessToken(
+            !MASKED_TOKEN.equals(token) ? token : existingConn.getAccessToken());
+
+        userConnManager.deleteByUserAndProvider(user.getUsername(), appName, existingDiscriminant);
+        userConnManager.save(updatedConn);
+      } else {
+        saveNewUserConnectionForMultipleOptionApp(token, user, appName, discriminant);
+      }
+    }
   }
 
   private void deleteConfigOptionsForAppsWithMultipleOptionSet(
@@ -573,8 +610,21 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else {
       options = originalOptions;
     }
+    String existingAlias = null;
+    if (DSW_APP_NAME.equals(appName) && null != optionsId) {
+      Optional<AppConfigElementSet> prevSavedOptions =
+          appConfigMgr.findByAppConfigElementSetId(optionsId);
+      if (!prevSavedOptions.isEmpty()) {
+        AppConfigElement prevSavedAlias =
+            prevSavedOptions.get().findElementByPropertyName(DSW_ALIAS);
+        if (null != prevSavedAlias) {
+          existingAlias = prevSavedAlias.getValue();
+        }
+      }
+    }
     appConfigMgr.saveAppConfigElementSet(options, optionsId, trustedOrigin, user);
-    saveConfigOptionsForAppsWithMultipleOptionSet(user, optionsId, appName, originalOptions);
+    saveConfigOptionsForAppsWithMultipleOptionSet(
+        user, optionsId, appName, originalOptions, existingAlias);
   }
 
   @Override

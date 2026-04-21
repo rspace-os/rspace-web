@@ -6,3 +6,34 @@ export const LOGO_COLOR = {
   saturation: 88,
   lightness: 54,
 };
+
+/**
+ * The colours used to accent the UI.
+ */
+export const ACCENT_COLOR = {
+  main: {
+    hue: 16,
+    saturation: 74,
+    lightness: 59,
+  },
+  darker: {
+    hue: 16,
+    saturation: 100,
+    lightness: 38,
+  },
+  contrastText: {
+    hue: 16,
+    saturation: 63,
+    lightness: 34,
+  },
+  background: {
+    hue: 16,
+    saturation: 39,
+    lightness: 71,
+  },
+  backgroundContrastText: {
+    hue: 16,
+    saturation: 39,
+    lightness: 34,
+  },
+};

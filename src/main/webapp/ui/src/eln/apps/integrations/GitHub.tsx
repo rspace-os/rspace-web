@@ -22,7 +22,7 @@ import RsSet from "../../../util/set";
 import GitHubIcon from "../../../assets/branding/github/logo.svg";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { LOGO_COLOR } from "../../../assets/branding/github";
-import { useBroadcastChannel } from "use-broadcast-channel";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 
 type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
 

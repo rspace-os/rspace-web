@@ -13,7 +13,7 @@ import Alerts from "../../../../components/Alerts/Alerts";
 import { observable } from "mobx";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
-import "../../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/matchMedia";
 import DSW from "@/eln/apps/integrations/DSW";
 describe("DSW", () => {
   describe("Accessibility", () => {

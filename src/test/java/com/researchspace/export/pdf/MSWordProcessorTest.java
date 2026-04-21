@@ -54,7 +54,7 @@ public class MSWordProcessorTest {
   @Mock private User exporter;
   private String htmlProcessed;
   private File outfile;
-  private ExportProcesserInput input;
+  private ExportProcessorInput input;
   private ConversionResult success;
 
   @Before
@@ -96,7 +96,7 @@ public class MSWordProcessorTest {
   }
 
   @NotNull
-  private ExportProcesserInput getAnyHTML() {
+  private ExportProcessorInput getAnyHTML() {
     return createAnyHTML();
   }
 
@@ -148,18 +148,18 @@ public class MSWordProcessorTest {
     verify(converter, atMost(1)).convert(any(Convertible.class), eq("doc"), eq(outfile));
   }
 
-  private ExportProcesserInput createAnyHTMLWithImage() {
+  private ExportProcessorInput createAnyHTMLWithImage() {
     EcatImage image = TestFactory.createEcatImage(1L);
     String imgHtml = rtupdater.generateURLStringForEcatImageLink(image, 2 + "");
-    return new ExportProcesserInput(imgHtml, Collections.emptyList(), null, null);
+    return new ExportProcessorInput(imgHtml, Collections.emptyList(), null, null, null);
   }
 
-  private ExportProcesserInput createAnyHTML() {
-    return new ExportProcesserInput("<html/>", Collections.emptyList(), null, null);
+  private ExportProcessorInput createAnyHTML() {
+    return new ExportProcessorInput("<html/>", Collections.emptyList(), null, null, null);
   }
 
-  private ExportProcesserInput createStoichiometryHTML() {
-    return new ExportProcesserInput(STOICHIOMETRY_HTML, Collections.emptyList(), null, null);
+  private ExportProcessorInput createStoichiometryHTML() {
+    return new ExportProcessorInput(STOICHIOMETRY_HTML, Collections.emptyList(), null, null, null);
   }
 
   private ExportToFileConfig getConfig() {
