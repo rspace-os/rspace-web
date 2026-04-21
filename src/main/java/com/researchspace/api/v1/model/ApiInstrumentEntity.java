@@ -2,6 +2,7 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InstrumentEntity;
@@ -66,7 +67,7 @@ public abstract class ApiInstrumentEntity extends ApiInstrumentEntityInfo {
   @JsonProperty(value = "sharedWith")
   private List<ApiGroupInfoWithSharedFlag> sharedWith;
 
-  @JsonProperty(value = "canBeDeleted")
+  @JsonProperty(value = "canBeDeleted", access = Access.READ_ONLY)
   private Boolean canBeDeleted;
 
   public ApiInstrumentEntity(InstrumentEntity instrumentEntity) {

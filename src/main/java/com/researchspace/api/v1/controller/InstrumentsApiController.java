@@ -3,7 +3,6 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.api.v1.InstrumentsApi;
 import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiInstrument;
-import com.researchspace.api.v1.model.ApiInstrumentEntity;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import javax.validation.Valid;
@@ -12,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +23,9 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
 
   @Autowired private InstrumentApiPostValidator instrumentApiPostValidator;
   @Autowired private InstrumentApiPostFullValidator instrumentApiPostFullValidator;
+
+  @Value("${inventory.instrument.enabled:false}")
+  private boolean inventoryInstrumentEnabled;
 
   @Data
   @AllArgsConstructor
@@ -41,8 +44,7 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
-
-    assertIsNotInstrumentTemplate(apiInstrument);
+    assertIsInventoryInstrumentEnabled();
     validateCreateInstrumentInput(apiInstrument, errors, user);
 
     if (apiInstrument.getNewTargetLocation() != null) {
@@ -58,10 +60,20 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     return result;
   }
 
-  private void assertIsNotInstrumentTemplate(ApiInstrumentEntity instrumentEntity) {
-    if (instrumentEntity.isTemplate()) {
-      throw new IllegalArgumentException(
-          "Please use /instrumentTemplates endpoint for template actions");
+  @Override
+  public ApiInstrument getInstrumentById(
+      @PathVariable Long id, @RequestAttribute(name = "user") User user) {
+    assertIsInventoryInstrumentEnabled();
+
+    ApiInstrument instrument = retrieveApiInstrumentIfExists(id, user);
+    buildAndAddInventoryRecordLinks(instrument);
+    return instrument;
+  }
+
+  private void assertIsInventoryInstrumentEnabled() {
+    if (!inventoryInstrumentEnabled) {
+      throw new UnsupportedOperationException(
+          "The inventory Instrument is not enabled in this RSpace instance");
     }
   }
 
@@ -88,19 +100,10 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     throwBindExceptionIfErrors(errors);
   }
 
-  @Override
-  public ApiInstrument getInstrumentById(
-      @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-
-    ApiInstrument instrument = retrieveApiInstrumentIfExists(id, user);
-    buildAndAddInventoryRecordLinks(instrument);
-    return instrument;
-  }
-
   private ApiInstrument retrieveApiInstrumentIfExists(Long id, User user) {
     boolean exists = instrumentApiMgr.instrumentExists(id);
     if (!exists) {
-      throw new NotFoundException(createNotFoundMessage("Inventory record", id));
+      throw new NotFoundException(createNotFoundMessage("Inventory Instrument ", id));
     }
     return instrumentApiMgr.getApiInstrumentById(id, user);
   }

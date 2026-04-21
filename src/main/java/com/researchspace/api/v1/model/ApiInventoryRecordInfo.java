@@ -1,4 +1,6 @@
-/** RSpace Inventory API Access your RSpace Inventory programmatically. */
+/**
+ * RSpace Inventory API Access your RSpace Inventory programmatically.
+ */
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -15,6 +17,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.Barcode;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
@@ -41,6 +45,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @ToString(callSuper = true)
 @NoArgsConstructor
 public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObject {
+
   @JsonProperty("description")
   private String description;
 
@@ -130,6 +135,7 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   @AllArgsConstructor
   @NoArgsConstructor
   public static class ApiGroupInfoWithSharedFlag {
+
     @JsonProperty(value = "group")
     private ApiGroupBasicInfo groupInfo;
 
@@ -146,11 +152,14 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   }
 
   /* to use when generating image/thumbnail links on controller level, but not sent to front-end */
-  @JsonIgnore private boolean customImage;
+  @JsonIgnore
+  private boolean customImage;
 
-  @JsonIgnore private FileProperty imageFileProperty;
+  @JsonIgnore
+  private FileProperty imageFileProperty;
 
-  @JsonIgnore private FileProperty thumbnailFileProperty;
+  @JsonIgnore
+  private FileProperty thumbnailFileProperty;
 
   @Size(max = 10_000_000, message = "Image cannot be larger than 10MB")
   @JsonProperty(value = "newBase64Image", access = Access.WRITE_ONLY)
@@ -164,6 +173,10 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
       return new ApiSubSampleInfoWithSampleInfo((SubSample) invRecord);
     } else if (invRecord.isContainer()) {
       return new ApiContainerInfo((Container) invRecord);
+    } else if (invRecord.isInstrument()) {
+      return new ApiInstrument((Instrument) invRecord);
+    } else if (invRecord.isInstrumentTemplate()) {
+      return new ApiInstrumentTemplate((InstrumentTemplate) invRecord);
     } else {
       throw new IllegalArgumentException("unsupported type: " + invRecord);
     }
@@ -178,6 +191,10 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
       return new ApiSubSample((SubSample) invRecord);
     } else if (invRecord.isContainer()) {
       return new ApiContainer((Container) invRecord);
+    } else if (invRecord.isInstrument()) {
+      return new ApiInstrument((Instrument) invRecord);
+    } else if (invRecord.isInstrumentTemplate()) {
+      return new ApiInstrumentTemplate((InstrumentTemplate) invRecord);
     } else {
       throw new IllegalArgumentException("unsupported type: " + invRecord);
     }

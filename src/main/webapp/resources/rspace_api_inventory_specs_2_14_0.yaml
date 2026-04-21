@@ -110,9 +110,8 @@ paths:
 
         `{ "name": "My Complex API Instrument #1", "description": "my description", "templateId": 2, "fields": [{ "content": "5.0" }, { "content": "2020-05-13" }, { "content": "a string"}, { "content": "<p>MyText content</p>" }, { "content": "https://www.researchspace.com" }, { "content": "SD12345" }, { "content": "description of an attached file" }, { "selectedOptions": ["option1"] }, { "selectedOptions": ["optionA"] }], "extraFields": [ { "name": "my instrument extra field", "type": "text", "content" :"extra instrument content (text)" } ] }` | Creates a complex Instrument based on a specific template (with id `2`) which contains 9 fields of various types. In order these are number, date, string, text, uri, reference, attachment, radio, choice.
 
-
       tags:
-        - Instruments
+        - Instruments (not enabled)
       parameters:
         - in: body
           name: instrument
@@ -136,7 +135,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Instruments
+        - Instruments (not enabled)
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
       responses:

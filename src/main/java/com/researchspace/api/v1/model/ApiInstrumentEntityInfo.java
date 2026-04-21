@@ -63,8 +63,7 @@ public class ApiInstrumentEntityInfo extends ApiInventoryRecordInfo {
   @JsonInclude(value = NON_NULL)
   private Long templateVersion;
 
-  @JsonProperty("template")
-  @JsonInclude(value = NON_NULL)
+  @JsonProperty(value = "template", access = Access.READ_ONLY)
   private boolean template;
 
   /* to use when generating image/thumbnail links on controller level, but not sent to front-end */

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
-import com.researchspace.model.inventory.InstrumentEntity;
+import com.researchspace.model.inventory.Instrument;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -44,7 +44,6 @@ import lombok.ToString;
   "sharingMode",
   "templateId",
   "templateVersion",
-  "template",
   "revisionId",
   "version",
   "historicalVersion",
@@ -63,23 +62,23 @@ public class ApiInstrument extends ApiInstrumentEntity {
   @JsonProperty(value = "newTargetLocation", access = Access.WRITE_ONLY)
   private ApiTargetLocation newTargetLocation;
 
-  @JsonProperty("parentContainers")
+  @JsonProperty(value = "parentContainers", access = Access.READ_ONLY)
   private List<ApiContainerInfo> parentContainers = new ArrayList<>();
 
-  @JsonProperty("parentLocation")
+  @JsonProperty(value = "parentLocation", access = Access.READ_ONLY)
   private ApiContainerLocation parentLocation;
 
-  @JsonProperty("lastNonWorkbenchParent")
+  @JsonProperty(value = "lastNonWorkbenchParent", access = Access.READ_ONLY)
   private ApiContainerInfo lastNonWorkbenchParent;
 
   @EqualsAndHashCode.Exclude
-  @JsonProperty("lastMoveDate")
+  @JsonProperty(value = "lastMoveDate", access = Access.READ_ONLY)
   @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
   @JsonDeserialize(using = ISO8601DateTimeDeserialiser.class)
   private Long lastMoveDateMillis;
 
   /* location fields */
-  @JsonProperty("storedInContainer")
+  @JsonProperty(value = "storedInContainer", access = Access.READ_ONLY)
   private boolean storedInContainer;
 
   /** default constructor used by jackson deserializer */
@@ -90,7 +89,7 @@ public class ApiInstrument extends ApiInstrumentEntity {
     super.setCanBeDeleted(true);
   }
 
-  public ApiInstrument(InstrumentEntity instrument) {
+  public ApiInstrument(Instrument instrument) {
     super(instrument);
 
     if (instrument.getParentLocation() != null) {
