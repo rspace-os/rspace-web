@@ -7,6 +7,7 @@ import { ACCENT_COLOR as PUBCHEM_ACCENT_COLOR } from "@/assets/branding/pubchem"
 import { ACCENT_COLOR as GALLERY_COLOR } from "@/assets/branding/rspace/gallery";
 import { ACCENT_COLOR as CHEMISTRY_COLOR } from "@/assets/branding/chemistry";
 import { ThemeProvider } from "@mui/material/styles";
+import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import * as Parsers from "../../util/parsers";
 import {
@@ -22,6 +23,9 @@ import CardMedia from "@mui/material/CardMedia";
 import EditIcon from "@mui/icons-material/Edit";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import StoichiometryAddReagentDialog from "@/tinyMCE/stoichiometry/StoichiometryAddReagentDialog";
+import StoichiometryInventoryUpdateDialog, {
+  type InventoryStockUpdateResult,
+} from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateDialog";
 import CompoundSearchDialog from "@/tinyMCE/pubchem/CompoundSearchDialog";
 import createAccentedTheme from "@/accentedTheme";
 import { MemoryRouter } from "react-router-dom";
@@ -30,6 +34,7 @@ import Backdrop from "@mui/material/Backdrop";
 import { filenameExceptExtension } from "@/util/files";
 import Result from "@/util/result";
 import MenuItem from "@mui/material/MenuItem";
+import Tooltip from "@mui/material/Tooltip";
 
 const GalleryPicker = React.lazy(() => import("../../eln/gallery/picker"));
 
@@ -40,15 +45,26 @@ declare module "@mui/x-data-grid" {
       name: string,
       source: string,
     ) => Promise<void>;
+    onUpdateInventoryStock?: (
+      selectedMoleculeIds: number[],
+    ) => Promise<InventoryStockUpdateResult>;
     editable: boolean;
     allMolecules: ReadonlyArray<EditableMolecule>;
+    hasChanges: boolean;
+    linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<
+      string,
+      InventoryQuantityQueryResult
+    >;
   }
 }
 
 const StoichiometryTableToolbar = ({
   onAddReagent,
+  onUpdateInventoryStock,
   editable,
   allMolecules,
+  hasChanges,
+  linkedInventoryQuantityInfoByGlobalId,
 }: GridSlotProps["toolbar"]) => {
   const apiRef = useGridApiContext();
   const [addReagantMenuAnchorEl, setAddReagentMenuAnchorEl] =
@@ -57,8 +73,13 @@ const StoichiometryTableToolbar = ({
     React.useState(false);
   const [pubchemDialogOpen, setPubchemDialogOpen] = React.useState(false);
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
+  const [inventoryUpdateDialogOpen, setInventoryUpdateDialogOpen] =
+    React.useState(false);
   const [exportMenuAnchorEl, setExportMenuAnchorEl] =
     React.useState<HTMLButtonElement | null>(null);
+  const inventoryUpdateDisabledTooltip = hasChanges
+    ? "Save the stoichiometry table before updating inventory stock."
+    : "";
 
   return (
     <>
@@ -74,6 +95,21 @@ const StoichiometryTableToolbar = ({
             >
               Add Chemical
             </Button>
+            <Tooltip title={inventoryUpdateDisabledTooltip}>
+              <span>
+                <Button
+                  aria-label="Update Inventory Stock"
+                  size="small"
+                  sx={{ mr: 1 }}
+                  disabled={hasChanges}
+                  onClick={() => {
+                    setInventoryUpdateDialogOpen(true);
+                  }}
+                >
+                  Update Inventory Stock
+                </Button>
+              </span>
+            </Tooltip>
             <Menu
               open={Boolean(addReagantMenuAnchorEl)}
               anchorEl={addReagantMenuAnchorEl}
@@ -134,6 +170,17 @@ const StoichiometryTableToolbar = ({
               }}
               onAddReagent={(smilesString, name) => {
                 void onAddReagent(smilesString, name, "manual");
+              }}
+            />
+            <StoichiometryInventoryUpdateDialog
+              open={inventoryUpdateDialogOpen}
+              molecules={allMolecules}
+              linkedInventoryQuantityInfoByGlobalId={
+                linkedInventoryQuantityInfoByGlobalId
+              }
+              onSave={onUpdateInventoryStock}
+              onClose={() => {
+                setInventoryUpdateDialogOpen(false);
               }}
             />
             <ThemeProvider theme={createAccentedTheme(PUBCHEM_ACCENT_COLOR)}>
