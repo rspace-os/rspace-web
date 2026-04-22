@@ -153,6 +153,8 @@ define(function() {
         $('#fileSystemSambaDomain').val("");
         $('#fileSystemSambaShare').val("");
         $('#fileSystemSftpServerPublicKey').val("");
+        $('#fileSystemS3Region').val("");
+        $('#fileSystemS3BucketName').val("");
 
         var clientOptions = parseClientOptions(fileSystem.clientOptions);
         if (isSambaClient) {
@@ -170,6 +172,9 @@ define(function() {
         } else if (isS3AWSClient || isS3OtherClient) {
             $('#fileSystemS3Region').val(clientOptions.S3_REGION);
             $('#fileSystemS3BucketName').val(clientOptions.S3_BUCKET_NAME);
+            var s3pathStyleEnabled = clientOptions.S3_PATH_STYLE_ACCESS_ENABLED === 'true';
+            $('#fileSystemS3PathStyleEnabled').prop('checked', s3pathStyleEnabled);
+            $('#fileSystemS3PathStyleDisabled').prop('checked', !s3pathStyleEnabled);
         }
         
         var isPasswordAuth = isExistingFileSystem && fileSystem.authType === 'PASSWORD';
@@ -265,10 +270,13 @@ define(function() {
         } else if (clientType === 'S3') {
             var s3Region = $('#fileSystemS3Region').val();
             var s3BucketName = $('#fileSystemS3BucketName').val();
+            var s3PathStyleEnabled = $('#fileSystemS3PathStyleEnabled').prop('checked');
             if ($('#fileSystemClientTypeS3AWS').prop('checked')) {
                 $('#fileSystemUrl').val("aws::" + s3Region);
             }
-            clientOptions = "S3_REGION=" + s3Region + "\nS3_BUCKET_NAME=" + s3BucketName;
+            clientOptions = "S3_REGION=" + s3Region
+                + "\nS3_BUCKET_NAME=" + s3BucketName
+                + "\nS3_PATH_STYLE_ACCESS_ENABLED=" + s3PathStyleEnabled;
         }
 
         var fileSystem = {
@@ -352,6 +360,7 @@ define(function() {
         $('.fileSystemDetailsS3Row').toggle(isS3Client);
         $('#fileSystemS3BucketName').prop('required', isS3Client);
         $('#fileSystemS3Region').prop('required', isS3Client);
+        $('.fileSystemDetailsS3PathStyleRow').toggle(isS3Client && !isS3AWSClient);
 
         if (isSambaClient || isIrodsClient) {
             $('#fileSystemAuthTypePassword').click();

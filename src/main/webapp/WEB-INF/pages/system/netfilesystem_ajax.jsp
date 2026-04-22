@@ -182,6 +182,18 @@
                     <spring:message code="system.netfilesystem.details.client.s3.region" /></label></td>
                 <td><input id="fileSystemS3Region" type="text" style="width: 20em" /></td>
             </tr>
+            <tr class="fileSystemDetailsS3PathStyleRow">
+                <td><label for="fileSystemS3PathStyle">
+                    <spring:message code="system.netfilesystem.details.client.s3.pathstyle" /></label></td>
+                <td>
+                    <label for="fileSystemS3PathStyleEnabled">
+                        <input type="radio" id="fileSystemS3PathStyleEnabled" name="fileSystemS3PathStyle" value="true">
+                        <spring:message code="system.netfilesystem.details.client.s3.pathstyle.enabled" /></label>
+                    <label for="fileSystemS3PathStylDisabled">
+                        <input type="radio" id="fileSystemS3PathStyleDisabled" name="fileSystemS3PathStyle" value="false">
+                        <spring:message code="system.netfilesystem.details.client.s3.pathstyle.disabled" /></label>
+                </td>
+            </tr>
 
             <tr class="fileSystemDetailsAuthRow">
                 <td><label><spring:message code="system.netfilesystem.details.auth" /></label></td>
