@@ -1,6 +1,5 @@
 package com.researchspace.service.impl;
 
-import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
@@ -12,6 +11,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.TransferService;
 import java.util.List;
@@ -22,12 +22,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class TemplateTransferService implements TransferService {
 
-  public final String DELETED_USER_TEMPLATES_FOLDER = "Deleted Users";
+  public static final String DELETED_USER_TEMPLATES_FOLDER = "Deleted Users";
+  public static final String DELETED_USER_NAME_SUFFIX = "(Deleted)";
 
   private final AuditTrailService auditTrailService;
   private final RecordGroupSharingDao recordGroupSharingDao;
-  private final FolderDao folderDao;
   private final FolderManager folderManager;
+  private final RecordManager recordManager;
   private final BaseRecordManager baseRecordManager;
   private final SharingHandler recordSharingHandler;
 
@@ -38,14 +39,14 @@ public class TemplateTransferService implements TransferService {
   public TemplateTransferService(
       AuditTrailService auditTrailService,
       RecordGroupSharingDao recordGroupSharingDao,
-      FolderDao folderDao,
       FolderManager folderManager,
+      RecordManager recordManager,
       BaseRecordManager baseRecordManager,
       SharingHandler recordSharingHandler) {
     this.auditTrailService = auditTrailService;
     this.recordGroupSharingDao = recordGroupSharingDao;
-    this.folderDao = folderDao;
     this.folderManager = folderManager;
+    this.recordManager = recordManager;
     this.baseRecordManager = baseRecordManager;
     this.recordSharingHandler = recordSharingHandler;
   }
@@ -54,11 +55,6 @@ public class TemplateTransferService implements TransferService {
     List<BaseRecord> sharedRecords = recordGroupSharingDao.getTemplatesSharedByUser(originalOwner);
 
     for (BaseRecord template : sharedRecords) {
-      //      RecordSharingACL tempAcl = template.getSharingACL();
-      //      List<ACLElement> aclElements = tempAcl.getAclElements();
-      //      System.out.println(
-      //          "@@@ " + template.getName() + "has this many ACL elements: " +
-      // aclElements.size());
       System.out.println("@@@ Unsharing: " + template.getName() + " (" + template.getId() + ")");
       List<RecordGroupSharing> sharings =
           recordGroupSharingDao.getRecordGroupSharingsForRecord(template.getId());
@@ -72,7 +68,6 @@ public class TemplateTransferService implements TransferService {
     }
 
     if (!sharedRecords.isEmpty()) {
-      // transferOwnershipOfForms(originalOwner, newOwner, formIds);
       System.out.println("@@@ This many shared templates: " + sharedRecords.size());
       System.out.println(
           "@@@ Transferring ownership of template from: "
@@ -82,10 +77,7 @@ public class TemplateTransferService implements TransferService {
       List<Long> templateIds =
           sharedRecords.stream().map(BaseRecord::getId).collect(Collectors.toList());
 
-      // Folder templateFolder = folderDao.getTemplateFolderForUser(newOwner);
       Folder templateFolder = folderManager.getTemplateFolderForUser(newOwner);
-      //      List<Long> templateChildren = folderManager.getFolderChildrenIds(templateFolder);
-      //      System.out.println("@@@ Template folder children: " + templateChildren);
       Folder deletedUsersTemplates = null;
       List<Folder> templateSubFolders = folderManager.getSubFolders(templateFolder);
       System.out.println("@@@ This many template folder subfolders: " + templateSubFolders.size());
@@ -101,9 +93,6 @@ public class TemplateTransferService implements TransferService {
                 templateFolder.getId(), DELETED_USER_TEMPLATES_FOLDER, newOwner);
         System.out.println("@@@ Created new deleted user templates folder");
       }
-      //      List<Long> deletedTemplatesChildrenIds =
-      //          folderManager.getFolderChildrenIds(deletedUsersTemplates);
-      //      System.out.println("@@@ Deleted templates children: " + deletedTemplatesChildrenIds);
       List<Folder> deletedSubFolders = folderManager.getSubFolders(deletedUsersTemplates);
       System.out.println("@@@ This many deleted subfolders: " + deletedSubFolders.size());
       Folder deletedUserFolder = null;
@@ -123,8 +112,13 @@ public class TemplateTransferService implements TransferService {
 
       System.out.println("@@@ Will move templates to folder with ID: " + deletedUserFolder.getId());
 
-      recordGroupSharingDao.transferOwnershipOfTemplates(
-          originalOwner, newOwner, templateIds, deletedUserFolder);
+      // TODO:  Move the above into a separate method
+      recordManager.moveUsersRecordsToFolder(templateIds, originalOwner, deletedUserFolder);
+
+      String deletedUserName = originalOwner.getUsername() + DELETED_USER_NAME_SUFFIX;
+      recordManager.transferTemplates(
+          originalOwner, newOwner, templateIds, deletedUserFolder, deletedUserName);
+
       String description =
           String.format(
               "Ownership of template transferred from %s to %s",
@@ -137,46 +131,4 @@ public class TemplateTransferService implements TransferService {
     }
   }
 
-  //  @Override
-  //  public void updateACLs(User originalOwner, User newOwner) {
-  //    List<BaseRecord> sharedRecords = recordGroupSharingDao.getTemplatesSharedByUser(newOwner);
-  //
-  //    for (BaseRecord template : sharedRecords) {
-  //      // Update the ACL to point at the new owner.
-  //      RecordSharingACL templateACL = template.getSharingACL();
-  //      List<ACLElement> toAdd = new ArrayList<>();
-  //      List<ACLElement> toRemove = new ArrayList<>();
-  //      for (ACLElement aclElement : templateACL.getAclElements()) {
-  //        System.out.println(
-  //            "@@@ ACL element: "
-  //                + aclElement.getUserOrGrpUniqueName()
-  //                + " , "
-  //                + aclElement.getAsString());
-  //
-  //        if (aclElement.getUserOrGrpUniqueName().equals(originalOwner.getUsername())) {
-  //          toRemove.add(aclElement);
-  //          ConstraintBasedPermission cbp =
-  //              constraintPermissionResolver.resolvePermission(aclElement);
-  //          ACLElement newElement = new ACLElement(newOwner.getUsername(), cbp);
-  //          toAdd.add(newElement);
-  //          System.out.println(
-  //              "@@@ Replacing with element: "
-  //                  + newElement.getUserOrGrpUniqueName()
-  //                  + " , "
-  //                  + newElement.getAsString());
-  //        }
-  //      }
-  //      System.out.println("@@@ Scooby doo!");
-  //      for (ACLElement remove : toRemove) {
-  //        templateACL.removeACLElement(remove);
-  //      }
-  //      for (ACLElement add : toAdd) {
-  //        templateACL.addACLElement(add);
-  //      }
-  //
-  //      auditTrailService.notify(
-  //          new GenericEvent(
-  //              newOwner, template, AuditAction.TRANSFER, "Transferring ACLs UPDATE THIS"));
-  //    }
-  //  }
 }

@@ -647,4 +647,103 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     countQuery.setParameter(USER_ID, user.getId());
     return countQuery.uniqueResult();
   }
+
+  // Moves the specified records that are currently owned by the specified
+  // user to the given folder.
+  @Override
+  public void moveUsersRecordsToFolder(
+      List<Long> recordIds, User currentOwner, Folder destinationFolder) {
+    Session session = getSession();
+    // Note the format of the below query, with the nested select.  This is because
+    // MariaDB was giving an exception when attempting to simply use a WHERE clause
+    // with two parameters...
+    Query<?> query =
+        session
+            .createQuery(
+                "UPDATE RecordToFolder rtf SET folder=:destination WHERE id IN (SELECT id FROM"
+                    + " RecordToFolder WHERE folder.owner=:originalOwner AND record.id IN :ids)")
+            .setParameter("destination", destinationFolder)
+            .setParameter("ids", recordIds)
+            .setParameter("originalOwner", currentOwner);
+    query.executeUpdate();
+  }
+
+  public void transferTemplates(
+      User originalOwner,
+      User newOwner,
+      List<Long> templateIds,
+      Folder destination,
+      String updatedOriginalOwnerName) {
+    System.out.println("@@@ About to transfer templates with IDs: " + templateIds);
+    System.out.println(
+        "@@@ To destination: " + destination.getId() + " : " + destination.getName());
+    Query<?> query;
+
+    query =
+        getSession()
+            .createQuery("UPDATE BaseRecord b SET owner=:newOwner WHERE id IN :ids")
+            .setParameter("newOwner", newOwner)
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+    System.out.println("@@@ Transferred base record");
+
+    if (null != updatedOriginalOwnerName) {
+      query =
+          getSession()
+              .createQuery(
+                  "UPDATE BaseRecord b SET originalCreatorUsername=:updatedOriginalOwnerName WHERE"
+                      + " id IN :ids AND originalCreatorUsername=:originalName")
+              .setParameter("updatedOriginalOwnerName", updatedOriginalOwnerName)
+              .setParameter("originalName", originalOwner.getUsername())
+              .setParameter("ids", templateIds);
+      query.executeUpdate();
+      System.out.println("@@@ Changed base record original creator user names");
+      query =
+          getSession()
+              .createQuery(
+                  "UPDATE BaseRecord b SET editInfo.createdBy=:updatedOriginalOwnerName WHERE id IN"
+                      + " :ids AND editInfo.createdBy=:originalName")
+              .setParameter("updatedOriginalOwnerName", updatedOriginalOwnerName)
+              .setParameter("originalName", originalOwner.getUsername())
+              .setParameter("ids", templateIds);
+      query.executeUpdate();
+      System.out.println("@@@ Changed base record created by user names");
+      query =
+          getSession()
+              .createQuery(
+                  "UPDATE BaseRecord b SET editInfo.modifiedBy=:updatedOriginalOwnerName WHERE id"
+                      + " IN :ids AND editInfo.modifiedBy=:originalName")
+              .setParameter("updatedOriginalOwnerName", updatedOriginalOwnerName)
+              .setParameter("originalName", originalOwner.getUsername())
+              .setParameter("ids", templateIds);
+      query.executeUpdate();
+      System.out.println("@@@ Changed base record created by user names");
+    }
+
+    query =
+        getSession()
+            .createNativeQuery(
+                "UPDATE BaseRecord_AUD b SET owner_id=:newOwner_id,"
+                    + " createdBy=:updatedOriginalOwnerName WHERE id IN :ids")
+            .setParameter("newOwner_id", newOwner.getId())
+            .setParameter(
+                "updatedOriginalOwnerName",
+                null != updatedOriginalOwnerName
+                    ? updatedOriginalOwnerName
+                    : originalOwner.getUsername())
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+    System.out.println("@@@ Transferred base record audit");
+
+    query =
+        getSession()
+            .createNativeQuery(
+                "UPDATE BaseRecord br SET acl = (SELECT REPLACE(br.acl, :originalOwner, :newOwner)"
+                    + " ) WHERE id IN :ids")
+            .setParameter("originalOwner", originalOwner.getUsername())
+            .setParameter("newOwner", newOwner.getUsername())
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+    System.out.println("@@@ Updated ACLs");
+  }
 }

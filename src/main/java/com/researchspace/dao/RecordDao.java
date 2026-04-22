@@ -4,6 +4,7 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.RecordToFolder;
@@ -163,4 +164,13 @@ public interface RecordDao extends GenericDao<Record, Long> {
 
   List<StructuredDocument> getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(
       String uNAme);
+
+  void moveUsersRecordsToFolder(List<Long> recordIds, User currentOwner, Folder destinationFolder);
+
+  void transferTemplates(
+      User originalOwner,
+      User newOwner,
+      List<Long> templateIds,
+      Folder destination,
+      String updatedOriginalOwnerName);
 }
