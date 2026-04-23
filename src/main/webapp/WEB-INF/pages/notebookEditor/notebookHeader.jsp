@@ -22,6 +22,9 @@
     <script src="<c:url value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
     <script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
     <script src="<c:url value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>
+    <c:if test="${boxEnabled}">
+        <script type="text/javascript" src="https://app.box.com/js/static/select.js"></script>
+    </c:if>
     <script src="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
     <script	src="<c:url value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
     <script type="text/javascript">
