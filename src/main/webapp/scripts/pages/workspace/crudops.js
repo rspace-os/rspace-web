@@ -132,7 +132,7 @@ function setUpExportDialogs() {
   var getExportSelectionForExportDlg = function () {
     return getExportSelectionFromSelectedDocuments(getSelectedIdsNamesAndTypes());
   }
-  $('.exportIcon').click(function (e) {
+  $('#exportRecords').click(function (e) {
     e.preventDefault();
     RS.exportModal.openWithExportSelection(getExportSelectionForExportDlg());
   });
