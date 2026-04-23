@@ -99,27 +99,19 @@ describe("StoichiometryTableGrid", () => {
     expect(screen.getByRole("columnheader", { name: "Type" })).toBeVisible();
   });
 
-  it("opens the Type dropdown on single click when there is no active chemId", async () => {
-    const user = userEvent.setup();
-
+  it("always renders the Type dropdown when the role is editable", () => {
     render(
       <StoichiometryTableGrid editable allMolecules={[makeMolecule()]} />,
     );
 
-    await user.click(
-      screen.getByRole("button", { name: "Edit type for Cyclopentane" }),
-    );
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("combobox", {
-          name: "Select type for Cyclopentane",
-        }),
-      ).toBeVisible();
-    });
+    expect(
+      screen.getByRole("combobox", {
+        name: "Select type for Cyclopentane",
+      }),
+    ).toBeVisible();
   });
 
-  it("does not open the Type dropdown on single click when an active chemId is present", () => {
+  it("keeps the Type column non-editable when an active chemId is present", () => {
     render(
       <StoichiometryTableGrid
         editable
@@ -129,14 +121,47 @@ describe("StoichiometryTableGrid", () => {
     );
 
     expect(
-      screen.queryByRole("button", { name: "Edit type for Cyclopentane" }),
-    ).not.toBeInTheDocument();
-
-    expect(
       screen.queryByRole("combobox", {
         name: "Select type for Cyclopentane",
       }),
     ).not.toBeInTheDocument();
+
+    expect(screen.getByText("reactant")).toBeVisible();
+  });
+
+  it("updates the molecule role when a new type is selected", async () => {
+    const user = userEvent.setup();
+    const onProcessRowUpdate = vi.fn(
+      (newRow: EditableMolecule) => newRow,
+    );
+
+    render(
+      <StoichiometryTableGrid
+        editable
+        allMolecules={[makeMolecule()]}
+        onProcessRowUpdate={onProcessRowUpdate}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("combobox", {
+        name: "Select type for Cyclopentane",
+      }),
+    );
+    await user.click(await screen.findByRole("option", { name: "Product" }));
+
+    await waitFor(() => {
+      expect(onProcessRowUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 1,
+          role: "PRODUCT",
+        }),
+        expect.objectContaining({
+          id: 1,
+          role: "REACTANT",
+        }),
+      );
+    });
   });
 
   it.each([

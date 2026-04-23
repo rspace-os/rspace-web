@@ -47,7 +47,6 @@ export default function StoichiometryTableTypeDropdown({
 
   return (
     <Select
-      autoFocus
       fullWidth
       size="small"
       value={value ?? STOICHIOMETRY_ROLES.REACTANT}

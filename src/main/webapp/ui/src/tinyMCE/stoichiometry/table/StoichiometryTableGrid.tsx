@@ -59,18 +59,7 @@ export default function StoichiometryTableGrid({
   onSelectLimitingReagent,
   onProcessRowUpdate,
 }: StoichiometryTableGridProps): React.ReactNode {
-  const [activeTypeEditorRowId, setActiveTypeEditorRowId] = React.useState<
-    number | null
-  >(null);
   const roleColumnEditable = editable && activeChemId === null;
-  const openTypeCellEditor = React.useCallback((rowId: number) => {
-    setActiveTypeEditorRowId(rowId);
-  }, []);
-  React.useEffect(() => {
-    if (!roleColumnEditable) {
-      setActiveTypeEditorRowId(null);
-    }
-  }, [roleColumnEditable]);
   const limitingReagent = allMolecules.find(
     (molecule) =>
       molecule.limitingReagent && molecule.role.toLowerCase() === "reactant",
@@ -167,51 +156,27 @@ export default function StoichiometryTableGrid({
         field: "role",
         headerName: "Type",
         sortable: false,
-        minWidth: 130,
+        minWidth: 160,
         valueFormatter: (value) => getRoleExportValue(value as string | null | undefined),
         renderCell: ({ row }) => {
           if (!roleColumnEditable) {
             return <StoichiometryTableRoleChip role={row.role || ""} />;
           }
 
-          if (activeTypeEditorRowId === row.id) {
-            return (
-              <StoichiometryTableTypeDropdown
-                rowName={row.name}
-                value={row.role}
-                onChangeValue={(nextValue) => {
-                  onProcessRowUpdate?.(
-                    {
-                      ...row,
-                      role: nextValue,
-                    },
-                    row,
-                  );
-                }}
-                onClose={() => {
-                  setActiveTypeEditorRowId(null);
-                }}
-              />
-            );
-          }
-
           return (
-            <Box
-              component="button"
-              type="button"
-              aria-label={`Edit type for ${row.name ?? "molecule"}`}
-              onClick={() => {
-                openTypeCellEditor(row.id);
+            <StoichiometryTableTypeDropdown
+              rowName={row.name}
+              value={row.role}
+              onChangeValue={(nextValue) => {
+                onProcessRowUpdate?.(
+                  {
+                    ...row,
+                    role: nextValue,
+                  },
+                  row,
+                );
               }}
-              sx={{
-                p: 0,
-                border: 0,
-                background: "transparent",
-                cursor: "pointer",
-              }}
-            >
-              <StoichiometryTableRoleChip role={row.role || ""} />
-            </Box>
+            />
           );
         },
       },
@@ -380,12 +345,11 @@ export default function StoichiometryTableGrid({
     [
       editable,
       roleColumnEditable,
-      activeTypeEditorRowId,
       limitingReagentId,
       linkedInventoryQuantityInfoByGlobalId,
       linkedInventoryItemGlobalIdsByMoleculeId,
       onDeleteReagent,
-      openTypeCellEditor,
+      onProcessRowUpdate,
       onPickInventoryItem,
       onRemoveInventoryLink,
       onUndoRemoveInventoryLink,
