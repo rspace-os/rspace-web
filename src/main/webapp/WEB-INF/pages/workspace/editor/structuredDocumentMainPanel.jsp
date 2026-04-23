@@ -33,7 +33,7 @@
 <script src="<c:url value='/scripts/jwplayer.js'/>"></script>
 <script src="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
 <script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-<script src="<c:url value="/scripts/pages/workspace/clientUISettings.js"/>"></script>
+<script src="<c:url value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
 <script src="<c:url value='/scripts/tags/shareDlg.js'/>"></script>
 <script src="<c:url value='/scripts/pages/coreEditor.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/documentView.js'/>"></script>
