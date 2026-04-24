@@ -6,7 +6,7 @@ Full project instructions are in [AGENTS.md](../AGENTS.md) at the repo root. Ple
 
 RSpace is a Java/Spring + React/TypeScript research data management platform (ELN + Inventory).
 
-- **Backend:** Java 17, Spring MVC, MariaDB, Hibernate, Maven
+- **Backend:** Java 11 source / Java 17 JDK, Spring MVC, MariaDB, Hibernate, Maven
 - **Frontend:** TypeScript, React, Material-UI v5, Vitest, Playwright (`src/main/webapp/ui/`)
 - **App:** `http://localhost:8080` · test users `user1a`–`user8h` · admin `sysadmin1`
 

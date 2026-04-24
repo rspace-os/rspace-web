@@ -13,11 +13,13 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 ## Tech Stack
 
 **Backend:**
-- Java 17, Spring Framework (MVC, Security, WebSocket)
+- Java 11 source level, Java 17 JDK runtime — do **not** use Java 17+ language features (e.g., records, sealed classes, pattern matching)
+- Spring Framework (MVC, Security, WebSocket)
 - Maven 3.8.1+ build tool (`./mvnw`)
 - MariaDB 10.6 or 10.11 with Hibernate ORM + Envers auditing
 - Liquibase for database migrations
 - Jetty embedded servlet container (dev)
+- Parent POM: `rspace-parent` (controls dependency versions — if a version isn't in this project's `pom.xml`, check the parent)
 
 **Frontend** (`src/main/webapp/ui/`):
 - TypeScript + React, Node 24, npm
@@ -28,7 +30,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 ## Build & Run
 
 ### Prerequisites
-- Java 17 JDK (Adoptium Temurin recommended)
+- Java 17 JDK (Adoptium Temurin recommended) — required even though source level is 11
 - Maven 3.8.1+ or use `./mvnw`
 - MariaDB 10.6 or 10.11
 - Node 24 (frontend dev only)
@@ -125,6 +127,44 @@ Run a single Vitest test file:
 npx vitest run src/components/MyComponent/__tests__/MyComponent.test.tsx
 ```
 
+### Frontend Testing Patterns
+
+- **Custom render:** Import `render` and `within` from `@/__tests__/customQueries` (not directly from `@testing-library/react`). This wrapper provides custom queries like `findTableCell`.
+- **Path alias:** `@/` resolves to `src/` in imports.
+- **Fetch mocking:** `vitest-fetch-mock` is enabled globally in test setup.
+- **Accessibility:** `@sa11y/vitest` is integrated — use `toBeAccessible` matcher.
+- **Test setup:** Global setup in `src/__tests__/setup.ts` polyfills `localStorage`, `sessionStorage`, `TextEncoder`/`TextDecoder`.
+- **Console suppression:** Use `silenceConsole()` from test helpers to suppress expected errors.
+- **Test timeout:** 20 seconds (configured in `vitest.config.ts`).
+
+### Internationalization (i18n)
+
+Message bundles live in `src/main/resources/bundles/` with subdirectories per module (`dashboard/`, `workspace/`, `gallery/`, `groups/`, `inventory/`, `admin/`, `apps/`, `system/`, `public/`). Spring's `ReloadableResourceBundleMessageSource` loads them. The main bundle is `ApplicationResources.properties`.
+
+## Configuration
+
+### Property File Layering
+
+Configuration is loaded in layers (later layers override earlier ones):
+
+1. `src/main/resources/deployments/defaultDeployment.properties` — default values
+2. `src/main/resources/deployments/dev/deployment.properties` — local dev overrides
+3. External runtime properties (production deployments)
+
+Key properties:
+- `rs.filestore=LOCAL` — file storage backend (`LOCAL` or `EGNYTE`)
+- Database credentials in `src/main/resources/rs.properties`
+
+> **Gotcha:** If a property is defined in `defaultDeployment.properties`, Spring EL default values (`${prop:default}`) won't work — the property is always present.
+
+### API Authentication
+
+The REST API (`/api/v1/`) supports two authentication methods:
+- **API Key:** `apiKey` header with user's API key
+- **OAuth Bearer Token:** Standard `Authorization: Bearer <token>` header
+
+API keys are managed by `UserApiKeyManager`. Authentication is implemented via Apache Shiro (not Spring Security).
+
 ## Architecture
 
 ### Multi-project layout
@@ -168,6 +208,26 @@ Spring profiles: `dev` (tests, automatic), `run` (jetty:run, automatic), `prod` 
 ### Database
 
 All schema changes via Liquibase changesets in `src/main/resources/sqlUpdates/`. Hibernate Envers provides full audit trail on entities. Use soft deletes, not hard deletes.
+
+**Liquibase changeset format:**
+- File name: `changeLog-<ticket-id>.xml`
+- Each `<changeSet>` requires `id` (date-based, e.g., `2025-06-13a`), `author`, and `context="run"`
+- Use standard Liquibase XML elements: `<createTable>`, `<addColumn>`, `<addForeignKeyConstraint>`, `<createIndex>`, etc.
+- Baseline migration: `rs-dbbaseline-utf8.sql` (fresh installs only)
+
+### WebSocket
+
+STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWebSocketMessageBroker` with simple broker for `/topic` prefixed destinations. Origin validation via `OriginRefererChecker`.
+
+## Common Development Pitfalls
+
+1. **Java language level:** Source is Java 11 (`<release>11</release>`) despite using JDK 17. Do not use records, sealed classes, text blocks, or other post-Java 11 features.
+2. **Transaction boundary:** Calling a DAO directly from a controller will fail silently or throw — always go through a `*Manager` service.
+3. **Test class separation:** `*Test.java` (transactional rollback) and `*IT.java` (real commits) run in different Maven phases. Mixing them causes failures.
+4. **Lazy loading in tests:** Spring transactional tests with auto-rollback mask lazy-loading exceptions that will surface in production.
+5. **Form data size:** Local Jetty limits form data to 200KB (Tomcat: 2MB). Override with `-Dorg.eclipse.jetty.server.Request.maxFormContentSize=2000000`.
+6. **Liquibase context:** Use `-Dliquibase.context=run` when running migrations locally.
+7. **Service naming:** Service beans must end in `Manager` for AOP transaction proxying (configured in `applicationContext-service.xml`).
 
 ## Key Conventions
 
@@ -225,6 +285,13 @@ DevDocs/                           # Developer documentation
 
 ## CI/CD
 
-- **GitHub Actions:** `.github/workflows/lint-and-test.yml` (public CI)
+- **GitHub Actions:** `.github/workflows/lint-and-test.yml` (public CI) — auto-detects frontend vs Java changes and runs appropriate test suites
 - **Jenkins:** `Jenkinsfile` (internal CI with code coverage)
 - Code quality: SonarQube, SpotBugs, Checkstyle
+- **PR template:** `.github/pull_request_template.md` — requires a description; design decisions and testing notes optional; include screenshots for UI changes
+
+## Agent-Specific Config Files
+
+- **AGENTS.md** (this file): Primary instructions for all AI agents
+- **CLAUDE.md**: Points to AGENTS.md — for Claude Code / Anthropic agents
+- **.github/copilot-instructions.md**: Quick-reference for GitHub Copilot — points to AGENTS.md
