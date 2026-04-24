@@ -19,7 +19,6 @@ import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import jakarta.validation.ConstraintViolationException;
-import java.math.BigDecimal;
 import java.util.List;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,7 +75,6 @@ public class StoichiometryInventoryLinkDaoHibernateTest extends SpringTransactio
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setSample(sample);
     link.setStoichiometryMolecule(mol);
-    link.setQuantity(new QuantityInfo(BigDecimal.ONE, RSUnitDef.MILLI_LITRE.getId()));
     return link;
   }
 }

@@ -13,8 +13,8 @@
 <%@ attribute name="user" required="true"
 			  type="com.researchspace.model.User"%>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core"%>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn"%>
 
 <c:catch var="highlightNotFoundException">
     <c:set var="visibleRecordName" value="${wrapped.getHighlightedField(\"name\")}" />

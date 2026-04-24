@@ -1,5 +1,5 @@
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <div class="biggerLogoDiv" style="text-align: center">
     <rst:hasDeploymentProperty name="cloud" value="true">
     	<img src="<c:url value='/images/biggerLogoCloudN.png'/>">

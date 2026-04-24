@@ -72,7 +72,7 @@ public class AsyncDepositorImplTest {
 
   @Test
   public void testMessageNoLink() {
-    RepositoryOperationResult result = new RepositoryOperationResult(true, "hello", null);
+    RepositoryOperationResult result = new RepositoryOperationResult(true, "hello", null, null);
     underTest.postDeposit(
         result,
         SystemPropertyTestFactory.createAnyApp(),
@@ -92,7 +92,8 @@ public class AsyncDepositorImplTest {
   @Test
   public void testMessageLink() throws MalformedURLException {
     RepositoryOperationResult result =
-        new RepositoryOperationResult(true, "hello", new URL("http://www.bbc.co.uk"));
+        new RepositoryOperationResult(
+            true, "hello", new URL("http://www.bbc.co.uk"), new URL("http://www.bbc.co.uk"));
     underTest.postDeposit(
         result,
         SystemPropertyTestFactory.createAnyApp(),
@@ -141,7 +142,9 @@ public class AsyncDepositorImplTest {
         new RaidUpdateResult(
             true, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
     Future<RepositoryOperationResult> futureRepoOperationResult =
-        new AsyncResult<>(new RepositoryOperationResult(true, "", new URL(expectedResultUrl)));
+        new AsyncResult<>(
+            new RepositoryOperationResult(
+                true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
 
     // WHEN
     Future<RaidUpdateResult> futureRaidUpdateResult =
@@ -194,7 +197,9 @@ public class AsyncDepositorImplTest {
         new RaidUpdateResult(
             true, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
     Future<RepositoryOperationResult> futureRepoOperationResult =
-        new AsyncResult<>(new RepositoryOperationResult(true, "", new URL(expectedResultUrl)));
+        new AsyncResult<>(
+            new RepositoryOperationResult(
+                true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
 
     // WHEN
     Future<RaidUpdateResult> futureRaidUpdateResult =

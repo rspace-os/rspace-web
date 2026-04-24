@@ -1,4 +1,4 @@
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags"%>
 
 <%@ attribute name="isNotebook" required="true" type="java.lang.Boolean"%>

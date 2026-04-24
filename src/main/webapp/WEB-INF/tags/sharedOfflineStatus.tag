@@ -1,6 +1,6 @@
 <%@ attribute name="record" required="true"
 	type="com.researchspace.model.record.BaseRecord"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%--  the shared icon for records --%>
 <c:choose>
 	<c:when test="${record.structuredDocument or record.notebook}">
