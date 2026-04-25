@@ -29,6 +29,7 @@ src/main/webapp/ui/playwright/
 /.classpath
 /.project
 /.settings
+/.worktrees/
 /archive/
 /bin/
 home/
