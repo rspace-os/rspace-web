@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import org.hibernate.validator.constraints.NotBlank;
 
 /**
  * Data object to encapsulate request parameters from Sysadmin Create User form and perform basic

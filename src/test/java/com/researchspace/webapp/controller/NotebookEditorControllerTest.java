@@ -54,8 +54,7 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
   private final String TEST_DATA_RECORD_NAME = "RECORD NAME ";
   private final String TEST_DATA_FOLDER_NAME = "FOLDER NAME ";
   @Mock private UserContentUpdater userContentUpdaterMock;
-  @Autowired
-  private UserContentUpdater userContentUpdaterBean;
+  @Autowired private UserContentUpdater userContentUpdaterBean;
 
   @Autowired private NotebookEditorController notebookEditorController;
 
@@ -96,16 +95,14 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
     notebookEditorController.setRecordManager(recordManagerStub);
     notebookEditorController.setPermissionUtils(permissionUtils);
     notebookEditorController.setServletContext(servletContext);
-    ReflectionTestUtils.setField(
-        grpMgr, "userContentUpdater", userContentUpdaterMock);
+    ReflectionTestUtils.setField(grpMgr, "userContentUpdater", userContentUpdaterMock);
   }
 
   @After
   public void tearDown() throws Exception {
     RSpaceTestUtils.logout();
     FolderManagerStub.noteBooksArePublished = false;
-    ReflectionTestUtils.setField(
-        grpMgr, "userContentUpdater", userContentUpdaterBean);
+    ReflectionTestUtils.setField(grpMgr, "userContentUpdater", userContentUpdaterBean);
   }
 
   @Test(expected = AuthorizationException.class)

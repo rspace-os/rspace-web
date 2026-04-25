@@ -42,11 +42,9 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.impl.UserContentUpdater;
-import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.TestGroup;
-import com.researchspace.webapp.controller.FolderManagerStub;
 import java.util.Arrays;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
@@ -62,21 +60,19 @@ public class GroupManagerTest extends SpringTransactionalTest {
 
   @Autowired SystemPropertyManager systemPropertyManager;
   @Autowired SharingHandler sharingHandler;
-  @Mock
-  private UserContentUpdater userContentUpdaterMock;
-  @Autowired
-  private UserContentUpdater userContentUpdaterBean;
+  @Mock private UserContentUpdater userContentUpdaterMock;
+  @Autowired private UserContentUpdater userContentUpdaterBean;
+
   @Before
   public void setUp() throws Exception {
     super.setUp();
     openMocks(this);
-    ReflectionTestUtils.setField(
-        grpMgr, "userContentUpdater", userContentUpdaterMock);
+    ReflectionTestUtils.setField(grpMgr, "userContentUpdater", userContentUpdaterMock);
   }
+
   @After
   public void tearDown() throws Exception {
-    ReflectionTestUtils.setField(
-        grpMgr, "userContentUpdater", userContentUpdaterBean);
+    ReflectionTestUtils.setField(grpMgr, "userContentUpdater", userContentUpdaterBean);
   }
 
   @Test

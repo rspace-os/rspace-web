@@ -1,7 +1,7 @@
 package com.researchspace.webapp.integrations.ascenscia.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import org.hibernate.validator.constraints.NotBlank;
 
 @Data
 public class ConnectDTO {
