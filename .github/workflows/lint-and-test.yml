@@ -2,7 +2,7 @@ name: Lint and Test
 
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -89,6 +89,7 @@ jobs:
     permissions:
       contents: read
       checks: write
+      pull-requests: write
     strategy:
       matrix:
         java-version: [17]
@@ -122,7 +123,12 @@ jobs:
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
+        if: |
+          always() &&
+          (
+            github.event_name != 'pull_request' ||
+            github.event.pull_request.head.repo.full_name == github.repository
+          )
         with:
           files: target/surefire-reports/*.xml
 
@@ -275,6 +281,7 @@ jobs:
     permissions:
       contents: read
       checks: write
+      pull-requests: write
     if: |
       github.event_name == 'pull_request' || 
       inputs.frontend_tests ||
@@ -302,7 +309,12 @@ jobs:
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
+        if: |
+          always() &&
+          (
+            github.event_name != 'pull_request' ||
+            github.event.pull_request.head.repo.full_name == github.repository
+          )
         with:
           check_name: Vitest Tests
           files: src/main/webapp/ui/junit.xml
@@ -313,6 +325,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      pull-requests: write
     strategy:
       matrix:
         browser: [ chromium, firefox, webkit ]
@@ -355,7 +368,7 @@ jobs:
         with:
           report-file: src/main/webapp/ui/playwright-report/results-${{ matrix.browser }}.json
           report-tag: ${{ matrix.browser }}
-          create-comment: ${{ github.event_name == 'pull_request' }}
+          create-comment: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
           job-summary: true
           comment-title: Playwright component test results
           test-command: npm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json

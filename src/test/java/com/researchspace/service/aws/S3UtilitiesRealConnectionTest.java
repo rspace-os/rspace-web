@@ -106,7 +106,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     File tmpFile = File.createTempFile("downloaded", ".tmp");
 
     // download txt file from the top folder
-    s3Utilities.downloadFromS3(TEST_UNIT_TESTS_PATH + "/" + "testS3File.txt", tmpFile);
+    s3Utilities.downloadFromS3(TEST_UNIT_TESTS_PATH + "/" + "testS3File-AWS.txt", tmpFile);
     String downloadedContent = Files.readString(tmpFile.toPath());
     assertEquals("testS3Content", downloadedContent);
 
@@ -129,15 +129,15 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     assertEquals(TEST_UNIT_TESTS_CONTENT_COUNT, items.size());
 
     // find the expected test file and verify its size
-    String testS3TxtFile = "testS3File.txt";
+    String testS3TxtFile = "testS3File-AWS.txt";
     Long testS3TxtFileSize = 13L;
     Optional<S3FolderContentItem> testS3File =
         items.stream()
             .filter(item -> item.getName().equals(testS3TxtFile) && !item.isFolder())
             .findFirst();
-    assertTrue("Expected to find file 'testS3File.txt'", testS3File.isPresent());
+    assertTrue("Expected to find file 'testS3File-AWS.txt'", testS3File.isPresent());
     assertEquals(
-        "Unexpected testS3File.txt size", testS3TxtFileSize, testS3File.get().getSizeInBytes());
+        "Unexpected testS3File-AWS.txt size", testS3TxtFileSize, testS3File.get().getSizeInBytes());
 
     // find the subfolder
     Optional<S3FolderContentItem> subfolder =

@@ -232,3 +232,5 @@ SNIPPETS/SHARED/LabGroup folder and if it does it saves the group-wide shared sn
    to create the SNIPPETS/SHARED/ folder (and subfolders) if they have not already been created. The code then checks to
    see if there is a group-wide shared snippets folder and if there is it saves that as a child of
    SNIPPETS/SHARED/LabGroup.
+4. On investigation of bug RSDEV-1025, users who were pre-this update and had never logged in AND were in no group, did not have the snippet folders. When a sysadmin attempted
+   to add such a user to a group a null pointer exception was thrown. The fix was to add a call in addUserToGroup to the userContentUpdater.
