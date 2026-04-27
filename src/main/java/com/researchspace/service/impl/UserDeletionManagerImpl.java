@@ -65,10 +65,6 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
       return new ServiceOperationResult<>(null, false, saveResourcesListError.get());
     }
 
-    //    List<BaseRecord> sharedRecords = recordGroupSharingDao.getTemplatesSharedByUser(toDelete);
-    //    if (!sharedRecords.isEmpty()) {
-    //      System.out.println("@@@ We probably want to deal with some shared stuff");
-    //    }
     templateTransferService.transferOwnership(toDelete, subject);
 
     if (formDao.hasUserPublishedFormsUsedInOtherRecords(toDelete)) {

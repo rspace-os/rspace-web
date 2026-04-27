@@ -191,91 +191,14 @@ public class RecordGroupSharingDaoHibernateImpl
   @SuppressWarnings("unchecked")
   @Override
   public List<BaseRecord> getTemplatesSharedByUser(User user) {
-    System.out.println("@@@ Getting shared records from user: " + user.getUsername());
     List<RecordGroupSharing> sharedRecords = getRecordsSharedByUser(user);
-    System.out.println("@@@ Found this many shared records: " + sharedRecords.size());
     List<BaseRecord> templates =
         sharedRecords.stream()
             .map(RecordGroupSharing::getShared)
             .filter(b -> b.hasType(RecordType.TEMPLATE))
             .collect(toList());
-    System.out.println("@@@ Which yields this many templates: " + templates.size());
     return templates;
   }
-
-  //  public void transferOwnershipOfTemplates(
-  //      User originalOwner, User newOwner, List<Long> templateIds, Folder destination) {
-  //    System.out.println("@@@ About to transfer templates with IDs: " + templateIds);
-  //    System.out.println(
-  //        "@@@ To destination: " + destination.getId() + " : " + destination.getName());
-  //    Query<?> query;
-  //
-  //    String deletedUsername = originalOwner.getUsername() + "(Deleted)";
-  //    query =
-  //        getSession()
-  //            .createQuery("UPDATE BaseRecord b SET owner=:newOwner WHERE id IN :ids")
-  //            .setParameter("newOwner", newOwner)
-  //            .setParameter("ids", templateIds);
-  //    query.executeUpdate();
-  //    System.out.println("@@@ Transferred base record");
-  //    query =
-  //        getSession()
-  //            .createQuery(
-  //                "UPDATE BaseRecord b SET originalCreatorUsername=:createdByWithDeleted WHERE id
-  // IN"
-  //                    + " :ids AND originalCreatorUsername=:originalName")
-  //            .setParameter("createdByWithDeleted", deletedUsername)
-  //            .setParameter("originalName", originalOwner.getUsername())
-  //            .setParameter("ids", templateIds);
-  //    query.executeUpdate();
-  //    System.out.println("@@@ Changed base record original creator user names");
-  //    query =
-  //        getSession()
-  //            .createQuery(
-  //                "UPDATE BaseRecord b SET editInfo.createdBy=:createdByWithDeleted WHERE id IN
-  // :ids"
-  //                    + " AND editInfo.createdBy=:originalName")
-  //            .setParameter("createdByWithDeleted", deletedUsername)
-  //            .setParameter("originalName", originalOwner.getUsername())
-  //            .setParameter("ids", templateIds);
-  //    query.executeUpdate();
-  //    System.out.println("@@@ Changed base record created by user names");
-  //    query =
-  //        getSession()
-  //            .createQuery(
-  //                "UPDATE BaseRecord b SET editInfo.modifiedBy=:createdByWithDeleted WHERE id IN
-  // :ids"
-  //                    + " AND editInfo.modifiedBy=:originalName")
-  //            .setParameter("createdByWithDeleted", deletedUsername)
-  //            .setParameter("originalName", originalOwner.getUsername())
-  //            .setParameter("ids", templateIds);
-  //    query.executeUpdate();
-  //    System.out.println("@@@ Changed base record created by user names");
-  //
-  //    query =
-  //        getSession()
-  //            .createNativeQuery(
-  //                "UPDATE BaseRecord_AUD b SET owner_id=:newOwner_id,
-  // createdBy=:createdByWithDeleted"
-  //                    + " WHERE id IN :ids")
-  //            .setParameter("newOwner_id", newOwner.getId())
-  //            .setParameter("createdByWithDeleted", deletedUsername)
-  //            .setParameter("ids", templateIds);
-  //    query.executeUpdate();
-  //    System.out.println("@@@ Transferred base record audit");
-  //
-  //    query =
-  //        getSession()
-  //            .createNativeQuery(
-  //                "UPDATE BaseRecord br SET acl = (SELECT REPLACE(br.acl, :originalOwner,
-  // :newOwner)"
-  //                    + " ) WHERE id IN :ids")
-  //            .setParameter("originalOwner", originalOwner.getUsername())
-  //            .setParameter("newOwner", newOwner.getUsername())
-  //            .setParameter("ids", templateIds);
-  //    query.executeUpdate();
-  //    System.out.println("@@@ Updated ACLs");
-  //  }
 
   public List<String> getTagsMetaDataForRecordsSharedWithUser(User subject, String tagFilter) {
     Criteria allDocsSharedWithUser = getSharedRecordsWithUserQuery(subject);

@@ -209,7 +209,6 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
                 Folder.class)
             .setParameter("rootFolderId", rootFolder.getId());
     List<Folder> folders = query.list();
-    System.out.println("@@@ This many folders: " + folders.size());
     return folders;
   }
 

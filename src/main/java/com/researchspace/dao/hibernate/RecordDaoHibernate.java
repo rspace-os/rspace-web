@@ -674,9 +674,6 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
       List<Long> templateIds,
       Folder destination,
       String updatedOriginalOwnerName) {
-    System.out.println("@@@ About to transfer templates with IDs: " + templateIds);
-    System.out.println(
-        "@@@ To destination: " + destination.getId() + " : " + destination.getName());
     Query<?> query;
 
     query =
@@ -685,7 +682,6 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
             .setParameter("newOwner", newOwner)
             .setParameter("ids", templateIds);
     query.executeUpdate();
-    System.out.println("@@@ Transferred base record");
 
     if (null != updatedOriginalOwnerName) {
       query =
@@ -697,7 +693,6 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
               .setParameter("originalName", originalOwner.getUsername())
               .setParameter("ids", templateIds);
       query.executeUpdate();
-      System.out.println("@@@ Changed base record original creator user names");
       query =
           getSession()
               .createQuery(
@@ -707,7 +702,6 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
               .setParameter("originalName", originalOwner.getUsername())
               .setParameter("ids", templateIds);
       query.executeUpdate();
-      System.out.println("@@@ Changed base record created by user names");
       query =
           getSession()
               .createQuery(
@@ -717,7 +711,6 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
               .setParameter("originalName", originalOwner.getUsername())
               .setParameter("ids", templateIds);
       query.executeUpdate();
-      System.out.println("@@@ Changed base record created by user names");
     }
 
     query =
@@ -733,7 +726,6 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
                     : originalOwner.getUsername())
             .setParameter("ids", templateIds);
     query.executeUpdate();
-    System.out.println("@@@ Transferred base record audit");
 
     query =
         getSession()
@@ -744,6 +736,5 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
             .setParameter("newOwner", newOwner.getUsername())
             .setParameter("ids", templateIds);
     query.executeUpdate();
-    System.out.println("@@@ Updated ACLs");
   }
 }
