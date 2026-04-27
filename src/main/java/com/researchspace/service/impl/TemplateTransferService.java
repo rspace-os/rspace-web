@@ -54,20 +54,21 @@ public class TemplateTransferService implements TransferService {
   public void transferOwnership(User originalOwner, User newOwner) {
     List<BaseRecord> sharedRecords = recordGroupSharingDao.getTemplatesSharedByUser(originalOwner);
 
-    for (BaseRecord template : sharedRecords) {
-      System.out.println("@@@ Unsharing: " + template.getName() + " (" + template.getId() + ")");
-      List<RecordGroupSharing> sharings =
-          recordGroupSharingDao.getRecordGroupSharingsForRecord(template.getId());
-      System.out.println("@@@ Has this many sharings: " + sharings.size());
-      for (RecordGroupSharing sharing : sharings) {
-        System.out.println("@@@ About to share: " + sharing.getId());
-        recordSharingHandler.unshare(sharing.getId(), originalOwner);
-        System.out.println("@@@ Unshared sharing");
-      }
-      System.out.println("@@@ Unshared all");
-    }
-
     if (!sharedRecords.isEmpty()) {
+
+      for (BaseRecord template : sharedRecords) {
+        System.out.println("@@@ Unsharing: " + template.getName() + " (" + template.getId() + ")");
+        List<RecordGroupSharing> sharings =
+            recordGroupSharingDao.getRecordGroupSharingsForRecord(template.getId());
+        System.out.println("@@@ Has this many sharings: " + sharings.size());
+        for (RecordGroupSharing sharing : sharings) {
+          System.out.println("@@@ About to share: " + sharing.getId());
+          recordSharingHandler.unshare(sharing.getId(), originalOwner);
+          System.out.println("@@@ Unshared sharing");
+        }
+        System.out.println("@@@ Unshared all");
+      }
+
       System.out.println("@@@ This many shared templates: " + sharedRecords.size());
       System.out.println(
           "@@@ Transferring ownership of template from: "
@@ -77,39 +78,7 @@ public class TemplateTransferService implements TransferService {
       List<Long> templateIds =
           sharedRecords.stream().map(BaseRecord::getId).collect(Collectors.toList());
 
-      Folder templateFolder = folderManager.getTemplateFolderForUser(newOwner);
-      Folder deletedUsersTemplates = null;
-      List<Folder> templateSubFolders = folderManager.getSubFolders(templateFolder);
-      System.out.println("@@@ This many template folder subfolders: " + templateSubFolders.size());
-      for (Folder subfolder : templateSubFolders) {
-        if (DELETED_USER_TEMPLATES_FOLDER.equals(subfolder.getName())) {
-          deletedUsersTemplates = subfolder;
-        }
-      }
-      if (null == deletedUsersTemplates) {
-        System.out.println("@@@ Creating new deleted user templates folder");
-        deletedUsersTemplates =
-            folderManager.createNewFolder(
-                templateFolder.getId(), DELETED_USER_TEMPLATES_FOLDER, newOwner);
-        System.out.println("@@@ Created new deleted user templates folder");
-      }
-      List<Folder> deletedSubFolders = folderManager.getSubFolders(deletedUsersTemplates);
-      System.out.println("@@@ This many deleted subfolders: " + deletedSubFolders.size());
-      Folder deletedUserFolder = null;
-      for (Folder deletedSubFolder : deletedSubFolders) {
-        if (originalOwner.getUsername().equals(deletedSubFolder.getName())) {
-          deletedUserFolder = deletedSubFolder;
-        }
-      }
-      if (null == deletedUserFolder) {
-        System.out.println("@@@ Creating new deleted user folder");
-        deletedUserFolder =
-            folderManager.createNewFolder(
-                deletedUsersTemplates.getId(), originalOwner.getUsername(), newOwner);
-        System.out.println(
-            "@@@ Created new deleted user templates folder: " + deletedUserFolder.getName());
-      }
-
+      Folder deletedUserFolder = determineDeletedTemplatesFolder(originalOwner, newOwner);
       System.out.println("@@@ Will move templates to folder with ID: " + deletedUserFolder.getId());
 
       // TODO:  Move the above into a separate method
@@ -131,4 +100,40 @@ public class TemplateTransferService implements TransferService {
     }
   }
 
+  private Folder determineDeletedTemplatesFolder(User originalOwner, User newOwner) {
+    Folder templateFolder = folderManager.getTemplateFolderForUser(newOwner);
+    Folder deletedUsersTemplates = null;
+    List<Folder> templateSubFolders = folderManager.getSubFolders(templateFolder);
+    System.out.println("@@@ This many template folder subfolders: " + templateSubFolders.size());
+    for (Folder subfolder : templateSubFolders) {
+      if (DELETED_USER_TEMPLATES_FOLDER.equals(subfolder.getName())) {
+        deletedUsersTemplates = subfolder;
+      }
+    }
+    if (null == deletedUsersTemplates) {
+      System.out.println("@@@ Creating new deleted user templates folder");
+      deletedUsersTemplates =
+          folderManager.createNewFolder(
+              templateFolder.getId(), DELETED_USER_TEMPLATES_FOLDER, newOwner);
+      System.out.println("@@@ Created new deleted user templates folder");
+    }
+    List<Folder> deletedSubFolders = folderManager.getSubFolders(deletedUsersTemplates);
+    System.out.println("@@@ This many deleted subfolders: " + deletedSubFolders.size());
+    Folder deletedUserFolder = null;
+    for (Folder deletedSubFolder : deletedSubFolders) {
+      if (originalOwner.getUsername().equals(deletedSubFolder.getName())) {
+        deletedUserFolder = deletedSubFolder;
+      }
+    }
+    if (null == deletedUserFolder) {
+      System.out.println("@@@ Creating new deleted user folder");
+      deletedUserFolder =
+          folderManager.createNewFolder(
+              deletedUsersTemplates.getId(), originalOwner.getUsername(), newOwner);
+      System.out.println(
+          "@@@ Created new deleted user templates folder: " + deletedUserFolder.getName());
+    }
+
+    return deletedUserFolder;
+  }
 }
