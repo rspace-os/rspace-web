@@ -51,11 +51,11 @@ The `rspacedbuser` credentials must match `src/main/resources/rs.properties`.
 
 ```bash
 # First run (creates/resets DB)
-mvn clean jetty:run -Denvironment=drop-recreate-db -DgenerateReactDist \
+./mvnw clean jetty:run -Denvironment=drop-recreate-db -DgenerateReactDist \
   -Dspring.profiles.active=run -DRS.devlogLevel=INFO
 
 # Subsequent runs (keep existing DB)
-mvn jetty:run -Denvironment=keepdbintact -Dspring.profiles.active=run
+./mvnw jetty:run -Denvironment=keepdbintact -Dspring.profiles.active=run
 ```
 
 Access at `http://localhost:8080`. Test users: `user1a`–`user8h`, admin: `sysadmin1`.
