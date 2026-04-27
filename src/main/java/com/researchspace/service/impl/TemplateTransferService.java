@@ -69,7 +69,6 @@ public class TemplateTransferService implements TransferService {
 
       Folder deletedUserFolder = determineDeletedTemplatesFolder(originalOwner, newOwner);
 
-      // TODO:  Move the above into a separate method
       recordManager.moveUsersRecordsToFolder(templateIds, originalOwner, deletedUserFolder);
 
       String deletedUserName = originalOwner.getUsername() + DELETED_USER_NAME_SUFFIX;
