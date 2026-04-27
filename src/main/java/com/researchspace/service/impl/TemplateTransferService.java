@@ -6,7 +6,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
-import com.researchspace.model.permissions.ConstraintPermissionResolver;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.BaseRecordManager;
@@ -31,9 +30,6 @@ public class TemplateTransferService implements TransferService {
   private final RecordManager recordManager;
   private final BaseRecordManager baseRecordManager;
   private final SharingHandler recordSharingHandler;
-
-  private final ConstraintPermissionResolver constraintPermissionResolver =
-      new ConstraintPermissionResolver();
 
   @Autowired
   public TemplateTransferService(
