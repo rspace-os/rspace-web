@@ -253,7 +253,7 @@ function generateIconSrc(
   extension: string | null,
   thumbnailId: number | null,
   id: Id,
-  modificationDate: Date,
+  modificationDate: Date | undefined,
   isFolder: boolean,
   isSystemFolder: boolean,
   file: GalleryFile,
@@ -691,7 +691,7 @@ export class RemoteFile implements GalleryFile {
   description: Description;
   readonly isFolder: boolean;
   readonly size: number;
-  readonly modificationDate: Date | null;
+  readonly modificationDate: Date | undefined;
   readonly path: ReadonlyArray<GalleryFile>;
   downloadHref?: () => Promise<UrlType>;
   logicPath: string;
@@ -714,7 +714,7 @@ export class RemoteFile implements GalleryFile {
     name: string;
     folder: boolean;
     fileSize: number;
-    modificationDate: Date | null;
+    modificationDate: Date | undefined;
     path: ReadonlyArray<GalleryFile>;
     logicPath: string;
     token: string;
@@ -1561,7 +1561,7 @@ export function useGalleryListing({
                     )(obj)
                       .flatMap(Parsers.isString)
                       .flatMap(Parsers.parseDate)
-                      .orElse(null);
+                      .orElse(undefined);
 
                     const logicPath = Parsers.getValueWithKey("logicPath")(obj)
                       .flatMap(Parsers.isString)
