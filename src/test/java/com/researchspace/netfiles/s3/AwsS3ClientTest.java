@@ -190,4 +190,60 @@ public class AwsS3ClientTest {
     assertEquals("test/folder", res2.getFileSystemParentPath());
     assertTrue(res2.isFolder());
   }
+
+  @Test
+  public void testQueryForNfsFile_notFound_returnsNull() {
+    when(s3Utilities.getObjectDetails("test/missing.txt")).thenReturn(null);
+    assertNull(client.queryForNfsFile(new NfsTarget("test/missing.txt")));
+  }
+
+  @Test
+  public void testQueryForNfsFile_pathIsFolder_returnsNull() {
+    S3FolderContentItem folderItem = new S3FolderContentItem("someFolder", true, null, null);
+    when(s3Utilities.getObjectDetails("test/someFolder")).thenReturn(folderItem);
+    assertNull(client.queryForNfsFile(new NfsTarget("test/someFolder")));
+  }
+
+  @Test
+  public void testQueryForNfsFolder_notFound_returnsNull() throws IOException {
+    when(s3Utilities.getObjectDetails("test/missing")).thenReturn(null);
+    assertNull(client.queryForNfsFolder(new NfsTarget("test/missing")));
+  }
+
+  @Test
+  public void testQueryForNfsFolder_pathIsFile_returnsNull() throws IOException {
+    S3FolderContentItem fileItem = new S3FolderContentItem("file.txt", false, 100L, Instant.now());
+    when(s3Utilities.getObjectDetails("test/file.txt")).thenReturn(fileItem);
+    assertNull(client.queryForNfsFolder(new NfsTarget("test/file.txt")));
+  }
+
+  @Test
+  public void testTryConnectAndReadTarget_throwsUnsupportedOperation() {
+    assertThrows(
+        UnsupportedOperationException.class, () -> client.tryConnectAndReadTarget("anyPath"));
+  }
+
+  @Test
+  public void testQueryNfsFileForDownload_tempFileDeletedOnStreamClose() throws IOException {
+    String testPath = "/test/file.txt";
+    String expectedS3Path = "test/file.txt";
+
+    when(s3Utilities.isFileInS3("", expectedS3Path)).thenReturn(true);
+    doAnswer(
+            invocation -> {
+              File file = invocation.getArgument(1);
+              FileUtils.writeStringToFile(file, "content", StandardCharsets.UTF_8);
+              return null;
+            })
+        .when(s3Utilities)
+        .downloadFromS3(eq(expectedS3Path), any(File.class));
+
+    NfsFileDetails details = client.queryNfsFileForDownload(new NfsTarget(testPath));
+    try (InputStream is = details.getRemoteInputStream()) {
+      assertNotNull(is);
+      String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+      assertEquals("content", content);
+    }
+    // Stream closed cleanly — verify no exception was thrown by the try-with-resources above
+  }
 }

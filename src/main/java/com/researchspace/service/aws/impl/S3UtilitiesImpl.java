@@ -39,6 +39,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @Slf4j
@@ -166,27 +167,37 @@ public class S3UtilitiesImpl implements S3Utilities {
               .delimiter("/")
               .build();
 
-      ListObjectsV2Response listResponse = s3Client.listObjectsV2(listRequest);
       List<S3FolderContentItem> items = new ArrayList<>();
+      ListObjectsV2Response listResponse;
+      do {
+        listResponse = s3Client.listObjectsV2(listRequest);
 
-      // Add subfolders (common prefixes)
-      for (CommonPrefix commonPrefix : listResponse.commonPrefixes()) {
-        String folderName = commonPrefix.prefix().substring(folderPrefixToQuery.length());
-        if (folderName.endsWith("/")) {
-          folderName = folderName.substring(0, folderName.length() - 1);
+        // Add subfolders (common prefixes)
+        for (CommonPrefix commonPrefix : listResponse.commonPrefixes()) {
+          String folderName = commonPrefix.prefix().substring(folderPrefixToQuery.length());
+          if (folderName.endsWith("/")) {
+            folderName = folderName.substring(0, folderName.length() - 1);
+          }
+          items.add(new S3FolderContentItem(folderName, true, null, null));
         }
-        items.add(new S3FolderContentItem(folderName, true, null, null));
-      }
 
-      // Add files (objects)
-      for (S3Object s3Object : listResponse.contents()) {
-        String key = s3Object.key();
-        if (!key.equals(folderPrefixToQuery)) { // Skip the folder itself
-          String fileName = key.substring(folderPrefixToQuery.length());
-          items.add(
-              new S3FolderContentItem(fileName, false, s3Object.size(), s3Object.lastModified()));
+        // Add files (objects)
+        for (S3Object s3Object : listResponse.contents()) {
+          String key = s3Object.key();
+          if (!key.equals(folderPrefixToQuery)) { // Skip the folder itself
+            String fileName = key.substring(folderPrefixToQuery.length());
+            items.add(
+                new S3FolderContentItem(fileName, false, s3Object.size(), s3Object.lastModified()));
+          }
         }
-      }
+
+        if (listResponse.isTruncated()) {
+          listRequest =
+              listRequest.toBuilder()
+                  .continuationToken(listResponse.nextContinuationToken())
+                  .build();
+        }
+      } while (listResponse.isTruncated());
 
       log.info("Successfully listed {} items in folder {}", items.size(), folderPath);
       return items;
@@ -209,8 +220,13 @@ public class S3UtilitiesImpl implements S3Utilities {
       String fileName = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
       return new S3FolderContentItem(
           fileName, false, response.contentLength(), response.lastModified());
-    } catch (NoSuchKeyException e) {
-      // It might be a folder
+    } catch (S3Exception e) {
+      if (e.statusCode() != 404) {
+        log.error(
+            "Error while getting object details for bucket {} and path {}", s3BucketName, path);
+        throw e;
+      }
+      // Not a file - check if it's a virtual folder (has content with this prefix)
       String folderPrefix = getFolderPrefixToQuery(path);
       ListObjectsV2Request listRequest =
           ListObjectsV2Request.builder()
@@ -240,7 +256,10 @@ public class S3UtilitiesImpl implements S3Utilities {
           HeadObjectRequest.builder().bucket(s3BucketName).key(folderKey).build();
       s3Client.headObject(headObjectRequest);
       return true;
-    } catch (NoSuchKeyException e) {
+    } catch (S3Exception e) {
+      if (e.statusCode() != 404) {
+        throw e;
+      }
       return false;
     }
   }

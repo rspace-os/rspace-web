@@ -14,6 +14,8 @@ import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
@@ -37,7 +39,9 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
   }
 
   @Override
-  public void tryConnectAndReadTarget(String target) throws NfsException, MalformedURLException {}
+  public void tryConnectAndReadTarget(String target) throws NfsException, MalformedURLException {
+    throw new UnsupportedOperationException("tryConnectAndReadTarget is not supported for S3");
+  }
 
   @Override
   public NfsFileTreeNode createFileTree(
@@ -188,7 +192,26 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
     s3Utilities.downloadFromS3(pathToDownload, tmpFile);
 
     NfsFileDetails nfsDetails = new NfsFileDetails(getFileNameFromPath(pathToDownload));
-    nfsDetails.setRemoteInputStream(new FileInputStream(tmpFile));
+    nfsDetails.setRemoteInputStream(new TempFileDeletingInputStream(tmpFile));
     return nfsDetails;
+  }
+
+  /** InputStream wrapper that deletes its backing temp file when the stream is closed. */
+  private static class TempFileDeletingInputStream extends FilterInputStream {
+    private final File tempFile;
+
+    TempFileDeletingInputStream(File tempFile) throws FileNotFoundException {
+      super(new FileInputStream(tempFile));
+      this.tempFile = tempFile;
+    }
+
+    @Override
+    public void close() throws IOException {
+      try {
+        super.close();
+      } finally {
+        tempFile.delete();
+      }
+    }
   }
 }
