@@ -68,27 +68,17 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
   }
 
   private static String stripStartAndEndSlashFromPath(String path) {
-    if (path == null) {
-      return "";
-    }
-    while (path.startsWith("/")) {
-      path = path.substring(1);
-    }
-    while (path.endsWith("/")) {
-      path = path.substring(0, path.length() - 1);
-    }
-    return path;
+    return path == null ? "" : StringUtils.strip(path, "/");
   }
 
-  private String getFileNameFromPath(String path) {
-    if (path == null || path.isEmpty()) {
-      return "";
-    }
+  private static String getFileNameFromPath(String path) {
     String stripped = stripStartAndEndSlashFromPath(path);
-    if (stripped.lastIndexOf('/') == -1) {
-      return stripped;
-    }
-    return StringUtils.substringAfterLast(stripped, "/");
+    String name = StringUtils.substringAfterLast(stripped, "/");
+    return name.isEmpty() ? stripped : name;
+  }
+
+  private static String joinPath(String parent, String name) {
+    return StringUtils.isBlank(parent) ? name : parent + "/" + name;
   }
 
   protected NfsFileTreeNode getNodeFromS3Item(
@@ -102,15 +92,12 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
     node.calculateFileName(item.getName());
     node.setIsFolder(item.isFolder());
     if (!item.isFolder()) {
-      node.setFileSize("" + item.getSizeInBytes());
+      node.setFileSize(String.valueOf(item.getSizeInBytes()));
       node.setFileSizeBytes(item.getSizeInBytes());
       node.setModificationDateMillis(item.getLastModified().toEpochMilli());
     }
 
-    String fullPathToTarget =
-        StringUtils.isBlank(rootPath)
-            ? item.getName()
-            : String.format("%s/%s", rootPath, item.getName());
+    String fullPathToTarget = joinPath(rootPath, item.getName());
     node.setNodePath(fullPathToTarget);
     node.calculateLogicPath("/" + fullPathToTarget, activeFilestore);
 
@@ -154,7 +141,7 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
   private static NfsResourceDetails getNfsResourceDetailsFromContentItem(
       S3FolderContentItem contentItem, String path) {
     NfsResourceDetails resource;
-    String fullPath = path.isEmpty() ? contentItem.getName() : path + "/" + contentItem.getName();
+    String fullPath = joinPath(path, contentItem.getName());
     if (contentItem.isFolder()) {
       resource = new NfsFolderDetails(contentItem.getName());
     } else {
@@ -168,14 +155,8 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
   }
 
   private static String getParentPath(String path) {
-    if (StringUtils.isBlank(path)) {
-      return "";
-    }
     String stripped = stripStartAndEndSlashFromPath(path);
-    if (!stripped.contains("/")) {
-      return "";
-    }
-    return stripped.substring(0, stripped.lastIndexOf('/'));
+    return stripped.contains("/") ? StringUtils.substringBeforeLast(stripped, "/") : "";
   }
 
   @Override

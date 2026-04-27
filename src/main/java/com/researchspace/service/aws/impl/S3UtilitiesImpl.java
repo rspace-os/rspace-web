@@ -36,6 +36,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
@@ -174,10 +175,9 @@ public class S3UtilitiesImpl implements S3Utilities {
 
         // Add subfolders (common prefixes)
         for (CommonPrefix commonPrefix : listResponse.commonPrefixes()) {
-          String folderName = commonPrefix.prefix().substring(folderPrefixToQuery.length());
-          if (folderName.endsWith("/")) {
-            folderName = folderName.substring(0, folderName.length() - 1);
-          }
+          String folderName =
+              StringUtils.removeEnd(
+                  commonPrefix.prefix().substring(folderPrefixToQuery.length()), "/");
           items.add(new S3FolderContentItem(folderName, true, null, null));
         }
 
@@ -215,11 +215,9 @@ public class S3UtilitiesImpl implements S3Utilities {
     try {
       HeadObjectRequest headObjectRequest =
           HeadObjectRequest.builder().bucket(s3BucketName).key(path).build();
-      software.amazon.awssdk.services.s3.model.HeadObjectResponse response =
-          s3Client.headObject(headObjectRequest);
-      String fileName = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
+      HeadObjectResponse response = s3Client.headObject(headObjectRequest);
       return new S3FolderContentItem(
-          fileName, false, response.contentLength(), response.lastModified());
+          getLeafName(path), false, response.contentLength(), response.lastModified());
     } catch (S3Exception e) {
       if (e.statusCode() != 404) {
         log.error(
@@ -239,8 +237,7 @@ public class S3UtilitiesImpl implements S3Utilities {
       if (!listResponse.commonPrefixes().isEmpty()
           || !listResponse.contents().isEmpty()
           || isFolderPlaceholderExists(path)) {
-        String folderName = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
-        return new S3FolderContentItem(folderName, true, null, null);
+        return new S3FolderContentItem(getLeafName(path), true, null, null);
       }
       return null;
     } catch (Exception e) {
@@ -262,6 +259,11 @@ public class S3UtilitiesImpl implements S3Utilities {
       }
       return false;
     }
+  }
+
+  private static String getLeafName(String path) {
+    String name = StringUtils.substringAfterLast(path, "/");
+    return name.isEmpty() ? path : name;
   }
 
   @NotNull
