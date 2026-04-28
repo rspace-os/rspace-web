@@ -1490,7 +1490,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-figshare-adapter</artifactId>
-      <version>da590b025f</version>
+      <version>c7d2ba38e8</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
