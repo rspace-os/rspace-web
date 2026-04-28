@@ -21,7 +21,6 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.views.ServiceOperationResult;
-import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.TransferService;
 import com.researchspace.service.UserDeletionPolicy;
@@ -48,8 +47,6 @@ public class UserDeletionManagerTest {
 
   private StaticMessageSource msgSource;
   private @Mock GroupManager grpMgr;
-  private @Mock CommunityServiceManager communityMgr;
-  private @Mock CommunityServiceManager communityDao;
   private @Mock FormDao formDao;
   private @Mock IPermissionUtils permUtils;
   private @Mock UserDeletionDao deletionDao;

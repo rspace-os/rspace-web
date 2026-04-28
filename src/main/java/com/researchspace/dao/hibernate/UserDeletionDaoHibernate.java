@@ -490,7 +490,6 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     executeDeleteByRecordOwner(userId, session, "Notification", RECORD_ID);
 
     execute(userId, session, "delete from BaseRecord where owner_id=:id");
-
     execute(userId, session, "delete from BaseRecord_AUD where owner_id=:id");
   }
 

@@ -648,8 +648,13 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     return countQuery.uniqueResult();
   }
 
-  // Moves the specified records that are currently owned by the specified
-  // user to the given folder.
+  /**
+   * Moves the specified records that are currently owned by the specified
+   * user to the given folder.
+   * @param recordIds - The records to be moved.
+   * @param currentOwner - The current owner of those records
+   * @param destinationFolder - The new folder for those records
+   */
   @Override
   public void moveUsersRecordsToFolder(
       List<Long> recordIds, User currentOwner, Folder destinationFolder) {
@@ -668,6 +673,17 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     query.executeUpdate();
   }
 
+  /**
+   * Transfers ownership of templates from one user to another user.
+   * @param originalOwner - Original owner of the templates
+   * @param newOwner - New owner of the templates
+   * @param templateIds - IDs of the templates to be transferred
+   * @param destination - The folder that the templates have been moved to
+   * @param updatedOriginalOwnerName - An updated name, if any, for the
+   *                                 original owner.  (e.g. In the case the
+   *                                 user has been deleted and updated with a
+   *                                 suffix to denote that.)
+   */
   public void transferTemplates(
       User originalOwner,
       User newOwner,
@@ -727,6 +743,8 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
             .setParameter("ids", templateIds);
     query.executeUpdate();
 
+    // Modify the template ACL so that the new owner has the same level of
+    // access as the original owner.
     query =
         getSession()
             .createNativeQuery(
