@@ -119,7 +119,7 @@ export function AboutRSpaceContent(): React.ReactElement {
         RSpace is licensed under AGPL.
       </Typography>
       <Typography variant="caption" align="center" color="textSecondary">
-        © {new Date().getFullYear()} ResearchSpace
+        © 2026 ResearchSpace
       </Typography>
 
       <Box mt={2} mb={3}>
