@@ -52,11 +52,12 @@ The skill / human implementer needs four pieces of data:
 | `src/main/webapp/ui/src/tinyMCE/<name>/<Name>.tsx`                                   | Empty React component.                                                  |
 | `src/main/webapp/ui/src/tinyMCE/<name>/__tests__/<Name>.test.tsx`                    | Vitest smoke test.                                                      |
 
-## Files modified (13)
+## Files modified (16)
 
 | Path                                                                                       | Edit                                                                                                                  |
 | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | `src/main/java/com/researchspace/service/IntegrationsHandler.java`                         | Insert `String <NAME>_APP_NAME = "<NAME>";` constant in alphabetical order.                                           |
+| `src/main/java/com/researchspace/service/SystemPropertyName.java`                          | Add `<NAME>_AVAILABLE("<name>.available"),` enum entry. Without this, `SystemPropertyManagerImpl`'s `@Cacheable(key = "#name.propertyName")` resolves on a null and throws `EL1007E: Property or field 'propertyName' cannot be found on null`, breaking `/integration/allIntegrations`. |
 | `src/main/resources/bundles/system/system.properties`                                      | Add `system.property.description.<name>.available=Makes <Name> integration available.`                                |
 | `src/main/resources/sqlUpdates/liquibase-master.xml`                                       | Register the new changeset.                                                                                            |
 | `src/main/webapp/ui/src/eln/apps/CardListing.tsx`                                          | Add import, `<name>Update` `useCallback`, and conditional render block (alphabetical).                                |
@@ -65,7 +66,7 @@ The skill / human implementer needs four pieces of data:
 | `src/main/webapp/ui/src/assets/DocLinks.ts`                                                | Add `<name>: mkDocLink("TODO_<NAME>_DOC_ID"),`.                                                                       |
 | `src/main/webapp/WEB-INF/pages/system/settings_ajax.jsp`                                   | Add `<div id="<name>.available.description">…</div>`.                                                                 |
 | `src/main/webapp/scripts/pages/system/settings_mod.js`                                     | Add `_printSettings(['<name>.available']);` under an existing category.                                               |
-| `src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js`                 | Add `<name>Enabled` const + `if (<name>Enabled) localTinymcesetup.external_plugins["<name>"] = "..."` block.          |
+| `src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js`                 | Add `<name>Enabled` const, plus an `if (<name>Enabled) { ... }` block containing both `localTinymcesetup.external_plugins["<name>"] = "..."` AND `addToToolbarIfNotPresent(localTinymcesetup, " | <name>")` (the second line is required for the toolbar button to appear). |
 | `src/main/webapp/scripts/tinymce/tinymce516/icons/custom_icons/icons.js`                   | Register a `<name>` SVG icon entry.                                                                                   |
 | `build-resources/resources_to_MD5_rename.txt`                                              | Add `scripts/externalTinymcePlugins/<name>/plugin.min.js` and `ui/dist/tinymce<Name>.js` lines.                       |
 | `src/main/webapp/ui/webpack.config.js`                                                     | Add `tinymce<Name>: "./src/tinyMCE/<name>/index.tsx",` entry.                                                         |
@@ -78,7 +79,8 @@ The empty-integration skill **does not** modify any of:
   (OAuth tokens or API keys saved via `UserConnectionManager`).
 - `IPropertyHolder.java`, `PropertyHolder.java`, `defaultDeployment.properties`
   — only needed for deployment-level URLs.
-- `IntegrationController.java`.
+- `IntegrationController.java`'s endpoint methods — except for the new
+  `rc.put(<NAME>_APP_NAME, ...)` in `getAll(User)` (which IS required).
 - `WEB-INF/pages/notebookEditor/notebookEditor.jsp`,
   `WEB-INF/pages/workspace/editor/structuredDocument.jsp`,
   `WEB-INF/pages/workspace/editor/include/textField.jsp`,
