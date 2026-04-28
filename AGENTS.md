@@ -228,6 +228,7 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 5. **Form data size:** Local Jetty limits form data to 200KB (Tomcat: 2MB). Override with `-Dorg.eclipse.jetty.server.Request.maxFormContentSize=2000000`.
 6. **Liquibase context:** Use `-Dliquibase.context=run` when running migrations locally.
 7. **Service naming:** Service beans must end in `Manager` for AOP transaction proxying (configured in `applicationContext-service.xml`).
+8. **TinyMCE plugin iframes:** Plugin dialogs (e.g., `internalLink.jsp`) load in iframes and don't inherit the main page decorator. If they use `global.js` functions that depend on DOM templates (e.g., `blockUI.html` for `RS.blockPage()`), those templates must be explicitly `<jsp:include>`d.
 
 ## Key Conventions
 
