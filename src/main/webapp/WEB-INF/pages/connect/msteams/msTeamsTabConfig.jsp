@@ -27,6 +27,7 @@
   <script src="/scripts/pages/workspace/clientUISettings.js"></script>
 
 </head>
+<jsp:include page="/scripts/templates/blockUI.html"/>
 
 <jsp:include page="../../searchableRecordPicker.jsp">
   <jsp:param name="onlyDocuments" value="true"/>
