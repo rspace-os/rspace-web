@@ -153,11 +153,8 @@ class StoichiometryPlugin {
       }
     };
 
-    const getStoichiometryTableOnlyText = (stoichiometry: {
-      id: number;
-      revision: number;
-    }): string => {
-      return `Stoichiometry Table ID ${stoichiometry.id} (click to edit)`;
+    const getStoichiometryTableOnlyText = (): string => {
+      return "Stoichiometry Table (no preview)";
     };
 
     const syncStoichiometryTableOnlyNodePresentation = (node: HTMLElement) => {
@@ -169,9 +166,8 @@ class StoichiometryPlugin {
 
       if (node.hasAttribute(STOICHIOMETRY_TABLE_DATA_ATTRIBUTE)) {
         try {
-          node.textContent = getStoichiometryTableOnlyText(
-            getStoichiometryDataFromTableOnlyNode(node),
-          );
+          getStoichiometryDataFromTableOnlyNode(node);
+          node.textContent = getStoichiometryTableOnlyText();
           return;
         } catch {
           return;

@@ -157,6 +157,12 @@ function createTableOnlyNode(
   return tableOnlyNode;
 }
 
+// This helper is needed as TinyMCE iframes are cross-realm
+function expectToHaveTextContent(node: Node | null, text: string) {
+  expect(node).not.toBeNull();
+  expect(document.importNode(node as Node, true)).toHaveTextContent(text);
+}
+
 function createEditorHarness({
   editorDocument = document.implementation.createHTMLDocument("editor"),
   initialSelectionNode,
@@ -340,7 +346,7 @@ describe("TinyMCE stoichiometry plugin", () => {
       '[data-stoichiometry-table-only="true"]',
     );
     expect(insertedTableOnly).not.toBeNull();
-    expect(insertedTableOnly?.textContent).toBe("Empty Stoichiometry Table");
+    expectToHaveTextContent(insertedTableOnly, "Empty Stoichiometry Table");
     expect(insertedTableOnly?.getAttribute("data-mce-contenteditable")).toBe(
       "false",
     );
@@ -389,8 +395,9 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(insertedTableOnly?.getAttribute("data-stoichiometry-table")).toBe(
       JSON.stringify({ id: 9, revision: 2 }),
     );
-    expect(insertedTableOnly?.textContent).toBe(
-      "Stoichiometry Table ID 9 (click to edit)",
+    expectToHaveTextContent(
+      insertedTableOnly,
+      "Stoichiometry Table (no preview)",
     );
 
     view = getLastRenderedDialogProps();
@@ -456,10 +463,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     await instantiateStoichiometryPlugin();
     const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
     new StoichiometryPlugin(editor);
-    // eslint-disable-next-line jest-dom/prefer-to-have-text-content
-    expect(tableOnlyNode.textContent).toBe(
-      "Stoichiometry Table ID 12 (click to edit)",
-    );
+    expectToHaveTextContent(tableOnlyNode, "Stoichiometry Table (no preview)");
     selectionState.current = tableOnlyNode;
     commands.get("cmdStoichiometry")?.();
 
@@ -559,8 +563,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
     new StoichiometryPlugin(editor);
 
-    // eslint-disable-next-line jest-dom/prefer-to-have-text-content
-    expect(tableOnlyNode.textContent).toBe("Empty Stoichiometry Table");
+    expectToHaveTextContent(tableOnlyNode, "Empty Stoichiometry Table");
     // eslint-disable-next-line jest-dom/prefer-to-have-style
     expect(tableOnlyNode.style.height).toBe("45px");
   });
@@ -596,8 +599,9 @@ describe("TinyMCE stoichiometry plugin", () => {
     const tableOnlyNode = editorDocument.querySelector(
       '[data-stoichiometry-table-only="true"]',
     );
-    expect(tableOnlyNode?.textContent).toBe(
-      "Stoichiometry Table ID 15 (click to edit)",
+    expectToHaveTextContent(
+      tableOnlyNode,
+      "Stoichiometry Table (no preview)",
     );
     expect(tableOnlyNode?.children.length).toBe(0);
   });
@@ -640,8 +644,9 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(tableOnlyNode?.getAttribute("data-stoichiometry-table")).toBe(
       JSON.stringify({ id: 15, revision: 7 }),
     );
-    expect(tableOnlyNode?.textContent).toBe(
-      "Stoichiometry Table ID 15 (click to edit)",
+    expectToHaveTextContent(
+      tableOnlyNode,
+      "Stoichiometry Table (no preview)",
     );
   });
 
