@@ -754,9 +754,10 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     StoichiometryMoleculeUpdateDTO molUpdate = StoichiometryMapper.toUpdateDTO(molecule);
     molUpdate.setActualAmount(1.0);
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    String subSampleGlobalId = sample.getSubSamples().get(0).getGlobalId();
     molUpdate.setInventoryLink(
         StoichiometryInventoryLinkRequest.builder()
-            .inventoryItemGlobalId(sample.getGlobalId())
+            .inventoryItemGlobalId(subSampleGlobalId)
             .build());
 
     long stoichiometryId = createdStoichiometry.getId();
