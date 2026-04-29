@@ -5,7 +5,6 @@ import StoichiometryDialogEntrypoint from "./StoichiometryDialogEntrypoint";
 const STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE = "data-stoichiometry-table-only";
 const STOICHIOMETRY_TABLE_DATA_ATTRIBUTE = "data-stoichiometry-table";
 const EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER = "Empty Stoichiometry Table";
-const STOICHIOMETRY_TABLE_ONLY_HEIGHT_PX = 45;
 
 declare global {
   interface Window {
@@ -24,6 +23,14 @@ declare global {
 interface Editor {
   ui: {
     registry: {
+      addButton: (
+        name: string,
+        config: {
+          tooltip: string;
+          icon: string;
+          onAction: () => void;
+        },
+      ) => void;
       addMenuItem: (
         name: string,
         config: {
@@ -118,20 +125,10 @@ class StoichiometryPlugin {
       return editor.getDoc();
     };
 
-    const syncStoichiometryTableOnlyHeight = (node: HTMLElement) => {
-      if (!isStoichiometryTableOnlyNode(node)) {
-        return;
-      }
-
-      node.style.height = `${STOICHIOMETRY_TABLE_ONLY_HEIGHT_PX}px`;
-    };
-
     const syncStoichiometryTableOnlyPlaceholder = (node: HTMLElement) => {
       if (!isStoichiometryTableOnlyNode(node)) {
         return;
       }
-
-      syncStoichiometryTableOnlyHeight(node);
 
       const hasStoichiometryData = node.hasAttribute(
         STOICHIOMETRY_TABLE_DATA_ATTRIBUTE,
@@ -161,8 +158,6 @@ class StoichiometryPlugin {
       if (!isStoichiometryTableOnlyNode(node)) {
         return;
       }
-
-      syncStoichiometryTableOnlyHeight(node);
 
       if (node.hasAttribute(STOICHIOMETRY_TABLE_DATA_ATTRIBUTE)) {
         try {
@@ -493,12 +488,20 @@ class StoichiometryPlugin {
     };
 
 
+    const openCreateStoichiometryDialog = () => {
+      editor.execCommand("cmdCreateStoichiometry", false);
+    };
+
+    editor.ui.registry.addButton("stoichiometryInsertButton", {
+      tooltip: "Insert reaction table",
+      icon: "stoichiometry",
+      onAction: openCreateStoichiometryDialog,
+    });
+
     editor.ui.registry.addMenuItem("stoichiometryMenuItem", {
       text: "Reaction Table",
       icon: "stoichiometry",
-      onAction: () => {
-        editor.execCommand("cmdCreateStoichiometry", false);
-      },
+      onAction: openCreateStoichiometryDialog,
     });
 
     if (!window.insertActions) {
@@ -508,9 +511,7 @@ class StoichiometryPlugin {
       text: "Stoichiometry Table",
       icon: "stoichiometry",
       aliases: ["Stoichiometry"],
-      action: () => {
-        editor.execCommand("cmdCreateStoichiometry", false);
-      },
+      action: openCreateStoichiometryDialog,
     });
 
     editor.addCommand("cmdCreateStoichiometry", function () {

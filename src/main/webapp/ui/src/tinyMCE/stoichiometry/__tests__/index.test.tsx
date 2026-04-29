@@ -37,6 +37,12 @@ type MenuItemConfig = {
   onAction: () => void;
 };
 
+type ButtonConfig = {
+  tooltip: string;
+  icon: string;
+  onAction: () => void;
+};
+
 type EditorCommand = () => void;
 
 type StoichiometryPluginConstructor = new (editor: EditorStub) => unknown;
@@ -173,6 +179,7 @@ function createEditorHarness({
   execCommand?: ReturnType<typeof vi.fn>;
 }) {
   const commands = new Map<string, EditorCommand>();
+  const buttons = new Map<string, ButtonConfig>();
   const menuItems = new Map<string, MenuItemConfig>();
   const selectionState = {
     current: initialSelectionNode,
@@ -219,7 +226,9 @@ function createEditorHarness({
   const editor: EditorStub = {
     ui: {
       registry: {
-        addButton: vi.fn(),
+        addButton: vi.fn((name: string, config: ButtonConfig) => {
+          buttons.set(name, config);
+        }),
         addContextToolbar: vi.fn(),
         addMenuItem: vi.fn((name: string, config: MenuItemConfig) => {
           menuItems.set(name, config);
@@ -247,6 +256,7 @@ function createEditorHarness({
   };
 
   return {
+    buttons,
     commands,
     editor,
     editorDocument,
@@ -297,12 +307,12 @@ describe("TinyMCE stoichiometry plugin", () => {
     window.insertActions = new Map<string, InsertAction>();
   });
 
-  it("registers menu/slash actions and opens a new table with a tableOnly div", async () => {
+  it("registers toolbar/menu/slash actions and opens a new table with a tableOnly div", async () => {
     const registeredPlugins = registerTinymcePlugins();
     const editorDocument = document.implementation.createHTMLDocument("editor");
     const initialSelectionNode: HTMLElement = editorDocument.createElement("p");
     editorDocument.body.appendChild(initialSelectionNode);
-    const { editor, menuItems } = createEditorHarness({
+    const { buttons, editor, menuItems } = createEditorHarness({
       editorDocument,
       initialSelectionNode,
     });
@@ -314,6 +324,12 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(menuItems.get("stoichiometryMenuItem")).toEqual(
       expect.objectContaining({ text: "Reaction Table", icon: "stoichiometry" }),
     );
+    expect(buttons.get("stoichiometryInsertButton")).toEqual(
+      expect.objectContaining({
+        tooltip: "Insert reaction table",
+        icon: "stoichiometry",
+      }),
+    );
     expect(window.insertActions?.get("stoichiometryMenuItem")).toEqual(
       expect.objectContaining({
         text: "Stoichiometry Table",
@@ -322,7 +338,7 @@ describe("TinyMCE stoichiometry plugin", () => {
       }),
     );
 
-    menuItems.get("stoichiometryMenuItem")?.onAction();
+    buttons.get("stoichiometryInsertButton")?.onAction();
 
     await waitFor(() => {
       expect(getLastRenderedDialogProps()).toEqual(
