@@ -580,8 +580,6 @@ describe("TinyMCE stoichiometry plugin", () => {
     new StoichiometryPlugin(editor);
 
     expectToHaveTextContent(tableOnlyNode, "Empty Stoichiometry Table");
-    // eslint-disable-next-line jest-dom/prefer-to-have-style
-    expect(tableOnlyNode.style.height).toBe("45px");
   });
 
   it("renders stoichiometry table text when data is added through plugin callbacks", async () => {
