@@ -404,6 +404,42 @@ tinymce.PluginManager.add('commandpalette', function (editor) {
 
 var initTinyMCE_cachedPropertiesResponse;
 var initTinyMCE_cachedIntegrationsResponse;
+var initTinyMCE_cachedOwnCloudClientRequest;
+var initTinyMCE_cachedNextCloudClientRequest;
+
+function loadOwnCloudClientScript() {
+	if (window.oc) {
+		return $.Deferred().resolve().promise();
+	}
+
+	if (!initTinyMCE_cachedOwnCloudClientRequest) {
+		initTinyMCE_cachedOwnCloudClientRequest = $.getScript("/scripts/bower_components/js-owncloud-client/owncloud.js");
+		initTinyMCE_cachedOwnCloudClientRequest.fail(function () {
+			initTinyMCE_cachedOwnCloudClientRequest = null;
+		});
+	} else {
+		console.log('using cached owncloud client script request');
+	}
+
+	return initTinyMCE_cachedOwnCloudClientRequest;
+}
+
+function loadNextCloudClientScript() {
+	if (window.nextcloud) {
+		return $.Deferred().resolve().promise();
+	}
+
+	if (!initTinyMCE_cachedNextCloudClientRequest) {
+		initTinyMCE_cachedNextCloudClientRequest = $.getScript("/scripts/bower_components/js-owncloud-client/nextcloud_owncloud.js");
+		initTinyMCE_cachedNextCloudClientRequest.fail(function () {
+			initTinyMCE_cachedNextCloudClientRequest = null;
+		});
+	} else {
+		console.log('using cached nextcloud client script request');
+	}
+
+	return initTinyMCE_cachedNextCloudClientRequest;
+}
 
 function initTinyMCE(selector) {
 	var localTinymcesetup = tinymcesetup;
@@ -443,13 +479,14 @@ function initTinyMCE(selector) {
 	}
 
 	let requestsPromise = $.when(propertiesRequest, integrationsRequest, toolbarRequest);
+	let tinymceSetupReady = $.Deferred();
 	requestsPromise.done(function (propertiesResponse, integrationsResponse, toolbarResponse) {
 
 		initTinyMCE_cachedPropertiesResponse = propertiesResponse;
 		initTinyMCE_cachedIntegrationsResponse = integrationsResponse;
 
 		localTinymcesetup.external_plugins["gallery"] = "/ui/dist/tinymceGallery.js";
-		
+
 		var properties = propertiesResponse[0];
 		var integrations = integrationsResponse[0].data;
 
@@ -574,14 +611,32 @@ function initTinyMCE(selector) {
 			addToToolbarIfNotPresent(localTinymcesetup, " | pubchem");
 			addToMenuIfNotPresent(localTinymcesetup, " | optPubchem");
 		}
+
+		let dependencyRequests = [];
+		if (ownCloudEnabled) {
+			dependencyRequests.push(loadOwnCloudClientScript());
+		}
+		if (nextCloudEnabled) {
+			dependencyRequests.push(loadNextCloudClientScript());
+		}
+
+		$.when.apply($, dependencyRequests)
+			.done(function () {
+				tinymceSetupReady.resolve();
+			})
+			.fail(function () {
+				console.log('owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
+				tinymceSetupReady.resolve();
+			});
 	});
 
 	requestsPromise.fail(function () {
 		console.log('properties, integrations or toolbar call failed - starting with default tinymce settings');
+		tinymceSetupReady.resolve();
 	});
 
 	let tinymceInitialisedDeferred = $.Deferred();
-	requestsPromise.always(function () {
+	tinymceSetupReady.always(function () {
 		if (localTinymcesetup.toolbar) {
 			complete2ndToolbar(localTinymcesetup);
 		}
