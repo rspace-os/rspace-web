@@ -11,7 +11,7 @@
 	<parent>
 		<artifactId>rspace-parent</artifactId>
 		<groupId>com.github.rspace-os</groupId>
-		<version>3.0.0</version>
+		<version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
 	</parent>
 
 	<repositories>
@@ -38,7 +38,7 @@
 		<dependency>
 			<groupId>com.github.rspace-os</groupId>
 			<artifactId>rspace-test-util</artifactId>
-			<version>3.0.0</version>
+			<version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
 			<scope>test</scope>
 			<exclusions>
 				<exclusion>

@@ -1,5 +1,9 @@
 ## Changelog
 
+## 2.0.0 2026-04-29
+- Spring 6 / Hibernate 6 / Jakarta namespace migration
+- Switch to rspace-parent 3.0.0
+
 ## 1.1.0 2026-01-26
 - switch to parent-pom 2.1.3
 - harden XML parsing to avoid XXE attacks
