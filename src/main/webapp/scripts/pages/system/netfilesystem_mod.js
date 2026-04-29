@@ -384,7 +384,7 @@ define(function() {
         } else {
             $('#fileSystemUrl').removeAttr('title').removeAttr('pattern');
         }
-        $('#fileSystemUrl').prop('required', !isS3Client);
+        $('#fileSystemUrl').prop('required', !isS3AWSClient);
     }
 
     function refreshAuthTypeRows() {

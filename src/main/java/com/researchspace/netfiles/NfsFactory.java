@@ -220,12 +220,12 @@ public class NfsFactory {
 
   private void verifyFileSystemProperties(NfsFileSystem fileSystem) {
 
+    if (fileSystem.getClientType() == null) {
+      throw new IllegalStateException("nfsFileSystem client type is empty");
+    }
     if (StringUtils.isEmpty(fileSystem.getUrl())
         && !fileSystem.getClientType().equals(NfsClientType.S3)) {
       throw new IllegalStateException("nfsFileSystem url is empty");
-    }
-    if (fileSystem.getClientType() == null) {
-      throw new IllegalStateException("nfsFileSystem client type is empty");
     }
     if (fileSystem.getAuthType() == null) {
       throw new IllegalStateException("nfsFileSystem authentication type is empty");
