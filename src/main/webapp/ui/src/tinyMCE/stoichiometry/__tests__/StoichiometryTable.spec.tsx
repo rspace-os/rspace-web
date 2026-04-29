@@ -426,6 +426,11 @@ const feature = test.extend<{
     }: {
       csv: Download;
     }) => Promise<void>;
+    "{CSV} should export inventory links as global IDs": ({
+      csv,
+    }: {
+      csv: Download;
+    }) => Promise<void>;
     "inventory picker should be visible for {molecule}": ({
       molecule,
     }: {
@@ -628,7 +633,7 @@ const feature = test.extend<{
         const headers = await page.getByRole("columnheader").allTextContents();
         expect(headers).toContain("Name");
         expect(headers).toContain("Inventory Link");
-        expect(headers).toContain("Role");
+        expect(headers).toContain("Type");
         expect(headers).toContain("Limiting Reagent");
         expect(headers).toContain("Equivalent");
         expect(headers).toContain("Molecular Weight (g/mol)");
@@ -680,6 +685,14 @@ const feature = test.extend<{
         expect(fileContents).not.toContain("REACTANT");
         expect(fileContents).not.toContain("PRODUCT");
         expect(fileContents).not.toContain("AGENT");
+      },
+      "{CSV} should export inventory links as global IDs": async ({ csv }) => {
+        const path = await csv.path();
+        const fileContents = await fs.readFile(path, "utf8");
+
+        expect(fileContents).toContain("SS123");
+        expect(fileContents).toContain("SS124");
+        expect(fileContents).toContain("SS125");
       },
       "the first row should NOT have a yield value": async () => {
         const table = page.getByRole("grid");
@@ -1075,6 +1088,16 @@ test.describe("Stoichiometry Table", () => {
       await Once["the table has loaded"]();
       const csv = await When["a CSV export is downloaded"]();
       await Then["{CSV} should contain the correct role strings"]({ csv });
+    },
+
+  );
+  feature(
+    "When exporting to CSV, inventory links should be exported using their global IDs",
+    async ({ Given, Once, When, Then }) => {
+      await Given["the table is loaded with data"]();
+      await Once["the table has loaded"]();
+      const csv = await When["a CSV export is downloaded"]();
+      await Then["{CSV} should export inventory links as global IDs"]({ csv });
     },
 
   );

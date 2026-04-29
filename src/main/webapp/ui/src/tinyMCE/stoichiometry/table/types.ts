@@ -7,12 +7,14 @@ export type StoichiometryTableProps = {
   stoichiometryRevision: number;
   editable?: boolean;
   hasChanges?: boolean;
+  activeChemId?: number | null;
 };
 
 export type StoichiometryTableGridProps = {
   editable: boolean;
   allMolecules: ReadonlyArray<EditableMolecule>;
   hasChanges?: boolean;
+  activeChemId?: number | null;
   linkedInventoryQuantityInfoByGlobalId?: ReadonlyMap<
     string,
     InventoryQuantityQueryResult

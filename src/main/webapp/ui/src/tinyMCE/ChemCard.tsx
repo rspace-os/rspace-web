@@ -1,4 +1,3 @@
-"use strict";
 import React, { useEffect } from "react";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
@@ -11,7 +10,78 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import axios from "@/common/axios";
 import { makeStyles } from "tss-react/mui";
-import { isUrl } from "../util/Util";
+import { isUrl } from "@/util/Util";
+
+type MetadataMap = Record<string, string>;
+
+interface ChemCardItem extends Record<string, string | undefined> {
+  id?: string;
+  imageSrc?: string;
+}
+
+interface ChemicalInfo {
+  role?: string;
+  name?: string;
+  formula?: string;
+  mass?: string | number;
+  exactMass?: string | number;
+  formalCharge?: string | number;
+  bondCount?: string | number;
+  atomCount?: string | number;
+  additionalMetadata?: string;
+}
+
+interface ChemInfo extends ChemicalInfo {
+  reaction?: boolean;
+  reactants: ChemicalInfo[];
+  products: ChemicalInfo[];
+  molecules: ChemicalInfo[];
+}
+
+interface ChemInfoResponse {
+  data?: ChemInfo;
+  error?: unknown;
+}
+
+interface ChemCardProps {
+  item: ChemCardItem;
+  inline?: boolean;
+  height?: number | string;
+  idx?: number;
+  onClose?: (id: string | undefined) => void;
+}
+
+function renderFormattedFormula(formula?: string): React.ReactNode {
+  if (!formula) {
+    return "";
+  }
+
+  return formula
+    .split(/(\d+)/)
+    .filter((part) => part !== "")
+    .map((part, index) =>
+      /^\d+$/.test(part) ? <sub key={`formula-sub-${index}`}>{part}</sub> : part,
+    );
+}
+
+function getAdditionalMetadata(additionalMetadata?: string): MetadataMap {
+  if (!additionalMetadata) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(additionalMetadata) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(parsed).map(([key, value]) => [key, String(value)]),
+    );
+  } catch {
+    return {};
+  }
+}
 
 const useStyles = makeStyles()((theme) => ({
   text: {
@@ -60,24 +130,29 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-export default function ChemCard(props) {
+export default function ChemCard(props: ChemCardProps) {
   const { classes } = useStyles();
-  const [chem, setChem] = React.useState({
+  const [chem, setChem] = React.useState<ChemInfo>({
     reactants: [],
     products: [],
     molecules: [],
   });
+  const chemId =
+    props.item.id !== undefined ? Number.parseInt(props.item.id, 10) : Number.NaN;
+  const additionalMetadata = getAdditionalMetadata(chem.additionalMetadata);
 
   // fetch chem details
-  const fetchChemDetails = () => {
-    // eslint-disable-next-line no-undef
-    const publicView = $("#public_document_view").length > 0;
+  const fetchChemDetails = (): void => {
+    if (Number.isNaN(chemId) || chemId < 0) {
+      return;
+    }
+
+    const publicView = document.getElementById("public_document_view");
     const publicUrlPrepend = publicView ? "/public/publicView" : "";
-    const url =
-      publicUrlPrepend + `/chemical/ajax/getInfo?chemId=${props.item.id}`;
+    const url = publicUrlPrepend + `/chemical/ajax/getInfo?chemId=${chemId}`;
     axios
-      .get(url)
-      .then((response) => {
+      .get<ChemInfoResponse>(url)
+      .then((response): void => {
         if (response.data.data) {
           setChem(response.data.data);
         } else {
@@ -87,18 +162,22 @@ export default function ChemCard(props) {
           );
         }
       })
-      .catch((error) => {
+      .catch((error: unknown): void => {
         console.warn(error);
       });
   };
 
   useEffect(() => {
-    fetchChemDetails();
-  }, []);
+    if (!Number.isNaN(chemId) && chemId >= 0) {
+      fetchChemDetails();
+    }
+  }, [chemId]);
 
-  const chemInfoTable = (chemical) => {
+  const chemInfoTable = (chemical: ChemicalInfo): React.ReactElement => {
+    const chemicalMetadata = getAdditionalMetadata(chemical.additionalMetadata);
+
     return (
-      <React.Fragment key={chemical.formula}>
+      <React.Fragment key={`${chemical.role ?? "chemical"}-${chemical.formula ?? ""}`}>
         <TableRow style={{ background: "rgb(240,240,240" }}>
           <TableCell component="th" scope="row"></TableCell>
           <TableCell component="th" scope="row" align="center">
@@ -119,13 +198,9 @@ export default function ChemCard(props) {
           <TableCell component="th" scope="row">
             Formula
           </TableCell>
-          <TableCell
-            align="right"
-            className={classes.tableCell}
-            dangerouslySetInnerHTML={{
-              __html: _getHtmlFormattedFormula(chemical.formula),
-            }}
-          ></TableCell>
+          <TableCell align="right" className={classes.tableCell}>
+            {renderFormattedFormula(chemical.formula)}
+          </TableCell>
         </TableRow>
         <TableRow>
           <TableCell component="th" scope="row">
@@ -167,9 +242,9 @@ export default function ChemCard(props) {
             {chemical.atomCount}
           </TableCell>
         </TableRow>
-        {Object.entries(JSON.parse(chemical.additionalMetadata ?? "{}")).map(
+        {Object.entries(chemicalMetadata).map(
           ([k, v]) => (
-            <TableRow>
+            <TableRow key={`${chemical.formula ?? chemical.role ?? "chemical"}-${k}`}>
               <TableCell component="th" scope="row">
                 {k}
               </TableCell>
@@ -189,6 +264,34 @@ export default function ChemCard(props) {
     );
   };
 
+  if (!Number.isNaN(chemId) && chemId < 0) {
+    return (
+      <Card
+        className={classes.card}
+        elevation={props.inline ? 0 : 4}
+        style={
+          props.inline
+            ? {
+                height:
+                  Number(props.height) < 200
+                    ? "200px"
+                    : `${Number.parseInt(String(props.height), 10) + 6}px`,
+                width: "200px",
+                margin: "0px",
+                border: "1px solid #eee",
+                backgroundColor: "#fafafa",
+              }
+            : {
+                height: "200px",
+                width: "200px",
+                border: "1px solid #eee",
+                backgroundColor: "#fafafa",
+              }
+        }
+      />
+    );
+  }
+
   return (
     <Card
       className={classes.card}
@@ -197,9 +300,9 @@ export default function ChemCard(props) {
         props.inline
           ? {
               height:
-                props.height < 200
+                Number(props.height) < 200
                   ? "200px"
-                  : `${parseInt(props.height) + 6}px`,
+                  : `${Number.parseInt(String(props.height), 10) + 6}px`,
               overflowY: "auto",
               margin: "0px",
             }
@@ -213,6 +316,7 @@ export default function ChemCard(props) {
             <img
               className={classes.avatar}
               src={props.item.imageSrc}
+              alt="Chemical structure"
               height="48px"
             />
           }
@@ -220,7 +324,7 @@ export default function ChemCard(props) {
             <IconButton
               size="small"
               aria-label="close"
-              onClick={() => props.onClose(props.item.id)}
+              onClick={() => props.onClose?.(props.item.id)}
               className={classes.closeButton}
             >
               <CloseIcon />
@@ -236,26 +340,22 @@ export default function ChemCard(props) {
                 <TableCell component="th" scope="row">
                   Formula
                 </TableCell>
-                <TableCell
-                  align="right"
-                  className={classes.tableCell}
-                  dangerouslySetInnerHTML={{
-                    __html: _getHtmlFormattedFormula(chem.formula),
-                  }}
-                ></TableCell>
+                <TableCell align="right" className={classes.tableCell}>
+                  {renderFormattedFormula(chem.formula)}
+                </TableCell>
               </TableRow>
             )}
             {chem.reactants.map((r) => chemInfoTable(r))}
             {chem.products.map((p) => chemInfoTable(p))}
             {chem.molecules.map((m) => chemInfoTable(m))}
-            {Object.entries(JSON.parse(chem.additionalMetadata ?? "{}")).map(
+            {Object.entries(additionalMetadata).map(
               ([k, v]) => (
                 <TableRow key={k}>
                   <TableCell component="th" scope="row">
                     {k}
                   </TableCell>
                   <TableCell align="right" className={classes.tableCell}>
-                    {isValidUrl(v) ? (
+                    {isUrl(v) ? (
                       <a href={v} target="_blank" rel="noopener noreferrer">
                         {v}
                       </a>

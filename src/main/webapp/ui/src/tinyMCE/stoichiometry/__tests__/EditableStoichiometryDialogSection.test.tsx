@@ -36,7 +36,12 @@ const mockUpdateInventoryStock = vi.fn();
 const mockUseEditableStoichiometryTable = vi.fn<
   (args: MockUseEditableStoichiometryTableArgs) => MockEditableStoichiometryTableResult
 >();
-let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+function createConsoleErrorSpy() {
+  return vi.spyOn(console, "error").mockImplementation(() => {});
+}
+
+let consoleErrorSpy: ReturnType<typeof createConsoleErrorSpy>;
 
 vi.mock("@/tinyMCE/stoichiometry/useEditableStoichiometryTable", () => ({
   useEditableStoichiometryTable: ({
@@ -99,7 +104,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTable", async () => {
 describe("EditableStoichiometryDialogSection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    consoleErrorSpy = createConsoleErrorSpy();
 
     mockUseEditableStoichiometryTable.mockImplementation(
       ({ onStoichiometryRefreshed }: MockUseEditableStoichiometryTableArgs) => {
@@ -149,6 +154,7 @@ describe("EditableStoichiometryDialogSection", () => {
     render(
       <EditableStoichiometryDialogSection
         currentStoichiometry={{ id: 1, revision: 1 }}
+        chemId={null}
         onClose={() => {}}
         onDelete={() => {}}
         setCurrentStoichiometry={vi.fn()}
@@ -170,6 +176,7 @@ describe("EditableStoichiometryDialogSection", () => {
     render(
       <EditableStoichiometryDialogSection
         currentStoichiometry={{ id: 1, revision: 1 }}
+        chemId={null}
         onClose={() => {}}
         onSave={onSave}
         onDelete={() => {}}
@@ -234,6 +241,7 @@ describe("EditableStoichiometryDialogSection", () => {
     render(
       <EditableStoichiometryDialogSection
         currentStoichiometry={{ id: 1, revision: 1 }}
+        chemId={null}
         onClose={() => {}}
         onDelete={() => {}}
         setCurrentStoichiometry={vi.fn()}
@@ -293,6 +301,7 @@ describe("EditableStoichiometryDialogSection", () => {
     render(
       <EditableStoichiometryDialogSection
         currentStoichiometry={{ id: 1, revision: 1 }}
+        chemId={null}
         onClose={() => {}}
         onDelete={() => {}}
         setCurrentStoichiometry={vi.fn()}

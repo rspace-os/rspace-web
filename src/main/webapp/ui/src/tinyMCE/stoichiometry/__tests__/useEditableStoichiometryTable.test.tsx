@@ -6,6 +6,7 @@ import { inventoryQueryKeys } from "@/modules/inventory/queries";
 import type { StoichiometryRequest } from "@/modules/stoichiometry/schema";
 import { stoichiometryQueryKeys } from "@/modules/stoichiometry/queries";
 import AnalyticsContext from "@/stores/contexts/Analytics";
+import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import {
   type RefreshedStoichiometry,
   useEditableStoichiometryTable,
@@ -320,14 +321,17 @@ vi.mock("@/tinyMCE/stoichiometry/editableMolecules", () => ({
 
 function HookHarness({
   onValue,
+  activeChemId = null,
   onStoichiometryRefreshed,
 }: {
   onValue: (value: ReturnType<typeof useEditableStoichiometryTable>) => void;
+  activeChemId?: number | null;
   onStoichiometryRefreshed?: (stoichiometry: RefreshedStoichiometry) => void;
 }) {
   const value = useEditableStoichiometryTable({
     stoichiometryId: 3,
     stoichiometryRevision: 1,
+    activeChemId,
     onStoichiometryRefreshed,
   });
 
@@ -341,10 +345,12 @@ function HookHarness({
 function renderWithProviders({
   queryClient,
   onValue,
+  activeChemId,
   onStoichiometryRefreshed,
 }: {
   queryClient: QueryClient;
   onValue: (value: ReturnType<typeof useEditableStoichiometryTable>) => void;
+  activeChemId?: number | null;
   onStoichiometryRefreshed?: (stoichiometry: RefreshedStoichiometry) => void;
 }) {
   return render(
@@ -357,6 +363,7 @@ function renderWithProviders({
       <QueryClientProvider client={queryClient}>
         <HookHarness
           onValue={onValue}
+          activeChemId={activeChemId}
           onStoichiometryRefreshed={onStoichiometryRefreshed}
         />
       </QueryClientProvider>
@@ -485,6 +492,192 @@ describe("useEditableStoichiometryTable", () => {
     );
     expect(new Set(addedReagents.map(({ id }) => id)).size).toBe(2);
     expect(addedReagents.every(({ id }) => id < 0)).toBe(true);
+  });
+
+  it("allows role changes through processRowUpdate when there is no active chem id", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+    renderWithProviders({
+      queryClient,
+      onValue: (value) => {
+        latestValue = value;
+      },
+    });
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+
+    const originalRow = latestValue!.allMolecules.find(({ id }) => id === 6)!;
+    let updatedRow: EditableMolecule | undefined;
+
+    act(() => {
+      updatedRow = latestValue?.tableController.processRowUpdate(
+        { ...originalRow, role: "REACTANT" },
+        originalRow,
+      );
+    });
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules.find(({ id }) => id === 6)?.role).toBe(
+        "REACTANT",
+      );
+    });
+    expect(updatedRow?.role).toBe("REACTANT");
+  });
+
+  it("keeps role changes blocked through processRowUpdate when an active chem id is present", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+    renderWithProviders({
+      queryClient,
+      activeChemId: 123,
+      onValue: (value) => {
+        latestValue = value;
+      },
+    });
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+
+    const originalRow = latestValue!.allMolecules.find(({ id }) => id === 6)!;
+    let returnedRow: EditableMolecule | undefined;
+
+    act(() => {
+      returnedRow = latestValue?.tableController.processRowUpdate(
+        { ...originalRow, role: "REACTANT" },
+        originalRow,
+      );
+    });
+
+    expect(returnedRow).toEqual(originalRow);
+    expect(latestValue!.allMolecules.find(({ id }) => id === 6)?.role).toBe(
+      "PRODUCT",
+    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error updating row:",
+      "Modifying the role of a molecule is not supported",
+    );
+  });
+
+  it.each([
+    { label: "reactant", moleculeId: 5 },
+    { label: "product", moleculeId: 6 },
+  ])(
+    "allows deleting $label molecules when there is no active chem id",
+    async ({ moleculeId }) => {
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+      let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+      renderWithProviders({
+        queryClient,
+        onValue: (value) => {
+          latestValue = value;
+        },
+      });
+
+      await waitFor(() => {
+        expect(latestValue?.allMolecules).toHaveLength(4);
+      });
+
+      act(() => {
+        latestValue?.tableController.deleteReagent(moleculeId);
+      });
+
+      await waitFor(() => {
+        expect(latestValue?.allMolecules).toHaveLength(3);
+      });
+      const remainingMolecules = latestValue!.allMolecules;
+      expect(remainingMolecules.find(({ id }) => id === moleculeId)).toBeUndefined();
+    },
+  );
+
+  it.each([
+    { label: "reactant", moleculeId: 5 },
+    { label: "product", moleculeId: 6 },
+  ])(
+    "keeps $label molecules when an active chem id is present",
+    async ({ moleculeId }) => {
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+      let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+      renderWithProviders({
+        queryClient,
+        activeChemId: 123,
+        onValue: (value) => {
+          latestValue = value;
+        },
+      });
+
+      await waitFor(() => {
+        expect(latestValue?.allMolecules).toHaveLength(4);
+      });
+
+      act(() => {
+        latestValue?.tableController.deleteReagent(moleculeId);
+      });
+
+      const moleculesAfterDeleteAttempt = latestValue!.allMolecules;
+      expect(moleculesAfterDeleteAttempt).toHaveLength(4);
+      expect(
+        moleculesAfterDeleteAttempt.find(({ id }) => id === moleculeId),
+      ).toBeDefined();
+    },
+  );
+
+  it("still allows deleting agent molecules when an active chem id is present", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+    renderWithProviders({
+      queryClient,
+      activeChemId: 123,
+      onValue: (value) => {
+        latestValue = value;
+      },
+    });
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+
+    act(() => {
+      latestValue?.tableController.deleteReagent(7);
+    });
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(3);
+    });
+    expect(latestValue!.allMolecules.find(({ id }) => id === 7)).toBeUndefined();
   });
 
   afterEach(() => {
@@ -747,6 +940,70 @@ describe("useEditableStoichiometryTable", () => {
       inventoryLink: null,
       savedInventoryLink: null,
       deletedInventoryLink: null,
+    });
+  });
+
+  it("saves the selected role for a newly added molecule", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+    mockGetMoleculeInfoMutateAsync.mockResolvedValueOnce({
+      molecularWeight: 18.015,
+      formula: "H2O",
+    });
+
+    renderWithProviders({
+      queryClient,
+      onValue: (value) => {
+        latestValue = value;
+      },
+    });
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+
+    await act(async () => {
+      await latestValue?.tableController.addReagent("O", "New Water", "manual");
+    });
+
+    let newMolecule: EditableMolecule | undefined;
+    await waitFor(() => {
+      newMolecule = latestValue?.allMolecules.find(({ name }) => name === "New Water");
+      expect(newMolecule).toBeDefined();
+    });
+
+    act(() => {
+      latestValue?.tableController.processRowUpdate(
+        { ...newMolecule!, role: "PRODUCT" },
+        newMolecule!,
+      );
+    });
+
+    await act(async () => {
+      await latestValue?.save();
+    });
+
+    const updateRequest = mockUpdateStoichiometryMutateAsync.mock.calls.at(-1)?.[0] as
+      | {
+          stoichiometryId: number;
+          stoichiometryData: StoichiometryRequest;
+        }
+      | undefined;
+
+    expect(
+      updateRequest?.stoichiometryData.molecules.find(
+        (molecule) => !("id" in molecule) && molecule.name === "New Water",
+      ),
+    ).toMatchObject({
+      name: "New Water",
+      smiles: "O",
+      role: "PRODUCT",
     });
   });
 

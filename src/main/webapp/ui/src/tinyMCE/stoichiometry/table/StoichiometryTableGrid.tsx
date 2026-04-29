@@ -2,7 +2,6 @@ import React from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Radio from "@mui/material/Radio";
-import Typography from "@mui/material/Typography";
 import {
   DataGrid,
   type GridCellParams,
@@ -12,6 +11,7 @@ import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import StoichiometryTableInventoryLinkCell from "@/tinyMCE/stoichiometry/StoichiometryTableInventoryLinkCell";
 import StoichiometryTableRoleChip from "@/tinyMCE/stoichiometry/StoichiometryTableRoleChip";
 import StoichiometryTableToolbar from "@/tinyMCE/stoichiometry/StoichiometryTableToolbar";
+import StoichiometryTableTypeDropdown from "@/tinyMCE/stoichiometry/table/StoichiometryTableTypeDropdown";
 import { STOICHIOMETRY_TABLE_CLASS } from "@/tinyMCE/stoichiometry/theme";
 import type { EditableMolecule } from "../types";
 import { calculateMoles, getInventoryUpdateEligibility } from "../utils";
@@ -23,10 +23,29 @@ const STOICHIOMETRY_TABLE_SLOTS = {
 
 const getMoleculeRowId = (row: EditableMolecule) => row.id;
 
+const getInventoryLinkExportValue = (row: EditableMolecule): string =>
+  row.inventoryLink?.inventoryItemGlobalId ??
+  row.deletedInventoryLink?.inventoryItemGlobalId ??
+  "";
+
+const getRoleExportValue = (role: string | null | undefined): string => {
+  if (!role) {
+    return "";
+  }
+
+  switch (role.toUpperCase()) {
+    case "AGENT":
+      return "Reagent";
+    default:
+      return `${role.slice(0, 1)}${role.slice(1).toLowerCase()}`;
+  }
+};
+
 export default function StoichiometryTableGrid({
   editable,
   allMolecules,
   hasChanges = false,
+  activeChemId = null,
   linkedInventoryQuantityInfoByGlobalId = new Map<
     string,
     InventoryQuantityQueryResult
@@ -40,6 +59,7 @@ export default function StoichiometryTableGrid({
   onSelectLimitingReagent,
   onProcessRowUpdate,
 }: StoichiometryTableGridProps): React.ReactNode {
+  const roleColumnEditable = editable && activeChemId === null;
   const limitingReagent = allMolecules.find(
     (molecule) =>
       molecule.limitingReagent && molecule.role.toLowerCase() === "reactant",
@@ -76,12 +96,12 @@ export default function StoichiometryTableGrid({
         align: "center",
         headerAlign: "center",
         renderCell: ({ row }) =>
-          row.role.toLowerCase() === "agent" ? (
+          editable ? (
             <Button
               variant="outlined"
               color="error"
               size="small"
-              disabled={!editable}
+              disabled={activeChemId !== null && row.role !== "AGENT"}
               aria-label={`Delete reagent ${row.name}`}
               onClick={() => {
                 onDeleteReagent?.(row.id);
@@ -104,6 +124,7 @@ export default function StoichiometryTableGrid({
         headerName: "Inventory Link",
         sortable: false,
         minWidth: 200,
+        valueGetter: (_value, row) => getInventoryLinkExportValue(row),
         renderCell: ({ row }) => (
           <StoichiometryTableInventoryLinkCell
             inventoryLink={row.inventoryLink}
@@ -133,20 +154,31 @@ export default function StoichiometryTableGrid({
       },
       {
         field: "role",
-        valueGetter: (_value, { role }) =>
-          (
-            {
-              REACTANT: "Reactant",
-              PRODUCT: "Product",
-              AGENT: "Reagent",
-            } as Record<string, string>
-          )[role] ?? "Unknown role",
-        headerName: "Role",
+        headerName: "Type",
         sortable: false,
-        minWidth: 130,
-        renderCell: ({ row }) => (
-          <StoichiometryTableRoleChip role={row.role || ""} />
-        ),
+        minWidth: 160,
+        valueFormatter: (value) => getRoleExportValue(value as string | null | undefined),
+        renderCell: ({ row }) => {
+          if (!roleColumnEditable) {
+            return <StoichiometryTableRoleChip role={row.role || ""} />;
+          }
+
+          return (
+            <StoichiometryTableTypeDropdown
+              rowName={row.name}
+              value={row.role}
+              onChangeValue={(nextValue) => {
+                onProcessRowUpdate?.(
+                  {
+                    ...row,
+                    role: nextValue,
+                  },
+                  row,
+                );
+              }}
+            />
+          );
+        },
       },
       {
         field: "limitingReagent",
@@ -312,10 +344,12 @@ export default function StoichiometryTableGrid({
     ],
     [
       editable,
+      roleColumnEditable,
       limitingReagentId,
       linkedInventoryQuantityInfoByGlobalId,
       linkedInventoryItemGlobalIdsByMoleculeId,
       onDeleteReagent,
+      onProcessRowUpdate,
       onPickInventoryItem,
       onRemoveInventoryLink,
       onUndoRemoveInventoryLink,
@@ -359,36 +393,22 @@ export default function StoichiometryTableGrid({
     ],
   );
 
-  if (!allMolecules.length) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight={100}
-        my={2}
-      >
-        <Typography variant="body2">No stoichiometry data available</Typography>
-      </Box>
-    );
-  }
-
   return (
-      <Box sx={{ width: "100%", minHeight: "1px", height: 1 }}>
-        <DataGrid
-          rows={allMolecules}
-          columns={columns}
-          disableVirtualization={true}
-          isCellEditable={isCellEditable}
-          hideFooter
-          disableColumnFilter
-          getRowId={getMoleculeRowId}
-          processRowUpdate={onProcessRowUpdate}
-          slots={STOICHIOMETRY_TABLE_SLOTS}
-          showToolbar={true}
-          slotProps={toolbarSlotProps}
-          className={STOICHIOMETRY_TABLE_CLASS}
-        />
-      </Box>
+    <Box sx={{ width: "100%", minHeight: "1px", height: 1 }}>
+      <DataGrid
+        rows={allMolecules}
+        columns={columns}
+        disableVirtualization={true}
+        isCellEditable={isCellEditable}
+        hideFooter
+        disableColumnFilter
+        getRowId={getMoleculeRowId}
+        processRowUpdate={onProcessRowUpdate}
+        slots={STOICHIOMETRY_TABLE_SLOTS}
+        showToolbar={true}
+        slotProps={toolbarSlotProps}
+        className={STOICHIOMETRY_TABLE_CLASS}
+      />
+    </Box>
   );
 }
