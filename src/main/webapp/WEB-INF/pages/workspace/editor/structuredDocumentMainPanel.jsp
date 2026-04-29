@@ -33,9 +33,6 @@
 <script src="<c:url value='/scripts/jwplayer.js'/>"></script>
 <script src="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
 <script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-<c:if test="${boxEnabled}">
-    <script type="text/javascript" src="https://app.box.com/js/static/select.js"></script>
-</c:if>
 <script src="<c:url value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
 <script src="<c:url value='/scripts/tags/shareDlg.js'/>"></script>
 <script src="<c:url value='/scripts/pages/coreEditor.js'/>"></script>

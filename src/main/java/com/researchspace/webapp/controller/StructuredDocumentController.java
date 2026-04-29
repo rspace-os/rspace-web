@@ -623,7 +623,6 @@ public class StructuredDocumentController extends BaseController {
     model.addAttribute("dmpEnabled", isDMPEnabled(user));
     model.addAttribute("galaxyEnabled", galaxyEnabled);
     model.addAttribute("inventoryAvailable", inventoryEnabled);
-    model.addAttribute("boxEnabled", isBoxEnabled(user));
     model.addAttribute("enforce_ontologies", anyGroupEnforcesOntologies(user));
     model.addAttribute("allow_bioOntologies", allGroupsAllowBioOntologies(user));
 

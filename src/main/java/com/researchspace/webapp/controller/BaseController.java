@@ -433,16 +433,6 @@ public abstract class BaseController implements ServletContextAware {
     return info.isAvailable() && info.isEnabled();
   }
 
-  protected Boolean isBoxEnabled(User subject) {
-    IntegrationInfo info = integrationsHandler.getIntegration(subject, "BOX");
-    if (info == null) {
-      return false;
-    }
-    boolean boxLinkingEnabled =
-        Boolean.parseBoolean(String.valueOf(info.getOptions().get("box.linking.enabled")));
-    return info.isAvailable() && info.isEnabled() && boxLinkingEnabled;
-  }
-
   protected Boolean isAsposeEnabled() {
     return properties.isAsposeEnabled();
   }

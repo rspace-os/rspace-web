@@ -404,8 +404,26 @@ tinymce.PluginManager.add('commandpalette', function (editor) {
 
 var initTinyMCE_cachedPropertiesResponse;
 var initTinyMCE_cachedIntegrationsResponse;
+var initTinyMCE_cachedBoxSelectRequest;
 var initTinyMCE_cachedOwnCloudClientRequest;
 var initTinyMCE_cachedNextCloudClientRequest;
+
+function loadBoxSelectScript() {
+	if (typeof BoxSelect === 'function') {
+		return $.Deferred().resolve().promise();
+	}
+
+	if (!initTinyMCE_cachedBoxSelectRequest) {
+		initTinyMCE_cachedBoxSelectRequest = $.getScript("https://app.box.com/js/static/select.js");
+		initTinyMCE_cachedBoxSelectRequest.fail(function () {
+			initTinyMCE_cachedBoxSelectRequest = null;
+		});
+	} else {
+		console.log('using cached box select script request');
+	}
+
+	return initTinyMCE_cachedBoxSelectRequest;
+}
 
 function loadOwnCloudClientScript() {
 	if (window.oc) {
@@ -491,7 +509,7 @@ function initTinyMCE(selector) {
 		var integrations = integrationsResponse[0].data;
 
 		var dropboxEnabled     = integrations.DROPBOX.enabled && integrations.DROPBOX.available && integrations.DROPBOX.options['dropbox.linking.enabled'];
-		var boxEnabled         = integrations.BOX.enabled && integrations.BOX.available && integrations.BOX.options['box.linking.enabled'];
+		const boxEnabled = integrations.BOX.enabled && integrations.BOX.available && integrations.BOX.options['box.linking.enabled'];
 		var oneDriveEnabled    = integrations.ONEDRIVE.enabled && integrations.ONEDRIVE.available && integrations.ONEDRIVE.options['onedrive.linking.enabled'];
 		var googleDriveEnabled = integrations.GOOGLEDRIVE.enabled && integrations.GOOGLEDRIVE.available && integrations.GOOGLEDRIVE.options['googledrive.linking.enabled'];
 		var egnyteEnabled      = integrations.EGNYTE.enabled && integrations.EGNYTE.available;
@@ -505,8 +523,15 @@ function initTinyMCE(selector) {
 		const omeroEnabled =  integrations.OMERO.enabled && integrations.OMERO.available && properties["omero.api.url"] !== "";
 		const joveEnabled =  integrations.JOVE.enabled && integrations.JOVE.available;
 		const identifiersEnabled = false; // Once RSDEV-484 is complete, this should check whether Inventory is available
-    const pubchemEnabled = chemistryEnabled;
+    	const pubchemEnabled = chemistryEnabled;
 		const galaxyEnabled = integrations.GALAXY.enabled && integrations.GALAXY.available;
+		const boxClientId = properties['box.client.id'];
+		const hasValidBoxClientId = typeof boxClientId === "string" && boxClientId.trim() !== ''
+
+		// Backwards-compatiblity warning
+		if (boxEnabled && !hasValidBoxClientId) {
+			apprise('Box integration has not been set up ("clientId" or "clientSecret" missing). Contact your system administrator.');
+		}
 
 		const chemistryProvider = properties["chemistry.provider"];
 		chemistryAvailable = integrations.CHEMISTRY.available;
@@ -543,8 +568,9 @@ function initTinyMCE(selector) {
 			enabledFileRepositories += " jove";
 			fileRepositoriesMenu += " optJove";
 		}
-		if (boxEnabled) {
+		if (boxEnabled && hasValidBoxClientId) {
 			localTinymcesetup.external_plugins["box"] = "/scripts/externalTinymcePlugins/box/plugin.min.js";
+			localTinymcesetup.box_client_id = boxClientId;
 			enabledFileRepositories += " box";
 			fileRepositoriesMenu += " optBox";
 		}
@@ -613,6 +639,9 @@ function initTinyMCE(selector) {
 		}
 
 		let dependencyRequests = [];
+		if (boxEnabled) {
+			dependencyRequests.push(loadBoxSelectScript());
+		}
 		if (ownCloudEnabled) {
 			dependencyRequests.push(loadOwnCloudClientScript());
 		}
@@ -625,7 +654,7 @@ function initTinyMCE(selector) {
 				tinymceSetupReady.resolve();
 			})
 			.fail(function () {
-				console.log('owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
+				console.log('box, owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
 				tinymceSetupReady.resolve();
 			});
 	});
