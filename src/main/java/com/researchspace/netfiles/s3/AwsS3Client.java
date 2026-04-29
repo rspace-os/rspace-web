@@ -3,7 +3,6 @@ package com.researchspace.netfiles.s3;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.netfiles.NfsAbstractClient;
 import com.researchspace.netfiles.NfsClient;
-import com.researchspace.netfiles.NfsException;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
 import com.researchspace.netfiles.NfsFileTreeOrderType;
@@ -17,7 +16,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FilterInputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -39,8 +37,8 @@ public class AwsS3Client extends NfsAbstractClient implements NfsClient {
   }
 
   @Override
-  public void tryConnectAndReadTarget(String target) throws NfsException, MalformedURLException {
-    throw new UnsupportedOperationException("tryConnectAndReadTarget is not supported for S3");
+  public void tryConnectAndReadTarget(String target) {
+    // S3 connectivity is validated at S3Utilities initialization time via HeadBucket
   }
 
   @Override

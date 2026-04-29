@@ -218,9 +218,11 @@ public class AwsS3ClientTest {
   }
 
   @Test
-  public void testTryConnectAndReadTarget_throwsUnsupportedOperation() {
-    assertThrows(
-        UnsupportedOperationException.class, () -> client.tryConnectAndReadTarget("anyPath"));
+  public void testTryConnectAndReadTarget_succeedsAsNoOp() throws Exception {
+    // S3 connectivity is validated at init, so tryConnectAndReadTarget is a no-op
+    client.tryConnectAndReadTarget("");
+    client.tryConnectAndReadTarget(null);
+    client.tryConnectAndReadTarget("anyPath");
   }
 
   @Test
