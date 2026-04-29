@@ -189,7 +189,7 @@
                     <label for="fileSystemS3PathStyleEnabled">
                         <input type="radio" id="fileSystemS3PathStyleEnabled" name="fileSystemS3PathStyle" value="true">
                         <spring:message code="system.netfilesystem.details.client.s3.pathstyle.enabled" /></label>
-                    <label for="fileSystemS3PathStylDisabled">
+                    <label for="fileSystemS3PathStyleDisabled">
                         <input type="radio" id="fileSystemS3PathStyleDisabled" name="fileSystemS3PathStyle" value="false">
                         <spring:message code="system.netfilesystem.details.client.s3.pathstyle.disabled" /></label>
                 </td>

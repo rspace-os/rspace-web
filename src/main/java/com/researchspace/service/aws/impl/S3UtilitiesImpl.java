@@ -39,7 +39,6 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -99,27 +98,34 @@ public class S3UtilitiesImpl implements S3Utilities {
 
     } catch (Exception e) {
       s3Client = null;
-      log.error("Error building S3 client with region {} and bucket {}", s3Region, s3BucketName);
+      log.error("Error building S3 client with region {} and bucket {}", s3Region, s3BucketName, e);
       throw e;
     }
   }
 
   @Override
   public boolean isFileInS3(String folderPath, String fileName) {
+    String fullPath = StringUtils.isBlank(folderPath) ? fileName : folderPath + "/" + fileName;
     try {
-      String fullPath = StringUtils.isBlank(folderPath) ? fileName : folderPath + "/" + fileName;
       HeadObjectRequest headObjectRequest =
           HeadObjectRequest.builder().bucket(s3BucketName).key(fullPath).build();
       s3Client.headObject(headObjectRequest);
       return true;
-    } catch (NoSuchKeyException e) {
-      log.error("Could not find object {} in S3", folderPath + "/" + fileName, e);
-      return false;
+    } catch (S3Exception e) {
+      if (e.statusCode() == 404) {
+        log.warn("Could not find object {} in S3", fullPath);
+        return false;
+      }
+      log.error(
+          "Error while making head object request for bucket {} and file {}",
+          s3BucketName,
+          fullPath);
+      throw e;
     } catch (Exception e) {
       log.error(
           "Error while making head object request for bucket {} and file {}",
           s3BucketName,
-          folderPath + "/" + fileName);
+          fullPath);
       throw e;
     }
   }
@@ -284,16 +290,14 @@ public class S3UtilitiesImpl implements S3Utilities {
 
   @Override
   public DeleteObjectResponse deleteFromS3(String folderPath, String fileName) {
+    String s3Key = StringUtils.isNotBlank(folderPath) ? folderPath + "/" + fileName : fileName;
     try {
       DeleteObjectRequest deleteObjectRequest =
-          DeleteObjectRequest.builder()
-              .bucket(s3BucketName)
-              .key(folderPath + "/" + fileName)
-              .build();
+          DeleteObjectRequest.builder().bucket(s3BucketName).key(s3Key).build();
 
       return s3Client.deleteObject(deleteObjectRequest);
     } catch (Exception e) {
-      log.error("Failed to delete object {} from S3", folderPath + "/" + fileName, e);
+      log.error("Failed to delete object {} from S3", s3Key, e);
       throw e;
     }
   }

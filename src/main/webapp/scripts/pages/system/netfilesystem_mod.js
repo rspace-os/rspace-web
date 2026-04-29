@@ -131,7 +131,7 @@ define(function() {
         var isSmbjClient = isExistingFileSystem && fileSystem.clientType === 'SMBJ';
         var isSftpClient = isExistingFileSystem && fileSystem.clientType === 'SFTP';
         var isIrodsClient = isExistingFileSystem && fileSystem.clientType === 'IRODS';
-        var isS3AWSClient = isExistingFileSystem && fileSystem.clientType === 'S3' && fileSystem.url.startsWith('aws::');
+        var isS3AWSClient = isExistingFileSystem && fileSystem.clientType === 'S3' && fileSystem.url && fileSystem.url.startsWith('aws::');
         var isS3OtherClient = isExistingFileSystem && fileSystem.clientType === 'S3' && !isS3AWSClient;
 
         $('#fileSystemClientTypeSamba').prop('checked', isSambaClient || isSmbjClient);

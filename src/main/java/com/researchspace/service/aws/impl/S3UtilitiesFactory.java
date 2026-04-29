@@ -4,9 +4,7 @@ import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.service.aws.S3Utilities;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
-@Component
 public class S3UtilitiesFactory {
 
   private static final Integer USE_CHUNKED_UPLOAD_MB_THRESHOLD_DEFAULT = 1000;
