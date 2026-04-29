@@ -1,0 +1,7 @@
+*.js @tchoi-rs
+*.jsx @tchoi-rs
+*.ts @tchoi-rs
+*.tsx @tchoi-rs
+*.css @tchoi-rs
+*.jsp @tchoi-rs
+*.html @tchoi-rs
