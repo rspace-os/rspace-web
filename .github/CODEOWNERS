@@ -1,9 +1,7 @@
-* @mKowalski256
-
-*.js @mKowalski256 @tchoi-rs
-*.jsx @mKowalski256 @tchoi-rs
-*.ts @mKowalski256 @tchoi-rs
-*.tsx @mKowalski256 @tchoi-rs
-*.css @mKowalski256 @tchoi-rs
-*.jsp @mKowalski256 @tchoi-rs
-*.html @mKowalski256 @tchoi-rs
+*.js @tchoi-rs
+*.jsx @tchoi-rs
+*.ts @tchoi-rs
+*.tsx @tchoi-rs
+*.css @tchoi-rs
+*.jsp @tchoi-rs
+*.html @tchoi-rs
