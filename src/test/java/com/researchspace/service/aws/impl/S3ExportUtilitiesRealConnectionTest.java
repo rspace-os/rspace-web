@@ -30,10 +30,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 @Slf4j
 public class S3ExportUtilitiesRealConnectionTest extends SpringTransactionalTest {
 
-  @Value("${s3.realConnectionTest.region}")
+  @Value("${s3.export.realConnectionTest.region}")
   private String s3region;
 
-  @Value("${s3.realConnectionTest.bucketName}")
+  @Value("${s3.export.realConnectionTest.bucketName}")
   private String s3bucketName;
 
   private static final String TEST_ARCHIVE_PATH = "aws-export-test";
