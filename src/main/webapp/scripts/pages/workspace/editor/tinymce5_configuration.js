@@ -621,11 +621,12 @@ function initTinyMCE(selector) {
 		}
 		// always load tinymceStoichiometry as it handles the case of chemistry not being enabled
 		localTinymcesetup.external_plugins["stoichiometry"] = "/ui/dist/tinymceStoichiometry.js";
+		addToMenuIfNotPresent(localTinymcesetup, " | stoichiometryMenuItem");
 		if (chemistryEnabled) {
 			localTinymcesetup.external_plugins["cheminfo"] = "/scripts/externalTinymcePlugins/chemInfo/plugin.min.js";
 			localTinymcesetup.external_plugins["ketcher"] = "/scripts/externalTinymcePlugins/ketcher/plugin.min.js";
 			addToMenuIfNotPresent(localTinymcesetup, " ketcherMenuItem");
-			addToToolbarIfNotPresent(localTinymcesetup, "| ketcher23");
+			addToToolbarIfNotPresent(localTinymcesetup, "| ketcher23 stoichiometryInsertButton");
 		}
 		if (identifiersEnabled) {
 			localTinymcesetup.external_plugins["identifiers"] = "/ui/dist/tinymceIdentifiers.js";

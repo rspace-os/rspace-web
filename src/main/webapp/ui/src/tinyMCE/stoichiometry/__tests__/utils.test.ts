@@ -504,6 +504,38 @@ describe("calculateUpdatedMolecules", () => {
     expect(result[2].coefficient).toBeCloseTo(0.5);
   });
 
+  it("updates the role when role changes are explicitly allowed", () => {
+    const molecules = makeBaseMolecules();
+    const editedRow = { ...molecules[2], role: "AGENT" as const };
+
+    const result = calculateUpdatedMolecules(molecules, editedRow, {
+      allowRoleChange: true,
+    });
+
+    expect(result[2].role).toBe("AGENT");
+    expect(result[2].limitingReagent).toBe(false);
+  });
+
+  it("clears the limiting reagent flag and dependent yield values when a limiting reactant changes role", () => {
+    const molecules = makeBaseMolecules();
+    const seededMolecules = calculateUpdatedMolecules(molecules, {
+      ...molecules[1],
+      notes: "seed yield calculations",
+    });
+
+    const result = calculateUpdatedMolecules(
+      seededMolecules,
+      { ...seededMolecules[0], role: "PRODUCT" as const },
+      { allowRoleChange: true },
+    );
+
+    expect(result[0].role).toBe("PRODUCT");
+    expect(result[0].limitingReagent).toBe(false);
+    expect(result[0].actualYield).toBeNull();
+    expect(result[1].actualYield).toBeNull();
+    expect(result[2].actualYield).toBeNull();
+  });
+
   it("scales edited coefficient and mass", () => {
     const molecules = makeBaseMolecules();
     const editedRow = { ...molecules[1], coefficient: 4 };
@@ -542,10 +574,6 @@ describe("calculateUpdatedMolecules", () => {
           "The SMILES representation is an intrinsic property of the chemical and cannot be modified",
       },
       {
-        edited: { ...molecules[0], role: "PRODUCT" },
-        message: "Modifying the role of a molecule is not supported",
-      },
-      {
         edited: {
           ...molecules[0],
           rsChemElement: {
@@ -563,6 +591,14 @@ describe("calculateUpdatedMolecules", () => {
         entry.message,
       );
     }
+  });
+
+  it("throws when role changes are not allowed", () => {
+    const molecules = makeBaseMolecules();
+
+    expect(() =>
+      calculateUpdatedMolecules(molecules, { ...molecules[0], role: "PRODUCT" }),
+    ).toThrow("Modifying the role of a molecule is not supported");
   });
 
   it("throws when no limiting reagent exists and coefficient is edited", () => {

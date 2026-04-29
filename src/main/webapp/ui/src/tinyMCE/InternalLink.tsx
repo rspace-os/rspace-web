@@ -1,11 +1,9 @@
-"use strict";
 import React, { useEffect } from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import { lighten } from "@mui/material/styles";
 import { makeStyles } from "tss-react/mui";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -18,19 +16,97 @@ import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
 import UserDetails from "../components/UserDetails";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
-import EnhancedTableHead from "../components/EnhancedTableHead";
+import EnhancedTableHead, { type Cell } from "../components/EnhancedTableHead";
 import Radio from "@mui/material/Radio";
 import { stableSort, getSorting, paginationOptions } from "../util/table";
 import { createRoot } from "react-dom/client";
 import materialTheme from "../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { type Order } from "../util/types";
 
-const headCells = [
+type RevisionIdentifier = string | number;
+type RevisionVersion = RevisionIdentifier;
+type RevisionSortKey = "version" | "name" | "ownerFullName" | "modificationDate";
+type RevisionSelection = RevisionVersion | null;
+type InternalLinkInsertParams = [
+  RevisionIdentifier,
+  string,
+  string,
+  typeof tinymce.activeEditor,
+];
+
+interface RevisionRecord {
+  id: RevisionIdentifier;
+  version: RevisionVersion;
+  revision: RevisionIdentifier;
+  name: string;
+  oid: {
+    idString: string;
+  };
+  ownerId: RevisionIdentifier;
+  ownerFullName: string;
+  modificationDate: string;
+}
+
+interface RevisionHistoryResponse {
+  data: RevisionRecord[];
+}
+
+interface InternalLinkProps {
+  id: RevisionIdentifier;
+  version?: RevisionVersion | null;
+  initialEl?: RemovableElement | null;
+}
+
+interface EnhancedTableToolbarProps {
+  selected?: RevisionVersion | null;
+}
+
+type InsertRevisionDetail = {
+  id: RevisionIdentifier;
+  version?: RevisionVersion | null;
+  el?: RemovableElement | ArrayLike<RemovableElement | undefined> | null;
+};
+
+type InsertRevisionEvent = CustomEvent<InsertRevisionDetail>;
+type RemovableElement = {
+  remove: () => unknown;
+};
+
+function isRemovableElement(value: unknown): value is RemovableElement {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "remove" in value &&
+    typeof value.remove === "function"
+  );
+}
+
+declare const tinymce: {
+  activeEditor: {
+    remove: () => void;
+  };
+};
+
+declare global {
+  interface RSGlobal {
+    tinymceInsertInternalLink?: (...params: InternalLinkInsertParams) => void;
+  }
+
+  interface Window {
+    RS: RSGlobal;
+  }
+}
+
+const LATEST_REVISION_SELECTION = "__latest__" as const;
+const LATEST_REVISION_LABEL = "Always automatically update link to latest version";
+
+const headCells: Array<Cell<RevisionSortKey>> = [
   { id: "version", numeric: true, disablePadding: false, label: "Version" },
   { id: "name", numeric: false, disablePadding: false, label: "Name" },
   {
-    id: "modifiedBy",
+    id: "ownerFullName",
     numeric: false,
     disablePadding: false,
     label: "Modified by",
@@ -53,7 +129,50 @@ const useToolbarStyles = makeStyles()((theme) => ({
   },
 }));
 
-const EnhancedTableToolbar = (props) => {
+function matchesVersion(
+  left: RevisionVersion | null | undefined,
+  right: RevisionVersion | null | undefined,
+): boolean {
+  return left != null && right != null && String(left) === String(right);
+}
+
+function isLatestSelection(
+  selection: RevisionSelection | null,
+): selection is typeof LATEST_REVISION_SELECTION {
+  return selection === LATEST_REVISION_SELECTION;
+}
+
+function createAuditUrl(
+  id: RevisionIdentifier,
+  revision: RevisionIdentifier,
+): string {
+  return `/workspace/editor/structuredDocument/audit/view?recordId=${String(id)}&revision=${String(revision)}`;
+}
+
+function normalizeInitialElement(
+  initialEl: InsertRevisionDetail["el"],
+): RemovableElement | null {
+  if (!initialEl) {
+    return null;
+  }
+
+  if (typeof initialEl === "object" && "0" in initialEl) {
+    const firstElement = initialEl[0];
+    if (isRemovableElement(firstElement)) {
+      return firstElement;
+    }
+  }
+
+  if (isRemovableElement(initialEl)) {
+    return initialEl;
+  }
+
+  return null;
+}
+
+function EnhancedTableToolbar(
+  props: EnhancedTableToolbarProps,
+): React.ReactElement {
   const { classes } = useToolbarStyles();
 
   return (
@@ -64,7 +183,7 @@ const EnhancedTableToolbar = (props) => {
       </Typography>
     </Toolbar>
   );
-};
+}
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -90,62 +209,84 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-export default function InternalLink(props) {
+export default function InternalLink(
+  props: InternalLinkProps,
+): React.ReactElement {
   const { classes } = useStyles();
   const [open, setOpen] = React.useState(true);
-  const [revisions, setRevisions] = React.useState([]);
-  const [latestRevision, setLatestRevision] = React.useState({});
+  const [revisions, setRevisions] = React.useState<RevisionRecord[]>([]);
+  const [latestRevision, setLatestRevision] = React.useState<RevisionRecord | null>(null);
   // const [preview, setPreview] = React.useState("");
-  const [order, setOrder] = React.useState("desc");
-  const [orderBy, setOrderBy] = React.useState("version");
-  const [selected, setSelected] = React.useState(null);
+  const [order, setOrder] = React.useState<Order>("desc");
+  const [orderBy, setOrderBy] = React.useState<RevisionSortKey>("version");
+  const [selected, setSelected] = React.useState<RevisionSelection | null>(null);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
-  const handleClose = () => {
+  const handleClose = (): void => {
     setOpen(false);
   };
 
-  const handleInsert = () => {
-    RS.tinymceInsertInternalLink(...generateParams());
-    props.initialEl.remove();
+  const handleInsert = (): void => {
+    const params = generateParams();
+    if (!params) {
+      return;
+    }
+
+    window.RS.tinymceInsertInternalLink?.(...params);
+    props.initialEl?.remove();
     setOpen(false);
   };
 
-  const generateParams = () => {
-    let revision = revisions.find((r) => r.version == selected);
-    if (selected == latestRevision.version) {
-      revision = latestRevision;
+  const generateParams = (): InternalLinkInsertParams | null => {
+    const revision = isLatestSelection(selected)
+      ? latestRevision
+      : revisions.find((record) => matchesVersion(record.version, selected));
+
+    if (!revision || selected === null) {
+      return null;
     }
 
     return [
       revision.id, // id
       `${revision.oid.idString}${
-        selected == latestRevision.version ? "" : `v${selected}`
+        isLatestSelection(selected) ? "" : `v${String(selected)}`
       }`, // global id
       revision.name, // name
       tinymce.activeEditor, // ed
     ];
   };
 
-  const handleRequestSort = (event, property) => {
+  const handleRequestSort = (
+    _event: React.MouseEvent<HTMLSpanElement>,
+    property: RevisionSortKey,
+  ): void => {
     const isDesc = orderBy === property && order === "desc";
     setOrder(isDesc ? "asc" : "desc");
     setOrderBy(property);
   };
 
-  const handleClick = (event, name) => {
-    if (event.target.tagName != "A") {
-      setSelected(name);
+  const handleClick = (
+    event: React.MouseEvent<HTMLTableRowElement>,
+    name: RevisionSelection,
+  ): void => {
+    if (event.target instanceof HTMLElement && event.target.closest("a")) {
+      return;
     }
+    setSelected(name);
   };
 
-  const handleChangePage = (event, newPage) => {
+  const handleChangePage = (
+    _event: React.MouseEvent<HTMLButtonElement> | null,
+    newPage: number,
+  ): void => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ): void => {
+    setRowsPerPage(Number.parseInt(event.target.value, 10));
     setPage(0);
   };
 
@@ -153,35 +294,33 @@ export default function InternalLink(props) {
     rowsPerPage - Math.min(rowsPerPage, revisions.length - page * rowsPerPage);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       try {
-        const response = await axios.get(
+        const response = await axios.get<RevisionHistoryResponse>(
           `/workspace/revisionHistory/ajax/${props.id}/versions`,
         );
-        const fetchedRevisions = response.data.data.reverse(); // reverse to show latest first
-        let latest = fetchedRevisions[0]; // latest version is the first in the reversed list
-        latest = { ...latest }; // make a copy so that we do not edit the last version
-        latest.version = `Always automatically update link to latest version`;
+        const fetchedRevisions = [...response.data.data].reverse();
+        const latest = fetchedRevisions[0] ?? null;
         setLatestRevision(latest);
 
         setRevisions(fetchedRevisions);
-        setSelected(props.version ? props.version : latest.version);
+        setSelected(props.version ?? LATEST_REVISION_SELECTION);
 
         // calculate the initial page so that current revision is visible
         const idx = fetchedRevisions.findIndex(
-          (r) => r.version == props.version,
+          (revision) => matchesVersion(revision.version, props.version),
         );
-        if (idx != -1) {
+        if (idx !== -1) {
           // if revision's not found, selected "Always latest" and set to page 0
           setPage(Math.floor(idx / 5));
         }
-      } catch (e) {
-        console.log(e);
+      } catch (error: unknown) {
+        console.log(error);
       }
     };
 
-    fetchData();
-  }, []);
+    void fetchData();
+  }, [props.id, props.version]);
 
   return (
     <Dialog
@@ -196,53 +335,54 @@ export default function InternalLink(props) {
       </DialogTitle>
       <DialogContent>
         <EnhancedTableToolbar selected={props.version} />
-        <Table
-          className={classes.table}
-          size="small"
-          aria-label="Internal link version options"
-        >
-          <TableBody>
-            <TableRow
-              hover
-              onClick={(event) => handleClick(event, latestRevision.version)}
-              role="checkbox"
-              aria-checked={selected == latestRevision.version}
-              tabIndex={-1}
-              key={latestRevision.version}
-              selected={selected == latestRevision.version}
-            >
-              <TableCell scope="row" align="left">
-                <Radio
-                  checked={selected == latestRevision.version}
-                  value="d"
-                  color="default"
-                  name="radio-button-demo"
-                  inputProps={{ "aria-label": "D" }}
-                />
-              </TableCell>
-              <TableCell scope="row" align="left">
-                {latestRevision.version}
-              </TableCell>
-              <TableCell align="left">
-                <a
-                  target="_blank"
-                  href={`/workspace/editor/structuredDocument/audit/view?recordId=${latestRevision.id}&revision=${latestRevision.revision}&settingsKey=bYlIKtlZMd`}
-                  rel="noreferrer"
-                >
-                  {latestRevision.name}
-                </a>
-              </TableCell>
-              <TableCell align="left">
-                <UserDetails
-                  userId={latestRevision.ownerId}
-                  fullName={latestRevision.ownerFullName}
-                  position={["bottom", "right"]}
-                  variant="outlined"
-                />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        {latestRevision && (
+          <Table
+            className={classes.table}
+            size="small"
+            aria-label="Internal link version options"
+          >
+            <TableBody>
+              <TableRow
+                hover
+                onClick={(event) => handleClick(event, LATEST_REVISION_SELECTION)}
+                role="checkbox"
+                aria-checked={isLatestSelection(selected)}
+                tabIndex={-1}
+                key={LATEST_REVISION_SELECTION}
+                selected={isLatestSelection(selected)}
+              >
+                <TableCell scope="row" align="left">
+                  <Radio
+                    checked={isLatestSelection(selected)}
+                    value="d"
+                    color="default"
+                    name="radio-button-demo"
+                    inputProps={{ "aria-label": "D" }}
+                  />
+                </TableCell>
+                <TableCell scope="row" align="left">
+                  {LATEST_REVISION_LABEL}
+                </TableCell>
+                <TableCell align="left">
+                  <a
+                    target="_blank"
+                    href={createAuditUrl(latestRevision.id, latestRevision.revision)}
+                    rel="noreferrer"
+                  >
+                    {latestRevision.name}
+                  </a>
+                </TableCell>
+                <TableCell align="left">
+                  <UserDetails
+                    userId={latestRevision.ownerId}
+                    fullName={latestRevision.ownerFullName}
+                    position={["bottom", "right"]}
+                  />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        )}
         <Typography variant="overline" display="block" gutterBottom>
           Or choose a version that the link should always point at:
         </Typography>
@@ -255,7 +395,6 @@ export default function InternalLink(props) {
           >
             <EnhancedTableHead
               headCells={headCells}
-              classes={classes}
               order={order}
               orderBy={orderBy}
               onRequestSort={handleRequestSort}
@@ -266,7 +405,7 @@ export default function InternalLink(props) {
               {stableSort(revisions, getSorting(order, orderBy))
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((revision, index) => {
-                  const isItemSelected = revision.version == selected;
+                  const isItemSelected = matchesVersion(revision.version, selected);
                   const labelId = `enhanced-table-checkbox-${index}`;
 
                   return (
@@ -276,7 +415,7 @@ export default function InternalLink(props) {
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
-                      key={revision.version}
+                      key={String(revision.version)}
                       selected={isItemSelected}
                     >
                       <TableCell id={labelId} scope="row" align="left">
@@ -294,7 +433,7 @@ export default function InternalLink(props) {
                       <TableCell align="left">
                         <a
                           target="_blank"
-                          href={`/workspace/editor/structuredDocument/audit/view?recordId=${revision.id}&revision=${revision.revision}&settingsKey=bYlIKtlZMd`}
+                          href={createAuditUrl(revision.id, revision.revision)}
                           rel="noreferrer"
                         >
                           {revision.name}
@@ -342,8 +481,9 @@ export default function InternalLink(props) {
           variant="contained"
           disableElevation
           disabled={
-            selected == props.version ||
-            (!props.version && selected == latestRevision.version)
+            selected === null ||
+            matchesVersion(selected, props.version) ||
+            (props.version == null && isLatestSelection(selected))
           }
         >
           Update revision link
@@ -357,7 +497,7 @@ export default function InternalLink(props) {
  * This is necessary because as of MUI v5 useStyles cannot be used in the same
  * component as the root MuiThemeProvider
  */
-function WrappedInternalLink(props) {
+function WrappedInternalLink(props: InternalLinkProps): React.ReactElement {
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
@@ -367,15 +507,21 @@ function WrappedInternalLink(props) {
   );
 }
 
-document.addEventListener("tinymce-insert-revision", (e) => {
-  $(document.body).append("<span class='revision-dialog'></span>");
-  const container = $(".revision-dialog")[$(".revision-dialog").length - 1];
+document.addEventListener("tinymce-insert-revision", (event: Event): void => {
+  const detail = (event as InsertRevisionEvent).detail;
+  if (!detail) {
+    return;
+  }
+
+  const container = document.createElement("span");
+  container.className = "revision-dialog";
+  document.body.appendChild(container);
   const root = createRoot(container);
   root.render(
     <WrappedInternalLink
-      id={e.detail.id}
-      version={e.detail.version}
-      initialEl={e.detail.el}
+      id={detail.id}
+      version={detail.version}
+      initialEl={normalizeInitialElement(detail.el)}
     />,
   );
 });
