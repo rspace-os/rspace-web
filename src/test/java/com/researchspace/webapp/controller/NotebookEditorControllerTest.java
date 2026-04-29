@@ -24,6 +24,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.impl.UserContentUpdater;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -39,6 +40,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockServletContext;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 import org.springframework.web.servlet.ModelAndView;
@@ -51,6 +53,8 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
   private final String TEXT_FIELD_NAME = "TEXT ";
   private final String TEST_DATA_RECORD_NAME = "RECORD NAME ";
   private final String TEST_DATA_FOLDER_NAME = "FOLDER NAME ";
+  @Mock private UserContentUpdater userContentUpdaterMock;
+  @Autowired private UserContentUpdater userContentUpdaterBean;
 
   @Autowired private NotebookEditorController notebookEditorController;
 
@@ -91,12 +95,14 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
     notebookEditorController.setRecordManager(recordManagerStub);
     notebookEditorController.setPermissionUtils(permissionUtils);
     notebookEditorController.setServletContext(servletContext);
+    ReflectionTestUtils.setField(grpMgr, "userContentUpdater", userContentUpdaterMock);
   }
 
   @After
   public void tearDown() throws Exception {
     RSpaceTestUtils.logout();
     FolderManagerStub.noteBooksArePublished = false;
+    ReflectionTestUtils.setField(grpMgr, "userContentUpdater", userContentUpdaterBean);
   }
 
   @Test(expected = AuthorizationException.class)

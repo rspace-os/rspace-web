@@ -110,7 +110,7 @@ public class GroupManagerImpl implements GroupManager {
   private @Autowired PermissionFactory permFactory;
   private @Autowired GroupDao groupDao;
   private @Autowired CollaborationGroupTrackerDao collabGrpTrackerDao;
-
+  private @Autowired UserContentUpdater userContentUpdater;
   private @Autowired CommunicationDao communicationDao;
   private @Autowired CommunityDao communityDao;
   private @Autowired DAOUtils daoUtils;
@@ -180,6 +180,9 @@ public class GroupManagerImpl implements GroupManager {
 
     Group group = groupDao.get(groupId);
     User userToAdd = userDao.getUserByUsername(usernameToAdd);
+    // Legacy users that have never logged in and dont belong to any group will not have the correct
+    // snippet folders - this will create them
+    userContentUpdater.doUserContentUpdates(userToAdd);
     Set<ConstraintBasedPermission> grpRolePerms = getPermissionsForRole(role, group);
     // if group already has user, just return
     if (group.hasMember(userToAdd)) {
