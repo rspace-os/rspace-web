@@ -286,5 +286,3 @@ async function insertSnippetFromGallery(data: WorkspaceRecordInformation) {
     alert(`An error occurred while inserting the snippet ${data.id}`);
   }
 }
-
-

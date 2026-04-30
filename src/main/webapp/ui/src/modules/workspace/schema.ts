@@ -59,7 +59,7 @@ export const WorkspaceRecordInformationSchema = v.objectWithRest(
     originalOwnerUsernamePreImport: v.optional(v.nullable(v.string())),
     creationDateWithClientTimezoneOffset: v.optional(v.string()),
     modificationDateWithClientTimezoneOffset: v.optional(v.string()),
-    status: v.optional(WorkspaceRecordEditStatusSchema),
+    status: v.optional(v.nullable(WorkspaceRecordEditStatusSchema)),
     currentEditor: v.optional(v.nullable(v.string())),
     signed: v.optional(v.boolean()),
     signatureStatus: v.optional(v.nullable(WorkspaceRecordSignatureStatusSchema)),
