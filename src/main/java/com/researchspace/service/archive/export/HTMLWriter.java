@@ -5,6 +5,7 @@ import static com.researchspace.core.util.imageutils.ImageUtils.TIFF_EXTENSIONS;
 import com.researchspace.archive.ArchivalGalleryMetadata;
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.archive.ArchiveUtils;
+import com.researchspace.export.externalworkflows.ExternalWorkflowHtmlGenerator;
 import com.researchspace.export.stoichiometry.StoichiometryHtmlGenerator;
 import com.researchspace.model.record.Record;
 import java.io.File;
@@ -28,6 +29,7 @@ public class HTMLWriter implements ExportObjectWriter {
   @Autowired private VelocityEngine velocity;
   Logger logger = LoggerFactory.getLogger(HTMLWriter.class);
   @Autowired private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
+  @Autowired private ExternalWorkflowHtmlGenerator externalWorkflowHtmlGenerator;
 
   @Override
   public void writeExportObject(File outputFile, ExportedRecord exported) {
@@ -79,6 +81,7 @@ public class HTMLWriter implements ExportObjectWriter {
       nfsFiles = exported.getArchivedRecord().getAllDistinctNfsElements();
     }
     velocityModel.put("nfsFiles", nfsFiles);
+    velocityModel.put("externalWorkflowHtmlGenerator", externalWorkflowHtmlGenerator);
 
     Record exportedRcd = exported.getExportedRecord();
     addParentLink(velocityModel, exportedRcd);
