@@ -59,7 +59,6 @@ export type IntegrationState<Credentials> = {
 export type IntegrationStates = {
   API_DIRECT: IntegrationState<null>;
   ARGOS: IntegrationState<emptyObject>;
-  ASCENSCIA: IntegrationState<emptyObject>;
   BOX: IntegrationState<{
     BOX_LINK_TYPE: Optional<"LIVE" | "VERSIONED" | "ASK">;
     "box.api.enabled": Optional<boolean>;
@@ -259,13 +258,6 @@ export type Integration = keyof IntegrationStates;
 
 function decodeArgos(data: FetchedState): IntegrationStates["ARGOS"] {
   return {mode: parseState(data), credentials: {}};
-}
-
-function decodeAscenscia(data: FetchedState): IntegrationStates["ASCENSCIA"] {
-  return {
-    mode: parseState(data),
-    credentials: {}
-  };
 }
 
 function decodeBox(data: FetchedState): IntegrationStates["BOX"] {
@@ -897,7 +889,6 @@ function decodeIntegrationStates(data: {
       credentials: null,
     },
     ARGOS: decodeArgos(data.ARGOS),
-    ASCENSCIA: decodeAscenscia(data.ASCENSCIA),
     BOX: decodeBox(data.BOX),
     CHEMISTRY: decodeChemistry(data.CHEMISTRY),
     CLUSTERMARKET: decodeClustermarket(data.CLUSTERMARKET),
@@ -936,17 +927,6 @@ const encodeIntegrationState = <I extends Integration>(
   if (integration === "ARGOS") {
     return {
       name: "ARGOS",
-      available: data.mode !== "UNAVAILABLE",
-      enabled: data.mode === "ENABLED",
-      options: {},
-    };
-  }
-  if (integration === "ASCENSCIA") {
-    // @ts-expect-error Looks like this is a bug in TypeScript?
-    const creds: IntegrationStates["ASCENSCIA"]["credentials"] =
-        data.credentials;
-    return {
-      name: "ASCENSCIA",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {},
@@ -1538,8 +1518,6 @@ export function useIntegrationsEndpoint(): {
             switch (integration) {
               case "ARGOS":
                 return decodeArgos(responseData.data) as IntegrationStates[I];
-              case "ASCENSCIA":
-                return decodeAscenscia(responseData.data) as IntegrationStates[I];
               case "BOX":
                 return decodeBox(responseData.data) as IntegrationStates[I];
               case "CHEMISTRY":
