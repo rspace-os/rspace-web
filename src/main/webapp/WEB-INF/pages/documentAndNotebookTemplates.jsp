@@ -317,6 +317,27 @@
 
 <jsp:include page="recordInfoPanel.jsp" />
 
+<div id="nfsFileInfoDialog" style="display: none">
+  <div class="nfsFileInfoPanel">
+    <table class="nfsInfoTable">
+      <tr><td colspan="2" class="nfsInfoTableHeaderRow"></td></tr>
+      <tr><td class="nfsInfoLabelCell">Name: </td><td class="nfsInfoPanel-name"> </td></tr>
+      <tr><td class="nfsInfoLabelCell">Original path: </td><td class="nfsInfoPanel-path"> </td></tr>
+      <tr><td>&nbsp;</td><td></td></tr>
+      <tr><td colspan="2">Stored on a File System:</td></tr>
+      <tr><td class="nfsInfoLabelCell">Name: </td><td class="nfsInfoPanel-fileSystemName"> </td></tr>
+      <tr><td class="nfsInfoLabelCell">URL: </td><td class="nfsInfoPanel-fileSystemPath"> </td></tr>
+      <tr class="nfsInfoShareNameRow">
+        <td class="nfsInfoLabelCell">Share: </td><td class="nfsInfoPanel-fileSystemShareName"> </td>
+      </tr>
+    </table>
+    <div class="nfsInfoPanelButtons">
+      <button type='button' title="Update Current Path" class='nfsInfoPanelBtn nfsUpdatePathBtn'>Update Path</button>
+      <button type='button' title="Download through RSpace" class='nfsInfoPanelBtn nfsFileDownloadBtn'>Download</button>
+    </div>
+  </div>
+</div>
+
 <!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
 <script src="<c:url value='/ui/dist/exportModal.js'/>"></script>
