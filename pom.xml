@@ -13,7 +13,7 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>3.0.0</version>
+    <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
   </parent>
 
   <repositories>
@@ -730,7 +730,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-test-util</artifactId>
-      <version>3.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -746,12 +746,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>snapgene-java-client</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-audit</artifactId>
-      <version>1.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
@@ -1398,7 +1398,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-license-server-entities</artifactId>
-      <version>0.8.2</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>javax.validation</groupId>
@@ -1524,12 +1524,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-repository-spi</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dataverse-adapter</artifactId>
-      <version>4.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1607,7 +1607,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-external-auth</artifactId>
-      <version>2.0.1</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1666,12 +1666,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-util</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>3.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1727,7 +1727,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-document-conversion-spi</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1738,7 +1738,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-figshare-adapter</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1749,7 +1749,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dryad-adapter</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1760,7 +1760,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-zenodo-adapter</artifactId>
-      <version>1.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1771,12 +1771,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rda-dmp-common-standard</artifactId>
-      <version>0.1.2</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-digital-commons-data-adapter</artifactId>
-      <version>0.0.6</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1819,17 +1819,17 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>protocols-java-client</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>fieldmark-java-client</artifactId>
-      <version>4.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>galaxy-java-client</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>org.jetbrains</groupId>
@@ -1840,12 +1840,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>argos-java-client</artifactId>
-      <version>1.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>dmptool-java-client</artifactId>
-      <version>1.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1856,7 +1856,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>raid-java-client</artifactId>
-      <version>4.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1887,12 +1887,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>datacite-java-client</artifactId>
-      <version>1.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-egnyte</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1907,7 +1907,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-rest-api-utils</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -2016,7 +2016,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-evernote-parser</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -2086,7 +2086,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-snapgene-adapter</artifactId>
-      <version>2.0.0</version>
+      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.thoughtworks.xstream</groupId>
