@@ -58,6 +58,25 @@
     text-align: center;
   }
 
+  .external-workflow-data {
+    text-align: center;
+  }
+
+  .external-workflow-table {
+    border-collapse: collapse;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .external-workflow-table td, .external-workflow-table th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 6px;
+    font-size: 80%;
+    word-wrap: break-word;
+  }
+
   .docExtrasTable {
     border-collapse: collapse;
     width: 90%;

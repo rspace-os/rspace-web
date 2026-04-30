@@ -24,6 +24,7 @@
     <div style="width:960px" >
     $field.fieldDataPrintable
     </div>
+     $externalWorkflowHtmlGenerator.getHtmlForArchivedExternalWorkflowData($field.externalWorkFlowData, $field.externalWorkFlowInvocations)
     <div>
      ## Here we're listing comments
       #if(! $field.comments.isEmpty())
