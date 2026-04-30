@@ -12,15 +12,21 @@ import com.researchspace.model.UserKeyPair;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.netfiles.s3.AwsS3Client;
 import com.researchspace.netfiles.samba.JcifsClient;
 import com.researchspace.netfiles.samba.SmbjClient;
 import com.researchspace.netfiles.sftp.SftpClient;
+import com.researchspace.service.aws.S3Utilities;
+import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class NfsFactoryTest {
 
   private NfsFactory factory = new NfsFactory();
+
+  private S3UtilitiesFactory s3UtilitiesFactoryMock = Mockito.mock(S3UtilitiesFactory.class);
 
   private String testServerUrl = "sftp://test";
   private String testUsername = "test";
@@ -31,6 +37,8 @@ public class NfsFactoryTest {
 
   @Before
   public void setUp() {
+    factory.setS3UtilitiesFactory(s3UtilitiesFactoryMock);
+
     // dummy key pair
     testUserKeyPair = new UserKeyPair();
     testUserKeyPair.setUser(new User(testUsername));
@@ -136,5 +144,22 @@ public class NfsFactoryTest {
     assertNotNull(smbjClient);
     assertEquals("test.url", smbjClient.getSambaHost());
     assertEquals("testShare", smbjClient.getShareName());
+  }
+
+  @Test
+  public void creatingAwsS3Client() {
+    testFileSystem.setClientType(NfsClientType.S3);
+    testFileSystem.setAuthType(NfsAuthenticationType.NONE);
+    testFileSystem.setClientOptions("S3_REGION=testRegion\nS3_BUCKET_NAME=testBucket");
+
+    S3Utilities mockS3Utilities = Mockito.mock(S3Utilities.class);
+    Mockito.when(s3UtilitiesFactoryMock.createS3UtilitiesForNfsConnector(testFileSystem))
+        .thenReturn(mockS3Utilities);
+
+    AwsS3Client awsS3Client =
+        (AwsS3Client) factory.getNfsClient(testUsername, null, testFileSystem);
+    assertNotNull(awsS3Client);
+    assertEquals(testUsername, awsS3Client.getUsername());
+    Mockito.verify(s3UtilitiesFactoryMock).createS3UtilitiesForNfsConnector(testFileSystem);
   }
 }

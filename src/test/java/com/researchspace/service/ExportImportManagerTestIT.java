@@ -104,7 +104,7 @@ import com.researchspace.service.archive.PostArchiveCompletion;
 import com.researchspace.service.archive.export.ArchiveRemover;
 import com.researchspace.service.archive.export.ExportRemovalPolicy;
 import com.researchspace.service.archive.export.StoichiometryReader;
-import com.researchspace.service.aws.S3Utilities;
+import com.researchspace.service.aws.S3ExportUtilities;
 import com.researchspace.service.chemistry.DefaultChemistryProvider;
 import com.researchspace.testutils.ArchiveTestUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -188,7 +188,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired DiskSpaceChecker diskSpaceChecker;
   private @Autowired @Qualifier("importUsersAndRecords") ImportStrategy importStrategy;
 
-  @Mock private S3Utilities s3Utilities;
+  @Mock private S3ExportUtilities s3ExportUtilities;
 
   @Autowired
   @Qualifier("standardPostExportCompletionImpl")
@@ -2579,10 +2579,10 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     SdkHttpResponse sdkHttpResponse = SdkHttpResponse.builder().statusCode(200).build();
     // PutObjectResponse putObjectResponse = Mockito.mock(PutObjectResponse.class);
 
-    when(s3Utilities.getPresignedUrlForArchiveDownload(anyString()))
+    when(s3ExportUtilities.getPresignedUrlForArchiveDownload(anyString()))
         .thenReturn(new URL("http://www.google.com"));
-    when(s3Utilities.isArchiveInS3(anyString())).thenReturn(true);
-    when(s3Utilities.uploadToS3(any(File.class))).thenReturn(sdkHttpResponse);
+    when(s3ExportUtilities.isArchiveInS3(anyString())).thenReturn(true);
+    when(s3ExportUtilities.uploadArchiveToS3(any(File.class))).thenReturn(sdkHttpResponse);
     ReflectionTestUtils.setField(standardPostExport, "hasS3Access", true);
 
     File file =

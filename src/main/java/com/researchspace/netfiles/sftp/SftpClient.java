@@ -137,7 +137,7 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
 
   @Override
   public NfsFileTreeNode createFileTree(
-      String target, String nfsOrder, NfsFileStore activeUserFolder) throws NfsException {
+      String target, String nfsOrder, NfsFileStore activeFilestore) throws NfsException {
 
     NfsFileTreeNode rootNode = new NfsFileTreeNode();
     NfsFileTreeOrderType order = NfsFileTreeOrderType.parseOrderTypeString(nfsOrder);
@@ -146,7 +146,7 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
     String lsPath = sanitiseLsPath(target);
     List<LsEntry> lsResult = getLsResult(lsPath);
     for (LsEntry lsEntry : lsResult) {
-      rootNode.addNode(getNodeFromLsEntry(lsEntry, lsPath, order, activeUserFolder));
+      rootNode.addNode(getNodeFromLsEntry(lsEntry, lsPath, order, activeFilestore));
     }
 
     String rootNodePath = CURRENT_DIR_PATH.equals(lsPath) ? getCurrentDirectory() : lsPath;

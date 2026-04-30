@@ -19,7 +19,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Record;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.archive.PostArchiveCompletion;
-import com.researchspace.service.aws.S3Utilities;
+import com.researchspace.service.aws.S3ExportUtilities;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired ExportRemovalPolicy removalPolicy;
   private @Autowired VelocityEngine velocity;
-  private @Autowired S3Utilities s3Utilities;
+  private @Autowired S3ExportUtilities s3ExportUtilities;
 
   @Value("${server.urls.prefix}")
   private String serverURLPrefix;
@@ -67,7 +67,7 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
   private void handleS3Export(IArchiveExportConfig expCfg, File fileToExport) {
     if (hasS3Access) {
 
-      SdkHttpResponse response = s3Utilities.uploadToS3(fileToExport);
+      SdkHttpResponse response = s3ExportUtilities.uploadArchiveToS3(fileToExport);
       if (response == null || response.statusCode() != 200) {
 
         log.error(
@@ -118,8 +118,8 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
   }
 
   private String handlePresignedS3Url(ArchiveResult result, File fileToPresign) {
-    if (hasS3Access && s3Utilities.isArchiveInS3(fileToPresign.getName())) {
-      URL s3Url = s3Utilities.getPresignedUrlForArchiveDownload(fileToPresign.getName());
+    if (hasS3Access && s3ExportUtilities.isArchiveInS3(fileToPresign.getName())) {
+      URL s3Url = s3ExportUtilities.getPresignedUrlForArchiveDownload(fileToPresign.getName());
       if (s3Url != null) {
         return s3Url.toString();
       } else {

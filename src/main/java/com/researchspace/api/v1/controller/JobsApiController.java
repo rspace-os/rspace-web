@@ -4,7 +4,7 @@ import com.researchspace.api.v1.JobsApi;
 import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.model.User;
-import com.researchspace.service.aws.S3Utilities;
+import com.researchspace.service.aws.S3ExportUtilities;
 import java.net.URL;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,7 @@ public class JobsApiController extends BaseApiController implements JobsApi {
   @Value("${aws.s3.hasS3Access}")
   boolean hasS3Access; // package-scoped for testing
 
-  private @Autowired S3Utilities s3Utils;
+  private @Autowired S3ExportUtilities s3ExportUtils;
 
   @Override
   public ApiJob get(
@@ -43,7 +43,7 @@ public class JobsApiController extends BaseApiController implements JobsApi {
           ArchiveUtils.getApiExportDownloadLink(
               properties.getServerUrl(), job.getResourceLocation()));
     else {
-      URL s3Link = s3Utils.getPresignedUrlForArchiveDownload(job.getResourceLocation());
+      URL s3Link = s3ExportUtils.getPresignedUrlForArchiveDownload(job.getResourceLocation());
       if (s3Link != null) job.addEnclosureLink(s3Link.toString());
       else {
         throw new IllegalStateException(
