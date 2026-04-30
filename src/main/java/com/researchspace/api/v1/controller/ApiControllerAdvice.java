@@ -23,7 +23,6 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -175,15 +174,13 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   }
 
   @Override
+  @ExceptionHandler(BindException.class)
   protected ResponseEntity<Object> handleBindException(
-      final BindException ex,
-      final HttpHeaders headers,
-      final HttpStatusCode status,
-      final WebRequest request) {
+      final BindException ex, final WebRequest request) {
 
     logException(ex);
     final ApiError apiError = getApiErrorFromBindException(ex);
-    return handleExceptionInternal(ex, apiError, headers, apiError.getStatus(), request);
+    return handleExceptionInternal(ex, apiError, new HttpHeaders(), apiError.getStatus(), request);
   }
 
   public ApiError getApiErrorFromBindException(final BindException ex) {
