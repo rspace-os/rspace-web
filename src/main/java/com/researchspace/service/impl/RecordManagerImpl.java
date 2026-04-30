@@ -1456,12 +1456,7 @@ public class RecordManagerImpl implements RecordManager {
 
   @Override
   public void transferTemplates(
-      User originalOwner,
-      User newOwner,
-      List<Long> templateIds,
-      Folder destination,
-      String updatedOriginalOwnerName) {
-    recordDao.transferTemplates(
-        originalOwner, newOwner, templateIds, destination, updatedOriginalOwnerName);
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName) {
+    recordDao.transferTemplates(originalOwner, newOwner, templateIds, updatedOriginalOwnerName);
   }
 }

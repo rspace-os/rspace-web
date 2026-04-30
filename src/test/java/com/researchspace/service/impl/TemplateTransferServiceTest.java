@@ -10,7 +10,6 @@ import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
-import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
@@ -36,8 +35,6 @@ class TemplateTransferServiceTest {
 
   @Mock RecordManager recordManager;
 
-  @Mock BaseRecordManager baseRecordManager;
-
   @Mock SharingHandler recordSharingHandler;
 
   @InjectMocks TemplateTransferService templateTransferService;
@@ -58,7 +55,6 @@ class TemplateTransferServiceTest {
     Mockito.verifyNoMoreInteractions(recordGroupSharingDao);
     Mockito.verifyNoInteractions(
         folderManager, recordManager, recordSharingHandler, auditTrailService);
-    Mockito.verifyNoInteractions(baseRecordManager);
   }
 
   @Test
@@ -69,7 +65,6 @@ class TemplateTransferServiceTest {
             recordGroupSharingDao,
             folderManager,
             recordManager,
-            baseRecordManager,
             recordSharingHandler);
 
     User originalOwner = new User();
@@ -129,7 +124,6 @@ class TemplateTransferServiceTest {
             originalOwner,
             newOwner,
             expectedTemplateIds,
-            deletedUserFolder,
             originalOwner.getUsername() + TemplateTransferService.DELETED_USER_NAME_SUFFIX);
 
     Mockito.verify(folderManager, Mockito.never())
@@ -151,7 +145,6 @@ class TemplateTransferServiceTest {
             recordGroupSharingDao,
             folderManager,
             recordManager,
-            baseRecordManager,
             recordSharingHandler);
 
     User originalOwner = new User();
@@ -212,7 +205,6 @@ class TemplateTransferServiceTest {
             originalOwner,
             newOwner,
             List.of(1L),
-            deletedUserFolder,
             originalOwner.getUsername() + TemplateTransferService.DELETED_USER_NAME_SUFFIX);
   }
 

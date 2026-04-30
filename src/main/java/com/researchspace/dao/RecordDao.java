@@ -168,9 +168,5 @@ public interface RecordDao extends GenericDao<Record, Long> {
   void moveUsersRecordsToFolder(List<Long> recordIds, User currentOwner, Folder destinationFolder);
 
   void transferTemplates(
-      User originalOwner,
-      User newOwner,
-      List<Long> templateIds,
-      Folder destination,
-      String updatedOriginalOwnerName);
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName);
 }

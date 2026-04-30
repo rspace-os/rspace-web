@@ -792,6 +792,15 @@ const DeleteAction = ({
       ),
     );
 
+  function getDeleteMessage(user: User): string {
+    let deleteMessage =
+    (user.hasFormsUsedByOtherUsers && !user.hasTemplatesUsedByOtherUsers) ? "Transfer Forms And Delete"
+        : (user.hasTemplatesUsedByOtherUsers && !user.hasFormsUsedByOtherUsers) ? "Transfer Templates And Delete"
+            : (user.hasFormsUsedByOtherUsers && user.hasTemplatesUsedByOtherUsers) ? "Transfer Forms And Templates And Delete"
+                : "Delete";
+    return deleteMessage;
+  }
+
   return (
     <>
       <MenuItem
@@ -934,12 +943,7 @@ const DeleteAction = ({
                   type="submit"
                   loading={false}
                   disabled={false}
-                  label={
-                    (user.hasFormsUsedByOtherUsers && !user.hasTemplatesUsedByOtherUsers) ? "Transfer Forms And Delete"
-                        : (user.hasTemplatesUsedByOtherUsers && !user.hasFormsUsedByOtherUsers) ? "Transfer Templates And Delete"
-                            : (user.hasFormsUsedByOtherUsers && user.hasTemplatesUsedByOtherUsers) ? "Transfer Forms And Templates And Delete"
-                                : "Delete"
-                  }
+                  label={getDeleteMessage(user)}
                 />
               </DialogActions>
             </form>

@@ -43,8 +43,6 @@ import org.springframework.stereotype.Repository;
 public class RecordGroupSharingDaoHibernateImpl
     extends GenericDaoHibernate<RecordGroupSharing, Long> implements RecordGroupSharingDao {
 
-  private String DELETED_SUFFIX = "(Deleted)";
-
   public RecordGroupSharingDaoHibernateImpl() {
     super(RecordGroupSharing.class);
   }
@@ -188,6 +186,20 @@ public class RecordGroupSharingDaoHibernateImpl
     return query;
   }
 
+  @Override
+  public boolean hasUserSharedTemplates(User user) {
+    Session session = getSession();
+    Object result =
+        session
+            .createQuery(
+                "select count (rgs.id) from RecordGroupSharing rgs join BaseRecord br ON"
+                    + " rgs.shared.id = br.id WHERE br.type like '%template%' AND br.owner=:owner")
+            .setParameter("owner", user)
+            .uniqueResult();
+    Long count = (Long) result;
+    return count > 0;
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public List<BaseRecord> getTemplatesSharedByUser(User user) {
@@ -195,6 +207,7 @@ public class RecordGroupSharingDaoHibernateImpl
     List<BaseRecord> templates =
         sharedRecords.stream()
             .map(RecordGroupSharing::getShared)
+            .distinct()
             .filter(b -> b.hasType(RecordType.TEMPLATE))
             .collect(toList());
     return templates;
@@ -445,7 +458,7 @@ public class RecordGroupSharingDaoHibernateImpl
     }
   }
 
-  public List<RecordGroupSharing> getRecordsSharedByUser(User user) {
+  private List<RecordGroupSharing> getRecordsSharedByUser(User user) {
     Session session = getSession();
     Query<RecordGroupSharing> query =
         session
@@ -467,7 +480,7 @@ public class RecordGroupSharingDaoHibernateImpl
                     + " and rgs.sharee.id=:grpId",
                 RecordGroupSharing.class)
             .setParameter("userId", user.getId())
-            .setParameter("grpId", null != grp.getId() ? grp.getId() : "*");
+            .setParameter("grpId", grp.getId());
     List<RecordGroupSharing> rc = query.list();
     return rc;
   }

@@ -143,7 +143,7 @@ public class UserProfileController extends BaseController {
   private static final String AFFILIATION = "affiliation";
   public static final String API_KEY_IS_ACTIVE = "apiKey is ACTIVE";
   private static final String USER_NOT_FOUND =
-      "User could not be found.  The user may have been deleted.";
+      "User with ID [%s] could not be found. The user may have been deleted.";
 
   private @Autowired IReauthenticator reauthenticator;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissionUtils;
@@ -211,7 +211,7 @@ public class UserProfileController extends BaseController {
       try {
         user = userManager.getUser(userId + "");
       } catch (ObjectRetrievalFailureException e) {
-        throw new UserNotFoundException(USER_NOT_FOUND);
+        throw new UserNotFoundException(String.format(USER_NOT_FOUND, userId));
       }
     }
 

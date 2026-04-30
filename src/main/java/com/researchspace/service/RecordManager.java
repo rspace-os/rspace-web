@@ -675,13 +675,8 @@ public interface RecordManager {
    * @param originalOwner
    * @param newOwner
    * @param templateIds
-   * @param destination
    * @param updatedOriginalOwnerName
    */
   void transferTemplates(
-      User originalOwner,
-      User newOwner,
-      List<Long> templateIds,
-      Folder destination,
-      String updatedOriginalOwnerName);
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName);
 }

@@ -8,7 +8,6 @@ import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
-import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
@@ -28,7 +27,6 @@ public class TemplateTransferService implements TransferService {
   private final RecordGroupSharingDao recordGroupSharingDao;
   private final FolderManager folderManager;
   private final RecordManager recordManager;
-  private final BaseRecordManager baseRecordManager;
   private final SharingHandler recordSharingHandler;
 
   @Autowired
@@ -37,13 +35,11 @@ public class TemplateTransferService implements TransferService {
       RecordGroupSharingDao recordGroupSharingDao,
       FolderManager folderManager,
       RecordManager recordManager,
-      BaseRecordManager baseRecordManager,
       SharingHandler recordSharingHandler) {
     this.auditTrailService = auditTrailService;
     this.recordGroupSharingDao = recordGroupSharingDao;
     this.folderManager = folderManager;
     this.recordManager = recordManager;
-    this.baseRecordManager = baseRecordManager;
     this.recordSharingHandler = recordSharingHandler;
   }
 
@@ -68,8 +64,7 @@ public class TemplateTransferService implements TransferService {
       recordManager.moveUsersRecordsToFolder(templateIds, originalOwner, deletedUserFolder);
 
       String deletedUserName = originalOwner.getUsername() + DELETED_USER_NAME_SUFFIX;
-      recordManager.transferTemplates(
-          originalOwner, newOwner, templateIds, deletedUserFolder, deletedUserName);
+      recordManager.transferTemplates(originalOwner, newOwner, templateIds, deletedUserName);
 
       String description =
           String.format(

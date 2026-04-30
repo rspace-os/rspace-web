@@ -445,9 +445,5 @@ public class RecordManagerStub implements RecordManager {
 
   @Override
   public void transferTemplates(
-      User originalOwner,
-      User newOwner,
-      List<Long> templateIds,
-      Folder destination,
-      String updatedOriginalOwnerName) {}
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName) {}
 }

@@ -649,8 +649,8 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
   }
 
   /**
-   * Moves the specified records that are currently owned by the specified
-   * user to the given folder.
+   * Moves the specified records that are currently owned by the specified user to the given folder.
+   *
    * @param recordIds - The records to be moved.
    * @param currentOwner - The current owner of those records
    * @param destinationFolder - The new folder for those records
@@ -675,21 +675,15 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
 
   /**
    * Transfers ownership of templates from one user to another user.
+   *
    * @param originalOwner - Original owner of the templates
    * @param newOwner - New owner of the templates
    * @param templateIds - IDs of the templates to be transferred
-   * @param destination - The folder that the templates have been moved to
-   * @param updatedOriginalOwnerName - An updated name, if any, for the
-   *                                 original owner.  (e.g. In the case the
-   *                                 user has been deleted and updated with a
-   *                                 suffix to denote that.)
+   * @param updatedOriginalOwnerName - An updated name, if any, for the original owner. (e.g. In the
+   *     case the user has been deleted and updated with a suffix to denote that.)
    */
   public void transferTemplates(
-      User originalOwner,
-      User newOwner,
-      List<Long> templateIds,
-      Folder destination,
-      String updatedOriginalOwnerName) {
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName) {
     Query<?> query;
 
     query =
