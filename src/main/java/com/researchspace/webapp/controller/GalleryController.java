@@ -61,7 +61,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 /** This controller handles all the operations in the gallery. */
 @Controller
-@RequestMapping({"/gallery"})
+@RequestMapping({"/gallery", "/public/publicView/gallery"})
 public class GalleryController extends BaseController {
 
   public static final String GALLERY_VIEW = "gallery";
