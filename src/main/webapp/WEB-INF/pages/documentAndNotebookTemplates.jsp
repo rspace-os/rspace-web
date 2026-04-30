@@ -308,6 +308,9 @@
       <tr><td colspan="2">Stored on a File System:</td></tr>
       <tr><td class="nfsInfoLabelCell">Name: </td><td class="nfsInfoPanel-fileSystemName"> </td></tr>
       <tr><td class="nfsInfoLabelCell">URL: </td><td class="nfsInfoPanel-fileSystemPath"> </td></tr>
+      <tr class="nfsInfoBucketNameRow">
+        <td class="nfsInfoLabelCell">Bucket: </td><td class="nfsInfoPanel-bucketName"> </td>
+      </tr>
       <tr class="nfsInfoShareNameRow">
         <td class="nfsInfoLabelCell">Share: </td><td class="nfsInfoPanel-fileSystemShareName"> </td>
       </tr>
