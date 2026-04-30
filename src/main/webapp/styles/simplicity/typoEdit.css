@@ -413,24 +413,32 @@
   }
 
   a.nfs_file {
-        background-image: url(/images/icons/fileStoreLink.png) !important;
-        background-repeat: no-repeat !important;
-        background-position: 5px !important;
-        border: 1px dashed #CCCCCC;
-        margin: 5px;
-        padding: 10px 10px 5px 30px;
-  }
-  a.nfs_file[data-linktype="file"][data-nfstype="IRODS"] {
-        background-image: url(/images/icons/fileStoreIrodsLink.png) !important;
-        padding: 10px 10px 5px 48px;
+    background-image: url(/images/icons/fileStoreLink.png) !important;
+    background-repeat: no-repeat !important;
+    background-position: 5px !important;
+    border: 1px dashed #CCCCCC;
+    margin: 5px;
+    padding: 10px 10px 5px 30px;
   }
   a.nfs_file[data-linktype="directory"] {
-        background-image: url(/images/icons/fileStoreFolderLink.png) !important;
-        padding: 10px 10px 5px 48px; 
+    background-image: url(/images/icons/fileStoreFolderLink.png) !important;
+    padding: 10px 10px 5px 48px;
+  }
+  a.nfs_file[data-linktype="file"][data-nfstype="IRODS"] {
+    background-image: url(/images/icons/fileStoreIrodsLink.png) !important;
+    padding: 10px 10px 5px 48px;
   }
   a.nfs_file[data-linktype="directory"][data-nfstype="IRODS"] {
-        background-image: url(/images/icons/fileStoreIrodsFolderLink.png) !important;
-        padding: 10px 10px 5px 68px;
+    background-image: url(/images/icons/fileStoreIrodsFolderLink.png) !important;
+    padding: 10px 10px 5px 68px;
+  }
+  a.nfs_file[data-linktype="file"][data-nfstype="S3"] {
+    background-image: url(/images/icons/fileStoreS3Link.png) !important;
+    padding: 10px 10px 5px 48px;
+  }
+  a.nfs_file[data-linktype="directory"][data-nfstype="S3"] {
+    background-image: url(/images/icons/fileStoreS3FolderLink.png) !important;
+    padding: 10px 10px 5px 68px;
   }
     
     a.linkedRecord, .mce-content-body a.linkedRecord {

@@ -1826,6 +1826,7 @@ RS.initAndOpenNetFileInfoDialog = function ($link) {
         var headerText = isFolder ? "Folder details: " : "File details:";
         var isSmbj = data.fileSystem.clientType === 'SMBJ';
         var isIrods = data.fileSystem.clientType === 'IRODS';
+        var isS3 = data.fileSystem.clientType === 'S3';
         $newInfoPanel.find('.nfsInfoTableHeaderRow').text(headerText);
         $newInfoPanel.find('.nfsInfoPanel-name').text(name);
 
@@ -1834,9 +1835,12 @@ RS.initAndOpenNetFileInfoDialog = function ($link) {
         $newInfoPanel.find('.nfsInfoPanel-fileSystemName').text(data.fileSystem.name);
         $newInfoPanel.find('.nfsInfoPanel-fileSystemPath').text(data.fileSystem.url);
         $newInfoPanel.find('.nfsInfoShareNameRow').toggle(isSmbj);
+        $newInfoPanel.find('.nfsInfoBucketNameRow').toggle(isS3);
         $newInfoPanel.find('.nfsUpdatePathBtn').toggle(isIrods);
         if (isSmbj) {
           $newInfoPanel.find('.nfsInfoPanel-fileSystemShareName').text(data.fileSystem.options.SAMBA_SHARE_NAME);
+        } else if (isS3) {
+          $newInfoPanel.find('.nfsInfoPanel-bucketName').text(data.fileSystem.options.S3_BUCKET_NAME);
         } else if (isIrods && !isFolder) {
           $newInfoPanel.find('.nfsUpdatePathBtn').off('click').on("click", function () {
             RS.updateNfsPath(relPath, nfsId, data.fileSystem.id, $newInfoPanel);

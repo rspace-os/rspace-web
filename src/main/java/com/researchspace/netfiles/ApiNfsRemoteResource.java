@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @JsonPropertyOrder(
-    value = {"name", "isFolder", "remotePath", "logicPath", "fileDateMillis", "fileSize", "nfsId"})
+    value = {"name", "isFolder", "logicPath", "modificationDate", "fileSize", "nfsId"})
 public class ApiNfsRemoteResource {
 
   private String name; /* a node name, displayed as a label and used in links for opening subtree */
