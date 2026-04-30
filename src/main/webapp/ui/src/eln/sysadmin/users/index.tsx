@@ -92,6 +92,7 @@ import useUiPreference, {
 } from "../../../hooks/api/useUiPreference";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 import Analytics from "../../../components/Analytics";
+import Alert from "@mui/material/Alert";
 
 /*
  * All of the DOM events that happen inside of components that are themselves
@@ -867,46 +868,24 @@ const DeleteAction = ({
               <DialogTitle>Deletion Confirmation</DialogTitle>
               <DialogContent>
                 <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                  {(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) && (
+                      <Alert severity="info" sx={{ mb: 1 }}>
+                        <Typography variant="body2">
+                          The user you are trying to delete is{" "}
+                          <strong>
+                            the owner of Forms and/or Templates that are used by other users.
+                          </strong>
+                          To ensure continued access to these Forms/Templates, the system
+                          <strong> will transfer ownership</strong> of those files to
+                          <strong> this System Administrator</strong> account. Forms and
+                          Templates that are not used by others will be deleted.
+                        </Typography>
+                      </Alert>
+                  )}
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     User deletion is irreversible, and all documents will be
                     deleted.
                   </Typography>
-                  {(user.hasFormsUsedByOtherUsers && !user.hasTemplatesUsedByOtherUsers) && (
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                      The user you are trying to delete is{" "}
-                      <strong>
-                        the owner of Forms that are used by other users.
-                      </strong>
-                      To ensure continued access to these Forms, the system
-                      <strong> will transfer ownership</strong> of the Forms to
-                      <strong> this System Administrator</strong> account. Forms
-                      that are not used by others will be deleted.
-                    </Typography>
-                  )}
-                  {(user.hasTemplatesUsedByOtherUsers && !user.hasFormsUsedByOtherUsers) && (
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        The user you are trying to delete is{" "}
-                        <strong>
-                          the owner of Templates that are used by other users.
-                        </strong>
-                        To ensure continued access to these Templates, the system
-                        <strong> will transfer ownership</strong> of the Templates to
-                        <strong> this System Administrator</strong> account. Templates
-                        that are not used by others will be deleted.
-                      </Typography>
-                  )}
-                  {(user.hasFormsUsedByOtherUsers && user.hasTemplatesUsedByOtherUsers) && (
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        The user you are trying to delete is{" "}
-                        <strong>
-                          the owner of Forms and Templates that are used by other users.
-                        </strong>
-                        To ensure continued access to these Forms and Templates, the system
-                        <strong> will transfer ownership</strong> of the Forms and Templates to
-                        <strong> this System Administrator</strong> account. Forms and Templates
-                        that are not used by others will be deleted.
-                      </Typography>
-                  )}
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     An XML archive will be made of the user&apos;s work which
                     will be available for a short time on the server.
@@ -943,7 +922,7 @@ const DeleteAction = ({
                   type="submit"
                   loading={false}
                   disabled={false}
-                  label={getDeleteMessage(user)}
+                  label={(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) ? "Transfer Forms/Templates And Delete" : "Delete"}
                 />
               </DialogActions>
             </form>
