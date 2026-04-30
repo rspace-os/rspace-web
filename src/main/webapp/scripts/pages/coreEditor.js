@@ -390,20 +390,22 @@ function updateAttachmentDivs($attachmentDivs) {
     var id = getAttachmentIdFrom$Div($thisDiv);
     var revision = $thisDiv.find('a.attachmentLinked').data('rsrevision');
     var $attachmentLink = $thisDiv.find('.attachmentLinked');
+    var attachmentType = $attachmentLink.data('type');
     var fileName = $attachmentLink.text();
     var extension = fileName.substring(fileName.lastIndexOf('.') + 1);
     var oldIconSrc = $thisDiv.find(".attachmentIcon").attr('src');
+    var thumbnailId = _getThumbnailIdFromAttachmentIconSrc(oldIconSrc, id);
     var pdfPreviewSupported = RS.isPdfPreviewSupported(extension);
     var isSnapGeneFormat = RS.isSnapGeneFormat(extension);
     var isSnapGeneAvailable = RS.loadUserSetting('snapgene-available') === "true";
     var $newAttachmentDiv = null;
 
     if (pdfPreviewSupported) {
-      $newAttachmentDiv = _getNewAttachmentDivWithPreview(id, revision, fileName, extension);
+      $newAttachmentDiv = _getNewAttachmentDivWithPreview(id, revision, fileName, extension, attachmentType, thumbnailId, oldIconSrc);
     } else if (isSnapGeneFormat) {
       $newAttachmentDiv = _getSnapGeneTemplate(id, oldIconSrc);
     } else if(msOfficePreviewAvailable || collaboraPreviewAvailable){
-      $newAttachmentDiv = _getAttachmentDivWithOnlineOfficeWithoutPreview(id, revision, extension);
+      $newAttachmentDiv = _getAttachmentDivWithOnlineOfficeWithoutPreview(id, revision, extension, attachmentType, thumbnailId, oldIconSrc);
     } else {
       $newAttachmentDiv = _getNewAttachmentDivWithoutPreview(id, revision, oldIconSrc);
     }
@@ -485,7 +487,21 @@ function getAttachmentIdFrom$Div($attachmentDiv) {
   return id;
 }
 
-function _getNewAttachmentDivWithPreview(id, revision, fileName, extension) {
+function _getThumbnailIdFromAttachmentIconSrc(iconSrc, id) {
+  if (!iconSrc || !id) {
+    return null;
+  }
+
+  var thumbnailIdMatch = iconSrc.match(new RegExp('/image/docThumbnail/' + id + '/([^?/#]+)'));
+  return thumbnailIdMatch ? thumbnailIdMatch[1] : null;
+}
+
+function _getAttachmentIconSrc(type, extension, thumbnailId, id, fallbackIconSrc) {
+  var iconSrc = generateIconSrc(type, extension, thumbnailId, id);
+  return iconSrc || fallbackIconSrc || RS.getIconPathForExtension(extension);
+}
+
+function _getNewAttachmentDivWithPreview(id, revision, fileName, extension, type, thumbnailId, fallbackIconSrc) {
   var $newAttachmentDiv = $('#previewableAttachmentDivTemplate').find('.attachmentPanel').clone();
 
   $newAttachmentDiv.data('id', id);
@@ -498,28 +514,19 @@ function _getNewAttachmentDivWithPreview(id, revision, fileName, extension) {
   toggleWopiActionElem('GL' + id, extension, revision != null, $newAttachmentDiv.find('.viewInMsOnlineLink'));
 
   var $attachmentIcon = $newAttachmentDiv.find('.attachmentIcon');
-  $attachmentIcon.attr('src', RS.getIconPathForExtension(extension));
-
-  $newAttachmentDiv.find('.previewExpandBtn').on('click', function () {
-    _expandAttachmentPreview(id, revision, fileName, extension, $newAttachmentDiv);
-    return false;
-  });
-  $newAttachmentDiv.find('.previewCollapseBtn').on('click', function () {
-    _collapseAttachmentPreview($newAttachmentDiv);
-    return false;
-  });
+  $attachmentIcon.attr('src', _getAttachmentIconSrc(type, extension, thumbnailId, id, fallbackIconSrc));
 
   return $newAttachmentDiv;
 }
 
-function _getAttachmentDivWithOnlineOfficeWithoutPreview(id, revision, extension) {
+function _getAttachmentDivWithOnlineOfficeWithoutPreview(id, revision, extension, type, thumbnailId, fallbackIconSrc) {
   let $newAttachmentDiv = $('#onlineOfficeWithoutPreviewAttachmentDivTemplate').find('.attachmentPanel').clone();
   $newAttachmentDiv.data('id', id);
   $newAttachmentDiv.data('revision', revision);
 
   toggleWopiActionElem('GL' + id, extension, revision != null, $newAttachmentDiv.find('.viewInMsOnlineLink'));
   let $attachmentIcon = $newAttachmentDiv.find('.attachmentIcon');
-  $attachmentIcon.attr('src', RS.getIconPathForExtension(extension));
+  $attachmentIcon.attr('src', _getAttachmentIconSrc(type, extension, thumbnailId, id, fallbackIconSrc));
   return $newAttachmentDiv;
 }
 
@@ -714,7 +721,7 @@ function _updateDisplayedMediaFileDetailsWithLatestInfo(info) {
     _updateAudioVideoPanelsWithLatestInfo(info);
   }
 
-  /* find and update view mode panels of this document, update name and possibly preview */
+  /* find and update view mode panels of this document, update name and thumbnail */
   var isDocument = info.type === 'Document' || info.type === 'Miscellaneous';
   if (isDocument) {
     _updateAttachedDocumentPanelsWithLatestInfo(info);
@@ -818,18 +825,8 @@ function _updateAttachedDocumentPanelsWithLatestInfo(info) {
 
     $viewModeAttachmentDiv.find('.historicalVersionImg').toggle(info.revision != null);
 
-    if ($viewModeAttachmentDiv.hasClass('previewableAttachmentPanel')) {
-      // refresh thumbnail
+    if ($viewModeAttachmentDiv.hasClass('previewableAttachmentDivTemplate')) {
       _loadAttachmentThumbnail($viewModeAttachmentDiv, info.id, info.revision, info.thumbnailId);
-      // refresh pdf previews that were loaded before
-      var $attachmentPreviewPanel = $viewModeAttachmentDiv.find(".attachmentPreviewPanel");
-      var previewAlreadyLoaded = $attachmentPreviewPanel.find('.pdfPreviewPanel').data('previewLoaded');
-      if (previewAlreadyLoaded) {
-        $attachmentPreviewPanel.find('.pdfPreviewPanel').data('previewLoaded', false);
-        if ($attachmentPreviewPanel.is(':visible')) {
-          RS.loadPdfPreviewIntoDiv(id, revision, info.name, info.extension, $attachmentPreviewPanel);
-        }
-      }
     }
   });
 }
@@ -920,19 +917,6 @@ function _setViewModeAttachmentNameAndVersionLabel($nameDiv, name, version) {
   $nameDiv.text(name + versionText);
 }
 
-function _expandAttachmentPreview(id, revision, fileName, extension, $attachmentDiv) {
-  $attachmentDiv.find(".previewExpandBtn, .attachmentThumbnailPanel, .inlineActionsPanel").hide();
-  $attachmentDiv.find(".previewCollapseBtn, .attachmentPreviewPanel, .attachmentPreviewInfoPanel").show();
-
-  showRecordInfo(id, revision, null, $attachmentDiv);
-  var $attachmentPreviewPanel = $attachmentDiv.find(".attachmentPreviewPanel");
-  RS.loadPdfPreviewIntoDiv(id, revision, fileName, extension, $attachmentPreviewPanel);
-}
-
-function _collapseAttachmentPreview($attachmentDiv) {
-  $attachmentDiv.find(".previewCollapseBtn, .attachmentPreviewPanel, .attachmentPreviewInfoPanel").hide();
-  $attachmentDiv.find(".previewExpandBtn, .attachmentThumbnailPanel, .inlineActionsPanel").show();
-}
 
 function _loadAttachmentThumbnail($attachmentDiv, docId, revision, thumbId) {
 

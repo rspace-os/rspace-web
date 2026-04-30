@@ -67,13 +67,6 @@
 
 <div id="previewableAttachmentDivTemplate" style="display:none">
   <div class="attachmentPanel previewableAttachmentPanel">
-    <button class='previewToggleBtn previewExpandBtn ignoreDblClick' type='button'>
-      <img class="ignoreDblClick" src='/images/icons/mag_glass_plus.png' height="20px">
-    </button>
-    <button class='previewToggleBtn previewCollapseBtn' type='button' style="display:none">
-      <img class="ignoreDblClick" src='/images/icons/mag_glass_minus.png' height="20px">
-    </button>
-
     <div class="attachmentThumbnailPanel">
       <img class="attachmentIcon" width="76" height="76" />
       <div class="attachmentNameDiv">
@@ -89,12 +82,6 @@
       <a href="#" class="inlineActionLink infoActionLink">
         Info <img class="infoImg" src="/images/info.svg" style="top:6px"/>
       </a>
-    </div>
-
-    <div class="attachmentPreviewPanel"></div>
-
-    <div class="attachmentPreviewInfoPanel">
-      <div class="recordInfoPanel"></div>
     </div>
   </div>
 </div>
@@ -115,12 +102,6 @@
       <a href="#" class="inlineActionLink infoActionLink">
         Info <img class="infoImg" src="/images/info.svg" style="top:6px"/>
       </a>
-    </div>
-
-    <div class="attachmentPreviewPanel"></div>
-
-    <div class="attachmentPreviewInfoPanel">
-      <div class="recordInfoPanel"></div>
     </div>
   </div>
 </div>

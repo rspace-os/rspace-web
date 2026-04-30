@@ -68,6 +68,16 @@ export function CallablePdfPreview({
   const [numPages, setNumPages] = React.useState<number>(0);
   const [scale, setScale] = React.useState(1);
 
+  React.useEffect(() => {
+    if (!pdfPreviewOpen) {
+      setNumPages(0);
+      setScale(1);
+      return;
+    }
+    setNumPages(0);
+    setScale(1);
+  }, [pdfPreviewOpen]);
+
   function onDocumentLoadSuccess({
     numPages: nextNumPages,
   }: {
@@ -85,8 +95,14 @@ export function CallablePdfPreview({
         <Dialog
           open={true}
           fullWidth
+          // Disabled to not clash with legacy jQuery dialogs. Can be removed once everything is Reactified
+          disableEnforceFocus
           onClose={() => {
             setPdfPreviewOpen(null);
+          }}
+          sx={{
+            // z-index to 2000 to ensure it still displays above legacy jQuery dialogs
+            zIndex: 2000,
           }}
           aria-label="PDF Preview"
         >
@@ -96,12 +112,9 @@ export function CallablePdfPreview({
               onLoadSuccess={onDocumentLoadSuccess}
             >
               {[...take(incrementForever(), numPages)].map((index) => (
-                <Page
-                  key={`page_${index + 1}`}
-                  pageNumber={index + 1}
-                  width={550}
-                  scale={scale}
-                />
+                <Box key={`page_${index + 1}`}>
+                  <Page pageNumber={index + 1} width={550} scale={scale} />
+                </Box>
               ))}
             </Document>
           </DialogContent>

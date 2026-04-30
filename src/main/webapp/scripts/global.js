@@ -1557,22 +1557,16 @@ RS.getPdfDownloadLink = function (documentId, revisionId, fileExtension, $elemen
 RS.openWithPdfViewer = function (documentId, revisionId, name, fileExtension) {
   /* The public view is for a document made accessible to non RSpace users */
   const publicView = $("#public_document_view").length > 0;
-  var pageNum = RS._pdfPageNumbers[documentId] || 1;
 
-  RS.getPdfDownloadLink(documentId, revisionId, fileExtension).then(function (downloadLink) {
-
-    var pdfViewerLink = '/scripts/pdfjs/v54530/web/viewer.html';
-    var encodedLink = encodeURIComponent((publicView?'/public/publicView':'')+downloadLink);
-    var encodedTitle = encodeURIComponent(name + ' - RSpace preview');
-
-    var pageNumAnchor = '';
-    if (pageNum) {
-      pageNumAnchor = '#page=' + pageNum;
+  window.dispatchEvent(new CustomEvent('OPEN_PDF_PREVIEW_DIALOG', {
+    detail: {
+      documentId: documentId,
+      revisionId: revisionId,
+      name: name,
+      fileExtension: fileExtension,
+      publicView: publicView
     }
-
-    var newWindowLink = pdfViewerLink + "?file=" + encodedLink + '&filename=' + encodedTitle + pageNumAnchor;
-    RS.openInNewWindow(newWindowLink);
-  });
+  }));
 };
 
 /**
@@ -1580,7 +1574,6 @@ RS.openWithPdfViewer = function (documentId, revisionId, name, fileExtension) {
  * @returns a promise for window object reference
  */
 RS.openInNewWindow = function (url) {
-
   var deferred = $.Deferred();
   var newWindow = window.open(url, '_blank');
 
@@ -1630,124 +1623,6 @@ RS.openOauthAuthorizationWindow = function (url, redirect_uri, successElemSelect
   });
 };
 
-RS._downloadedPdfs = {};
-RS._pdfPageNumbers = {};
-RS._pdfRenderingInProgress = {};
-
-/**
- * Appends pdfPreviewPanel to given $div and starts loading the PDF preview into pdfPreviewCanvas.
- */
-RS.loadPdfPreviewIntoDiv = function (id, revisionId, fileName, extension, $div) {
-
-  if ($div.find('.pdfPreviewPanel').data('previewLoaded')) {
-    return;
-  }
-
-  var $previewPanel = $('#pdfPreviewPanelTemplate > .pdfPreviewPanel').clone();
-  $previewPanel.data('id', id);
-  $div.empty().append($previewPanel);
-
-  var $previewMainPanel = $previewPanel.find('.pdfPreviewMainPanel');
-  var $canvas = $previewMainPanel.find(".pdfPreviewCanvas");
-  RS.getPdfDownloadLink(id, revisionId, extension, $previewMainPanel).then(function (pdfDownloadLink) {
-
-    RS.blockPage("Generating preview...", false, $previewMainPanel);
-
-    pdfjsLib.getDocument(pdfDownloadLink).promise.then(function (pdf) {
-      RS.unblockPage($previewMainPanel);
-      $previewPanel.data('previewLoaded', true);
-
-      RS._downloadedPdfs[id] = pdf;
-      RS._pdfPageNumbers[id] = 1;
-
-      $previewPanel.find('.pdfPageCount').text(pdf.numPages);
-      $previewPanel.find('.pdfPreviewPageNumDiv, .previewPageChangeDiv')
-        .css('visibility', 'visible');
-
-      RS._renderPdfPage($previewPanel);
-    }, function () {
-      RS.unblockPage($previewMainPanel);
-    });
-  });
-
-  $previewPanel.find('.previewPreviousPageBtn').click(function () {
-    if (RS._pdfPageNumbers[id] <= 1) {
-      return;
-    }
-    RS._pdfPageNumbers[id]--;
-    RS._renderPdfPage($previewPanel);
-  });
-  $previewPanel.find('.previewNextPageBtn').click(function () {
-    if (RS._pdfPageNumbers[id] >= RS._downloadedPdfs[id].numPages) {
-      return;
-    }
-    RS._pdfPageNumbers[id]++;
-    RS._renderPdfPage($previewPanel);
-  });
-
-  $canvas.click(function () {
-    RS.openWithPdfViewer(id, revisionId, fileName, extension);
-  });
-};
-
-RS._renderPdfPage = function ($previewPanel) {
-
-  var id = $previewPanel.data('id');
-  var pdf = RS._downloadedPdfs[id];
-  var pageNum = RS._pdfPageNumbers[id];
-
-  var $canvas = $previewPanel.find(".pdfPreviewCanvas");
-  $previewPanel.find('.pdfPageNum').text(pageNum);
-
-  var $attachmentDiv = $previewPanel.parents(".attachmentDiv");
-  var attachmentDivWidth = $attachmentDiv.width();
-
-  pdf.getPage(pageNum).then(function (page) {
-
-    if (RS._pdfRenderingInProgress[id]) {
-      return;
-    }
-    RS._pdfRenderingInProgress[id] = true;
-
-    var canvas = $canvas.get(0);
-
-    // lets measure the full-scale viewport
-    var fullScale = 1;
-    var viewport = page.getViewport({ scale: fullScale });
-
-    // we need to fit preview into limited width & height
-    var scaleHeight = $canvas.height() / viewport.height;
-    var scaleWidth = $canvas.width() / viewport.width;
-    var newScale = Math.min(1, scaleHeight, scaleWidth);
-
-    viewport = page.getViewport({ scale: newScale });
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-
-    $canvas.css("width", viewport.width);
-    $canvas.css("height", viewport.height);
-
-    // widen info panel for portrait preview
-    var $infoPanel = $attachmentDiv.find('.attachmentPreviewInfoPanel');
-    $infoPanel.css("width", attachmentDivWidth - viewport.width - 130);
-
-    var context = canvas.getContext('2d');
-    var renderContext = {
-      canvasContext: context,
-      viewport: viewport
-    };
-    var renderTask = page.render(renderContext);
-    renderTask.promise.then(function () {
-      RS._pdfRenderingInProgress[id] = false;
-      if (pageNum !== RS._pdfPageNumbers[id]) {
-        // new page rendering is pending
-        RS._renderPdfPage($previewPanel);
-      }
-    }, function () {
-      RS._pdfRenderingInProgress[id] = false;
-    });
-  });
-};
 
 /*
   API for managing breadcrumb area. Breadcrumbs are used by workspace, gallery and in coreEditor.

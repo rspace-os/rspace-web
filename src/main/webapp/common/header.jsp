@@ -224,3 +224,4 @@
 <script src="<c:url value='/ui/dist/toastMessage.js'/>"></script>
 
 <script src="<c:url value='/ui/dist/confirmationDialog.js'/>"></script>
+<script src="<c:url value='/ui/dist/pdfPreviewDialog.js'/>"></script>

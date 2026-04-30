@@ -25,6 +25,7 @@ const config = {
     apps: "./src/eln/apps/index.tsx",
     gallery: "./src/eln/gallery/index.tsx",
     about: "./src/eln/about/index.tsx",
+    pdfPreviewDialog: "./src/modules/preview/PdfPreviewDialogEntrypoint.tsx",
 
     /*
      * The Electronic Notebook (ELN) is a traditional multipage application
