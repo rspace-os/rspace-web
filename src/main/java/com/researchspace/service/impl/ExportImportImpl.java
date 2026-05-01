@@ -348,9 +348,14 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
 
     ImportArchiveReport report =
         archiveImporter.importArchive(zipFile, iconfig, monitor, importStrategy);
-    if (report.isSuccessful()) {
+    try {
       User user = userManager.getUserByUsername(importer);
       stoichiometryRevisionFixupManager.fixupStoichiometryRevisions(report, user);
+    } catch (Exception e) {
+      log.warn(
+          "Stoichiometry revision fixup failed after archive import completed for user {}",
+          importer,
+          e);
     }
     return report;
   }
