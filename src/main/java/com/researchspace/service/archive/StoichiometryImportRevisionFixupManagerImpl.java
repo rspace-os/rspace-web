@@ -70,9 +70,6 @@ public class StoichiometryImportRevisionFixupManagerImpl
     String updatedData = field.getFieldData();
 
     for (StoichiometryDTO dto : stoichiometries) {
-      if (dto.getRevision() != null) {
-        continue;
-      }
       Long stoichId = dto.getId();
       AuditedEntity<Stoichiometry> audited =
           auditManager.getNewestRevisionForEntity(Stoichiometry.class, stoichId);
