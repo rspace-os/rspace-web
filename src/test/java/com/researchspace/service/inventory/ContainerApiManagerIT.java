@@ -73,7 +73,7 @@ public class ContainerApiManagerIT extends RealTransactionSpringTestBase {
             () -> containerApiMgr.updateApiContainer(storageFlagsUpdate, testUser));
     assertEquals(
         "Container cannot have all \"canStoreSamples\", \"canStoreContainers\" and "
-            + "\"canStoreSamples\" set to false",
+            + "\"canStoreInstruments\" set to false",
         cve.getMessage());
   }
 }
