@@ -11,7 +11,7 @@
     "omero-test": "vitest run --dir ./src/tinyMCE/omero",
     "build": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" webpack --mode production",
     "build:stats": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" FRONTEND_BUILD_STATS=true webpack --mode production",
-    "serve": "cross-env NODE_OPTIONS='--max-old-space-size=8192' webpack --watch --mode development --devtool eval-cheap-module-source-map",
+    "serve": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" webpack --watch --mode development --devtool eval-cheap-module-source-map",
     "depcruise": "npx depcruise src",
     "tsc": "tsc --noEmit",
     "test-ct": "cross-env NODE_OPTIONS=\"--conditions=require\" playwright test -c playwright-ct.config.ts",
