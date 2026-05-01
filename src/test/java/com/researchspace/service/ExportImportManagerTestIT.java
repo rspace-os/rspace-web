@@ -2066,7 +2066,9 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     Folder importedFolder =
         (Folder) newDocs.stream().filter(BaseRecord::isFolder).findFirst().get();
 
-    String importedFieldData = importedDoc.getFirstFieldData();
+    // Load field data via service to avoid lazy-loading on detached entity
+    String importedFieldData =
+        fieldMgr.getFieldsByRecordId(importedDoc.getId(), user).get(0).getFieldData();
 
     /* internal links should point to newly created folder and notebook, and not to old ids */
     String expectedTargetFolderLink = "href=\"/globalId/" + importedFolder.getGlobalIdentifier();
