@@ -11,7 +11,7 @@
   </span>
   <span>
     <a href="<fmt:message key='company.url'/>" target="_blank">
-      <img src="<c:url value='/images/footerLogoN.png'/>" style="vertical-align:middle; margin-top:-5px; width: 80px;"
+      <img src="<c:url value='/images/mainLogo3.svg'/>" style="vertical-align:middle; margin-top:-5px; width: 80px;"
         alt="RSpace" />
     </a>
     &copy;&nbsp;
