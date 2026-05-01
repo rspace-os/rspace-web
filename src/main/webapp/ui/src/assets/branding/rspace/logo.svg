@@ -1,72 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 150 150">
-  <defs>
-    <style>
-      .cls-1 {
-        stroke: #00aeef;
-      }
-
-      .cls-1, .cls-2, .cls-3, .cls-4 {
-        fill: none;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        stroke-width: 2px;
-      }
-
-      .cls-5 {
-        fill: #00aeef;
-      }
-
-      .cls-2 {
-        stroke: #ed1165;
-      }
-
-      .cls-3 {
-        stroke: #575c70;
-      }
-
-      .cls-6 {
-        fill: #ed1165;
-      }
-
-      .cls-4 {
-        stroke: #5a5b6a;
-      }
-
-      .cls-7 {
-        fill: #575c70;
-      }
-    </style>
-  </defs>
-  <!-- Generator: Adobe Illustrator 28.6.0, SVG Export Plug-In . SVG Version: 1.2.0 Build 709)  -->
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 100 100">
+  <!-- Generator: Adobe Illustrator 29.5.1, SVG Export Plug-In . SVG Version: 2.1.0 Build 141)  -->
   <g>
-    <g id="Layer_1">
-      <g>
-        <line class="cls-1" x1="93.7" y1="84.1" x2="82.3" y2="78.5"/>
-        <circle class="cls-7" cx="37.6" cy="56.3" r="5.7"/>
-        <circle class="cls-6" cx="37.6" cy="75" r="5.7"/>
-        <circle class="cls-5" cx="37.6" cy="93.7" r="5.7"/>
-        <circle class="cls-6" cx="75" cy="56.3" r="5.7"/>
-        <circle class="cls-7" cx="75" cy="75" r="5.7"/>
-        <circle class="cls-6" cx="75" cy="93.7" r="5.7"/>
-        <circle class="cls-5" cx="75" cy="112.4" r="5.7"/>
-        <circle class="cls-7" cx="75" cy="37.6" r="5.7"/>
-        <circle class="cls-6" cx="56.3" cy="65.4" r="5.7"/>
-        <circle class="cls-6" cx="56.3" cy="84.1" r="5.7"/>
-        <circle class="cls-5" cx="56.3" cy="102.8" r="5.7"/>
-        <circle class="cls-7" cx="56.3" cy="46.7" r="5.7"/>
-        <circle class="cls-6" cx="93.7" cy="65.4" r="5.7"/>
-        <circle class="cls-5" cx="93.7" cy="84.1" r="5.7"/>
-        <circle class="cls-5" cx="93.7" cy="102.8" r="5.7"/>
-        <circle class="cls-7" cx="93.7" cy="46.7" r="5.7"/>
-        <circle class="cls-7" cx="112.4" cy="56.3" r="5.7"/>
-        <circle class="cls-6" cx="112.4" cy="75" r="5.7"/>
-        <circle class="cls-5" cx="112.4" cy="93.7" r="5.7"/>
-        <line class="cls-4" x1="63" y1="69" x2="75" y2="75"/>
-        <polyline class="cls-3" points="112.4 56.3 75 37.6 37.6 56.3 49.5 62.2"/>
-        <polyline class="cls-2" points="112.4 75 75 56.3 37.6 75 75 93.7"/>
-        <polyline class="cls-1" points="93.7 84.1 112.4 93.7 75 112.4 37.6 93.7"/>
-      </g>
-    </g>
+    <polygon points="16.386 30.593 16.386 69.407 50 88.814 50 50 16.386 30.593" fill="#8cb7fd"/>
+    <path d="M50,91.398c-.446,0-.892-.115-1.292-.346l-33.614-19.406c-.799-.461-1.292-1.313-1.292-2.237V30.594c0-.923.493-1.776,1.292-2.237.799-.462,1.784-.462,2.583,0l33.614,19.407c.799.461,1.292,1.313,1.292,2.237v38.813c0,.923-.493,1.776-1.292,2.237-.4.232-.846.346-1.292.346ZM18.97,67.916l28.447,16.423v-32.847l-28.447-16.424s0,32.848,0,32.848Z" fill="#004494"/>
+  </g>
+  <g>
+    <polygon points="50 50 50 88.814 83.614 69.407 83.614 30.593 50 50" fill="#fae68d"/>
+    <path d="M50,91.398c-.446,0-.892-.115-1.292-.346-.799-.461-1.292-1.313-1.292-2.237v-38.813c0-.923.493-1.776,1.292-2.237l33.613-19.407c.799-.462,1.784-.462,2.583,0,.799.461,1.292,1.313,1.292,2.237v38.814c0,.923-.493,1.776-1.292,2.237l-33.613,19.406c-.4.232-.846.346-1.292.346ZM52.584,51.493v32.847l28.446-16.423v-32.848s-28.446,16.424-28.446,16.424Z" fill="#004494"/>
+  </g>
+  <g>
+    <polygon points="16.386 30.593 50 50 83.614 30.593 50 11.186 16.386 30.593" fill="#a8ecaf"/>
+    <path d="M50,52.584c-.446,0-.892-.115-1.292-.346L15.094,32.831c-.799-.461-1.292-1.313-1.292-2.237s.493-1.776,1.292-2.237L48.709,8.949c.799-.462,1.784-.462,2.583,0l33.613,19.407c.799.461,1.292,1.313,1.292,2.237s-.493,1.776-1.292,2.237l-33.613,19.407c-.4.232-.846.346-1.292.346ZM21.553,30.593l28.447,16.424,28.446-16.424-28.446-16.424s-28.447,16.424-28.447,16.424Z" fill="#004494"/>
   </g>
 </svg>
