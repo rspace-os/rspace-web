@@ -7,6 +7,7 @@ import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
+import com.researchspace.model.field.Field;
 import com.researchspace.service.ExternalWorkFlowDataManager;
 import java.util.List;
 import java.util.Set;
@@ -56,5 +57,11 @@ public class ExternalWorkFlowDataManagerImpl implements ExternalWorkFlowDataMana
   @Override
   public ExternalWorkFlow findWorkFlowByExtIdAndName(String extId, String name) {
     return externalWorkFlowDao.findWorkFlowByExtIdAndName(extId, name);
+  }
+
+  @Override
+  public Set<ExternalWorkFlowData> findAllExternalWorkFlowDataForFieldsAndServiceType(
+      ExternalService externalService, List<Long> ids) {
+    return externalWorkFlowDataDao.findAllExternalWorkFlowDataForFieldsAndServiceType(externalService, ids);
   }
 }

@@ -6,6 +6,7 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.archive.model.ArchiveModelFactory;
 import com.researchspace.core.util.FieldParserConstants;
+import com.researchspace.export.externalworkflows.ExternalWorkflowHtmlGenerator;
 import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.EcatCommentItem;
@@ -13,6 +14,8 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.elninventory.ListOfMaterials;
 import com.researchspace.model.elninventory.MaterialUsage;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
+import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
 import com.researchspace.model.field.ChoiceField;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.TextField;
@@ -24,12 +27,14 @@ import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.EcatCommentManager;
+import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.archive.export.ImageFieldExporter;
 import com.researchspace.session.SessionTimeZoneUtils;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -88,6 +93,8 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
   private @Autowired NfsManager nfsManager;
   private @Autowired FieldParser fieldParser;
   private @Autowired UserExternalIdResolver extIdResolver;
+  private @Autowired ExternalWorkFlowDataManager externalWorkFlowDataManager;
+  private @Autowired ExternalWorkflowHtmlGenerator externalWorkflowHtmlGenerator;
 
   void setUrlPrefix(String urlPrefix) {
     this.urlPrefix = urlPrefix;
@@ -129,6 +136,12 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     sbf.append(nameLink);
     List<Field> flds = strucDoc.getFields();
     Set<String> igsnInventoryLinkedItems = new HashSet<>();
+    Set<ExternalWorkFlowData> allExternalWorkFlowDataForDoc = Collections.emptySet();
+    if(exportConfig.isIncludeExternalWorkflowData() && !flds.isEmpty() ) {
+      List<Long> fieldIds = flds.stream().map(Field::getId).collect(java.util.stream.Collectors.toList());
+      allExternalWorkFlowDataForDoc = externalWorkFlowDataManager.findAllExternalWorkFlowDataForFieldsAndServiceType(
+          ExternalService.GALAXY, fieldIds);
+    }
     for (Field field : flds) {
       try {
         String fieldName = escapeHtml4(field.getName());
@@ -152,6 +165,9 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
 
         if (!field.getListsOfMaterials().isEmpty()) {
           igsnInventoryLinkedItems.addAll(appendListsOfMaterials(sbf, field.getListsOfMaterials()));
+        }
+        if (exportConfig.isIncludeExternalWorkflowData()) {
+          appendExternalWorkflowData(sbf, field, allExternalWorkFlowDataForDoc);
         }
 
       } catch (Exception ex) {
@@ -233,6 +249,15 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
       }
     }
     return igsnInventoryLinkedItems;
+  }
+
+  private void appendExternalWorkflowData(StringBuffer sbf, Field field,Set<ExternalWorkFlowData> externalWorkFlowData ) {
+    if (field.getId() == null) {
+      return;
+    }
+    Set<ExternalWorkFlowData> externalWorkFlowDataMatchingField =
+       externalWorkFlowData.stream().filter(data -> data.getRspacecontainerid() == field.getId()).collect(java.util.stream.Collectors.toSet());
+    sbf.append(externalWorkflowHtmlGenerator.getHtmlForExternalWorkflowData(externalWorkFlowData));
   }
 
   private void replaceIframesWithEmbedCodeLink(Document doc) {

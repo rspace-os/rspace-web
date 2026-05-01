@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
+import org.apache.commons.io.FileUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +43,10 @@ public class MSWordProcessorTest {
 
   public static final String STOICHIOMETRY_HTML =
       "<html><div data-stoichiometry-table=\"{\"id\":1, \"revision\":null}\"></div></html>";
+  public static final String EXTERNAL_WORKFLOW_HTML =
+      "<html><body><div class='external-workflow-data'><table"
+          + " class='external-workflow-table'><tbody><tr><td>Galaxy data</td></tr></tbody></table>"
+          + "</div></body></html>";
   MSWordProcessor mswordExporter;
   @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock DocumentConversionService converter;
@@ -137,6 +142,22 @@ public class MSWordProcessorTest {
   }
 
   @Test
+  public void testExternalWorkflowExportIsPreparedForWordConversion() throws IOException {
+    input = createExternalWorkflowHTML();
+    returnSuccesfullExport(outfile, success);
+
+    mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
+
+    File htmlInput = new File(outfile.getParentFile(), outfile.getName().replace(".doc", ".html"));
+    String wordInputHtml = FileUtils.readFileToString(htmlInput, "UTF-8");
+    assertTrue(wordInputHtml.contains("external-workflow-data"));
+    assertTrue(wordInputHtml.contains("external-workflow-table"));
+    assertTrue(wordInputHtml.contains("border=\"1\""));
+    assertTrue(wordInputHtml.contains("cellpadding=\"4\""));
+    assertTrue(wordInputHtml.contains("Galaxy data"));
+  }
+
+  @Test
   public void testMakeExportWithImages() throws IOException {
     input = createAnyHTMLWithImage();
     when(converter.convert(any(Convertible.class), eq("doc"), eq(outfile))).thenReturn(success);
@@ -160,6 +181,11 @@ public class MSWordProcessorTest {
 
   private ExportProcessorInput createStoichiometryHTML() {
     return new ExportProcessorInput(STOICHIOMETRY_HTML, Collections.emptyList(), null, null, null);
+  }
+
+  private ExportProcessorInput createExternalWorkflowHTML() {
+    return new ExportProcessorInput(
+        EXTERNAL_WORKFLOW_HTML, Collections.emptyList(), null, null, null);
   }
 
   private ExportToFileConfig getConfig() {

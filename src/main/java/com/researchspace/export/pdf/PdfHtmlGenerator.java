@@ -139,7 +139,7 @@ public class PdfHtmlGenerator {
 
     Elements tables = doc.getElementsByTag("table");
     for (Element table : tables) {
-      table.attr("class", "docContentTable");
+      table.addClass("docContentTable");
     }
     return doc.html();
   }

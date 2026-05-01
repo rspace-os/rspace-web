@@ -54,6 +54,23 @@ div.stoichiometry-table-container {
 	overflow-x: auto;
 }
 
+table.external-workflow-table {
+	border: 1px solid #ddd;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+table.external-workflow-table td,
+table.external-workflow-table th {
+	border: 1px solid #ddd;
+	padding: 6px;
+	vertical-align: top;
+}
+
+div.external-workflow-table-container {
+	overflow-x: auto;
+}
+
 hr {
 	border: 0;
 	color: #DDDDDD;

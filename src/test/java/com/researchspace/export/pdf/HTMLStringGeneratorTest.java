@@ -32,6 +32,7 @@ import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.EcatCommentManager;
+import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.testutils.TestFactory;
@@ -60,6 +61,7 @@ public class HTMLStringGeneratorTest {
   private @Mock NfsManager netFileManager;
   private @Mock FieldParser fieldParser;
   private @Mock UserExternalIdResolver resolver;
+  private @Mock ExternalWorkFlowDataManager externalWorkFlowDataManagerMock;
 
   @InjectMocks HTMLStringGeneratorForExport htmlGenerator;
   ExportToFileConfig cfg;
