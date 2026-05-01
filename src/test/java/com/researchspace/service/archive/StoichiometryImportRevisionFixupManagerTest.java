@@ -183,9 +183,12 @@ public class StoichiometryImportRevisionFixupManagerTest {
   }
 
   @Test
-  void skipsStoichiometriesWithExistingRevision() {
+  void doesNotSkipStoichiometriesWithExistingRevision() {
     setupRecordInReport();
-
+    Stoichiometry stoich2 = new Stoichiometry();
+    stoich2.setId(20L);
+    AuditedEntity<Stoichiometry> audited2 = new AuditedEntity<>(stoich2, 200);
+    when(auditManager.getNewestRevisionForEntity(Stoichiometry.class, 42L)).thenReturn(audited2);
     String fieldHtml =
         "<img data-stoichiometry-table=\"{&quot;id&quot;:42,&quot;revision&quot;:123}\">";
     Field field = mockFieldWithData(200L, fieldHtml);
@@ -193,7 +196,7 @@ public class StoichiometryImportRevisionFixupManagerTest {
 
     testee.fixupStoichiometryRevisions(report, user);
 
-    verify(auditManager, never()).getNewestRevisionForEntity(any(Class.class), any(Long.class));
-    verify(fieldManager, never()).save(any(Field.class), any(User.class));
+    verify(auditManager).getNewestRevisionForEntity(any(Class.class), any(Long.class));
+    verify(fieldManager).save(any(Field.class), any(User.class));
   }
 }
