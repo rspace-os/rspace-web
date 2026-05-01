@@ -33,7 +33,7 @@ public class StoichiometryImportRevisionFixupManagerImpl
 
   @Override
   public void fixupStoichiometryRevisions(ImportArchiveReport report, User user) {
-    if (!report.isSuccessful()) {
+    if (report.getImportedRecords().isEmpty()) {
       return;
     }
     for (BaseRecord record : report.getImportedRecords()) {
