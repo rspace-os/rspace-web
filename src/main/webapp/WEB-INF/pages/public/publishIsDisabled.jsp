@@ -8,7 +8,7 @@
 <div class="container" style="max-width:960px;padding:0 5% 0 5%;">
     <div class="row">
         <div class="biggerLogoDiv" style="text-align: center">
-            <img src="/public/images/mainLogoEnterpriseN2.png">
+            <img src="/public/images/mainLogo3.png">
         </div>
         <div style="text-align:center; margin-top:46px;">
             <h3 class="form-signup-heading">Public Documents are disabled</h3>

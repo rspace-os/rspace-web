@@ -13,15 +13,9 @@
               ${applicationScope['RS_DEPLOY_PROPS']['bannerImageLoggedOutLink']}
             </c:if>
             ">
-        <rst:hasDeploymentProperty name="cloud" value="true">
-               <img src="<c:url value='/images/mainLogoCloudN2.png'/>" 
-                    alt="RSpace" class="rs-navbar__icon" />
-         </rst:hasDeploymentProperty>
-         <rst:hasDeploymentProperty name="cloud" value="false">
                <img src="<c:url value='/public/banner'/>" 
                     alt="RSpace" class="rs-navbar__icon"
                     data-src="${applicationScope['RS_DEPLOY_PROPS']['bannerImageName']}" />
-         </rst:hasDeploymentProperty>
         </a>
       </li>
       
