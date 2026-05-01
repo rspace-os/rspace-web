@@ -41,15 +41,6 @@ public class ExternalWorkflowHtmlGenerator {
     return renderRows(createRowsForExternalWorkflowData(externalWorkFlowData));
   }
 
-  public String getHtmlForArchivedExternalWorkflowData(
-      Set<ArchiveExternalWorkFlowData> externalWorkFlowData,
-      Set<ArchiveExternalWorkFlowInvocation> invocations) {
-    if (externalWorkFlowData == null || externalWorkFlowData.isEmpty()) {
-      return "";
-    }
-    return renderRows(createRowsForArchivedExternalWorkflowData(externalWorkFlowData, invocations));
-  }
-
   void setUrlPrefix(String urlPrefix) {
     this.urlPrefix = urlPrefix;
   }
@@ -85,31 +76,6 @@ public class ExternalWorkflowHtmlGenerator {
     return rows;
   }
 
-  private List<ExternalWorkflowTableData> createRowsForArchivedExternalWorkflowData(
-      Set<ArchiveExternalWorkFlowData> externalWorkFlowData,
-      Set<ArchiveExternalWorkFlowInvocation> invocations) {
-    List<ExternalWorkflowTableData> rows = new ArrayList<>();
-    List<ArchiveExternalWorkFlowData> sortedData =
-        sortArchivedExternalWorkflowData(externalWorkFlowData);
-    Set<String> historyIdsWithInvocations = new HashSet<>();
-
-    for (ArchiveExternalWorkFlowInvocation invocation : sortArchivedInvocations(invocations)) {
-      Map<String, List<ArchiveExternalWorkFlowData>> invocationDataByHistory =
-          groupArchivedExternalWorkflowDataByHistoryId(
-              sortedData.stream()
-                  .filter(data -> invocation.getDataIds().contains(data.getId()))
-                  .collect(Collectors.toList()));
-      for (List<ArchiveExternalWorkFlowData> dataForInvocation : invocationDataByHistory.values()) {
-        ArchiveExternalWorkFlowData first = dataForInvocation.get(0);
-        historyIdsWithInvocations.add(first.getExtContainerId());
-        rows.add(createArchivedInvocationRow(dataForInvocation, invocation, first));
-      }
-    }
-
-    rows.addAll(createArchivedDataOnlyRows(sortedData, historyIdsWithInvocations));
-    return rows;
-  }
-
   private Set<ExternalWorkFlowInvocation> collectInvocations(List<ExternalWorkFlowData> data) {
     return data.stream()
         .flatMap(item -> item.getExternalWorkflowInvocations().stream())
@@ -128,18 +94,6 @@ public class ExternalWorkflowHtmlGenerator {
         .collect(Collectors.toList());
   }
 
-  private List<ExternalWorkflowTableData> createArchivedDataOnlyRows(
-      List<ArchiveExternalWorkFlowData> data, Set<String> historyIdsWithInvocations) {
-    return groupArchivedExternalWorkflowDataByHistoryId(
-            data.stream()
-                .filter(item -> !historyIdsWithInvocations.contains(item.getExtContainerId()))
-                .collect(Collectors.toList()))
-        .values()
-        .stream()
-        .map(items -> createArchivedDataOnlyRow(items, items.get(0)))
-        .collect(Collectors.toList());
-  }
-
   private ExternalWorkflowTableData createInvocationRow(
       List<ExternalWorkFlowData> dataForInvocation,
       ExternalWorkFlowInvocation invocation,
@@ -149,21 +103,6 @@ public class ExternalWorkflowHtmlGenerator {
         display(first.getExtContainerName()),
         galaxyHistoryHref(first.getBaseUrl(), first.getExtContainerID()),
         display(invocation.getExternalWorkFlow().getName()),
-        galaxyInvocationHref(first.getBaseUrl(), invocation.getExtId()),
-        display(invocation.getStatus()));
-  }
-
-  private ExternalWorkflowTableData createArchivedInvocationRow(
-      List<ArchiveExternalWorkFlowData> dataForInvocation,
-      ArchiveExternalWorkFlowInvocation invocation,
-      ArchiveExternalWorkFlowData first) {
-    ArchiveExternalWorkFlow workFlow = invocation.getWorkFlowMetaData();
-    String invocationName = workFlow != null ? workFlow.getName() : null;
-    return new ExternalWorkflowTableData(
-        dataForInvocation.stream().map(this::createArchivedDataLink).collect(Collectors.toList()),
-        display(first.getExtContainerName()),
-        galaxyHistoryHref(first.getBaseUrl(), first.getExtContainerId()),
-        display(invocationName),
         galaxyInvocationHref(first.getBaseUrl(), invocation.getExtId()),
         display(invocation.getStatus()));
   }
@@ -179,25 +118,9 @@ public class ExternalWorkflowHtmlGenerator {
         NO_VALUE);
   }
 
-  private ExternalWorkflowTableData createArchivedDataOnlyRow(
-      List<ArchiveExternalWorkFlowData> dataForHistory, ArchiveExternalWorkFlowData first) {
-    return new ExternalWorkflowTableData(
-        dataForHistory.stream().map(this::createArchivedDataLink).collect(Collectors.toList()),
-        display(first.getExtContainerName()),
-        galaxyHistoryHref(first.getBaseUrl(), first.getExtContainerId()),
-        NO_VALUE,
-        "",
-        NO_VALUE);
-  }
-
   private ExternalWorkflowDataLink createDataLink(ExternalWorkFlowData data) {
     return new ExternalWorkflowDataLink(
         display(data.getExtName()), escapeHtml4(rspaceGalleryHref(data.getRspacedataid())));
-  }
-
-  private ExternalWorkflowDataLink createArchivedDataLink(ArchiveExternalWorkFlowData data) {
-    return new ExternalWorkflowDataLink(
-        display(data.getExtName()), escapeHtml4(data.getLinkFile()));
   }
 
   private String rspaceGalleryHref(long rspaceDataId) {
@@ -237,16 +160,6 @@ public class ExternalWorkflowHtmlGenerator {
                 Collectors.toList()));
   }
 
-  private Map<String, List<ArchiveExternalWorkFlowData>>
-      groupArchivedExternalWorkflowDataByHistoryId(Collection<ArchiveExternalWorkFlowData> data) {
-    return data.stream()
-        .collect(
-            Collectors.groupingBy(
-                item -> StringUtils.defaultString(item.getExtContainerId()),
-                LinkedHashMap::new,
-                Collectors.toList()));
-  }
-
   private List<ExternalWorkFlowData> sortExternalWorkflowData(Set<ExternalWorkFlowData> data) {
     return data.stream()
         .sorted(
@@ -258,22 +171,6 @@ public class ExternalWorkflowHtmlGenerator {
                     Comparator.nullsFirst(String::compareTo))
                 .thenComparing(
                     ExternalWorkFlowData::getExtName, Comparator.nullsFirst(String::compareTo)))
-        .collect(Collectors.toList());
-  }
-
-  private List<ArchiveExternalWorkFlowData> sortArchivedExternalWorkflowData(
-      Set<ArchiveExternalWorkFlowData> data) {
-    return data.stream()
-        .sorted(
-            Comparator.comparing(
-                    ArchiveExternalWorkFlowData::getExtContainerName,
-                    Comparator.nullsFirst(String::compareTo))
-                .thenComparing(
-                    ArchiveExternalWorkFlowData::getExtContainerId,
-                    Comparator.nullsFirst(String::compareTo))
-                .thenComparing(
-                    ArchiveExternalWorkFlowData::getExtName,
-                    Comparator.nullsFirst(String::compareTo)))
         .collect(Collectors.toList());
   }
 
@@ -292,34 +189,10 @@ public class ExternalWorkflowHtmlGenerator {
     return sortedInvocations;
   }
 
-  private List<ArchiveExternalWorkFlowInvocation> sortArchivedInvocations(
-      Set<ArchiveExternalWorkFlowInvocation> invocations) {
-    if (invocations == null) {
-      return new ArrayList<>();
-    }
-    List<ArchiveExternalWorkFlowInvocation> sortedInvocations = new ArrayList<>(invocations);
-    sortedInvocations.sort(
-        (first, second) -> {
-          int workflowNameComparison =
-              compareNullableStrings(
-                  getArchivedWorkflowName(first), getArchivedWorkflowName(second));
-          if (workflowNameComparison != 0) {
-            return workflowNameComparison;
-          }
-          return compareNullableStrings(first.getExtId(), second.getExtId());
-        });
-    return sortedInvocations;
-  }
-
   private String getWorkflowName(ExternalWorkFlowInvocation invocation) {
     return invocation.getExternalWorkFlow() != null
         ? invocation.getExternalWorkFlow().getName()
         : null;
-  }
-
-  private String getArchivedWorkflowName(ArchiveExternalWorkFlowInvocation invocation) {
-    ArchiveExternalWorkFlow workflow = invocation.getWorkFlowMetaData();
-    return workflow != null ? workflow.getName() : null;
   }
 
   private int compareNullableStrings(String first, String second) {
