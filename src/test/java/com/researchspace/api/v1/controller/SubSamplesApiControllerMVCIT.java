@@ -219,7 +219,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError err = getErrorFromJsonResponseBody(addNewNoteResult, ApiError.class);
-    assertApiErrorContainsMessage(err, "empty");
+    assertApiErrorContainsMessage(err, "blank");
     assertEquals(b4Count, getCountOfEntityTable("SubSampleNote"));
 
     // happy case
