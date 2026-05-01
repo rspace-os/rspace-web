@@ -169,9 +169,9 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
     } else if (invRecord.isContainer()) {
       return new ApiContainerInfo((Container) invRecord);
     } else if (invRecord.isInstrument()) {
-      return new ApiInstrument((Instrument) invRecord);
+      return new ApiInstrumentEntityInfo((Instrument) invRecord);
     } else if (invRecord.isInstrumentTemplate()) {
-      return new ApiInstrumentTemplate((InstrumentTemplate) invRecord);
+      return new ApiInstrumentEntityInfo((InstrumentTemplate) invRecord);
     } else {
       throw new IllegalArgumentException("unsupported type: " + invRecord);
     }
