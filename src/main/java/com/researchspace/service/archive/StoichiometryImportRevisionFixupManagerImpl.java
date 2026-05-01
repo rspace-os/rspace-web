@@ -55,10 +55,10 @@ public class StoichiometryImportRevisionFixupManagerImpl
         fixupField(field, user);
       } catch (Exception e) {
         log.warn(
-            "Failed to fixup stoichiometry revisions for field id={} in record id={}: {}",
+            "Failed to fixup stoichiometry revisions for field id={} in record id={}",
             field.getId(),
             recordId,
-            e.getMessage());
+            e);
       }
     }
   }
