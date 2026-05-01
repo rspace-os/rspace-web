@@ -16,6 +16,7 @@ import com.researchspace.api.v1.model.ApiContainerLocationWithContent;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
@@ -129,6 +130,7 @@ import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.inventory.BasketApiManager;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InstrumentApiManager;
 import com.researchspace.service.inventory.InventoryBulkOperationApiManager;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
@@ -279,6 +281,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   protected @Autowired FieldLinksEntitiesSynchronizer fieldSyncher;
   protected @Autowired NfsManager nfsMgr;
   protected @Autowired SampleApiManager sampleApiMgr;
+  protected @Autowired InstrumentApiManager instrumentApiMgr;
   protected @Autowired SampleDao sampleDao;
   protected @Autowired ContainerDao containerDao;
   protected @Autowired SubSampleApiManager subSampleApiMgr;
@@ -1300,6 +1303,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    *   <li>they should be persisted groups
    *   <li>This method will return the first collaboration group found; therefore there shouldn't be
    *       previously created collab groups involving these groups already created in the test.
+   * </ul>
    *
    * @param g1
    * @param g2
@@ -1689,6 +1693,19 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     grpMgr.createSharedCommunalGroupFolders(group.getId(), pi.getUsername());
     reloadGroup(group);
     return group;
+  }
+
+  /*
+   * Create a minimal instrument (no template, no fields) for the given user.
+   */
+  protected ApiInstrument createBasicInstrumentForUser(User user) {
+    return createBasicInstrumentForUser(user, "myInstrument");
+  }
+
+  protected ApiInstrument createBasicInstrumentForUser(User user, String instrumentName) {
+    ApiInstrument newInstrument = new ApiInstrument();
+    newInstrument.setName(instrumentName);
+    return instrumentApiMgr.createNewApiInstrument(newInstrument, user);
   }
 
   /*
