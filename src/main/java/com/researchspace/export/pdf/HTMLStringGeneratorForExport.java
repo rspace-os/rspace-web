@@ -34,6 +34,7 @@ import com.researchspace.service.archive.export.ImageFieldExporter;
 import com.researchspace.session.SessionTimeZoneUtils;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -135,6 +136,12 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     sbf.append(nameLink);
     List<Field> flds = strucDoc.getFields();
     Set<String> igsnInventoryLinkedItems = new HashSet<>();
+    Set<ExternalWorkFlowData> allExternalWorkFlowDataForDoc = Collections.emptySet();
+    if(exportConfig.isIncludeExternalWorkflowData() && !flds.isEmpty() ) {
+      List<Long> fieldIds = flds.stream().map(Field::getId).collect(java.util.stream.Collectors.toList());
+      allExternalWorkFlowDataForDoc = externalWorkFlowDataManager.findAllExternalWorkFlowDataForFieldsAndServiceType(
+          ExternalService.GALAXY, fieldIds);
+    }
     for (Field field : flds) {
       try {
         String fieldName = escapeHtml4(field.getName());
@@ -160,7 +167,7 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
           igsnInventoryLinkedItems.addAll(appendListsOfMaterials(sbf, field.getListsOfMaterials()));
         }
         if (exportConfig.isIncludeExternalWorkflowData()) {
-          appendExternalWorkflowData(sbf, field);
+          appendExternalWorkflowData(sbf, field, allExternalWorkFlowDataForDoc);
         }
 
       } catch (Exception ex) {
@@ -244,13 +251,12 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     return igsnInventoryLinkedItems;
   }
 
-  private void appendExternalWorkflowData(StringBuffer sbf, Field field) {
+  private void appendExternalWorkflowData(StringBuffer sbf, Field field,Set<ExternalWorkFlowData> externalWorkFlowData ) {
     if (field.getId() == null) {
       return;
     }
-    Set<ExternalWorkFlowData> externalWorkFlowData =
-        externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
-            field.getId(), ExternalService.GALAXY);
+    Set<ExternalWorkFlowData> externalWorkFlowDataMatchingField =
+       externalWorkFlowData.stream().filter(data -> data.getRspacecontainerid() == field.getId()).collect(java.util.stream.Collectors.toSet());
     sbf.append(externalWorkflowHtmlGenerator.getHtmlForExternalWorkflowData(externalWorkFlowData));
   }
 

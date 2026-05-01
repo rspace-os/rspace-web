@@ -4,6 +4,7 @@ import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
+import com.researchspace.model.field.Field;
 import java.util.List;
 import java.util.Set;
 
@@ -23,4 +24,6 @@ public interface ExternalWorkFlowDataManager {
       String state);
 
   ExternalWorkFlow findWorkFlowByExtIdAndName(String extId, String name);
+
+  Set<ExternalWorkFlowData> findAllExternalWorkFlowDataForFieldsAndServiceType(ExternalService externalService, List<Long> ids);
 }
