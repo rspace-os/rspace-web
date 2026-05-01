@@ -1,5 +1,220 @@
 import { produce } from "immer";
+import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
+import {
+  convertFromGrams,
+  getQuantityUnitSymbol,
+  isMassUnit,
+} from "@/modules/inventory/utils";
 import type { EditableMolecule } from "./types";
+
+export type InventoryUpdateSelectionDisabledReason =
+  | "missingInventoryLink"
+  | "linkedStockUnavailable"
+  | "nonMassInventoryQuantity"
+  | "missingActualMass"
+  | "insufficientStock";
+
+export type InventoryUpdateEligibility = {
+  disabledReason: InventoryUpdateSelectionDisabledReason | null;
+  helperText: string | null;
+  showInsufficientStockWarning: boolean;
+  stockDisplay: InventoryUpdateStockDisplay;
+};
+
+export type InventoryUpdateRemainingStatus =
+  | "default"
+  | "positive"
+  | "zero"
+  | "negative";
+
+export type InventoryUpdateStockMetric = {
+  rawValue: number | null;
+  displayValue: string;
+  unitLabel: string | null;
+};
+
+export type InventoryUpdateStockDisplay = {
+  inStock: InventoryUpdateStockMetric;
+  willUse: InventoryUpdateStockMetric;
+  remaining: InventoryUpdateStockMetric;
+  remainingStatus: InventoryUpdateRemainingStatus;
+  warningText: string | null;
+};
+
+function formatInventoryUpdateMetricValue(value: number | null): string {
+  if (value === null || Number.isNaN(value)) {
+    return "—";
+  }
+
+  // Do not round down to zero
+  if (value > 0 && value < 0.0005) {
+    return value.toLocaleString(undefined, {
+      maximumSignificantDigits: 12,
+    });
+  }
+
+  const normalizedValue = Math.abs(value) < 0.0005 ? 0 : value;
+
+  return normalizedValue.toLocaleString(undefined, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 3,
+  });
+}
+
+function makeStockMetric(
+  rawValue: number | null,
+  unitLabel: string | null,
+): InventoryUpdateStockMetric {
+  return {
+    rawValue,
+    displayValue: formatInventoryUpdateMetricValue(rawValue),
+    unitLabel,
+  };
+}
+
+function makeEmptyStockDisplay(): InventoryUpdateStockDisplay {
+  return {
+    inStock: makeStockMetric(null, null),
+    willUse: makeStockMetric(null, null),
+    remaining: makeStockMetric(null, null),
+    remainingStatus: "default",
+    warningText: null,
+  };
+}
+
+function buildInventoryUpdateStockDisplay(
+  quantity: { numericValue: number; unitId: number },
+  actualAmount: EditableMolecule["actualAmount"],
+): InventoryUpdateStockDisplay {
+  const unitLabel = getQuantityUnitSymbol(quantity.unitId);
+  const inStock = makeStockMetric(quantity.numericValue, unitLabel);
+
+  if (!isMassUnit(quantity.unitId)) {
+    return {
+      inStock,
+      willUse: makeStockMetric(null, unitLabel),
+      remaining: makeStockMetric(null, unitLabel),
+      remainingStatus: "default",
+      warningText: null,
+    };
+  }
+
+  if (actualAmount === null || actualAmount === undefined) {
+    return {
+      inStock,
+      willUse: makeStockMetric(null, unitLabel),
+      remaining: makeStockMetric(null, unitLabel),
+      remainingStatus: "default",
+      warningText: null,
+    };
+  }
+
+  const willUseValue = convertFromGrams(Number(actualAmount), quantity.unitId);
+  if (willUseValue === null) {
+    return {
+      inStock,
+      willUse: makeStockMetric(null, unitLabel),
+      remaining: makeStockMetric(null, unitLabel),
+      remainingStatus: "default",
+      warningText: null,
+    };
+  }
+
+  const rawRemainingValue = quantity.numericValue - willUseValue;
+  const remainingValue =
+    rawRemainingValue > 0 && rawRemainingValue < 0.0005
+      ? rawRemainingValue
+      : Math.abs(rawRemainingValue) < 0.0005
+        ? 0
+        : rawRemainingValue;
+  const remainingStatus: InventoryUpdateRemainingStatus =
+    remainingValue < 0 ? "negative" : remainingValue === 0 ? "zero" : "positive";
+
+  return {
+    inStock,
+    willUse: makeStockMetric(willUseValue, unitLabel),
+    remaining: makeStockMetric(remainingValue, unitLabel),
+    remainingStatus,
+    warningText: remainingStatus === "negative" ? "Insufficient Stock" : null,
+  };
+}
+
+function getInventoryUpdateDisabledReasonText(
+  reason: InventoryUpdateSelectionDisabledReason,
+): string {
+  return {
+    missingInventoryLink: "Link an inventory item before updating stock.",
+    linkedStockUnavailable:
+      "Linked stock information is unavailable, so this molecule cannot be updated.",
+    nonMassInventoryQuantity:
+      "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
+    missingActualMass:
+      "Define actual mass before updating linked inventory stock.",
+    insufficientStock:
+      "There is insufficient linked stock for this molecule's actual mass.",
+  }[reason];
+}
+
+export function getInventoryUpdateEligibility(
+  molecule: EditableMolecule,
+  linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<
+    string,
+    InventoryQuantityQueryResult
+  > = new Map<string, InventoryQuantityQueryResult>(),
+): InventoryUpdateEligibility {
+  const inventoryItemGlobalId = molecule.inventoryLink?.inventoryItemGlobalId;
+  if (!inventoryItemGlobalId) {
+    return {
+      disabledReason: "missingInventoryLink",
+      helperText: getInventoryUpdateDisabledReasonText("missingInventoryLink"),
+      showInsufficientStockWarning: false,
+      stockDisplay: makeEmptyStockDisplay(),
+    };
+  }
+
+  const linkedInventoryQuantityInfo = linkedInventoryQuantityInfoByGlobalId.get(
+    inventoryItemGlobalId,
+  );
+  if (
+    !linkedInventoryQuantityInfo ||
+    linkedInventoryQuantityInfo.status !== "available" ||
+    !linkedInventoryQuantityInfo.quantity
+  ) {
+    return {
+      disabledReason: "linkedStockUnavailable",
+      helperText: getInventoryUpdateDisabledReasonText("linkedStockUnavailable"),
+      showInsufficientStockWarning: false,
+      stockDisplay: makeEmptyStockDisplay(),
+    };
+  }
+
+  const { quantity } = linkedInventoryQuantityInfo;
+  const stockDisplay = buildInventoryUpdateStockDisplay(quantity, molecule.actualAmount);
+  const stockDeducted = molecule.inventoryLink?.stockDeducted === true;
+
+  const showInsufficientStockWarning =
+    !stockDeducted && stockDisplay.remainingStatus === "negative";
+
+  let disabledReason: InventoryUpdateSelectionDisabledReason | null = null;
+  if (!isMassUnit(quantity.unitId)) {
+    disabledReason = "nonMassInventoryQuantity";
+  } else if (molecule.actualAmount == null) {
+    disabledReason = "missingActualMass";
+  } else if (showInsufficientStockWarning) {
+    disabledReason = "insufficientStock";
+  }
+
+  return {
+    disabledReason,
+    helperText: stockDeducted
+      ? "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule."
+      : disabledReason === null || disabledReason === "insufficientStock"
+        ? null
+        : getInventoryUpdateDisabledReasonText(disabledReason),
+    showInsufficientStockWarning,
+    stockDisplay,
+  };
+}
 
 export function calculateMoles(
   mass: EditableMolecule["mass"],
@@ -19,8 +234,59 @@ export function hasDuplicateInventoryLink(
   return molecules.some(
     (molecule) =>
       molecule.id !== moleculeId &&
-      molecule.inventoryLink?.inventoryItemGlobalId === inventoryItemGlobalId,
+      (molecule.inventoryLink?.inventoryItemGlobalId === inventoryItemGlobalId ||
+        molecule.deletedInventoryLink?.inventoryItemGlobalId ===
+          inventoryItemGlobalId),
   );
+}
+
+function calculateProductYield(
+  {
+    actualAmount,
+    coefficient,
+    molecularWeight,
+  }: Pick<EditableMolecule, "actualAmount"> & {
+    coefficient: number;
+    molecularWeight: number;
+  },
+  limitingReagentMoles: number,
+): number | null {
+  if (actualAmount === null || limitingReagentMoles <= 0) {
+    return null;
+  }
+
+  const theoreticalMoles = limitingReagentMoles * coefficient;
+  const theoreticalMass = theoreticalMoles * molecularWeight;
+
+  if (theoreticalMass <= 0) {
+    return null;
+  }
+
+  return actualAmount / theoreticalMass;
+}
+
+function calculateNonLimitingReagentExcess(
+  {
+    actualAmount,
+    coefficient,
+    molecularWeight,
+  }: Pick<EditableMolecule, "actualAmount"> & {
+    coefficient: number;
+    molecularWeight: number;
+  },
+  limitingReagentMoles: number,
+): number | null {
+  if (actualAmount === null || limitingReagentMoles <= 0) {
+    return null;
+  }
+
+  const actualMoles = calculateMoles(actualAmount, molecularWeight);
+
+  if (actualMoles === null) {
+    return null;
+  }
+
+  return actualMoles / coefficient / limitingReagentMoles - 1;
 }
 
 function calculateActualYieldOrExcess(
@@ -34,43 +300,51 @@ function calculateActualYieldOrExcess(
   }
 
   if (molecule.role === "PRODUCT") {
-    // For products, calculate yield percentage based on theoretical yield from limiting reagent
-    if (molecule.actualAmount === null || limitingReagentMoles <= 0) {
-      return null;
-    }
+    return calculateProductYield(
+      {
+        actualAmount: molecule.actualAmount,
+        coefficient: molecule.coefficient,
+        molecularWeight: molecule.molecularWeight,
+      },
+      limitingReagentMoles,
+    );
+  }
 
-    const theoreticalMoles = limitingReagentMoles * molecule.coefficient;
-
-    const theoreticalMass = theoreticalMoles * molecule.molecularWeight;
-    if (theoreticalMass <= 0) {
-      return null;
-    }
-    return molecule.actualAmount / theoreticalMass;
-  } else if (
+  if (
     (molecule.role === "REACTANT" || molecule.role === "AGENT") &&
     !molecule.limitingReagent
   ) {
-    // For non-limiting reactants, calculate excess using molar ratio formula
-    if (molecule.actualAmount === null || limitingReagentMoles <= 0) {
-      return null;
-    }
-    return (
-      (calculateMoles(molecule.actualAmount, molecule.molecularWeight) ?? 0) /
-        
-        molecule.coefficient /
-        limitingReagentMoles -
-      1
+    return calculateNonLimitingReagentExcess(
+      {
+        actualAmount: molecule.actualAmount,
+        coefficient: molecule.coefficient,
+        molecularWeight: molecule.molecularWeight,
+      },
+      limitingReagentMoles,
     );
   }
+
   return null;
+}
+
+function clearActualYieldAndExcess(
+  molecules: ReadonlyArray<EditableMolecule>,
+): ReadonlyArray<EditableMolecule> {
+  return produce(molecules, (draftMolecules) => {
+    for (const molecule of draftMolecules) {
+      molecule.actualYield = null;
+    }
+  });
 }
 
 function updateYieldAndExcess(
   molecules: ReadonlyArray<EditableMolecule>,
 ): ReadonlyArray<EditableMolecule> {
-  const limitingReagent = molecules.find((m) => m.limitingReagent);
+  const limitingReagent = molecules.find(
+    (m) => m.limitingReagent && m.role === "REACTANT",
+  );
   if (!limitingReagent || limitingReagent.actualAmount === null) {
-    return molecules;
+    return clearActualYieldAndExcess(molecules);
   }
 
   if (limitingReagent.coefficient === null) {
@@ -84,7 +358,7 @@ function updateYieldAndExcess(
       
     ) ?? 0) / limitingReagent.coefficient;
   if (limitingReagentMoles <= 0) {
-    return molecules;
+    return clearActualYieldAndExcess(molecules);
   }
 
   return produce(molecules, (draftMolecules) => {
@@ -140,6 +414,44 @@ function applyMassByRatio(
   });
 }
 
+type CalculateUpdatedMoleculesOptions = {
+  allowRoleChange?: boolean;
+};
+
+function validateMoleculeImmutability(
+  before: EditableMolecule,
+  after: EditableMolecule,
+  { allowRoleChange = false }: CalculateUpdatedMoleculesOptions = {},
+) {
+  if (before.id !== after.id)
+    throw new Error(
+      "ID is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (before.name !== after.name)
+    throw new Error(
+      "Name is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (before.molecularWeight !== after.molecularWeight)
+    throw new Error(
+      "Molecular weight is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (before.formula !== after.formula)
+    throw new Error(
+      "Chemical formula is an intrinsic property of the chemical and cannot be modified",
+    );
+  if (before.smiles !== after.smiles)
+    throw new Error(
+      "The SMILES representation is an intrinsic property of the chemical and cannot be modified",
+    );
+
+  if (!allowRoleChange && before.role !== after.role)
+    throw new Error("Modifying the role of a molecule is not supported");
+  if (before.rsChemElement !== after.rsChemElement)
+    throw new Error(
+      "Modifying the rsChemElement of a molecule is not supported",
+    );
+}
+
 /**
  * Calculates updated molecules based on stoichiometric relationships.
  *
@@ -154,6 +466,7 @@ function applyMassByRatio(
  *
  * This function handles:
  * - Storing changes to notes
+ * - Optionally updating a molecule's role when the caller enables it
  * - Update moles when mass is changed
  * - Update mass when moles are changed
  * - Update actual moles when actual amount is changed
@@ -169,57 +482,37 @@ function applyMassByRatio(
 export function calculateUpdatedMolecules(
   allMolecules: ReadonlyArray<EditableMolecule>,
   editedRow: EditableMolecule,
+  options: CalculateUpdatedMoleculesOptions = {},
 ): ReadonlyArray<EditableMolecule> {
-  function applyChanges(
-    newProperties: Partial<EditableMolecule>,
-    molecules = allMolecules,
-  ) {
-    return produce(molecules, (draftMolecules) => {
-      const editedMolecule = draftMolecules.find((m) => m.id === editedRow.id);
-      if (!editedMolecule) {
-        return;
-      }
-      Object.assign(editedMolecule, newProperties);
-    });
-  }
-
   const beforeMolecule = allMolecules.find((m) => m.id === editedRow.id);
   if (!beforeMolecule) {
     throw new Error("Edited molecule not found");
   }
 
-  if (beforeMolecule.id !== editedRow.id)
-    throw new Error(
-      "ID is an intrinsic property of the chemical and cannot be modified",
-    );
-  if (beforeMolecule.name !== editedRow.name)
-    throw new Error(
-      "Name is an intrinsic property of the chemical and cannot be modified",
-    );
-  if (beforeMolecule.molecularWeight !== editedRow.molecularWeight)
-    throw new Error(
-      "Molecular weight is an intrinsic property of the chemical and cannot be modified",
-    );
-  if (beforeMolecule.formula !== editedRow.formula)
-    throw new Error(
-      "Chemical formula is an intrinsic property of the chemical and cannot be modified",
-    );
-  if (beforeMolecule.smiles !== editedRow.smiles)
-    throw new Error(
-      "The SMILES representation is an intrinsic property of the chemical and cannot be modified",
-    );
+  validateMoleculeImmutability(beforeMolecule, editedRow, options);
 
-  if (beforeMolecule.role !== editedRow.role)
-    throw new Error("Modifying the role of a molecule is not supported");
-  if (beforeMolecule.rsChemElement !== editedRow.rsChemElement)
-    throw new Error(
-      "Modifying the rsChemElement of a molecule is not supported",
-    );
+  const applyChanges = (
+    newProperties: Partial<EditableMolecule>,
+    molecules = allMolecules,
+  ) => {
+    return produce(molecules, (draftMolecules) => {
+      const editedMolecule = draftMolecules.find((m) => m.id === editedRow.id);
+      if (editedMolecule) {
+        Object.assign(editedMolecule, newProperties);
+      }
+    });
+  };
 
   if (beforeMolecule.notes !== editedRow.notes) {
+    return updateYieldAndExcess(applyChanges({ notes: editedRow.notes }));
+  }
+
+  if (beforeMolecule.role !== editedRow.role) {
     return updateYieldAndExcess(
       applyChanges({
-        notes: editedRow.notes,
+        role: editedRow.role,
+        limitingReagent:
+          editedRow.role === "REACTANT" ? editedRow.limitingReagent : false,
       }),
     );
   }
@@ -238,71 +531,41 @@ export function calculateUpdatedMolecules(
       const ratio =
         limitingReagentMoles === null
           ? null
-          : 
-            limitingReagentMoles / limitingReagent.coefficient;
+          : limitingReagentMoles / limitingReagent.coefficient;
       return updateYieldAndExcess(
         applyChanges(
-          {
-            mass: editedRow.mass,
-          },
+          { mass: editedRow.mass },
           applyMassByRatio(allMolecules, ratio),
         ),
       );
-    } else {
-      return updateYieldAndExcess(
-        applyChanges({
-          mass: editedRow.mass,
-        }),
-      );
     }
+    return updateYieldAndExcess(applyChanges({ mass: editedRow.mass }));
   }
 
   if (editedRow.moles !== null) {
+    if (beforeMolecule.molecularWeight === null) {
+      throw new Error("Molecular weight is undefined");
+    }
+    const mass = editedRow.moles * beforeMolecule.molecularWeight;
+
     if (editedRow.limitingReagent) {
       const limitingReagent = allMolecules.find((m) => m.limitingReagent);
       if (!limitingReagent) throw new Error("No limiting reagent defined");
       if (limitingReagent.coefficient === null) {
         throw new Error("Limiting reagent coefficient weight is undefined");
       }
-      const limitingReagentMoles = editedRow.moles;
-      const ratio =
-        limitingReagentMoles === null
-          ? null
-          : 
-            limitingReagentMoles / limitingReagent.coefficient;
-
-      if (beforeMolecule.molecularWeight === null) {
-        throw new Error("Molecular weight is undefined");
-      }
+      const ratio = editedRow.moles / limitingReagent.coefficient;
 
       return updateYieldAndExcess(
-        applyChanges(
-          {
-            
-            mass: editedRow.moles * beforeMolecule.molecularWeight,
-          },
-          applyMassByRatio(allMolecules, ratio),
-        ),
-      );
-    } else {
-      if (beforeMolecule.molecularWeight === null) {
-        throw new Error("Molecular weight is undefined");
-      }
-
-      return updateYieldAndExcess(
-        applyChanges({
-          
-          mass: editedRow.moles * beforeMolecule.molecularWeight,
-        }),
+        applyChanges({ mass }, applyMassByRatio(allMolecules, ratio)),
       );
     }
+    return updateYieldAndExcess(applyChanges({ mass }));
   }
 
   if (beforeMolecule.actualAmount !== editedRow.actualAmount) {
     return updateYieldAndExcess(
-      applyChanges({
-        actualAmount: editedRow.actualAmount,
-      }),
+      applyChanges({ actualAmount: editedRow.actualAmount }),
     );
   }
 
@@ -320,13 +583,11 @@ export function calculateUpdatedMolecules(
 
   if (beforeMolecule.limitingReagent !== editedRow.limitingReagent) {
     const updatedMolecules = applyChanges(
-      {
-        limitingReagent: editedRow.limitingReagent,
-      },
-      produce(allMolecules, (draftMolecules) => {
-        for (const molecule of draftMolecules) {
-          molecule.limitingReagent = false;
-        }
+      { limitingReagent: editedRow.limitingReagent },
+      produce(allMolecules, (draft) => {
+        draft.forEach((m) => {
+          m.limitingReagent = false;
+        });
       }),
     );
     const newLimitingReagent = updatedMolecules.find((m) => m.limitingReagent);
@@ -342,7 +603,8 @@ export function calculateUpdatedMolecules(
     if (beforeMolecule.coefficient === null || editedRow.coefficient === null) {
       throw new Error("Molecule coefficient is undefined");
     }
-    const changeInCoefficient = editedRow.coefficient / beforeMolecule.coefficient;
+    const changeInCoefficient =
+      editedRow.coefficient / beforeMolecule.coefficient;
     const updatedMolecules = applyChanges({
       coefficient: editedRow.coefficient,
       mass:

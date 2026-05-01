@@ -154,8 +154,9 @@ import com.researchspace.service.audit.search.LogFileTracker;
 import com.researchspace.service.audit.search.LogLineContentProvider;
 import com.researchspace.service.audit.search.LogLineContentProviderImpl;
 import com.researchspace.service.audit.search.UpdateRecordNamePostProcessor;
-import com.researchspace.service.aws.S3Utilities;
-import com.researchspace.service.aws.impl.S3UtilitiesImpl;
+import com.researchspace.service.aws.S3ExportUtilities;
+import com.researchspace.service.aws.impl.S3ExportUtilitiesImpl;
+import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import com.researchspace.service.chemistry.ChemistryClient;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.chemistry.DefaultChemistryProvider;
@@ -1311,12 +1312,17 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  public S3Utilities s3Utilities() {
+  public S3ExportUtilities s3ExportUtilities() {
     if (hasS3Access) {
-      return new S3UtilitiesImpl();
+      return new S3ExportUtilitiesImpl();
     } else {
-      return S3Utilities.NOOP_S3Utilities;
+      return S3ExportUtilities.NOOP_S3ExportUtilities;
     }
+  }
+
+  @Bean
+  public S3UtilitiesFactory s3UtilitiesFactory() {
+    return new S3UtilitiesFactory();
   }
 
   @Bean

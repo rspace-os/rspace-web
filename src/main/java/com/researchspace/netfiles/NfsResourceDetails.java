@@ -41,11 +41,9 @@ public abstract class NfsResourceDetails {
   public boolean isFile() {
     return TYPE_FILE.equals(type);
   }
-  ;
 
   @JsonIgnore
   public boolean isFolder() {
     return TYPE_FOLDER.equals(type);
   }
-  ;
 }

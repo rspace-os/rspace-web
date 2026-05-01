@@ -1,8 +1,8 @@
 import { test, describe, expect, beforeEach, afterEach, vi } from 'vitest';
-import "@/__tests__/mocks/useOauthToken";
-import "@/__tests__/mocks/useWhoAmI";
-import "@/__tests__/mocks/useWebSocketNotifications";
-import "../../../../__mocks__/matchMedia";
+import "@/__tests__/__mocks__/useOauthToken";
+import "@/__tests__/__mocks__/useWhoAmI";
+import "@/__tests__/__mocks__/useWebSocketNotifications";
+import "@/__tests__/__mocks__/matchMedia";
 import React from "react";
 import {
   render,
@@ -63,11 +63,9 @@ beforeEach(() => {
 });
 afterEach(() => {
   restoreConsole();
-
 });
-// TODO: Remove the skip once the test is fixed, before merging
-describe.skip("DSWImportDialog", () => {
 
+describe.skip("DSWImportDialog", () => {
   test("No DMPs message is shown when no DMPs are returned.", async () => {
     mockAxios
       .onGet(`/apps/dsw/plans?serverAlias=${connectionSettings.DSW_ALIAS}`)

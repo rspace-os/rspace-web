@@ -1,5 +1,3 @@
-/* jshint maxerr: 100 */
-
 /* coreEditor.js -> Common functions in structuredDocument and notebookEditor */
 var fadeTime = 400;
 var recordName = '';
@@ -1703,13 +1701,6 @@ function getImageIdFrom$Img($image) {
     return idElements[1];
   }
   return null;
-}
-
-function _getHtmlFormattedFormula(formula) {
-  if (!formula) {
-    return formula;
-  }
-  return formula.replace(/(\d+)/g, "<sub>$&</sub>");
 }
 
 var rs_tableExport;

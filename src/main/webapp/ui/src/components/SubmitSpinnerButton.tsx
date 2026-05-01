@@ -1,5 +1,6 @@
 import React from "react";
 import Button from "@mui/material/Button";
+import type { SxProps, Theme } from "@mui/material/styles";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { observer } from "mobx-react-lite";
@@ -11,7 +12,7 @@ import {
   ariaValueNow,
   ariaValueMin,
   ariaValueMax,
-} from "../util/progress";
+} from "@/util/progress";
 
 const useStyles = makeStyles<{ progress: Progress }>()(
   (theme, { progress }) => ({
@@ -52,6 +53,7 @@ type SubmitSpinnerButtonArgs = {
   size?: "small" | "medium" | "large";
   className?: string;
   color?: "primary" | "callToAction";
+  sx?: SxProps<Theme>;
 };
 
 function SubmitSpinnerButton({
@@ -65,6 +67,7 @@ function SubmitSpinnerButton({
   size = "medium",
   className,
   color = "callToAction",
+  sx,
 }: SubmitSpinnerButtonArgs): React.ReactNode {
   const { classes } = useStyles({ progress: progress ?? 0 });
   return (
@@ -80,6 +83,7 @@ function SubmitSpinnerButton({
       type={type}
       size={size}
       classes={{ root: className }}
+      sx={sx}
     >
       <div className={clsx(classes.spinner, !loading && classes.hidden)}>
         <FontAwesomeIcon

@@ -125,9 +125,39 @@ public class StoichiometryInventoryLinkManagerImplTest {
   }
 
   @Test
+  public void deductStockWhenLinkBelongsToDifferentStoichiometryReturnsErrorResult() {
+    long requestedStoichiometryId = 55L;
+    long actualStoichiometryId = 99L;
+
+    StoichiometryMolecule mol = new StoichiometryMolecule();
+    Stoichiometry otherStoichiometry = new Stoichiometry();
+    otherStoichiometry.setId(actualStoichiometryId);
+    mol.setStoichiometry(otherStoichiometry);
+    mol.setActualAmount(10.0);
+
+    StoichiometryInventoryLink link = createMoleculeAndLink(321L, 300L, mol);
+
+    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(link));
+
+    StockDeductionResult result =
+        manager.deductStock(requestedStoichiometryId, List.of(321L), user);
+
+    assertEquals(1, result.getResults().size());
+    assertFalse(result.getResults().get(0).isSuccess());
+    assertEquals(
+        String.format(
+            "Link with id %d does not belong to stoichiometry with id %d",
+            321L, requestedStoichiometryId),
+        result.getResults().get(0).getErrorMessage());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
   public void deductStockSuccess() {
     StoichiometryInventoryLink original = new StoichiometryInventoryLink();
     original.setId(321L);
+    long stoichiometryId = 55L;
+    molecule.getStoichiometry().setId(stoichiometryId);
     molecule.setActualAmount(10.0);
     original.setStoichiometryMolecule(molecule);
     original.setInventoryRecord(invSubSample);
@@ -141,10 +171,11 @@ public class StoichiometryInventoryLinkManagerImplTest {
         .when(invPerms)
         .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
 
-    StockDeductionResult result = manager.deductStock(List.of(321L), user);
+    StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 
     assertEquals(1, result.getResults().size());
     assertTrue(result.getResults().get(0).isSuccess());
+    assertEquals(Long.valueOf(stoichiometryId), result.getStoichiometryId());
     assertTrue(original.isStockDeducted());
     verify(linkDao).save(original);
   }
@@ -153,6 +184,8 @@ public class StoichiometryInventoryLinkManagerImplTest {
   public void deductStockWithInsufficientStockReturnsErrorResult() {
     StoichiometryInventoryLink original = new StoichiometryInventoryLink();
     original.setId(321L);
+    long stoichiometryId = 1000L;
+    molecule.getStoichiometry().setId(stoichiometryId);
     molecule.setActualAmount(20.0);
     original.setStoichiometryMolecule(molecule);
     original.setInventoryRecord(invSubSample);
@@ -167,7 +200,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
         .when(invPerms)
         .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
 
-    StockDeductionResult result = manager.deductStock(List.of(321L), user);
+    StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 
     assertEquals(1, result.getResults().size());
     assertFalse(result.getResults().get(0).isSuccess());
@@ -191,6 +224,9 @@ public class StoichiometryInventoryLinkManagerImplTest {
   @Test
   public void deductStockWithNotFoundExceptionReturnsErrorMessage() {
     StoichiometryMolecule mol = new StoichiometryMolecule();
+    mol.setStoichiometry(new Stoichiometry());
+    long stoichiometryId = 55L;
+    mol.getStoichiometry().setId(stoichiometryId);
     StoichiometryInventoryLink link = createMoleculeAndLink(101L, 1001L, mol);
     InventoryRecord ss = link.getInventoryRecord();
     when(linkDao.getSafeNull(101L)).thenReturn(java.util.Optional.of(link));
@@ -200,7 +236,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
         .when(invPerms)
         .assertUserCanEditInventoryRecord(ss, user);
 
-    StockDeductionResult result = manager.deductStock(List.of(101L), user);
+    StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(101L), user);
 
     assertEquals(1, result.getResults().size());
     assertEquals(Long.valueOf(101L), result.getResults().get(0).getLinkId());
@@ -212,6 +248,9 @@ public class StoichiometryInventoryLinkManagerImplTest {
   @Test
   public void deductStockWithIllegalArgumentExceptionReturnsErrorMessage() {
     StoichiometryMolecule mol = new StoichiometryMolecule();
+    mol.setStoichiometry(new Stoichiometry());
+    long stoichiometryId = 55L;
+    mol.getStoichiometry().setId(stoichiometryId);
     StoichiometryInventoryLink link = createMoleculeAndLink(102L, 1002L, mol);
     InventoryRecord ss = link.getInventoryRecord();
     when(linkDao.getSafeNull(102L)).thenReturn(java.util.Optional.of(link));
@@ -221,7 +260,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
         .when(invPerms)
         .assertUserCanEditInventoryRecord(ss, user);
 
-    StockDeductionResult result = manager.deductStock(List.of(102L), user);
+    StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(102L), user);
 
     assertEquals(1, result.getResults().size());
     assertEquals(Long.valueOf(102L), result.getResults().get(0).getLinkId());
@@ -233,6 +272,9 @@ public class StoichiometryInventoryLinkManagerImplTest {
   @Test
   public void deductStockWithUnexpectedExceptionReturnsGenericErrorMessage() {
     StoichiometryMolecule mol = new StoichiometryMolecule();
+    mol.setStoichiometry(new Stoichiometry());
+    long stoichiometryId = 55L;
+    mol.getStoichiometry().setId(stoichiometryId);
     StoichiometryInventoryLink link = createMoleculeAndLink(103L, 1003L, mol);
     InventoryRecord ss = link.getInventoryRecord();
     when(linkDao.getSafeNull(103L)).thenReturn(java.util.Optional.of(link));
@@ -242,7 +284,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
         .when(invPerms)
         .assertUserCanEditInventoryRecord(ss, user);
 
-    StockDeductionResult result = manager.deductStock(List.of(103L), user);
+    StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(103L), user);
 
     assertEquals(1, result.getResults().size());
     assertEquals(Long.valueOf(103L), result.getResults().get(0).getLinkId());

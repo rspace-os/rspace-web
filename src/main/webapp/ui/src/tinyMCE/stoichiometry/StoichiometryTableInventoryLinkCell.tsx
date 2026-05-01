@@ -1,12 +1,19 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrashAlt } from "@fortawesome/free-regular-svg-icons/faTrashAlt";
+import { faClockRotateLeft } from "@fortawesome/free-solid-svg-icons/faClockRotateLeft";
 import { RecordLink } from "@/Inventory/components/RecordLink";
 import type { InventoryLink } from "@/modules/stoichiometry/schema";
 import InventoryPicker from "@/Inventory/components/Picker/Picker";
@@ -50,22 +57,19 @@ function createInventoryPickerSearch(): Search {
 
 type StoichiometryTableInventoryLinkCellProps = {
   inventoryLink: InventoryLink | null | undefined;
-  inventoryRecord?: InventoryRecord | null;
+  isDeleted?: boolean;
   moleculeName: string | null;
   editable?: boolean;
+  showInsufficientStockWarning?: boolean;
   linkedInventoryItemGlobalIds?: string[];
   onPickInventoryItem?: (id: number, inventoryItemGlobalId: string) => void;
   onRemoveInventoryLink?: () => void;
+  onUndoRemoveInventoryLink?: () => void;
 };
 
 function toLinkedSubsampleRecord(
   inventoryLink: InventoryLink,
-  inventoryRecord?: InventoryRecord | null,
 ): InventoryRecord {
-  if (inventoryRecord?.globalId === inventoryLink.inventoryItemGlobalId) {
-    return inventoryRecord;
-  }
-
   const id = Number.parseInt(inventoryLink.inventoryItemGlobalId.slice(2), 10);
 
   return {
@@ -80,21 +84,25 @@ function toLinkedSubsampleRecord(
   } as InventoryRecord;
 }
 
+/*
+ * NB: This component cannot be split into subcomponents right now because there
+ * is a lot of circular dependencies coming from the InventoryPicker and Search
+ * imports.
+ */
 const StoichiometryTableInventoryLinkCell = ({
   inventoryLink,
-  inventoryRecord,
+  isDeleted = false,
   moleculeName,
   editable = true,
+  showInsufficientStockWarning = false,
   linkedInventoryItemGlobalIds = [],
   onPickInventoryItem,
   onRemoveInventoryLink,
+  onUndoRemoveInventoryLink,
 }: StoichiometryTableInventoryLinkCellProps) => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch] = useState(createInventoryPickerSearch);
-  const linkedInventoryItemGlobalIdSet = useMemo(
-    () => new Set(linkedInventoryItemGlobalIds),
-    [linkedInventoryItemGlobalIds],
-  );
+  const linkedInventoryItemGlobalIdSet = new Set(linkedInventoryItemGlobalIds);
 
   const moleculeLabel = moleculeName ?? "molecule";
   const pickerTitle = `Pick inventory item for ${moleculeLabel}`;
@@ -123,31 +131,113 @@ const StoichiometryTableInventoryLinkCell = ({
     });
   }, [pickerOpen, pickerSearch]);
 
-  const handlePickerAddition = useCallback(
-    (records: Array<InventoryRecord>) => {
-      const [record] = records;
-      if (!record || !record.id) {
-        return;
-      }
-      const inventoryItemGlobalId = record.globalId;
-      if (typeof inventoryItemGlobalId !== "string") {
-        return;
-      }
-      if (linkedInventoryItemGlobalIdSet.has(inventoryItemGlobalId)) {
-        return;
-      }
-      onPickInventoryItem?.(record.id, inventoryItemGlobalId);
-      closePicker();
-    },
-    [linkedInventoryItemGlobalIdSet, onPickInventoryItem],
-  );
+  const handlePickerAddition = (records: Array<InventoryRecord>) => {
+    const [record] = records;
+    if (!record || !record.id) {
+      return;
+    }
+    const inventoryItemGlobalId = record.globalId;
+    if (typeof inventoryItemGlobalId !== "string") {
+      return;
+    }
+    if (linkedInventoryItemGlobalIdSet.has(inventoryItemGlobalId)) {
+      return;
+    }
+    onPickInventoryItem?.(record.id, inventoryItemGlobalId);
+    closePicker();
+  };
+
+  if (isDeleted) {
+    return (
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.5}
+        sx={{ height: "100%" }}
+      >
+        {/* Font Size for the icon is necessary as MUI overrides FA font-size */}
+        <Chip
+          size="small"
+          variant="outlined"
+          label="Link Deleted"
+          icon={
+            <FontAwesomeIcon
+              icon={faTrashAlt}
+              size="2xs"
+            />
+          }
+          sx={(theme) => ({
+            fontSize: theme.typography.caption.fontSize,
+            "& .MuiChip-label": {
+              fontSize: "inherit",
+            },
+            "& .MuiChip-icon": {
+              fontSize: "inherit",
+            },
+          })}
+        />
+        {editable && (
+          <Tooltip title="Undo deleting link">
+            <span>
+              <IconButton
+                size="small"
+                aria-label={`Undo deleting inventory link for ${moleculeLabel}`}
+                onClick={onUndoRemoveInventoryLink}
+              >
+                <FontAwesomeIcon icon={faClockRotateLeft} size="sm" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
+      </Stack>
+    );
+  }
 
   if (inventoryLink) {
-    const record = toLinkedSubsampleRecord(inventoryLink, inventoryRecord);
+    const record = toLinkedSubsampleRecord(inventoryLink);
+    const showStockDeductedIndicator = inventoryLink.stockDeducted === true;
+    const showInsufficientStockIndicator =
+      showInsufficientStockWarning && !showStockDeductedIndicator;
 
     return (
       <Stack direction="row" alignItems="center" spacing={0.5} sx={{ height: '100%' }}>
-        <RecordLink record={record} disableNavigationContext={true} newTab={true} />
+        <RecordLink
+          record={record}
+          disableNavigationContext={true}
+          hideRecordTypeTooltip={true}
+          newTab={true}
+        />
+        {showStockDeductedIndicator && (
+          <Tooltip title="Stock deducted">
+            <Box
+              component="span"
+              display="inline-flex"
+              alignItems="center"
+              gap={0.25}
+            >
+              <CheckCircleOutlineIcon
+                fontSize="small"
+                sx={{ color: "success.main" }}
+              />
+            </Box>
+          </Tooltip>
+        )}
+        {showInsufficientStockIndicator && (
+          <Tooltip title="Insufficient Stock">
+            <Box
+              component="span"
+              display="inline-flex"
+              alignItems="center"
+              gap={0.25}
+            >
+              <WarningAmberIcon
+                aria-label="Insufficient Stock"
+                fontSize="small"
+                sx={{ color: "warning.main" }}
+              />
+            </Box>
+          </Tooltip>
+        )}
         {editable && (
           <Tooltip title="Remove inventory link">
             <span>

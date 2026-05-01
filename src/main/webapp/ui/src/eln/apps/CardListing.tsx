@@ -7,7 +7,6 @@ import {
 import Grid from "@mui/material/Grid";
 import ApiDirect from "./integrations/ApiDirect";
 import Argos from "./integrations/Argos";
-import Ascenscia from "./integrations/Ascenscia";
 import Box from "./integrations/Box";
 import Chemistry from "./integrations/Chemistry";
 import Clustermarket from "./integrations/Clustermarket";
@@ -74,16 +73,6 @@ function CardListing({
       });
     },
     [update, integrationStates.ARGOS],
-  );
-
-  const ascensciaUpdate = React.useCallback(
-    (newState: IntegrationStates["ASCENSCIA"]) => {
-      void runInAction(async () => {
-        integrationStates.ASCENSCIA = await update("ASCENSCIA", newState);
-      });
-    },
-
-    [update]
   );
 
   const boxUpdate = React.useCallback(
@@ -367,12 +356,6 @@ function CardListing({
       )}
       {integrationStates.API_DIRECT.mode === mode && <ApiDirect />}
       {integrationStates.API_DIRECT.mode === mode && <Jupyter />}
-      {integrationStates.ASCENSCIA.mode === mode && (
-        <Ascenscia
-          integrationState={integrationStates.ASCENSCIA}
-          update={ascensciaUpdate}
-        />
-      )}
       {integrationStates.BOX.mode === mode && (
         <Box integrationState={integrationStates.BOX} update={boxUpdate} />
       )}

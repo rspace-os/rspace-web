@@ -1,20 +1,32 @@
-import { alpha, createTheme, lighten } from "@mui/material/styles";
+import {
+  alpha,
+  createTheme,
+  darken,
+  lighten,
+  type Theme,
+} from "@mui/material/styles";
 import { type ThemeOptions } from "@mui/material";
-import type {} from "@mui/x-data-grid/themeAugmentation";
+import "@mui/x-data-grid/themeAugmentation";
 import { mergeThemes } from "@/util/styles";
 
 export const STOICHIOMETRY_TABLE_CLASS = "stoichiometry-table";
 
 export function createStoichiometryTheme(baseTheme: unknown) {
-  const theme = baseTheme as {
-    palette: {
-      background: { default: string };
-      divider: string;
-      action: { hover: string };
-      primary: { background: string; contrastText: string };
-    };
-  };
+  const theme = baseTheme as Theme;
   const tableBackground = theme.palette.background.default;
+  const lightenedPrimaryBackground = lighten(theme.palette.primary.main, 0.5);
+  const lightenedPrimaryHoverBackground = darken(
+    lightenedPrimaryBackground,
+    0.1,
+  );
+  const lightenedCallToActionBackground = lighten(
+    theme.palette.callToAction.main,
+    0.5,
+  );
+  const lightenedCallToActionHoverBackground = darken(
+    lightenedCallToActionBackground,
+    0.1,
+  );
 
   return createTheme(
     mergeThemes(baseTheme as ThemeOptions, {
@@ -26,6 +38,24 @@ export function createStoichiometryTheme(baseTheme: unknown) {
         },
       } as unknown as ThemeOptions["palette"],
       components: {
+        MuiButton: {
+          styleOverrides: {
+            containedPrimary: {
+              backgroundColor: lightenedPrimaryBackground,
+              color: theme.palette.primary.dark,
+              "&:hover": {
+                backgroundColor: lightenedPrimaryHoverBackground,
+              },
+            },
+            containedCallToAction: {
+              backgroundColor: lightenedCallToActionBackground,
+              color: theme.palette.callToAction.contrastText,
+              "&:hover": {
+                backgroundColor: lightenedCallToActionHoverBackground,
+              },
+            },
+          },
+        },
         MuiDataGrid: {
           styleOverrides: {
             root: {

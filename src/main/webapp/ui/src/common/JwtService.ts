@@ -1,20 +1,45 @@
 import { jwtDecode } from "jwt-decode";
 
+/**
+ * @deprecated Use the functions in `src/modules/common/utils/auth.ts` instead.
+ */
 class JwtService {
   // if you change this, change login.jsp and logout.jsp accordingly
   static ID_TOKEN_KEY: string = "id_token";
   static JWT_TOKEN_PATTERN: RegExp = /^.+\..+\..+$/;
 
+  private static getSessionStorage(): Storage | null {
+    try {
+      return typeof globalThis.sessionStorage?.getItem === "function"
+        ? globalThis.sessionStorage
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
   static getToken(): string | null {
-    return window.sessionStorage.getItem(JwtService.ID_TOKEN_KEY);
+    try {
+      return JwtService.getSessionStorage()?.getItem(JwtService.ID_TOKEN_KEY) ?? null;
+    } catch {
+      return null;
+    }
   }
 
   static saveToken(token: string): void {
-    window.sessionStorage.setItem(JwtService.ID_TOKEN_KEY, token);
+    try {
+      JwtService.getSessionStorage()?.setItem(JwtService.ID_TOKEN_KEY, token);
+    } catch {
+      // Ignore storage access failures in non-browser or restricted environments.
+    }
   }
 
   static destroyToken(): void {
-    window.sessionStorage.removeItem(JwtService.ID_TOKEN_KEY);
+    try {
+      JwtService.getSessionStorage()?.removeItem(JwtService.ID_TOKEN_KEY);
+    } catch {
+      // Ignore storage access failures in non-browser or restricted environments.
+    }
   }
 
   static secondsToExpiry(token: string): number {

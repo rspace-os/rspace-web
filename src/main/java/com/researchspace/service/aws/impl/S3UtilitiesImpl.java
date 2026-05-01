@@ -4,22 +4,31 @@ import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.aws.S3Utilities;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import javax.annotation.PostConstruct;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.springframework.beans.factory.annotation.Value;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+import org.jetbrains.annotations.NotNull;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
@@ -27,151 +36,111 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class S3UtilitiesImpl implements S3Utilities {
-
-  private static final Integer USE_CHUNKED_UPLOAD_MB_THRESHOLD_DEFAULT = 1000;
-
-  private static final Integer DEFAULT_CHUNK_SIZE_MB = 50;
 
   // AWS max limit for a PutUpload
   private static final long AWS_PUT_FILE_LIMIT = 5 * FileUtils.ONE_GB;
 
-  @Value("${aws.s3.bucketName}")
+  @Setter(AccessLevel.PACKAGE)
+  private Integer chunkedUploadMbThreshold;
+
+  @Setter(AccessLevel.PACKAGE)
+  private Integer chunkedUploadMbSize;
+
   private String s3BucketName;
 
-  @Value(("${archive.folder.storagetime}"))
-  private int archiveFolderStorageTime;
+  @Getter private S3Client s3Client;
 
-  @Value("${aws.s3.archivePath}")
-  private String s3ArchivePath;
-
-  @Value("${aws.s3.region}")
-  private String region;
-
-  // must be >5Mb
-  @Value("${aws.s3.chunk.threshold.mb:1000}")
-  private Integer chunkedUploadMbThreshold = USE_CHUNKED_UPLOAD_MB_THRESHOLD_DEFAULT;
-
-  // must be >5Mb
-  @Value("${aws.s3.chunk.size.mb:50}")
-  private Integer chunkedUploadMbSize = DEFAULT_CHUNK_SIZE_MB;
-
-  /* for testing */
-  void setChunkedUploadThreshold(Integer chunkedUploadMbThreshold) {
-    this.chunkedUploadMbThreshold = chunkedUploadMbThreshold;
+  protected void initializeS3ClientWithAwsDefaults(String s3Region, String s3BucketName) {
+    initializeS3Client(null, s3Region, s3BucketName, false, null, null);
   }
 
-  private S3Client s3Client;
+  /** Initializes s3 client used by this S3Utilities instance */
+  protected void initializeS3Client(
+      String s3url,
+      String s3Region,
+      String s3BucketName,
+      boolean pathStyleAccessEnabled,
+      String accessKeyId,
+      String secretAccessKey) {
 
-  private S3Presigner s3Presigner;
+    Validate.notBlank(s3BucketName, "s3BucketName must be set for initialization");
+    Validate.notBlank(s3Region, "s3Region must be set for initialization");
+    this.s3BucketName = s3BucketName;
 
-  /**
-   * Post-construct method which builds s3 client objects and also checks whether connection to S3
-   * can be made by making a head bucket request to determine if S3 parameters are configured
-   * correctly on the RSpace side.
-   */
-  @PostConstruct
-  public void init() {
     try {
-      s3Client = S3Client.builder().region(Region.of(region)).build();
+      S3ClientBuilder s3ClientBuilder = S3Client.builder().region(Region.of(s3Region));
+      if (StringUtils.isNotBlank(s3url) && !s3url.startsWith("aws::")) {
+        s3ClientBuilder.endpointOverride(URI.create(s3url));
+      }
+      if (StringUtils.isNotBlank(accessKeyId) && StringUtils.isNotBlank(secretAccessKey)) {
+        s3ClientBuilder.credentialsProvider(
+            StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(accessKeyId, secretAccessKey)));
+      }
+      if (pathStyleAccessEnabled) {
+        s3ClientBuilder.serviceConfiguration(
+            S3Configuration.builder().pathStyleAccessEnabled(true).build());
+      }
 
-      s3Presigner = S3Presigner.builder().region(Region.of(region)).build();
-      // Check s3Client is configured correctly by checking if bucket exists
+      s3Client = s3ClientBuilder.build();
       HeadBucketRequest headBucketRequest =
           HeadBucketRequest.builder().bucket(s3BucketName).build();
       s3Client.headBucket(headBucketRequest);
 
     } catch (Exception e) {
-      log.error("Error building S3 client with region {} and bucket {}", region, s3BucketName, e);
+      s3Client = null;
+      log.error("Error building S3 client with region {} and bucket {}", s3Region, s3BucketName, e);
+      throw e;
     }
   }
 
   @Override
-  public boolean isArchiveInS3(String fileName) {
+  public boolean isFileInS3(String folderPath, String fileName) {
+    String fullPath = StringUtils.isBlank(folderPath) ? fileName : folderPath + "/" + fileName;
     try {
       HeadObjectRequest headObjectRequest =
-          HeadObjectRequest.builder()
-              .bucket(s3BucketName)
-              .key(s3ArchivePath + "/" + fileName)
-              .build();
+          HeadObjectRequest.builder().bucket(s3BucketName).key(fullPath).build();
       s3Client.headObject(headObjectRequest);
       return true;
-    } catch (NoSuchKeyException e) {
-      log.error("Could not find object {} in S3", s3ArchivePath + "/" + fileName, e);
-      return false;
+    } catch (S3Exception e) {
+      if (e.statusCode() == 404) {
+        log.warn("Could not find object {} in S3", fullPath);
+        return false;
+      }
+      log.error(
+          "Error while making head object request for bucket {} and file {}",
+          s3BucketName,
+          fullPath);
+      throw e;
     } catch (Exception e) {
       log.error(
           "Error while making head object request for bucket {} and file {}",
           s3BucketName,
-          s3ArchivePath + "/" + fileName);
+          fullPath);
       throw e;
     }
   }
 
   @Override
-  public URL getPresignedUrlForArchiveDownload(String fileName) {
-    try {
-      if (isArchiveInS3(fileName)) {
-        GetObjectRequest getObjectRequest =
-            GetObjectRequest.builder()
-                .bucket(s3BucketName)
-                .key(s3ArchivePath + "/" + fileName)
-                .build();
-
-        GetObjectPresignRequest getObjectPresignRequest =
-            GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofHours(archiveFolderStorageTime))
-                .getObjectRequest(getObjectRequest)
-                .build();
-
-        return s3Presigner.presignGetObject(getObjectPresignRequest).url();
-      } else {
-        return null;
-      }
-
-    } catch (Exception e) {
-      log.error(
-          "Failed to generate pre-signed url for S3 Object: {}", s3ArchivePath + "/" + fileName, e);
-      throw e;
-    }
+  public SdkHttpResponse uploadToS3(String folderPath, File file) {
+    return getS3Uploader(folderPath, file).apply(file);
   }
 
-  @Override
-  public DeleteObjectResponse deleteArchiveFromS3(String fileName) {
-    try {
-      DeleteObjectRequest deleteObjectRequest =
-          DeleteObjectRequest.builder()
-              .bucket(s3BucketName)
-              .key(s3ArchivePath + "/" + fileName)
-              .build();
-
-      return s3Client.deleteObject(deleteObjectRequest);
-    } catch (Exception e) {
-      log.error("Failed to delete object {} from S3", s3ArchivePath + "/" + fileName, e);
-      throw e;
-    }
-  }
-
-  @Override
-  public SdkHttpResponse uploadToS3(File file) {
-    return getS3Uploader(file).apply(file);
-  }
-
-  protected Function<File, SdkHttpResponse> getS3Uploader(File file) {
+  protected Function<File, SdkHttpResponse> getS3Uploader(String folderPath, File file) {
     if ((file.length() <= AWS_PUT_FILE_LIMIT)
         && (chunkedUploadMbThreshold * FileUtils.ONE_MB > file.length())) {
-      return new S3PutUploader(s3Client, s3BucketName, s3ArchivePath);
+      return new S3PutUploader(s3Client, s3BucketName, folderPath);
     }
-    return new S3MultipartChunkedUploader(
-        s3Client, s3BucketName, s3ArchivePath, chunkedUploadMbSize);
+    return new S3MultipartChunkedUploader(s3Client, s3BucketName, folderPath, chunkedUploadMbSize);
   }
 
   @Override
@@ -195,37 +164,46 @@ public class S3UtilitiesImpl implements S3Utilities {
 
   @Override
   public List<S3FolderContentItem> listFolderContents(String folderPath) {
-    try {
-      String folderPathWithSlash = folderPath.endsWith("/") ? folderPath : folderPath + "/";
 
+    String folderPrefixToQuery = getFolderPrefixToQuery(folderPath);
+    try {
       ListObjectsV2Request listRequest =
           ListObjectsV2Request.builder()
               .bucket(s3BucketName)
-              .prefix(folderPathWithSlash)
+              .prefix(folderPrefixToQuery)
               .delimiter("/")
               .build();
 
-      ListObjectsV2Response listResponse = s3Client.listObjectsV2(listRequest);
-
       List<S3FolderContentItem> items = new ArrayList<>();
+      ListObjectsV2Response listResponse;
+      do {
+        listResponse = s3Client.listObjectsV2(listRequest);
 
-      // Add subfolders (common prefixes)
-      for (CommonPrefix commonPrefix : listResponse.commonPrefixes()) {
-        String folderName = commonPrefix.prefix().substring(folderPathWithSlash.length());
-        if (folderName.endsWith("/")) {
-          folderName = folderName.substring(0, folderName.length() - 1);
+        // Add subfolders (common prefixes)
+        for (CommonPrefix commonPrefix : listResponse.commonPrefixes()) {
+          String folderName =
+              StringUtils.removeEnd(
+                  commonPrefix.prefix().substring(folderPrefixToQuery.length()), "/");
+          items.add(new S3FolderContentItem(folderName, true, null, null));
         }
-        items.add(new S3FolderContentItem(folderName, true, null));
-      }
 
-      // Add files (objects)
-      for (S3Object s3Object : listResponse.contents()) {
-        String key = s3Object.key();
-        if (!key.equals(folderPathWithSlash)) { // Skip the folder itself
-          String fileName = key.substring(folderPathWithSlash.length());
-          items.add(new S3FolderContentItem(fileName, false, s3Object.size()));
+        // Add files (objects)
+        for (S3Object s3Object : listResponse.contents()) {
+          String key = s3Object.key();
+          if (!key.equals(folderPrefixToQuery)) { // Skip the folder itself
+            String fileName = key.substring(folderPrefixToQuery.length());
+            items.add(
+                new S3FolderContentItem(fileName, false, s3Object.size(), s3Object.lastModified()));
+          }
         }
-      }
+
+        if (listResponse.isTruncated()) {
+          listRequest =
+              listRequest.toBuilder()
+                  .continuationToken(listResponse.nextContinuationToken())
+                  .build();
+        }
+      } while (listResponse.isTruncated());
 
       log.info("Successfully listed {} items in folder {}", items.size(), folderPath);
       return items;
@@ -235,10 +213,92 @@ public class S3UtilitiesImpl implements S3Utilities {
     }
   }
 
+  @Override
+  public S3FolderContentItem getObjectDetails(String path) {
+    if (StringUtils.isBlank(path)) {
+      return new S3FolderContentItem("", true, null, null);
+    }
+    try {
+      HeadObjectRequest headObjectRequest =
+          HeadObjectRequest.builder().bucket(s3BucketName).key(path).build();
+      HeadObjectResponse response = s3Client.headObject(headObjectRequest);
+      return new S3FolderContentItem(
+          getLeafName(path), false, response.contentLength(), response.lastModified());
+    } catch (S3Exception e) {
+      if (e.statusCode() != 404) {
+        log.error(
+            "Error while getting object details for bucket {} and path {}", s3BucketName, path);
+        throw e;
+      }
+      // Not a file - check if it's a virtual folder (has content with this prefix)
+      String folderPrefix = getFolderPrefixToQuery(path);
+      ListObjectsV2Request listRequest =
+          ListObjectsV2Request.builder()
+              .bucket(s3BucketName)
+              .prefix(folderPrefix)
+              .delimiter("/")
+              .maxKeys(1)
+              .build();
+      ListObjectsV2Response listResponse = s3Client.listObjectsV2(listRequest);
+      if (!listResponse.commonPrefixes().isEmpty()
+          || !listResponse.contents().isEmpty()
+          || isFolderPlaceholderExists(path)) {
+        return new S3FolderContentItem(getLeafName(path), true, null, null);
+      }
+      return null;
+    } catch (Exception e) {
+      log.error("Error while getting object details for bucket {} and path {}", s3BucketName, path);
+      throw e;
+    }
+  }
+
+  private boolean isFolderPlaceholderExists(String path) {
+    try {
+      String folderKey = path.endsWith("/") ? path : path + "/";
+      HeadObjectRequest headObjectRequest =
+          HeadObjectRequest.builder().bucket(s3BucketName).key(folderKey).build();
+      s3Client.headObject(headObjectRequest);
+      return true;
+    } catch (S3Exception e) {
+      if (e.statusCode() != 404) {
+        throw e;
+      }
+      return false;
+    }
+  }
+
+  private static String getLeafName(String path) {
+    String name = StringUtils.substringAfterLast(path, "/");
+    return name.isEmpty() ? path : name;
+  }
+
+  @NotNull
+  private String getFolderPrefixToQuery(String folderPath) {
+    if (!folderPath.isEmpty() && !folderPath.endsWith("/")) {
+      return folderPath + "/";
+    }
+    return folderPath;
+  }
+
   @Data
   public static class S3FolderContentItem {
     private final String name;
     private final boolean isFolder;
     private final Long sizeInBytes;
+    private final Instant lastModified;
+  }
+
+  @Override
+  public DeleteObjectResponse deleteFromS3(String folderPath, String fileName) {
+    String s3Key = StringUtils.isNotBlank(folderPath) ? folderPath + "/" + fileName : fileName;
+    try {
+      DeleteObjectRequest deleteObjectRequest =
+          DeleteObjectRequest.builder().bucket(s3BucketName).key(s3Key).build();
+
+      return s3Client.deleteObject(deleteObjectRequest);
+    } catch (Exception e) {
+      log.error("Failed to delete object {} from S3", s3Key, e);
+      throw e;
+    }
   }
 }

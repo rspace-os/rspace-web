@@ -3,6 +3,7 @@ import webpack from "webpack";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 
 const isCi = process.env.CI === "true" || process.env.CI === "1";
+const isBuildStats = Boolean(process.env.FRONTEND_BUILD_STATS);
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -49,7 +50,7 @@ const config = {
     fileTreeToolbar: "./src/Toolbar/FileTreeToolbar.js",
     galleryToolbar: "./src/Toolbar/Gallery/Toolbar.tsx",
     newLabGroup: "./src/system-groups/NewLabGroup.js",
-    tinymceSidebarInfo: "./src/tinyMCE/sidebarInfo.js",
+    tinymceSidebarInfo: "./src/tinyMCE/SidebarInfo.tsx",
     PreviewInfo: "./src/tinyMCE/PreviewInfo.tsx",
     userDetails: "./src/components/UserDetails_deprecated.js",
     groupUserActivity: "./src/my-rspace/directory/groups/GroupUserActivity.js",
@@ -60,14 +61,14 @@ const config = {
     labgroupsTable: "./src/my-rspace/profile/GroupsTable.js",
     snapGeneDialog: "./src/tinyMCE/SnapGene/snapGeneDialog.js",
     toastMessage: "./src/components/ToastMessage.js",
-    internalLink: "./src/tinyMCE/internallink.js",
+    InternalLink: "./src/tinyMCE/InternalLink.tsx",
     tinymceShortcuts: "./src/tinyMCE/shortcutsPlugin/shortcuts.js",
     tinymcePyrat: "./src/tinyMCE/pyrat/Pyrat.js",
     tinymceClustermarket: "./src/tinyMCE/clustermarket/index.js",
     tinymceGalaxy: "./src/tinyMCE/galaxy/index.tsx",
     tinymceOmero: "./src/tinyMCE/omero/index.js",
     tinymceJove: "./src/tinyMCE/jove/index.tsx",
-    tinymceKetcher: "./src/tinyMCE/ketcher/KetcherTinyMce.js",
+    tinymceKetcher: "./src/tinyMCE/ketcher/KetcherTinyMce.tsx",
     ketcherViewer: "./src/tinyMCE/ketcher/KetcherViewer.tsx",
     tinymceIdentifiers: "./src/tinyMCE/inventory/identifiers/index.tsx",
     tinymcePubchem: "./src/tinyMCE/pubchem/index.tsx",
@@ -100,10 +101,11 @@ const config = {
       process: { env: {} },
     }),
     new BundleAnalyzerPlugin({
-      analyzerMode: Boolean(process.env.FRONTEND_BUILD_STATS)
-        ? "server"
-        : "disabled",
-      generateStatsFile: isCi,
+      analyzerMode: isBuildStats ? (isCi ? "static" : "server") : "disabled",
+      reportFilename: "bundle-analyzer-report.html",
+      generateStatsFile: isBuildStats,
+      openAnalyzer: !isCi,
+      logLevel: "warn",
     }),
   ],
   optimization: {

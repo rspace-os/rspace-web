@@ -131,10 +131,15 @@ define(function() {
         var isSmbjClient = isExistingFileSystem && fileSystem.clientType === 'SMBJ';
         var isSftpClient = isExistingFileSystem && fileSystem.clientType === 'SFTP';
         var isIrodsClient = isExistingFileSystem && fileSystem.clientType === 'IRODS';
+        var isS3AWSClient = isExistingFileSystem && fileSystem.clientType === 'S3' && fileSystem.url && fileSystem.url.startsWith('aws::');
+        var isS3OtherClient = isExistingFileSystem && fileSystem.clientType === 'S3' && !isS3AWSClient;
 
         $('#fileSystemClientTypeSamba').prop('checked', isSambaClient || isSmbjClient);
         $('#fileSystemClientTypeSftp').prop('checked', isSftpClient);
         $('#fileSystemClientTypeIrods').prop('checked', isIrodsClient);
+        $('#fileSystemClientTypeS3').prop('checked', isS3AWSClient || isS3OtherClient);
+        $('#fileSystemClientTypeS3AWS').prop('checked', isS3AWSClient);
+        $('#fileSystemClientTypeS3Other').prop('checked', isS3OtherClient);
         $('#fileSystemClientTypeSambaSmbj').prop('checked', !isSambaClient);
         $('#fileSystemClientTypeSambaJcifs').prop('checked', isSambaClient);
         $('#fileSystemDetailsSftpDirChoiceYes').prop('checked', isSftpClient && fileSystemRequiresUserDirs(fileSystem));
@@ -148,9 +153,10 @@ define(function() {
         $('#fileSystemSambaDomain').val("");
         $('#fileSystemSambaShare').val("");
         $('#fileSystemSftpServerPublicKey').val("");
+        $('#fileSystemS3Region').val("");
+        $('#fileSystemS3BucketName').val("");
 
         var clientOptions = parseClientOptions(fileSystem.clientOptions);
-        // $('#fileSystemDetailsSftpDirChoiceRow').hide();
         if (isSambaClient) {
             $('#fileSystemSambaDomain').val(clientOptions.SAMBA_DOMAIN);
         } else if (isSmbjClient) {
@@ -163,13 +169,21 @@ define(function() {
             $('#fileSystemIrodsHomeDir').val(clientOptions.IRODS_HOME_DIR);
             $('#fileSystemIrodsPort').val(clientOptions.IRODS_PORT);
             $('#fileSystemIrodsCsneg').val(clientOptions.IRODS_CSNEG);
+        } else if (isS3AWSClient || isS3OtherClient) {
+            $('#fileSystemS3Region').val(clientOptions.S3_REGION);
+            $('#fileSystemS3BucketName').val(clientOptions.S3_BUCKET_NAME);
+            var s3pathStyleEnabled = clientOptions.S3_PATH_STYLE_ACCESS_ENABLED === 'true';
+            $('#fileSystemS3PathStyleEnabled').prop('checked', s3pathStyleEnabled);
+            $('#fileSystemS3PathStyleDisabled').prop('checked', !s3pathStyleEnabled);
         }
         
         var isPasswordAuth = isExistingFileSystem && fileSystem.authType === 'PASSWORD';
         var isPubKeyAuth = isExistingFileSystem && fileSystem.authType === 'PUBKEY';
+        var isNoneAuth = isExistingFileSystem && fileSystem.authType === 'NONE';
         
         $('#fileSystemAuthTypePassword').prop('checked', isPasswordAuth);
         $('#fileSystemAuthTypePubKey').prop('checked', isPubKeyAuth);
+        $('#fileSystemAuthTypeNone').prop('checked', isNoneAuth);
         refreshAuthTypeRows();
 
         $('#fileSystemPubKeyRegistrationUrl').val("");
@@ -248,7 +262,21 @@ define(function() {
                 clientOptions +="\nUSER_DIRS_REQUIRED=" + dirsRequired;
             }
         } else if (clientType === 'IRODS') {
-            clientOptions = "IRODS_ZONE=" + $('#fileSystemIrodsZone').val() + "\nIRODS_HOME_DIR=" + $('#fileSystemIrodsHomeDir').val() + "\nIRODS_PORT=" + $('#fileSystemIrodsPort').val()+"\nIRODS_CSNEG=" + $('#fileSystemIrodsCsneg').val()+"\nIRODS_AUTH=" + $('input[name="iRODSfileSystemAuthType"]:checked').val()+"\n";
+            clientOptions = "IRODS_ZONE=" + $('#fileSystemIrodsZone').val()
+                        + "\nIRODS_HOME_DIR=" + $('#fileSystemIrodsHomeDir').val()
+                        + "\nIRODS_PORT=" + $('#fileSystemIrodsPort').val()
+                        + "\nIRODS_CSNEG=" + $('#fileSystemIrodsCsneg').val()
+                        + "\nIRODS_AUTH=" + $('input[name="iRODSfileSystemAuthType"]:checked').val()+"\n";
+        } else if (clientType === 'S3') {
+            var s3Region = $('#fileSystemS3Region').val();
+            var s3BucketName = $('#fileSystemS3BucketName').val();
+            var s3PathStyleEnabled = $('#fileSystemS3PathStyleEnabled').prop('checked');
+            if ($('#fileSystemClientTypeS3AWS').prop('checked')) {
+                $('#fileSystemUrl').val("aws::" + s3Region);
+            }
+            clientOptions = "S3_REGION=" + s3Region
+                + "\nS3_BUCKET_NAME=" + s3BucketName
+                + "\nS3_PATH_STYLE_ACCESS_ENABLED=" + s3PathStyleEnabled;
         }
 
         var fileSystem = {
@@ -261,7 +289,6 @@ define(function() {
                 clientOptions: clientOptions,
                 authOptions: authOptions
             };
-        //console.log("File System:", fileSystem);
         RS.blockPage("Saving...");
         var jqxhr = RS.sendJsonPostRequestToUrl('/system/netfilesystem/save', fileSystem);
         jqxhr.done(function() {
@@ -288,26 +315,30 @@ define(function() {
             sysNetFileSysDetUrl = $("label[for='fileSystemUrl']").text();
         }
         if (sysNetfileSysDetAuthPasswd === undefined) {
-            sysNetfileSysDetAuthPasswd = $('#fileSystemAuthTypePasswordSpan').text();
+            sysNetfileSysDetAuthPasswd = $(
+                '#fileSystemAuthTypePasswordSpan').text();
         }
-	
+
         const isSambaClient = $('#fileSystemClientTypeSamba').prop('checked');
-        const isSambaSmbjClient = isSambaClient && $('#fileSystemClientTypeSambaSmbj').prop('checked');
+        const isSambaSmbjClient = isSambaClient && $(
+            '#fileSystemClientTypeSambaSmbj').prop('checked');
         const isSftpClient = $('#fileSystemClientTypeSftp').prop('checked');
         const isIrodsClient = $('#fileSystemClientTypeIrods').prop('checked');
+        const isS3Client = $('#fileSystemClientTypeS3').prop('checked');
+        const isS3AWSClient = isS3Client && $('#fileSystemClientTypeS3AWS').prop('checked');
         const existingFileSystem = $('#fileSystemId').html().length;
-        if(!isSftpClient) {
-            $('#fileSystemDetailsSftpDirChoiceRow').hide();
-        } else {
-            $('#fileSystemDetailsSftpDirChoiceRow').show();
-        }
-        if($("#fileSystemDetailsSftpDirChoiceYes").length) {
+
+        $('.fileSystemDetailsUrlRow').toggle(!isS3AWSClient);
+
+        $('#fileSystemDetailsSftpDirChoiceRow').toggle(isSftpClient);
+        if ($("#fileSystemDetailsSftpDirChoiceYes").length) {
             if ((existingFileSystem && !isSftpClient) || !existingFileSystem) {
                 $('#fileSystemDetailsSftpDirChoiceYes').prop('checked', true);
             }
         }
         $('.fileSystemDetailsSambaRow').toggle(isSambaClient);
-        $('.fileSystemDetailsSambaShareRow').toggle(isSambaClient && isSambaSmbjClient);
+        $('.fileSystemDetailsSambaShareRow').toggle(
+            isSambaClient && isSambaSmbjClient);
         $('#fileSystemSambaDomain').prop('required', isSambaClient);
         $('.fileSystemDetailsSftpRow').toggle(isSftpClient);
         $('#fileSystemSftpServerPublicKey').prop('required', isSftpClient);
@@ -315,17 +346,26 @@ define(function() {
         $('.fileSystemDetailsIrodsHomeDirRow').toggle(isIrodsClient);
         $('.fileSystemDetailsIrodsPortRow').toggle(isIrodsClient);
         $('.fileSystemDetailsIrodsCsnegRow').toggle(isIrodsClient);
-	      $('.fileSystemDetailsIrodsAuthRow').toggle(isIrodsClient);
+        $('.fileSystemDetailsIrodsAuthRow').toggle(isIrodsClient);
 
         $('#fileSystemIrodsZone').prop('required', isIrodsClient);
         $('#fileSystemIrodsHomeDir').prop('required', isIrodsClient);
         $('#iRODSfileSystemAuthTypeNative').prop('required', isIrodsClient);
         $('#iRODSfileSystemAuthTypePAM').prop('required', isIrodsClient);
 
-        $('#fileSystemAuthTypePubKey').prop('disabled', isSambaClient || isSambaSmbjClient);
-        $("label[for='fileSystemAuthTypePubKey']").toggle(!isIrodsClient);
+        $("label[for='fileSystemAuthTypePassword']").toggle(!isS3Client);
+        $("label[for='fileSystemAuthTypePubKey']").toggle(isSftpClient);
+        $("label[for='fileSystemAuthTypeNone']").toggle(isS3Client);
+
+        $('.fileSystemDetailsS3Row').toggle(isS3Client);
+        $('#fileSystemS3BucketName').prop('required', isS3Client);
+        $('#fileSystemS3Region').prop('required', isS3Client);
+        $('.fileSystemDetailsS3PathStyleRow').toggle(isS3Client && !isS3AWSClient);
+
         if (isSambaClient || isIrodsClient) {
             $('#fileSystemAuthTypePassword').click();
+        } else if (isS3Client) {
+            $('#fileSystemAuthTypeNone').click();
         }
         $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
         $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
@@ -335,15 +375,16 @@ define(function() {
 
         if (isSambaClient || isSambaSmbjClient) {
             $('#fileSystemUrl')
-                .attr('title', 'Samba server URL should start with smb://')
-                .attr('pattern', '^smb://.*');
+            .attr('title', 'Samba server URL should start with smb://')
+            .attr('pattern', '^smb://.*');
         } else if (isIrodsClient) {
-	          $('#fileSystemUrl')
-		            .removeAttr('pattern')
-		            .attr('title', 'iRODS hostname or IP without protocol');
+            $('#fileSystemUrl')
+            .removeAttr('pattern')
+            .attr('title', 'iRODS hostname or IP without protocol');
         } else {
             $('#fileSystemUrl').removeAttr('title').removeAttr('pattern');
         }
+        $('#fileSystemUrl').prop('required', !isS3AWSClient);
     }
 
     function refreshAuthTypeRows() {
@@ -360,6 +401,7 @@ define(function() {
         $(document).on('click', '.fileSystemDeleteButton', deleteFileSystem);
         $(document).on('change', 'input[name="fileSystemClientType"]', refreshClientTypeRows);
         $(document).on('change', 'input[name="fileSystemClientTypeSamba"]', refreshClientTypeRows);
+        $(document).on('change', 'input[name="fileSystemClientTypeS3"]', refreshClientTypeRows);
         $(document).on('change', 'input[name="fileSystemAuthType"]', refreshAuthTypeRows);
         $(document).on('click','#addNewFileSystem', addNewFileSystem);
         $(document).on('submit', '#fileSystemDetailsForm', saveFileSystem);

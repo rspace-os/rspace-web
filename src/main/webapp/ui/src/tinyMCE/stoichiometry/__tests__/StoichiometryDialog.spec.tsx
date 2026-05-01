@@ -60,6 +60,9 @@ const feature = test.extend<{
   };
   Then: {
     "the calculate button is visible": () => Promise<void>;
+    "an inline calculate error should be displayed": (
+      message: string,
+    ) => Promise<void>;
     "the table is displayed": () => Promise<void>;
     "the callback should have been invoked": ({
       onTableCreatedSpy,
@@ -147,10 +150,16 @@ const feature = test.extend<{
         await page.getByRole("button", { name: "Save Changes" }).click();
       },
       "the user clicks the delete button": async () => {
-        await page.getByRole("button", { name: "Delete" }).click();
+        await page.getByRole("button", { name: "Delete", exact: true }).click();
       },
       "the user confirms the deletion": async () => {
-        const confirmButton = page.getByRole("button", { name: "Delete" });
+        const confirmDialog = page.getByRole("dialog", {
+          name: /Delete Stoichiometry Table/,
+        });
+        const confirmButton = confirmDialog.getByRole("button", {
+          name: "Delete",
+          exact: true,
+        });
         await confirmButton.click();
       },
     });
@@ -162,6 +171,12 @@ const feature = test.extend<{
           name: "Calculate Stoichiometry",
         });
         await expect(button).toBeVisible();
+      },
+      "an inline calculate error should be displayed": async (message) => {
+        const errorAlert = page.getByRole("alert").filter({
+          hasText: message,
+        });
+        await expect(errorAlert).toBeVisible();
       },
       "the table is displayed": async () => {
         const table = page.getByRole("grid");
@@ -175,8 +190,9 @@ const feature = test.extend<{
           expect(hasStoichiometryRequest(networkRequests, "POST")).toBe(true);
         },
       "the save button should not be visible": async () => {
-        const saveButton = page.getByTestId("SubmitButton");
-        await expect(saveButton).not.toBeVisible();
+        await expect(
+          page.getByRole("button", { name: "Save Changes" }),
+        ).toHaveCount(0);
       },
       "the save button should be visible": async () => {
         const saveButton = page.getByRole("button", { name: "Save Changes" });
@@ -193,7 +209,10 @@ const feature = test.extend<{
           );
         },
       "the delete button should be visible": async () => {
-        const deleteButton = page.getByRole("button", { name: "Delete" });
+        const deleteButton = page.getByRole("button", {
+          name: "Delete",
+          exact: true,
+        });
         await expect(deleteButton).toBeVisible();
       },
       "the confirmation dialog should be displayed": async () => {
@@ -434,6 +453,13 @@ test.describe("Stoichiometry Dialog", () => {
 
   );
   feature(
+    "calculate dialog has no accessibility violations",
+    async ({ Given, Then }) => {
+      await Given["the dialog is open without a stoichiometry table"]();
+      await Then["there shouldn't be any axe violations"]();
+    },
+  );
+  feature(
     "displays stoichiometry table when data is available",
     async ({ Given, Then }) => {
       await Given["the dialog is open with a stoichiometry table"]();
@@ -478,6 +504,38 @@ test.describe("Stoichiometry Dialog", () => {
       ]();
     },
 
+  );
+  feature(
+    "shows an inline error when creating a new table fails",
+    async ({ Given, When, Then, page }) => {
+      const createErrorMessage = "Unable to create stoichiometry table.";
+      await page.route(
+        /\/api\/v1\/stoichiometry\?recordId=1&chemId=12345$/,
+        async (route) => {
+          await route.fulfill({
+            status: 500,
+            contentType: "application/json",
+            body: JSON.stringify({
+              status: "error",
+              httpCode: 500,
+              internalCode: 500,
+              message: createErrorMessage,
+              messageCode: null,
+              errors: [],
+              iso8601Timestamp: "2026-04-07T00:00:00Z",
+              data: null,
+            }),
+          });
+        },
+      );
+
+      await Given["the dialog is open without a stoichiometry table"]();
+      await When["the user clicks calculate"]();
+      await Then["the calculate button is visible"]();
+      await Then["an inline calculate error should be displayed"](
+        createErrorMessage,
+      );
+    },
   );
   feature(
     "does not show save button when table has not been modified",
