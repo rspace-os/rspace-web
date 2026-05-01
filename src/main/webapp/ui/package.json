@@ -56,7 +56,7 @@
     "babel-loader": "10.1.1",
     "babel-plugin-syntax-hermes-parser": "0.34.0",
     "canvas": "3.2.3",
-    "cross-env": "^7.0.3",
+    "cross-env": "7.0.3",
     "css-loader": "7.1.4",
     "dependency-cruiser": "17.3.10",
     "eslint": "9.39.4",
