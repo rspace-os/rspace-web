@@ -5,6 +5,7 @@ import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Repository;
 
@@ -29,6 +30,25 @@ public class ExternalWorkFlowDataDaoHibernate
                 ExternalWorkFlowData.class)
             .setParameter("rspaceContainerId", rspaceContainerId)
             .setParameter("type", type)
+            .list());
+  }
+
+  @Override
+  public Set<ExternalWorkFlowData> findAllExternalWorkFlowDataForFieldsAndServiceType(
+      ExternalService externalService, List<Long> ids) {
+    if (ids == null || ids.isEmpty()) {
+      return new HashSet<>();
+    }
+    return new HashSet<>(
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(
+                "from ExternalWorkFlowData efd left join fetch efd.externalWorkflowInvocations ewfi"
+                    + " left join fetch ewfi.externalWorkFlowData where efd.rspacecontainerid in (:ids)"
+                    + " and efd.externalService = (:type)",
+                ExternalWorkFlowData.class)
+            .setParameterList("ids", ids)
+            .setParameter("type", externalService)
             .list());
   }
 }
