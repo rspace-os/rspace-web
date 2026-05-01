@@ -52,10 +52,11 @@ public class StoichiometryImportRevisionFixupManagerTest {
   }
 
   @Test
-  void noOpWhenReportNotSuccessful() {
-    when(report.isSuccessful()).thenReturn(false);
+  void whenReportNotSuccessfulStillDoesFixup() {
+    Mockito.lenient().when(report.isSuccessful()).thenReturn(false);
+    setupRecordInReport();
     testee.fixupStoichiometryRevisions(report, user);
-    verify(fieldManager, never()).getFieldsByRecordId(any(Long.class), any(User.class));
+    verify(fieldManager).getFieldsByRecordId(any(Long.class), any(User.class));
   }
 
   @Test
@@ -92,10 +93,7 @@ public class StoichiometryImportRevisionFixupManagerTest {
 
   @Test
   void skipsFieldsWithNoStoichiometryData() {
-    StructuredDocument doc = mockStructuredDocument(100L);
-    Set<BaseRecord> records = new HashSet<>();
-    records.add(doc);
-    when(report.getImportedRecords()).thenReturn(records);
+    setupRecordInReport();
 
     Field field = mockFieldWithData(200L, "<p>No stoichiometry here</p>");
     when(fieldManager.getFieldsByRecordId(100L, user)).thenReturn(List.of(field));
@@ -104,12 +102,16 @@ public class StoichiometryImportRevisionFixupManagerTest {
     verify(fieldManager, never()).save(any(Field.class), any(User.class));
   }
 
-  @Test
-  void fixesNullRevisionWithActualEnversRevision() {
+  private void setupRecordInReport() {
     StructuredDocument doc = mockStructuredDocument(100L);
     Set<BaseRecord> records = new HashSet<>();
     records.add(doc);
     when(report.getImportedRecords()).thenReturn(records);
+  }
+
+  @Test
+  void fixesNullRevisionWithActualEnversRevision() {
+    setupRecordInReport();
 
     String fieldHtml =
         "<img data-stoichiometry-table=\"{&quot;id&quot;:42,&quot;revision&quot;:null}\">";
@@ -134,10 +136,7 @@ public class StoichiometryImportRevisionFixupManagerTest {
 
   @Test
   void fixesMultipleStoichiometriesInOneField() {
-    StructuredDocument doc = mockStructuredDocument(100L);
-    Set<BaseRecord> records = new HashSet<>();
-    records.add(doc);
-    when(report.getImportedRecords()).thenReturn(records);
+    setupRecordInReport();
 
     String fieldHtml =
         "<img data-stoichiometry-table=\"{&quot;id&quot;:10,&quot;revision&quot;:null}\">"
@@ -167,10 +166,7 @@ public class StoichiometryImportRevisionFixupManagerTest {
 
   @Test
   void logsWarningAndContinuesWhenEnversReturnsNull() {
-    StructuredDocument doc = mockStructuredDocument(100L);
-    Set<BaseRecord> records = new HashSet<>();
-    records.add(doc);
-    when(report.getImportedRecords()).thenReturn(records);
+    setupRecordInReport();
 
     String fieldHtml =
         "<img data-stoichiometry-table=\"{&quot;id&quot;:42,&quot;revision&quot;:null}\">";
@@ -188,10 +184,7 @@ public class StoichiometryImportRevisionFixupManagerTest {
 
   @Test
   void skipsStoichiometriesWithExistingRevision() {
-    StructuredDocument doc = mockStructuredDocument(100L);
-    Set<BaseRecord> records = new HashSet<>();
-    records.add(doc);
-    when(report.getImportedRecords()).thenReturn(records);
+    setupRecordInReport();
 
     String fieldHtml =
         "<img data-stoichiometry-table=\"{&quot;id&quot;:42,&quot;revision&quot;:123}\">";
