@@ -55,7 +55,7 @@
     </rule>
     <rule> <!-- RSPAC-1388 -->
         <from>/favicon.ico</from>
-        <to>/images/faviconEnterprise.ico</to>
+        <to>/images/favicon.png</to>
     </rule>
 
     <!-- Backward compatibility: previous location of box/dropbox icons -->
