@@ -109,7 +109,7 @@ public class PublicControllerTest {
   public void testBanner() throws Exception {
     final String ptestImagPath = "IS1.jpg";
 
-    final int testImageSize = 12287;
+    final int testImageSize = 10329;
     // path not set, use default
     when(properties.getBannerImagePath()).thenReturn("");
 
