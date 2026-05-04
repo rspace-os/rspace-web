@@ -167,7 +167,7 @@
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/import/archiveImport')}"> currentPanel</c:if>" tabindex="0">
       	<a id="exportImportLink" href="/import/archiveImport">
           <fmt:message key="menu.admin.inOut"/><br>
-          <img src="/images/icons/exportImportN.png" class="menuInnerPanelIcon" tabindex="-1">
+          <img src="/images/icons/exportImportN2.png" class="menuInnerPanelIcon" tabindex="-1">
         </a>
       </li>
     </div>

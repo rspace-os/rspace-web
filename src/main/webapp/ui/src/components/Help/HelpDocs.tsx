@@ -247,7 +247,7 @@ function HelpDocs() {
         )}
         <Divider />
         <MenuItem onClick={handleHelpButtonClicked}>
-          <ListItemIcon><Box component="img" sx={{ height: 24, width: 24 }} alt="RSpace" src="/images/icons/rspaceIcon.svg" /></ListItemIcon>
+          <ListItemIcon><Box component="img" sx={{ height: 24, width: 24 }} alt="RSpace" src="/images/icons/rspaceIcon2.svg" /></ListItemIcon>
           <ListItemText>RSpace Documentation</ListItemText></MenuItem>
       </Menu>
     </div>
