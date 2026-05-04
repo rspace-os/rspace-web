@@ -39,7 +39,7 @@ public class PublicControllerTest {
   @Mock MaintenanceManager maintenanceMgr;
   @Mock IPropertyHolder properties;
   @Mock Resource resource;
-  final int defaultImageSize = 41430;
+  final int defaultImageSize = 14166;
   MockHttpServletResponse response;
 
   class PublicControllerTSS extends PublicController {
