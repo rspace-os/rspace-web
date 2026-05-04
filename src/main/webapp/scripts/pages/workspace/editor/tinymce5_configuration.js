@@ -1,4 +1,3 @@
-
 var tinymcesetup = {
 	theme: "silver",
 	width: "100%",
@@ -405,6 +404,60 @@ tinymce.PluginManager.add('commandpalette', function (editor) {
 
 var initTinyMCE_cachedPropertiesResponse;
 var initTinyMCE_cachedIntegrationsResponse;
+var initTinyMCE_cachedBoxSelectRequest;
+var initTinyMCE_cachedOwnCloudClientRequest;
+var initTinyMCE_cachedNextCloudClientRequest;
+
+function loadBoxSelectScript() {
+	if (typeof BoxSelect === 'function') {
+		return $.Deferred().resolve().promise();
+	}
+
+	if (!initTinyMCE_cachedBoxSelectRequest) {
+		initTinyMCE_cachedBoxSelectRequest = $.getScript("https://app.box.com/js/static/select.js");
+		initTinyMCE_cachedBoxSelectRequest.fail(function () {
+			initTinyMCE_cachedBoxSelectRequest = null;
+		});
+	} else {
+		console.log('using cached box select script request');
+	}
+
+	return initTinyMCE_cachedBoxSelectRequest;
+}
+
+function loadOwnCloudClientScript() {
+	if (window.oc) {
+		return $.Deferred().resolve().promise();
+	}
+
+	if (!initTinyMCE_cachedOwnCloudClientRequest) {
+		initTinyMCE_cachedOwnCloudClientRequest = $.getScript("/scripts/bower_components/js-owncloud-client/owncloud.js");
+		initTinyMCE_cachedOwnCloudClientRequest.fail(function () {
+			initTinyMCE_cachedOwnCloudClientRequest = null;
+		});
+	} else {
+		console.log('using cached owncloud client script request');
+	}
+
+	return initTinyMCE_cachedOwnCloudClientRequest;
+}
+
+function loadNextCloudClientScript() {
+	if (window.nextcloud) {
+		return $.Deferred().resolve().promise();
+	}
+
+	if (!initTinyMCE_cachedNextCloudClientRequest) {
+		initTinyMCE_cachedNextCloudClientRequest = $.getScript("/scripts/bower_components/js-owncloud-client/nextcloud_owncloud.js");
+		initTinyMCE_cachedNextCloudClientRequest.fail(function () {
+			initTinyMCE_cachedNextCloudClientRequest = null;
+		});
+	} else {
+		console.log('using cached nextcloud client script request');
+	}
+
+	return initTinyMCE_cachedNextCloudClientRequest;
+}
 
 function initTinyMCE(selector) {
 	var localTinymcesetup = tinymcesetup;
@@ -444,18 +497,19 @@ function initTinyMCE(selector) {
 	}
 
 	let requestsPromise = $.when(propertiesRequest, integrationsRequest, toolbarRequest);
+	let tinymceSetupReady = $.Deferred();
 	requestsPromise.done(function (propertiesResponse, integrationsResponse, toolbarResponse) {
 
 		initTinyMCE_cachedPropertiesResponse = propertiesResponse;
 		initTinyMCE_cachedIntegrationsResponse = integrationsResponse;
 
 		localTinymcesetup.external_plugins["gallery"] = "/ui/dist/tinymceGallery.js";
-		
+
 		var properties = propertiesResponse[0];
 		var integrations = integrationsResponse[0].data;
 
 		var dropboxEnabled     = integrations.DROPBOX.enabled && integrations.DROPBOX.available && integrations.DROPBOX.options['dropbox.linking.enabled'];
-		var boxEnabled         = integrations.BOX.enabled && integrations.BOX.available && integrations.BOX.options['box.linking.enabled'];
+		const boxEnabled = integrations.BOX.enabled && integrations.BOX.available && integrations.BOX.options['box.linking.enabled'];
 		var oneDriveEnabled    = integrations.ONEDRIVE.enabled && integrations.ONEDRIVE.available && integrations.ONEDRIVE.options['onedrive.linking.enabled'];
 		var googleDriveEnabled = integrations.GOOGLEDRIVE.enabled && integrations.GOOGLEDRIVE.available && integrations.GOOGLEDRIVE.options['googledrive.linking.enabled'];
 		var egnyteEnabled      = integrations.EGNYTE.enabled && integrations.EGNYTE.available;
@@ -469,8 +523,15 @@ function initTinyMCE(selector) {
 		const omeroEnabled =  integrations.OMERO.enabled && integrations.OMERO.available && properties["omero.api.url"] !== "";
 		const joveEnabled =  integrations.JOVE.enabled && integrations.JOVE.available;
 		const identifiersEnabled = false; // Once RSDEV-484 is complete, this should check whether Inventory is available
-    const pubchemEnabled = chemistryEnabled;
+    	const pubchemEnabled = chemistryEnabled;
 		const galaxyEnabled = integrations.GALAXY.enabled && integrations.GALAXY.available;
+		const boxClientId = properties['box.client.id'];
+		const hasValidBoxClientId = typeof boxClientId === "string" && boxClientId.trim() !== ''
+
+		// Backwards-compatiblity warning
+		if (boxEnabled && !hasValidBoxClientId) {
+			apprise('Box integration has not been set up ("clientId" or "clientSecret" missing). Contact your system administrator.');
+		}
 
 		const chemistryProvider = properties["chemistry.provider"];
 		chemistryAvailable = integrations.CHEMISTRY.available;
@@ -507,8 +568,9 @@ function initTinyMCE(selector) {
 			enabledFileRepositories += " jove";
 			fileRepositoriesMenu += " optJove";
 		}
-		if (boxEnabled) {
+		if (boxEnabled && hasValidBoxClientId) {
 			localTinymcesetup.external_plugins["box"] = "/scripts/externalTinymcePlugins/box/plugin.min.js";
+			localTinymcesetup.box_client_id = boxClientId;
 			enabledFileRepositories += " box";
 			fileRepositoriesMenu += " optBox";
 		}
@@ -576,14 +638,35 @@ function initTinyMCE(selector) {
 			addToToolbarIfNotPresent(localTinymcesetup, " | pubchem");
 			addToMenuIfNotPresent(localTinymcesetup, " | optPubchem");
 		}
+
+		let dependencyRequests = [];
+		if (boxEnabled) {
+			dependencyRequests.push(loadBoxSelectScript());
+		}
+		if (ownCloudEnabled) {
+			dependencyRequests.push(loadOwnCloudClientScript());
+		}
+		if (nextCloudEnabled) {
+			dependencyRequests.push(loadNextCloudClientScript());
+		}
+
+		$.when.apply($, dependencyRequests)
+			.done(function () {
+				tinymceSetupReady.resolve();
+			})
+			.fail(function () {
+				console.log('box, owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
+				tinymceSetupReady.resolve();
+			});
 	});
 
 	requestsPromise.fail(function () {
 		console.log('properties, integrations or toolbar call failed - starting with default tinymce settings');
+		tinymceSetupReady.resolve();
 	});
 
 	let tinymceInitialisedDeferred = $.Deferred();
-	requestsPromise.always(function () {
+	tinymceSetupReady.always(function () {
 		if (localTinymcesetup.toolbar) {
 			complete2ndToolbar(localTinymcesetup);
 		}

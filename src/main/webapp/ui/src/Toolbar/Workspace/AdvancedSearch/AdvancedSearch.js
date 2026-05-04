@@ -1,6 +1,6 @@
 "use strict";
 import React from "react";
-import update from "immutability-helper";
+import { produce } from "immer";
 import styled from "@emotion/styled";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -26,6 +26,7 @@ import FilePicker from "./RecordSelect/FilePicker";
 import UserSelect from "./UserSelect/UserSelect";
 import TagSelect from "./TagSelect/TagSelect";
 import Searchbox from "./Searchbox";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 const QueryRow = styled.tr`
   td {
@@ -109,69 +110,60 @@ class AdvancedSearch extends React.Component {
 
   handleChange = (idx, input) => (event) => {
     const value = event.target.value;
-    let queries = this.state.queries;
+    this.setState((prevState) => ({
+      queries: produce(prevState.queries, (draft) => {
+        if (value === "records") {
+          draft[idx] = { filter: value, term: getSelectedGlobalIds() };
+          return;
+        }
 
-    if (value == "records") {
-      const selected = getSelectedGlobalIds();
+        if (input === "filter") {
+          draft[idx].term = "";
+        }
 
-      this.setState({
-        queries: update(queries, {
-          [idx]: { $set: { filter: value, term: selected } },
-        }),
-      });
-      return;
-    }
-    if (input == "filter") {
-      queries = update(queries, {
-        [idx]: { term: { $set: "" } },
-      });
-    }
-
-    this.setState({
-      queries: update(queries, {
-        [idx]: { [input]: { $set: value } },
+        draft[idx][input] = value;
       }),
-    });
+    }));
   };
 
   updateSelected = (idx, selected) => {
-    this.setState({
-      queries: update(this.state.queries, {
-        [idx]: { term: { $set: selected } },
+    this.setState((prevState) => ({
+      queries: produce(prevState.queries, (draft) => {
+        draft[idx].term = selected;
       }),
-    });
+    }));
   };
 
   handleDateChange = (idx, input, value) => {
-    this.setState({
-      queries: update(this.state.queries, {
-        [idx]: { [input]: { $set: value } },
+    this.setState((prevState) => ({
+      queries: produce(prevState.queries, (draft) => {
+        draft[idx][input] = value;
       }),
-    });
+    }));
   };
 
   handleSelectAutocomplete = (selects, label, idx) => {
-    this.setState({
-      queries: update(this.state.queries, {
-        [idx]: { term: { $set: selects.map((s) => s[label]).join("<<>>") } },
+    this.setState((prevState) => ({
+      queries: produce(prevState.queries, (draft) => {
+        draft[idx].term = selects.map((s) => s[label]).join("<<>>");
       }),
-    });
+    }));
   };
 
   addNewQuery = () => {
-    this.setState({
-      queries: update(this.state.queries, {
-        $push: [{ filter: "fullText", term: "", from: null, to: null }],
+    this.setState((prevState) => ({
+      queries: produce(prevState.queries, (draft) => {
+        draft.push({ filter: "fullText", term: "", from: null, to: null });
       }),
-    });
+    }));
   };
 
   deleteQuery = (idx) => {
-    this.setState({
-      queries: update(this.state.queries, {
-        $splice: [[idx, 1]],
+    this.setState((prevState) => ({
+      queries: produce(prevState.queries, (draft) => {
+        draft.splice(idx, 1);
       }),
-    });
+    }));
   };
 
   submitSearch = () => {
@@ -185,7 +177,7 @@ class AdvancedSearch extends React.Component {
     workspaceSettings.pageNumber = 0;
 
     doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
-    RS.trackEvent("user:search:advanced:workspace", {
+    this.context.trackEvent("user:search:advanced:workspace", {
       options: workspaceSettings.options,
       operator: workspaceSettings.operator,
     });
@@ -224,51 +216,43 @@ class AdvancedSearch extends React.Component {
   validateQueries = () => {
     let valid = true;
     let oneValid = false;
-    let queries = this.state.queries;
+    let queries = produce(this.state.queries, (draft) => {
+      this.state.queries.forEach((query, idx) => {
+        const isSimple = [
+          "fullText",
+          "name",
+          "form",
+          "template",
+          "attachment",
+        ].includes(query.filter);
+        const isSelectable = ["owner", "tag"].includes(query.filter);
+        const isScopeRecords = query.filter === "records";
 
-    this.state.queries.map((query, idx) => {
-      const isSimple = [
-        "fullText",
-        "name",
-        "form",
-        "template",
-        "attachment",
-      ].includes(query.filter);
-      const isSelectable = ["owner", "tag"].includes(query.filter);
-      const isScopeRecords = query.filter == "records";
+        if (isSimple) {
+          if (query.term.length >= 2) {
+            valid &= true;
+            oneValid = true;
 
-      if (isSimple) {
-        if (query.term.length >= 2) {
+            draft[idx].error = null;
+          } else {
+            draft[idx].error = "The term should be at least 2 symbols";
+            if (query.term.length || draft.length === 1) valid = false;
+          }
+        } else if (isSelectable || isScopeRecords) {
+          if (query.term.length > 0) {
+            valid &= true;
+            oneValid = true;
+
+            draft[idx].error = null;
+          } else {
+            draft[idx].error = "Include at least one " + query.filter;
+            if (draft.length === 1) valid = false;
+          }
+        } else {
           valid &= true;
           oneValid = true;
-
-          queries = update(queries, {
-            [idx]: { error: { $set: null } },
-          });
-        } else {
-          queries = update(queries, {
-            [idx]: { error: { $set: "The term should be at least 2 symbols" } },
-          });
-          if (query.term.length || queries.length == 1) valid = false;
         }
-      } else if (isSelectable || isScopeRecords) {
-        if (query.term.length > 0) {
-          valid &= true;
-          oneValid = true;
-
-          queries = update(queries, {
-            [idx]: { error: { $set: null } },
-          });
-        } else {
-          queries = update(queries, {
-            [idx]: { error: { $set: "Include at least one " + query.filter } },
-          });
-          if (queries.length == 1) valid = false;
-        }
-      } else {
-        valid &= true;
-        oneValid = true;
-      }
+      });
     });
     valid = valid && oneValid;
 
@@ -517,5 +501,7 @@ class AdvancedSearch extends React.Component {
     );
   }
 }
+
+AdvancedSearch.contextType = AnalyticsContext;
 
 export default AdvancedSearch;

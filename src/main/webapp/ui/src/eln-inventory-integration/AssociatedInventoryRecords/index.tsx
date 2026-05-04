@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import useStores from "../../stores/use-stores";
 import { createRoot } from "react-dom/client";
-import { type ElnDocumentId } from "../../stores/models/MaterialsModel";
+import { type ElnDocumentId } from "@/stores/models/MaterialsModel";
 import { observer } from "mobx-react-lite";
 import Collapse from "@mui/material/Collapse";
 import NoValue from "../../components/NoValue";
 import RsSet from "../../util/set";
-import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
+import { type InventoryRecord } from "@/stores/definitions/InventoryRecord";
+import AnalyticsContext from "@/stores/contexts/Analytics";
+import Analytics from "@/components/Analytics";
 
 type ListingContentsProps = {
   setOfRecords: RsSet<InventoryRecord>;
@@ -36,6 +38,7 @@ const AssociatedInventoryRecords = observer(
   function AssociatedInventoryRecords({
     elnDocumentId,
   }: AssociatedInventoryRecordsArgs) {
+    const { trackEvent } = React.useContext(AnalyticsContext);
     const { materialsStore } = useStores();
     const [open, setOpen] = useState(false);
 
@@ -74,19 +77,14 @@ const AssociatedInventoryRecords = observer(
           onClick={() => {
             const willOpen = !open;
             setOpen(willOpen);
-            // @ts-expect-error ignore
-            if (typeof window.RS?.trackEvent === "function") {
-              if (willOpen) {
-                // @ts-expect-error ignore
-                window.RS.trackEvent(
-                  "user:open:inventory_attachment_listing:document_editor",
-                );
-              } else {
-                // @ts-expect-error ignore
-                window.RS.trackEvent(
-                  "user:close:inventory_attachment_listing:document_editor",
-                );
-              }
+            if (willOpen) {
+              trackEvent(
+                "user:open:inventory_attachment_listing:document_editor",
+              );
+            } else {
+              trackEvent(
+                "user:close:inventory_attachment_listing:document_editor",
+              );
             }
           }}
           className="btn btn-primary"
@@ -110,9 +108,11 @@ const wrapperDiv = document.getElementById("inventoryRecordList");
 if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
-    <AssociatedInventoryRecords
-      elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)}
-    />,
+    <Analytics>
+      <AssociatedInventoryRecords
+        elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)}
+      />
+    </Analytics>,
   );
 }
 

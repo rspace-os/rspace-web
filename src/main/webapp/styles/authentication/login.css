@@ -216,33 +216,6 @@ input[type=text].rs-field__input.rs-field__input--invalid:valid  {
 	text-transform: none;
 }
 
-.btn.btn-facebook {
-  background-color: #3b539a;
-  color: white;
-}
-
-.btn.btn-google-plus {
-  background-color: #ff1200;
-  color: white;
-}
-
-.btn.btn-google-plus:hover, .btn.btn-google-plus:focus {
-  color: white;
-  background-color: #e61000;
-}
-
-.btn.btn-facebook:hover, .btn.btn-facebook:focus {
-  color: white;
-  background-color: #344988;
-}
-
-.rs-field__icon.rs-field__icon--social {
-  color: white;
-  left: 26px;
-  right: auto;
-}
-
-
 /* Section of small patches to cope with default imports which are definied above
 	 such as jquery UI
 */

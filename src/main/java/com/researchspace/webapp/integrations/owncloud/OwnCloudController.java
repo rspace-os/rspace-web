@@ -210,12 +210,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
     return OauthAuthorizationError.builder().appName("ownCloud");
   }
 
-  /**
-   * Gets the access token id there is one, else returns empty string.
-   *
-   * @param subject
-   * @return
-   */
+  /** Likely unused? */
   @GetMapping("/accessCredentials")
   public @ResponseBody Map<String, String> getAccessCredentials(Principal subject) {
     Optional<UserConnection> connection =
@@ -293,6 +288,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
     return map;
   }
 
+  /** Likely unused? */
   @PostMapping("/sessionInfo")
   @ResponseBody
   public String saveOwnCloudCredentialsToSession(

@@ -18,9 +18,11 @@ import { faEye } from "@fortawesome/free-solid-svg-icons/faEye";
 import { faTimes } from "@fortawesome/free-solid-svg-icons/faTimes";
 
 import BaseToolbar from "../../components/BaseToolbar";
+import Analytics from "../../components/Analytics";
 import SaveMenu from "./ToolbarSaveMenu";
 import SocialActions from "../ToolbarSocial";
 import ShareDialog from "../../components/ShareDialog";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 class StructuredDocumentToolbar extends React.Component {
   constructor(props) {
@@ -116,7 +118,9 @@ class StructuredDocumentToolbar extends React.Component {
                     color="inherit"
                     id="delete"
                     onClick={() => {
-                      RS.trackEvent("user:delete:document:document_editor");
+                      this.context.trackEvent(
+                        "user:delete:document:document_editor",
+                      );
                     }}
                   >
                     <FontAwesomeIcon icon={faTrashAlt} />
@@ -131,7 +135,9 @@ class StructuredDocumentToolbar extends React.Component {
                     id="signDocument"
                     onClick={() => {
                       this.props.eventHandlers.onCanSign();
-                      RS.trackEvent("user:sign:document:document_editor");
+                      this.context.trackEvent(
+                        "user:sign:document:document_editor",
+                      );
                     }}
                   >
                     <FontAwesomeIcon icon={faFileSignature} />
@@ -145,7 +151,9 @@ class StructuredDocumentToolbar extends React.Component {
                     color="inherit"
                     id="witnessDocument"
                     onClick={() => {
-                      RS.trackEvent("user:witness:document:document_editor");
+                      this.context.trackEvent(
+                        "user:witness:document:document_editor",
+                      );
                     }}
                   >
                     <FontAwesomeIcon icon={faEye} />
@@ -160,7 +168,9 @@ class StructuredDocumentToolbar extends React.Component {
                     color="inherit"
                     id="shareRecord"
                     onClick={() => {
-                      RS.trackEvent("user:share:document:document_editor");
+                      this.context.trackEvent(
+                        "user:share:document:document_editor",
+                      );
                     }}
                   >
                     <FontAwesomeIcon icon={faShareAlt} />
@@ -185,7 +195,9 @@ class StructuredDocumentToolbar extends React.Component {
                   id="exportDocument"
                   onClick={() => {
                     this.props.eventHandlers.onExportDocument();
-                    RS.trackEvent("user:export:document:document_editor");
+                    this.context.trackEvent(
+                      "user:export:document:document_editor",
+                    );
                   }}
                 >
                   <FontAwesomeIcon icon={faCloudDownloadAlt} />
@@ -193,7 +205,9 @@ class StructuredDocumentToolbar extends React.Component {
               </Tooltip>
               <PrintButton
                 onClick={() => {
-                  RS.trackEvent("user:print:document:document_editor");
+                  this.context.trackEvent(
+                    "user:print:document:document_editor",
+                  );
                 }}
                 dataTestId="notebooktoolbar-print"
               />
@@ -252,12 +266,16 @@ class StructuredDocumentToolbar extends React.Component {
     return (
       <StyledEngineProvider injectFirst>
         <ThemeProvider theme={materialTheme}>
-          <BaseToolbar content={this.content()} />
+          <Analytics>
+            <BaseToolbar content={this.content()} />
+          </Analytics>
         </ThemeProvider>
       </StyledEngineProvider>
     );
   }
 }
+
+StructuredDocumentToolbar.contextType = AnalyticsContext;
 
 let rootNode;
 let domContainer;

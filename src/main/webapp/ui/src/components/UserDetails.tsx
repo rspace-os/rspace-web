@@ -12,43 +12,18 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import TimeAgo from "react-timeago";
 import axios from "@/common/axios";
-import { makeStyles } from "tss-react/mui";
-import { type PersonId } from "../stores/definitions/Person";
-import Chip from "@mui/material/Chip";
+import { type PersonId } from "@/stores/definitions/Person";
+import Chip, { type ChipProps } from "@mui/material/Chip";
 import * as Parsers from "../util/parsers";
-
-const useStyles = makeStyles()((theme) => ({
-  text: {
-    fontSize: "16px !important",
-    lineHeight: "30px",
-    textDecoration: "none",
-    fontWeight: "bold",
-    color: "#1465b7 !important",
-  },
-  paper: {
-    padding: theme.spacing(0),
-  },
-  cardContent: {
-    padding: "0",
-  },
-  chip: {
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
-    backgroundColor: theme.palette.grey[300],
-    height: theme.spacing(3),
-    color: theme.palette.grey[800],
-    fontWeight: theme.typography.fontWeightRegular,
-    cursor: "default",
-  },
-  openProfile: {
-    cursor: "pointer",
-  },
-}));
 
 type UserDetailsArgs = {
   userId: PersonId;
   fullName: string;
   position: ["top" | "bottom", "right" | "left"];
+  label?: string;
+  variant?: ChipProps["variant"];
+  allowMessaging?: boolean;
+  onOpen?: () => void;
 };
 
 type Group = {
@@ -60,16 +35,32 @@ type Person = {
   groups: Array<Group>;
   lastLogin: string;
   fullname: string;
+  username?: string;
   profileImageLink: string;
   email: string;
   accountEnabled: boolean;
 };
 
 export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
-  const { classes } = useStyles();
+  const variant = props.variant ?? "filled";
   const [anchorEl, setAnchorEl] = React.useState<null | Element>(null);
   const [user, setUser] = React.useState<Person | null>(null);
   const [fetched, setFetched] = React.useState(false);
+  const [messagingAvailable, setMessagingAvailable] = React.useState(false);
+
+  const sendMessage = () => {
+    if (!user?.username) {
+      return;
+    }
+
+    setAnchorEl(null);
+    const recipient = `${user.username}<${user.fullname}>,`;
+    const dialog = $("#createRequestDlg");
+    dialog.data("recipient", recipient);
+    (dialog as JQuery<HTMLElement> & { dialog: (action: string) => void }).dialog(
+      "open",
+    );
+  };
 
   const fetchUser = () => {
     const url = `/userform/ajax/miniprofile/${props.userId}`;
@@ -89,18 +80,12 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
   };
 
   const listLabgroups = user?.groups.map((group) => (
-    <TableRow
-      key={group.groupId}
-      data-test-id={`group-${group.groupId}-${group.roleInGroup}`}
-    >
+    <TableRow key={group.groupId}>
       <TableCell component="th" scope="row">
         {group.roleInGroup} at
       </TableCell>
       <TableCell align="right">
-        <a
-          data-test-id={`group-link-${group.groupId}`}
-          href={`/groups/view/${group.groupId}`}
-        >
+        <a href={`/groups/view/${group.groupId}`}>
           {group.groupName}
         </a>
       </TableCell>
@@ -110,8 +95,16 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
   const handlePopoverOpen = (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
+    props.onOpen?.();
     if (!fetched) {
       fetchUser();
+      if (
+        props.allowMessaging &&
+        $("#createRequestDlg").length > 0 &&
+        $("body").find("[aria-describedby='messageDlg']").length > 0
+      ) {
+        setMessagingAvailable(true);
+      }
     }
     setAnchorEl(event.currentTarget);
   };
@@ -126,16 +119,27 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
       <Chip
         clickable={true}
         component="div"
-        label={props.fullName}
-        data-test-id={`profile-activator-${props.userId}`}
+        variant={variant}
+        label={props.label ?? props.fullName}
         onClick={handlePopoverOpen}
-        className={classes.chip}
+        sx={(theme) => ({
+          mt: 0.5,
+          mb: 0.5,
+          height: theme.spacing(3),
+          cursor: "default",
+          ...(variant === "filled"
+            ? {
+                backgroundColor: theme.palette.grey[300],
+                color: theme.palette.grey[800],
+                fontWeight: theme.typography.fontWeightRegular,
+              }
+            : {}),
+        })}
       />
       <Popover
         open={Boolean(anchorEl) && Boolean(user)}
         anchorEl={anchorEl}
         onClose={handlePopoverClose}
-        data-test-id={`profile-popup-${props.userId}`}
         anchorOrigin={{
           vertical: props.position[0] === "top" ? "top" : "bottom",
           horizontal: props.position[1] === "right" ? "left" : "right",
@@ -144,12 +148,16 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
           vertical: props.position[0] === "top" ? "bottom" : "top",
           horizontal: props.position[1] === "right" ? "left" : "right",
         }}
-        classes={{
-          paper: classes.paper,
+        slotProps={{
+          paper: {
+            sx: {
+              p: 0,
+            },
+          },
         }}
       >
         {user && (
-          <Card data-test-id={`profile-card-${props.userId}`}>
+          <Card>
             <CardHeader
               avatar={<Avatar src={user.profileImageLink ?? ""} />}
               title={`${user.fullname}`}
@@ -161,23 +169,30 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
                 </>
               }
             />
-            <CardContent className={classes.cardContent}>
-              <Table>
+            <CardContent
+              sx={{
+                p: 0,
+                "&:last-child": {
+                  pb: 0,
+                },
+              }}
+            >
+              <Table sx={{
+                // Override typo.css
+                margin: '0 !important'
+              }}>
                 <TableBody>
-                  <TableRow data-test-id="row-email">
+                  <TableRow>
                     <TableCell component="th" scope="row">
                       Email
                     </TableCell>
                     <TableCell align="right">
-                      <a
-                        href={`mailto:${user.email}`}
-                        data-test-id="send-email"
-                      >
+                      <a href={`mailto:${user.email}`}>
                         {user.email}
                       </a>
                     </TableCell>
                   </TableRow>
-                  <TableRow data-test-id="row-status">
+                  <TableRow>
                     <TableCell component="th" scope="row">
                       Account Status
                     </TableCell>
@@ -190,13 +205,28 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
               </Table>
             </CardContent>
             <CardActions>
+              {messagingAvailable && user.username && (
+                <Button
+                  size="small"
+                  color="primary"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    sendMessage();
+                  }}
+                  href="#"
+                >
+                  Send a message
+                </Button>
+              )}
               <Button
                 component="a"
                 size="small"
                 color="primary"
                 href={`/userform?userId=${props.userId}`}
-                data-test-id="open-profile"
-                className={classes.openProfile}
+                sx={{
+                  cursor: "pointer",
+                }}
               >
                 Open profile
               </Button>

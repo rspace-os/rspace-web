@@ -14,7 +14,7 @@ import TableRow from "@mui/material/TableRow";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
-import UserDetails from "../components/UserDetails_deprecated";
+import UserDetails from "../components/UserDetails";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import EnhancedTableHead, { type Cell } from "../components/EnhancedTableHead";
 import Radio from "@mui/material/Radio";
@@ -444,6 +444,7 @@ export default function InternalLink(
                           userId={revision.ownerId}
                           fullName={revision.ownerFullName}
                           position={["bottom", "right"]}
+                          variant="outlined"
                         />
                       </TableCell>
                       <TableCell align="left">

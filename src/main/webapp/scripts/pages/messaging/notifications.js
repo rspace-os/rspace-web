@@ -244,10 +244,28 @@ function _displaySpecialMessages() {
 				var divName = '#'+templateName+"-template";
 				var template = $(htmlTemplates).filter(divName).html();
 				var html = Mustache.render(template, msg);
+				var toastDiv;
 				if (msg.messageType === 'GLOBAL_MESSAGE') {
-					RS.notificationMsg(html);
+					toastDiv = $().toastmessage('showToast', {
+						text: html,
+						sticky: true,
+						type: 'notice',
+						close: function () { return false }
+					});
+					$('.toast-position-top-right').css('top', '35px');
+					$('.toast-type-notice').css('padding-top', '35px');
+					var $toastCloseBtn = $(toastDiv).find('.toast-item-close');
+					$toastCloseBtn.remove();
 				} else {
-					RS.requestMsg(html);
+					toastDiv = $().toastmessage('showToast', {
+						text: html,
+						sticky: true,
+						type: 'notice'
+					});
+					$('.toast-position-top-right').css('top', '35px');
+					$('.toast-type-notice').css('padding-top', '35px');
+					$('.toast-item-close').css('background-image', 'url(/images/close.gif)');
+					$(toastDiv).find('.toast-item-image-notice').css('background', 'url(/images/yesNo.png)');
 				}
 			}
 		});

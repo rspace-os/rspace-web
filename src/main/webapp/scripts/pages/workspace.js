@@ -6,7 +6,7 @@ var effectDuration = 200;
 var isWorkspacePage = true;
 var tableElement = ".mainTable tbody";
 
-var nameFolderModal, nameNotebookModal, formListModal;
+var formListModal;
 
 // Call this when doing a fresh search
 function resetPageNumber() {
@@ -589,12 +589,20 @@ $(document).ready(function () {
   });
 
   RS.setupPagination(paginationEventHandler);
-  RS.addOrderByTooltips();
+  $(".orderByLink").each(function () {
+    $(this).attr("title", "Order by " + $(this).text().trim());
+  });
   balanceTableColumns();
 });
 
 var balanceTableColumns = function () {
   var dateCell = $("#file_table td:nth-child(4)").first();
+  var dateCellFontProperties = {};
+  ["font-style", "font-variant", "font-weight", "font-size",
+    "line-height", "font-family", "letter-spacing"
+  ].forEach(function (name) {
+    dateCellFontProperties[name] = dateCell.css(name);
+  });
   var longestOwnerName = getLongestCellContent(
       $("#file_table td:nth-child(7)"));
   var longestOwnerNameText = $("#file_table td:nth-child(7)").eq(
@@ -602,7 +610,7 @@ var balanceTableColumns = function () {
   var ownerCell = $("#file_table td:nth-child(7)").first();
   var ownerMinWidth = $('<span>').hide().appendTo(document.body)
       .text(longestOwnerNameText)
-      .css(RS.getFontProperties(dateCell))
+      .css(dateCellFontProperties)
       .outerWidth() +
       parseInt(ownerCell.css("padding-left")) + parseInt(
           ownerCell.css("padding-right")) +

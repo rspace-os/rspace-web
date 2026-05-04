@@ -276,7 +276,7 @@ The following optional properties enable RSpace to connect to OneDrive (if OneDr
 * **onedrive.client.id**  application id obtained from OneDrive developer site. Default is unset.
 * **onedrive.redirect** Callback URL that is configured on OneDrive developer site for this RSpace. Default is unset.
 
-The following optional properties enable RSpace to connect to Enterprise Box API (if this integration is enabled):
+The following properties is required for RSpace to connect to Enterprise Box API (if this integration is enabled):
 * **box.client.id** Client id of Box App registered for given RSpace instance
 * **box.client.secret** Client secret of Box App registered for given RSpace instance
 

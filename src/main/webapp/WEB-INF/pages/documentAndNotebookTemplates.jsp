@@ -67,13 +67,6 @@
 
 <div id="previewableAttachmentDivTemplate" style="display:none">
   <div class="attachmentPanel previewableAttachmentPanel">
-    <button class='previewToggleBtn previewExpandBtn ignoreDblClick' type='button'>
-      <img class="ignoreDblClick" src='/images/icons/mag_glass_plus.png' height="20px">
-    </button>
-    <button class='previewToggleBtn previewCollapseBtn' type='button' style="display:none">
-      <img class="ignoreDblClick" src='/images/icons/mag_glass_minus.png' height="20px">
-    </button>
-
     <div class="attachmentThumbnailPanel">
       <img class="attachmentIcon" width="76" height="76" />
       <div class="attachmentNameDiv">
@@ -89,12 +82,6 @@
       <a href="#" class="inlineActionLink infoActionLink">
         Info <img class="infoImg" src="/images/info.svg" style="top:6px"/>
       </a>
-    </div>
-
-    <div class="attachmentPreviewPanel"></div>
-
-    <div class="attachmentPreviewInfoPanel">
-      <div class="recordInfoPanel"></div>
     </div>
   </div>
 </div>
@@ -115,12 +102,6 @@
       <a href="#" class="inlineActionLink infoActionLink">
         Info <img class="infoImg" src="/images/info.svg" style="top:6px"/>
       </a>
-    </div>
-
-    <div class="attachmentPreviewPanel"></div>
-
-    <div class="attachmentPreviewInfoPanel">
-      <div class="recordInfoPanel"></div>
     </div>
   </div>
 </div>
@@ -316,6 +297,30 @@
 <axt:shareDlg shareDlgGroups="${groups}" shareDlgUsers="${uniqueUsers}" />
 
 <jsp:include page="recordInfoPanel.jsp" />
+
+<div id="nfsFileInfoDialog" style="display: none">
+  <div class="nfsFileInfoPanel">
+    <table class="nfsInfoTable">
+      <tr><td colspan="2" class="nfsInfoTableHeaderRow"></td></tr>
+      <tr><td class="nfsInfoLabelCell">Name: </td><td class="nfsInfoPanel-name"> </td></tr>
+      <tr><td class="nfsInfoLabelCell">Original path: </td><td class="nfsInfoPanel-path"> </td></tr>
+      <tr><td>&nbsp;</td><td></td></tr>
+      <tr><td colspan="2">Stored on a File System:</td></tr>
+      <tr><td class="nfsInfoLabelCell">Name: </td><td class="nfsInfoPanel-fileSystemName"> </td></tr>
+      <tr><td class="nfsInfoLabelCell">URL: </td><td class="nfsInfoPanel-fileSystemPath"> </td></tr>
+      <tr class="nfsInfoBucketNameRow">
+        <td class="nfsInfoLabelCell">Bucket: </td><td class="nfsInfoPanel-bucketName"> </td>
+      </tr>
+      <tr class="nfsInfoShareNameRow">
+        <td class="nfsInfoLabelCell">Share: </td><td class="nfsInfoPanel-fileSystemShareName"> </td>
+      </tr>
+    </table>
+    <div class="nfsInfoPanelButtons">
+      <button type='button' title="Update Current Path" class='nfsInfoPanelBtn nfsUpdatePathBtn'>Update Path</button>
+      <button type='button' title="Download through RSpace" class='nfsInfoPanelBtn nfsFileDownloadBtn'>Download</button>
+    </div>
+  </div>
+</div>
 
 <!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>

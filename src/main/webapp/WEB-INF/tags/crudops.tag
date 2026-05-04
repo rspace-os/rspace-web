@@ -43,7 +43,7 @@ d) A function 'idsToNames' gets ids and names of records based on a clicked chec
   	<li class="crudopsAction deleteIcon" id="deleteRecords" tabindex="0">
       Delete
     </li>
-    <li class="crudopsAction exportIcon newExport" tabindex="0">
+    <li class="crudopsAction exportIcon" id="exportRecords" tabindex="0">
       Export
     </li>
     <li class="crudopsAction exportIcon" id="compareRecords" tabindex="0">

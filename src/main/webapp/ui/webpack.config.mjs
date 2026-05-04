@@ -25,6 +25,7 @@ const config = {
     apps: "./src/eln/apps/index.tsx",
     gallery: "./src/eln/gallery/index.tsx",
     about: "./src/eln/about/index.tsx",
+    pdfPreviewDialog: "./src/modules/preview/PdfPreviewDialogEntrypoint.tsx",
 
     /*
      * The Electronic Notebook (ELN) is a traditional multipage application
@@ -48,11 +49,10 @@ const config = {
     notebookToolbar: "./src/Toolbar/Notebook/Toolbar.js",
     structuredDocumentToolbar: "./src/Toolbar/StructuredDocument/Toolbar.js",
     fileTreeToolbar: "./src/Toolbar/FileTreeToolbar.js",
-    galleryToolbar: "./src/Toolbar/Gallery/Toolbar.tsx",
     newLabGroup: "./src/system-groups/NewLabGroup.js",
     tinymceSidebarInfo: "./src/tinyMCE/SidebarInfo.tsx",
     PreviewInfo: "./src/tinyMCE/PreviewInfo.tsx",
-    userDetails: "./src/components/UserDetails_deprecated.js",
+    userDetails: "./src/components/UserDetailsEntrypoint.tsx",
     groupUserActivity: "./src/my-rspace/directory/groups/GroupUserActivity.js",
     groupActivity: "./src/my-rspace/profile/GroupActivity.js",
     accountActivity: "./src/my-rspace/profile/AccountActivity.js",
@@ -74,9 +74,9 @@ const config = {
     tinymcePubchem: "./src/tinyMCE/pubchem/index.tsx",
     tinymceStoichiometry: "./src/tinyMCE/stoichiometry/index.tsx",
     tinymceGallery: "./src/tinyMCE/gallery/index.tsx",
+    tinymceGalleryUtils: "./src/tinyMCE/gallery/GalleryUtilsEntrypoint.ts",
     baseSearch: "./src/components/BaseSearch.tsx",
     confirmationDialog: "./src/components/ConfirmationDialog.tsx",
-    imageEditor: "./src/Gallery/imageEditorDialog.js",
     materialsListing:
       "./src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
     externalWorkFlows: "./src/eln/eln-external-workflows/index.tsx",

@@ -259,22 +259,6 @@ export function lift3<A, B, C, D>(
   return optA.flatMap((a) => lift2((b, c) => f(a, b, c), optB, optC));
 }
 
-/**
- * Lift a function that operates on four normal values into one that operates
- * on four Optional values.
- */
-export function lift4<A, B, C, D, E>(
-  f: (a: A, b: B, c: C, d: D) => E,
-  optA: Optional<A>,
-  optB: Optional<B>,
-  optC: Optional<C>,
-  optD: Optional<D>,
-): Optional<E> {
-  return optA.flatMap((a) =>
-    lift3((b, c, d) => f(a, b, c, d), optB, optC, optD),
-  );
-}
-
 /*
  * Other helper functions
  */

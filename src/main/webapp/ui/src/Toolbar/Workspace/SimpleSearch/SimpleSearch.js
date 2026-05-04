@@ -1,7 +1,7 @@
 "use strict";
 import React from "react";
 import axios from "@/common/axios";
-import update from "immutability-helper";
+import { produce } from "immer";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import styled from "@emotion/styled";
@@ -23,6 +23,7 @@ import UserSelect from "../AdvancedSearch/UserSelect/UserSelect";
 import TagSelect from "../AdvancedSearch/TagSelect/TagSelect";
 import ScopeDialog from "./SimpleSearchScopeDialog";
 import ChemicalSearcher from "./ChemicalSearcher";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 function formatDateForTooltip(date /*: ?Date*/) /*: string*/ {
   if (date === null) return "";
@@ -266,9 +267,9 @@ class SimpleSearch extends React.Component {
     doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
 
     if (scopedSearch) {
-      RS.trackEvent("user:search:scoped:workspace");
+      this.context.trackEvent("user:search:scoped:workspace");
     } else {
-      RS.trackEvent("user:search:simple:workspace");
+      this.context.trackEvent("user:search:simple:workspace");
     }
   };
 
@@ -321,12 +322,14 @@ class SimpleSearch extends React.Component {
   };
 
   removeRecord = (record_id) => {
-    const idx = this.state.selectedRecords.findIndex((r) => r == record_id);
-    this.setState({
-      selectedRecords: update(this.state.selectedRecords, {
-        $splice: [[idx, 1]],
+    this.setState((prevState) => ({
+      selectedRecords: produce(prevState.selectedRecords, (draft) => {
+        const idx = draft.findIndex((r) => r == record_id);
+        if (idx !== -1) {
+          draft.splice(idx, 1);
+        }
       }),
-    });
+    }));
   };
 
   render() {
@@ -500,5 +503,7 @@ class SimpleSearch extends React.Component {
     );
   }
 }
+
+SimpleSearch.contextType = AnalyticsContext;
 
 export default SimpleSearch;

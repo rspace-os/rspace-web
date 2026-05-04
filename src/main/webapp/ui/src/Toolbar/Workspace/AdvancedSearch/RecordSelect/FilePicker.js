@@ -1,6 +1,6 @@
 "use strict";
 import React from "react";
-import update from "immutability-helper";
+import { produce } from "immer";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -56,17 +56,19 @@ class FilePicker extends React.Component {
   };
 
   removeFile = (file_id) => {
-    const selected = update(this.state.selectedFiles, {
-      $splice: [[this.state.selectedFiles.indexOf(file_id), 1]],
-    });
+    this.setState((prevState) => {
+      const selected = produce(prevState.selectedFiles, (draft) => {
+        const idx = draft.indexOf(file_id);
+        if (idx !== -1) {
+          draft.splice(idx, 1);
+        }
+      });
 
-    this.setState(
-      {
+      return {
         selectedFiles: selected,
         globalSelect: selected,
-      },
-      this.propagateChange,
-    );
+      };
+    }, this.propagateChange);
   };
 
   propagateChange = () => {

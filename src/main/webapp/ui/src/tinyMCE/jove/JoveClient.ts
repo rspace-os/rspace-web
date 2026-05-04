@@ -20,11 +20,17 @@ export type JoveSearchResult = {
   pagesize: number;
 };
 
+type TrackEvent = (
+  event: string,
+  properties?: Record<string, unknown>,
+) => void;
+
 export const search = async (
   searchParam: (typeof SearchParam)[keyof typeof SearchParam],
   query: string,
   page: number,
-  pageSize: number
+  pageSize: number,
+  trackEvent: TrackEvent,
 ): Promise<{
   data: JoveSearchResult;
 } | null> => {
@@ -36,8 +42,7 @@ export const search = async (
   } else if (searchParam === SearchParam.institution) {
     request = { institution: query, pageNumber: page, pageSize: pageSize };
   }
-  // @ts-expect-error global
-  RS.trackEvent("JoveSearchRequest", request); //eslint-disable-line
+  trackEvent("JoveSearchRequest", request);
   const result = await makeSearchRequest(request);
   if (result.data.joveSearchResult) {
     return { data: result.data.joveSearchResult };
