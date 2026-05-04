@@ -92,8 +92,8 @@ public class ImageRetrieverHelperTest {
 
   @Test
   public void testIncludeStaticResource() throws IOException {
-    String imagePath = "/images/icons/mainLogoN2.png";
-    File iconIs = RSpaceTestUtils.getResource("mainLogoN2.png");
+    String imagePath = "/images/mainLogo3.png";
+    File iconIs = RSpaceTestUtils.getResource("mainLogo3.png");
     FileSystemResource res = new FileSystemResource(iconIs);
     when(resource.getResource(imagePath)).thenReturn(res);
     assertNotNull(imgRetriever.getImageBytesFromImgSrc(imagePath, config));
@@ -209,7 +209,7 @@ public class ImageRetrieverHelperTest {
     EcatImage rawimg = TestFactory.createEcatImage(5L);
     rawimg.setOwner(exporter);
     String thumbnailLink = textupdater.generateRawImageElement(rawimg, 3L + "");
-    File workingImgFile = RSpaceTestUtils.getResource("mainLogoN2.png");
+    File workingImgFile = RSpaceTestUtils.getResource("mainLogo3.png");
     final Long EXPECTED_LENGTH = workingImgFile.length();
     FileProperty workingImgFP =
         TestFactory.createAFileProperty(workingImgFile, exporter, new FileStoreRoot("/somewhere"));
@@ -259,6 +259,6 @@ public class ImageRetrieverHelperTest {
   }
 
   byte[] getAnyPngImage() throws IOException {
-    return RSpaceTestUtils.getResourceAsByteArray("mainLogoN2.png");
+    return RSpaceTestUtils.getResourceAsByteArray("mainLogo3.png");
   }
 }

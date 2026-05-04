@@ -110,8 +110,7 @@ public class UserDetailsApiController extends BaseApiController implements UserD
 
     ApiUiNavigationData navigationData = new ApiUiNavigationData();
 
-    navigationData.setBannerImgSrc(
-        properties.isCloud() ? "/images/mainLogoCloudN2.png" : "/public/banner");
+    navigationData.setBannerImgSrc("/public/banner");
 
     ApiUiNavigationVisibleTabs visibleTabs = new ApiUiNavigationVisibleTabs();
     visibleTabs.setInventory(

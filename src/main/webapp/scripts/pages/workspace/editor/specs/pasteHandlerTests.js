@@ -207,13 +207,13 @@ describe("tinyMCE Paste Handler - pasting html copied from RSpace view mode (RSP
         var text = 'paragraph';
         var html = '<button id="prevEntryButton_mobile" class="bootstrap-custom-flat" title="Previous entry">' 
             + '<span class="glyphicon glyphicon-chevron-left"></span></button><div id="journalPagePaddingId" class="journalPagePadding">'
-            + '<div class="journalPageContent"><img src="' + _currentServerUrl + '/images/mainLogoN2.png"><p><b>paragraph</b></p></div></div>';
+            + '<div class="journalPageContent"><img src="' + _currentServerUrl + '/images/mainLogo3.png"><p><b>paragraph</b></p></div></div>';
 
         expect(RS.tinymcePasteHandler._containsRSpaceViewModeClasses($(html))).toBe(true);
         expect(RS.tinymcePasteHandler.processPastedContent(text, html)).toBe(true);
 
         expect(tinymce.activeEditor.execCommand).toHaveBeenCalledWith('mceInsertContent', false, 
-                '<img src="' + _currentServerUrl + '/images/mainLogoN2.png"><p><b>paragraph</b></p>');
+                '<img src="' + _currentServerUrl + '/images/mainLogo3.png"><p><b>paragraph</b></p>');
         
         // fragment of notebook example page, with selection invisibly ending in footer area (Firefox)
         var text2 = 'roles in mitosis.';
