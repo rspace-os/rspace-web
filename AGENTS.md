@@ -318,3 +318,28 @@ DevDocs/                           # Developer documentation
 - **AGENTS.md** (this file): Primary instructions for all AI agents
 - **CLAUDE.md**: Points to AGENTS.md — for Claude Code / Anthropic agents
 - **.github/copilot-instructions.md**: Quick-reference for GitHub Copilot — points to AGENTS.md
+
+## Repo-Local Agent Skills
+
+Reusable agent skills (executable playbooks) live under `.agents/skills/`. Each
+skill is a directory containing a `SKILL.md` (with YAML frontmatter `name` +
+`description`) plus optional `REFERENCE.md` and bundled resources.
+
+Currently available:
+
+- `.agents/skills/rspace-empty-integration/` — scaffolds a new "empty" RSpace
+  integration (Liquibase migration, sysadmin/user toggles, Apps-page card,
+  TinyMCE toolbar icon opening a dialog whose chrome title is the integration's name).
+
+**Discovery:** `.agents/skills/` is the cross-agent convention (used by
+agents-md-aware tools, Cursor, Codex CLI, and others that follow the AGENTS.md
+spec). Claude Code users who want auto-discovery can either (a) symlink
+`.claude/skills -> ../.agents/skills` locally (not committed), or (b) point
+Claude at the skill explicitly: "use the skill at `.agents/skills/<name>`".
+Either way, every agent can read these files directly — no install step needed
+to use them in this repo.
+
+**To add a new skill:** create `.agents/skills/<skill-name>/SKILL.md` with
+frontmatter, keep it under ~150 lines, and put bulky templates/recipes in a
+sibling `REFERENCE.md`. List it above so the team can discover it.
+
