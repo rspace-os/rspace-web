@@ -19,7 +19,7 @@ The plan is derived from a detailed analysis of the seven Galaxy commits
 work.
 
 It is intended to be implemented as an agent skill (see
-`~/.agents/skills/rspace-empty-integration/`) and read by humans adding
+`.agents/skills/rspace-empty-integration/`) and read by humans adding
 integrations by hand. See also:
 
 - `DevDocs/DeveloperNotes/CreatingNewIntegration.md`
