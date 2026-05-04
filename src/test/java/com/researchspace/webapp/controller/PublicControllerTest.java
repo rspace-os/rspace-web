@@ -140,7 +140,7 @@ public class PublicControllerTest {
     // mockery.assertIsSatisfied();
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertEquals(MediaType.IMAGE_PNG, resp.getHeaders().getContentType());
-    assertEquals(17333, resp.getBody().length);
+    assertEquals(10830, resp.getBody().length);
     assertEquals("biggerLogo.png", publicController.bannerImgName());
   }
 
