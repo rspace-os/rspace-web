@@ -39,7 +39,7 @@ public class PublicControllerTest {
   @Mock MaintenanceManager maintenanceMgr;
   @Mock IPropertyHolder properties;
   @Mock Resource resource;
-  final int defaultImageSize = 41430;
+  final int defaultImageSize = 14166;
   MockHttpServletResponse response;
 
   class PublicControllerTSS extends PublicController {
@@ -109,7 +109,7 @@ public class PublicControllerTest {
   public void testBanner() throws Exception {
     final String ptestImagPath = "IS1.jpg";
 
-    final int testImageSize = 12287;
+    final int testImageSize = 10329;
     // path not set, use default
     when(properties.getBannerImagePath()).thenReturn("");
 
@@ -140,7 +140,7 @@ public class PublicControllerTest {
     // mockery.assertIsSatisfied();
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertEquals(MediaType.IMAGE_PNG, resp.getHeaders().getContentType());
-    assertEquals(17333, resp.getBody().length);
+    assertEquals(10830, resp.getBody().length);
     assertEquals("biggerLogo.png", publicController.bannerImgName());
   }
 
