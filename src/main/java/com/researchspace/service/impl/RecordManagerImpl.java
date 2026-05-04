@@ -1447,4 +1447,26 @@ public class RecordManagerImpl implements RecordManager {
     }
     return DOCUMENT_CATEGORIES.DOCUMENTFILE;
   }
+
+  @Override
+  public void moveUsersRecordsToFolder(
+      List<Long> recordIds, User currentOwner, Folder destinationFolder) {
+    recordDao.moveUsersRecordsToFolder(recordIds, currentOwner, destinationFolder);
+  }
+
+  @Override
+  public boolean hasUserSharedTemplatesUsedByOtherUsers(User u) {
+    return recordDao.hasUserSharedTemplatesUsedByOtherUsers(u);
+  }
+
+  @Override
+  public List<BaseRecord> getTemplatesSharedByUserAndUsedByOtherUsers(User u) {
+    return recordDao.getTemplatesSharedByUserAndUsedByOtherUsers(u);
+  }
+
+  @Override
+  public void transferTemplates(
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName) {
+    recordDao.transferTemplates(originalOwner, newOwner, templateIds, updatedOriginalOwnerName);
+  }
 }

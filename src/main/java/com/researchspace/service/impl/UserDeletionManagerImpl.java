@@ -4,6 +4,7 @@ import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.dao.FormDao;
+import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.dao.UserDeletionDao;
 import com.researchspace.files.service.FileStore;
@@ -40,6 +41,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
   private @Autowired CommunityServiceManager communityMgr;
   private @Autowired CommunityServiceManager communityDao;
   private @Autowired FormDao formDao;
+  private @Autowired RecordDao recordDao;
   private @Autowired IPermissionUtils permUtils;
   private @Autowired UserDeletionDao deletionDao;
   private @Autowired FileMetadataDao fileMetadataDao;
@@ -49,6 +51,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
   private @Autowired DeletedUserResourcesListHelper deletedUserResourcesHelper;
 
   private @Autowired @Qualifier("formTransferService") TransferService formTransferService;
+  private @Autowired @Qualifier("templateTransferService") TransferService templateTransferService;
 
   @Override
   public ServiceOperationResult<User> removeUser(
@@ -62,6 +65,10 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     Optional<String> saveResourcesListError = saveFilestoreResourcesTempList(toDelete);
     if (saveResourcesListError.isPresent()) {
       return new ServiceOperationResult<>(null, false, saveResourcesListError.get());
+    }
+
+    if (recordDao.hasUserSharedTemplatesUsedByOtherUsers(toDelete)) {
+      templateTransferService.transferOwnership(toDelete, subject);
     }
 
     if (formDao.hasUserPublishedFormsUsedInOtherRecords(toDelete)) {

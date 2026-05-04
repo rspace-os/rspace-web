@@ -431,6 +431,18 @@ public class RecordGroupSharingDaoHibernateImpl
     }
   }
 
+  private List<RecordGroupSharing> getRecordsSharedByUser(User user) {
+    Session session = getSession();
+    Query<RecordGroupSharing> query =
+        session
+            .createQuery(
+                " from RecordGroupSharing rgs where rgs.shared.owner.id=:userId ",
+                RecordGroupSharing.class)
+            .setParameter("userId", user.getId());
+    List<RecordGroupSharing> rc = query.list();
+    return rc;
+  }
+
   @Override
   public List<RecordGroupSharing> getRecordsSharedByUserToGroup(User user, Group grp) {
     Session session = getSession();

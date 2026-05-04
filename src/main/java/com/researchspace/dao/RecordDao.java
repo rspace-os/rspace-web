@@ -4,6 +4,7 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.RecordToFolder;
@@ -163,4 +164,25 @@ public interface RecordDao extends GenericDao<Record, Long> {
 
   List<StructuredDocument> getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(
       String uNAme);
+
+  void moveUsersRecordsToFolder(List<Long> recordIds, User currentOwner, Folder destinationFolder);
+
+  /**
+   * Returns true if the user has any templates which have been shared with other users or groups.
+   *
+   * @param u User
+   * @return
+   */
+  boolean hasUserSharedTemplatesUsedByOtherUsers(User u);
+
+  /**
+   * Gets all templates shared from a specific user.
+   *
+   * @param u user
+   * @return
+   */
+  List<BaseRecord> getTemplatesSharedByUserAndUsedByOtherUsers(User u);
+
+  void transferTemplates(
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName);
 }

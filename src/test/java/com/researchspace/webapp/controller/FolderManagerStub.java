@@ -21,6 +21,7 @@ import com.researchspace.model.views.TreeViewItem;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordContext;
 import com.researchspace.testutils.TestFactory;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -161,6 +162,11 @@ public class FolderManagerStub implements FolderManager {
   @Override
   public Folder getMediaFolderFromURLPath(String path, User user) {
     return null;
+  }
+
+  @Override
+  public List<Folder> getSubFolders(Folder rootFolder) {
+    return Collections.emptyList();
   }
 
   @Override

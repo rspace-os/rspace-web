@@ -632,6 +632,11 @@ public class FolderManagerImpl implements FolderManager {
   }
 
   @Override
+  public List<Folder> getSubFolders(Folder rootFolder) {
+    return folderDao.getSubFolders(rootFolder);
+  }
+
+  @Override
   public Folder getFromURLPath(String path, User user, CollectionFilter<BaseRecord> filter) {
     Folder targetRecord = getRootFolderForUser(user);
     if (targetRecord == null) {

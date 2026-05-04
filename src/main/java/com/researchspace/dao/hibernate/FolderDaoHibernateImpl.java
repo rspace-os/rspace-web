@@ -199,6 +199,20 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   }
 
   @Override
+  public List<Folder> getSubFolders(Folder rootFolder) {
+    Query<Folder> query =
+        getSession()
+            .createQuery(
+                "SELECT f FROM RecordToFolder rtf JOIN BaseRecord br ON rtf.record.id = br.id JOIN"
+                    + " Folder f ON br.id = f.id WHERE rtf.folder.id = :rootFolderId AND "
+                    + " br.deleted = false",
+                Folder.class)
+            .setParameter("rootFolderId", rootFolder.getId());
+    List<Folder> folders = query.list();
+    return folders;
+  }
+
+  @Override
   public Folder getTemplateFolderForUser(User user) {
     List<Folder> folders =
         getFolderCriteria()

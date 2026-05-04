@@ -647,4 +647,147 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     countQuery.setParameter(USER_ID, user.getId());
     return countQuery.uniqueResult();
   }
+
+  /**
+   * Moves the specified records that are currently owned by the specified user to the given folder.
+   *
+   * @param recordIds - The records to be moved.
+   * @param currentOwner - The current owner of those records
+   * @param destinationFolder - The new folder for those records
+   */
+  @Override
+  public void moveUsersRecordsToFolder(
+      List<Long> recordIds, User currentOwner, Folder destinationFolder) {
+    Session session = getSession();
+    // Note the format of the below query, with the nested select.  This is because
+    // MariaDB was giving an exception when attempting to simply use a WHERE clause
+    // with two parameters...
+    Query<?> query =
+        session
+            .createQuery(
+                "UPDATE RecordToFolder rtf SET folder=:destination WHERE id IN (SELECT id FROM"
+                    + " RecordToFolder WHERE folder.owner=:originalOwner AND record.id IN :ids)")
+            .setParameter("destination", destinationFolder)
+            .setParameter("ids", recordIds)
+            .setParameter("originalOwner", currentOwner);
+    query.executeUpdate();
+  }
+
+  @Override
+  public boolean hasUserSharedTemplatesUsedByOtherUsers(User user) {
+    Session session = getSession();
+    Object result =
+        session
+            .createQuery(
+                "select count (br.id) from BaseRecord br join StructuredDocument sd on br.id ="
+                    + " sd.template.id and br.owner=:owner")
+            .setParameter("owner", user)
+            .uniqueResult();
+    Long count = (Long) result;
+    return count > 0;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public List<BaseRecord> getTemplatesSharedByUserAndUsedByOtherUsers(User user) {
+    Session session = getSession();
+    Query<BaseRecord> query =
+        session
+            .createQuery(
+                "select br from BaseRecord br join StructuredDocument sd on br.id ="
+                    + " sd.template.id and br.owner=:owner")
+            .setParameter("owner", user);
+    List<BaseRecord> templates = query.list();
+    return templates.stream().distinct().collect(Collectors.toList());
+  }
+
+  /**
+   * Transfers ownership of templates from one user to another user.
+   *
+   * @param originalOwner - Original owner of the templates
+   * @param newOwner - New owner of the templates
+   * @param templateIds - IDs of the templates to be transferred
+   * @param updatedOriginalOwnerName - An updated name, if any, for the original owner. (e.g. In the
+   *     case the user has been deleted and updated with a suffix to denote that.)
+   */
+  public void transferTemplates(
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName) {
+    Query<?> query;
+
+    query =
+        getSession()
+            .createQuery("UPDATE BaseRecord b SET owner=:newOwner WHERE id IN :ids")
+            .setParameter("newOwner", newOwner)
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+
+    if (null != updatedOriginalOwnerName) {
+      query =
+          getSession()
+              .createQuery(
+                  "UPDATE BaseRecord b SET originalCreatorUsername=:updatedOriginalOwnerName WHERE"
+                      + " id IN :ids AND originalCreatorUsername=:originalName")
+              .setParameter("updatedOriginalOwnerName", updatedOriginalOwnerName)
+              .setParameter("originalName", originalOwner.getUsername())
+              .setParameter("ids", templateIds);
+      query.executeUpdate();
+      query =
+          getSession()
+              .createQuery(
+                  "UPDATE BaseRecord b SET editInfo.createdBy=:updatedOriginalOwnerName WHERE id IN"
+                      + " :ids AND editInfo.createdBy=:originalName")
+              .setParameter("updatedOriginalOwnerName", updatedOriginalOwnerName)
+              .setParameter("originalName", originalOwner.getUsername())
+              .setParameter("ids", templateIds);
+      query.executeUpdate();
+      query =
+          getSession()
+              .createQuery(
+                  "UPDATE BaseRecord b SET editInfo.modifiedBy=:updatedOriginalOwnerName WHERE id"
+                      + " IN :ids AND editInfo.modifiedBy=:originalName")
+              .setParameter("updatedOriginalOwnerName", updatedOriginalOwnerName)
+              .setParameter("originalName", originalOwner.getUsername())
+              .setParameter("ids", templateIds);
+      query.executeUpdate();
+    }
+
+    query =
+        getSession()
+            .createNativeQuery(
+                "UPDATE BaseRecord_AUD b SET owner_id=:newOwner_id,"
+                    + " createdBy=:updatedOriginalOwnerName WHERE id IN :ids")
+            .setParameter("newOwner_id", newOwner.getId())
+            .setParameter(
+                "updatedOriginalOwnerName",
+                null != updatedOriginalOwnerName
+                    ? updatedOriginalOwnerName
+                    : originalOwner.getUsername())
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+
+    // Modify the template ACL so that the new owner has the same level of
+    // access as the original owner.  Do this in two stages to ensure that
+    // we do not accidentally set for partial user name matches.
+    query =
+        getSession()
+            .createNativeQuery(
+                "UPDATE BaseRecord br SET acl = (SELECT CONCAT(:newOwner, (SELECT SUBSTRING(br.acl,"
+                    + " LENGTH(:originalOwnerAtStart), LENGTH(br.acl))))) WHERE id IN :ids AND"
+                    + " br.acl LIKE :originalOwnerAtStartQuery")
+            .setParameter("originalOwnerAtStart", originalOwner.getUsername() + "=")
+            .setParameter("originalOwnerAtStartQuery", "%" + originalOwner.getUsername() + "=%")
+            .setParameter("newOwner", newOwner.getUsername())
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+
+    query =
+        getSession()
+            .createNativeQuery(
+                "UPDATE BaseRecord br SET acl = (SELECT REPLACE(br.acl, :originalOwnerInMiddle,"
+                    + " :newOwnerInMiddle) ) WHERE id IN :ids")
+            .setParameter("originalOwnerInMiddle", "&" + originalOwner.getUsername() + "")
+            .setParameter("newOwnerInMiddle", "&" + newOwner.getUsername() + "")
+            .setParameter("ids", templateIds);
+    query.executeUpdate();
+  }
 }

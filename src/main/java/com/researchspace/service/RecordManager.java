@@ -656,4 +656,43 @@ public interface RecordManager {
       boolean isOnRoot,
       BaseRecord baseRecord,
       String mediaType);
+
+  /**
+   * Moves the specified records that are currently owned by the specified user to the given folder.
+   *
+   * @param recordIds
+   * @param currentOwner
+   * @param destinationFolder
+   */
+  void moveUsersRecordsToFolder(List<Long> recordIds, User currentOwner, Folder destinationFolder);
+
+  /**
+   * Returns true if the user has any templates which have been shared with other users or groups.
+   *
+   * @param u User
+   * @return
+   */
+  boolean hasUserSharedTemplatesUsedByOtherUsers(User u);
+
+  /**
+   * Gets all templates shared from a specific user.
+   *
+   * @param u user
+   * @return
+   */
+  List<BaseRecord> getTemplatesSharedByUserAndUsedByOtherUsers(User u);
+
+  /**
+   * Move templates from one owner to a new owner. Optional: Update the name of the original user
+   * that created the template (this will mostly be of use when deleting users). Note that
+   * technically this method could transfer any type of BaseRecord, but the intended use is (as of
+   * time of writing this) for templates.
+   *
+   * @param originalOwner
+   * @param newOwner
+   * @param templateIds
+   * @param updatedOriginalOwnerName
+   */
+  void transferTemplates(
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName);
 }
