@@ -1738,7 +1738,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     User u1 = createInitAndLoginAnyUser();
     // create form with icon entity
     RSForm originalForm = createAnyForm(u1);
-    BufferedImage anImage = RSpaceTestUtils.getImageFromTestResourcesFolder("mainLogoN2.png");
+    BufferedImage anImage = RSpaceTestUtils.getImageFromTestResourcesFolder("mainLogo3.png");
     IconEntity originalIcon =
         IconEntity.createIconEntityFromImage(originalForm.getId(), anImage, "png");
     originalIcon = iconMgr.saveIconEntity(originalIcon, true);

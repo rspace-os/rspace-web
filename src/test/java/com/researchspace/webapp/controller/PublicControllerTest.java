@@ -31,7 +31,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 public class PublicControllerTest {
 
-  private static final String DEFAULT_LOGO_NAME = "mainLogoN2.png";
+  private static final String DEFAULT_LOGO_NAME = "mainLogo3.png";
   @Rule public MockitoRule mockery = MockitoJUnit.rule();
   @Mock IExportUtils exportUtils;
   @Mock Principal principal;
@@ -39,7 +39,7 @@ public class PublicControllerTest {
   @Mock MaintenanceManager maintenanceMgr;
   @Mock IPropertyHolder properties;
   @Mock Resource resource;
-  final int defaultImageSize = 10591;
+  final int defaultImageSize = 41430;
   MockHttpServletResponse response;
 
   class PublicControllerTSS extends PublicController {

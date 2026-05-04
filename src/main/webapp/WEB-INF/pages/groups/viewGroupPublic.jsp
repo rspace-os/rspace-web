@@ -217,7 +217,7 @@
               <c:if test="${showExportFunctionality}">
                 <td>
                   <c:if test="${!ug.user.PI or ug.user eq subject}">
-                    <a class="exportUsersWorkButton groupEditButton" style="position: relative; background-image:url('/images/icons/exportIcon.png');background-repeat: no-repeat; padding:4px 7px 3px 40px;"
+                    <a class="exportUsersWorkButton groupEditButton" style="position: relative; background-image:url('/images/icons/exportIcon2.png');background-repeat: no-repeat; padding:4px 7px 3px 40px;"
                       href="#" data-username="${ug.user.username}"></a>
                   </c:if>
                 </td>
