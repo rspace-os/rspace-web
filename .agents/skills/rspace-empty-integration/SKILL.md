@@ -20,7 +20,7 @@ Inputs to gather from the user:
 Derived: `<NAME>` = uppercase, `<name>` = lowercase, `<DATE>` = today's date in
 `YYYY-MM-DD`.
 
-Workspace root: `rspace-web/` (a Java/Spring + React/TypeScript monorepo).
+Workspace root: the repo root (the directory containing `pom.xml` and `mvnw`).
 
 ## Workflow
 
@@ -34,7 +34,7 @@ on what is and isn't in scope, and re-read it before each ambiguous decision.
 
 ### 2. Verify prerequisites
 
-- Confirm `rspace-web/pom.xml` exists at the workspace root.
+- Confirm `pom.xml` exists at the workspace root.
 - Confirm `<NAME>` is not already a key in
   `src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.ts` `IntegrationStates`
   type. If it is, abort with a clear message — the integration already exists.
@@ -53,14 +53,13 @@ For exact file contents and templates, see [REFERENCE.md](REFERENCE.md):
 - [ ] `src/main/webapp/ui/src/tinyMCE/<name>/<Name>.tsx`
 - [ ] `src/main/webapp/ui/src/tinyMCE/<name>/__tests__/<Name>.test.tsx`
 
-### 4. Modify existing files (13)
+### 4. Modify existing files (15)
 
 Each edit must preserve existing alphabetical ordering. See
 [REFERENCE.md](REFERENCE.md) for the exact insertion patterns.
 
 - [ ] `src/main/java/com/researchspace/service/IntegrationsHandler.java`
 - [ ] `src/main/java/com/researchspace/service/SystemPropertyName.java`
-- [ ] `src/main/java/com/researchspace/service/impl/IntegrationsHandlerImpl.java`
 - [ ] `src/main/java/com/researchspace/webapp/controller/IntegrationController.java`
 - [ ] `src/main/resources/bundles/system/system.properties`
 - [ ] `src/main/resources/sqlUpdates/liquibase-master.xml`
@@ -94,6 +93,18 @@ Optionally run the smoke test for the new TinyMCE component:
 
 ```bash
 cd src/main/webapp/ui && npx vitest run src/tinyMCE/<name>/__tests__/<Name>.test.tsx
+```
+
+To verify the backend changes (Liquibase changeset applied, `SystemPropertyName` enum correct, integration visible in the API), run the existing MVC integration test against a running database:
+
+```bash
+mvn test -Dtest=IntegrationControllerMVCIT#getAllIntegrations
+```
+
+Alternatively, start the app and confirm `<NAME>` appears as a key in the response from:
+
+```
+GET http://localhost:8080/integration/allIntegrations
 ```
 
 ### 6. Report manual follow-ups

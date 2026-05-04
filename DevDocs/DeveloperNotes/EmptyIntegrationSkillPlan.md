@@ -52,7 +52,7 @@ The skill / human implementer needs four pieces of data:
 | `src/main/webapp/ui/src/tinyMCE/<name>/<Name>.tsx`                                   | Empty React component.                                                  |
 | `src/main/webapp/ui/src/tinyMCE/<name>/__tests__/<Name>.test.tsx`                    | Vitest smoke test.                                                      |
 
-## Files modified (16)
+## Files modified (15)
 
 | Path                                                                                       | Edit                                                                                                                  |
 | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
@@ -67,20 +67,27 @@ The skill / human implementer needs four pieces of data:
 | `src/main/webapp/WEB-INF/pages/system/settings_ajax.jsp`                                   | Add `<div id="<name>.available.description">…</div>`.                                                                 |
 | `src/main/webapp/scripts/pages/system/settings_mod.js`                                     | Add `_printSettings(['<name>.available']);` under an existing category.                                               |
 | `src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js`                 | Add `<name>Enabled` const, plus an `if (<name>Enabled) { ... }` block containing both `localTinymcesetup.external_plugins["<name>"] = "..."` AND `addToToolbarIfNotPresent(localTinymcesetup, " | <name>")` (the second line is required for the toolbar button to appear). |
-| `src/main/webapp/scripts/tinymce/tinymce516/icons/custom_icons/icons.js`                   | Register a `<name>` SVG icon entry.                                                                                   |
+| `src/main/java/com/researchspace/webapp/controller/IntegrationController.java`       | Add `rc.put(<NAME>_APP_NAME, ...)` in `getAll(User)` and the corresponding static import.                             |
+| `src/main/webapp/scripts/tinymce/tinymce5109/icons/custom_icons/icons.js`            | Register a `<name>` SVG icon entry.                                                                                   |
 | `build-resources/resources_to_MD5_rename.txt`                                              | Add `scripts/externalTinymcePlugins/<name>/plugin.min.js` and `ui/dist/tinymce<Name>.js` lines.                       |
-| `src/main/webapp/ui/webpack.config.js`                                                     | Add `tinymce<Name>: "./src/tinyMCE/<name>/index.tsx",` entry.                                                         |
+| `src/main/webapp/ui/webpack.config.mjs`                                                    | Add `tinymce<Name>: "./src/tinyMCE/<name>/index.tsx",` entry.                                                         |
 
 ## Out of scope (explicitly NOT touched)
 
 The empty-integration skill **does not** modify any of:
 
 - `IntegrationsHandlerImpl.java` — only needed when there are per-user options
-  (OAuth tokens or API keys saved via `UserConnectionManager`).
+  (OAuth tokens or API keys saved via `UserConnectionManager`) or when the
+  integration requires app-level configuration (deployment URLs). A simple
+  toggle integration with no per-user options does not appear in any of the
+  `isAppConfigIntegration`, `postProcessInfo`, or `setNewIntegrationInfo`
+  switches.
 - `IPropertyHolder.java`, `PropertyHolder.java`, `defaultDeployment.properties`
   — only needed for deployment-level URLs.
-- `IntegrationController.java`'s endpoint methods — except for the new
-  `rc.put(<NAME>_APP_NAME, ...)` in `getAll(User)` (which IS required).
+- `IntegrationController.java`'s endpoint methods other than `getAll(User)` —
+  no separate create/update/delete endpoints are needed for a simple toggle.
+  (The `rc.put(<NAME>_APP_NAME, ...)` insertion in `getAll(User)` IS required
+  and is listed in "Files modified" above.)
 - `WEB-INF/pages/notebookEditor/notebookEditor.jsp`,
   `WEB-INF/pages/workspace/editor/structuredDocument.jsp`,
   `WEB-INF/pages/workspace/editor/include/textField.jsp`,
@@ -107,7 +114,9 @@ The empty-integration skill **does not** modify any of:
 - **`PropertyDescriptor.defaultValue`** = `DENIED`. **`SystemPropertyValue.value`**
   = `DENIED`. (The Galaxy commit used `ALLOWED` for the descriptor; that is an
   outlier and not the convention.)
-- **TypeScript credentials** for an empty integration: `Record<string, never>`.
+- **TypeScript credentials** for an empty integration: use the `emptyObject`
+  type alias (imported from `../../util/types` in `useIntegrationsEndpoint.ts`),
+  matching the convention used by all existing empty-credential integrations.
   The encoder emits `options: {}`; the decoder emits `credentials: {}`.
 - **Apps-page card**: follows the **Chemistry** simple-toggle pattern. No
   `useState`, no auth form, `update={(newMode) => update({ mode: newMode,

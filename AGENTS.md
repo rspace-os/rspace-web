@@ -306,7 +306,7 @@ Currently available:
 
 - `.agents/skills/rspace-empty-integration/` — scaffolds a new "empty" RSpace
   integration (Liquibase migration, sysadmin/user toggles, Apps-page card,
-  TinyMCE toolbar icon opening a blank-titled dialog).
+  TinyMCE toolbar icon opening a dialog whose chrome title is the integration's name).
 
 **Discovery:** `.agents/skills/` is the cross-agent convention (used by
 agents-md-aware tools, Cursor, Codex CLI, and others that follow the AGENTS.md
@@ -317,6 +317,6 @@ Either way, every agent can read these files directly — no install step needed
 to use them in this repo.
 
 **To add a new skill:** create `.agents/skills/<skill-name>/SKILL.md` with
-frontmatter, keep it under ~100 lines, and put bulky templates/recipes in a
+frontmatter, keep it under ~150 lines, and put bulky templates/recipes in a
 sibling `REFERENCE.md`. List it above so the team can discover it.
 

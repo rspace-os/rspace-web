@@ -259,7 +259,21 @@ Add an entry in alphabetical position:
 <NAME>_AVAILABLE("<name>.available"),
 ```
 
-### `IntegrationsHandlerImpl.java`
+### `IntegrationController.java`
+
+Add a `rc.put(...)` entry inside `getAll(User)`, in alphabetical order alongside the existing entries:
+
+```java
+rc.put(<NAME>_APP_NAME, integrationsHandler.getIntegration(user, <NAME>_APP_NAME));
+```
+
+Also add the corresponding static import at the top of the file:
+
+```java
+import static com.researchspace.service.IntegrationsHandler.<NAME>_APP_NAME;
+```
+
+### `system.properties`
 
 Add a line in the `system.property.description.*.available` group:
 
@@ -472,8 +486,11 @@ tinymce<Name>: "./src/tinyMCE/<name>/index.tsx",
 ## Anti-patterns (things never to do for an empty integration)
 
 - Adding `<NAME>` to `IntegrationsHandlerImpl.postProcessInfo`,
-  `setNewIntegrationInfo`, or `isSingleOptionSetAppConfigIntegration` switches.
-  (Adding to `isAppConfigIntegration` IS required — see above.)
+  `setNewIntegrationInfo`, `isAppConfigIntegration`, or
+  `isSingleOptionSetAppConfigIntegration` switches. These are only needed for
+  integrations with per-user credentials or app-level config options (OAuth
+  tokens, API keys, server URLs). A truly empty integration (no per-user
+  options) does not appear in any of these switches.
 - Adding `<NAME>_APIKEY` (or any other) `PropertyDescriptor` and
   `AppConfigElementDescriptor` to the changeset.
 - Adding deployment URL properties to `PropertyHolder.java` or
