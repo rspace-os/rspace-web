@@ -130,7 +130,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     assertTrue(waitForConditionTrue(test, null, 5000L));
 
     // assert invalid file rejected, we can't import png files to RSpace docs:
-    File invalidFile = getResource("mainLogoN2.png");
+    File invalidFile = getResource("mainLogo3.png");
     MockMultipartFile invalid =
         new MockMultipartFile(
             "wordXfile", invalidFile.getName(), "unknown", readFileToByteArray(invalidFile));
