@@ -444,6 +444,16 @@ public class RecordManagerStub implements RecordManager {
       List<Long> recordIds, User currentOwner, Folder destinationFolder) {}
 
   @Override
+  public boolean hasUserSharedTemplatesUsedByOtherUsers(User u) {
+    return false;
+  }
+
+  @Override
+  public List<BaseRecord> getTemplatesSharedByUserAndUsedByOtherUsers(User u) {
+    return null;
+  }
+
+  @Override
   public void transferTemplates(
       User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName) {}
 }

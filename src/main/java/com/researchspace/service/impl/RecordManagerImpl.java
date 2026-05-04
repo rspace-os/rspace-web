@@ -1455,6 +1455,16 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
+  public boolean hasUserSharedTemplatesUsedByOtherUsers(User u) {
+    return recordDao.hasUserSharedTemplatesUsedByOtherUsers(u);
+  }
+
+  @Override
+  public List<BaseRecord> getTemplatesSharedByUserAndUsedByOtherUsers(User u) {
+    return recordDao.getTemplatesSharedByUserAndUsedByOtherUsers(u);
+  }
+
+  @Override
   public void transferTemplates(
       User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName) {
     recordDao.transferTemplates(originalOwner, newOwner, templateIds, updatedOriginalOwnerName);

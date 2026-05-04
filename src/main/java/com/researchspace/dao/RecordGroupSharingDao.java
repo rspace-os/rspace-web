@@ -92,22 +92,6 @@ public interface RecordGroupSharingDao extends GenericDao<RecordGroupSharing, Lo
    */
   List<BaseRecord> getSharedTemplatesWithUser(User u);
 
-  /**
-   * Returns true if the user has any templates which have been shared with other users or groups.
-   *
-   * @param u User
-   * @return
-   */
-  boolean hasUserSharedTemplates(User u);
-
-  /**
-   * Gets all templates shared from a specific user.
-   *
-   * @param u user
-   * @return
-   */
-  List<BaseRecord> getTemplatesSharedByUser(User u);
-
   ISearchResults<RecordGroupSharing> listAllPublishedRecordsForInternet(
       PaginationCriteria<RecordGroupSharing> pcg);
 

@@ -44,7 +44,8 @@ public class TemplateTransferService implements TransferService {
   }
 
   public void transferOwnership(User originalOwner, User newOwner) {
-    List<BaseRecord> sharedRecords = recordGroupSharingDao.getTemplatesSharedByUser(originalOwner);
+    List<BaseRecord> sharedRecords =
+        recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner);
 
     if (!sharedRecords.isEmpty()) {
 

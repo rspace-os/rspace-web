@@ -186,33 +186,6 @@ public class RecordGroupSharingDaoHibernateImpl
     return query;
   }
 
-  @Override
-  public boolean hasUserSharedTemplates(User user) {
-    Session session = getSession();
-    Object result =
-        session
-            .createQuery(
-                "select count (rgs.id) from RecordGroupSharing rgs join BaseRecord br ON"
-                    + " rgs.shared.id = br.id WHERE br.type like '%template%' AND br.owner=:owner")
-            .setParameter("owner", user)
-            .uniqueResult();
-    Long count = (Long) result;
-    return count > 0;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public List<BaseRecord> getTemplatesSharedByUser(User user) {
-    List<RecordGroupSharing> sharedRecords = getRecordsSharedByUser(user);
-    List<BaseRecord> templates =
-        sharedRecords.stream()
-            .map(RecordGroupSharing::getShared)
-            .distinct()
-            .filter(b -> b.hasType(RecordType.TEMPLATE))
-            .collect(toList());
-    return templates;
-  }
-
   public List<String> getTagsMetaDataForRecordsSharedWithUser(User subject, String tagFilter) {
     Criteria allDocsSharedWithUser = getSharedRecordsWithUserQuery(subject);
     allDocsSharedWithUser.setProjection(Projections.distinct(Projections.property("shared")));
