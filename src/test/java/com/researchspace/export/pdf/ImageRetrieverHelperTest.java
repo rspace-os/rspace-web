@@ -92,7 +92,7 @@ public class ImageRetrieverHelperTest {
 
   @Test
   public void testIncludeStaticResource() throws IOException {
-    String imagePath = "/images/icons/mainLogo3.png";
+    String imagePath = "/images/mainLogo3.png";
     File iconIs = RSpaceTestUtils.getResource("mainLogo3.png");
     FileSystemResource res = new FileSystemResource(iconIs);
     when(resource.getResource(imagePath)).thenReturn(res);
