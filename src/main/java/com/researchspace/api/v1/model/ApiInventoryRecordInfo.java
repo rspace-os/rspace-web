@@ -15,6 +15,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.Barcode;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
@@ -41,6 +43,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @ToString(callSuper = true)
 @NoArgsConstructor
 public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObject {
+
   @JsonProperty("description")
   private String description;
 
@@ -88,9 +91,11 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
 
   public enum ApiInventoryRecordType {
     SAMPLE,
+    SAMPLE_TEMPLATE,
     SUBSAMPLE,
     CONTAINER,
-    SAMPLE_TEMPLATE
+    INSTRUMENT,
+    INSTRUMENT_TEMPLATE
   }
 
   @JsonProperty(value = "attachments")
@@ -128,6 +133,7 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   @AllArgsConstructor
   @NoArgsConstructor
   public static class ApiGroupInfoWithSharedFlag {
+
     @JsonProperty(value = "group")
     private ApiGroupBasicInfo groupInfo;
 
@@ -162,6 +168,10 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
       return new ApiSubSampleInfoWithSampleInfo((SubSample) invRecord);
     } else if (invRecord.isContainer()) {
       return new ApiContainerInfo((Container) invRecord);
+    } else if (invRecord.isInstrument()) {
+      return new ApiInstrumentEntityInfo((Instrument) invRecord);
+    } else if (invRecord.isInstrumentTemplate()) {
+      return new ApiInstrumentEntityInfo((InstrumentTemplate) invRecord);
     } else {
       throw new IllegalArgumentException("unsupported type: " + invRecord);
     }
@@ -176,6 +186,10 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
       return new ApiSubSample((SubSample) invRecord);
     } else if (invRecord.isContainer()) {
       return new ApiContainer((Container) invRecord);
+    } else if (invRecord.isInstrument()) {
+      return new ApiInstrument((Instrument) invRecord);
+    } else if (invRecord.isInstrumentTemplate()) {
+      return new ApiInstrumentTemplate((InstrumentTemplate) invRecord);
     } else {
       throw new IllegalArgumentException("unsupported type: " + invRecord);
     }
@@ -199,9 +213,6 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
       setDeletedDate(invRecord.getDeletedDate().getTime());
     }
     setIconId(invRecord.getIconId());
-    if (invRecord.getQuantityInfo() != null) {
-      setQuantity(new ApiQuantityInfo(invRecord));
-    }
     setApiTagInfo(invRecord.getTagMetaData());
     setType(ApiInventoryRecordType.valueOf(invRecord.getType().toString()));
     setSharingMode(ApiInventorySharingMode.valueOf(invRecord.getSharingMode().toString()));

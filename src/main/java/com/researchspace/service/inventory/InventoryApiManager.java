@@ -12,7 +12,7 @@ import java.io.InputStream;
 import java.util.List;
 import org.springframework.context.ApplicationEventPublisher;
 
-public interface InventoryApiManager {
+public interface InventoryApiManager<T> {
 
   void createImagesForRecord(InventoryRecord invRecord, String base64Image, User user)
       throws IOException;
@@ -40,6 +40,8 @@ public interface InventoryApiManager {
    */
   ApiInventorySearchResult convertToApiInventorySearchResult(
       Long totalHits, Integer pageNumber, List<? extends InventoryRecord> dbRecords, User user);
+
+  //  T getIfExists(Long id);
 
   /*
    * ==============

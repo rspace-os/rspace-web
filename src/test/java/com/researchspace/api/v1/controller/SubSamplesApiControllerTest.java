@@ -22,10 +22,10 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSample;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
@@ -213,7 +213,7 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
     ApiSampleTemplatePost sampleTemplatePost = new ApiSampleTemplatePost();
     sampleTemplatePost.setName("Sample Template");
     sampleTemplatePost.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
-    ApiSampleField templateField = new ApiSampleField();
+    ApiInventoryEntityField templateField = new ApiInventoryEntityField();
     templateField.setName("attachement-field");
     templateField.setType(ATTACHMENT);
     templateField.setColumnIndex(1);
@@ -223,7 +223,7 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
 
     // creating sample request
     ApiSampleWithFullSubSamples newBasicSample = new ApiSampleWithFullSubSamples();
-    ApiSampleField attachementField = new ApiSampleField();
+    ApiInventoryEntityField attachementField = new ApiInventoryEntityField();
     attachementField.setDeleteFieldRequest(false);
     attachementField.setDeleteFieldOnSampleUpdate(false);
     attachementField.setMandatory(false);

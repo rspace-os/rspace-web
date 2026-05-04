@@ -13,7 +13,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import javax.ws.rs.NotFoundException;
 
 /** Handles API actions around Inventory Container. */
-public interface ContainerApiManager extends InventoryApiManager {
+public interface ContainerApiManager extends InventoryApiManager<Container> {
 
   /**
    * Get all top-level not-deleted containers that user can see. Optionally limit to containers

@@ -2,6 +2,7 @@ package com.researchspace.api.v1.service;
 
 import com.researchspace.api.v1.model.ApiDocumentField;
 import com.researchspace.api.v1.model.ApiField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatAudio;
 import com.researchspace.model.EcatChemistryFile;
@@ -16,6 +17,7 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.ValidatingField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.SecurityLogger;
@@ -33,6 +35,7 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.Errors;
 
 /** To deal with API fields conversion when fields are sent between RSpace server and API client. */
 @Component
@@ -308,6 +312,52 @@ public class ApiFieldsHelper {
   public void checkApiFieldsMatchingFormFields(
       List<? extends ApiField> apiFields, List<FieldForm> formFields, User user) {
     checkApiFieldsMatchingFormFields(apiFields, formFields, user, this::consumeErrorMsgAndThrowIAE);
+  }
+
+  /**
+   * Checks if the provided entity apiFields (of Samples or Instrument or InstrumentTemplate) are
+   * matching templateFields and alsop if they are mandatory.
+   *
+   * <p>Otherwise add the errors if there are problems.
+   */
+  public void validateMandatoryFieldsForEntityPost(
+      String entityTypeName,
+      List<ApiInventoryEntityField> incomingApiFields,
+      List<InventoryEntityField> templateFields,
+      Errors errors) {
+
+    for (int i = 0; i < templateFields.size(); i++) {
+      InventoryEntityField templateField = templateFields.get(i);
+      if (templateField.isMandatory()) {
+        boolean hasApiFieldForTemplateField = incomingApiFields.size() > i;
+        boolean isOptionsStoringField = templateField.isOptionsStoringField();
+        if (isOptionsStoringField) {
+          List<String> selectedOptions =
+              hasApiFieldForTemplateField
+                  ? incomingApiFields.get(i).getSelectedOptions()
+                  : templateField.getSelectedOptions();
+          if (CollectionUtils.isEmpty(selectedOptions)) {
+            errors.rejectValue(
+                "fields",
+                "errors.inventory." + entityTypeName + ".mandatory.field.no.selection",
+                new Object[] {templateField.getName()},
+                "no option selected for mandatory field");
+          }
+        } else {
+          String incomingContent =
+              hasApiFieldForTemplateField
+                  ? incomingApiFields.get(i).getContent()
+                  : templateField.getFieldData();
+          if (!templateField.isValidValueForMandatoryField(incomingContent)) {
+            errors.rejectValue(
+                "fields",
+                "errors.inventory." + entityTypeName + ".mandatory.field.empty",
+                new Object[] {templateField.getName()},
+                "no content for mandatory field");
+          }
+        }
+      }
+    }
   }
 
   /**

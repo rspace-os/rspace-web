@@ -8,12 +8,9 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -74,19 +71,7 @@ public class ApiSampleWithFullSubSamples extends ApiSampleWithoutSubSamples {
   private Integer newSampleSubSamplesCount;
 
   @JsonProperty(value = "newSampleSubSampleTargetLocations", access = Access.WRITE_ONLY)
-  private List<ApiSampleSubSampleTargetLocation> newSampleSubSampleTargetLocations;
-
-  @Getter
-  @Setter
-  @NoArgsConstructor
-  @AllArgsConstructor
-  public static class ApiSampleSubSampleTargetLocation {
-    @JsonProperty("containerId")
-    private Long containerId;
-
-    @JsonProperty("location")
-    private ApiContainerLocation containerLocation;
-  }
+  private List<ApiTargetLocation> newSampleSubSampleTargetLocations;
 
   public ApiSampleWithFullSubSamples(Sample sample) {
     super(sample);

@@ -3,7 +3,7 @@ package com.researchspace.api.v1.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSampleName;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,15 +29,15 @@ public class ApiSampleTemplatePost extends ApiSampleTemplateInfo {
   private Integer defaultUnitId = RSUnitDef.MILLI_LITRE.getId();
 
   @JsonProperty("fields")
-  protected List<ApiSampleField> fields = new ArrayList<>();
+  protected List<ApiInventoryEntityField> fields = new ArrayList<>();
 
   @JsonProperty(value = "sharedWith")
   private List<ApiGroupInfoWithSharedFlag> sharedWith;
 
   public ApiSampleTemplatePost(Sample template) {
     super(template);
-    for (SampleField f : template.getActiveFields()) {
-      fields.add(new ApiSampleField(f));
+    for (InventoryEntityField f : template.getActiveFields()) {
+      fields.add(new ApiInventoryEntityField(f));
     }
   }
 }

@@ -18,12 +18,12 @@ import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
 import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSharedFlag;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSample;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
@@ -228,23 +228,23 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     sampleUpdates.setTags(retrievedSample.getTags());
 
     // modification to content of sample field should be accepted
-    ApiSampleField fieldUpdate = new ApiSampleField();
+    ApiInventoryEntityField fieldUpdate = new ApiInventoryEntityField();
     fieldUpdate.setId(retrievedSample.getFields().get(0).getId());
     fieldUpdate.setContent("24");
     sampleUpdates.getFields().add(fieldUpdate);
 
     // attempt to add sample field - back-end should ignore
-    ApiSampleField newField =
+    ApiInventoryEntityField newField =
         createBasicApiSampleField("new field", ApiFieldType.STRING, "test content");
     newField.setNewFieldRequest(true);
     sampleUpdates.getFields().add(newField);
 
     // attempts to delete sample fields - back-end should ignore
-    ApiSampleField fieldDelete1 = new ApiSampleField();
+    ApiInventoryEntityField fieldDelete1 = new ApiInventoryEntityField();
     fieldDelete1.setId(retrievedSample.getFields().get(1).getId());
     fieldDelete1.setDeleteFieldRequest(true);
     sampleUpdates.getFields().add(fieldDelete1);
-    ApiSampleField fieldDelete2 = new ApiSampleField();
+    ApiInventoryEntityField fieldDelete2 = new ApiInventoryEntityField();
     fieldDelete2.setId(retrievedSample.getFields().get(2).getId());
     fieldDelete2.setDeleteFieldRequest(true);
     sampleUpdates.getFields().add(fieldDelete2);
@@ -496,7 +496,8 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         iae.getMessage());
 
     // add content in mandatory fields
-    newSample.setFields(Stream.generate(ApiSampleField::new).limit(6).collect(Collectors.toList()));
+    newSample.setFields(
+        Stream.generate(ApiInventoryEntityField::new).limit(6).collect(Collectors.toList()));
     newSample.getFields().get(0).setContent("test content 1");
     newSample.getFields().get(1).setContent("test content 2");
     newSample.getFields().get(3).setSelectedOptions(List.of("a"));
@@ -509,7 +510,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample sampleUpdates = new ApiSample();
     sampleUpdates.setId(createdSample.getId());
     sampleUpdates.setName("updated sample");
-    ApiSampleField textFieldUpdate = new ApiSampleField();
+    ApiInventoryEntityField textFieldUpdate = new ApiInventoryEntityField();
     textFieldUpdate.setId(createdSample.getFields().get(0).getId());
     textFieldUpdate.setContent(" ");
     sampleUpdates.getFields().add(textFieldUpdate);
@@ -523,7 +524,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         iae.getMessage());
 
     // attempt to update with blank options in mandatory radio field
-    ApiSampleField radioFieldUpdate = new ApiSampleField();
+    ApiInventoryEntityField radioFieldUpdate = new ApiInventoryEntityField();
     radioFieldUpdate.setId(createdSample.getFields().get(3).getId());
     radioFieldUpdate.setSelectedOptions(new ArrayList<>());
     sampleUpdates.getFields().clear();
@@ -637,7 +638,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   public void duplicateSample() throws Exception {
     ApiSampleWithFullSubSamples newSample = createComplexSampleForUser(testUser);
     assertNotNull(newSample.getTemplateId());
-    final Long initialSampleFieldCount = getCountOfEntityTable("SampleField");
+    final Long initialSampleFieldCount = getCountOfEntityTable("InventoryEntityField");
 
     ApiContainer workbench = getWorkbenchForUser(testUser);
     int initialWorkbenchContentCount = workbench.getContentSummary().getTotalCount();
@@ -648,7 +649,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // all extra fields are created ok
     assertEquals(
         initialSampleFieldCount + duplicate.getFields().size(),
-        getCountOfEntityTable("SampleField"));
+        getCountOfEntityTable("InventoryEntityField"));
     assertFalse(duplicate.getId().equals(newSample.getId()));
 
     // duplicated subsample lives in workbench

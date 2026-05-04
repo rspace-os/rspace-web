@@ -13,10 +13,10 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.model.ApiSample;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -27,8 +27,8 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -235,7 +235,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
         "aTagValue__RSP_EXTONT_URL_DELIM__uriValue__RSP_EXTONT_NAME_DELIM__ontName__RSP_EXTONT_VERSION_DELIM__1",
         sampleFromSimpleRequest.getTags().get(0).toString());
     assertNull(sampleFromSimpleRequest.getTemplateId());
-    assertEquals(SampleSource.VENDOR_SUPPLIED, sampleFromSimpleRequest.getSampleSource());
+    assertEquals(InventoryItemSource.VENDOR_SUPPLIED, sampleFromSimpleRequest.getSampleSource());
     assertEquals(0, sampleFromSimpleRequest.getFields().size());
     ApiSubSampleInfo createdSubSample = sampleFromSimpleRequest.getSubSamples().get(0);
 
@@ -1103,7 +1103,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSampleWithFullSubSamples createdSample =
         mvcUtils.getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
 
-    ApiSampleField timeField =
+    ApiInventoryEntityField timeField =
         createdSample.getFields().stream()
             .filter(f -> f.getType().equals(ApiFieldType.TIME))
             .findFirst()

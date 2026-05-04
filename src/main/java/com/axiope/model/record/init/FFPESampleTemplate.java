@@ -2,15 +2,15 @@ package com.axiope.model.record.init;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryDateField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryTextField;
-import com.researchspace.model.inventory.field.SampleField;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
@@ -39,7 +39,7 @@ public class FFPESampleTemplate extends BuiltinContent implements SampleTemplate
 
   private Sample createTemplate(User createdBy) {
     Sample sample = recordFactory.createSample("FFPE tissue", createdBy);
-    sample.setSampleSource(SampleSource.LAB_CREATED);
+    sample.setSampleSource(InventoryItemSource.LAB_CREATED);
     sample.setSubSampleAliases(SubSampleName.PORTION);
     sample.setDefaultUnitId(RSUnitDef.DIMENSIONLESS.getId());
     sample.setDescription(
@@ -48,27 +48,28 @@ public class FFPESampleTemplate extends BuiltinContent implements SampleTemplate
             + " blocks from the same procedure should stored together in a single draw.");
     sample.setTags("FFPE,tissue,slide,section,pathology");
 
-    SampleField id = new InventoryTextField("Identifier");
+    InventoryEntityField id = new InventoryTextField("Identifier");
     sample.addSampleField(id);
-    SampleField donorNumber = new InventoryNumberField("Donor number");
+    InventoryEntityField donorNumber = new InventoryNumberField("Donor number");
     sample.addSampleField(donorNumber);
-    SampleField blockNumber = new InventoryNumberField("Block number");
+    InventoryEntityField blockNumber = new InventoryNumberField("Block number");
     sample.addSampleField(blockNumber);
-    SampleField genderRace = new InventoryTextField("Gender,Race");
+    InventoryEntityField genderRace = new InventoryTextField("Gender,Race");
     sample.addSampleField(genderRace);
-    SampleField heightWeightAge = new InventoryTextField("Height (cm), Weight (kg), BMI");
+    InventoryEntityField heightWeightAge = new InventoryTextField("Height (cm), Weight (kg), BMI");
     sample.addSampleField(heightWeightAge);
 
-    SampleField pathReport = new InventoryTextField("Pathology report as text if available");
+    InventoryEntityField pathReport =
+        new InventoryTextField("Pathology report as text if available");
     sample.addSampleField(pathReport);
 
-    SampleField diagnosis = new InventoryTextField("Indication / Diagnosis");
+    InventoryEntityField diagnosis = new InventoryTextField("Indication / Diagnosis");
     sample.addSampleField(diagnosis);
 
-    SampleField date_of_birth_of_donor = new InventoryDateField("Date of birth of donor");
+    InventoryEntityField date_of_birth_of_donor = new InventoryDateField("Date of birth of donor");
     sample.addSampleField(date_of_birth_of_donor);
 
-    SampleField dateOfProcedure =
+    InventoryEntityField dateOfProcedure =
         new InventoryDateField("Date of surgical procedure (creation of sample)");
     sample.addSampleField(dateOfProcedure);
 

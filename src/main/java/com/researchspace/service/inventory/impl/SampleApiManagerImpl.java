@@ -2,10 +2,10 @@ package com.researchspace.service.inventory.impl;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.api.v1.model.ApiSample;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
@@ -37,7 +37,7 @@ import com.researchspace.model.inventory.InventorySeriesNamingHelper;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryMoveHelper;
@@ -57,7 +57,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service("sampleApiManager")
-public class SampleApiManagerImpl extends InventoryApiManagerImpl implements SampleApiManager {
+public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
+    implements SampleApiManager {
 
   public static final String SAMPLE_DEFAULT_NAME = "Generic Sample";
 
@@ -132,18 +133,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
     Sample sample = getIfExists(id);
     invPermissions.assertUserCanEditInventoryRecord(sample, user);
     return sample;
-  }
-
-  @Override
-  public Sample assertUserCanReadSampleField(Long id, User user) {
-    GlobalIdentifier sampleOid = getSampleGlobalIdByFieldIdIfExists(id);
-    return assertUserCanReadSample(sampleOid.getDbId(), user);
-  }
-
-  @Override
-  public Sample assertUserCanEditSampleField(Long id, User user) {
-    GlobalIdentifier sampleOid = getSampleGlobalIdByFieldIdIfExists(id);
-    return assertUserCanEditSample(sampleOid.getDbId(), user);
   }
 
   @Override
@@ -262,8 +251,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
     return apiResultSample;
   }
 
-  private void assertDefaultFieldsValid(List<SampleField> activeFields) {
-    for (SampleField field : activeFields) {
+  private void assertDefaultFieldsValid(List<InventoryEntityField> activeFields) {
+    for (InventoryEntityField field : activeFields) {
       field.assertFieldDataValid(field.getFieldData());
     }
   }
@@ -314,25 +303,27 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
   }
 
   private void saveNewApiFieldsIntoSampleFields(
-      List<? extends ApiSampleField> apiFieldList, List<SampleField> sampleFieldList, User user) {
+      List<? extends ApiInventoryEntityField> apiFieldList,
+      List<InventoryEntityField> inventoryEntityFieldList,
+      User user) {
 
-    if (apiFieldList.size() != sampleFieldList.size()) {
+    if (apiFieldList.size() != inventoryEntityFieldList.size()) {
       throw new IllegalArgumentException(
           String.format(
               "Number of incoming sample fields [%d]"
                   + " doesn't match number of template fields [%d]",
-              apiFieldList.size(), sampleFieldList.size()));
+              apiFieldList.size(), inventoryEntityFieldList.size()));
     }
 
     for (int i = 0; i < apiFieldList.size(); i++) {
-      ApiSampleField apiField = apiFieldList.get(i);
+      ApiInventoryEntityField apiField = apiFieldList.get(i);
       String newFieldContent = apiField.getContent();
-      SampleField sampleField = sampleFieldList.get(i);
+      InventoryEntityField inventoryEntityField = inventoryEntityFieldList.get(i);
 
-      if (sampleField.isOptionsStoringField()) {
-        sampleField.setSelectedOptions(apiField.getSelectedOptions());
+      if (inventoryEntityField.isOptionsStoringField()) {
+        inventoryEntityField.setSelectedOptions(apiField.getSelectedOptions());
       } else {
-        sampleField.setFieldData(newFieldContent);
+        inventoryEntityField.setFieldData(newFieldContent);
       }
     }
   }
@@ -470,7 +461,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
 
   @Override
   @SuppressWarnings("unchecked")
-  Sample getIfExists(Long id) {
+  protected Sample getIfExists(Long id) {
     return getIfExists(id, false);
   }
 
@@ -757,8 +748,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
   }
 
   private void createFields(ApiSampleTemplatePost apiSample, Sample sample) {
-    for (ApiSampleField field : apiSample.getFields()) {
-      SampleField toAdd = apiFieldToModelFieldFactory.apiSampleFieldToModelField(field);
+    for (ApiInventoryEntityField field : apiSample.getFields()) {
+      InventoryEntityField toAdd = apiFieldToModelFieldFactory.apiInvenotryFieldToModelField(field);
       sample.addSampleField(toAdd);
     }
   }
@@ -789,9 +780,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
   private boolean createDeleteRequestedFieldsInDbSampleTemplate(
       ApiSampleWithoutSubSamples apiSample, Sample dbTemplate) {
     boolean changed = false;
-    for (ApiSampleField apiField : apiSample.getFields()) {
+    for (ApiInventoryEntityField apiField : apiSample.getFields()) {
       if (apiField.isNewFieldRequest()) {
-        SampleField toAdd = apiFieldToModelFieldFactory.apiSampleFieldToModelField(apiField);
+        InventoryEntityField toAdd =
+            apiFieldToModelFieldFactory.apiInvenotryFieldToModelField(apiField);
         dbTemplate.addSampleField(toAdd);
         changed = true;
       }
@@ -801,7 +793,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl implements Sam
               "'id' property not provided "
                   + "for a template field with 'deleteFieldRequest' flag");
         }
-        Optional<SampleField> dbFieldOpt =
+        Optional<InventoryEntityField> dbFieldOpt =
             dbTemplate.getActiveFields().stream()
                 .filter(sf -> apiField.getId().equals(sf.getId()))
                 .findFirst();

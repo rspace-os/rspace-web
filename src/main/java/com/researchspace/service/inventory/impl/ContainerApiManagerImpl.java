@@ -41,7 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service("containerApiManager")
-public class ContainerApiManagerImpl extends InventoryApiManagerImpl
+public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
     implements ContainerApiManager {
 
   public static final String CONTAINER_DEFAULT_NAME = "Generic Container";
@@ -424,7 +424,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl
   }
 
   @Override
-  Container getIfExists(Long id) {
+  protected Container getIfExists(Long id) {
     boolean exists = containerDao.exists(id);
     if (!exists) {
       throw new NotFoundException("No container with id: " + id);

@@ -15,8 +15,8 @@ import com.researchspace.api.v1.controller.InventoryFilesApiController.ApiInvent
 import com.researchspace.api.v1.controller.InventoryFilesApiController.ApiInventoryFilePost;
 import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryFile;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
 import com.researchspace.core.util.ISearchResults;
@@ -137,7 +137,7 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
 
     User user = createInitAndLoginAnyUser();
     ApiSampleWithoutSubSamples apiSample = createComplexSampleForUser(user);
-    ApiSampleField attachmentField = apiSample.getFields().get(6);
+    ApiInventoryEntityField attachmentField = apiSample.getFields().get(6);
     assertEquals(ApiFieldType.ATTACHMENT, attachmentField.getType());
     assertNull(attachmentField.getAttachment());
 

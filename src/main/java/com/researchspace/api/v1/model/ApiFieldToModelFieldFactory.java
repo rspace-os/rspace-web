@@ -2,18 +2,21 @@ package com.researchspace.api.v1.model;
 
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
-import com.researchspace.model.inventory.field.SampleField;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-/** Maps incoming template ApiField to SampleField based on value of 'type' property */
+/**
+ * Maps incoming template ApiInventoryEntityField to InventoryEntityField based on value of 'type'
+ * property
+ */
 @Component
 public class ApiFieldToModelFieldFactory {
 
-  public SampleField apiSampleFieldToModelField(ApiSampleField field) {
-    SampleField toAdd = null;
+  public InventoryEntityField apiInvenotryFieldToModelField(ApiInventoryEntityField field) {
+    InventoryEntityField toAdd = null;
     switch (field.getType()) {
       case STRING:
       case TEXT:
@@ -24,7 +27,7 @@ public class ApiFieldToModelFieldFactory {
       case REFERENCE:
       case URI:
       case IDENTIFIER:
-        toAdd = SampleField.fromFieldTypeString(field.getType().toString());
+        toAdd = InventoryEntityField.fromFieldTypeString(field.getType().toString());
         break;
       case CHOICE:
         InventoryChoiceFieldDef def = new InventoryChoiceFieldDef();
@@ -61,7 +64,7 @@ public class ApiFieldToModelFieldFactory {
     return toAdd;
   }
 
-  private boolean definitionIsEmpty(ApiSampleField field) {
+  private boolean definitionIsEmpty(ApiInventoryEntityField field) {
     return field.getDefinition() == null
         || CollectionUtils.isEmpty(field.getDefinition().getOptions());
   }

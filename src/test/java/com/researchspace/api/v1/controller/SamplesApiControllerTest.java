@@ -23,20 +23,20 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSample;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
-import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples.ApiSampleSubSampleTargetLocation;
 import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
+import com.researchspace.api.v1.model.ApiTargetLocation;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
@@ -348,28 +348,28 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     Sample savedTemplate = sampleDao.persistSampleTemplate(sampleTemplate);
     newSample.setTemplateId(savedTemplate.getId());
 
-    List<ApiSampleField> fields = new ArrayList<>();
-    ApiSampleField numberField = new ApiSampleField();
+    List<ApiInventoryEntityField> fields = new ArrayList<>();
+    ApiInventoryEntityField numberField = new ApiInventoryEntityField();
     numberField.setContent("3.14");
     fields.add(numberField);
-    ApiSampleField dateField = new ApiSampleField();
+    ApiInventoryEntityField dateField = new ApiInventoryEntityField();
     fields.add(dateField);
-    ApiSampleField stringField = new ApiSampleField();
+    ApiInventoryEntityField stringField = new ApiInventoryEntityField();
     fields.add(stringField);
-    ApiSampleField textField = new ApiSampleField();
+    ApiInventoryEntityField textField = new ApiInventoryEntityField();
     fields.add(textField);
-    ApiSampleField urlField = new ApiSampleField();
+    ApiInventoryEntityField urlField = new ApiInventoryEntityField();
     fields.add(urlField);
-    ApiSampleField refrenceField = new ApiSampleField();
+    ApiInventoryEntityField refrenceField = new ApiInventoryEntityField();
     fields.add(refrenceField);
-    ApiSampleField attachmentField = new ApiSampleField();
+    ApiInventoryEntityField attachmentField = new ApiInventoryEntityField();
     fields.add(attachmentField);
-    ApiSampleField timeField = new ApiSampleField();
+    ApiInventoryEntityField timeField = new ApiInventoryEntityField();
     fields.add(timeField);
-    ApiSampleField radioField = new ApiSampleField();
+    ApiInventoryEntityField radioField = new ApiInventoryEntityField();
     radioField.setSelectedOptions(List.of("option1"));
     fields.add(radioField);
-    ApiSampleField choiceField = new ApiSampleField();
+    ApiInventoryEntityField choiceField = new ApiInventoryEntityField();
     choiceField.setSelectedOptions(List.of("optionA", "optionB"));
     fields.add(choiceField);
     newSample.setFields(fields);
@@ -508,13 +508,11 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples newSample =
         new ApiSampleWithFullSubSamples("sample with 3 subsamples and default quantity");
     newSample.setNewSampleSubSamplesCount(3);
-    List<ApiSampleSubSampleTargetLocation> targetLocations =
+    List<ApiTargetLocation> targetLocations =
         List.of(
-            new ApiSampleSubSampleTargetLocation(listContainer.getId(), new ApiContainerLocation()),
-            new ApiSampleSubSampleTargetLocation(
-                gridContainer.getId(), new ApiContainerLocation(1, 2)),
-            new ApiSampleSubSampleTargetLocation(
-                imageContainer.getId(), imageContainer.getLocations().get(1)));
+            new ApiTargetLocation(listContainer.getId(), new ApiContainerLocation()),
+            new ApiTargetLocation(gridContainer.getId(), new ApiContainerLocation(1, 2)),
+            new ApiTargetLocation(imageContainer.getId(), imageContainer.getLocations().get(1)));
     newSample.setNewSampleSubSampleTargetLocations(targetLocations);
 
     ApiSampleWithFullSubSamples sampleWithSubSamples =
@@ -559,7 +557,7 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     assertEquals(0, complexSample.getAttachments().size());
 
     // check attachment field of complex sample has a file attached to it
-    ApiSampleField attachmentField = complexSample.getFields().get(6);
+    ApiInventoryEntityField attachmentField = complexSample.getFields().get(6);
     assertEquals("MyAttachment", attachmentField.getName());
     assertNotNull(attachmentField.getAttachment());
     assertEquals("loremIpsem20para.txt", attachmentField.getAttachment().getName());

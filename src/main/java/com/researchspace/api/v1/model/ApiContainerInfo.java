@@ -86,6 +86,9 @@ public class ApiContainerInfo extends ApiInventoryRecordInfo {
   @JsonProperty("canStoreContainers")
   private Boolean canStoreContainers;
 
+  @JsonProperty("canStoreInstruments")
+  private Boolean canStoreInstruments;
+
   @JsonProperty("parentContainers")
   private List<ApiContainerInfo> parentContainers = new ArrayList<>();
 
@@ -153,6 +156,7 @@ public class ApiContainerInfo extends ApiInventoryRecordInfo {
             container.getContentCountContainers()));
     setCanStoreContainers(container.isCanStoreContainers());
     setCanStoreSamples(container.isCanStoreSamples());
+    setCanStoreInstruments(container.isCanStoreInstruments());
     setCustomImage(container.getImageFileProperty() != null);
     setCType(container.getContainerType().name());
     setLocationsImageFileProperty(container.getLocationsImageFileProperty());
@@ -242,9 +246,19 @@ public class ApiContainerInfo extends ApiInventoryRecordInfo {
       if (!getCanStoreContainers() && !dbContainer.getStoredContainers().isEmpty()) {
         throw new IllegalArgumentException(
             "Cannot set canStoreContainers to false, as this container is already storing"
-                + " subcontainers");
+                + " containers");
       }
       dbContainer.setCanStoreContainers(getCanStoreContainers());
+      contentChanged = true;
+    }
+    if (getCanStoreInstruments() != null
+        && !getCanStoreInstruments().equals(dbContainer.isCanStoreInstruments())) {
+      if (!getCanStoreInstruments() && !dbContainer.getStoredInstruments().isEmpty()) {
+        throw new IllegalArgumentException(
+            "Cannot set canStoreInstrument to false, as this container is already storing"
+                + " instruments");
+      }
+      dbContainer.setCanStoreInstruments(getCanStoreInstruments());
       contentChanged = true;
     }
     return contentChanged;

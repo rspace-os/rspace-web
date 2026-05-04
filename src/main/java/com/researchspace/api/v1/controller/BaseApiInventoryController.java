@@ -14,6 +14,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.BasketApiManager;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InstrumentApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -41,6 +42,8 @@ public class BaseApiInventoryController extends BaseApiController {
   public static final String API_INVENTORY_V1 = "/api/inventory/v1";
   public static final String SAMPLES_ENDPOINT = "/samples";
   public static final String SAMPLE_TEMPLATES_ENDPOINT = "/sampleTemplates";
+  public static final String INSTRUMENTS_ENDPOINT = "/instruments";
+  public static final String INSTRUMENT_TEMPLATES_ENDPOINT = "/instrumentTemplates";
   public static final String SUBSAMPLES_ENDPOINT = "/subSamples";
   public static final String CONTAINERS_ENDPOINT = "/containers";
   public static final String SEARCH_ENDPOINT = "/search";
@@ -53,6 +56,7 @@ public class BaseApiInventoryController extends BaseApiController {
   protected @Autowired InventoryPermissionUtils invPermissions;
   protected @Autowired InventoryEditLockTracker tracker;
 
+  protected @Autowired InstrumentApiManager instrumentApiMgr;
   protected @Autowired SampleApiManager sampleApiMgr;
   protected @Autowired SubSampleApiManager subSampleApiMgr;
   protected @Autowired ContainerApiManager containerApiMgr;
@@ -159,8 +163,12 @@ public class BaseApiInventoryController extends BaseApiController {
         return subSampleApiMgr.assertUserCanEditSubSample(recordOid.getDbId(), user);
       case IC:
         return containerApiMgr.assertUserCanEditContainer(recordOid.getDbId(), user);
+      case II:
+        return instrumentApiMgr.assertUserCanEditInstrument(recordOid.getDbId(), user);
+      case NS:
+        return instrumentApiMgr.assertUserCanEditInstrumentTemplate(recordOid.getDbId(), user);
       case SF:
-        return sampleApiMgr.assertUserCanEditSampleField(recordOid.getDbId(), user);
+        return instrumentApiMgr.assertUserCanEditInventoryEntityField(recordOid.getDbId(), user);
       default:
         throw new IllegalArgumentException(
             "unsupported global id type: " + recordOid.getIdString());
@@ -177,8 +185,12 @@ public class BaseApiInventoryController extends BaseApiController {
         return subSampleApiMgr.assertUserCanReadSubSample(recordOid.getDbId(), user);
       case IC:
         return containerApiMgr.assertUserCanReadContainer(recordOid.getDbId(), user);
+      case II:
+        return instrumentApiMgr.assertUserCanReadInstrument(recordOid.getDbId(), user);
+      case NS:
+        return instrumentApiMgr.assertUserCanReadInstrumentTemplate(recordOid.getDbId(), user);
       case SF:
-        return sampleApiMgr.assertUserCanReadSampleField(recordOid.getDbId(), user);
+        return instrumentApiMgr.assertUserCanReadInventoryEntityField(recordOid.getDbId(), user);
       default:
         throw new IllegalArgumentException(
             "unsupported global id type: " + recordOid.getIdString());

@@ -15,6 +15,8 @@ import com.researchspace.api.v1.controller.SamplesApiController;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiInventoryImportPartialResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleImportResult;
@@ -23,8 +25,6 @@ import com.researchspace.api.v1.model.ApiInventoryImportSubSampleImportResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
 import com.researchspace.api.v1.model.ApiSample;
-import com.researchspace.api.v1.model.ApiSampleField;
-import com.researchspace.api.v1.model.ApiSampleField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -33,8 +33,8 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.ContainerApiManager;
@@ -125,16 +125,19 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     // with a 3-field template (text/radio/choice fields)
     ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
     templatePost.setName("3-field template");
-    templatePost.setSampleSource(SampleSource.VENDOR_SUPPLIED);
+    templatePost.setSampleSource(InventoryItemSource.VENDOR_SUPPLIED);
     templatePost.setDefaultUnitId(RSUnitDef.GRAM.getId());
-    ApiSampleField textField = createBasicApiSampleField("textField", ApiFieldType.TEXT, "");
+    ApiInventoryEntityField textField =
+        createBasicApiSampleField("textField", ApiFieldType.TEXT, "");
     templatePost.getFields().add(textField);
-    ApiSampleField radioField = createBasicApiSampleField("radioField", ApiFieldType.RADIO, "");
+    ApiInventoryEntityField radioField =
+        createBasicApiSampleField("radioField", ApiFieldType.RADIO, "");
     ApiInventoryFieldDef radioDef = new ApiInventoryFieldDef();
     radioDef.setOptions(List.of("no", "yes"));
     radioField.setDefinition(radioDef);
     templatePost.getFields().add(radioField);
-    ApiSampleField choiceField = createBasicApiSampleField("choiceField", ApiFieldType.CHOICE, "");
+    ApiInventoryEntityField choiceField =
+        createBasicApiSampleField("choiceField", ApiFieldType.CHOICE, "");
     ApiInventoryFieldDef def = new ApiInventoryFieldDef();
     def.setOptions(List.of("opt1", "opt2", "opt3"));
     choiceField.setDefinition(def);
@@ -149,7 +152,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     assertNotNull(createdTemplate);
     assertTrue(createdTemplate.isTemplate());
     assertEquals("3-field template", createdTemplate.getName());
-    assertEquals(SampleSource.VENDOR_SUPPLIED, createdTemplate.getSampleSource());
+    assertEquals(InventoryItemSource.VENDOR_SUPPLIED, createdTemplate.getSampleSource());
     assertEquals(RSUnitDef.GRAM.getId(), createdTemplate.getDefaultUnitId());
 
     // import lines pointing to 3-field template
@@ -187,7 +190,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
 
     // check defaults taken from template, or unset (RSINV-311)
     assertEquals(null, sample1.getDescription());
-    assertEquals(SampleSource.VENDOR_SUPPLIED, sample1.getSampleSource());
+    assertEquals(InventoryItemSource.VENDOR_SUPPLIED, sample1.getSampleSource());
     assertEquals(null, sample1.getExpiryDate());
     assertEquals(null, sample1.getStorageTempMin());
     assertEquals(null, sample1.getStorageTempMax());
@@ -259,7 +262,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     assertEquals("desc1", sample1.getDescription());
     assertTrue(sample1.getTags().isEmpty());
     assertEquals(LocalDate.of(2030, 1, 1), sample1.getExpiryDate());
-    assertEquals(SampleSource.OTHER, sample1.getSampleSource());
+    assertEquals(InventoryItemSource.OTHER, sample1.getSampleSource());
     assertEquals("200 g", sample1.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(3, sample1.getFields().size());
     assertEquals("testContent1", sample1.getFields().get(0).getContent());
@@ -274,7 +277,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     assertEquals("tag1", sample2.getTags().get(0).toString());
     assertEquals("tag2", sample2.getTags().get(1).toString());
     assertEquals(null, sample2.getExpiryDate());
-    assertEquals(SampleSource.VENDOR_SUPPLIED, sample2.getSampleSource());
+    assertEquals(InventoryItemSource.VENDOR_SUPPLIED, sample2.getSampleSource());
     assertEquals("5.25 µg", sample2.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(3, sample2.getFields().size());
     assertEquals("testContent2", sample2.getFields().get(0).getContent());

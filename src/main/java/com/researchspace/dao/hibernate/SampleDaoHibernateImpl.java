@@ -12,8 +12,8 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
-import com.researchspace.model.inventory.field.SampleField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -132,10 +132,10 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
 
   @Override
   public GlobalIdentifier getSampleGlobalIdFromFieldId(Long fieldId) {
-    SampleField field =
+    InventoryEntityField field =
         sessionFactory
             .getCurrentSession()
-            .createQuery("from SampleField where id=:fieldId", SampleField.class)
+            .createQuery("from InventoryEntityField where id=:fieldId", InventoryEntityField.class)
             .setParameter("fieldId", fieldId)
             .getSingleResult();
     if (field == null) {

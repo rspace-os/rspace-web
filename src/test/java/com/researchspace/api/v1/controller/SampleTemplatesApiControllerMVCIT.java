@@ -1,22 +1,37 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.SamplesApiControllerMVCIT.NUM_FIELDS_IN_COMPLEX_SAMPLE;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.researchspace.api.v1.model.*;
+import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
-import com.researchspace.api.v1.model.ApiSampleField.ApiInventoryFieldDef;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
+import com.researchspace.api.v1.model.ApiLinkItem;
+import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleInfo;
+import com.researchspace.api.v1.model.ApiSampleTemplate;
+import com.researchspace.api.v1.model.ApiSampleTemplateInfo;
+import com.researchspace.api.v1.model.ApiSampleTemplatePost;
+import com.researchspace.api.v1.model.ApiSampleTemplateSearchResult;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSampleAlias;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
-import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
@@ -51,7 +66,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     sampleTemplatePost.setName("myNewTemplate");
     sampleTemplatePost.setApiTagInfo("tag1,tag2");
     sampleTemplatePost.setDefaultUnitId(RSUnitDef.GRAM.getId());
-    sampleTemplatePost.setSampleSource(SampleSource.LAB_CREATED);
+    sampleTemplatePost.setSampleSource(InventoryItemSource.LAB_CREATED);
     return sampleTemplatePost;
   }
 
@@ -224,7 +239,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleTemplate sampleTemplate = getFromJsonResponseBody(result, ApiSampleTemplate.class);
     assertEquals("Restriction Enzyme", sampleTemplate.getName());
     assertEquals(5, sampleTemplate.getFields().size());
-    ApiSampleField firstField = sampleTemplate.getFields().get(0);
+    ApiInventoryEntityField firstField = sampleTemplate.getFields().get(0);
     assertEquals("Recognition sequence length", firstField.getName());
     assertEquals(List.of("6"), firstField.getSelectedOptions());
   }
@@ -270,28 +285,33 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     int initialCount = searchHits.getTotalHits().intValue();
     ApiSampleTemplatePost templatePost = createValidSampleTemplatePostNoFields();
     // create 10 fields, 1 of each type
-    ApiSampleField text = createBasicApiSampleField("text", ApiFieldType.TEXT, "text value");
-    ApiSampleField string =
+    ApiInventoryEntityField text =
+        createBasicApiSampleField("text", ApiFieldType.TEXT, "text value");
+    ApiInventoryEntityField string =
         createBasicApiSampleField("string", ApiFieldType.STRING, "string value");
-    ApiSampleField date = createBasicApiSampleField("date", ApiFieldType.DATE, "2020-10-31");
-    ApiSampleField time = createBasicApiSampleField("time", ApiFieldType.TIME, "23:45");
-    ApiSampleField number = createBasicApiSampleField("number", ApiFieldType.NUMBER, "112.34");
+    ApiInventoryEntityField date =
+        createBasicApiSampleField("date", ApiFieldType.DATE, "2020-10-31");
+    ApiInventoryEntityField time = createBasicApiSampleField("time", ApiFieldType.TIME, "23:45");
+    ApiInventoryEntityField number =
+        createBasicApiSampleField("number", ApiFieldType.NUMBER, "112.34");
 
-    ApiSampleField choice =
+    ApiInventoryEntityField choice =
         createBasicApiSampleOptionsField("choice", ApiFieldType.CHOICE, List.of("1", "2"));
     ApiInventoryFieldDef def = new ApiInventoryFieldDef();
     def.setOptions(List.of("1", "2", "3"));
     choice.setDefinition(def);
 
-    ApiSampleField radio =
+    ApiInventoryEntityField radio =
         createBasicApiSampleOptionsField("radio", ApiFieldType.RADIO, List.of("1"));
     ApiInventoryFieldDef def2 = new ApiInventoryFieldDef();
     def2.setOptions(List.of("1", "2", "3"));
     radio.setDefinition(def2);
 
-    ApiSampleField attach = createBasicApiSampleField("attach", ApiFieldType.ATTACHMENT, "attach");
-    ApiSampleField ref = createBasicApiSampleField("ref", ApiFieldType.REFERENCE, "ref value");
-    ApiSampleField URI =
+    ApiInventoryEntityField attach =
+        createBasicApiSampleField("attach", ApiFieldType.ATTACHMENT, "attach");
+    ApiInventoryEntityField ref =
+        createBasicApiSampleField("ref", ApiFieldType.REFERENCE, "ref value");
+    ApiInventoryEntityField URI =
         createBasicApiSampleField("uri", ApiFieldType.URI, "https://somewhere.com");
 
     templatePost.setFields(
@@ -368,13 +388,13 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleTemplatePost sampleTemplatePost = new ApiSampleTemplatePost();
     sampleTemplatePost.setName("test template with radio and choice");
     // add radio field
-    ApiSampleField radioField =
+    ApiInventoryEntityField radioField =
         createBasicApiSampleOptionsField("my radio", ApiFieldType.RADIO, List.of("r2"));
     ApiInventoryFieldDef radioDef = new ApiInventoryFieldDef(List.of("r1", "r2", "r3"), false);
     radioField.setDefinition(radioDef);
     sampleTemplatePost.getFields().add(radioField);
     // add choice field
-    ApiSampleField choiceField =
+    ApiInventoryEntityField choiceField =
         createBasicApiSampleOptionsField("my choice", ApiFieldType.CHOICE, List.of("c1", "c2"));
     ApiInventoryFieldDef def = new ApiInventoryFieldDef(List.of("c1", "c2", "c3"), true);
     choiceField.setDefinition(def);
@@ -389,10 +409,10 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals("IT" + createdTemplate.getId(), retrievedTemplate.getGlobalId());
     assertFalse(retrievedTemplate.isHistoricalVersion());
     assertEquals(2, retrievedTemplate.getFields().size());
-    ApiSampleField retrievedTemplateRadioField = retrievedTemplate.getFields().get(0);
+    ApiInventoryEntityField retrievedTemplateRadioField = retrievedTemplate.getFields().get(0);
     assertEquals("my radio", retrievedTemplateRadioField.getName());
     assertEquals(List.of("r2"), retrievedTemplateRadioField.getSelectedOptions());
-    ApiSampleField retrievedTemplateChoiceField = retrievedTemplate.getFields().get(1);
+    ApiInventoryEntityField retrievedTemplateChoiceField = retrievedTemplate.getFields().get(1);
     assertEquals("my choice", retrievedTemplateChoiceField.getName());
     assertEquals(List.of("c1", "c2"), retrievedTemplateChoiceField.getSelectedOptions());
 
@@ -418,7 +438,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleWithFullSubSamples anotherApiSample =
         new ApiSampleWithFullSubSamples("another sample from template v1");
     anotherApiSample.setTemplateId(retrievedTemplate.getId());
-    ApiSampleField emptyField = new ApiSampleField();
+    ApiInventoryEntityField emptyField = new ApiInventoryEntityField();
     emptyField.setContent("");
     anotherApiSample.setFields(List.of(emptyField, emptyField));
     ApiSampleWithFullSubSamples anotherCreatedSample =
@@ -432,7 +452,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSample templateUpdates = new ApiSample();
     templateUpdates.setId(retrievedTemplate.getId());
     // add a new option to radio field, and set it as a default
-    ApiSampleField radioFieldUpdates = new ApiSampleField();
+    ApiInventoryEntityField radioFieldUpdates = new ApiInventoryEntityField();
     radioFieldUpdates.setId(retrievedTemplateRadioField.getId());
     radioFieldUpdates.setName("updated radio");
     ApiInventoryFieldDef updatedRadioDef =
@@ -441,7 +461,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     radioFieldUpdates.setSelectedOptions(List.of("r4"));
     templateUpdates.getFields().add(radioFieldUpdates);
     // add a new option to choice field, and set it as a default
-    ApiSampleField choiceFieldUpdates = new ApiSampleField();
+    ApiInventoryEntityField choiceFieldUpdates = new ApiInventoryEntityField();
     choiceFieldUpdates.setId(retrievedTemplateChoiceField.getId());
     choiceFieldUpdates.setName("updated choice");
     ApiInventoryFieldDef updatedChoiceDef =
@@ -545,7 +565,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleTemplatePost sampleTemplatePost = new ApiSampleTemplatePost();
     sampleTemplatePost.setName("test template v1");
     // add radio field
-    ApiSampleField radioField =
+    ApiInventoryEntityField radioField =
         createBasicApiSampleOptionsField("my radio", ApiFieldType.RADIO, List.of("r1"));
     ApiInventoryFieldDef radioDef = new ApiInventoryFieldDef(List.of("r1", "r2", "r3"), false);
     radioField.setDefinition(radioDef);
@@ -567,15 +587,15 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     sampleApiMgr.createNewApiSample(apiSample, anyUser);
     // 2nd have a different radio option (that'll be valid after update) and some text
     apiSample.setName("sample2 with r2 selected and text content");
-    ApiSampleField myRadioField = new ApiSampleField();
+    ApiInventoryEntityField myRadioField = new ApiInventoryEntityField();
     myRadioField.setContent("r2");
-    ApiSampleField myTextField = new ApiSampleField();
+    ApiInventoryEntityField myTextField = new ApiInventoryEntityField();
     myTextField.setContent("text");
     apiSample.setFields(List.of(myRadioField, myTextField));
     sampleApiMgr.createNewApiSample(apiSample, anyUser);
     // 3rd have a different radio option and empty text field (this one should update fine)
     apiSample.setName("sample3 with r2 selected and no text content");
-    apiSample.setFields(List.of(myRadioField, new ApiSampleField()));
+    apiSample.setFields(List.of(myRadioField, new ApiInventoryEntityField()));
     sampleApiMgr.createNewApiSample(apiSample, anyUser);
     // 4th is a the same as 3rd, will use for edit lock testing
     apiSample.setName("sample4 (locked)");

@@ -16,15 +16,16 @@ import com.researchspace.api.v1.model.ApiContainerLocationWithContent;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSharedFlag;
 import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
-import com.researchspace.api.v1.model.ApiSampleField;
-import com.researchspace.api.v1.model.ApiSampleField.ApiInventoryFieldDef;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -129,6 +130,7 @@ import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.inventory.BasketApiManager;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InstrumentApiManager;
 import com.researchspace.service.inventory.InventoryBulkOperationApiManager;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
@@ -279,6 +281,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   protected @Autowired FieldLinksEntitiesSynchronizer fieldSyncher;
   protected @Autowired NfsManager nfsMgr;
   protected @Autowired SampleApiManager sampleApiMgr;
+  protected @Autowired InstrumentApiManager instrumentApiMgr;
   protected @Autowired SampleDao sampleDao;
   protected @Autowired ContainerDao containerDao;
   protected @Autowired SubSampleApiManager subSampleApiMgr;
@@ -1300,6 +1303,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    *   <li>they should be persisted groups
    *   <li>This method will return the first collaboration group found; therefore there shouldn't be
    *       previously created collab groups involving these groups already created in the test.
+   * </ul>
    *
    * @param g1
    * @param g2
@@ -1692,6 +1696,19 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   }
 
   /*
+   * Create a minimal instrument (no template, no fields) for the given user.
+   */
+  protected ApiInstrument createBasicInstrumentForUser(User user) {
+    return createBasicInstrumentForUser(user, "myInstrument");
+  }
+
+  protected ApiInstrument createBasicInstrumentForUser(User user, String instrumentName) {
+    ApiInstrument newInstrument = new ApiInstrument();
+    newInstrument.setName(instrumentName);
+    return instrumentApiMgr.createNewApiInstrument(newInstrument, user);
+  }
+
+  /*
    * Create a sample with name, 1 subsample with quantity 5g
    */
   protected ApiSampleWithFullSubSamples createBasicSampleForUser(User user) {
@@ -1855,12 +1872,12 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     // prepare new template with radio & numeric field
     ApiSampleTemplatePost sampleTemplatePost = new ApiSampleTemplatePost();
     sampleTemplatePost.setName("test template with radio and number");
-    ApiSampleField radioField =
+    ApiInventoryEntityField radioField =
         createBasicApiSampleOptionsField("my radio", ApiFieldType.RADIO, List.of("r2"));
     ApiInventoryFieldDef radioDef = new ApiInventoryFieldDef(List.of("r1", "r2", "r3"), false);
     radioField.setDefinition(radioDef);
     sampleTemplatePost.getFields().add(radioField);
-    ApiSampleField numberField =
+    ApiInventoryEntityField numberField =
         createBasicApiSampleField("my number", ApiFieldType.NUMBER, "3.14");
     sampleTemplatePost.getFields().add(numberField);
 
@@ -1877,22 +1894,22 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     ApiSampleTemplatePost sampleTemplatePost = new ApiSampleTemplatePost();
     sampleTemplatePost.setName("test template with mandatory text field");
 
-    ApiSampleField textField =
+    ApiInventoryEntityField textField =
         createBasicApiSampleField(
             "myText (mandatory - with default value)", ApiFieldType.TEXT, "default value");
     textField.setMandatory(true);
     sampleTemplatePost.getFields().add(textField);
 
-    ApiSampleField textField2 =
+    ApiInventoryEntityField textField2 =
         createBasicApiSampleField("myText (mandatory - no default value)", ApiFieldType.TEXT, "");
     textField2.setMandatory(true);
     sampleTemplatePost.getFields().add(textField2);
 
-    ApiSampleField textField3 =
+    ApiInventoryEntityField textField3 =
         createBasicApiSampleField("myText (not mandatory)", ApiFieldType.TEXT, "");
     sampleTemplatePost.getFields().add(textField3);
 
-    ApiSampleField radioField =
+    ApiInventoryEntityField radioField =
         createBasicApiSampleOptionsField(
             "myRadio (mandatory - with default value)", ApiFieldType.RADIO, List.of("a"));
     radioField.setMandatory(true);
@@ -1900,7 +1917,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     radioField.setDefinition(radioDef);
     sampleTemplatePost.getFields().add(radioField);
 
-    ApiSampleField radioField2 =
+    ApiInventoryEntityField radioField2 =
         createBasicApiSampleOptionsField(
             "myRadio (mandatory - no default value)", ApiFieldType.RADIO, null);
     radioField2.setMandatory(true);
@@ -1908,7 +1925,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     radioField2.setDefinition(radioDef2);
     sampleTemplatePost.getFields().add(radioField2);
 
-    ApiSampleField radioField3 =
+    ApiInventoryEntityField radioField3 =
         createBasicApiSampleOptionsField("myRadio (not mandatory)", ApiFieldType.RADIO, null);
     ApiInventoryFieldDef radioDef3 = new ApiInventoryFieldDef(List.of("a", "b", "c"), false);
     radioField3.setDefinition(radioDef3);
@@ -1970,18 +1987,18 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     return containerApiMgr.createNewApiContainer(newContainer, user);
   }
 
-  protected ApiSampleField createBasicApiSampleField(
+  protected ApiInventoryEntityField createBasicApiSampleField(
       String name, ApiFieldType type, String content) {
-    ApiSampleField field = new ApiSampleField();
+    ApiInventoryEntityField field = new ApiInventoryEntityField();
     field.setName(name);
     field.setType(type);
     field.setContent(content);
     return field;
   }
 
-  protected ApiSampleField createBasicApiSampleOptionsField(
+  protected ApiInventoryEntityField createBasicApiSampleOptionsField(
       String name, ApiFieldType type, List<String> selectedOptions) {
-    ApiSampleField field = new ApiSampleField();
+    ApiInventoryEntityField field = new ApiInventoryEntityField();
     field.setName(name);
     field.setType(type);
     field.setSelectedOptions(selectedOptions);

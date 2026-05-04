@@ -10,8 +10,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.api.v1.controller.BaseApiInventoryController;
 import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.core.util.jsonserialisers.LocalDateSerialiser;
+import com.researchspace.model.inventory.InventoryItemSource;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.ValidTemperature;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -100,7 +100,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
   private LocalDate expiryDate;
 
   @JsonProperty("sampleSource")
-  private SampleSource sampleSource;
+  private InventoryItemSource sampleSource;
 
   @JsonProperty("revisionId")
   private Long revisionId;
@@ -122,6 +122,9 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
   public ApiSampleInfo(Sample sample) {
     super(sample);
 
+    if (sample.getQuantityInfo() != null) {
+      setQuantity(new ApiQuantityInfo(sample));
+    }
     // Sample will have null quantity without subsamples, but for API we should rather return zero
     if (getQuantity() == null) {
       setQuantity(new ApiQuantityInfo(BigDecimal.ZERO, sample.getDefaultUnitId()));
