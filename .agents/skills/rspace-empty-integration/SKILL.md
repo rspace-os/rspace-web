@@ -53,7 +53,7 @@ For exact file contents and templates, see [REFERENCE.md](REFERENCE.md):
 - [ ] `src/main/webapp/ui/src/tinyMCE/<name>/<Name>.tsx`
 - [ ] `src/main/webapp/ui/src/tinyMCE/<name>/__tests__/<Name>.test.tsx`
 
-### 4. Modify existing files (15)
+### 4. Modify existing files (16)
 
 Each edit must preserve existing alphabetical ordering. See
 [REFERENCE.md](REFERENCE.md) for the exact insertion patterns.
@@ -61,6 +61,7 @@ Each edit must preserve existing alphabetical ordering. See
 - [ ] `src/main/java/com/researchspace/service/IntegrationsHandler.java`
 - [ ] `src/main/java/com/researchspace/service/SystemPropertyName.java`
 - [ ] `src/main/java/com/researchspace/webapp/controller/IntegrationController.java`
+- [ ] `src/main/java/com/researchspace/service/impl/IntegrationsHandlerImpl.java`
 - [ ] `src/main/resources/bundles/system/system.properties`
 - [ ] `src/main/resources/sqlUpdates/liquibase-master.xml`
 - [ ] `src/main/webapp/ui/src/eln/apps/CardListing.tsx`
@@ -81,7 +82,22 @@ Each edit must preserve existing alphabetical ordering. See
 > (`content.replace(needle, replacement, 1)`) rather than retrying the same
 > tool call.
 
-### 5. Verify
+### 5. Build the frontend bundles
+
+The TinyMCE dialog body (`dialog.html`) loads a Webpack bundle that does not
+exist until the UI is built. Run the build now so the integration is fully
+functional immediately after the scaffold is applied:
+
+```bash
+cd src/main/webapp/ui && npm run build
+```
+
+> **⚠️ This step is mandatory.** Without it, clicking the toolbar button opens
+> a blank dialog with a console error (`Failed to load resource:
+> tinymce<Name>.js`). The Apps-page card and sysadmin toggle work without the
+> build, but the TinyMCE dialog will not load.
+
+### 6. Verify
 
 Run the frontend type-check and lint to catch typos in the generated edits:
 
@@ -107,7 +123,7 @@ Alternatively, start the app and confirm `<NAME>` appears as a key in the respon
 GET http://localhost:8080/integration/allIntegrations
 ```
 
-### 6. Report manual follow-ups
+### 7. Report manual follow-ups
 
 After the scaffold is in place, output a checklist of work the developer must
 complete by hand: replace placeholder card strings, replace

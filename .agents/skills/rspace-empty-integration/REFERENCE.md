@@ -273,6 +273,45 @@ Also add the corresponding static import at the top of the file:
 import static com.researchspace.service.IntegrationsHandler.<NAME>_APP_NAME;
 ```
 
+### `IntegrationsHandlerImpl.java`
+
+Without this change, `IntegrationsHandlerImpl.isValidIntegration()` returns
+`false` for the new name, causing `checkValidIntegration()` to throw, which
+makes `/integration/allIntegrations` return an error and crashes the React Apps
+page on first load.
+
+Two edits are required:
+
+**1.** Add a new private method (e.g. after `isSingleOptionSetAppConfigIntegration`):
+
+```java
+private boolean isValidEmptyIntegration(String integrationName) {
+  switch (integrationName) {
+    case <NAME>_APP_NAME:
+      return true;
+  }
+  return false;
+}
+```
+
+**2.** Find the last line of `isAppConfigIntegration()`:
+
+```java
+return isSingleOptionSetAppConfigIntegration(integrationName);
+```
+
+Replace it with:
+
+```java
+return isValidEmptyIntegration(integrationName)
+    || isSingleOptionSetAppConfigIntegration(integrationName);
+```
+
+> **Why a separate method?** `isSingleOptionSetAppConfigIntegration` is for
+> integrations with exactly one stored credential (e.g. Egnyte domain, Zenodo
+> token). An empty integration has no per-user options, so it must not appear
+> there. `isValidEmptyIntegration` is the correct home.
+
 ### `system.properties`
 
 Add a line in the `system.property.description.*.available` group:
@@ -431,6 +470,12 @@ Two insertions inside `initTinyMCE`:
    }
    ```
 
+> **⚠️ CRITICAL — the ` | ` separator is mandatory.** The argument to
+> `addToToolbarIfNotPresent` MUST be `" | <name>"` (space, pipe, space, then
+> the name). Passing only `"<name>"` concatenates it directly onto the last
+> toolbar token (e.g. `"fullscreennew_test"`), which TinyMCE cannot parse, and
+> **no toolbar button will appear** even though the plugin loads successfully.
+
 > **Do not** add `enabledFileRepositories += " <name>"`,
 > `fileRepositoriesMenu += " opt<Name>"`, or `addToMenuIfNotPresent` lines.
 > Those wire the integration into the "Insert from…" dropdown menu, which the
@@ -479,18 +524,23 @@ tinymce<Name>: "./src/tinyMCE/<name>/index.tsx",
 5. Replace the TinyMCE icon SVG in `icons.js` with a properly-designed icon.
 6. Move the `_printSettings(['<name>.available']);` line in `settings_mod.js`
    under the correct sysadmin-settings category (default placement is `'Other'`).
-7. Run a clean rebuild and confirm the integration appears in the Apps page,
+7. Run `cd src/main/webapp/ui && npm run build` to produce the
+   `ui/dist/tinymce<Name>.js` bundle. Without this, the TinyMCE dialog opens
+   blank (the React component fails to load). This was already done in step 5
+   of the skill workflow; include it here as a reminder for manual runs.
+8. Run a clean rebuild and confirm the integration appears in the Apps page,
    the sysadmin settings page, and the TinyMCE toolbar of a structured
    document.
 
 ## Anti-patterns (things never to do for an empty integration)
 
 - Adding `<NAME>` to `IntegrationsHandlerImpl.postProcessInfo`,
-  `setNewIntegrationInfo`, `isAppConfigIntegration`, or
-  `isSingleOptionSetAppConfigIntegration` switches. These are only needed for
-  integrations with per-user credentials or app-level config options (OAuth
-  tokens, API keys, server URLs). A truly empty integration (no per-user
-  options) does not appear in any of these switches.
+  `setNewIntegrationInfo`, or `isSingleOptionSetAppConfigIntegration` switches.
+  These are only needed for integrations with per-user credentials or
+  app-level config options (OAuth tokens, API keys, server URLs). An empty
+  integration has no per-user options, so it must not appear in any of these.
+  Use the dedicated `isValidEmptyIntegration()` method instead (see recipe
+  above).
 - Adding `<NAME>_APIKEY` (or any other) `PropertyDescriptor` and
   `AppConfigElementDescriptor` to the changeset.
 - Adding deployment URL properties to `PropertyHolder.java` or

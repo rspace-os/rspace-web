@@ -52,12 +52,13 @@ The skill / human implementer needs four pieces of data:
 | `src/main/webapp/ui/src/tinyMCE/<name>/<Name>.tsx`                                   | Empty React component.                                                  |
 | `src/main/webapp/ui/src/tinyMCE/<name>/__tests__/<Name>.test.tsx`                    | Vitest smoke test.                                                      |
 
-## Files modified (15)
+## Files modified (16)
 
 | Path                                                                                       | Edit                                                                                                                  |
 | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | `src/main/java/com/researchspace/service/IntegrationsHandler.java`                         | Insert `String <NAME>_APP_NAME = "<NAME>";` constant in alphabetical order.                                           |
 | `src/main/java/com/researchspace/service/SystemPropertyName.java`                          | Add `<NAME>_AVAILABLE("<name>.available"),` enum entry. Without this, `SystemPropertyManagerImpl`'s `@Cacheable(key = "#name.propertyName")` resolves on a null and throws `EL1007E: Property or field 'propertyName' cannot be found on null`, breaking `/integration/allIntegrations`. |
+| `src/main/java/com/researchspace/service/impl/IntegrationsHandlerImpl.java`                | Add a new `isValidEmptyIntegration()` private method with `case <NAME>_APP_NAME: return true;`, and update `isAppConfigIntegration()` to delegate to it. Without this, `isValidIntegration()` returns false and the Apps page crashes. |
 | `src/main/resources/bundles/system/system.properties`                                      | Add `system.property.description.<name>.available=Makes <Name> integration available.`                                |
 | `src/main/resources/sqlUpdates/liquibase-master.xml`                                       | Register the new changeset.                                                                                            |
 | `src/main/webapp/ui/src/eln/apps/CardListing.tsx`                                          | Add import, `<name>Update` `useCallback`, and conditional render block (alphabetical).                                |
@@ -76,12 +77,12 @@ The skill / human implementer needs four pieces of data:
 
 The empty-integration skill **does not** modify any of:
 
-- `IntegrationsHandlerImpl.java` — only needed when there are per-user options
-  (OAuth tokens or API keys saved via `UserConnectionManager`) or when the
-  integration requires app-level configuration (deployment URLs). A simple
-  toggle integration with no per-user options does not appear in any of the
-  `isAppConfigIntegration`, `postProcessInfo`, or `setNewIntegrationInfo`
-  switches.
+- `IntegrationsHandlerImpl.java`'s `postProcessInfo`, `setNewIntegrationInfo`,
+  or `isSingleOptionSetAppConfigIntegration` switches — only needed for
+  integrations with per-user options (OAuth tokens, API keys). Note that
+  `IntegrationsHandlerImpl.java` itself IS modified — a dedicated
+  `isValidEmptyIntegration()` method is added and `isAppConfigIntegration()`
+  delegates to it (see Files modified table above).
 - `IPropertyHolder.java`, `PropertyHolder.java`, `defaultDeployment.properties`
   — only needed for deployment-level URLs.
 - `IntegrationController.java`'s endpoint methods other than `getAll(User)` —
