@@ -942,7 +942,7 @@ function GalleryAppBar({
                       <img
                         src={bannerImgSrc}
                         alt="branding"
-                        style={{ width: "min(100%, 120px)" }}
+                        style={{ maxWidth: "120px", display: "block" }}
                       />
                     </ListItem>
                   ))
