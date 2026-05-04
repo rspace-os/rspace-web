@@ -103,7 +103,7 @@
 			<spring:message code="importExport.export.all.help1" />
 		</p>
 		<a href="#" id="exportMyWork" class="exportLink"
-			style="background-image:url('/images/icons/exportIcon.png');">Export all my work</a>
+			style="background-image:url('/images/icons/exportIcon2.png');">Export all my work</a>
 	</div>
 
 	<div id="importBlock">
