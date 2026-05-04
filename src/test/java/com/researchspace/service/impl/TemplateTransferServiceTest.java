@@ -49,15 +49,14 @@ class TemplateTransferServiceTest {
     User newOwner = new User();
     newOwner.setUsername("new");
 
-    Mockito.when(recordDao.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
+    Mockito.when(recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
         .thenReturn(Collections.emptyList());
 
     templateTransferService.transferOwnership(originalOwner, newOwner);
 
-    Mockito.verify(recordDao).getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner);
-    Mockito.verifyNoMoreInteractions(recordGroupSharingDao);
+    Mockito.verifyNoMoreInteractions(recordGroupSharingDao, recordManager);
     Mockito.verifyNoInteractions(
-        folderManager, recordManager, recordSharingHandler, auditTrailService);
+        folderManager, recordSharingHandler, auditTrailService);
   }
 
   @Test
@@ -80,7 +79,7 @@ class TemplateTransferServiceTest {
     BaseRecord template2 = Mockito.mock(BaseRecord.class);
     Mockito.when(template2.getId()).thenReturn(2L);
     List<BaseRecord> templates = List.of(template1, template2);
-    Mockito.when(recordDao.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
+    Mockito.when(recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
         .thenReturn(templates);
 
     RecordGroupSharing sharing1 = Mockito.mock(RecordGroupSharing.class);
@@ -110,7 +109,7 @@ class TemplateTransferServiceTest {
 
     templateTransferService.transferOwnership(originalOwner, newOwner);
 
-    Mockito.verify(recordDao).getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner);
+    Mockito.verify(recordManager).getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner);
     Mockito.verify(recordGroupSharingDao).getRecordGroupSharingsForRecord(1L);
     Mockito.verify(recordGroupSharingDao).getRecordGroupSharingsForRecord(2L);
     Mockito.verify(recordSharingHandler).unshare(11L, originalOwner);
@@ -157,7 +156,7 @@ class TemplateTransferServiceTest {
 
     BaseRecord template1 = Mockito.mock(BaseRecord.class);
     Mockito.when(template1.getId()).thenReturn(1L);
-    Mockito.when(recordDao.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
+    Mockito.when(recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
         .thenReturn(List.of(template1));
     Mockito.when(recordGroupSharingDao.getRecordGroupSharingsForRecord(1L))
         .thenReturn(Collections.emptyList());
