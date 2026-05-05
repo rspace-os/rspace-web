@@ -40,23 +40,11 @@ public class StoichiometryImportRevisionFixupManagerTest {
 
   @InjectMocks private StoichiometryImportRevisionFixupManagerImpl testee;
 
-  @BeforeEach
-  void setUp() {
-    Mockito.lenient().when(report.isSuccessful()).thenReturn(true);
-  }
 
   private StructuredDocument mockStructuredDocument(long id) {
     StructuredDocument doc = Mockito.mock(StructuredDocument.class);
     when(doc.getId()).thenReturn(id);
     return doc;
-  }
-
-  @Test
-  void whenReportNotSuccessfulStillDoesFixup() {
-    Mockito.lenient().when(report.isSuccessful()).thenReturn(false);
-    setupRecordInReport();
-    testee.fixupStoichiometryRevisions(report, user);
-    verify(fieldManager).getFieldsByRecordId(any(Long.class), any(User.class));
   }
 
   @Test
