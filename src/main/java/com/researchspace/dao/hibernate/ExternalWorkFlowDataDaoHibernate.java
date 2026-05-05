@@ -44,8 +44,8 @@ public class ExternalWorkFlowDataDaoHibernate
             .getCurrentSession()
             .createQuery(
                 "from ExternalWorkFlowData efd left join fetch efd.externalWorkflowInvocations ewfi"
-                    + " left join fetch ewfi.externalWorkFlowData where efd.rspacecontainerid in (:ids)"
-                    + " and efd.externalService = (:type)",
+                    + " left join fetch ewfi.externalWorkFlowData where efd.rspacecontainerid in"
+                    + " (:ids) and efd.externalService = (:type)",
                 ExternalWorkFlowData.class)
             .setParameterList("ids", ids)
             .setParameter("type", externalService)

@@ -137,10 +137,12 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     List<Field> flds = strucDoc.getFields();
     Set<String> igsnInventoryLinkedItems = new HashSet<>();
     Set<ExternalWorkFlowData> allExternalWorkFlowDataForDoc = Collections.emptySet();
-    if(exportConfig.isIncludeExternalWorkflowData() && !flds.isEmpty() ) {
-      List<Long> fieldIds = flds.stream().map(Field::getId).collect(java.util.stream.Collectors.toList());
-      allExternalWorkFlowDataForDoc = externalWorkFlowDataManager.findAllExternalWorkFlowDataForFieldsAndServiceType(
-          ExternalService.GALAXY, fieldIds);
+    if (exportConfig.isIncludeExternalWorkflowData() && !flds.isEmpty()) {
+      List<Long> fieldIds =
+          flds.stream().map(Field::getId).collect(java.util.stream.Collectors.toList());
+      allExternalWorkFlowDataForDoc =
+          externalWorkFlowDataManager.findAllExternalWorkFlowDataForFieldsAndServiceType(
+              ExternalService.GALAXY, fieldIds);
     }
     for (Field field : flds) {
       try {
@@ -251,13 +253,18 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     return igsnInventoryLinkedItems;
   }
 
-  private void appendExternalWorkflowData(StringBuffer sbf, Field field,Set<ExternalWorkFlowData> externalWorkFlowData ) {
+  private void appendExternalWorkflowData(
+      StringBuffer sbf, Field field, Set<ExternalWorkFlowData> externalWorkFlowData) {
     if (field.getId() == null) {
       return;
     }
     Set<ExternalWorkFlowData> externalWorkFlowDataMatchingField =
-       externalWorkFlowData.stream().filter(data -> data.getRspacecontainerid() == field.getId()).collect(java.util.stream.Collectors.toSet());
-    sbf.append(externalWorkflowHtmlGenerator.getHtmlForExternalWorkflowData(externalWorkFlowData));
+        externalWorkFlowData.stream()
+            .filter(data -> data.getRspacecontainerid() == field.getId())
+            .collect(java.util.stream.Collectors.toSet());
+    sbf.append(
+        externalWorkflowHtmlGenerator.getHtmlForExternalWorkflowData(
+            externalWorkFlowDataMatchingField));
   }
 
   private void replaceIframesWithEmbedCodeLink(Document doc) {
