@@ -21,6 +21,7 @@
 </div>
 #foreach ($field in $document.listFields)
 <H3> ${field.fieldName}</H3>
+    $externalWorkflowHtmlGenerator.getHtmlForArchivedExternalWorkflowData($field.externalWorkFlowData, $field.externalWorkFlowInvocations)
     <div style="width:960px" >
     $field.fieldDataPrintable
     </div>

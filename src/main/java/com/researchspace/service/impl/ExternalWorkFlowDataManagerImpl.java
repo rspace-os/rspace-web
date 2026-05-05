@@ -57,4 +57,11 @@ public class ExternalWorkFlowDataManagerImpl implements ExternalWorkFlowDataMana
   public ExternalWorkFlow findWorkFlowByExtIdAndName(String extId, String name) {
     return externalWorkFlowDao.findWorkFlowByExtIdAndName(extId, name);
   }
+
+  @Override
+  public Set<ExternalWorkFlowData> findAllExternalWorkFlowDataForFieldsAndServiceType(
+      ExternalService externalService, List<Long> ids) {
+    return externalWorkFlowDataDao.findAllExternalWorkFlowDataForFieldsAndServiceType(
+        externalService, ids);
+  }
 }

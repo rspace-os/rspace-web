@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -39,7 +38,6 @@ public class StoichiometryImportRevisionFixupManagerTest {
   @Mock private ImportArchiveReport report;
 
   @InjectMocks private StoichiometryImportRevisionFixupManagerImpl testee;
-
 
   private StructuredDocument mockStructuredDocument(long id) {
     StructuredDocument doc = Mockito.mock(StructuredDocument.class);
