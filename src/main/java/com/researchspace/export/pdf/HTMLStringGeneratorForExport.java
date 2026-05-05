@@ -148,6 +148,9 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
       try {
         String fieldName = escapeHtml4(field.getName());
         sbf.append("<h3>" + fieldName + "</h3>");
+        if (exportConfig.isIncludeExternalWorkflowData()) {
+          appendExternalWorkflowData(sbf, field, allExternalWorkFlowDataForDoc);
+        }
         String fieldContent =
             !(field instanceof ChoiceField)
                 ? field.getFieldData()
@@ -167,9 +170,6 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
 
         if (!field.getListsOfMaterials().isEmpty()) {
           igsnInventoryLinkedItems.addAll(appendListsOfMaterials(sbf, field.getListsOfMaterials()));
-        }
-        if (exportConfig.isIncludeExternalWorkflowData()) {
-          appendExternalWorkflowData(sbf, field, allExternalWorkFlowDataForDoc);
         }
 
       } catch (Exception ex) {
