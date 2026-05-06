@@ -160,4 +160,30 @@ describe("KetcherTinyMce accessibility", () => {
     expect(rootRenderCalls[0]?.container).toHaveAttribute("id", "tinymce-ketcher");
     expect(rootRenderCalls[1]?.container).toHaveAttribute("id", "tinymce-ketcher");
   });
+
+  it("mounts a fresh KetcherTinyMce on each open so dialogIsOpen state resets to true", () => {
+    document.body.innerHTML = '<div id="tinymce-ketcher"></div>';
+
+    window.dispatchEvent(new Event("OPEN_KETCHER_DIALOG"));
+    window.dispatchEvent(new Event("OPEN_KETCHER_DIALOG"));
+
+    expect(rootRenderCalls).toHaveLength(2);
+
+    // Traverse ThemeProvider > Analytics > Alerts > KetcherTinyMce to read key
+    const getKetcherKey = (node: React.ReactNode): React.Key | null => {
+      const themeProvider = node as React.ReactElement;
+      const analytics = themeProvider.props.children as React.ReactElement;
+      const alerts = analytics.props.children as React.ReactElement;
+      const ketcher = alerts.props.children as React.ReactElement;
+      return ketcher.key;
+    };
+
+    const firstKey = getKetcherKey(rootRenderCalls[0]!.node);
+    const secondKey = getKetcherKey(rootRenderCalls[1]!.node);
+
+    // A changing key forces React to unmount and remount KetcherTinyMce,
+    // which resets dialogIsOpen to its initial value of true.
+    expect(firstKey).not.toBeNull();
+    expect(firstKey).not.toBe(secondKey);
+  });
 });

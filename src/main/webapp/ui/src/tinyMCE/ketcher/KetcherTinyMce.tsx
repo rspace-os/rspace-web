@@ -48,6 +48,7 @@ const EMPTY_MOLECULE_MESSAGE =
 const ketcherDialogRoots = new WeakMap<HTMLElement, Root>();
 
 let ketcherDialogListenerRegistered = false;
+let ketcherDialogRenderCount = 0;
 
 function getTinyMceDialogUtils(): TinyMceDialogUtils | undefined {
   return (globalThis as { tinymceDialogUtils?: TinyMceDialogUtils })
@@ -130,13 +131,14 @@ function renderKetcherDialog(): void {
     return;
   }
 
+  ketcherDialogRenderCount++;
   const root = ketcherDialogRoots.get(wrapperDiv) ?? createRoot(wrapperDiv);
   ketcherDialogRoots.set(wrapperDiv, root);
   root.render(
     <ThemeProvider theme={theme}>
       <Analytics>
         <Alerts>
-          <KetcherTinyMce />
+          <KetcherTinyMce key={ketcherDialogRenderCount} />
         </Alerts>
       </Analytics>
     </ThemeProvider>,
