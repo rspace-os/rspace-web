@@ -74,7 +74,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertNull(result.getResolvedException());
     byte[] responseBytes = result.getResponse().getContentAsByteArray();
     assertNotNull(responseBytes);
-    assertEquals(72169, responseBytes.length);
+    assertEquals(47326, responseBytes.length);
 
     // check latest container lists the file
     MvcResult retrieveResult =

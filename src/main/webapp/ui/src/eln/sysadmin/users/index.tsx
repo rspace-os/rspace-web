@@ -1956,7 +1956,7 @@ export const UsersPage = (): React.ReactNode => {
                                 recordCount: "recordCount()",
                                 lastLogin: "lastLogin",
                                 created: "creationDate",
-                                name: "lastName",
+                                fullName: "lastName",
                                 firstName: "firstName",
                                 lastName: "lastName",
                                 email: "email",

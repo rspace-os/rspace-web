@@ -16,7 +16,7 @@
 <div class="container">
     <div class="row">
         <div class="biggerLogoDiv" style="text-align: center">
-            <img src="/public/images/mainLogoEnterpriseN2.png">
+            <img src="/public/images/mainLogo3.png" alt="RSpace logo">
         </div>
         <div>
             <h1 class="form-signup-heading" style="text-align: center">Link not found</h1>

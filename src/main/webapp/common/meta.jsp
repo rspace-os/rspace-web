@@ -7,6 +7,4 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta charset="UTF-8">
  
-    <rst:hasDeploymentProperty name="cloud" value="true">
-        <link rel="icon" href="<c:url value="/images/faviconCommunity.ico"/>"/>
-    </rst:hasDeploymentProperty>
+    <link rel="icon" type="image/png" href="<c:url value="/images/favicon.png"/>"/>

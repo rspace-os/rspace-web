@@ -401,8 +401,8 @@ function GalleryAppBar({
                 backgroundColor: "white",
                 width: "4px",
                 clipPath: `url(#${leftClipId})`,
-                borderRight: "1px solid white",
                 marginLeft: "4px",
+                marginRight: "-1px",
               }}
             ></div>
             <svg width="0" height="0" viewBox="0 0 3.9 40">
@@ -420,6 +420,7 @@ function GalleryAppBar({
         <Box
           sx={{
             display: "flex",
+            alignItems: "center",
             backgroundColor:
               variant === "page" && !isViewportSmall ? "white" : "unset",
             height: "40px",
@@ -459,7 +460,7 @@ function GalleryAppBar({
                 backgroundColor: "white",
                 width: "12px",
                 clipPath: `url(#${rightClipId})`,
-                borderLeft: "1px solid white",
+                marginLeft: "-1px",
               }}
             ></div>
             <svg width="0" height="0">
@@ -941,7 +942,7 @@ function GalleryAppBar({
                       <img
                         src={bannerImgSrc}
                         alt="branding"
-                        style={{ width: "min(100%, 120px)" }}
+                        style={{ maxWidth: "120px", display: "block" }}
                       />
                     </ListItem>
                   ))

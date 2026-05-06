@@ -406,7 +406,7 @@ public class ContentInitializerForDevRunManager extends AbstractContentInitializ
     StringBuffer text = new StringBuffer();
     for (int i = 0; i < n; i++) {
       text.append(
-          "<img src=\"/images/mainLogoN2.png\"><p><b>paragraph"
+          "<img src=\"/images/mainLogo3.png\"><p><b>paragraph"
               + i
               + "</b> We have performed a biochemical and double-stranded RNA-mediated interference"
               + " (RNAi) analysis of the role of two chromosomal passenger proteins, inner"

@@ -58,7 +58,7 @@ public class InventoryAttachmentsApiControllerMVCIT extends API_MVC_InventoryTes
     assertNull(result.getResolvedException());
     byte[] responseBytes = result.getResponse().getContentAsByteArray();
     assertNotNull(responseBytes);
-    assertEquals(72169, responseBytes.length);
+    assertEquals(47326, responseBytes.length);
 
     // check latest container lists the file
     MvcResult retrieveResult =
