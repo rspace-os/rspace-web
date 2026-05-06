@@ -4,7 +4,7 @@ import type { EditableMolecule } from "../types";
 
 export type StoichiometryTableProps = {
   stoichiometryId: number;
-  stoichiometryRevision: number;
+  stoichiometryRevision?: number;
   editable?: boolean;
   hasChanges?: boolean;
   activeChemId?: number | null;
