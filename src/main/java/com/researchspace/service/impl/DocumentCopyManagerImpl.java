@@ -193,6 +193,14 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
             log.warn("Standalone stoichiometry with id {} not found during copy.", oldStoichId);
             continue;
           }
+          if (original.getRecord() != null
+              && !permissionUtils.isPermitted(original.getRecord(), PermissionType.COPY, user)) {
+            log.warn(
+                "User {} not permitted to copy standalone stoichiometry {}.",
+                user.getUsername(),
+                oldStoichId);
+            continue;
+          }
           Stoichiometry newStoich = stoichiometryManager.copy(original, null, destRecord, user);
           stoichOldId2NewId.put(oldStoichId, newStoich.getId());
         } catch (Exception e) {
