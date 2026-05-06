@@ -49,6 +49,11 @@ public class StoichiometryHtmlGenerator {
       if (header.isEmpty()) {
         header = " the chemical reaction above.";
       }
+      boolean isReactionLess =
+          stoichiometryElement.attr("data-stoichiometry-table-only").equals("true");
+      if (isReactionLess) {
+        header = " this reactionless stoichiometry.";
+      }
       context.put("header", header);
       String stoichiometryTableHtml =
           VelocityEngineUtils.mergeTemplateIntoString(
