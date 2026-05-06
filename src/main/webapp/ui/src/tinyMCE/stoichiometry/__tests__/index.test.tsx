@@ -300,6 +300,7 @@ function getLastRenderedDialogProps(): DialogProps | null {
 
 describe("TinyMCE stoichiometry plugin", () => {
   beforeEach(() => {
+    fetchMock.resetMocks();
     vi.resetModules();
     vi.clearAllMocks();
     rootRenderCalls.length = 0;
@@ -462,6 +463,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(
       editorDocument.querySelectorAll('[data-stoichiometry-table-only="true"]'),
     ).toHaveLength(1);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("removes a newly inserted tableOnly div when its stoichiometry table is deleted", async () => {
