@@ -81,14 +81,14 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly-s3cloudflare")
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testDownloadFileCloudflare() throws IOException {
     initializeS3UtilitiesWithCloudflare();
     downloadFileScenario("testS3File-Cloudflare.txt");
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly-s3cloudflare")
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testListFolderContentCloudflare() {
     initializeS3UtilitiesWithCloudflare();
     listFolderContentsScenario("testS3File-Cloudflare.txt");

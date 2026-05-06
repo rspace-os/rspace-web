@@ -38,7 +38,7 @@ public class FormIconWriterTest {
   @Before
   public void setUp() throws Exception {
     doc = TestFactory.createAnySD();
-    imageFile = RSpaceTestUtils.getResource("mainLogoN2.png");
+    imageFile = RSpaceTestUtils.getResource("mainLogo3.png");
   }
 
   @After

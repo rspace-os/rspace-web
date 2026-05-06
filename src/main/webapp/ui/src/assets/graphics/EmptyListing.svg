@@ -1,18 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 200 200" width="200px" height="200px">
-  <!-- Generator: Adobe Illustrator 29.5.1, SVG Export Plug-In . SVG Version: 2.1.0 Build 141)  -->
-  <g>
-    <polygon points="135 79 110.375 78.125 121.375 95.5 135 79" fill="#ceeace"/>
-    <polyline points="119.609 96.5 104.75 69.5 103.875 69.5 19.75 69.5 34.172 96.5" fill="#ceeace" stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
-    <polyline points="123.75 96.5 138.609 69.5 138.875 69.5 180.25 69.5 164.648 96.5" fill="#ceeace" stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
-    <rect x="34.375" y="96.5" width="131" height="84" fill="#e7f7e7" stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
-    <line x1="121.375" y1="98" x2="121.375" y2="179" fill="none" stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
-    <line x1="108.875" y1="77.5" x2="129.875" y2="77.5" fill="none" stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
-    <rect x="124.875" y="100" width="37" height="77" fill="#ceeace"/>
-  </g>
-  <g>
-    <line x1="100.375" y1="42" x2="100.375" y2="20" fill="none" stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
-    <line x1="65.708" y1="28.136" x2="75.208" y2="43.5" fill="none" stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
-    <line x1="135.208" y1="28.136" x2="125.708" y2="43.5" fill="none" stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
-  </g>
-</svg>
+<svg height="200" viewBox="0 0 200 200" width="200" xmlns="http://www.w3.org/2000/svg"><path d="m135 79-24.625-.875 11 17.375z" fill="#ceeace"/><g stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"><path d="m119.609 96.5-14.859-27h-.875-84.125l14.422 27" fill="#ceeace"/><path d="m123.75 96.5 14.859-27h.266 41.375l-15.602 27" fill="#ceeace"/><path d="m34.375 96.5h131v84h-131z" fill="#e7f7e7"/><path d="m121.375 98v81" fill="none"/><path d="m108.875 77.5h21" fill="none"/></g><path d="m124.875 100h37v77h-37z" fill="#ceeace"/><path d="m100.375 42v-22" fill="none" stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/><path d="m65.708 28.136 9.5 15.364" fill="none" stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/><path d="m135.208 28.136-9.5 15.364" fill="none" stroke="#95b595" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/></svg>

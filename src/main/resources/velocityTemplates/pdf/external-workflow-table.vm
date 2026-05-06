@@ -1,0 +1,46 @@
+<div class="external-workflow-data">
+  <br>
+  <h4>Galaxy Workflow Data</h4>
+  <div class="external-workflow-table-container">
+    <table class="external-workflow-table">
+      <thead>
+      <tr>
+        <th>Data Uploaded</th>
+        <th>Container/Galaxy History</th>
+        <th>Invocation</th>
+        <th>Invocation Status</th>
+      </tr>
+      </thead>
+      <tbody>
+      #foreach($row in $rows)
+        <tr>
+          <td>
+            #foreach($dataLink in $row.getDataLinks())
+              #if($dataLink.hasHref())
+                <a href="$dataLink.getHref()">$dataLink.getName()</a>#if($foreach.hasNext), #end
+              #else
+                $dataLink.getName()#if($foreach.hasNext), #end
+              #end
+            #end
+          </td>
+          <td>
+            #if($row.hasHistoryHref())
+              <a href="$row.getHistoryHref()">$row.getHistoryName()</a>
+            #else
+              $row.getHistoryName()
+            #end
+          </td>
+          <td>
+            #if($row.hasInvocationHref())
+              <a href="$row.getInvocationHref()">$row.getInvocationName()</a>
+            #else
+              $row.getInvocationName()
+            #end
+          </td>
+          <td>$row.getInvocationStatus()</td>
+        </tr>
+      #end
+      </tbody>
+    </table>
+  </div>
+</div>

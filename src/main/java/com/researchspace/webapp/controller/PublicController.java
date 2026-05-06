@@ -131,7 +131,7 @@ public class PublicController extends BaseController {
 
   private ResponseEntity<byte[]> returnDefaultImage(String bannerName) throws IOException {
     byte[] image;
-    String fallBackName = "mainLogoN2.png";
+    String fallBackName = "mainLogo3.png";
     String nameToLoad = null;
     if (!StringUtils.isBlank(bannerName)) {
       nameToLoad = bannerName;
