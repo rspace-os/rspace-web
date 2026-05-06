@@ -488,20 +488,20 @@ class StoichiometryPlugin {
     };
 
 
-    const openCreateStoichiometryDialog = () => {
-      editor.execCommand("cmdCreateStoichiometry", false);
+    const openStoichiometryDialogFromSelection = () => {
+      editor.execCommand("cmdStoichiometry", false);
     };
 
     editor.ui.registry.addButton("stoichiometryInsertButton", {
       tooltip: "Insert reaction table",
       icon: "stoichiometry",
-      onAction: openCreateStoichiometryDialog,
+      onAction: openStoichiometryDialogFromSelection,
     });
 
     editor.ui.registry.addMenuItem("stoichiometryMenuItem", {
       text: "Reaction Table",
       icon: "stoichiometry",
-      onAction: openCreateStoichiometryDialog,
+      onAction: openStoichiometryDialogFromSelection,
     });
 
     if (!window.insertActions) {
@@ -511,7 +511,7 @@ class StoichiometryPlugin {
       text: "Stoichiometry Table",
       icon: "stoichiometry",
       aliases: ["Stoichiometry"],
-      action: openCreateStoichiometryDialog,
+      action: openStoichiometryDialogFromSelection,
     });
 
     editor.addCommand("cmdCreateStoichiometry", function () {
