@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 public class TemplateTransferService implements TransferService {
 
   public static final String DELETED_USER_TEMPLATES_FOLDER = "Deleted Users";
-  public static final String DELETED_USER_NAME_SUFFIX = "(Deleted)";
+  public static final String DELETED_USER_NAME_SUFFIX = " (Deleted)";
 
   private final AuditTrailService auditTrailService;
   private final RecordGroupSharingDao recordGroupSharingDao;

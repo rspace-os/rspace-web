@@ -55,8 +55,7 @@ class TemplateTransferServiceTest {
     templateTransferService.transferOwnership(originalOwner, newOwner);
 
     Mockito.verifyNoMoreInteractions(recordGroupSharingDao, recordManager);
-    Mockito.verifyNoInteractions(
-        folderManager, recordSharingHandler, auditTrailService);
+    Mockito.verifyNoInteractions(folderManager, recordSharingHandler, auditTrailService);
   }
 
   @Test

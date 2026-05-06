@@ -679,8 +679,9 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     Object result =
         session
             .createQuery(
-                "select count (br.id) from BaseRecord br join StructuredDocument sd on br.id ="
-                    + " sd.template.id and br.owner=:owner")
+                "SELECT COUNT(DISTINCT(br.id)) FROM BaseRecord br WHERE br.id IN (SELECT sd.id FROM"
+                    + " StructuredDocument sd JOIN BaseRecord br ON br.id = sd.template.id  WHERE"
+                    + " br.owner = :owner AND sd.template.id IS NOT NULL) AND br.owner != :owner")
             .setParameter("owner", user)
             .uniqueResult();
     Long count = (Long) result;
@@ -694,8 +695,11 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     Query<BaseRecord> query =
         session
             .createQuery(
-                "select br from BaseRecord br join StructuredDocument sd on br.id ="
-                    + " sd.template.id and br.owner=:owner")
+                "select brB from StructuredDocument sdB join BaseRecord brB on sdB.template.id ="
+                    + " brB.id where sdB.id in (select brA.id from StructuredDocument sdA join"
+                    + " BaseRecord brA on sdA.id = brA.id where sdA.template.id in (select"
+                    + " sd.template.id from StructuredDocument sd join BaseRecord br on br.id ="
+                    + " sd.template.id where br.owner = :owner) and brA.owner != :owner)")
             .setParameter("owner", user);
     List<BaseRecord> templates = query.list();
     return templates.stream().distinct().collect(Collectors.toList());
@@ -753,15 +757,8 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
 
     query =
         getSession()
-            .createNativeQuery(
-                "UPDATE BaseRecord_AUD b SET owner_id=:newOwner_id,"
-                    + " createdBy=:updatedOriginalOwnerName WHERE id IN :ids")
+            .createNativeQuery("UPDATE BaseRecord_AUD b SET owner_id=:newOwner_id WHERE id IN :ids")
             .setParameter("newOwner_id", newOwner.getId())
-            .setParameter(
-                "updatedOriginalOwnerName",
-                null != updatedOriginalOwnerName
-                    ? updatedOriginalOwnerName
-                    : originalOwner.getUsername())
             .setParameter("ids", templateIds);
     query.executeUpdate();
 
