@@ -37,13 +37,13 @@ function getStoichiometryReference(raw: string | undefined) {
     const parsedRevision =
       typeof revision === "number" ? revision : Number(revision);
 
-    if (Number.isNaN(parsedId) || Number.isNaN(parsedRevision)) {
+    if (Number.isNaN(parsedId)) {
       return null;
     }
 
     return {
       id: parsedId,
-      revision: parsedRevision,
+      revision: Number.isNaN(parsedRevision) ? undefined : parsedRevision,
     };
   } catch {
     return null;
@@ -79,7 +79,7 @@ export function StoichiometryPreviewSection({
   stoichiometryRevision,
 }: {
   stoichiometryId: number;
-  stoichiometryRevision: number;
+  stoichiometryRevision?: number;
 }) {
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
 

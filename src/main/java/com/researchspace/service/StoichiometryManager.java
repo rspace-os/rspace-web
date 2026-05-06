@@ -28,6 +28,9 @@ public interface StoichiometryManager extends GenericManager<Stoichiometry, Long
 
   Stoichiometry copy(Long sourceParentReactionId, RSChemElement newParentReaction, User user);
 
+  Stoichiometry copy(
+      Stoichiometry source, RSChemElement newParentReaction, Record newRecord, User user);
+
   AuditedEntity<Stoichiometry> getRevision(long id, Long revisionId, User user);
 
   Stoichiometry createNewFromDataWithoutInventoryLinks(

@@ -199,12 +199,14 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
                 () ->
                     new StoichiometryException(
                         "No stoichiometry found for reaction id " + sourceParentReactionId));
+    return copy(originalStoich, newParentReaction, newParentReaction.getRecord(), user);
+  }
 
+  @Override
+  public Stoichiometry copy(
+      Stoichiometry originalStoich, RSChemElement newParentReaction, Record newRecord, User user) {
     Stoichiometry newStoich =
-        Stoichiometry.builder()
-            .parentReaction(newParentReaction)
-            .record(newParentReaction.getRecord())
-            .build();
+        Stoichiometry.builder().parentReaction(newParentReaction).record(newRecord).build();
     newStoich = save(newStoich);
 
     if (originalStoich.getMolecules() != null) {

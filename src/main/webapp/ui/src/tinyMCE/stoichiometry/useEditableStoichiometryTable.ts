@@ -48,7 +48,7 @@ export type RefreshedStoichiometry = {
 
 type UseEditableStoichiometryTableArgs = {
   stoichiometryId: number;
-  stoichiometryRevision: number;
+  stoichiometryRevision?: number;
   activeChemId?: number | null;
   onStoichiometryRefreshed?: (
     stoichiometry: RefreshedStoichiometry,
@@ -57,7 +57,7 @@ type UseEditableStoichiometryTableArgs = {
 
 function getStoichiometryLinkAnalyticsProperties(
   stoichiometryId: number,
-  revisionId: number,
+  revisionId: number | undefined,
   molecule: Pick<EditableMolecule, "id" | "name" | "role">,
 ) {
   return {
