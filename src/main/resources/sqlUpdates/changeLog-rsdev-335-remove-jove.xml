@@ -1,0 +1,55 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="remove-jove-a" context="run" author="codex">
+        <comment>Remove JoVE integration data: UserConnection tokens</comment>
+        <sql>
+            delete from UserConnection where providerId = 'JOVE';
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-jove-b" context="run" author="codex">
+        <comment>Remove JoVE integration data: AppConfigElement, AppConfigElementSet, AppConfigElementDescriptor and UserAppConfig</comment>
+        <sql>
+            delete from AppConfigElement where appConfigElementDescriptor_id in (
+                select id from AppConfigElementDescriptor where app_id = (
+                    select id from App where name = 'app.jove'));
+
+            delete from AppConfigElementSet where userAppConfig_id in (
+                select id from UserAppConfig where app_id = (
+                    select id from App where name = 'app.jove'));
+
+            delete from AppConfigElementDescriptor where app_id = (
+                select id from App where name = 'app.jove');
+
+            delete from UserAppConfig where app_id = (
+                select id from App where name = 'app.jove');
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-jove-c" context="run" author="codex">
+        <comment>Remove JoVE integration data: SystemPropertyValue, SystemProperty and PropertyDescriptor for jove.available</comment>
+        <sql>
+            delete from SystemPropertyValue where property_id = (
+                select sp.id from SystemProperty sp
+                inner join PropertyDescriptor pd on sp.descriptor_id = pd.id
+                where pd.name = 'jove.available');
+
+            delete from SystemProperty where descriptor_id = (
+                select id from PropertyDescriptor where name = 'jove.available');
+
+            delete from PropertyDescriptor where name = 'jove.available';
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-jove-d" context="run" author="codex">
+        <comment>Remove JoVE integration data: App</comment>
+        <sql>
+            delete from App where name = 'app.jove';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

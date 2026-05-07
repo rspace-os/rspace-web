@@ -12,7 +12,6 @@ scripts/externalTinymcePlugins/github/js/dialog.js
 scripts/externalTinymcePlugins/github/plugin.min.js
 scripts/externalTinymcePlugins/googledrive/plugin.min.js
 scripts/externalTinymcePlugins/internallink/plugin.min.js
-scripts/externalTinymcePlugins/jove/plugin.min.js
 scripts/externalTinymcePlugins/ketcher/plugin.min.js
 scripts/externalTinymcePlugins/mathjax/plugin.min.js
 scripts/externalTinymcePlugins/nexcloud/plugin.min.js
@@ -149,7 +148,6 @@ ui/dist/sysadminUsers.js
 ui/dist/tinymceClustermarket.js
 ui/dist/tinymceGalaxy.js
 ui/dist/tinymceIdentifiers.js
-ui/dist/tinymceJove.js
 ui/dist/tinymceKetcher.js
 ui/dist/tinymceOmero.js
 ui/dist/tinymcePubchem.js

@@ -467,7 +467,6 @@ function initTinyMCE(selector) {
 		let pyratEnabled       = integrations.PYRAT.enabled && integrations.PYRAT.available && properties["pyrat.server.config"] !== "";
 		const clustermarketEnabled =  integrations.CLUSTERMARKET.enabled && integrations.CLUSTERMARKET.available && properties["clustermarket.web.url"] !== "";
 		const omeroEnabled =  integrations.OMERO.enabled && integrations.OMERO.available && properties["omero.api.url"] !== "";
-		const joveEnabled =  integrations.JOVE.enabled && integrations.JOVE.available;
 		const identifiersEnabled = false; // Once RSDEV-484 is complete, this should check whether Inventory is available
     const pubchemEnabled = chemistryEnabled;
 		const galaxyEnabled = integrations.GALAXY.enabled && integrations.GALAXY.available;
@@ -500,12 +499,6 @@ function initTinyMCE(selector) {
 			localTinymcesetup.omero_web_url = properties["omero.api.url"];
 			enabledFileRepositories += " omero";
 			fileRepositoriesMenu += " optOmero";
-		}
-		if (joveEnabled) {
-			localTinymcesetup.external_plugins["jove"] = "/scripts/externalTinymcePlugins/jove/plugin.min.js";
-			localTinymcesetup.jove_api_url = properties["jove.api.url"];
-			enabledFileRepositories += " jove";
-			fileRepositoriesMenu += " optJove";
 		}
 		if (boxEnabled) {
 			localTinymcesetup.external_plugins["box"] = "/scripts/externalTinymcePlugins/box/plugin.min.js";

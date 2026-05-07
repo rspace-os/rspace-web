@@ -462,12 +462,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         saveNewUserConnectionForSingleOptionApp(
             newInfo.getOptions().get(FIELDMARK_USER_TOKEN).toString(), user, FIELDMARK_APP_NAME);
         break;
-      case JOVE_APP_NAME:
-        // Jove doesn't currently fit well into our existing integration handler, so we just get the
-        // global api key from properties file
-        saveNewUserConnectionForSingleOptionApp(
-            propertyHolder.getJoveApiKey(), user, JOVE_APP_NAME);
-        break;
       default:
         break;
     }
@@ -675,7 +669,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case PROTOCOLS_IO_APP_NAME:
       case DMPTOOL_APP_NAME:
       case PYRAT_APP_NAME:
-      case JOVE_APP_NAME:
         return true;
     }
     return false;
