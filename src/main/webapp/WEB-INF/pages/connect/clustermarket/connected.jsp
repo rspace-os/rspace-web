@@ -1,16 +1,16 @@
 <%@ include file="/common/taglibs.jsp"%>
 <head>
-<title>You are connected to Clustermarket</title>
+<title>You are connected to Calira</title>
 <script src="<c:url value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 </head>
 
 <div id="clustermarketAuthorizationSuccess" class="bootstrap-custom-flat">
-	Success - RSpace was authorized to access data from Clustermarket.
+	Success - RSpace was authorized to access data from Calira.
 	<p class="font-weight-bold">
 	 You can
 	close this window now or configure <a href="/apps"> more Apps</a>.
 	</p>
-	<p>If you want to revoke RSpace's access to your Clustermarket account,
+	<p>If you want to revoke RSpace's access to your Calira account,
 	    please click 'Disconnect':
 	</p>
 	<form action="<c:url value="/apps/clustermarket/connect" />" method="POST"

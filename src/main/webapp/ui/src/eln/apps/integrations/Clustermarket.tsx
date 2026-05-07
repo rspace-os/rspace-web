@@ -53,7 +53,7 @@ function Clustermarket({
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully connected to Clustermarket.",
+          message: "Successfully connected to Calira.",
         })
       );
     };
@@ -66,7 +66,7 @@ function Clustermarket({
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
-        name="Clustermarket"
+        name="Calira"
         integrationState={integrationState}
         explanatoryText="Manage schedules of lab equipment, maintenance, and personnel through a web-based platform."
         image={ClustermarketIcon}
@@ -74,21 +74,21 @@ function Clustermarket({
         update={(newMode) =>
           update({ mode: newMode, credentials: integrationState.credentials })
         }
-        helpLinkText="Clustermarket integration docs"
+        helpLinkText="Calira integration docs"
         website="clustermarket.com"
         docLink="clustermarket"
-        usageText="You can view and insert your equipment bookings from Clustermarket into RSpace documents, as data tables. These tables will contain direct links back to the bookings in Clustermarket."
+        usageText="You can view and insert your equipment bookings from Calira into RSpace documents, as data tables. These tables will contain direct links back to the bookings in Calira."
         setupSection={
           <>
             <ol>
-              <li>Register for a Clustermarket account.</li>
+              <li>Register for a Calira account.</li>
               <li>
                 Click on Connect to authorise RSpace to access your
-                Clustermarket account.
+                Calira account.
               </li>
               <li>Enable the integration.</li>
               <li>
-                When editing a document, click on the Clustermarket icon in the
+                When editing a document, click on the Calira icon in the
                 text editor toolbar to access and insert equipment data.
               </li>
             </ol>
