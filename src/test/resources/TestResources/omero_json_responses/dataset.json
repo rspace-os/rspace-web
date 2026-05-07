@@ -73,7 +73,7 @@
     },
     "Name": "CDK5RAP2-C",
     "omero:childCount": 33,
-    "url:images": "https://idr.openmicroscopy.org/api/v0/m/datasets/51/images/",
-    "url:projects": "https://idr.openmicroscopy.org/api/v0/m/datasets/51/projects/"
+    "url:images": "https://localhost:8080/api/v0/m/datasets/51/images/",
+    "url:projects": "https://localhost:8080/api/v0/m/datasets/51/projects/"
   }
 }
