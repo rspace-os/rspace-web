@@ -48,7 +48,6 @@ const EMPTY_MOLECULE_MESSAGE =
 const ketcherDialogRoots = new WeakMap<HTMLElement, Root>();
 
 let ketcherDialogListenerRegistered = false;
-let ketcherDialogRenderCount = 0;
 
 function getTinyMceDialogUtils(): TinyMceDialogUtils | undefined {
   return (globalThis as { tinymceDialogUtils?: TinyMceDialogUtils })
@@ -131,14 +130,19 @@ function renderKetcherDialog(): void {
     return;
   }
 
-  ketcherDialogRenderCount++;
   const root = ketcherDialogRoots.get(wrapperDiv) ?? createRoot(wrapperDiv);
   ketcherDialogRoots.set(wrapperDiv, root);
+
+  const unmount = () => {
+    root.unmount();
+    ketcherDialogRoots.delete(wrapperDiv);
+  };
+
   root.render(
     <ThemeProvider theme={theme}>
       <Analytics>
         <Alerts>
-          <KetcherTinyMce key={ketcherDialogRenderCount} />
+          <KetcherTinyMce onUnmount={unmount} />
         </Alerts>
       </Analytics>
     </ThemeProvider>,
@@ -154,10 +158,13 @@ function registerKetcherDialogListener(): void {
   ketcherDialogListenerRegistered = true;
 }
 
-export const KetcherTinyMce = (): React.ReactNode => {
+export const KetcherTinyMce = ({
+  onUnmount,
+}: {
+  onUnmount: () => void;
+}): React.ReactNode => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [existingChemical, setExistingChemical] = useState("");
-  const [dialogIsOpen, setDialogIsOpen] = useState(true);
   const [isValid, setIsValid] = useState<ValidationResult>(IsValid());
   const ketcherRef = useRef<Ketcher | null>(null);
   const { save } = useChemicalImport();
@@ -308,9 +315,8 @@ export const KetcherTinyMce = (): React.ReactNode => {
       try {
         const chemical = await ketcher.getKet();
         await saveChemicalAndInsert(chemical);
-        setDialogIsOpen(false);
-        setExistingChemical("");
         await window.ketcher.setMolecule("");
+        onUnmount();
       } catch {
         // Ignore failed insert attempts; save() already reports API errors.
       }
@@ -318,8 +324,7 @@ export const KetcherTinyMce = (): React.ReactNode => {
   };
 
   const handleClose = (): void => {
-    setDialogIsOpen(false);
-    setExistingChemical("");
+    onUnmount();
   };
 
   const validate = (ketcher: Ketcher | null | undefined): void => {
@@ -363,7 +368,7 @@ export const KetcherTinyMce = (): React.ReactNode => {
       }
     >
       <KetcherDialog
-        isOpen={dialogIsOpen}
+        isOpen={true}
         handleInsert={handleInsert}
         title={"Ketcher Insert Chemical"}
         existingChem={existingChemical}

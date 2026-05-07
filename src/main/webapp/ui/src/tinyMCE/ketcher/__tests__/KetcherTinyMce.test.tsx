@@ -15,6 +15,7 @@ const { mockAxiosGet, mockAxiosPost, mockCreateRoot, rootRenderCalls } =
         render: vi.fn((node: React.ReactNode) => {
           renderCalls.push({ container, node });
         }),
+        unmount: vi.fn(),
       })),
       mockAxiosGet: vi.fn(),
       mockAxiosPost: vi.fn(),
@@ -92,7 +93,7 @@ describe("KetcherTinyMce accessibility", () => {
       },
     });
 
-    const { baseElement } = render(<KetcherTinyMce />);
+    const { baseElement } = render(<KetcherTinyMce onUnmount={vi.fn()} />);
 
     expect(
       await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" }),
@@ -134,7 +135,7 @@ describe("KetcherTinyMce accessibility", () => {
       },
     });
 
-    render(<KetcherTinyMce />);
+    render(<KetcherTinyMce onUnmount={vi.fn()} />);
 
     expect(
       await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" }),
@@ -161,29 +162,35 @@ describe("KetcherTinyMce accessibility", () => {
     expect(rootRenderCalls[1]?.container).toHaveAttribute("id", "tinymce-ketcher");
   });
 
-  it("mounts a fresh KetcherTinyMce on each open so dialogIsOpen state resets to true", () => {
+  it("unmounts the component on close and creates a fresh mount on re-open", () => {
     document.body.innerHTML = '<div id="tinymce-ketcher"></div>';
 
     window.dispatchEvent(new Event("OPEN_KETCHER_DIALOG"));
-    window.dispatchEvent(new Event("OPEN_KETCHER_DIALOG"));
+    expect(mockCreateRoot).toHaveBeenCalledTimes(1);
+    expect(rootRenderCalls).toHaveLength(1);
 
-    expect(rootRenderCalls).toHaveLength(2);
+    // Extract the onUnmount callback passed to KetcherTinyMce.
+    // Tree: ThemeProvider > Analytics > Alerts > KetcherTinyMce
+    const themeProvider = rootRenderCalls[0]!.node as React.ReactElement;
+    const analytics = themeProvider.props.children as React.ReactElement;
+    const alerts = analytics.props.children as React.ReactElement;
+    const ketcherEl = alerts.props.children as React.ReactElement;
+    const onUnmount = ketcherEl.props.onUnmount as () => void;
 
-    // Traverse ThemeProvider > Analytics > Alerts > KetcherTinyMce to read key
-    const getKetcherKey = (node: React.ReactNode): React.Key | null => {
-      const themeProvider = node as React.ReactElement;
-      const analytics = themeProvider.props.children as React.ReactElement;
-      const alerts = analytics.props.children as React.ReactElement;
-      const ketcher = alerts.props.children as React.ReactElement;
-      return ketcher.key;
+    expect(onUnmount).toBeTypeOf("function");
+
+    // Simulates the user closing the dialog.
+    onUnmount();
+
+    // The mock root's unmount should have been called.
+    const firstRoot = mockCreateRoot.mock.results[0]!.value as {
+      unmount: ReturnType<typeof vi.fn>;
     };
+    expect(firstRoot.unmount).toHaveBeenCalledOnce();
 
-    const firstKey = getKetcherKey(rootRenderCalls[0]!.node);
-    const secondKey = getKetcherKey(rootRenderCalls[1]!.node);
-
-    // A changing key forces React to unmount and remount KetcherTinyMce,
-    // which resets dialogIsOpen to its initial value of true.
-    expect(firstKey).not.toBeNull();
-    expect(firstKey).not.toBe(secondKey);
+    // Re-opening should create a brand-new React root (fresh mount → fresh state).
+    window.dispatchEvent(new Event("OPEN_KETCHER_DIALOG"));
+    expect(mockCreateRoot).toHaveBeenCalledTimes(2);
+    expect(rootRenderCalls).toHaveLength(2);
   });
 });
