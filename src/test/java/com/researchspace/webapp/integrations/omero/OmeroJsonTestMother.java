@@ -73,6 +73,10 @@ public class OmeroJsonTestMother {
   public static String screensJsonResource = "TestResources/omero_json_responses/screens.json";
   public static String screensJson = makeDataJson(screensJsonResource);
 
+  public static String wellsForPlateJsonResource =
+      "TestResources/omero_json_responses/wells_for_plate.json";
+  public static String wellsForPlateJson = makeDataJson(wellsForPlateJsonResource);
+
   @SneakyThrows
   private static String makeDataJson(String resource) {
     ClassLoader classLoader = OmeroJsonTestMother.class.getClassLoader();
