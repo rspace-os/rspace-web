@@ -500,6 +500,9 @@ function initTinyMCE(selector) {
 			enabledFileRepositories += " omero";
 			fileRepositoriesMenu += " optOmero";
 		}
+		localTinymcesetup.external_plugins["videoembed"] = "/scripts/externalTinymcePlugins/video/plugin.js";
+		enabledFileRepositories += " videoembed";
+		fileRepositoriesMenu += " optVideoEmbed";
 		if (boxEnabled) {
 			localTinymcesetup.external_plugins["box"] = "/scripts/externalTinymcePlugins/box/plugin.min.js";
 			enabledFileRepositories += " box";
