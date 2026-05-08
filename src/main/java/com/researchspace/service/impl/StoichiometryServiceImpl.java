@@ -176,6 +176,17 @@ public class StoichiometryServiceImpl implements StoichiometryService {
         stoichiometryDTO, chemElement, user);
   }
 
+  /**
+   * Pass-through to the manager. Intentionally does <strong>not</strong> apply the permission check
+   * used by {@link #createEmpty(long, User)}; called only from the archive importer, which is the
+   * authoritative authorisation gate for archive-driven writes.
+   */
+  @Override
+  public Stoichiometry createReactionlessFromArchive(
+      StoichiometryDTO stoichiometryDTO, Record record, User user) {
+    return stoichiometryManager.createReactionlessFromArchive(stoichiometryDTO, record, user);
+  }
+
   private static boolean analysisExists(Optional<ElementalAnalysisDTO> analysis) {
     return analysis.isPresent()
         && analysis.get().getMoleculeInfo() != null

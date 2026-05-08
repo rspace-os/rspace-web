@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -745,6 +746,81 @@ public class StoichiometryManagerImplTest {
     stoichiometryManager.update(updateDTO, user);
 
     assertNull(mol.getInventoryLink());
+  }
+
+  @Test
+  public void whenCreateReactionlessFromArchive_thenStoichiometryHasNoParentReactionAndMolecules()
+      throws Exception {
+    StoichiometryDTO archived = new StoichiometryDTO();
+    StoichiometryMoleculeDTO mol1 =
+        StoichiometryMoleculeDTO.builder()
+            .role(MoleculeRole.REACTANT)
+            .formula("C2H6O")
+            .name("Ethanol")
+            .smiles("CCO")
+            .molecularWeight(46.07)
+            .coefficient(1.0)
+            .mass(46.07)
+            .limitingReagent(true)
+            .build();
+    StoichiometryMoleculeDTO mol2 =
+        StoichiometryMoleculeDTO.builder()
+            .role(MoleculeRole.PRODUCT)
+            .formula("C2H4O")
+            .name("Acetaldehyde")
+            .smiles("CC=O")
+            .molecularWeight(44.05)
+            .coefficient(1.0)
+            .build();
+    archived.setMolecules(List.of(mol1, mol2));
+
+    when(rsChemElementManager.save(any(RSChemElement.class), any(User.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0, RSChemElement.class));
+
+    Stoichiometry result =
+        stoichiometryManager.createReactionlessFromArchive(archived, record, user);
+
+    assertNull(
+        "Imported reaction-less stoichiometry must not link to a parent reaction",
+        result.getParentReaction());
+    assertEquals(record, result.getRecord());
+    assertEquals(2, result.getMolecules().size());
+
+    StoichiometryMolecule firstMol = result.getMolecules().get(0);
+    assertEquals(MoleculeRole.REACTANT, firstMol.getRole());
+    assertEquals("CCO", firstMol.getSmiles());
+    assertEquals("Ethanol", firstMol.getName());
+    assertEquals("C2H6O", firstMol.getFormula());
+    assertEquals(46.07, firstMol.getMolecularWeight(), 0.001);
+    assertTrue(firstMol.getLimitingReagent());
+    assertNotNull(
+        "rs_chem_id is NOT NULL in the DB; reaction-less import must create an RSChemElement"
+            + " per molecule",
+        firstMol.getRsChemElement());
+
+    StoichiometryMolecule secondMol = result.getMolecules().get(1);
+    assertEquals(MoleculeRole.PRODUCT, secondMol.getRole());
+    assertNotNull(secondMol.getRsChemElement());
+
+    // One RSChemElement saved per molecule
+    verify(rsChemElementManager, times(2)).save(any(RSChemElement.class), any(User.class));
+  }
+
+  @Test
+  public void whenCreateReactionlessFromArchive_withNoMolecules_thenCreatesEmptyStoichiometry()
+      throws Exception {
+    StoichiometryDTO archived = new StoichiometryDTO();
+    archived.setMolecules(null);
+
+    Stoichiometry result =
+        stoichiometryManager.createReactionlessFromArchive(archived, record, user);
+
+    assertNull(result.getParentReaction());
+    assertEquals(record, result.getRecord());
+    assertTrue(
+        "Empty molecule list should produce an empty molecules collection",
+        result.getMolecules() == null || result.getMolecules().isEmpty());
+    verify(rsChemElementManager, never()).save(any(RSChemElement.class), any(User.class));
   }
 
   @Test

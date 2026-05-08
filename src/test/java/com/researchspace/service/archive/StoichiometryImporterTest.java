@@ -1,6 +1,8 @@
 package com.researchspace.service.archive;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -19,7 +21,9 @@ import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
 import com.researchspace.service.archive.export.StoichiometryReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -110,5 +114,58 @@ public class StoichiometryImporterTest {
     verify(newField)
         .setFieldData(
             "<img data-stoichiometry-table=\"{&quot;id&quot;:33,&quot;revision&quot;:null}\">");
+  }
+
+  // --- importReactionlessStoichiometries (RSDEV-1091) ---
+
+  @Test
+  public void testReactionlessImport_whenEmptyStoichiometriesList_doesNothing() {
+    when(oldField.getStoichiometries()).thenReturn(new ArrayList<>());
+    testee.importReactionlessStoichiometries(Collections.emptySet());
+    verifyZeroInteractions(service);
+  }
+
+  @Test
+  public void testReactionlessImport_whenAllStoichsAreReactionLinked_doesNothing() {
+    when(oldField.getStoichiometries()).thenReturn(List.of(existingStoich));
+    when(existingStoich.getParentReactionId()).thenReturn(1L);
+    testee.importReactionlessStoichiometries(Set.of(1L));
+    verify(service, never()).createReactionlessFromArchive(any(), any(), any());
+  }
+
+  @Test
+  public void
+      testReactionlessImport_whenStoichHasNullParentReaction_callsServiceAndRewritesFieldHtml() {
+    Stoichiometry created = new Stoichiometry();
+    created.setId(77L);
+    when(oldField.getStoichiometries()).thenReturn(List.of(existingStoich));
+    when(existingStoich.getParentReactionId()).thenReturn(null);
+    when(service.createReactionlessFromArchive(eq(existingStoich), eq(strucDoc), eq(user)))
+        .thenReturn(created);
+
+    testee.importReactionlessStoichiometries(Collections.emptySet());
+
+    verify(service).createReactionlessFromArchive(eq(existingStoich), eq(strucDoc), eq(user));
+    StoichiometryImporter.IdAndRevision expected = new StoichiometryImporter.IdAndRevision();
+    expected.id = 77L;
+    verify(reader)
+        .createReplacementHtmlContentForTargetStoichiometryInFieldData(
+            eq(NEW_FIELD_FIELDDATA), eq(existingStoich), eq(expected));
+    verify(fieldManager).save(eq(newField), eq(user));
+  }
+
+  @Test
+  public void testReactionlessImport_whenOrphanReactionLinkedStoich_doesNotImport() {
+    // existingStoich has a parentReactionId that is NOT in the imported chem element set.
+    // The production code emits a log.warn for this case (see StoichiometryImporter); we only
+    // assert the user-facing behaviour here (no import) — the log line is best-effort
+    // observability.
+    when(oldField.getStoichiometries()).thenReturn(List.of(existingStoich));
+    when(existingStoich.getParentReactionId()).thenReturn(99999L);
+
+    testee.importReactionlessStoichiometries(Set.of(1L, 2L));
+
+    verify(service, never()).createReactionlessFromArchive(any(), any(), any());
+    verify(fieldManager, never()).save(any(), any());
   }
 }

@@ -2,7 +2,7 @@ import React from "react";
 
 export type CurrentStoichiometry = {
   id: number;
-  revision: number;
+  revision?: number;
 };
 
 export type SetCurrentStoichiometry = React.Dispatch<

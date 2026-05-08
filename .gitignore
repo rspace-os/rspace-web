@@ -66,3 +66,4 @@ src/main/webapp/ui/junit.xml
 
 # other tooling
 /.claude/
+.worktrees/
