@@ -1,16 +1,8 @@
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
-
-type TinyMceEditor = {
-  id: string;
-};
+import type { InternalLinkInsertParams, TinyMceEditor } from "@/tinyMCE/types";
 
 type RSGalleryUtils = {
-  tinymceInsertInternalLink: (
-    id: number,
-    globalId: string,
-    name: string,
-    editor: TinyMceEditor,
-  ) => void;
+  tinymceInsertInternalLink: (...params: InternalLinkInsertParams) => void;
   insertTemplateIntoTinyMCE: (templateName: string, data: unknown) => void;
   blockPage: (message: string) => void;
   unblockPage: () => void;

@@ -1,9 +1,12 @@
 import React, {useState} from "react";
 import {createRoot} from "react-dom/client";
-import { IpynbRenderer } from "react-ipynb-renderer";
-import type {IpynbType, SyntaxThemeType} from "react-ipynb-renderer/dist/types";
+import { IpynbRenderer, type Ipynb } from "react-ipynb-renderer";
 import "react-ipynb-renderer/dist/styles/oceans16.css";
 import axios from "@/common/axios";
+
+type SyntaxThemeType = NonNullable<
+  React.ComponentProps<typeof IpynbRenderer>["syntaxTheme"]
+>;
 
 /**
  * Renders a view of an attached jupyter notebook
@@ -46,7 +49,7 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
           const rootDiv = $('#' + rootDivId)[0];
           // @ts-ignore
           (async () => {
-            const {data} = await axios.get<IpynbType>(
+            const {data} = await axios.get<Ipynb>(
                 "/Streamfile/" +
                 attachedFileId
             );
