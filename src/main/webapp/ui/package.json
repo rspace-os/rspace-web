@@ -69,6 +69,7 @@
     "eslint-plugin-testing-library": "7.16.2",
     "fast-check": "4.7.0",
     "get-port": "7.2.0",
+    "jsdom": "29.1.1",
     "jsonwebtoken": "9.0.3",
     "prettier": "3.8.3",
     "prop-types": "15.8.1",
