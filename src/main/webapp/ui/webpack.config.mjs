@@ -116,11 +116,6 @@ const config = {
     alias: {
       Styles: path.resolve(import.meta.dirname, "src/util/styles"),
       "@": path.resolve(import.meta.dirname, "src"),
-      // Remove this once we move to j  upyter-kit v3
-      "react-syntax-highlighter/dist/esm/styles/prism": path.resolve(
-        import.meta.dirname,
-        "node_modules/react-syntax-highlighter/dist/cjs/styles/prism/index.js"
-      ),
     },
     fallback: {
       url: import.meta.resolve("url/"),
