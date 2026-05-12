@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "private": true,
-  "packageManager": "npm@11.12.1",
+  "packageManager": "npm@11.14.1",
   "scripts": {
     "test": "cross-env NODE_OPTIONS=\"--conditions=require\" vitest run",
     "test:ui": "cross-env NODE_OPTIONS=\"--conditions=require\" vitest --ui",
