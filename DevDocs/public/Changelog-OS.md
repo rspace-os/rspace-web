@@ -2,7 +2,26 @@ This document records significant changes to RSpace.
 It includes a summary of new features, bugfixes and server-side configuration changes.
 The intended audience is on-prem RSpace technical administrators who maintain RSpace.
 
-You can find official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
+You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
+
+# 2.22.0 2026-05-08
+
+### ELN Features
+
+- RSDEV-1023, ISSUE#611 New S3 File System connector allows linking to files/folders on S3-compatible storage (AWS S3, Cloudflare, etc.)
+- RSDEV-1084 Chemical stoichiometry tables can be now created from scratch (without connection to pre-uploaded reaction file)
+- RSDEV-876 Reactants used in a chemical stoichiometry table can now reduce the stock of linked inventory items
+- RSDEV-577 Updated chemistry libraries (indigo/Ketcher)
+- RSDEV-1087 Galaxy workflow execution data is now included in HTML/PDF and MS Word exports
+- RSDEV-1048 New RSpace logo applied across the UI
+
+### ELN Bugfix
+
+- RSDEV-1077, ISSUE#681 Fix a problem with TinyMCE internal link plugin not working correctly
+- RSDEV-1081 Fix a problem with exporting archives to Figshare repository (caused by changes to Figshare API)
+- RSDEV-1084 Fix for XML export-import not handling chemical stoichiometry tables correctly
+- RSDEV-967 Fix sorting by full name on System -> Users page
+- RSDEV-1069 'insert from Gallery' dialog no longer closes after clicking on 'Actions' dropdown
 
 # 2.21.0 2026-04-02
 

@@ -67,7 +67,7 @@ export default function StoichiometryDialog({
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [currentStoichiometry, setCurrentStoichiometry] =
     React.useState<CurrentStoichiometry | null>(
-      stoichiometryId !== undefined && stoichiometryRevision !== undefined
+      stoichiometryId !== undefined
         ? { id: stoichiometryId, revision: stoichiometryRevision }
         : null,
     );
@@ -75,7 +75,7 @@ export default function StoichiometryDialog({
   const tableCloseHandlerRef = React.useRef<(() => Promise<void>) | null>(null);
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
   const syncedStoichiometry =
-    stoichiometryId !== undefined && stoichiometryRevision !== undefined
+    stoichiometryId !== undefined
       ? { id: stoichiometryId, revision: stoichiometryRevision }
       : null;
 

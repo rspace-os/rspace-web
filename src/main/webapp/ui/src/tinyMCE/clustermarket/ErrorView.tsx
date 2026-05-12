@@ -15,7 +15,7 @@ export default function ErrorView({
       <AlertTitle>Error</AlertTitle>
       {errorReason === ErrorReason.NetworkError && (
         <>
-          The Clustermarket server at{" "}
+          The Calira server at{" "}
           <a
             // @ts-expect-error -- tinymce is defined in the parent window
             href={parent.tinymce.activeEditor.settings.clustermarket_url}
@@ -27,15 +27,15 @@ export default function ErrorView({
             {parent.tinymce.activeEditor.settings.clustermarket_url}
           </a>{" "}
           is down, or CORS for this server has not been configured properly. If
-          you are responsible for setting up the Clustermarket integration, open
+          you are responsible for setting up the Calira integration, open
           developer tools and have a look at the console and/or the network tab
           to find out what the issue is.
         </>
       )}
       {errorReason === ErrorReason.NotFound && (
         <>
-          Please contact an Admin: Clustermarket returned HTTP status 404. Is
-          Clustermarket endpoint set correctly?
+          Please contact an Admin: Calira returned HTTP status 404. Is
+          Calira endpoint set correctly?
         </>
       )}
       {/* when an OAuth token expires the Clustermarket API responds with 401 response.
@@ -43,8 +43,8 @@ export default function ErrorView({
       {(errorReason === ErrorReason.Unauthorized ||
         errorMessage.includes("invalid_grant")) && (
         <>
-          Invalid Clustermarket user or client token. Please re-connect to
-          Clustermarket.
+          Invalid Calira user or client token. Please re-connect to
+          Calira.
         </>
       )}
       {errorReason === ErrorReason.Timeout && <>Request timed out.</>}

@@ -44,14 +44,12 @@ import com.researchspace.model.RSMath;
 import com.researchspace.model.User;
 import com.researchspace.model.Version;
 import com.researchspace.model.core.RecordType;
-import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.ExternalWorkFlowDataManager;
@@ -62,19 +60,21 @@ import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.StoichiometryService;
-import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
 import com.researchspace.service.archive.export.StoichiometryReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -494,7 +494,6 @@ abstract class AbstractImporterStrategyImpl {
     fld =
         importChemElementsAndStoichiometries(
             fld, archiveFld, user, recordFolder, oldIdToNewGalleryItem);
-    fld = importEmptyStoichiometries(archiveFld, fld, user);
     fld = importMath(fld, archiveFld, recordFolder);
     fld = importImageAnnotation(fld, archiveFld, recordFolder, oldIdToNewGalleryItem);
     importLinkedRecords(fld, archiveFld, recordFolder, linkRecord);
@@ -854,25 +853,6 @@ abstract class AbstractImporterStrategyImpl {
       "xsi:schemaLocation=\"http://www.chemaxon.com"
           + " http://www.chemaxon.com/marvin/schema/mrvSchema";
 
-  private Field importEmptyStoichiometries(ArchivalField archiveFld, Field newField, User user) {
-    List<StoichiometryDTO> stoichiometries = archiveFld.getStoichiometries();
-    for (StoichiometryDTO aStoichiometry : stoichiometries) {
-      if (aStoichiometry.getParentReactionId() == null) {
-        Stoichiometry created =
-            stoichiometryService.createEmpty(newField.getStructuredDocument().getId(), user);
-        IdAndRevision newDTO = new IdAndRevision();
-        newDTO.id = created.getId();
-        String updatedStoichiometriesFieldContent =
-            new StoichiometryReader()
-                .createReplacementHtmlContentForTargetStoichiometryInFieldData(
-                    newField.getFieldData(), aStoichiometry, newDTO);
-        newField.setFieldData(updatedStoichiometriesFieldContent);
-        fieldManager.save(newField, user);
-      }
-    }
-    return newField;
-  }
-
   private Field importChemElementsAndStoichiometries(
       Field fld,
       ArchivalField archiveFld,
@@ -881,8 +861,7 @@ abstract class AbstractImporterStrategyImpl {
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
       throws IOException {
     List<ArchivalGalleryMetadata> chemMeta = archiveFld.getChemElementMeta();
-    StoichiometryImporter stoichiometryImporter = null;
-    stoichiometryImporter =
+    StoichiometryImporter stoichiometryImporter =
         new StoichiometryImporter(
             stoichiometryService, new StoichiometryReader(), archiveFld, fld, fieldManager, user);
     if (chemMeta != null && !chemMeta.isEmpty()) {
@@ -944,6 +923,11 @@ abstract class AbstractImporterStrategyImpl {
         }
       }
     }
+    Set<Long> archivedChemElementIds =
+        chemMeta == null
+            ? Collections.emptySet()
+            : chemMeta.stream().map(ArchivalGalleryMetadata::getId).collect(Collectors.toSet());
+    stoichiometryImporter.importReactionlessStoichiometries(archivedChemElementIds);
     return fld;
   }
 

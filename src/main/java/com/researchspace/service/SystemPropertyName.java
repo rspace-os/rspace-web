@@ -39,7 +39,6 @@ public enum SystemPropertyName {
   FIGSHARE_AVAILABLE("figshare.available"),
   GALAXY_AVAILABLE("galaxy.available"),
   GITHUB_AVAILABLE("github.available"),
-  JOVE_AVAILABLE("jove.available"),
   MS_TEAMS_AVAILABLE("msteams.available"),
   NEXTCLOUD_AVAILABLE("nextcloud.available"),
   OMERO_AVAILABLE("omero.available"),

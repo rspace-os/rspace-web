@@ -90,14 +90,6 @@
       "oauthConnected" : false,
       "options" : { }
     },
-    "JOVE" : {
-      "name" : "JOVE",
-      "displayName" : "Jove",
-      "available" : false,
-      "enabled" : false,
-      "oauthConnected" : false,
-      "options" : { }
-    },
     "CHEMISTRY" : {
       "name" : "CHEMISTRY",
       "displayName" : "CHEMISTRY",

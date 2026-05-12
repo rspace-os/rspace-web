@@ -24,6 +24,10 @@ public class ExportProcessorInput {
     return documentAsHtml.contains("data-stoichiometry-table");
   }
 
+  public boolean hasExternalWorkflowData() {
+    return documentAsHtml.contains("external-workflow-data");
+  }
+
   public boolean hasComments() {
     return comments != null && comments.size() > 0;
   }

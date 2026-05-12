@@ -127,6 +127,9 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
     if (html.contains("data-stoichiometry-table")) {
       html = stoichiometryHtmlGenerator.addStoichiometryLinks(html, exportConfig.getExporter());
     }
+    if (exportInput.hasExternalWorkflowData()) {
+      html = prepareExternalWorkflowTablesForWordExport(html);
+    }
     String pageSize = exportConfig.getPageSize().equals("A4") ? "A4" : "LETTER";
     String footerFormattedDate = formatFooterDate(strucDoc, exportConfig);
     html =
@@ -138,6 +141,17 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
         new File(tempExportFile.getParentFile(), getBaseName(tempExportFile.getName()) + ".html");
     FileUtils.write(htmlInput, html, "UTF-8");
     return htmlInput;
+  }
+
+  private String prepareExternalWorkflowTablesForWordExport(String html) {
+    Document document = stringToJsoupDoc(html);
+    Elements externalWorkflowTables = document.select("table.external-workflow-table");
+    for (Element table : externalWorkflowTables) {
+      table.attr("border", "1");
+      table.attr("cellpadding", "4");
+      table.attr("cellspacing", "0");
+    }
+    return document.toString();
   }
 
   private String formatFooterDate(IRSpaceDoc doc, ExportToFileConfig config) {

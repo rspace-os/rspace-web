@@ -32,6 +32,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.service.FieldManager;
@@ -148,6 +149,8 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
       User user) {
     String updatedContent = fieldData;
     Map<Long, Long> chemOldKey2NewKey = new HashMap<>();
+    Map<Long, Long> stoichOldId2NewId = new HashMap<>();
+
     for (RSChemElement origChem : originalChemElements) {
       boolean permitted = canUserCopyElement(origChem, user);
       if (permitted) {
@@ -162,8 +165,12 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
 
         if (destFieldId != null) {
           try {
-            if (stoichiometryManager.findByParentReactionId(origChem.getId()).isPresent()) {
-              stoichiometryManager.copy(origChem.getId(), copyChem, user);
+            Optional<Stoichiometry> existingStoich =
+                stoichiometryManager.findByParentReactionId(origChem.getId());
+            if (existingStoich.isPresent()) {
+              Stoichiometry newStoich =
+                  stoichiometryManager.copy(existingStoich.get(), copyChem, destRecord, user);
+              stoichOldId2NewId.put(existingStoich.get().getId(), newStoich.getId());
             }
           } catch (Exception e) {
             log.error(
@@ -179,8 +186,40 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
       }
     }
 
+    // copy standalone stoichiometry tables (not linked to a chem element/reaction)
+    if (destFieldId != null) {
+      for (long oldStoichId : updater.findStandaloneStoichiometryIds(fieldData)) {
+        try {
+          Stoichiometry original = stoichiometryManager.get(oldStoichId);
+          if (original == null) {
+            log.warn("Standalone stoichiometry with id {} not found during copy.", oldStoichId);
+            continue;
+          }
+          if (original.getRecord() != null
+              && !permissionUtils.isPermitted(original.getRecord(), PermissionType.COPY, user)) {
+            log.warn(
+                "User {} not permitted to copy standalone stoichiometry {}.",
+                user.getUsername(),
+                oldStoichId);
+            continue;
+          }
+          Stoichiometry newStoich = stoichiometryManager.copy(original, null, destRecord, user);
+          stoichOldId2NewId.put(oldStoichId, newStoich.getId());
+        } catch (Exception e) {
+          log.error(
+              "Problem copying standalone stoichiometry {} in document {}.",
+              oldStoichId,
+              destRecord.getId(),
+              e);
+        }
+      }
+    }
+
     if (!chemOldKey2NewKey.isEmpty()) {
       updatedContent = updater.updateChemIdsInCopy(chemOldKey2NewKey, fieldData);
+    }
+    if (!stoichOldId2NewId.isEmpty()) {
+      updatedContent = updater.updateStoichiometryIdsInCopy(stoichOldId2NewId, updatedContent);
     }
     return updatedContent;
   }

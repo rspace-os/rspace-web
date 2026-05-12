@@ -20,6 +20,7 @@ import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.si
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.tokenJson;
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.urlsJson;
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.versionJson;
+import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.wellsForPlateJson;
 import static org.junit.Assert.assertEquals;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -326,7 +327,7 @@ public class OmeroServiceTest {
                 .withMethod("GET")
                 .withPath("/api/v0/m/plates/422/wellsampleindex/0/wells/")
                 .withQueryStringParameter("offset", "0"))
-        .respond(response().withBody(imagesForDatasetJson));
+        .respond(response().withBody(wellsForPlateJson));
     client
         .when(
             request()

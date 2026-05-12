@@ -74,6 +74,8 @@ import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeUpdateDTO;
+import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalWorkFlowDataBuilder;
@@ -89,7 +91,9 @@ import com.researchspace.model.record.IconEntity;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
+import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFolderDetails;
@@ -1289,6 +1293,141 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     TriFunction<Long, Long, User, Stoichiometry> creator =
         (a, b, user) -> stoichiometryService.createFromReaction(b, a, user);
     testExportImportStoichiometriesWithChemOrEmpty(creator);
+  }
+
+  /**
+   * RSDEV-1091: reaction-less Stoichiometry with molecules round-trips through XML archive.
+   * Verifies that the molecules survive export/import (the bug this ticket fixes was that they were
+   * silently dropped) and that one fresh RSChemElement row is created per molecule on import,
+   * matching the user-creation path (the {@code rs_chem_id} column is NOT NULL).
+   */
+  @Test
+  public void testExportImportReactionlessStoichiometryWithMolecules() throws Exception {
+    User u1 = createInitAndLoginAnyUser();
+    StructuredDocument sdoc = createBasicDocumentInRootFolderWithText(u1, "source");
+    Field textField = sdoc.getFields().get(0);
+    textField.setName("testTextField");
+
+    // Create reaction-less stoichiometry (no parent reaction) and populate molecules
+    Stoichiometry stoichiometry = stoichiometryService.createEmpty(sdoc.getId(), u1);
+
+    StoichiometryMoleculeUpdateDTO ethanol =
+        StoichiometryMoleculeUpdateDTO.builder()
+            .smiles("CCO")
+            .name("Ethanol")
+            .formula("C2H6O")
+            .role(MoleculeRole.REACTANT)
+            .coefficient(1.0)
+            .molecularWeight(46.07)
+            .mass(46.07)
+            .limitingReagent(true)
+            .build();
+    StoichiometryMoleculeUpdateDTO acetaldehyde =
+        StoichiometryMoleculeUpdateDTO.builder()
+            .smiles("CC=O")
+            .name("Acetaldehyde")
+            .formula("C2H4O")
+            .role(MoleculeRole.PRODUCT)
+            .coefficient(1.0)
+            .molecularWeight(44.05)
+            .build();
+
+    StoichiometryUpdateDTO updateDTO =
+        StoichiometryUpdateDTO.builder()
+            .id(stoichiometry.getId())
+            .molecules(List.of(ethanol, acetaldehyde))
+            .build();
+    stoichiometryService.update(stoichiometry.getId(), updateDTO, u1);
+
+    Long stoichiometryId = stoichiometry.getId();
+    Long stoichiometryRevision =
+        stoichiometryService.getById(stoichiometryId, null, u1).getRevision();
+
+    // Set the field HTML to the reaction-less marker DOM (RSDEV-874 frontend output)
+    textField.setFieldData(
+        "<div data-stoichiometry-table-only=\"true\" "
+            + "data-stoichiometry-table=\"{&quot;id&quot;:"
+            + stoichiometryId
+            + ",&quot;revision&quot;:"
+            + stoichiometryRevision
+            + "}\"></div>");
+    fieldMgr.save(textField, u1);
+
+    int rsChemElementsBeforeImport = countRowsInTable(jdbcTemplate, "RSChemElement");
+
+    final ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
+    ArchiveResult result =
+        exportImportMgr
+            .asyncExportSelectionToArchive(
+                getSingleRecordExportSelection(sdoc.getId(), RecordType.NORMAL.toString()),
+                cfg,
+                u1,
+                anyURI(),
+                standardPostExport)
+            .get();
+
+    ArchivalImportConfig importCfg =
+        createDefaultArchiveImportConfig(u1, tempImportFolder2.getRoot());
+    ImportArchiveReport report =
+        exportImportMgr.importArchive(
+            fileToMultipartfile(result.getExportFile().getName(), result.getExportFile()),
+            u1.getUsername(),
+            importCfg,
+            NULL_MONITOR,
+            importStrategy::doImport);
+    assertTrue(report.isSuccessful());
+
+    StructuredDocument importedDoc = report.getImportedRecords().iterator().next().asStrucDoc();
+    Stoichiometry importedStoichiometry =
+        stoichiometryMgr
+            .findByRecordId(importedDoc.getId())
+            .orElseThrow(() -> new RuntimeException("Stoichiometry not found after import"));
+
+    // New stoichiometry row with no parent reaction
+    assertNotEquals(stoichiometryId, importedStoichiometry.getId());
+    assertNull(
+        "Imported reaction-less stoichiometry must not have a parent reaction",
+        importedStoichiometry.getParentReaction());
+
+    // Molecules survived the round-trip — this is the bug RSDEV-1091 fixes
+    assertEquals(2, importedStoichiometry.getMolecules().size());
+
+    StoichiometryMolecule importedEthanol =
+        importedStoichiometry.getMolecules().stream()
+            .filter(m -> "Ethanol".equals(m.getName()))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Ethanol molecule missing after import"));
+    assertEquals("CCO", importedEthanol.getSmiles());
+    assertEquals("C2H6O", importedEthanol.getFormula());
+    assertEquals(MoleculeRole.REACTANT, importedEthanol.getRole());
+    assertEquals(46.07, importedEthanol.getMolecularWeight(), 0.001);
+    assertTrue(importedEthanol.getLimitingReagent());
+    assertNotNull(
+        "rs_chem_id is NOT NULL; reaction-less import must create RSChemElement rows",
+        importedEthanol.getRsChemElement());
+
+    StoichiometryMolecule importedAcetaldehyde =
+        importedStoichiometry.getMolecules().stream()
+            .filter(m -> "Acetaldehyde".equals(m.getName()))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Acetaldehyde molecule missing after import"));
+    assertEquals(MoleculeRole.PRODUCT, importedAcetaldehyde.getRole());
+    assertNotNull(importedAcetaldehyde.getRsChemElement());
+
+    // One RSChemElement row created per imported molecule (mirrors user-creation path)
+    int rsChemElementsAfterImport = countRowsInTable(jdbcTemplate, "RSChemElement");
+    assertEquals(
+        "Reaction-less import must create one RSChemElement per molecule",
+        rsChemElementsBeforeImport + 2,
+        rsChemElementsAfterImport);
+
+    // Field HTML rewritten to reference the new id
+    List<StoichiometryDTO> importedRtfData =
+        new StoichiometryReader()
+            .extractStoichiometriesFromFieldContents(
+                importedDoc.getField("testTextField").getFieldData());
+    assertEquals(1, importedRtfData.size());
+    assertEquals(importedStoichiometry.getId(), importedRtfData.get(0).getId());
   }
 
   @Test

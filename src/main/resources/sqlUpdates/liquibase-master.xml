@@ -166,6 +166,7 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1015.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1022.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1079-remove-ascenscia.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-335-remove-jove.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-hibernate6-migration.xml"/>
 
     <!--  ensure that customUpdates-changeLog.xml always runs LAST! -->
