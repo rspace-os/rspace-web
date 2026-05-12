@@ -22,9 +22,7 @@
 		<script src="<c:url value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
 		<script src="<c:url value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
 
-		<rst:hasDeploymentProperty name="cloud" value="true">
-			<link rel="icon" href="<c:url value=" /images/faviconCommunity.ico" />"/>
-		</rst:hasDeploymentProperty>
+		<link rel="icon" type="image/png" href="<c:url value="/images/favicon.png"/>"/>
 
 		<script>
 			$(document).ready(function () {

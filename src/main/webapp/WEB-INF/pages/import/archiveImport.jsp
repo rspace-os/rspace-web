@@ -103,7 +103,7 @@
 			<spring:message code="importExport.export.all.help1" />
 		</p>
 		<a href="#" id="exportMyWork" class="exportLink"
-			style="background-image:url('/images/icons/exportIcon.png');">Export all my work</a>
+			style="background-image:url('/images/icons/exportIcon2.png');">Export all my work</a>
 	</div>
 
 	<div id="importBlock">
@@ -131,7 +131,7 @@
 					<label>
 						<spring:message code="importExport.import.help3" /><br />
 						<br />
-						<input id="importSubmit" class="exportLink" style="background-image:url('/images/icons/importIcon.png');"
+						<input id="importSubmit" class="exportLink" style="background-image:url('/images/icons/importIcon2.png');"
 							type="submit" value='<spring:message code="action.import"/>'>
 					</label>
 				</div>
@@ -184,7 +184,7 @@
 					<label>
 						<spring:message code="importExport.import.help3" /><br />
 						<br />
-						<input id="importSubmitOntology" class="exportLink" style="background-image:url('/images/icons/importIcon.png');"
+						<input id="importSubmitOntology" class="exportLink" style="background-image:url('/images/icons/importIcon2.png');"
 							   type="submit" value='<spring:message code="action.import"/>'>
 					</label>
 				</div>
@@ -217,7 +217,7 @@
 							<spring:message code="importExport.import.help3" /><br />
 							<br />
 							<input id="importServerSubmit" class="exportLink"
-								style="background-image:url('/images/icons/importIcon.png');" type="submit"
+								style="background-image:url('/images/icons/importIcon2.png');" type="submit"
 								value='<spring:message code="action.import"/>'>
 						</label>
 					</div>

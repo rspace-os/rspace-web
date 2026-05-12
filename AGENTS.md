@@ -2,6 +2,21 @@
 
 Project instructions for AI coding agents (Claude Code, OpenAI Codex, Gemini CLI, Cursor, etc.).
 
+## Scope
+
+These instructions apply to the entire repository unless a deeper `AGENTS.md` overrides them.
+
+## Repository Shape & Working Rules
+
+- This repository is primarily a Java application with a TypeScript/React frontend under `src/main/webapp/ui`.
+- Treat `src/main/webapp/scripts/bower_components` and other vendored third-party assets as read-only unless the task explicitly requires patching vendored code.
+- Build outputs and dependency directories must stay out of diffs. Do not commit generated files from `target`, `dist`, or `node_modules`.
+- Keep changes narrowly scoped to the user request. Do not refactor unrelated areas.
+- Match existing code style and conventions in the touched area.
+- Check for nested `AGENTS.md` files before editing files in subdirectories.
+- When searching the repo, prefer `rg` and `rg --files`.
+- Do not edit minified files unless the user explicitly asks for it.
+
 ## Project Overview
 
 RSpace is an open-source collaborative research data management platform (ELN + Inventory). It enables researchers to plan, conduct, record, and report on their work, with integrations for 30+ external services (Box, GitHub, Figshare, ORCID, MS Teams, Slack, etc.).
@@ -121,6 +136,8 @@ npm run tsc           # TypeScript type check
 npm run lint          # ESLint
 npm run lint:fix      # ESLint with auto-fix
 ```
+
+When changing frontend code in `src/main/webapp/ui`, run the most relevant checks before finishing. At minimum, run `npm run tsc`; run `npm run test` for behavioral changes and `npm run lint` when the change could affect linted code or formatting.
 
 Run a single Vitest test file:
 ```bash
@@ -249,6 +266,9 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 - Axios for API calls (centralized)
 - DOMPurify for any user-generated HTML (XSS prevention)
 - ESLint + Prettier enforced; run `npm run lint` before committing
+- Use the existing workspace package manager (`npm` for `src/main/webapp/ui`)
+- Install dependencies only when needed for the task
+- Do not add new dependencies unless they are necessary to solve the requested problem
 
 ### Transactions
 
@@ -283,6 +303,8 @@ DevDocs/                           # Developer documentation
 - `DevDocs/DeveloperNotes/Transactions.md` — Transaction boundaries
 - `DevDocs/DeveloperNotes/Caching.md` — Caching strategies
 - `DevDocs/DeveloperNotes/Logging.md` — Logging guidelines
+- Update nearby documentation when behavior or developer workflow changes
+- Keep documentation concise and specific to this repository
 
 ## CI/CD
 
@@ -296,3 +318,28 @@ DevDocs/                           # Developer documentation
 - **AGENTS.md** (this file): Primary instructions for all AI agents
 - **CLAUDE.md**: Points to AGENTS.md — for Claude Code / Anthropic agents
 - **.github/copilot-instructions.md**: Quick-reference for GitHub Copilot — points to AGENTS.md
+
+## Repo-Local Agent Skills
+
+Reusable agent skills (executable playbooks) live under `.agents/skills/`. Each
+skill is a directory containing a `SKILL.md` (with YAML frontmatter `name` +
+`description`) plus optional `REFERENCE.md` and bundled resources.
+
+Currently available:
+
+- `.agents/skills/rspace-empty-integration/` — scaffolds a new "empty" RSpace
+  integration (Liquibase migration, sysadmin/user toggles, Apps-page card,
+  TinyMCE toolbar icon opening a dialog whose chrome title is the integration's name).
+
+**Discovery:** `.agents/skills/` is the cross-agent convention (used by
+agents-md-aware tools, Cursor, Codex CLI, and others that follow the AGENTS.md
+spec). Claude Code users who want auto-discovery can either (a) symlink
+`.claude/skills -> ../.agents/skills` locally (not committed), or (b) point
+Claude at the skill explicitly: "use the skill at `.agents/skills/<name>`".
+Either way, every agent can read these files directly — no install step needed
+to use them in this repo.
+
+**To add a new skill:** create `.agents/skills/<skill-name>/SKILL.md` with
+frontmatter, keep it under ~150 lines, and put bulky templates/recipes in a
+sibling `REFERENCE.md`. List it above so the team can discover it.
+

@@ -104,6 +104,38 @@ describe("StoichiometryDialog", () => {
     });
   });
 
+  it("auto-creates the stoichiometry table on open when requested", async () => {
+    mockMutateCalculateStoichiometry.mockImplementation(
+      (
+        _variables: unknown,
+        options?: { onSuccess?: (result: { id: number; revision: number }) => void },
+      ) => {
+        options?.onSuccess?.({ id: 8, revision: 4 });
+      },
+    );
+
+    render(
+      <StoichiometryDialog
+        open
+        onClose={() => {}}
+        chemId={12345}
+        autoCreateTableOnOpen
+        recordId={1}
+        stoichiometryId={undefined}
+        stoichiometryRevision={undefined}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(mockMutateCalculateStoichiometry).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockMutateCalculateStoichiometry).toHaveBeenCalledWith(
+      { chemId: 12345, recordId: 1 },
+      expect.any(Object),
+    );
+  });
+
   it("renders the editable section immediately when stoichiometry already exists", () => {
     render(
       <StoichiometryDialog

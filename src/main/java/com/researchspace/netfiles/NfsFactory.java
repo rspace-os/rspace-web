@@ -7,10 +7,15 @@ import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.netfiles.irods.IRODSClient;
 import com.researchspace.netfiles.irods.JargonFacade;
+import com.researchspace.netfiles.s3.AwsS3Client;
 import com.researchspace.netfiles.samba.JcifsClient;
 import com.researchspace.netfiles.samba.JcifsSmbjClient;
 import com.researchspace.netfiles.samba.SmbjClient;
 import com.researchspace.netfiles.sftp.SftpClient;
+import com.researchspace.service.aws.S3Utilities;
+import com.researchspace.service.aws.impl.S3UtilitiesFactory;
+import lombok.AccessLevel;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.irods.jargon.core.connection.AuthScheme;
 import org.irods.jargon.core.connection.ClientServerNegotiationPolicy;
@@ -40,6 +45,12 @@ public class NfsFactory {
   @Autowired private NfsUserPasswordAuthentication userPasswordAuthentication;
 
   @Autowired private NfsPublicKeyAuthentication publicKeyAuthentication;
+
+  @Autowired private NfsRSpaceProvidedAuthentication rspaceProvidedAuthentication;
+
+  @Setter(AccessLevel.PROTECTED)
+  @Autowired
+  private S3UtilitiesFactory s3UtilitiesFactory;
 
   @Value("${netfilestores.auth.pubKey.passphrase}")
   private String passphrase;
@@ -102,15 +113,11 @@ public class NfsFactory {
     }
     if (NfsClientType.IRODS.equals(clientType)) {
 
-      int irodsPort;
-      String irodsCSNeg;
-      String irodsAuth;
-
-      irodsPort =
+      int irodsPort =
           (StringUtils.isBlank(fileSystem.getClientOption(NfsFileSystemOption.IRODS_PORT)))
               ? IRODS_DEFAULT_PORT
               : Integer.parseInt(fileSystem.getClientOption(NfsFileSystemOption.IRODS_PORT));
-      irodsCSNeg =
+      String irodsCSNeg =
           (StringUtils.isBlank(fileSystem.getClientOption(NfsFileSystemOption.IRODS_CSNEG)))
               ? IRODS_DEFAULT_CSNEG
               : fileSystem.getClientOption(NfsFileSystemOption.IRODS_CSNEG);
@@ -127,8 +134,7 @@ public class NfsFactory {
       JargonFacade jf = new JargonFacade();
 
       // set up iRODS CS NEG
-      // here you could set all jargon/irods props
-      // see
+      // here you could set all jargon/irods props, see
       // jargon-core/src/main/java/org/irods/jargon/core/connection/SettableJargonProperties.java
       IRODSFileSystem iRODSFs = jf.iRODSFs;
       IRODSSession session = iRODSFs.getIrodsSession();
@@ -139,7 +145,7 @@ public class NfsFactory {
       session.setJargonProperties(props);
 
       // set iRODS auth scheme
-      irodsAuth =
+      String irodsAuth =
           (StringUtils.isBlank(fileSystem.getClientOption(NfsFileSystemOption.IRODS_AUTH)))
               ? IRODS_DEFAULT_AUTH
               : fileSystem.getClientOption(NfsFileSystemOption.IRODS_AUTH);
@@ -149,8 +155,16 @@ public class NfsFactory {
 
       return new IRODSClient(ia, jf);
     }
+    if (NfsClientType.S3.equals(clientType)) {
+      try {
+        S3Utilities s3Utilities = s3UtilitiesFactory.createS3UtilitiesForNfsConnector(fileSystem);
+        return new AwsS3Client(nfsusername, s3Utilities);
+      } catch (Exception e) {
+        throw new IllegalStateException("Couldn't initialize s3 client for selected filesystem", e);
+      }
+    }
 
-    return null;
+    throw new IllegalArgumentException("unknown client type: " + clientType);
   }
 
   private void configureExtraSystemProperties() {
@@ -198,16 +212,20 @@ public class NfsFactory {
     if (NfsAuthenticationType.PASSWORD.equals(authType)) {
       return userPasswordAuthentication;
     }
+    if (NfsAuthenticationType.NONE.equals(authType)) {
+      return rspaceProvidedAuthentication;
+    }
     return null;
   }
 
   private void verifyFileSystemProperties(NfsFileSystem fileSystem) {
 
-    if (StringUtils.isEmpty(fileSystem.getUrl())) {
-      throw new IllegalStateException("nfsFileSystem url is empty");
-    }
     if (fileSystem.getClientType() == null) {
       throw new IllegalStateException("nfsFileSystem client type is empty");
+    }
+    if (StringUtils.isEmpty(fileSystem.getUrl())
+        && !fileSystem.getClientType().equals(NfsClientType.S3)) {
+      throw new IllegalStateException("nfsFileSystem url is empty");
     }
     if (fileSystem.getAuthType() == null) {
       throw new IllegalStateException("nfsFileSystem authentication type is empty");

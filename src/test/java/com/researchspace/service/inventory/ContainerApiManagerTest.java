@@ -835,15 +835,15 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         .publishEvent(Mockito.any(InventoryEditingEvent.class));
 
     // images are named as a hash of their contents
-    String mainImageHash = "f80c29ef57845fbcece93142a9497afe943cf3772e8941f27beba4a38f51c8df";
-    String thumbnailHash = "e7bdf239dd7ea19b3e2180de4ca1de09816ef51f15ba6fbe3a6c6003c42e2f72";
-    String locationsHash = "28fcb66876c91f599e63aa4daa19f18d5db80c82caeb3add283348fcfaaea800";
+    String mainImageHash = "71a151b243f0231777a010b31d431f092f5f4b92f00830fb1c6531ff3cdd5124";
+    String thumbnailHash = "7249356ee824f863e509a114e444bcda70b86159d67897f4e99f3a42d2eb9ee1";
+    String locationsHash = "b5eade9c89d35e2a6fd48d017c8fbf750642bbd40e13beaba2979bd39f3ecc12";
 
     // verify both images saved
     Container updatedContainer = containerApiMgr.getContainerById(containerId, testUser);
     FileProperty jpgImageFP = updatedContainer.getImageFileProperty();
     assertNotNull(jpgImageFP);
-    assertEquals("102469", jpgImageFP.getFileSize());
+    assertEquals("87958", jpgImageFP.getFileSize());
     assertEquals(mainImageHash + ".jpg", jpgImageFP.getFileName());
     FileProperty jpgThumbnailFP = updatedContainer.getThumbnailFileProperty();
     assertNotNull(jpgThumbnailFP);
@@ -851,7 +851,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertEquals(thumbnailHash + ".jpg", jpgThumbnailFP.getFileName());
     FileProperty pngLocationsFP = updatedContainer.getLocationsImageFileProperty();
     assertNotNull(pngLocationsFP);
-    assertEquals("168434", pngLocationsFP.getFileSize());
+    assertEquals("124580", pngLocationsFP.getFileSize());
     assertEquals(locationsHash + ".png", pngLocationsFP.getFileName());
 
     // update main image again
@@ -870,17 +870,17 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
 
     FileProperty jpgUpdatedImageFP = updatedContainer.getImageFileProperty();
     String updatedMainImageHash =
-        "21ede13b2a6e043c956e1e7f14f934bbdd6c8c3d5589cc80bcfdc09c86045f49";
+        "1218c6872dd4277e2d2df776d90f5d12d235b5f782afeccce4e65f0adff5ab13";
     assertNotNull(jpgUpdatedImageFP);
-    assertEquals("794", jpgUpdatedImageFP.getFileSize());
+    assertEquals("663", jpgUpdatedImageFP.getFileSize());
     assertEquals(updatedMainImageHash + ".jpg", jpgUpdatedImageFP.getFileName());
     assertEquals(updatedMainImageHash, jpgUpdatedImageFP.getContentsHash());
 
     FileProperty jpgUpdatedThumbnailFP = updatedContainer.getThumbnailFileProperty();
     String updatedThumbnailHash =
-        "d34f2fe4a6b04eb4b5ddc1d1273ff0064042caf0cb114828b5a4f336d2203958";
+        "f45db523f4ee512482a4255907666f0ab7b2e395ac44f1deb5c28cdcd366d0db";
     assertNotNull(jpgUpdatedThumbnailFP);
-    assertEquals("972", jpgUpdatedThumbnailFP.getFileSize());
+    assertEquals("971", jpgUpdatedThumbnailFP.getFileSize());
     assertEquals(updatedThumbnailHash + ".jpg", jpgUpdatedThumbnailFP.getFileName());
     // locations image should stay the same
     assertEquals(pngLocationsFP, updatedContainer.getLocationsImageFileProperty());

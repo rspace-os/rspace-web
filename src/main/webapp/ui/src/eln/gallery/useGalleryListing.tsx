@@ -253,7 +253,6 @@ function generateIconSrc(
   extension: string | null,
   thumbnailId: number | null,
   id: Id,
-  modificationDate: Date,
   isFolder: boolean,
   isSystemFolder: boolean,
   file: GalleryFile,
@@ -269,12 +268,12 @@ function generateIconSrc(
   if (file.isSnippet) return "/images/icons/snippet.svg";
   return idToString(id)
     .flatMap((idStr) => {
-      if (type === "Image")
-        return Result.Ok(
-          `/gallery/getThumbnail/${idStr}/${Math.floor(
-            modificationDate.getTime() / 1000,
-          )}`,
-        );
+      if (type === "Image") {
+        const time = file.modificationDate
+          ? Math.floor(file.modificationDate.getTime() / 1000)
+          : 0;
+        return Result.Ok(`/gallery/getThumbnail/${idStr}/${time}`);
+      }
       if (
         (type === "Documents" || type === "PdfDocuments") &&
         thumbnailId !== null
@@ -462,7 +461,6 @@ export class LocalGalleryFile implements GalleryFile {
       this.extension,
       this.thumbnailId,
       this.id,
-      this.modificationDate,
       this.isFolder,
       this.isSystemFolder,
       this,
@@ -691,7 +689,7 @@ export class RemoteFile implements GalleryFile {
   description: Description;
   readonly isFolder: boolean;
   readonly size: number;
-  readonly modificationDate: Date;
+  readonly modificationDate: Date | undefined;
   readonly path: ReadonlyArray<GalleryFile>;
   downloadHref?: () => Promise<UrlType>;
   logicPath: string;
@@ -714,7 +712,7 @@ export class RemoteFile implements GalleryFile {
     name: string;
     folder: boolean;
     fileSize: number;
-    modificationDate: Date;
+    modificationDate: Date | undefined;
     path: ReadonlyArray<GalleryFile>;
     logicPath: string;
     token: string;
@@ -779,7 +777,6 @@ export class RemoteFile implements GalleryFile {
       justFilenameExtension(this.name),
       null,
       -1,
-      this.modificationDate,
       this.isFolder,
       false,
       this,
@@ -1561,7 +1558,7 @@ export function useGalleryListing({
                     )(obj)
                       .flatMap(Parsers.isString)
                       .flatMap(Parsers.parseDate)
-                      .elseThrow();
+                      .orElse(undefined);
 
                     const logicPath = Parsers.getValueWithKey("logicPath")(obj)
                       .flatMap(Parsers.isString)

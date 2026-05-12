@@ -10,6 +10,7 @@ const StoichiometryTable = ({
   stoichiometryRevision,
   editable = false,
   hasChanges = false,
+  activeChemId = null,
 }: StoichiometryTableProps) => {
   const tableController = useStoichiometryTableController();
 
@@ -23,6 +24,7 @@ const StoichiometryTable = ({
         editable
         allMolecules={tableController.allMolecules}
         hasChanges={hasChanges}
+        activeChemId={activeChemId}
         linkedInventoryQuantityInfoByGlobalId={
           tableController.linkedInventoryQuantityInfoByGlobalId
         }

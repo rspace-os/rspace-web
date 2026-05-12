@@ -13,7 +13,7 @@ import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
-import com.researchspace.service.aws.S3Utilities;
+import com.researchspace.service.aws.S3ExportUtilities;
 import com.researchspace.testutils.TestFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -34,7 +34,7 @@ public class JobsApiControllerTest {
   public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock JobsApiHandler handler;
   @Mock IPropertyHolder props;
-  @Mock S3Utilities s3Utils;
+  @Mock S3ExportUtilities s3ExportUtils;
   @InjectMocks JobsApiController controller;
   User exporter = TestFactory.createAnyUser("any");
   MockHttpServletResponse response;
@@ -53,7 +53,7 @@ public class JobsApiControllerTest {
     controller.hasS3Access = true;
     when(handler.getJob(1L, exporter)).thenReturn(completed);
     URL expectedLink = new URL("https://somelink.com");
-    when(s3Utils.getPresignedUrlForArchiveDownload(completed.getResourceLocation()))
+    when(s3ExportUtils.getPresignedUrlForArchiveDownload(completed.getResourceLocation()))
         .thenReturn(expectedLink);
 
     ApiJob job = controller.get(1L, response, exporter);
@@ -68,7 +68,7 @@ public class JobsApiControllerTest {
     ApiJob completed = createCompletedApiJob();
     controller.hasS3Access = true;
     when(handler.getJob(1L, exporter)).thenReturn(completed);
-    when(s3Utils.getPresignedUrlForArchiveDownload(completed.getResourceLocation()))
+    when(s3ExportUtils.getPresignedUrlForArchiveDownload(completed.getResourceLocation()))
         .thenReturn(null);
     CoreTestUtils.assertIllegalStateExceptionThrown(() -> controller.get(1L, response, exporter));
   }

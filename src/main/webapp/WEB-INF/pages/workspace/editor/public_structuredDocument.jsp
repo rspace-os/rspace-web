@@ -83,7 +83,7 @@
 
   <!-- React Scripts -->
   <script src="<c:url value='/public/ui/dist/tinymceSidebarInfo.js'/>"></script>
-  <script src="<c:url value='/public/ui/dist/internalLink.js'/>"></script>
+  <script src="<c:url value='/public/ui/dist/InternalLink.js'/>"></script>
   <script src="<c:url value='/public/ui/dist/exportModal.js'/>"></script>
   <script src="<c:url value='/public/ui/dist/PreviewInfo.js'/>"></script>
   <script src="<c:url value='/public/ui/dist/snapGeneDialog.js'/>"></script>

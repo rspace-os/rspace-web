@@ -28,7 +28,6 @@ public enum SystemPropertyName {
   DIGITAL_COMMON_DATA_AVAILABLE("digitalCommonsData.available"),
   RAID_AVAILABLE("raid.available"),
   ARGOS_AVAILABLE("argos.available"),
-  ASCENSCIA_AVAILABLE("ascenscia.available"),
   CLUSTER_MARKET_AVAILABLE("clustermarket.available"),
   DATAVERSE_AVAILABLE("dataverse.available"),
   DMPONLINE_AVAILABLE("dmponline.available"),

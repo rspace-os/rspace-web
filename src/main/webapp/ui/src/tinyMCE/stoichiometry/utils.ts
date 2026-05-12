@@ -46,6 +46,13 @@ function formatInventoryUpdateMetricValue(value: number | null): string {
     return "—";
   }
 
+  // Do not round down to zero
+  if (value > 0 && value < 0.0005) {
+    return value.toLocaleString(undefined, {
+      maximumSignificantDigits: 12,
+    });
+  }
+
   const normalizedValue = Math.abs(value) < 0.0005 ? 0 : value;
 
   return normalizedValue.toLocaleString(undefined, {
@@ -114,7 +121,12 @@ function buildInventoryUpdateStockDisplay(
   }
 
   const rawRemainingValue = quantity.numericValue - willUseValue;
-  const remainingValue = Math.abs(rawRemainingValue) < 0.0005 ? 0 : rawRemainingValue;
+  const remainingValue =
+    rawRemainingValue > 0 && rawRemainingValue < 0.0005
+      ? rawRemainingValue
+      : Math.abs(rawRemainingValue) < 0.0005
+        ? 0
+        : rawRemainingValue;
   const remainingStatus: InventoryUpdateRemainingStatus =
     remainingValue < 0 ? "negative" : remainingValue === 0 ? "zero" : "positive";
 
@@ -315,12 +327,24 @@ function calculateActualYieldOrExcess(
   return null;
 }
 
+function clearActualYieldAndExcess(
+  molecules: ReadonlyArray<EditableMolecule>,
+): ReadonlyArray<EditableMolecule> {
+  return produce(molecules, (draftMolecules) => {
+    for (const molecule of draftMolecules) {
+      molecule.actualYield = null;
+    }
+  });
+}
+
 function updateYieldAndExcess(
   molecules: ReadonlyArray<EditableMolecule>,
 ): ReadonlyArray<EditableMolecule> {
-  const limitingReagent = molecules.find((m) => m.limitingReagent);
+  const limitingReagent = molecules.find(
+    (m) => m.limitingReagent && m.role === "REACTANT",
+  );
   if (!limitingReagent || limitingReagent.actualAmount === null) {
-    return molecules;
+    return clearActualYieldAndExcess(molecules);
   }
 
   if (limitingReagent.coefficient === null) {
@@ -334,7 +358,7 @@ function updateYieldAndExcess(
       
     ) ?? 0) / limitingReagent.coefficient;
   if (limitingReagentMoles <= 0) {
-    return molecules;
+    return clearActualYieldAndExcess(molecules);
   }
 
   return produce(molecules, (draftMolecules) => {
@@ -390,9 +414,14 @@ function applyMassByRatio(
   });
 }
 
+type CalculateUpdatedMoleculesOptions = {
+  allowRoleChange?: boolean;
+};
+
 function validateMoleculeImmutability(
   before: EditableMolecule,
   after: EditableMolecule,
+  { allowRoleChange = false }: CalculateUpdatedMoleculesOptions = {},
 ) {
   if (before.id !== after.id)
     throw new Error(
@@ -415,7 +444,7 @@ function validateMoleculeImmutability(
       "The SMILES representation is an intrinsic property of the chemical and cannot be modified",
     );
 
-  if (before.role !== after.role)
+  if (!allowRoleChange && before.role !== after.role)
     throw new Error("Modifying the role of a molecule is not supported");
   if (before.rsChemElement !== after.rsChemElement)
     throw new Error(
@@ -437,6 +466,7 @@ function validateMoleculeImmutability(
  *
  * This function handles:
  * - Storing changes to notes
+ * - Optionally updating a molecule's role when the caller enables it
  * - Update moles when mass is changed
  * - Update mass when moles are changed
  * - Update actual moles when actual amount is changed
@@ -452,13 +482,14 @@ function validateMoleculeImmutability(
 export function calculateUpdatedMolecules(
   allMolecules: ReadonlyArray<EditableMolecule>,
   editedRow: EditableMolecule,
+  options: CalculateUpdatedMoleculesOptions = {},
 ): ReadonlyArray<EditableMolecule> {
   const beforeMolecule = allMolecules.find((m) => m.id === editedRow.id);
   if (!beforeMolecule) {
     throw new Error("Edited molecule not found");
   }
 
-  validateMoleculeImmutability(beforeMolecule, editedRow);
+  validateMoleculeImmutability(beforeMolecule, editedRow, options);
 
   const applyChanges = (
     newProperties: Partial<EditableMolecule>,
@@ -474,6 +505,16 @@ export function calculateUpdatedMolecules(
 
   if (beforeMolecule.notes !== editedRow.notes) {
     return updateYieldAndExcess(applyChanges({ notes: editedRow.notes }));
+  }
+
+  if (beforeMolecule.role !== editedRow.role) {
+    return updateYieldAndExcess(
+      applyChanges({
+        role: editedRow.role,
+        limitingReagent:
+          editedRow.role === "REACTANT" ? editedRow.limitingReagent : false,
+      }),
+    );
   }
 
   if (beforeMolecule.mass !== editedRow.mass) {

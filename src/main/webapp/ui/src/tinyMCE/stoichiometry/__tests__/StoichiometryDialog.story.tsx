@@ -1,10 +1,5 @@
 import React from "react";
-import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
-import createAccentedTheme from "../../../accentedTheme";
-import { ACCENT_COLOR } from "../../../assets/branding/chemistry";
 import StoichiometryDialogEntrypoint from "../StoichiometryDialogEntrypoint";
-import Alerts from "../../../components/Alerts/Alerts";
-import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
 
 export const StoichiometryDialogWithCalculateButtonStory = ({
   onTableCreated,
@@ -26,56 +21,38 @@ export const StoichiometryDialogWithCalculateButtonStory = ({
   };
 
   return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider
-        theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
-      >
-        <Alerts>
-          <StoichiometryDialogEntrypoint
-            open={open}
-            onClose={() => setOpen(false)}
-            chemId={12345}
-            recordId={1}
-            stoichiometryId={stoichiometryId}
-            stoichiometryRevision={stoichiometryRevision}
-            onTableCreated={handleTableCreated}
-          />
-        </Alerts>
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <StoichiometryDialogEntrypoint
+      open={open}
+      onClose={() => setOpen(false)}
+      chemId={12345}
+      recordId={1}
+      stoichiometryId={stoichiometryId}
+      stoichiometryRevision={stoichiometryRevision}
+      onTableCreated={handleTableCreated}
+    />
   );
 };
 
 export const StoichiometryDialogWithTableStory = ({
-  onChangesUpdate,
   onSave,
   onDelete,
 }: {
-  onChangesUpdate?: (hasChanges: boolean) => void;
   onSave?: () => void;
   onDelete?: () => void;
 } = {}) => {
   const [open, setOpen] = React.useState(true);
 
   return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider
-        theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
-      >
-        <Alerts>
-          <StoichiometryDialogEntrypoint
-            open={open}
-            onClose={() => setOpen(false)}
-            chemId={12345}
-            recordId={1}
-            stoichiometryId={1}
-            stoichiometryRevision={1}
-            onSave={onSave}
-            onDelete={onDelete}
-          />
-        </Alerts>
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <StoichiometryDialogEntrypoint
+      open={open}
+      onClose={() => setOpen(false)}
+      chemId={12345}
+      recordId={1}
+      stoichiometryId={1}
+      stoichiometryRevision={1}
+      onSave={onSave}
+      onDelete={onDelete}
+    />
   );
 };
 
@@ -93,23 +70,17 @@ export const StoichiometryDialogClosedStory = () => {
   };
 
   return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider
-        theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
-      >
-        <Alerts>
-          <div>Dialog is closed</div>
-          <StoichiometryDialogEntrypoint
-            open={false}
-            onClose={() => {}}
-            chemId={12345}
-            recordId={1}
-            stoichiometryId={stoichiometryId}
-            stoichiometryRevision={stoichiometryRevision}
-            onTableCreated={handleTableCreated}
-          />
-        </Alerts>
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <>
+      <div>Dialog is closed</div>
+      <StoichiometryDialogEntrypoint
+        open={false}
+        onClose={() => {}}
+        chemId={12345}
+        recordId={1}
+        stoichiometryId={stoichiometryId}
+        stoichiometryRevision={stoichiometryRevision}
+        onTableCreated={handleTableCreated}
+      />
+    </>
   );
 };

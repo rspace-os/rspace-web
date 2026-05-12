@@ -104,7 +104,7 @@ import com.researchspace.service.archive.PostArchiveCompletion;
 import com.researchspace.service.archive.export.ArchiveRemover;
 import com.researchspace.service.archive.export.ExportRemovalPolicy;
 import com.researchspace.service.archive.export.StoichiometryReader;
-import com.researchspace.service.aws.S3Utilities;
+import com.researchspace.service.aws.S3ExportUtilities;
 import com.researchspace.service.chemistry.DefaultChemistryProvider;
 import com.researchspace.testutils.ArchiveTestUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -188,7 +188,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired DiskSpaceChecker diskSpaceChecker;
   private @Autowired @Qualifier("importUsersAndRecords") ImportStrategy importStrategy;
 
-  @Mock private S3Utilities s3Utilities;
+  @Mock private S3ExportUtilities s3ExportUtilities;
 
   @Autowired
   @Qualifier("standardPostExportCompletionImpl")
@@ -1245,21 +1245,32 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             NULL_MONITOR,
             importStrategy::doImport);
     assertTrue(report.isSuccessful());
-    // now check field content
+    // now check field content - re-read from DB since fixup runs post-import in a separate
+    // transaction
     StructuredDocument importedDoc = report.getImportedRecords().iterator().next().asStrucDoc();
     Stoichiometry importedStoichiometry =
         stoichiometryMgr
             .findByRecordId(importedDoc.getId())
             .orElseThrow(() -> new RuntimeException("Stoichiometry not found after import"));
     assertNotEquals(stoichiometryID, importedStoichiometry.getId());
+    List<Field> importedFields = fieldMgr.getFieldsByRecordId(importedDoc.getId(), u1);
+    Field importedTextField =
+        importedFields.stream()
+            .filter(
+                f -> f.getFieldData() != null && f.getFieldData().contains("data-stoichiometry"))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("No field with stoichiometry data found"));
     List<StoichiometryDTO> importedInDocRtfGData =
         new StoichiometryReader()
-            .extractStoichiometriesFromFieldContents(
-                importedDoc.getField("testTextField").getFieldData());
+            .extractStoichiometriesFromFieldContents(importedTextField.getFieldData());
     assertEquals(1, importedInDocRtfGData.size());
-    // rtf data of field has been changed to have the new stoichiometry's ID and null as revision.
+    // rtf data of field has been updated by post-import fixup to have the new stoichiometry's ID
+    // and its actual Envers revision.
     assertEquals(importedStoichiometry.getId(), importedInDocRtfGData.get(0).getId());
-    assertNull(importedInDocRtfGData.get(0).getRevision());
+    assertNotNull(importedInDocRtfGData.get(0).getRevision());
+    Long expectedRevision =
+        stoichiometryService.getById(importedStoichiometry.getId(), null, u1).getRevision();
+    assertEquals(expectedRevision, importedInDocRtfGData.get(0).getRevision());
     assertEquals(importedStoichiometry.getMolecules().size(), stoichiometry.getMolecules().size());
     if (!importedStoichiometry.getMolecules().isEmpty()) {
       assertTrue(importedStoichiometry.getMolecules().get(0).getInventoryLink() == null);
@@ -1740,7 +1751,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     User u1 = createInitAndLoginAnyUser();
     // create form with icon entity
     RSForm originalForm = createAnyForm(u1);
-    BufferedImage anImage = RSpaceTestUtils.getImageFromTestResourcesFolder("mainLogoN2.png");
+    BufferedImage anImage = RSpaceTestUtils.getImageFromTestResourcesFolder("mainLogo3.png");
     IconEntity originalIcon =
         IconEntity.createIconEntityFromImage(originalForm.getId(), anImage, "png");
     originalIcon = iconMgr.saveIconEntity(originalIcon, true);
@@ -2057,9 +2068,9 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     Folder importedFolder =
         (Folder) newDocs.stream().filter(BaseRecord::isFolder).findFirst().get();
 
-    // Reload with fields to avoid LazyInitializationException on detached entity in Hibernate 6
-    importedDoc = recordMgr.getRecordWithFields(importedDoc.getId(), user).asStrucDoc();
-    String importedFieldData = importedDoc.getFirstFieldData();
+    // Load field data via service to avoid lazy-loading on detached entity
+    String importedFieldData =
+        fieldMgr.getFieldsByRecordId(importedDoc.getId(), user).get(0).getFieldData();
 
     /* internal links should point to newly created folder and notebook, and not to old ids */
     String expectedTargetFolderLink = "href=\"/globalId/" + importedFolder.getGlobalIdentifier();
@@ -2581,10 +2592,10 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     SdkHttpResponse sdkHttpResponse = SdkHttpResponse.builder().statusCode(200).build();
     // PutObjectResponse putObjectResponse = Mockito.mock(PutObjectResponse.class);
 
-    when(s3Utilities.getPresignedUrlForArchiveDownload(anyString()))
+    when(s3ExportUtilities.getPresignedUrlForArchiveDownload(anyString()))
         .thenReturn(new URL("http://www.google.com"));
-    when(s3Utilities.isArchiveInS3(anyString())).thenReturn(true);
-    when(s3Utilities.uploadToS3(any(File.class))).thenReturn(sdkHttpResponse);
+    when(s3ExportUtilities.isArchiveInS3(anyString())).thenReturn(true);
+    when(s3ExportUtilities.uploadArchiveToS3(any(File.class))).thenReturn(sdkHttpResponse);
     ReflectionTestUtils.setField(standardPostExport, "hasS3Access", true);
 
     File file =

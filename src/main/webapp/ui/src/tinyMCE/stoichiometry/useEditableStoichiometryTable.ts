@@ -49,6 +49,7 @@ export type RefreshedStoichiometry = {
 type UseEditableStoichiometryTableArgs = {
   stoichiometryId: number;
   stoichiometryRevision: number;
+  activeChemId?: number | null;
   onStoichiometryRefreshed?: (
     stoichiometry: RefreshedStoichiometry,
   ) => void;
@@ -104,10 +105,7 @@ function toStoichiometryRequest(
         throw new Error("New reagents must have a name");
       }
 
-      return {
-        ...base,
-        role: "AGENT",
-      } as NewMolecule;
+      return base as NewMolecule;
     }),
   };
 }
@@ -133,6 +131,7 @@ function normaliseMoleculesAfterSave(
 export function useEditableStoichiometryTable({
   stoichiometryId,
   stoichiometryRevision,
+  activeChemId = null,
   onStoichiometryRefreshed,
 }: UseEditableStoichiometryTableArgs) {
   const { getToken } = useOauthToken();
@@ -712,14 +711,20 @@ export function useEditableStoichiometryTable({
   const deleteReagent = useCallback(
     (moleculeId: number) => {
       const moleculeToDelete = allMolecules.find((m) => m.id === moleculeId);
-      if (!moleculeToDelete || moleculeToDelete.role.toLowerCase() !== "agent") {
+      if (!moleculeToDelete) {
         return;
       }
+
+      // If the table is backed by a chemical, then the reactant and product is derived from the chemical. Disallow those changes
+      if (activeChemId !== null && moleculeToDelete.role.toLowerCase() !== "agent") {
+        return;
+      }
+
       updateAllMolecules((prevMolecules) =>
         prevMolecules.filter((m) => m.id !== moleculeId),
       );
     },
-    [allMolecules, updateAllMolecules],
+    [activeChemId, allMolecules, updateAllMolecules],
   );
 
   const selectLimitingReagent = useCallback(
@@ -752,7 +757,9 @@ export function useEditableStoichiometryTable({
           }
         }
 
-        const newMolecules = calculateUpdatedMolecules(allMolecules, newRow);
+        const newMolecules = calculateUpdatedMolecules(allMolecules, newRow, {
+          allowRoleChange: activeChemId === null,
+        });
         form.setFieldValue("allMolecules", Array.from(newMolecules), {
           dontValidate: true,
         });
@@ -762,7 +769,7 @@ export function useEditableStoichiometryTable({
         return oldRow;
       }
     },
-    [allMolecules, form],
+    [activeChemId, allMolecules, form],
   );
 
   const tableController = React.useMemo<StoichiometryTableController>(

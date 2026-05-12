@@ -1703,13 +1703,6 @@ function getImageIdFrom$Img($image) {
   return null;
 }
 
-function _getHtmlFormattedFormula(formula) {
-  if (!formula) {
-    return formula;
-  }
-  return formula.replace(/(\d+)/g, "<sub>$&</sub>");
-}
-
 var rs_tableExport;
 
 function addDownloadImageContextButton($img) {

@@ -24,15 +24,6 @@ import {
   STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX,
 } from "./shared";
 
-export type EditableStoichiometryDialogSectionProps = {
-  currentStoichiometry: CurrentStoichiometry;
-  onClose: () => void;
-  onSave?: (id: number, version: number) => void;
-  onDelete?: () => void;
-  setCurrentStoichiometry: SetCurrentStoichiometry;
-  registerCloseHandler?: RegisterCloseHandler;
-};
-
 function getMutationErrorMessage(
   error: unknown,
   fallbackMessage: string,
@@ -42,12 +33,21 @@ function getMutationErrorMessage(
 
 export default function EditableStoichiometryDialogSection({
   currentStoichiometry,
+  chemId,
   onClose,
   onSave,
   onDelete,
   setCurrentStoichiometry,
   registerCloseHandler,
-}: EditableStoichiometryDialogSectionProps): React.ReactNode {
+}: {
+  currentStoichiometry: CurrentStoichiometry;
+  chemId: number | null;
+  onClose: () => void;
+  onSave?: (id: number, version: number) => void;
+  onDelete?: () => void;
+  setCurrentStoichiometry: SetCurrentStoichiometry;
+  registerCloseHandler?: RegisterCloseHandler;
+}): React.ReactNode {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const confirm = useConfirm();
   const [mutationError, setMutationError] = React.useState<string | null>(null);
@@ -61,6 +61,7 @@ export default function EditableStoichiometryDialogSection({
   } = useEditableStoichiometryTable({
     stoichiometryId: currentStoichiometry.id,
     stoichiometryRevision: currentStoichiometry.revision,
+    activeChemId: chemId,
     onStoichiometryRefreshed: (
       refreshedStoichiometry: RefreshedStoichiometry,
     ) => {
@@ -170,6 +171,7 @@ export default function EditableStoichiometryDialogSection({
               stoichiometryId={currentStoichiometry.id}
               stoichiometryRevision={currentStoichiometry.revision}
               hasChanges={hasChanges}
+              activeChemId={chemId}
             />
           </Box>
           {mutationError && <Alert severity="error">{mutationError}</Alert>}

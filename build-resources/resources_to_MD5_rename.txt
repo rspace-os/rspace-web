@@ -129,7 +129,7 @@ ui/dist/groupActivity.js
 ui/dist/groupEditBar.js
 ui/dist/groupUserActivity.js
 ui/dist/imageEditor.js
-ui/dist/internalLink.js
+ui/dist/InternalLink.js
 ui/dist/inventoryEntry.js
 ui/dist/inventoryRecordIdentifierPublicPage.js
 ui/dist/ketcherViewer.js

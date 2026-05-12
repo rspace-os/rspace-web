@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.api.v1.GalleryFilestoresApi;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.User;
+import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -10,6 +11,7 @@ import com.researchspace.model.netfiles.NfsFileSystemInfo;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.ApiNfsRemotePathBrowseResult;
 import com.researchspace.netfiles.NfsClient;
+import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
 import com.researchspace.netfiles.NfsTarget;
@@ -45,6 +47,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
   @Autowired private NfsManager nfsManager;
   @Autowired private NfsFileHandler nfsFileHandler;
+  @Autowired private NfsFactory nfsFactory;
 
   @Override
   public List<NfsFileStoreInfo> getUserFilestores(@RequestAttribute(name = "user") User user) {
@@ -62,7 +65,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     assertFilestoresApiEnabled(user);
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     NfsFileSystem filesystem = filestore.getFileSystem();
-    NfsClient nfsClient = credentialsStore.getNfsClientWithStoredCredentials(user, filesystem);
+    NfsClient nfsClient = getNfsClientForUserAndFilesystem(user, filesystem);
 
     String combinedPath = filestore.getPath();
     if (StringUtils.isNotBlank(browsePath)) {
@@ -71,6 +74,13 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     NfsFileTreeNode fileTree = nfsClient.createFileTree(combinedPath, null, filestore);
     return getRemotePathBrowseResult(filesystem, nfsClient, fileTree);
+  }
+
+  private NfsClient getNfsClientForUserAndFilesystem(User user, NfsFileSystem filesystem) {
+    if (NfsAuthenticationType.NONE.equals(filesystem.getAuthType())) {
+      return nfsFactory.getNfsClient(user.getUsername(), null, filesystem);
+    }
+    return credentialsStore.getNfsClientWithStoredCredentials(user, filesystem);
   }
 
   private ApiNfsRemotePathBrowseResult getRemotePathBrowseResult(
@@ -100,7 +110,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     NfsFileSystem filesystem = filestore.getFileSystem();
-    NfsClient nfsClient = credentialsStore.getNfsClientWithStoredCredentials(user, filesystem);
+    NfsClient nfsClient = getNfsClientForUserAndFilesystem(user, filesystem);
 
     String fullPath = filestore.getAbsolutePath(remotePath);
     NfsFileDetails nfsFileDetails =
@@ -172,7 +182,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     assertFilestoresApiEnabled(user);
     NfsFileSystem filesystem = nfsManager.getFileSystem(filesystemId);
-    NfsClient nfsClient = credentialsStore.getNfsClientWithStoredCredentials(user, filesystem);
+    NfsClient nfsClient = getNfsClientForUserAndFilesystem(user, filesystem);
 
     NfsFileTreeNode fileTree = nfsClient.createFileTree(browsePath, null, null);
     return getRemotePathBrowseResult(filesystem, nfsClient, fileTree);

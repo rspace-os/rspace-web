@@ -150,10 +150,16 @@ const feature = test.extend<{
         await page.getByRole("button", { name: "Save Changes" }).click();
       },
       "the user clicks the delete button": async () => {
-        await page.getByRole("button", { name: "Delete" }).click();
+        await page.getByRole("button", { name: "Delete", exact: true }).click();
       },
       "the user confirms the deletion": async () => {
-        const confirmButton = page.getByRole("button", { name: "Delete" });
+        const confirmDialog = page.getByRole("dialog", {
+          name: /Delete Stoichiometry Table/,
+        });
+        const confirmButton = confirmDialog.getByRole("button", {
+          name: "Delete",
+          exact: true,
+        });
         await confirmButton.click();
       },
     });
@@ -203,7 +209,10 @@ const feature = test.extend<{
           );
         },
       "the delete button should be visible": async () => {
-        const deleteButton = page.getByRole("button", { name: "Delete" });
+        const deleteButton = page.getByRole("button", {
+          name: "Delete",
+          exact: true,
+        });
         await expect(deleteButton).toBeVisible();
       },
       "the confirmation dialog should be displayed": async () => {

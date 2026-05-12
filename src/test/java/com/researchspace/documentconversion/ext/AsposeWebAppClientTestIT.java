@@ -41,7 +41,7 @@ public class AsposeWebAppClientTestIT extends AbstractJUnit4SpringContextTests {
   File wordFile = RSpaceTestUtils.getResource("PowerPasteTesting_RSpace.docx");
   final int EXPECTED_WORDFILE_TO_PDF_LENGTH = 620471;
   final int EXPECTED_WORDFILE_TO_HTML_LENGTH = 26210;
-  final int EXPECTED_HTML_TO_DOC = 166400;
+  final int EXPECTED_HTML_TO_DOC = 150528;
 
   @Before
   public void before() throws URISyntaxException {

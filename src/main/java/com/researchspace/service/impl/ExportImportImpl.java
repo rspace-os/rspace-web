@@ -42,6 +42,7 @@ import com.researchspace.service.archive.ImportArchiveReport;
 import com.researchspace.service.archive.ImportStrategy;
 import com.researchspace.service.archive.PdfWordExportManager;
 import com.researchspace.service.archive.PostArchiveCompletion;
+import com.researchspace.service.archive.StoichiometryImportRevisionFixupManager;
 import com.researchspace.service.archive.export.ArchiveExportPlanner;
 import com.researchspace.service.archive.export.ArchiveRemover;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
@@ -113,6 +114,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   private @Autowired ArchiveRemover archiveRemover;
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired ArchiveExportPlanner archivePlanner;
+  private @Autowired StoichiometryImportRevisionFixupManager stoichiometryRevisionFixupManager;
 
   public Future<ExportEcatDocumentResult> asyncExportAllUserRecordsToPdf(
       User toExport, ExportToFileConfig config, User exporter) throws IOException {
@@ -344,7 +346,18 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     log.info("Unzipping archive into {}", tempDir);
     iconfig.setUser(importer);
 
-    return archiveImporter.importArchive(zipFile, iconfig, monitor, importStrategy);
+    ImportArchiveReport report =
+        archiveImporter.importArchive(zipFile, iconfig, monitor, importStrategy);
+    try {
+      User user = userManager.getUserByUsername(importer);
+      stoichiometryRevisionFixupManager.fixupStoichiometryRevisions(report, user);
+    } catch (Exception e) {
+      log.warn(
+          "Stoichiometry revision fixup failed after archive import completed for user {}",
+          importer,
+          e);
+    }
+    return report;
   }
 
   private File multipartToFile(MultipartFile multipart, File ouFolder)

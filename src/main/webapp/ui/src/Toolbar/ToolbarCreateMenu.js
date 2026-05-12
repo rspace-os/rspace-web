@@ -154,7 +154,7 @@ export default function CreateMenu(props) {
             data-test-id="create-btn-protocols"
           >
             <img
-              src="/images/protocolsio.png"
+              src="/images/integrations/protocolsio.png"
               style={{ paddingRight: "5px", width: "22px", marginLeft: "-5px" }}
             />
             From Protocols.io
