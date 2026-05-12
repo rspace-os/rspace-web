@@ -16,8 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Methods for encoding/decoding known embed code iframes. Currently supports iframes from Youtube
- * and JoVE.
+ * Methods for encoding/decoding known embed code iframes. Currently supports iframes from YouTube,
+ * JoVE and TIB AV-Portal.
  */
 @Component("textFieldEmbedIframeHandler")
 public class TextFieldEmbedIframeHandler {

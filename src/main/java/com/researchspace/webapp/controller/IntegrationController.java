@@ -15,7 +15,6 @@ import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GALAXY_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.JOVE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.MSTEAMS_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.NEXTCLOUD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.OMERO_APP_NAME;
@@ -139,7 +138,6 @@ public class IntegrationController extends BaseController {
     rc.put(DMPONLINE_APP_NAME, integrationsHandler.getIntegration(user, DMPONLINE_APP_NAME));
     rc.put(
         CLUSTERMARKET_APP_NAME, integrationsHandler.getIntegration(user, CLUSTERMARKET_APP_NAME));
-    rc.put(JOVE_APP_NAME, integrationsHandler.getIntegration(user, JOVE_APP_NAME));
     rc.put(DRYAD_APP_NAME, integrationsHandler.getIntegration(user, DRYAD_APP_NAME));
     rc.put(ARGOS_APP_NAME, integrationsHandler.getIntegration(user, ARGOS_APP_NAME));
     rc.put(ZENODO_APP_NAME, integrationsHandler.getIntegration(user, ZENODO_APP_NAME));

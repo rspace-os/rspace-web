@@ -269,10 +269,6 @@ public interface IPropertyHolder extends Versionable {
 
   boolean isLoginDirectoryOption();
 
-  String getJoveApiUrl();
-
-  String getJoveApiKey();
-
   String getDryadBaseUrl();
 
   String getZenodoApiUrl();

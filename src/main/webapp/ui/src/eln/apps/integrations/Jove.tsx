@@ -1,41 +1,52 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
 import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import JoveIcon from "../../../assets/branding/jove/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/jove";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
 
-type JoveArgs = {
-  integrationState: IntegrationStates["JOVE"];
-  update: (newIntegrationState: IntegrationStates["JOVE"]) => void;
-};
-
-/*
- * There is no authentication mechanism for Jove. All users can use it to embed
- * videos into their documents.
- */
-function Jove({ integrationState, update }: JoveArgs): React.ReactNode {
+function Jove(): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
         name="JoVE"
-        integrationState={integrationState}
+        integrationState={{
+          mode: "EXTERNAL",
+          credentials: null,
+        }}
         explanatoryText="Watch, reference, and teach research methods and technologies through detailed process videos."
         image={JoveIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: {} })}
-        usageText="You can search for JoVE videos and insert them into your RSpace documents, directly from RSpace. The embedded videos are directly playable from the document."
+        update={() => {}}
+        usageText="Embed JoVE videos in RSpace documents by opening the Video tool from the Documents Editor, pasting a JoVE URL, and inserting the generated embed at the cursor position."
         helpLinkText="JoVE integration docs"
         website="jove.com"
         docLink="jove"
         setupSection={
-          <ol>
-            <li>Enable the integration.</li>
-            <li>
-              When editing a document, click on the JoVE icon in the text editor
-              toolbar to access and insert videos or articles.
-            </li>
-          </ol>
+          <Stack direction="column" gap={2}>
+            <ol>
+              <li>
+                Open a document in the Documents Editor and click the <strong>Video</strong>
+                button in the editor toolbar, the insert menu, or the slash
+                menu.
+              </li>
+              <li>
+                Paste a full JoVE URL from a supported <code>jove.com</code>{" "}
+                page, for example <code>https://www.jove.com/v/60908/...</code>{" "}
+                or <code>https://app.jove.com/v/60908/...</code>.
+              </li>
+              <li>
+                Select <strong>Insert</strong> to place the JoVE video embed at
+                the current cursor position.
+              </li>
+            </ol>
+            <Typography variant="body2">
+              <strong>Note:</strong> Pasting a JoVE URL directly into the
+              document does not auto-embed it; use the Video editor action when
+              you want an embed.
+            </Typography>
+          </Stack>
         }
       />
     </Grid>
