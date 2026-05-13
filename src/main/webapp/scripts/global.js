@@ -1922,6 +1922,296 @@ RS.updateNfsPath = function(relPath, nfsId, fileSystemId, $infoPanel) {
   }
 };
 
+/*
+ * Net file store login dialog support (previously in netfiles.js).
+ * Gallery-only functions (_loadNfsFileTree, _openFileStore, etc.) are
+ * intentionally omitted — they are unreachable from the login dialog flow.
+ */
+
+var nfsPageStates = {
+  INTRO: "intro",
+  BROWSING: "browsing",
+  ADDING: "adding",
+  SYSTEM_SELECTION: "file_system_selection",
+  INIT_ERROR: "initialization_error"
+};
+var nfsCurrentPageState = nfsPageStates.INTRO;
+
+var userFileStores;
+var fileSystems;
+
+var selectedFileSystem = null;
+var selectedFileStore = null;
+
+function _initUserFileStoresAndFileSystems() {
+  try {
+    userFileStores = JSON.parse(RS.unescape(USER_FILESTORES_JSON_STRING));
+    fileSystems = JSON.parse(RS.unescape(FILESYSTEMS_JSON_STRING));
+  } catch (error) {
+    nfsCurrentPageState = nfsPageStates.INIT_ERROR;
+    console.error('error on parsing Filestores/Filesystem json string: ', error);
+    console.info("USER_FILESTORES_JSON_STRING: " + RS.unescape(USER_FILESTORES_JSON_STRING));
+    console.info("FILESYSTEMS_JSON_STRING: " + RS.unescape(FILESYSTEMS_JSON_STRING));
+  }
+}
+
+function initNetFilesLoginDialog() {
+  _initUserFileStoresAndFileSystems();
+}
+
+function _getStoreOrSystemById(id, array) {
+  var result;
+  $.each(array, function(i, storeOrSystem) {
+    if (storeOrSystem.id == id) {
+      result = storeOrSystem;
+      return false;
+    }
+  });
+  return result;
+}
+
+function getFileStoreById(fileStoreId) {
+  return _getStoreOrSystemById(fileStoreId, userFileStores);
+}
+
+function getFileSystemById(fileSystemId) {
+  return _getStoreOrSystemById(fileSystemId, fileSystems);
+}
+
+function _isLoggedIn(result) {
+  return result && (result.indexOf("logged.as.") === 0);
+}
+
+function _isNfsGalleryView() {
+  return typeof nfsGalleryView == 'boolean' && nfsGalleryView;
+}
+
+function _setLoggedUsernameFromResult(result, fileSystem) {
+  fileSystem.loggedUsername = result.substring("logged.as.".length);
+}
+
+function _saveUserTargetDir(fileSystem, targetDir) {
+  fileSystem.options.targetDir = targetDir;
+  window.sessionStorage.setItem(fileSystem.name + fileSystem.id, targetDir);
+}
+
+function _hideLoginPanel() {
+  if ($('#nfsUserPasswordLoginPanel').dialog('instance')) {
+    $('#nfsUserPasswordLoginPanel').dialog('close');
+  }
+  $('#nfsPublicKeyInfoPanel').hide();
+}
+
+function _showNfsActionFailureMsg(action, failureDetails) {
+  apprise(action + " action failed (" + failureDetails + "), if that does not work contact your System Admin");
+}
+
+function _toggleLoggedUserPanel(showPanel) {
+  if (!showPanel) {
+    $('#nfsLoggedUserPanel').css('visibility', 'hidden');
+    return;
+  }
+
+  $('#nfsLoggedUserPanel').css('visibility', 'visible');
+  var fileSystem = selectedFileSystem;
+  if (!fileSystem) {
+    fileSystem = getFileSystemById(selectedFileStore.fileSystem.id);
+  }
+  $('#nfsLoggedUserMsg').html('Logged into ' + fileSystem.name + ' as: ');
+  $('#nfsLoggedUsername').html(fileSystem.loggedUsername);
+}
+
+function _reloadFileStoresPanel() {
+  $('#fileStoreList .userFileStoreRow').remove();
+
+  var template = $('#fileStoreRowTemplate').html();
+  $.each(userFileStores, function (i, store) {
+    var data = {
+      fileStoreId: store.id,
+      fileStoreName: store.name
+    };
+    var newrow = Mustache.render(template, data);
+    $('#fileStoreList > tbody:last').append(newrow);
+  });
+
+  $('.userFileStoreLink').on("click", function() {
+    _openFileStore(getFileStoreById($(this).data('filestoreid')));
+    return false;
+  });
+}
+
+function _togglePanelsForCurrentPageState() {
+  var fileSystemsConfigured = fileSystems && fileSystems.length > 0;
+  if (!fileSystemsConfigured) {
+    var initErrorState = nfsCurrentPageState = nfsPageStates.INIT_ERROR;
+    $('#nfsInitErrorHeader').toggle(initErrorState);
+    if (!initErrorState) {
+      $('#nfsIntroHeader').show();
+      $('#noFileSystemsMsg').show();
+      $('#nfsFileStoresPanel').hide();
+    }
+    return;
+  }
+
+  var introState = nfsCurrentPageState === nfsPageStates.INTRO;
+  var browsingState = nfsCurrentPageState === nfsPageStates.BROWSING;
+  var addingState = nfsCurrentPageState === nfsPageStates.ADDING;
+  var systemSelectionState = nfsCurrentPageState === nfsPageStates.SYSTEM_SELECTION;
+
+  var fileStoresConfigured = userFileStores && userFileStores.length > 0;
+
+  _reloadFileStoresPanel();
+
+  $('#nfsIntroHeader').toggle(introState);
+  $('#fileStoreIntro').toggle(introState && fileStoresConfigured);
+  $('#fileStoreIntroNoFilestores').toggle(introState && !fileStoresConfigured);
+
+  $("#fileStoreBrowsingHeader").toggle(browsingState);
+  $('#deleteUserFileStoreBtn').prop('disabled', !browsingState);
+
+  $('.userFileStoreRowSelected').removeClass('userFileStoreRowSelected');
+  if (browsingState) {
+    $('.userFileStoreLink')
+      .filter(function() { return $(this).data('filestoreid') == selectedFileStore.id; })
+      .closest('tr').addClass('userFileStoreRowSelected');
+    $("#activeFileTreeTitle").text('Filestore: ' + selectedFileStore.name);
+  }
+
+  $("#nfsFileTreePanel").toggle(browsingState || addingState);
+  $("#fileStoreAddHeader").toggle(addingState);
+  $('#fileSystemSelectHeader').toggle(systemSelectionState);
+  $('#fileSystemSelectPanel').toggle(systemSelectionState);
+  if (systemSelectionState) {
+    _loadFileSystemsPanel();
+  }
+
+  _hideLoginPanel();
+  _toggleLoggedUserPanel(false);
+}
+
+function _changePageState(newState) {
+  nfsCurrentPageState = newState;
+  _togglePanelsForCurrentPageState();
+}
+
+function _processConnectionTestResult(result, fileSystem, nfsuserdir) {
+  var loggedIn = false;
+  if (_isLoggedIn(result)) {
+    _setLoggedUsernameFromResult(result, fileSystem);
+    loggedIn = true;
+    if (_isNfsGalleryView()) {
+      _loadNfsFileTree(nfsuserdir ? nfsuserdir : _getUserTargetDir(fileSystem));
+    }
+  } else if (result === "need.log.in") {
+    const unixPath = nfsuserdir ? nfsuserdir.includes("/") : false;
+    const windowsPath = nfsuserdir ? nfsuserdir.includes("\\") : false;
+    _showLoginPanel(fileSystem, unixPath ? nfsuserdir.split("/")[0] : windowsPath ? nfsuserdir.split("\\")[0] : nfsuserdir);
+  }
+  return loggedIn;
+}
+
+function _showLoginPanel(fileSystem, targetDir) {
+  console.log('logging to ' + fileSystem.name + ' with authType: ' + fileSystem.authType);
+  $('#fileStoreAddHeader').hide();
+  if (fileSystem.options.USER_DIRS_REQUIRED === "true") {
+    $('#userDirectoriesRequired').show();
+  } else {
+    $('#userDirectoriesRequired').hide();
+  }
+  if (fileSystem.authType === "PASSWORD") {
+    _showUsernamePasswordDialog(fileSystem, targetDir);
+  } else if (fileSystem.authType === "PUBKEY") {
+    _showPublicKeyPanels(fileSystem);
+  }
+}
+
+function _loginToNFS(fileSystem, afterLoginCallback) {
+  console.log('logging into ' + fileSystem.name);
+
+  var nfsparams = {
+    fileSystemId: fileSystem.id,
+    nfsusername: $('#nfsUsername').val(),
+    nfspassword: $('#nfsPassword').val(),
+    nfsuserdir: $('#nfsUserDir').val()
+  };
+  $('.nfsError').html('');
+  RS.blockPage("Connecting...");
+  var jqxhr = $.post('/netFiles/ajax/nfsLogin', nfsparams);
+
+  jqxhr.done(function(result) {
+    if (_isLoggedIn(result)) {
+      if (nfsparams.nfsuserdir !== undefined) {
+        _saveUserTargetDir(fileSystem, nfsparams.nfsuserdir);
+      }
+    }
+    const loggedIn = _processConnectionTestResult(result, fileSystem, selectedFileStore ? selectedFileStore.path : nfsparams.nfsuserdir);
+
+    if (loggedIn) {
+      _hideLoginPanel();
+      if (typeof afterLoginCallback == "function") {
+        afterLoginCallback(nfsparams.nfsusername);
+      }
+    } else {
+      var authDialog = $("#nfsUserPasswordLoginPanel");
+      if (authDialog.dialog('isOpen')) {
+        var currHeight = authDialog.dialog("option", "height");
+        authDialog.dialog("option", "height", currHeight + 30);
+        $('#nfsPassword').val('');
+      }
+      $('.nfsError').html(result);
+    }
+  });
+  jqxhr.fail(function() { _showNfsActionFailureMsg('Login', jqxhr.responseText); });
+  jqxhr.always(function() { RS.unblockPage(); });
+}
+
+function _showUsernamePasswordDialog(fileSystem, targetDir, afterLoginCallback) {
+  $('.nfsFileSystemName').html(fileSystem.name);
+  $('.nfsError').html('');
+
+  $('#nfsUsername').val('');
+  $('#nfsPassword').val('');
+  $('#nfsUserDir').val(targetDir);
+
+  $(document).ready(function() {
+    RS.switchToBootstrapButton();
+    $("#nfsUserPasswordLoginPanel").dialog({
+      resizable: false,
+      autoOpen: false,
+      width: 400,
+      height: 300,
+      modal: true,
+      zIndex: 3002,
+      buttons: {
+        Cancel: function() {
+          $(this).dialog('close');
+          _changePageState(nfsPageStates.INTRO);
+        },
+        "OK": _onUsernamePasswordDialogConfirm
+      }
+    });
+    $('#nfsUserPasswordLoginPanel').dialog('open');
+    RS.switchToJQueryUIButton();
+  });
+
+  function _onUsernamePasswordDialogConfirm() {
+    _loginToNFS(fileSystem, afterLoginCallback);
+    $("#nfsUserPasswordLoginPanel").dialog("option", "height", 300);
+  }
+
+  $('#nfsPassword').unbind();
+  $('#nfsPassword').keypress(function (e) {
+    if (e.which == 13) {
+      _onUsernamePasswordDialogConfirm();
+      return false;
+    }
+  });
+}
+
+function showUsernamePasswordDialog(fileSystem, afterLoginCallback) {
+  _showUsernamePasswordDialog(fileSystem, null, afterLoginCallback);
+}
+
 RS.showNetFileLoginDialog = function (fileSystemId, fileStoreId, afterLoginCallback) {
 
   if (!fileSystemId && !fileStoreId) {
@@ -1929,14 +2219,12 @@ RS.showNetFileLoginDialog = function (fileSystemId, fileStoreId, afterLoginCallb
     return;
   }
 
-  var jqxhrScript = $.getScript('/scripts/pages/workspace/gallery/netfiles.js');
   var jqxhrPage = $.get('/netFiles/ajax/netFilesLoginView');
 
-  $.when(jqxhrScript, jqxhrPage).done(function (script, page) {
+  jqxhrPage.done(function (page) {
 
-    $(document.body).append(page[0]);
+    $(document.body).append(page);
 
-    /* init method defined in downloaded netfiles.js script that is loaded at this point  */
     initNetFilesLoginDialog();
 
     var fileSystem;
@@ -1954,7 +2242,8 @@ RS.showNetFileLoginDialog = function (fileSystemId, fileStoreId, afterLoginCallb
         ' and try login there');
     }
 
-  }).fail(function (jqxhr, settings, exception) {
+  });
+  jqxhrPage.fail(function (jqxhr, settings, exception) {
     apprise('An error occured on loading net files gallery');
   });
 
