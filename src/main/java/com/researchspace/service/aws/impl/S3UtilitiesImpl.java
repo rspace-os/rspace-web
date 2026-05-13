@@ -2,7 +2,6 @@ package com.researchspace.service.aws.impl;
 
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.aws.S3Utilities;
-import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
