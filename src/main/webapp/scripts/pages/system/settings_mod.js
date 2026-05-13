@@ -90,7 +90,6 @@ define(function() {
         _printSettings([ 'snapgene.available' ]);
 
         _printCategory('Research Methods and Protocols');
-        _printSettings([ 'jove.available' ]);
         _printSettings([ 'protocols_io.available' ]);
 
         _printCategory('Analysis and Programming');

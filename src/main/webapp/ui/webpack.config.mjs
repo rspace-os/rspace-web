@@ -67,7 +67,6 @@ const config = {
     tinymceClustermarket: "./src/tinyMCE/clustermarket/index.js",
     tinymceGalaxy: "./src/tinyMCE/galaxy/index.tsx",
     tinymceOmero: "./src/tinyMCE/omero/index.js",
-    tinymceJove: "./src/tinyMCE/jove/index.tsx",
     tinymceKetcher: "./src/tinyMCE/ketcher/KetcherTinyMce.tsx",
     ketcherViewer: "./src/tinyMCE/ketcher/KetcherViewer.tsx",
     tinymceIdentifiers: "./src/tinyMCE/inventory/identifiers/index.tsx",

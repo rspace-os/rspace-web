@@ -462,6 +462,8 @@ function updateEmbedIframes($iframeDivs) {
       brandDesc = "<img class='joveLogo' src='/images/jove_logo.png'/>";
     } else if (iframeSrc.includes('youtube')) {
       brandDesc = "YouTube";
+    } else if (iframeSrc.includes('av.tib.eu')) {
+      brandDesc = "TIB AV-Portal";
     }
     if (brandDesc) {
       $thisIframeDiv.append("<div class='iframeDescDiv'>embedded video from " + brandDesc + " </div>");

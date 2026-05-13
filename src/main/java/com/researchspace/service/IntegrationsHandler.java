@@ -26,7 +26,6 @@ public interface IntegrationsHandler {
   String DIGITAL_COMMONS_DATA_APP_NAME = "DIGITALCOMMONSDATA";
   String CLUSTERMARKET_APP_NAME = "CLUSTERMARKET";
   String OMERO_APP_NAME = "OMERO";
-  String JOVE_APP_NAME = "JOVE";
   String DRYAD_APP_NAME = "DRYAD";
   String ARGOS_APP_NAME = "ARGOS";
   String ZENODO_APP_NAME = "ZENODO";

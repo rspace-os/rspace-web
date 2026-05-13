@@ -87,9 +87,6 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${omero.api.url}")
   private String omeroApiUrl;
 
-  @Value("${jove.api.url}")
-  private String joveApiUrl;
-
   @Value("${sysadmin.delete.user}")
   private String sysadminDeleteUser;
 
@@ -142,8 +139,6 @@ public class DeploymentPropertiesController extends BaseController {
         return clustermarketApiUrl;
       case "omero.api.url":
         return omeroApiUrl;
-      case "jove.api.url":
-        return joveApiUrl;
       case "onedrive.redirect":
         return oneDriveRedirect;
       case "server.urls.prefix":
@@ -215,7 +210,6 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("clustermarket.api.url", clustermarketApiUrl);
     properties.put("clustermarket.web.url", clustermarketWebUrl);
     properties.put("omero.api.url", omeroApiUrl);
-    properties.put("jove.api.url", joveApiUrl);
     properties.put("dropbox.available", rc.get("dropbox.available").getValue());
     properties.put("dropbox.linking.enabled", rc.get("dropbox.linking.enabled").getValue());
 
