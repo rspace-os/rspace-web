@@ -64,7 +64,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 /** This controller returns an image so that it may be displayed within an image tag or CSS */
 @Controller
-@RequestMapping({"/image"})
+@RequestMapping({"/image", "/public/publicView/image"})
 public class ImageController extends BaseController {
 
   private @Autowired EcatImageAnnotationManager ecatImageAnnotationManager;
