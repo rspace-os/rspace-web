@@ -5,7 +5,7 @@ import com.researchspace.service.aws.S3Utilities;
 import java.io.File;
 import java.net.URL;
 import java.time.Duration;
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
