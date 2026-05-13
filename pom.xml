@@ -1671,7 +1671,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>f41984ada5</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
