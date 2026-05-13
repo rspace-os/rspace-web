@@ -26,7 +26,6 @@ import com.researchspace.service.EcatImageAnnotationManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.IconImageManager;
-import com.researchspace.service.ImageProcessor;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RSChemElementManager;
 import java.awt.image.BufferedImage;
@@ -71,10 +70,7 @@ public class ImageController extends BaseController {
   private @Autowired IconImageManager iconImageManager;
   private @Autowired MediaManager mediaManager;
   private @Autowired FieldManager fieldManager;
-  private @Autowired ImageProcessor imgProcesser;
   private @Autowired IMediaFactory mediaFactory;
-
-  private @Autowired RSChemElementManager rsChemElementManager;
 
   @Autowired
   @Qualifier("compositeDocumentConverter")
