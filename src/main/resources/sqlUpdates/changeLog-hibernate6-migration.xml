@@ -30,4 +30,28 @@
         </update>
     </changeSet>
 
+    <changeSet id="externalworkflowdata-enum-ordinal-to-string" author="spring6-migration">
+        <comment>Convert ExternalWorkFlowData enum columns from ordinal (integer-as-string) to enum name strings for Hibernate 6 compatibility</comment>
+        <update tableName="ExternalWorkFlowData">
+            <column name="externalService" value="GALAXY"/>
+            <where>externalService = '0'</where>
+        </update>
+        <update tableName="ExternalWorkFlowData">
+            <column name="rspaceDataType" value="LOCAL"/>
+            <where>rspaceDataType = '0'</where>
+        </update>
+        <update tableName="ExternalWorkFlowData">
+            <column name="rspaceDataType" value="EXTERNAL"/>
+            <where>rspaceDataType = '1'</where>
+        </update>
+        <update tableName="ExternalWorkFlowData">
+            <column name="rspaceContainerType" value="DOCUMENT"/>
+            <where>rspaceContainerType = '0'</where>
+        </update>
+        <update tableName="ExternalWorkFlowData">
+            <column name="rspaceContainerType" value="FIELD"/>
+            <where>rspaceContainerType = '1'</where>
+        </update>
+    </changeSet>
+
 </databaseChangeLog>

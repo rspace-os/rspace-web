@@ -24,8 +24,8 @@ public class ExternalWorkFlowDataDaoHibernate
         sessionFactory
             .getCurrentSession()
             .createQuery(
-                "from ExternalWorkFlowData efd left join fetch efd.externalWorkflowInvocations ewfi"
-                    + " left join fetch ewfi.externalWorkFlowData where efd.rspacecontainerid ="
+                "select efd from ExternalWorkFlowData efd left join fetch"
+                    + " efd.externalWorkflowInvocations where efd.rspacecontainerid ="
                     + " (:rspaceContainerId) and efd.externalService = (:type) ",
                 ExternalWorkFlowData.class)
             .setParameter("rspaceContainerId", rspaceContainerId)
@@ -43,8 +43,8 @@ public class ExternalWorkFlowDataDaoHibernate
         sessionFactory
             .getCurrentSession()
             .createQuery(
-                "from ExternalWorkFlowData efd left join fetch efd.externalWorkflowInvocations ewfi"
-                    + " left join fetch ewfi.externalWorkFlowData where efd.rspacecontainerid in"
+                "select efd from ExternalWorkFlowData efd left join fetch"
+                    + " efd.externalWorkflowInvocations where efd.rspacecontainerid in"
                     + " (:ids) and efd.externalService = (:type)",
                 ExternalWorkFlowData.class)
             .setParameterList("ids", ids)
