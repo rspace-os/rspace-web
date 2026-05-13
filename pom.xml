@@ -1771,7 +1771,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rda-dmp-common-standard</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>0.1.2</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
