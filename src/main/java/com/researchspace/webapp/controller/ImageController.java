@@ -27,7 +27,6 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.IconImageManager;
 import com.researchspace.service.MediaManager;
-import com.researchspace.service.RSChemElementManager;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

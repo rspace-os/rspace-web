@@ -2238,8 +2238,7 @@ RS.showNetFileLoginDialog = function (fileSystemId, fileStoreId, afterLoginCallb
       showUsernamePasswordDialog(fileSystem, afterLoginCallback);
     } else {
       apprise('Sorry, there is some problem with logging you into ' + fileSystem.name +
-        ' please go to <a href="/gallery/netfiles" target="_blank">Gallery Filestores</a>' +
-        ' and try login there');
+        '. Please ask your administrator for help.');
     }
 
   });

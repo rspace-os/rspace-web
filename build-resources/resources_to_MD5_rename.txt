@@ -62,8 +62,6 @@ scripts/pages/workspace/editor/formlist.js
 scripts/pages/workspace/editor/tinymce5_configuration.js
 scripts/pages/workspace/editor/tinymceRS_pasteHandler.js
 scripts/pages/workspace/editor/tinymceRS_scrollHandler.js
-scripts/pages/workspace/GalleriesCrudops.js
-scripts/pages/workspace/mediaGalleryManager.js
 scripts/segment.js
 scripts/tags/createFromTemplateDlg.js
 scripts/tags/export.js
@@ -79,9 +77,7 @@ scripts/tinymceDialogUtils.js
 styles/authentication/login.css
 styles/displaytag.css
 styles/forms.css
-styles/gallery.css
 styles/journal.css
-styles/mediaGallery.css
 styles/messages.css
 styles/pages/groups/viewGroup.css
 styles/pages/searchableRecordPicker.css
@@ -120,7 +116,6 @@ ui/dist/fileTreeToolbar.js
 ui/dist/groupActivity.js
 ui/dist/groupEditBar.js
 ui/dist/groupUserActivity.js
-ui/dist/imageEditor.js
 ui/dist/InternalLink.js
 ui/dist/inventoryEntry.js
 ui/dist/inventoryRecordIdentifierPublicPage.js
@@ -132,6 +127,7 @@ ui/dist/myLabGroups.js
 ui/dist/newLabGroup.js
 ui/dist/notebookToolbar.js
 ui/dist/oAuth.js
+ui/dist/pdfPreviewDialog.js
 ui/dist/PreviewInfo.js
 ui/dist/raidConnections.js
 ui/dist/rorIntegration.js
