@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Value;
 /**
  * The tests running a real connection to AWS and Cloudflare S3 buckets, require bucket details and
  * iam authentication secrets in deployment properties.
+ *
+ * Test buckets need to contain expected files/folders structure for tests to pass.
  */
 @RunWith(ConditionalTestRunner.class)
 @Slf4j
@@ -58,7 +60,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   @Value("${s3.realConnectionTest.cloudflare.secretKey}")
   private String cloudflareSecretKey;
 
-  private static final int TOP_LEVEL_FOLDER_CONTENT_COUNT = 2;
+  private static final int TOP_LEVEL_FOLDER_CONTENT_COUNT = 3;
   private static final String UNIT_TESTS_FOLDER_NAME = "unitTests";
   private static final int UNIT_TESTS_FOLDER_CONTENT_COUNT = 3;
   private static final String UNIT_TESTS_SUBFOLDER_NAME = "unitTests subfolder";
