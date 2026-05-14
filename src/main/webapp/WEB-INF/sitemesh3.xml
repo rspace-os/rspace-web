@@ -26,9 +26,9 @@
     <mapping path="/listOfMaterials/**" exclude="true"/>
     <mapping path="*/public/inventory/**" exclude="true"/>
     <mapping path="/apps" exclude="true"/>
-    <mapping path="/Gallery" exclude="true"/>
-    <mapping path="/Gallery*" exclude="true"/>
-    <mapping path="/Gallery/**" exclude="true"/>
+    <mapping path="/gallery" exclude="true"/>
+    <mapping path="/gallery*" exclude="true"/>
+    <mapping path="/gallery/**" exclude="true"/>
     <mapping path="/about" exclude="true"/>
     <mapping path="/about/**" exclude="true"/>
 
