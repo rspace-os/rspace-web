@@ -4,7 +4,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>rspace-test-util</artifactId>
-	<version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+	<version>3.0.0</version>
 	<name>RSpace Test utilities</name>
 	<description>Utility classes used for testing across RSpace dependencies</description>
 
