@@ -4,15 +4,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.User;
+import com.researchspace.model.UserKeyPair;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystemInfo;
+import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.netfiles.NfsViewProperty;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
+import com.researchspace.service.UserKeyManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -62,6 +65,8 @@ public class NfsController extends BaseController {
   @Autowired private NfsManager nfsManager;
 
   @Autowired private NfsFileHandler nfsFileHandler;
+
+  @Autowired private UserKeyManager userKeyManager;
 
   /**
    * @return a view of login dialog for file system
@@ -150,6 +155,41 @@ public class NfsController extends BaseController {
       return loginResult; // logged in fine
     }
     return getText(loginResult); // error code, let's translate
+  }
+
+  /*
+   * ==========================
+   * public key authentication managing methods
+   *
+   * No longer triggered from the RSpace UI after the old Gallery removal, but the URLs
+   * are kept so external scripts / integrations relying on them continue to work.
+   * ==========================
+   */
+
+  /** Kept for URL stability — no longer called from the RSpace UI. */
+  @PostMapping("/nfsRegisterKey")
+  @ResponseBody
+  public String registerNewKeyForNfs(Principal principal) {
+    UserKeyPair registerNewKey = userKeyManager.createNewUserKeyPair(getPrincipalUser(principal));
+    return registerNewKey.getPublicKey();
+  }
+
+  /** Kept for URL stability — no longer called from the RSpace UI. */
+  @GetMapping("/nfsRemoveKey")
+  @ResponseBody
+  public String removeKeyForNfs(Principal principal) {
+    userKeyManager.removeUserKeyPair(getPrincipalUser(principal));
+    return SUCCESS_MSG;
+  }
+
+  /** Kept for URL stability — no longer called from the RSpace UI. */
+  @GetMapping("/nfsPublicKeyRegistrationUrl")
+  @ResponseBody
+  public String getNfsPublicKeyRegistrationUrl(
+      @RequestParam(value = "fileSystemId") Long fileSystemId) {
+    return nfsManager
+        .getFileSystem(fileSystemId)
+        .getAuthOption(NfsFileSystemOption.PUBLIC_KEY_REGISTRATION_DIALOG_URL);
   }
 
   @PostMapping("/getCurrentPath")

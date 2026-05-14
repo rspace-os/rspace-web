@@ -28,7 +28,7 @@ import org.springframework.beans.factory.annotation.Value;
  * The tests running a real connection to AWS and Cloudflare S3 buckets, require bucket details and
  * iam authentication secrets in deployment properties.
  *
- * <p>Test buckets need to contain expected files/folders structure for tests to pass.
+ * Test buckets need to contain expected files/folders structure for tests to pass.
  */
 @RunWith(ConditionalTestRunner.class)
 @Slf4j
