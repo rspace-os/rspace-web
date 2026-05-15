@@ -14,7 +14,7 @@ import TableRow from "@mui/material/TableRow";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
-import UserDetails from "../components/UserDetails_deprecated";
+import UserDetails from "../components/UserDetails";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import EnhancedTableHead, { type Cell } from "../components/EnhancedTableHead";
 import Radio from "@mui/material/Radio";
@@ -24,17 +24,15 @@ import materialTheme from "../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { type Order } from "../util/types";
+import type {
+  InternalLinkInsertParams,
+  RevisionIdentifier,
+  TinyMceEditor,
+} from "@/tinyMCE/types";
 
-type RevisionIdentifier = string | number;
 type RevisionVersion = RevisionIdentifier;
 type RevisionSortKey = "version" | "name" | "ownerFullName" | "modificationDate";
 type RevisionSelection = RevisionVersion | null;
-type InternalLinkInsertParams = [
-  RevisionIdentifier,
-  string,
-  string,
-  typeof tinymce.activeEditor,
-];
 
 interface RevisionRecord {
   id: RevisionIdentifier;
@@ -44,7 +42,7 @@ interface RevisionRecord {
   oid: {
     idString: string;
   };
-  ownerId: RevisionIdentifier;
+  ownerId: number;
   ownerFullName: string;
   modificationDate: string;
 }
@@ -84,9 +82,7 @@ function isRemovableElement(value: unknown): value is RemovableElement {
 }
 
 declare const tinymce: {
-  activeEditor: {
-    remove: () => void;
-  };
+  activeEditor: TinyMceEditor;
 };
 
 declare global {
@@ -444,6 +440,7 @@ export default function InternalLink(
                           userId={revision.ownerId}
                           fullName={revision.ownerFullName}
                           position={["bottom", "right"]}
+                          variant="outlined"
                         />
                       </TableCell>
                       <TableCell align="left">

@@ -2,6 +2,8 @@
  * These are just some generic helper functions and types to aid with ensuring
  * that the various states that the system can be in when fetching data --
  * success, loading, and error -- are always correctly covered.
+ *
+ * @deprecated Use TanStack Query directly
  */
 
 import Result from "./result";
@@ -29,21 +31,6 @@ export function match<A, B>(
   if (fetched.tag === "loading") return matcher.loading();
   if (fetched.tag === "error") return matcher.error(fetched.error);
   return matcher.success(fetched.value);
-}
-
-/**
- * Apply a function to the value some fetched data, assuming that is has
- * succeessfully been fetched. This useful when rendering some data that has
- * been fetched, by applying a function that returns some JSX, with the result
- * being as if we had fetched the JSX directly.
- */
-export function map<A, B>(
-  fetched: Fetched<A>,
-  func: (loadedValue: A) => B
-): Fetched<B> {
-  if (fetched.tag === "success")
-    return { tag: "success", value: func(fetched.value) };
-  return fetched;
 }
 
 /**

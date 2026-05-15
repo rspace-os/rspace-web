@@ -6,7 +6,7 @@ import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
-import { traverseObjectTree } from "./unsafeUtils";
+import { traverseObjectTree } from "../util/unsafeUtils";
 import { Optional } from "./optional";
 
 type Operation =

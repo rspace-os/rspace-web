@@ -9,16 +9,19 @@ import {
 } from "./Clustermarket";
 import { getSorting, stableSort } from "../../util/table";
 import { createRoot } from "react-dom/client";
+import Analytics from "../../components/Analytics";
 
 document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-clustermarket");
   const root = createRoot(domContainer);
   root.render(
-    <Clustermarket
-      clustermarket_web_url={
-        parent.tinymce.activeEditor.settings.clustermarket_web_url
-      }
-    />,
+    <Analytics>
+      <Clustermarket
+        clustermarket_web_url={
+          parent.tinymce.activeEditor.settings.clustermarket_web_url
+        }
+      />
+    </Analytics>,
   );
 });
 

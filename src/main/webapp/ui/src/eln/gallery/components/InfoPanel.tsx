@@ -948,7 +948,6 @@ export function InfoPanelForLargeViewports() {
                 return null;
               })
               .orElseGet((errors) => {
-
                 console.info("Could not provide view", errors);
                 return (
                   <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
