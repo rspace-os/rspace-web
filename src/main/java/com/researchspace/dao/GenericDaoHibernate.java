@@ -115,12 +115,12 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   }
 
   /**
-   * Replaces Hibernate 5's {@code Session.saveOrUpdate()}, which was removed in Hibernate 6.
-   * {@code saveOrUpdate()} kept the original Java instance managed for both new and detached
-   * entities. {@code merge()} cannot do this — it returns a copy, which causes
-   * {@code EntityExistsException} when the original is already referenced by a parent collection
-   * in the session. So we use {@code persist()} for new/managed entities (same-instance semantics)
-   * and {@code merge()} only for detached entities.
+   * Replaces Hibernate 5's {@code Session.saveOrUpdate()}, which was removed in Hibernate 6. {@code
+   * saveOrUpdate()} kept the original Java instance managed for both new and detached entities.
+   * {@code merge()} cannot do this — it returns a copy, which causes {@code EntityExistsException}
+   * when the original is already referenced by a parent collection in the session. So we use {@code
+   * persist()} for new/managed entities (same-instance semantics) and {@code merge()} only for
+   * detached entities.
    *
    * <p>{@inheritDoc}
    */
