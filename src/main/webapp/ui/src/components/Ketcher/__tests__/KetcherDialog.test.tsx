@@ -1,5 +1,6 @@
 import React from "react";
-import { render, screen, waitForElementToBeRemoved } from "@testing-library/react";
+import { screen, waitForElementToBeRemoved } from "@testing-library/react";
+import { render } from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

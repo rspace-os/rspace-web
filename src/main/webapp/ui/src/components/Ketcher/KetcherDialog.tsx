@@ -94,7 +94,7 @@ const KetcherDialog = ({
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
-  const initialKet = useRef<string>("");
+  const initialKet = useRef<string | null>(null);
 
   React.useEffect(() => {
     if (isOpen) trackEvent("user:open:chemistry_editor", { readOnly });
@@ -110,6 +110,10 @@ const KetcherDialog = ({
   };
 
   const handleCancelClick = async () => {
+    if (initialKet.current === null) {
+      closeAndReset();
+      return;
+    }
     const currentKet = await window.ketcher?.getKet();
     if (currentKet && currentKet !== initialKet.current) {
       setShowDiscardConfirm(true);
@@ -152,11 +156,15 @@ const KetcherDialog = ({
                   onChange?.();
                 });
                 window.ketcher = ketcher;
-                void ketcher.setMolecule(existingChem).then(() =>
-                  ketcher.getKet().then((ket) => {
+                void ketcher
+                  .setMolecule(existingChem)
+                  .then(() => ketcher.getKet())
+                  .then((ket) => {
                     initialKet.current = ket;
-                  }),
-                );
+                  })
+                  .catch(() => {
+                    initialKet.current = null;
+                  });
                 if (readOnly) {
                   ketcher.editor.setOptions(
                     JSON.stringify({ viewOnlyMode: true }),
