@@ -132,6 +132,9 @@
         <mapping class="com.researchspace.model.inventory.Sample"/>
         <mapping class="com.researchspace.model.inventory.SubSample"/>
         <mapping class="com.researchspace.model.inventory.SubSampleNote"/>
+
+        <mapping class="com.researchspace.model.inventory.Instrument"/>
+        <mapping class="com.researchspace.model.inventory.InstrumentTemplate"/>
     
         <mapping class="com.researchspace.model.inventory.Container"/>
         <mapping class="com.researchspace.model.inventory.ContainerLocation"/>

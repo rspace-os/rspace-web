@@ -11,9 +11,9 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
-import com.researchspace.model.inventory.field.SampleField;
 import com.researchspace.model.record.IRecordFactory;
 import java.io.IOException;
 import java.util.List;
@@ -48,7 +48,7 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
     Sample newSample = createSampleWithOldFormatRadioChoiceFields(user);
     Sample persistedSample = sampleDao.persistSampleTemplate(newSample);
     assertNotNull(persistedSample);
-    List<SampleField> persistedFields = persistedSample.getActiveFields();
+    List<InventoryEntityField> persistedFields = persistedSample.getActiveFields();
     commitTransaction();
 
     // confirm sample saved
@@ -113,7 +113,7 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
     openTransaction();
     Sample retrievedSample = sampleDao.get(persistedSample.getId());
     assertNotNull(retrievedSample);
-    List<SampleField> updatedFields = retrievedSample.getActiveFields();
+    List<InventoryEntityField> updatedFields = retrievedSample.getActiveFields();
     commitTransaction();
 
     // confirm sample updated fine and content now parseable
@@ -152,13 +152,13 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
     InventoryRadioFieldDef radioDef1 = new InventoryRadioFieldDef();
     FieldUtils.writeField(
         radioDef1, "radioOptions", "no-default-radio=option1&no-default-radio=option2", true);
-    SampleField radioField1 = new InventoryRadioField(radioDef1, "radioField v1.70");
+    InventoryEntityField radioField1 = new InventoryRadioField(radioDef1, "radioField v1.70");
     radioField1.setData("option1");
     newSample.addSampleField(radioField1);
     // format used in RSpace 1.71
     InventoryRadioFieldDef radioDef2 = new InventoryRadioFieldDef();
     FieldUtils.writeField(radioDef2, "radioOptions", "v=Invitrogen&v=NEB&v=Amersham&v=Sigma", true);
-    SampleField radioField2 = new InventoryRadioField(radioDef2, "radioField v1.71");
+    InventoryEntityField radioField2 = new InventoryRadioField(radioDef2, "radioField v1.71");
     radioField2.setData("Sigma");
     newSample.addSampleField(radioField2);
 
@@ -167,7 +167,7 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
     InventoryChoiceFieldDef choiceDef1 = new InventoryChoiceFieldDef();
     FieldUtils.writeField(
         choiceDef1, "choiceOptions", "choiceField=optionA&choiceField=optionB", true);
-    SampleField choiceField1 = new InventoryChoiceField(choiceDef1, "choiceField v1.70 a");
+    InventoryEntityField choiceField1 = new InventoryChoiceField(choiceDef1, "choiceField v1.70 a");
     choiceField1.setData("fieldSelectedChoices=optionA");
     newSample.addSampleField(choiceField1);
     // format used in RSpace 1.70, raised in RSINV-470
@@ -177,13 +177,13 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
         "choiceOptions",
         "choice & Field =optionA&choice & Field =optionB&choice & Field =and C",
         true);
-    SampleField choiceField2 = new InventoryChoiceField(choiceDef2, "choiceField v1.70 b");
+    InventoryEntityField choiceField2 = new InventoryChoiceField(choiceDef2, "choiceField v1.70 b");
     choiceField2.setData("fieldSelectedChoices=optionB&fieldSelectedChoices=and C");
     newSample.addSampleField(choiceField2);
     // format used in RSpace 1.71
     InventoryChoiceFieldDef choiceDef3 = new InventoryChoiceFieldDef();
     FieldUtils.writeField(choiceDef3, "choiceOptions", "v=4&v=6&v=8&v=other", true);
-    SampleField choiceField3 = new InventoryChoiceField(choiceDef3, "choiceField v1.71");
+    InventoryEntityField choiceField3 = new InventoryChoiceField(choiceDef3, "choiceField v1.71");
     choiceField3.setData("v=4&v=6");
     newSample.addSampleField(choiceField3);
 

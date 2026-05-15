@@ -4,7 +4,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -58,15 +58,15 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
     return columnNames;
   }
 
-  private List<SampleField> getSampleFieldsFromAllSamples(List<Sample> samples) {
+  private List<InventoryEntityField> getSampleFieldsFromAllSamples(List<Sample> samples) {
     return samples.stream().flatMap(s -> s.getActiveFields().stream()).collect(Collectors.toList());
   }
 
   protected List<String> getSampleFieldColumnNamesForCsv(
-      List<SampleField> extraFields, CsvExportMode exportMode) {
+      List<InventoryEntityField> extraFields, CsvExportMode exportMode) {
     List<String> columnNames = new ArrayList<>();
     if (CsvExportMode.FULL.equals(exportMode) && extraFields != null) {
-      for (SampleField sf : extraFields) {
+      for (InventoryEntityField sf : extraFields) {
         String sampleFieldColumName = getColumnNameForSampleField(sf);
         if (!columnNames.contains(sampleFieldColumName)) {
           columnNames.add(sampleFieldColumName);
@@ -76,7 +76,7 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
     return columnNames;
   }
 
-  protected String getColumnNameForSampleField(SampleField sf) {
+  protected String getColumnNameForSampleField(InventoryEntityField sf) {
     String connectedTemplateGlobalId = sf.getTemplateField().getSample().getGlobalIdentifier();
     return String.format("%s (%s, %s)", sf.getName(), sf.getType(), connectedTemplateGlobalId);
   }
@@ -160,7 +160,7 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
         numberOfCsvColumns, itemProperties);
 
     if (CsvExportMode.FULL.equals(exportMode) && sample.getActiveExtraFields() != null) {
-      for (SampleField sf : sample.getActiveFields()) {
+      for (InventoryEntityField sf : sample.getActiveFields()) {
         String valueForProp = sf.getData();
         int columnIndexForValue = csvColumnNames.indexOf(getColumnNameForSampleField(sf));
         itemProperties.set(columnIndexForValue, valueForProp != null ? valueForProp : "");

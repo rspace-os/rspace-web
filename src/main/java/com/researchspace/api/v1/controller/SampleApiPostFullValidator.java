@@ -1,11 +1,11 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.controller.SamplesApiController.ApiSampleFullPost;
-import com.researchspace.api.v1.model.ApiSampleField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.List;
 import java.util.function.Consumer;
@@ -23,6 +23,7 @@ import org.springframework.validation.Validator;
 public class SampleApiPostFullValidator implements Validator {
 
   @Autowired private ApiFieldsHelper fieldHelper;
+  private static final String SAMPLE_ENTITY_NAME_TYPE = "sample";
 
   @Data
   @AllArgsConstructor
@@ -72,8 +73,8 @@ public class SampleApiPostFullValidator implements Validator {
 
   private void validateFieldsAndTemplateFields(Errors errors, ApiSampleFullPost apiSamplePost) {
     if (apiSamplePost.getTemplate() != null) {
-      List<ApiSampleField> incomingApiFields = apiSamplePost.getApiSample().getFields();
-      List<SampleField> templateFields = apiSamplePost.getTemplate().getActiveFields();
+      List<ApiInventoryEntityField> incomingApiFields = apiSamplePost.getApiSample().getFields();
+      List<InventoryEntityField> templateFields = apiSamplePost.getTemplate().getActiveFields();
 
       if (!incomingApiFields.isEmpty()) {
         // run validation against template fields
@@ -84,44 +85,8 @@ public class SampleApiPostFullValidator implements Validator {
             new ErrorAggregator(errors));
       }
 
-      validateMandatoryFieldsForSamplePost(incomingApiFields, templateFields, errors);
-    }
-  }
-
-  private void validateMandatoryFieldsForSamplePost(
-      List<ApiSampleField> incomingApiFields, List<SampleField> templateFields, Errors errors) {
-
-    for (int i = 0; i < templateFields.size(); i++) {
-      SampleField templateField = templateFields.get(i);
-      if (templateField.isMandatory()) {
-        boolean hasApiFieldForTemplateField = incomingApiFields.size() > i;
-        boolean isOptionsStoringField = templateField.isOptionsStoringField();
-        if (isOptionsStoringField) {
-          List<String> selectedOptions =
-              hasApiFieldForTemplateField
-                  ? incomingApiFields.get(i).getSelectedOptions()
-                  : templateField.getSelectedOptions();
-          if (CollectionUtils.isEmpty(selectedOptions)) {
-            errors.rejectValue(
-                "fields",
-                "errors.inventory.sample.mandatory.field.no.selection",
-                new Object[] {templateField.getName()},
-                "no option selected for mandatory field");
-          }
-        } else {
-          String incomingContent =
-              hasApiFieldForTemplateField
-                  ? incomingApiFields.get(i).getContent()
-                  : templateField.getFieldData();
-          if (!templateField.isValidValueForMandatoryField(incomingContent)) {
-            errors.rejectValue(
-                "fields",
-                "errors.inventory.sample.mandatory.field.empty",
-                new Object[] {templateField.getName()},
-                "no content for mandatory field");
-          }
-        }
-      }
+      fieldHelper.validateMandatoryFieldsForEntityPost(
+          SAMPLE_ENTITY_NAME_TYPE, incomingApiFields, templateFields, errors);
     }
   }
 

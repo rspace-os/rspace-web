@@ -8,10 +8,10 @@ import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryDateField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryTextField;
 import com.researchspace.model.inventory.field.InventoryTimeField;
-import com.researchspace.model.inventory.field.SampleField;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
@@ -48,13 +48,13 @@ public class SyntheticWaxSampleTemplate extends BuiltinContent implements Sample
             + " sqaure portions cut from main block using Acme wax block cutter.");
     sample.setTags("wax");
 
-    SampleField id = new InventoryTextField("Identifier");
+    InventoryEntityField id = new InventoryTextField("Identifier");
     sample.addSampleField(id);
-    SampleField productionDate = new InventoryDateField("Production Date");
+    InventoryEntityField productionDate = new InventoryDateField("Production Date");
     sample.addSampleField(productionDate);
-    SampleField productionTime = new InventoryTimeField("Production Time");
+    InventoryEntityField productionTime = new InventoryTimeField("Production Time");
     sample.addSampleField(productionTime);
-    SampleField batchNumber = new InventoryNumberField("Batch Number");
+    InventoryEntityField batchNumber = new InventoryNumberField("Batch Number");
     sample.addSampleField(batchNumber);
 
     InventoryChoiceFieldDef choiceFieldDef = new InventoryChoiceFieldDef();

@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.csvimport;
 
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryDateField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryIdentifierField;
 import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
@@ -10,7 +11,6 @@ import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryTextField;
 import com.researchspace.model.inventory.field.InventoryTimeField;
 import com.researchspace.model.inventory.field.InventoryUriField;
-import com.researchspace.model.inventory.field.SampleField;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.ArrayList;
@@ -39,7 +39,8 @@ public class InventoryImportSampleFieldCreator {
   /** Ratio of distinct values to all values below which the radio type is suggested. */
   public static final double RADIO_REPEATING_OPTIONS_RATIO = 0.76;
 
-  public SampleField getSuggestedSampleFieldForNameAndValues(String name, List<String> values) {
+  public InventoryEntityField getSuggestedSampleFieldForNameAndValues(
+      String name, List<String> values) {
 
     List<String> nonEmptyValues =
         values.stream().filter(opt -> StringUtils.isNotBlank(opt)).collect(Collectors.toList());
@@ -96,7 +97,7 @@ public class InventoryImportSampleFieldCreator {
     return new HashMap<>();
   }
 
-  private boolean isSuggestedFieldForValues(Set<String> values, SampleField field) {
+  private boolean isSuggestedFieldForValues(Set<String> values, InventoryEntityField field) {
     return !values.isEmpty() && values.stream().allMatch(v -> field.isSuggestedFieldForData(v));
   }
 
