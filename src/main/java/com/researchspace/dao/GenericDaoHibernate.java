@@ -9,8 +9,11 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import org.hibernate.MappingException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,28 +115,12 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   }
 
   /**
-   * Saves or updates the entity, mirroring the semantics of the removed {@code
-   * Session.saveOrUpdate()}.
-   *
-   * <ul>
-   *   <li><b>New entities (id == null)</b>: {@link Session#persist} is used so that the
-   *       <em>same</em> Java instance becomes managed. This is important when the entity is already
-   *       present in a parent collection — a {@code merge()} copy would create two managed
-   *       instances for the same row and cause {@link jakarta.persistence.EntityExistsException} on
-   *       the next cascade.
-   *   <li><b>Entities with an id</b>: {@link Session#merge} is used. This correctly handles both
-   *       detached entities and already-managed entities (including property-access entities where
-   *       {@link jakarta.persistence.PersistenceUnitUtil#getIdentifier} incorrectly returns {@code
-   *       null} in Hibernate 6). Merge also cascades to {@code CascadeType.MERGE} child
-   *       associations, ensuring that new children added after the initial persist (e.g. {@code
-   *       StoichiometryMolecule} added to an already-persisted {@code Stoichiometry}) are
-   *       themselves inserted and assigned their database ids.
-   * </ul>
-   *
-   * <p>For new entities, the database-generated id is set on the entity immediately by the {@code
-   * IDENTITY} strategy. For entities that reach the {@code merge()} path while transient, {@link
-   * com.researchspace.dao.spring.ext.IdTransferringMergeEventListener} copies the generated id back
-   * to the original instance.
+   * Replaces Hibernate 5's {@code Session.saveOrUpdate()}, which was removed in Hibernate 6.
+   * {@code saveOrUpdate()} kept the original Java instance managed for both new and detached
+   * entities. {@code merge()} cannot do this — it returns a copy, which causes
+   * {@code EntityExistsException} when the original is already referenced by a parent collection
+   * in the session. So we use {@code persist()} for new/managed entities (same-instance semantics)
+   * and {@code merge()} only for detached entities.
    *
    * <p>{@inheritDoc}
    */
@@ -142,55 +129,34 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
     Session session = getSession();
     Object id = getEntityId(object, session);
     if (id == null) {
-      // New entity: persist() keeps the same Java instance managed (no copy created).
       session.persist(object);
       return object;
     }
     if (session.contains(object)) {
-      // For managed entities, persist() is a no-op on the entity itself but the JPA spec
-      // guarantees it cascades CascadeType.PERSIST/ALL to any new transient children reachable
-      // through cascade relationships (e.g. newly-added ExtraField, DigitalObjectIdentifier).
-      // This is intentionally preferred over merge() here: merge() on a managed entity in
-      // Hibernate 6 re-initialises lazy collection proxies from the database, which overwrites
-      // in-memory soft-deletion changes (e.g. doi.setDeleted(true)) before they can be flushed.
       session.persist(object);
       return object;
     }
-    // Detached entity: merge() re-attaches it and cascades to new transient children.
     return (T) session.merge(object);
   }
 
   /**
    * Returns the database identifier of {@code object}, or {@code null} if the entity is new.
    *
-   * <p>Tries {@link jakarta.persistence.PersistenceUnitUtil#getIdentifier} first (works for
-   * field-access entities). Falls back to reflective invocation of {@code getId()} for
-   * property-access entities where Hibernate 6's {@code PersistenceUnitUtil} incorrectly returns
-   * {@code null} even when the entity has a non-null id.
+   * <p>Uses Hibernate's {@link EntityPersister} to extract the identifier, which works correctly
+   * for both field-access and property-access entities. {@code PersistenceUnitUtil.getIdentifier()}
+   * incorrectly returns {@code null} for property-access entities in Hibernate 6. If the model
+   * entities are migrated to field-access ({@code @Id} on the field instead of the getter), this
+   * method could be replaced with a simple {@code PersistenceUnitUtil.getIdentifier()} call.
    */
   private Object getEntityId(Object object, Session session) {
+    SessionImplementor si = (SessionImplementor) session;
     try {
-      Object id = session.getSessionFactory().getPersistenceUnitUtil().getIdentifier(object);
-      if (id != null) {
-        return id;
-      }
-    } catch (IllegalArgumentException e) {
+      EntityPersister persister = si.getEntityPersister(null, object);
+      return persister.getIdentifier(object, si);
+    } catch (MappingException e) {
       // Entity type not registered with this persistence unit
+      return null;
     }
-    // Fallback for property-access entities (e.g. BaseRecord, RecordToFolder, UserAppConfig).
-    Class<?> cls = object.getClass();
-    while (cls != null) {
-      try {
-        java.lang.reflect.Method m = cls.getDeclaredMethod("getId");
-        m.setAccessible(true);
-        return m.invoke(object);
-      } catch (NoSuchMethodException e) {
-        cls = cls.getSuperclass();
-      } catch (ReflectiveOperationException e) {
-        break;
-      }
-    }
-    return null;
   }
 
   /** {@inheritDoc} */
