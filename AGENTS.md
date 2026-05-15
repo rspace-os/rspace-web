@@ -239,93 +239,60 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 ## Isolated Database (Agent Tasks)
 
 When running tests that require a database (Spring integration tests or IT tests — not
-pure unit tests with `-Dfast=true`) or running the application during a task, spin up
-an isolated MariaDB container so your work doesn't touch the developer's local database.
+pure unit tests with `-Dfast=true`) or running the application during a task from a **git
+worktree**, spin up an isolated MariaDB container so your work doesn't touch the
+developer's local database.
 
-### Step 1 — Check Docker availability
+This applies **only to worktrees** (detected via `git rev-parse`). In the main checkout,
+use the developer's local MariaDB instance and do **not** run `drop-recreate-db`.
 
-```bash
-docker info > /dev/null 2>&1
-```
+### Helper script
 
-If this fails, skip to **Fallback** below.
-
-### Step 2 — Start the container
-
-Run the following as a single shell block so all variables remain in scope for later steps.
-Also write state to `/tmp/rspace-agent-db.env` so it survives across separate shell invocations.
+All lifecycle management is handled by `.agents/scripts/agent-db.sh`:
 
 ```bash
-AGENT_DB_NAME="rspace-agent-db-$$"
-AGENT_DB_PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()")
-AGENT_DB_PROPS="src/main/resources/deployments/dev/deployment.properties"
-AGENT_DB_ORIG=$(grep "^jdbc\.url=" "$AGENT_DB_PROPS" || echo "")
-printf 'AGENT_DB_NAME=%s\nAGENT_DB_PORT=%s\n' \
-  "$AGENT_DB_NAME" "$AGENT_DB_PORT" > /tmp/rspace-agent-db.env
-printf 'AGENT_DB_ORIG=%q\n' "$AGENT_DB_ORIG" >> /tmp/rspace-agent-db.env
+# Before DB-needing work — idempotent, reuses existing container
+.agents/scripts/agent-db.sh start
 
-docker run -d \
-  --name "$AGENT_DB_NAME" \
-  -e MYSQL_ROOT_PASSWORD=rootpwd \
-  -e MYSQL_DATABASE=rspace \
-  -e MYSQL_USER=rspacedbuser \
-  -e MYSQL_PASSWORD=rspacedbpwd \
-  -p "127.0.0.1:${AGENT_DB_PORT}:3306" \
-  mariadb:10.11 \
-  --character-set-server=utf8mb4 \
-  --collation-server=utf8mb4_unicode_ci
+# When done (or on failure) — stops container, cleans state
+.agents/scripts/agent-db.sh stop
 
-until docker exec "$AGENT_DB_NAME" mariadb-admin ping -u root -prootpwd --silent 2>/dev/null; do
-  sleep 1
-done
+# Check current state
+.agents/scripts/agent-db.sh status
 ```
 
-### Step 3 — Patch the JDBC URL
+**What `start` does:**
+1. Verifies you're in a git worktree and Docker is available
+2. Garbage-collects orphaned containers from deleted worktrees
+3. If a container already exists for this worktree, reuses it
+4. Otherwise: starts a MariaDB 10.11 container named `rspace-agent-db-<worktree-name>`
+   on a random free port
+5. Patches `deployment.properties` with the container's JDBC URL
+6. Initialises the schema via `drop-recreate-db`
+7. Writes state to `.agent-db.env` in the worktree root
 
-```bash
-. /tmp/rspace-agent-db.env
-# portable sed: works on both macOS and Linux
-sed -i.bak '/^jdbc\.url=/d' "$AGENT_DB_PROPS" && rm -f "${AGENT_DB_PROPS}.bak"
-echo "jdbc.url=jdbc:mysql://127.0.0.1:${AGENT_DB_PORT}/rspace" >> "$AGENT_DB_PROPS"
-```
+After `start`, run Maven commands normally — no `-Denvironment` flag needed.
 
-### Step 4 — Initialise the schema
+**What `stop` does:**
+1. Stops and removes the container
+2. Removes the patched `jdbc.url` from `deployment.properties`
+3. Removes the `.agent-db.env` state file
 
-On the **first** Maven test/run command in the task, add `-Denvironment=drop-recreate-db`
-to create the schema in the fresh container. For all subsequent Maven commands in the same
-task, use `-Denvironment=keepdbintact`. Note: pure unit tests (`-Dfast=true`) don't touch
-the DB and don't need either flag.
+### Container lifecycle
 
-### Step 5 — Cleanup (always, even on failure)
-
-At the end of the task (or if the task is interrupted), restore the properties file and
-stop the container:
-
-```bash
-. /tmp/rspace-agent-db.env
-sed -i.bak '/^jdbc\.url=/d' "$AGENT_DB_PROPS" && rm -f "${AGENT_DB_PROPS}.bak"
-if [ -n "$AGENT_DB_ORIG" ]; then
-  echo "$AGENT_DB_ORIG" >> "$AGENT_DB_PROPS"
-fi
-docker stop "$AGENT_DB_NAME" && docker rm "$AGENT_DB_NAME"
-rm -f /tmp/rspace-agent-db.env
-```
-
-If you can't clean up (e.g. the session crashed), the developer can run:
-
-```bash
-docker ps -a --filter "name=rspace-agent-db-" --format '{{.Names}}' | while read -r c; do docker rm -f "$c"; done
-```
+Containers are scoped **per worktree**, not per session or test run. If a second session
+starts in the same worktree, `start` detects the existing container and reuses it.
+Orphaned containers (from deleted worktrees or crashes) are automatically cleaned up
+when any agent runs `start` or `gc`.
 
 ### Fallback (Docker unavailable)
 
-Skip Steps 2–3. Assume a local MariaDB instance is running with:
-- DB name: `rspace`
-- User: `rspacedbuser` / `rspacedbpwd`
-- URL: `jdbc:mysql://localhost:3306/rspace` (the default in `defaultDeployment.properties`)
+If Docker is not available, the script will exit with an error. In that case, assume a
+local MariaDB instance is running with the defaults in `defaultDeployment.properties`:
+- DB: `rspace`, User: `rspacedbuser` / `rspacedbpwd`
+- URL: `jdbc:mysql://localhost:3306/rspace`
 
-Do **not** drop or recreate this database — use `-Denvironment=keepdbintact` (or the equivalent
-flag for the run command) to preserve the developer's existing data.
+Do **not** drop or recreate this database to preserve the developer's existing data.
 
 ## Common Development Pitfalls
 
