@@ -1,9 +1,11 @@
 package com.axiope.service.cfg;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import javax.cache.Cache;
 import javax.cache.CacheManager;
+import org.ehcache.Cache;
+import org.ehcache.config.ResourceType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,17 +22,35 @@ public class EhCacheConfigurerConfigTest extends AbstractJUnit4SpringContextTest
   @After
   public void tearDown() throws Exception {}
 
+  // from ehcache.xml
+  static final long DEFAULT_FILEPROPERTY_SIZE = 2500;
+  static final long DEFAULT_IMAGE_BLOB_SIZE = 1000;
+
   // any number > 0
   static final int OVERRIDE_FILEPROPERTY_SIZE = 1012;
-  static final int OVERRIDE_IMAGE_BLOB_SIZE_SIZE = 2312;
+  static final int OVERRIDE_IMAGE_BLOB_SIZE = 2312;
 
-  static Cache<?, ?> getCache(String name, CacheManager cacheMgr) {
-    return cacheMgr.getCache(name);
+  static Cache<?, ?> getNativeCache(String name, CacheManager cacheMgr) {
+    javax.cache.Cache<?, ?> jcache = cacheMgr.getCache(name);
+    assertNotNull("Cache " + name + " not found", jcache);
+    return (Cache<?, ?>) jcache.unwrap(Cache.class);
   }
 
-  static void assertCachesPresent(CacheManager cacheMgr) {
-    assertNotNull(getCache("com.researchspace.model.FileProperty", cacheMgr));
-    assertNotNull(getCache("com.researchspace.model.ImageBlob", cacheMgr));
+  static long getHeapSize(Cache<?, ?> cache) {
+    return cache
+        .getRuntimeConfiguration()
+        .getResourcePools()
+        .getPoolForResource(ResourceType.Core.HEAP)
+        .getSize();
+  }
+
+  static void assertCacheSettingsUseDefaults(CacheManager cacheMgr) {
+    assertEquals(
+        DEFAULT_FILEPROPERTY_SIZE,
+        getHeapSize(getNativeCache("com.researchspace.model.FileProperty", cacheMgr)));
+    assertEquals(
+        DEFAULT_IMAGE_BLOB_SIZE,
+        getHeapSize(getNativeCache("com.researchspace.model.ImageBlob", cacheMgr)));
   }
 
   private @Autowired CacheManager jCacheManager;
@@ -38,36 +58,26 @@ public class EhCacheConfigurerConfigTest extends AbstractJUnit4SpringContextTest
 
   @Test
   public void testEhCacheConfiguration() {
-    // EhCache 3.x with JCache: caches need to be explicitly created with types
-    // Create the caches that the test expects
-    if (jCacheManager.getCache("com.researchspace.model.FileProperty") == null) {
-      jCacheManager.createCache(
-          "com.researchspace.model.FileProperty",
-          new javax.cache.configuration.MutableConfiguration<Object, Object>()
-              .setStoreByValue(false));
-    }
-    if (jCacheManager.getCache("com.researchspace.model.ImageBlob") == null) {
-      jCacheManager.createCache(
-          "com.researchspace.model.ImageBlob",
-          new javax.cache.configuration.MutableConfiguration<Object, Object>()
-              .setStoreByValue(false));
-    }
-
     // if not overridden, use defaults
-    // factory.getObject will areturn the same object each time; it is a singleton
     cacheConfigurer.configure(jCacheManager);
-    assertCachesPresent(jCacheManager);
+    assertCacheSettingsUseDefaults(jCacheManager);
 
     // set bad values, should be unchanged, defaults should work
     cacheConfigurer.setFilePropertyMaxElementsInMemory("abcde");
     cacheConfigurer.setImageBlobMaxElementsInMemory("-1234");
     cacheConfigurer.configure(jCacheManager);
-    assertCachesPresent(jCacheManager);
+    assertCacheSettingsUseDefaults(jCacheManager);
 
     // override via property injection
     cacheConfigurer.setFilePropertyMaxElementsInMemory(OVERRIDE_FILEPROPERTY_SIZE + "");
-    cacheConfigurer.setImageBlobMaxElementsInMemory(OVERRIDE_IMAGE_BLOB_SIZE_SIZE + "");
+    cacheConfigurer.setImageBlobMaxElementsInMemory(OVERRIDE_IMAGE_BLOB_SIZE + "");
     cacheConfigurer.configure(jCacheManager);
-    assertCachesPresent(jCacheManager);
+
+    assertEquals(
+        OVERRIDE_FILEPROPERTY_SIZE,
+        getHeapSize(getNativeCache("com.researchspace.model.FileProperty", jCacheManager)));
+    assertEquals(
+        OVERRIDE_IMAGE_BLOB_SIZE,
+        getHeapSize(getNativeCache("com.researchspace.model.ImageBlob", jCacheManager)));
   }
 }
