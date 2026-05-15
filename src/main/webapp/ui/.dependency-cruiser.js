@@ -133,7 +133,6 @@ module.exports = {
           "src/tinyMCE/pyrat/Pyrat.js",
           "src/tinyMCE/clustermarket/index.js",
           "src/tinyMCE/omero/index.js",
-          "src/tinyMCE/jove/index.tsx",
           "src/tinyMCE/pubchem/index.tsx",
           "src/tinyMCE/inventory/identifiers/index.tsx",
           "src/components/BaseSearch.js",

@@ -23,4 +23,7 @@ public interface ExternalWorkFlowDataManager {
       String state);
 
   ExternalWorkFlow findWorkFlowByExtIdAndName(String extId, String name);
+
+  Set<ExternalWorkFlowData> findAllExternalWorkFlowDataForFieldsAndServiceType(
+      ExternalService externalService, List<Long> ids);
 }

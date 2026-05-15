@@ -208,12 +208,6 @@ public class PropertyHolder implements IMutablePropertyHolder {
 
   private Key jwtKey = null;
 
-  @Value("${jove.api.url}")
-  private String joveApiUrl;
-
-  @Value("${jove.api.key}")
-  private String joveApiKey;
-
   @Value("${dryad.base.url}")
   private String dryadBaseUrl;
 
@@ -320,26 +314,6 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public boolean isLoginDirectoryOption() {
     return Boolean.parseBoolean(loginDirectoryOption);
-  }
-
-  @Override
-  public String getJoveApiUrl() {
-    return joveApiUrl;
-  }
-
-  @Override
-  public void setJoveApiUrl(String joveApiUrl) {
-    this.joveApiUrl = joveApiUrl;
-  }
-
-  @Override
-  public String getJoveApiKey() {
-    return this.joveApiKey;
-  }
-
-  @Override
-  public void setJoveApiKey(String joveApiKey) {
-    this.joveApiKey = joveApiKey;
   }
 
   @Override

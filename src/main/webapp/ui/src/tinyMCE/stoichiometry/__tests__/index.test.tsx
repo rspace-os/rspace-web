@@ -300,6 +300,7 @@ function getLastRenderedDialogProps(): DialogProps | null {
 
 describe("TinyMCE stoichiometry plugin", () => {
   beforeEach(() => {
+    fetchMock.resetMocks();
     vi.resetModules();
     vi.clearAllMocks();
     rootRenderCalls.length = 0;
@@ -423,6 +424,46 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(
       editorDocument.querySelector('[data-stoichiometry-table-only="true"]'),
     ).not.toBeNull();
+  });
+
+  it("reopens the selected stoichiometry table from the toolbar button instead of inserting a new one", async () => {
+    const registeredPlugins = registerTinymcePlugins();
+    const editorDocument = document.implementation.createHTMLDocument("editor");
+    const tableOnlyNode = createTableOnlyNode(editorDocument, {
+      id: "stoichiometry-1",
+      stoichiometry: { id: 12, revision: 4 },
+    });
+    const { buttons, editor, selectionState } = createEditorHarness({
+      editorDocument,
+      initialSelectionNode: tableOnlyNode,
+    });
+
+    await instantiateStoichiometryPlugin();
+    const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
+    new StoichiometryPlugin(editor);
+
+    tableOnlyNode.innerHTML =
+      '<span data-stoichiometry-preview="true"><div><button type="button">Edit</button></div></span>';
+    selectionState.current = tableOnlyNode.querySelector("button") as HTMLElement;
+
+    buttons.get("stoichiometryInsertButton")?.onAction();
+
+    await waitFor(() => {
+      expect(getLastRenderedDialogProps()).toEqual(
+        expect.objectContaining({
+          open: true,
+          chemId: null,
+          stoichiometryId: 12,
+          stoichiometryRevision: 4,
+          autoCreateTableOnOpen: false,
+        }),
+      );
+    });
+
+    expect(
+      editorDocument.querySelectorAll('[data-stoichiometry-table-only="true"]'),
+    ).toHaveLength(1);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("removes a newly inserted tableOnly div when its stoichiometry table is deleted", async () => {
@@ -579,6 +620,9 @@ describe("TinyMCE stoichiometry plugin", () => {
     const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
     new StoichiometryPlugin(editor);
 
+    expect(document.importNode(tableOnlyNode, true)).toHaveTextContent(
+      "Empty Stoichiometry Table",
+    );
     expectToHaveTextContent(tableOnlyNode, "Empty Stoichiometry Table");
   });
 
@@ -697,7 +741,3 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(editor.focus).not.toHaveBeenCalled();
   });
 });
-
-
-
-
