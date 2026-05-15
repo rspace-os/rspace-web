@@ -1,6 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
 <c:url var="createFromTemplateURL" value="/workspace/editor/structuredDocument/create/${selectedNotebookId}"></c:url>
 <jsp:include page="notebookHeader.jsp" />
+
+<body>
   <script src="<c:url value='/scripts/pages/journal.js'/>"></script>
   <script>journal(jQuery)</script>
   <script src="<c:url value='/scripts/bower_components/blueimp-file-upload/js/jquery.fileupload.js'/>"></script>
@@ -11,8 +13,6 @@
 
   <script src="<c:url value='/scripts/pages/messaging/notifications.js'/>"></script>
   <script src="<c:url value='/scripts/pages/messaging/messages.js'/>"></script>
-
-<body>
   <div class="mainDocumentView">
     <axt:fileTreeBrowser />
     <div class="documentPanel">
