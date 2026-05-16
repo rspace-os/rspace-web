@@ -56,8 +56,8 @@ public class UpdateFilestoreLinkTypesInFieldContentIT extends AbstractDBHelpers 
     addOldFilestoreLink(doc2);
 
     // assert filestore links have old format
-    doc1 = (StructuredDocument) recordManager.get(doc1.getId());
-    doc2 = (StructuredDocument) recordManager.get(doc2.getId());
+    doc1 = (StructuredDocument) recordManager.getRecordWithFields(doc1.getId(), user);
+    doc2 = (StructuredDocument) recordManager.getRecordWithFields(doc2.getId(), user);
     assertOldStyleLink(doc1.getFields().get(0).getData());
     assertOldStyleLink(doc2.getFields().get(0).getData());
 
@@ -75,8 +75,8 @@ public class UpdateFilestoreLinkTypesInFieldContentIT extends AbstractDBHelpers 
 
     // check link format is updated now
     openTransaction();
-    doc1 = (StructuredDocument) recordManager.get(doc1.getId());
-    doc2 = (StructuredDocument) recordManager.get(doc2.getId());
+    doc1 = (StructuredDocument) recordManager.getRecordWithFields(doc1.getId(), user);
+    doc2 = (StructuredDocument) recordManager.getRecordWithFields(doc2.getId(), user);
     assertNewStyleLink(doc1.getFields().get(0).getData());
     assertNewStyleLink(doc2.getFields().get(0).getData());
     commitTransaction();

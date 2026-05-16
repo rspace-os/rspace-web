@@ -10,8 +10,6 @@ import com.researchspace.model.Thumbnail;
 import com.researchspace.model.Thumbnail.SourceType;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
-import com.researchspace.model.permissions.IPermissionUtils;
-import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.Record;
@@ -34,7 +32,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.shiro.authz.AuthorizationException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -61,7 +58,6 @@ public class MobileManagerImpl implements MobileManager {
   private @Autowired RsToMobileContentConverter rsToMobileContentConverter;
   private @Autowired MobileToRsContentConverter mobileToRsContentConverter;
   private @Autowired MediaManager mediaManager;
-  private @Autowired IPermissionUtils permissionUtils;
 
   @Override
   public List<OfflineRecordInfo> getOfflineRecordList(String username) {
@@ -82,13 +78,8 @@ public class MobileManagerImpl implements MobileManager {
   @Override
   public OfflineRecord getRecord(Long recordId, String username) throws Exception {
 
-    Record record = recordManager.get(recordId);
     User user = userManager.getUserByUsername(username, true);
-
-    boolean accessPermitted = permissionUtils.isPermitted(record, PermissionType.READ, user);
-    if (!accessPermitted) {
-      throw new AuthorizationException("user " + user.getId() + " can't read record " + recordId);
-    }
+    Record record = (Record) recordManager.getRecordWithFields(recordId, user);
 
     OfflineRecord offlineRecord = new OfflineRecord(record);
     RSPath recordPath = record.getParentHierarchyForUser(user);
@@ -197,7 +188,8 @@ public class MobileManagerImpl implements MobileManager {
   protected Long updateExistingRecordFromOffline(OfflineRecord incomingRecord, User user)
       throws IOException {
 
-    StructuredDocument dbRecord = (StructuredDocument) recordManager.get(incomingRecord.getId());
+    StructuredDocument dbRecord =
+        (StructuredDocument) recordManager.getRecordWithFields(incomingRecord.getId(), user);
 
     // offline edit lock could have been reverted
     if (noOfflineEditLock(dbRecord, user)) {

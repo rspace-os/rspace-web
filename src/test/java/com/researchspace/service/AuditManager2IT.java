@@ -363,7 +363,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     doc.getFields().get(0).setFieldData("New data1");
     recordMgr.save(doc, piUser);
 
-    doc = (StructuredDocument) recordMgr.get(DOC_ID);
+    doc = (StructuredDocument) recordMgr.getRecordWithFields(DOC_ID, piUser);
     doc.getFields().get(0).setFieldData("New data2");
     Long fieldId = doc.getFields().get(0).getId();
     recordMgr.save(doc, piUser);

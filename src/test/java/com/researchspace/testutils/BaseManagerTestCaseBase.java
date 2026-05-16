@@ -1290,7 +1290,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   protected StructuredDocument createTemplateFromDocumentAndAddtoTemplateFolder(
       Long docId, User user) throws DocumentAlreadyEditedException {
 
-    StructuredDocument doc = (StructuredDocument) recordMgr.get(docId);
+    StructuredDocument doc = (StructuredDocument) recordMgr.getRecordWithFields(docId, user);
     List<Long> ids =
         doc.getFields().stream()
             .map(new ObjectToIdPropertyTransformer())

@@ -156,12 +156,7 @@ public class RecordManagerImpl implements RecordManager {
 
   @Override
   public Record get(long id) {
-    Record record = recordDao.get(id);
-    // H6: initialize fields within the transaction so callers can access them after tx closes
-    if (record instanceof StructuredDocument) {
-      Hibernate.initialize(((StructuredDocument) record).getFields());
-    }
-    return record;
+    return recordDao.get(id);
   }
 
   @Override

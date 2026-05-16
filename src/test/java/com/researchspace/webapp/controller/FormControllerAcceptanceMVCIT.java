@@ -477,7 +477,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     currVersionId = formController.updateForm(tempform.getId(), mockPrincipal).getData();
 
     // now reload doc -s hould have 4 fields OK
-    created = recordMgr.get(created.getId()).asStrucDoc();
+    created = recordMgr.getRecordWithFields(created.getId(), u1).asStrucDoc();
     assertEquals(4, created.getFieldCount());
     // now create new doc with form that has had fieldform deleted, should be 2 fields
     created = recordMgr.createNewStructuredDocument(rootId, currVersionId, u1);
