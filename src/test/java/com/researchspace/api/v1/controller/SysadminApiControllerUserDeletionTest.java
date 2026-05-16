@@ -14,11 +14,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.archive.ArchiveResult;
-import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.testutils.MockAndStubUtils;
-import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
 import com.researchspace.webapp.controller.UserExportHandler;
 import java.time.LocalDate;
@@ -28,9 +26,7 @@ import javax.servlet.ServletRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
@@ -50,27 +46,14 @@ import org.springframework.test.util.ReflectionTestUtils;
  *       and rejects with a "only admin or PI" / "owner of a labgroup" message.
  * </ul>
  */
-public class SysadminApiControllerUserDeletionTest extends SpringTransactionalTest {
+public class SysadminApiControllerUserDeletionTest extends SysadminApiControllerTestSupport {
 
-  @Autowired private SysadminApiController sysadminApiController;
-  @Autowired private WhiteListIPChecker originalIpChecker;
   @Autowired private UserExportHandler originalUserExportHandler;
 
-  private User sysadmin;
-  private MockHttpServletRequest request;
-  private WhiteListIPChecker mockIpChecker;
   private UserExportHandler mockUserExportHandler;
 
   @Before
-  public void setUp() throws Exception {
-    super.setUp();
-    request = new MockHttpServletRequest();
-    sysadmin = logoutAndLoginAsSysAdmin();
-    mockIpChecker = mock(WhiteListIPChecker.class);
-    when(mockIpChecker.isRequestWhitelisted(any(), any(User.class), any(Logger.class)))
-        .thenReturn(true);
-    ReflectionTestUtils.setField(sysadminApiController, "ipWhiteListChecker", mockIpChecker);
-
+  public void mockUserExport() throws Exception {
     // Mock the user export so the non-temp deletion path doesn't try to write to the filestore.
     mockUserExportHandler = mock(UserExportHandler.class);
     @SuppressWarnings("unchecked")
@@ -82,11 +65,9 @@ public class SysadminApiControllerUserDeletionTest extends SpringTransactionalTe
   }
 
   @After
-  public void tearDown() throws Exception {
-    ReflectionTestUtils.setField(sysadminApiController, "ipWhiteListChecker", originalIpChecker);
+  public void restoreUserExport() {
     ReflectionTestUtils.setField(
         sysadminApiController, "userExportHandler", originalUserExportHandler);
-    super.tearDown();
   }
 
   // ---- LAB_GROUP -----------------------------------------------------------

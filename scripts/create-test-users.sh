@@ -27,7 +27,10 @@
 set -euo pipefail
 
 # shellcheck source=lib.sh
-. "$(cd "$(dirname "$0")" && pwd)/lib.sh"
+_self="$0"
+while [[ -L "${_self}" ]]; do _self="$(readlink "${_self}")"; done
+. "$(cd "$(dirname "${_self}")" && pwd)/lib.sh"
+unset _self
 
 # --- config ---------------------------------------------------------------
 RSPACE_BASE_URL="${RSPACE_BASE_URL:-http://localhost:8080}"
@@ -89,7 +92,7 @@ fi
 AUTH_HEADER_FILE="$(rspace_write_auth_header_file "${RSPACE_API_KEY}")"
 TMP_BODY="$(mktemp -t rspace-create-user.XXXXXX)"
 TMP_REQ="$(mktemp -t rspace-create-user-req.XXXXXX)"
-trap 'rm -f "${AUTH_HEADER_FILE}" "${TMP_BODY}" "${TMP_REQ}"' EXIT
+trap 'rm -f "${AUTH_HEADER_FILE}" "${TMP_BODY}" "${TMP_REQ}"' EXIT INT TERM HUP
 unset RSPACE_API_KEY
 
 # --- JSON escaping --------------------------------------------------------

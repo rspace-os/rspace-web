@@ -8,11 +8,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.User;
@@ -24,17 +20,11 @@ import com.researchspace.service.GroupManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.testutils.MockAndStubUtils;
-import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
 import java.time.LocalDate;
 import javax.servlet.ServletRequest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * Spring transactional integration tests for the sysadmin "delete group" API endpoint ({@link
@@ -44,33 +34,10 @@ import org.springframework.test.util.ReflectionTestUtils;
  * PI where the type requires one), invokes the endpoint as a sysadmin, and asserts that the
  * underlying {@link Group} row has been removed via {@link GroupManager#getGroup(Long)}.
  */
-public class SysadminApiControllerGroupDeletionTest extends SpringTransactionalTest {
+public class SysadminApiControllerGroupDeletionTest extends SysadminApiControllerTestSupport {
 
-  @Autowired private SysadminApiController sysadminApiController;
   @Autowired private SystemPropertyManager systemPropertyManager;
   @Autowired private SharingHandler sharingHandler;
-  @Autowired private WhiteListIPChecker originalIpChecker;
-
-  private User sysadmin;
-  private MockHttpServletRequest request;
-  private WhiteListIPChecker mockIpChecker;
-
-  @Before
-  public void setUp() throws Exception {
-    super.setUp();
-    request = new MockHttpServletRequest();
-    sysadmin = logoutAndLoginAsSysAdmin();
-    mockIpChecker = mock(WhiteListIPChecker.class);
-    when(mockIpChecker.isRequestWhitelisted(any(), any(User.class), any(Logger.class)))
-        .thenReturn(true);
-    ReflectionTestUtils.setField(sysadminApiController, "ipWhiteListChecker", mockIpChecker);
-  }
-
-  @After
-  public void tearDown() throws Exception {
-    ReflectionTestUtils.setField(sysadminApiController, "ipWhiteListChecker", originalIpChecker);
-    super.tearDown();
-  }
 
   @Test
   public void sysadminCanDeleteLabGroup() {

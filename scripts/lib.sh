@@ -51,6 +51,12 @@ rspace_write_auth_header_file() {
 # Prints the final HTTP status code on stdout. Retries up to 3 times on 5xx
 # or curl-failure ("000"), with linear backoff. 2xx/3xx/4xx are returned on
 # the first attempt.
+#
+# Idempotency note: if a transient 5xx is returned on attempt N, the
+# underlying DELETE may have already succeeded server-side. A subsequent
+# attempt against the same id then returns 404. We treat 404 on attempt > 1
+# as "already gone" (success) and rewrite the status to 204 so the caller
+# logs the id as succeeded instead of permanently failing.
 rspace_curl() {
   local body_out="$1"; shift
   local header_file="$1"; shift
@@ -69,8 +75,33 @@ rspace_curl() {
       "${url}") || status="000"
     case "${status}" in
       000|5*) sleep "$((attempt * 2))" ;;
+      404)
+        # If we already retried, treat 404 as "already deleted" (idempotent).
+        if [[ "${attempt}" -gt 1 ]]; then
+          status="204"
+        fi
+        break ;;
       *) break ;;
     esac
   done
   printf '%s' "${status}"
+}
+
+# --- symlink-robust script-dir resolution --------------------------------
+# Echoes the absolute directory containing this lib (or the calling script
+# if SCRIPT="$0"). Tolerates the script being invoked via a symlink in
+# ~/bin etc.
+rspace_resolve_script_dir() {
+  local script="$1"
+  local target="${script}"
+  # Resolve up to 8 levels of symlinks (cycle-safe).
+  local i
+  for i in 1 2 3 4 5 6 7 8; do
+    if [[ -L "${target}" ]]; then
+      target="$(readlink "${target}")"
+    else
+      break
+    fi
+  done
+  (cd "$(dirname "${target}")" && pwd)
 }

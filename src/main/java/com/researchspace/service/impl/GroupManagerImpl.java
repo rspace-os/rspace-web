@@ -840,7 +840,7 @@ public class GroupManagerImpl implements GroupManager {
   @Override
   public Group removeGroupIfNoMemberLoggedInRecently(Long groupId, User subject) {
     Group group = groupDao.get(groupId);
-    Date cutoff = oneYearAgoMidnightUtc();
+    Date cutoff = java.sql.Date.valueOf(java.time.LocalDate.now().minusYears(1));
     boolean hasRecentlyActiveMember =
         group.getMembers().stream()
             .map(User::getLastLogin)
@@ -850,14 +850,9 @@ public class GroupManagerImpl implements GroupManager {
       throw new IllegalStateException(
           "Cannot delete group "
               + groupId
-              + ": at least one member has logged in within the last"
-              + " year.");
+              + ": at least one member has logged in within the last year.");
     }
     return removeGroup(groupId, subject);
-  }
-
-  private Date oneYearAgoMidnightUtc() {
-    return java.sql.Date.valueOf(java.time.LocalDate.now().minusYears(1));
   }
 
   public Group getGroupFromAnyLevelOfSharedFolder(
