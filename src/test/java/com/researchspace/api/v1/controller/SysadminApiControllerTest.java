@@ -33,7 +33,6 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.licensews.LicenseServerUnavailableException;
 import com.researchspace.model.Group;
-import com.researchspace.model.GroupType;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
@@ -72,6 +71,7 @@ import org.mockito.junit.MockitoRule;
 import org.slf4j.Logger;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 
@@ -308,78 +308,68 @@ public class SysadminApiControllerTest extends JavaxValidatorTest {
   }
 
   @Test
-  public void deleteGroupIfNoLoginInPastYearRejectedIfSubjectNotSysadmin() throws Exception {
+  public void deleteGroupRejectedIfSubjectNotSysadmin() throws Exception {
     Group toDelete = createAnyGroupWithId();
     assertExceptionThrown(
-        () -> controller.deleteGroupIfNoLoginInPastYear(request, toDelete.getId(), user),
+        () -> controller.deleteGroup(request, toDelete.getId(), user),
         AuthorizationException.class);
-    verify(groupManager, never()).removeGroup(Mockito.anyLong(), Mockito.any(User.class));
+    verify(groupManager, never())
+        .removeGroupIfNoMemberLoggedInRecently(Mockito.anyLong(), Mockito.any(User.class));
   }
 
   @Test
-  public void deleteGroupIfNoLoginInPastYearRejectedIfIpNotWhitelisted() throws Exception {
+  public void deleteGroupRejectedIfIpNotWhitelisted() throws Exception {
     Group toDelete = createAnyGroupWithId();
     mockWhiteListedIP(false, sysadmin);
     assertExceptionThrown(
-        () -> controller.deleteGroupIfNoLoginInPastYear(request, toDelete.getId(), sysadmin),
+        () -> controller.deleteGroup(request, toDelete.getId(), sysadmin),
         AuthorizationException.class);
-    verify(groupManager, never()).removeGroup(Mockito.anyLong(), Mockito.any(User.class));
+    verify(groupManager, never())
+        .removeGroupIfNoMemberLoggedInRecently(Mockito.anyLong(), Mockito.any(User.class));
   }
 
   @Test
-  public void deleteGroupInvokesGroupManagerRemoveGroupIfNoLoginInPastYearAndAudits()
-      throws Exception {
+  public void deleteGroupDelegatesToGroupManagerAndAudits() throws Exception {
     mockWhiteListedIP(true, sysadmin);
     Group toDelete = createAnyGroupWithId();
-    when(groupManager.getGroup(toDelete.getId())).thenReturn(toDelete);
-    when(groupManager.removeGroup(toDelete.getId(), sysadmin)).thenReturn(toDelete);
+    when(groupManager.removeGroupIfNoMemberLoggedInRecently(toDelete.getId(), sysadmin))
+        .thenReturn(toDelete);
 
-    controller.deleteGroupIfNoLoginInPastYear(request, toDelete.getId(), sysadmin);
+    controller.deleteGroup(request, toDelete.getId(), sysadmin);
 
-    verify(groupManager).removeGroup(toDelete.getId(), sysadmin);
+    verify(groupManager).removeGroupIfNoMemberLoggedInRecently(toDelete.getId(), sysadmin);
     verify(auditService).notify(Mockito.any(GenericEvent.class));
   }
 
   @Test
-  public void deleteGroupWorksForAllGroupIfNoLoginInPastYearTypes() throws Exception {
+  public void deleteGroupMapsServiceIllegalStateToIllegalArgumentWithGenericMessage()
+      throws Exception {
     mockWhiteListedIP(true, sysadmin);
-    for (GroupType type :
-        new GroupType[] {
-          GroupType.LAB_GROUP, GroupType.PROJECT_GROUP, GroupType.COLLABORATION_GROUP
-        }) {
-      Group toDelete = createAnyGroupWithId();
-      toDelete.setGroupType(type);
-      when(groupManager.getGroup(toDelete.getId())).thenReturn(toDelete);
-      when(groupManager.removeGroup(toDelete.getId(), sysadmin)).thenReturn(toDelete);
+    Group toDelete = createAnyGroupWithId();
+    when(groupManager.removeGroupIfNoMemberLoggedInRecently(toDelete.getId(), sysadmin))
+        .thenThrow(new IllegalStateException("internal: user 'alice' logged in 5 days ago"));
 
-      controller.deleteGroupIfNoLoginInPastYear(request, toDelete.getId(), sysadmin);
+    IllegalArgumentException ex =
+        org.junit.Assert.assertThrows(
+            IllegalArgumentException.class,
+            () -> controller.deleteGroup(request, toDelete.getId(), sysadmin));
 
-      verify(groupManager).removeGroup(toDelete.getId(), sysadmin);
-    }
+    // Generic message; no username leaked.
+    org.junit.Assert.assertFalse(
+        "response message must not leak internal usernames", ex.getMessage().contains("alice"));
+    org.junit.Assert.assertTrue(ex.getMessage().contains("within the last year"));
+    verify(auditService, never()).notify(Mockito.any(GenericEvent.class));
   }
 
   @Test
-  public void deleteGroupIfNoLoginInPastYearRejectedWhenMemberHasRecentLastLogin()
-      throws Exception {
+  public void deleteGroupMapsObjectRetrievalFailureToNotFound() throws Exception {
     mockWhiteListedIP(true, sysadmin);
-    User recentlyActive = TestFactory.createAnyUser("recentlyActive");
-    recentlyActive.setLastLogin(new Date());
-    Group toDelete = createAnyGroupWithMember(recentlyActive);
-    when(groupManager.getGroup(toDelete.getId())).thenReturn(toDelete);
+    when(groupManager.removeGroupIfNoMemberLoggedInRecently(999L, sysadmin))
+        .thenThrow(new ObjectRetrievalFailureException(Group.class, 999L));
 
     assertExceptionThrown(
-        () -> controller.deleteGroupIfNoLoginInPastYear(request, toDelete.getId(), sysadmin),
-        IllegalArgumentException.class);
-
-    verify(groupManager, never()).removeGroup(Mockito.anyLong(), Mockito.any(User.class));
-  }
-
-  private Group createAnyGroupWithMember(User member) {
-    User pi = TestFactory.createAnyUser("piForGroup");
-    pi.addRole(Role.PI_ROLE);
-    Group group = createAnyGroup(pi, member);
-    group.setId(nextGroupId++);
-    return group;
+        () -> controller.deleteGroup(request, 999L, sysadmin), javax.ws.rs.NotFoundException.class);
+    verify(auditService, never()).notify(Mockito.any(GenericEvent.class));
   }
 
   private long nextGroupId = 100L;

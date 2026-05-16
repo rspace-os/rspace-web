@@ -99,6 +99,21 @@ public interface GroupManager {
   Group removeGroup(Long groupId, User subject);
 
   /**
+   * Disbands and removes the group only if no member of the group has logged in within the last
+   * year. Members with a null {@code lastLogin} are treated as never-logged-in (allowed).
+   *
+   * <p>The membership check and the underlying delete run in the same transaction so that a member
+   * logging in between the two cannot race past the guard.
+   *
+   * @param groupId id of the group to delete
+   * @param subject the subject performing the deletion (must already be authorised by the caller)
+   * @return the deleted {@link Group}
+   * @throws org.springframework.orm.ObjectRetrievalFailureException if no group with this id exists
+   * @throws IllegalStateException if any member has logged in within the last year
+   */
+  Group removeGroupIfNoMemberLoggedInRecently(Long groupId, User subject);
+
+  /**
    * Returns the group from shareFolder (or any of the subfolders fo the share folder)
    *
    * @param user

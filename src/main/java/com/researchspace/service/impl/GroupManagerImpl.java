@@ -83,10 +83,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -833,6 +835,29 @@ public class GroupManagerImpl implements GroupManager {
     // should be last call once all FKs are removed
     groupDao.remove(group.getId());
     return group;
+  }
+
+  @Override
+  public Group removeGroupIfNoMemberLoggedInRecently(Long groupId, User subject) {
+    Group group = groupDao.get(groupId);
+    Date cutoff = oneYearAgoMidnightUtc();
+    boolean hasRecentlyActiveMember =
+        group.getMembers().stream()
+            .map(User::getLastLogin)
+            .filter(Objects::nonNull)
+            .anyMatch(lastLogin -> lastLogin.after(cutoff));
+    if (hasRecentlyActiveMember) {
+      throw new IllegalStateException(
+          "Cannot delete group "
+              + groupId
+              + ": at least one member has logged in within the last"
+              + " year.");
+    }
+    return removeGroup(groupId, subject);
+  }
+
+  private Date oneYearAgoMidnightUtc() {
+    return java.sql.Date.valueOf(java.time.LocalDate.now().minusYears(1));
   }
 
   public Group getGroupFromAnyLevelOfSharedFolder(

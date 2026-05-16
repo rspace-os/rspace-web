@@ -223,8 +223,7 @@ public class FindDeletableUsersAndGroupsTest extends SpringTransactionalTest {
   private User createUserWithLastLogin(LocalDate lastLogin) {
     User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("u"));
     if (lastLogin != null) {
-      MockAndStubUtils.modifyDateField(
-          user, localDateToDateUTC(lastLogin), User.class, "setLastLogin");
+      MockAndStubUtils.modifyUserLastLoginDate(user, localDateToDateUTC(lastLogin));
     }
     return userMgr.save(user);
   }
@@ -243,8 +242,8 @@ public class FindDeletableUsersAndGroupsTest extends SpringTransactionalTest {
 
   private void setLastLogin(User user, LocalDate when) {
     User reloaded = userMgr.get(user.getId());
-    MockAndStubUtils.modifyDateField(
-        reloaded, when == null ? null : localDateToDateUTC(when), User.class, "setLastLogin");
+    MockAndStubUtils.modifyUserLastLoginDate(
+        reloaded, when == null ? null : localDateToDateUTC(when));
     userMgr.save(reloaded);
   }
 }

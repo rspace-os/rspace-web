@@ -56,6 +56,7 @@ import javax.servlet.ServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -69,6 +70,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -473,33 +475,27 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
 
   @Override
   @DeploymentProperty(DeploymentPropertyType.API_BETA_ENABLED)
-  public void deleteGroupIfNoLoginInPastYear(
+  public void deleteGroup(
       ServletRequest req,
       @PathVariable("id") Long groupId,
       @RequestAttribute(name = "user") User sysadmin) {
     assertIsSysadmin(sysadmin, req);
-    assertNoMemberLoggedInWithinTheLastYear(groupId);
-    Group deleted = groupManager.removeGroup(groupId, sysadmin);
-    auditService.notify(new GenericEvent(sysadmin, deleted, AuditAction.DELETE));
-  }
-
-  private void assertNoMemberLoggedInWithinTheLastYear(Long groupId) {
-    Group group = groupManager.getGroup(groupId);
-    Date cutoff = oneYearAgo();
-    User recentlyActive =
-        group.getMembers().stream()
-            .filter(u -> u.getLastLogin() != null)
-            .filter(u -> u.getLastLogin().after(cutoff))
-            .findFirst()
-            .orElse(null);
-    if (recentlyActive != null) {
+    Group deleted;
+    try {
+      deleted = groupManager.removeGroupIfNoMemberLoggedInRecently(groupId, sysadmin);
+    } catch (ObjectRetrievalFailureException notFound) {
+      throw new NotFoundException("No group with id=" + groupId);
+    } catch (IllegalStateException recentLogin) {
+      // Generic message to the client; full detail (group id + reason) to the security log only.
+      SECURITY_LOG.warn(
+          "Sysadmin {} attempted to delete group {} but rejected: {}",
+          sysadmin.getUsername(),
+          groupId,
+          recentLogin.getMessage());
       throw new IllegalArgumentException(
-          "Cannot delete group "
-              + groupId
-              + ": member '"
-              + recentlyActive.getUsername()
-              + "' has logged in within the last year");
+          "Cannot delete group " + groupId + ": a member has logged in within the last year.");
     }
+    auditService.notify(new GenericEvent(sysadmin, deleted, AuditAction.DELETE));
   }
 
   private Group apiGroupToGroup(GroupApiPost groupApiPost) {

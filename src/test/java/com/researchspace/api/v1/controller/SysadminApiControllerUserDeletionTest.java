@@ -302,8 +302,8 @@ public class SysadminApiControllerUserDeletionTest extends SpringTransactionalTe
 
   private void ageLastLogin(User user) {
     User reloaded = userMgr.get(user.getId());
-    MockAndStubUtils.modifyDateField(
-        reloaded, localDateToDateUTC(LocalDate.now().minusYears(2)), User.class, "setLastLogin");
+    MockAndStubUtils.modifyUserLastLoginDate(
+        reloaded, localDateToDateUTC(LocalDate.now().minusYears(2)));
     userMgr.save(reloaded);
   }
 
@@ -328,18 +328,6 @@ public class SysadminApiControllerUserDeletionTest extends SpringTransactionalTe
               containsString("only admin or PI"),
               containsString("owner of a labgroup"),
               containsString("only group owner")));
-    }
-  }
-
-  private void assertDeleteTempUserRejectedAsNotTempAccount(User toDelete) {
-    try {
-      sysadminApiController.deleteTempUserOlderThan1Year(request, toDelete.getId(), sysadmin);
-      fail(
-          "expected IllegalArgumentException because "
-              + toDelete.getUsername()
-              + " is not a temp account, but no exception was thrown");
-    } catch (IllegalArgumentException expected) {
-      assertThat(expected.getMessage(), containsString("temp users"));
     }
   }
 }
