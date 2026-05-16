@@ -1,8 +1,9 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc";
 
 export default defineConfig({
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   plugins: [react()],
   resolve: {
     alias: [

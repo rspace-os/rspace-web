@@ -1,4 +1,6 @@
 
+<%@ taglib uri="http://researchspace.com/tags" prefix="rst" %>
+
 <script id="journalEntryOnRibbonTemplate" type="text/mustache">
   <div id={{id}} class="journalEntry {{selectedEntryClass}}" tabindex="0">
     <div class="journalName" title="Name: '{{name}}'">{{name}}</div>
@@ -75,5 +77,7 @@
       <div id="cachedData"></div>
     </div>
   </div>
-  <script id="baseSearchScript" src="<c:url value='{{scriptsPrefix}}/ui/dist/baseSearch.js'/>" />
 </script>
+<rst:bundle bundle="baseSearch" />
+
+

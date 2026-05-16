@@ -82,7 +82,7 @@ all code dependencies and compile the code.
 The application .war file can be built with the following maven command:  
 
 ```
-mvn clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
+mvn clean package -DskipTests=true -DrenameResourcesMD5=true \
   -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
   -Djava-version=17 -Djava-vendor=openjdk
 ```
@@ -170,16 +170,21 @@ This just runs plain Junit tests and is much faster to run:
 
 When starting RSpace for the first time use the following command: 
 
-***(note - you may need to increase memory for NODE when doing `generateReactDist`
-step below : set and export the environmental variable NODE_OPTIONS:
-`export NODE_OPTIONS="--max-old-space-size=8192"`  in .zshrc file for OSX, or .bash_profile for linux)***
-
 ```bash
 mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
--Dspring.profiles.active=run -DgenerateReactDist \
+-Dspring.profiles.active=run -DreactDevMode=true \
 -Dlog4j2.configurationFile=log4j2-dev.xml
 ```
-This command clears and sets up the database, so it takes a bit longer to run. 
+This command clears and sets up the database, so it takes a bit longer to run.
+
+When `-DreactDevMode=true` is set, Jetty proxies frontend asset requests to a
+local Vite dev server for Hot Module Replacement (HMR). Start the Vite dev
+server in a separate terminal:
+```bash
+cd src/main/webapp/ui
+npm ci --force
+npm run serve
+```
 
 **NOTE:** dont skip the tests compilation when cleaning the DB this way else existing data will not be deleted.
 - you can skip test compilation phase by adding -Dmaven.test.skip=true

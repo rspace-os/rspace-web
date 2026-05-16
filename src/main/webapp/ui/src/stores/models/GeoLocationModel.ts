@@ -6,7 +6,7 @@
  *  module that is imported, MUST NOT import anything from the global Inventory
  *  stores (i.e. from ../stores/*). If it does, then the page will be rendered
  *  as a blank screen and there will be an unhelpful error message on the
- *  browser's console saying that webpack export could not be initialised.
+ *  browser's console saying that a module export could not be initialised.
  *
  *  [1]: ../../components/PublicPage/IdentifierPublicPage.js
  *

@@ -23,7 +23,7 @@
 <link rel="stylesheet" href="<c:url value='/styles/tinymce_rs.css'/>" />
 <link rel="stylesheet" href="<c:url value='/styles/plugins/autocomplete.css'/>" />
 <link rel="stylesheet" href="<c:url value='/scripts/bower_components/font-awesome/css/font-awesome.min.css'/>" />
-<script src="<c:url value='/ui/dist/tinymceGalleryUtils.js'/>"></script>
+<rst:bundle bundle="tinymceGalleryUtils" />
 <script src="<c:url value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>
 <script src="<c:url value='/scripts/bower_components/tableexport.js/dist/js/tableexport.js'/>"></script>
 <script src="<c:url value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>

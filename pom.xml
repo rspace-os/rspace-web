@@ -84,6 +84,47 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>2.0.0</version>
+        <configuration>
+          <nodeVersion>v24.15.0</nodeVersion>
+          <npmVersion>11.14.1</npmVersion>
+          <workingDirectory>src/main/webapp/ui</workingDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <id>Install node and npm locally to the project</id>
+            <goals>
+              <goal>install-node-and-npm</goal>
+            </goals>
+            <configuration>
+              <skip>${reactDevMode}</skip>
+            </configuration>
+          </execution>
+          <execution>
+            <id>Collect npm dependencies</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>${npm.dependencies.collection.arg}</arguments>
+              <skip>${reactDevMode}</skip>
+            </configuration>
+          </execution>
+          <execution>
+            <id>Build react dist files</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run build</arguments>
+              <skip>${reactDevMode}</skip>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <executions>
@@ -2481,68 +2522,6 @@
       </build>
     </profile>
 
-    <!-- generating react dist files, with npm dependencies downloaded through npm install or npm ci -->
-    <profile>
-      <id>generateReactDist-useNpmCi</id>
-      <activation>
-        <property>
-          <name>generateReactDist</name>
-          <value>clean</value>
-        </property>
-      </activation>
-      <properties>
-        <npm.dependencies.collection.arg>ci --force</npm.dependencies.collection.arg> <!-- overrides default value -->
-      </properties>
-    </profile>
-    <profile>
-      <id>generateReactDistFiles</id>
-      <activation>
-        <property>
-          <name>generateReactDist</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.github.eirslett</groupId>
-            <artifactId>frontend-maven-plugin</artifactId>
-            <version>1.15.1</version>
-            <configuration>
-              <nodeVersion>v24.13.1</nodeVersion>
-              <npmVersion>11.14.1</npmVersion>
-              <workingDirectory>src/main/webapp/ui</workingDirectory>
-            </configuration>
-            <executions>
-              <execution>
-                <id>Install node and npm locally to the project</id>
-                <goals>
-                  <goal>install-node-and-npm</goal>
-                </goals>
-              </execution>
-              <execution>
-                <id>Collect npm dependencies</id>
-                <goals>
-                  <goal>npm</goal>
-                </goals>
-                <configuration>
-                  <arguments>${npm.dependencies.collection.arg}</arguments>
-                </configuration>
-              </execution>
-              <execution>
-                <id>Build react dist files</id>
-                <goals>
-                  <goal>npm</goal>
-                </goals>
-                <configuration>
-                  <arguments>run build</arguments>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
     <profile>
       <id>rename-static-resources-with-MD5</id>
       <activation>
@@ -2698,6 +2677,8 @@
     <deployment>dev</deployment>
     <!-- default location of external properties file is actually the classpath one! -->
     <propertyFileDirPlaceholder>classpath:deployments/${deployment}</propertyFileDirPlaceholder>
+    <!-- set to true when using a local Vite dev server, skipping the production Vite build -->
+    <reactDevMode>false</reactDevMode>
 
     <!-- set this to true to create groups in run profile -->
     <groupcreation>false</groupcreation>
@@ -2742,7 +2723,7 @@
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
     <spotless.version>2.46.1</spotless.version>
-    <npm.dependencies.collection.arg>install --force</npm.dependencies.collection.arg>
+    <npm.dependencies.collection.arg>ci --force</npm.dependencies.collection.arg>
 
     <!--Sonar properties-->
     <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce5109/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>

@@ -104,6 +104,31 @@
     </rule>
 
     <rule>
+        <from>/scripts/externalTinymcePlugins/clustermarket/dialog.html</from>
+        <to>/scripts/externalTinymcePlugins/clustermarket/dialog.jsp</to>
+    </rule>
+    <rule>
+        <from>/scripts/externalTinymcePlugins/galaxy/dialog.html</from>
+        <to>/scripts/externalTinymcePlugins/galaxy/dialog.jsp</to>
+    </rule>
+    <rule>
+        <from>/scripts/externalTinymcePlugins/omero/dialog.html</from>
+        <to>/scripts/externalTinymcePlugins/omero/dialog.jsp</to>
+    </rule>
+    <rule>
+        <from>/scripts/externalTinymcePlugins/jove/dialog.html</from>
+        <to>/scripts/externalTinymcePlugins/jove/dialog.jsp</to>
+    </rule>
+    <rule>
+        <from>/scripts/externalTinymcePlugins/ketcher/dialog.html</from>
+        <to>/scripts/externalTinymcePlugins/ketcher/dialog.jsp</to>
+    </rule>
+    <rule>
+        <from>/scripts/externalTinymcePlugins/shortcuts/dialog.html</from>
+        <to>/scripts/externalTinymcePlugins/shortcuts/dialog.jsp</to>
+    </rule>
+
+    <rule>
         <from>/scripts/**</from>
         <to>/scripts/$1</to>
     </rule>
@@ -118,43 +143,43 @@
 
     <rule>
         <from>/inventory</from>
-        <to>/inventory/start.html</to>
+        <to>/inventory/start.jsp</to>
     </rule>
     <rule>
         <from>/inventory/**</from>
-        <to>/inventory/start.html</to>
+        <to>/inventory/start.jsp</to>
     </rule>
     <rule>
         <from>/listOfMaterials/**</from>
-        <to>/inventory/start.html</to>
+        <to>/inventory/start.jsp</to>
     </rule>
     <rule>
         <from>/public/inventory/**</from>
-        <to>/inventory/identifierPublicPage.html</to>
+        <to>/inventory/identifierPublicPage.jsp</to>
     </rule>
     <rule>
         <from>/about</from>
-        <to>/about/index.html</to>
+        <to>/about/index.jsp</to>
     </rule>
     <rule>
         <from>/about/**</from>
-        <to>/about/index.html</to>
+        <to>/about/index.jsp</to>
     </rule>
     <rule>
         <from>/apps</from>
-        <to>/eln/apps.html</to>
+        <to>/eln/apps.jsp</to>
     </rule>
     <rule>
       <from>/gallery</from>
-      <to>/eln/gallery.html</to>
+      <to>/eln/gallery.jsp</to>
     </rule>
     <rule match-type="regex">
       <from>^/gallery/item/([0-9]+)$</from>
-      <to>/eln/gallery.html</to>
+      <to>/eln/gallery.jsp</to>
     </rule>
     <rule match-type="regex">
       <from>^/gallery/([0-9]+)$</from>
-      <to>/eln/gallery.html</to>
+      <to>/eln/gallery.jsp</to>
     </rule>
 
     <!-- Backward compatibility: nextcloud/owncloud were not using /apps prefix until RSDEV-105 -->

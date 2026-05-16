@@ -97,4 +97,4 @@
 <jsp:include page="/WEB-INF/pages/recordInfoPanel.jsp"></jsp:include>
 
 <!-- Import React search -->
-<script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
+<rst:bundle bundle="baseSearch" />

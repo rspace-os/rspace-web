@@ -153,6 +153,6 @@
 	   	</form:form>-->--%>
 	</div>
 	<!-- React Scripts -->
-		<script src="<c:url value='/ui/dist/createGroup.js'/>"></script>
+		<rst:bundle bundle="createGroup" />
 	<!--End React Scripts -->
 </html>

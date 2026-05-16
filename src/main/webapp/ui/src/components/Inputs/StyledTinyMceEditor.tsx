@@ -20,11 +20,12 @@ import "tinymce/plugins/autoresize";
 
 /*
  * This is an unfortunate hack, for which there doesn't seem to be a better
- * alternative. An attempt was made to have this code run as part of the webpack
- * config, thereby ensuring that no matter where tinymce is used this setup is
- * performed. However, this resulted in the tinymce widget simply rendering as a
- * blank region of the webpack with no console errors. Not at all clear why, and
- * with little to help debug the underlying issue, this hack seems necessary.
+ * alternative. An attempt was made to have this code run as part of the shared
+ * frontend build setup, thereby ensuring that no matter where tinymce is used
+ * this setup is performed. However, this resulted in the tinymce widget simply
+ * rendering as a blank region with no console errors. Not at all clear why,
+ * and with little to help debug the underlying issue, this hack seems
+ * necessary.
  * As such, be careful when using tinymce in other components directly to ensure
  * that they do not depend on this component being rendered on the page to
  * correctly do this setup and also be aware that there is the possibility of

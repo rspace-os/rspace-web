@@ -3,9 +3,6 @@
 
 <head> 
 <!-- Import React and Toast messages on any page that has a  header -->
-  <script src="<c:url value='/public/ui/dist/runtime.js'/>"></script>
-  <script src="<c:url value='/public/ui/dist/pdfPreviewDialog.js'/>"></script>
-
   <script>
     //if we dont delete id_tokens (Oauth tokens that identify the user) then using the public link can result in actual logged in users being switched
     //for previously logged in users. See JwtService and login.jsp and logout.jsp. The tokens are read in authenticate() method in AbstractApiAuthenticator
@@ -83,11 +80,12 @@
   </script>
 
   <!-- React Scripts -->
-  <script src="<c:url value='/public/ui/dist/tinymceSidebarInfo.js'/>"></script>
-  <script src="<c:url value='/public/ui/dist/InternalLink.js'/>"></script>
-  <script src="<c:url value='/public/ui/dist/exportModal.js'/>"></script>
-  <script src="<c:url value='/public/ui/dist/PreviewInfo.js'/>"></script>
-  <script src="<c:url value='/public/ui/dist/snapGeneDialog.js'/>"></script>
+  <rst:bundle bundle="tinymceSidebarInfo" />
+  <rst:bundle bundle="internalLink" />
+  <rst:bundle bundle="exportModal" />
+  <rst:bundle bundle="PreviewInfo" />
+  <rst:bundle bundle="snapGeneDialog" />
+  <rst:bundle bundle="pdfPreviewDialog" />
   <!--End React Scripts -->
 
 </body>

@@ -1,5 +1,7 @@
 package com.axiope.webapp.listener;
 
+import com.axiope.webapp.dev.ViteDevServerProxyServlet;
+import com.axiope.webapp.taglib.BundleTag;
 import com.researchspace.Constants;
 import com.researchspace.properties.IPropertyHolder;
 import java.util.HashMap;
@@ -7,9 +9,13 @@ import java.util.Map;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import javax.servlet.ServletRegistration;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /**
@@ -43,6 +49,8 @@ public class StartupListener implements ServletContextListener {
 
     setupContext(context);
     getProperties(propHolder, context);
+    preWarmBundleManifestCache(ctx, context);
+    registerViteDevServerProxyIfEnabled(ctx, context);
   }
 
   ApplicationContext getApplicationContext(ServletContext context) {
@@ -68,6 +76,47 @@ public class StartupListener implements ServletContextListener {
       if (context.getAttribute(RS_DEPLOY_PROPS_CTX_ATTR_NAME) == null) {
         context.setAttribute(RS_DEPLOY_PROPS_CTX_ATTR_NAME, props);
       }
+    }
+  }
+
+  void preWarmBundleManifestCache(ApplicationContext applicationContext, ServletContext context) {
+    boolean isDevMode = applicationContext.getEnvironment().acceptsProfiles(Profiles.of("run"));
+    BundleTag.preWarmManifestCache(context, isDevMode);
+  }
+
+  /**
+   * Registers a same-origin reverse proxy from {@code /ui/dist/*} to the local Vite dev server when
+   * {@code reactDevMode=true}. Lets JSPs emit relative asset URLs in both dev and production
+   * builds, removing the cross-origin asset load that the previous Vite integration required.
+   */
+  void registerViteDevServerProxyIfEnabled(
+      ApplicationContext applicationContext, ServletContext context) {
+    Environment environment = applicationContext.getEnvironment();
+    if (!Boolean.parseBoolean(StringUtils.trimToEmpty(environment.getProperty("reactDevMode")))) {
+      return;
+    }
+    String configured =
+        StringUtils.trimToEmpty(environment.getProperty("ui.vite.devServer.origin"));
+    String origin = configured.isEmpty() ? ViteDevServerProxyServlet.DEFAULT_ORIGIN : configured;
+    if (configured.isEmpty()) {
+      log.info(
+          "reactDevMode=true, ui.vite.devServer.origin unset — using default origin {}", origin);
+    }
+    try {
+      ServletRegistration.Dynamic registration =
+          context.addServlet("viteDevServerProxy", new ViteDevServerProxyServlet(origin));
+      if (registration == null) {
+        log.warn(
+            "Vite dev server proxy was already registered; skipping (origin would have been {})",
+            origin);
+        return;
+      }
+      registration.addMapping("/ui/dist/*");
+      log.info("Registered Vite dev server proxy at /ui/dist/* -> {}", origin);
+    } catch (IllegalStateException e) {
+      log.warn(
+          "Unable to register Vite dev server proxy at /ui/dist/*: {} (context already started?)",
+          e.getMessage());
     }
   }
 

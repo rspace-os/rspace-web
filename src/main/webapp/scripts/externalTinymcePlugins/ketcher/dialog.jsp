@@ -1,10 +1,11 @@
+<%@ include file="/common/taglibs.jsp"%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <title>Insert from Ketcher</title>
-  <script src="/ui/dist/runtime.js"></script>
-  <script src="/ui/dist/tinymceKetcher.js"></script>
-  <script src="/ui/dist/ketcherViewer.js"></script>
+  <rst:viteClient />
+  <rst:bundle bundle="tinymceKetcher" />
+  <rst:bundle bundle="ketcherViewer" />
   <script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
   <script src="/scripts/global.js"></script>
 </head>

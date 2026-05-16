@@ -29,17 +29,11 @@ to be found in the JavaScript console after
 on [getRootStore](../../stores/stores/RootStore.js):
 
 ```
-Uncaught ReferenceError: Cannot access '__WEBPACK_DEFAULT_EXPORT__' before initialization
+Uncaught ReferenceError: Cannot access a module export before initialization
     at Module.default (ApiServiceBase.js:3:42)
-    at eval (ElnApiService.js:7:71)
-    at ./src/common/ElnApiService.js (inventoryRecordIdentifierPublicPage.js:4213:1)
-    at __webpack_require__ (runtime.js:31:42)
-    at eval (AuthStore.js:9:79)
-    at ./src/stores/stores/AuthStore.js (inventoryRecordIdentifierPublicPage.js:4906:1)
-    at __webpack_require__ (runtime.js:31:42)
-    at eval (RootStore.js:6:68)
-    at ./src/stores/stores/RootStore.js (inventoryRecordIdentifierPublicPage.js:4983:1)
-    at __webpack_require__ (runtime.js:31:42)
+    at Module.default (ElnApiService.js:7:71)
+    at Module.default (AuthStore.js:9:79)
+    at Module.default (RootStore.js:6:68)
 ```
 
 ## So then how do I fix the issue?

@@ -287,7 +287,7 @@ pipeline {
             steps {
                 echo 'Building feature branch'
                 sh '''
-                ./mvnw clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
+                ./mvnw clean package -DskipTests=true -DrenameResourcesMD5=true \
                 -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                 -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
@@ -314,7 +314,7 @@ pipeline {
             steps {
                 echo "Building prodRelease .war package"
                  sh '''
-                 ./mvnw clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
+                 ./mvnw clean package -DskipTests=true -DrenameResourcesMD5=true \
                 -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
                 -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \

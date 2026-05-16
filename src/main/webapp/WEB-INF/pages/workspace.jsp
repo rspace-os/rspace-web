@@ -144,6 +144,6 @@ $(document).ready(function() {
 
 <!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
-<script src="<c:url value='/ui/dist/exportModal.js'/>"></script>
-<script src="<c:url value='/ui/dist/workspaceToolbar.js'/>"></script>
+<rst:bundle bundle="exportModal" />
+<rst:bundle bundle="workspaceToolbar" />
 <!--End React Scripts -->

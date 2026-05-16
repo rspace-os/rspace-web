@@ -52,6 +52,6 @@
 
 <!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
-<script src="<c:url value='/ui/dist/exportModal.js'/>"></script>
-<script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
+<rst:bundle bundle="exportModal" />
+<rst:bundle bundle="baseSearch" />
 <!--End React Scripts -->

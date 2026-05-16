@@ -47,7 +47,7 @@ The skill / human implementer needs four pieces of data:
 | `src/main/webapp/ui/src/assets/branding/<name>/logo.svg`                             | 100×100 placeholder logo.                                               |
 | `src/main/webapp/ui/src/eln/apps/integrations/<Name>.tsx`                            | Apps-page card (Chemistry-style simple toggle).                         |
 | `src/main/webapp/scripts/externalTinymcePlugins/<name>/plugin.min.js`                | TinyMCE plugin: registers icon + toolbar button + dialog opener.        |
-| `src/main/webapp/scripts/externalTinymcePlugins/<name>/dialog.html`                  | Dialog body host that loads the React bundle.                           |
+| `src/main/webapp/scripts/externalTinymcePlugins/<name>/dialog.html`                  | Dialog body host that loads the React bundle (rewritten to JSP at runtime).  |
 | `src/main/webapp/ui/src/tinyMCE/<name>/index.tsx`                                    | Mounts React component into `#tinymce-<name>`.                          |
 | `src/main/webapp/ui/src/tinyMCE/<name>/<Name>.tsx`                                   | Empty React component.                                                  |
 | `src/main/webapp/ui/src/tinyMCE/<name>/__tests__/<Name>.test.tsx`                    | Vitest smoke test.                                                      |
@@ -70,8 +70,8 @@ The skill / human implementer needs four pieces of data:
 | `src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js`                 | Add `<name>Enabled` const, plus an `if (<name>Enabled) { ... }` block containing both `localTinymcesetup.external_plugins["<name>"] = "..."` AND `addToToolbarIfNotPresent(localTinymcesetup, " | <name>")` (the second line is required for the toolbar button to appear). |
 | `src/main/java/com/researchspace/webapp/controller/IntegrationController.java`       | Add `rc.put(<NAME>_APP_NAME, ...)` in `getAll(User)` and the corresponding static import.                             |
 | `src/main/webapp/scripts/tinymce/tinymce5109/icons/custom_icons/icons.js`            | Register a `<name>` SVG icon entry.                                                                                   |
-| `build-resources/resources_to_MD5_rename.txt`                                              | Add `scripts/externalTinymcePlugins/<name>/plugin.min.js` and `ui/dist/tinymce<Name>.js` lines.                       |
-| `src/main/webapp/ui/webpack.config.mjs`                                                    | Add `tinymce<Name>: "./src/tinyMCE/<name>/index.tsx",` entry.                                                         |
+| `build-resources/resources_to_MD5_rename.txt`                                              | Add `scripts/externalTinymcePlugins/<name>/plugin.min.js` line.                                                       |
+| `src/main/webapp/ui/bundleEntries.json`                                                    | Add `"tinymce<Name>": "src/tinyMCE/<name>/index.tsx"` entry.                                                          |
 
 ## Out of scope (explicitly NOT touched)
 
@@ -95,7 +95,7 @@ The empty-integration skill **does not** modify any of:
   `scripts/pages/journal.js` — these are only modified by integrations that
   mount per-text-field React components (e.g. Galaxy's
   `ext-workflows-textfield`).
-- The `externalWorkFlows` webpack entry — Galaxy-specific workflow tracking
+- The `externalWorkFlows` bundle entry — Galaxy-specific workflow tracking
   bundle.
 - `BaseController`, `ControllerExceptionHandler`,
   `IControllerExceptionHandler`, `NotFoundLoggedAsErrorExceptionHandlerVisitor`,

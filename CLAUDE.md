@@ -31,7 +31,7 @@ When adding comments to Jira tickets:
 ## Tech Stack (RSpace)
 
 **Backend:** Java 11 source level on JDK 17 runtime, Spring Framework (MVC, Security, WebSocket), Maven, MariaDB + Hibernate ORM, Liquibase migrations, Jetty (dev).
-**Frontend:** TypeScript + React, Material-UI v5, Webpack, MobX (legacy) + React Query (new work), Vitest, Playwright.
+**Frontend:** TypeScript + React, Material-UI v5, Vite, MobX (legacy) + React Query (new work), Vitest, Playwright.
 
 ### Java / Backend conventions
 - **Do NOT use Java 17+ language features** (no records, sealed classes, text blocks, pattern matching) — source level is Java 11

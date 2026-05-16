@@ -1,10 +1,11 @@
+<%@ include file="/common/taglibs.jsp"%>
 <!DOCTYPE html>
 <html>
 
 <head>
   <title>Configure keyboard shortcuts</title>
-  <script src="/ui/dist/runtime.js"></script>
-  <script src="/ui/dist/tinymceShortcuts.js"></script>
+  <rst:viteClient />
+  <rst:bundle bundle="tinymceShortcuts" />
   <link rel="stylesheet" type="text/css" href="/styles/bootstrap-custom-flat.css" />
   <link rel="stylesheet" type="text/css" href="/scripts/externalTinymcePlugins/shortcuts/styles/style.css" />
   <script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
@@ -18,3 +19,4 @@
 </body>
 
 </html>
+
