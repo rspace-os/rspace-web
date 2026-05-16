@@ -16,8 +16,8 @@ import {
   isShiftwithsomeKey,
   isShortcutForbidden,
 } from "../../util/shortcuts";
-import ActionsTab from "./actionsTab";
-import SymbolsTab from "./symbolsTab";
+import ActionsTab from "./ActionsTab";
+import SymbolsTab from "./SymbolsTab";
 import { Alert, AlertTitle } from "@mui/material";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faInfo } from "@fortawesome/free-solid-svg-icons/faInfo";

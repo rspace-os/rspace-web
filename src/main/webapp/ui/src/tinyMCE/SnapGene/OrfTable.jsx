@@ -71,7 +71,7 @@ const headCells = [
   },
 ];
 
-export default function orfTable(props) {
+export default function OrfTable(props) {
   const { classes } = useStyles();
   const [order, setOrder] = React.useState("desc");
   const [orderBy, setOrderBy] = React.useState("version");

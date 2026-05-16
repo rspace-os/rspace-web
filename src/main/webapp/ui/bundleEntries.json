@@ -30,7 +30,7 @@
   "PreviewInfo": "src/tinyMCE/PreviewInfo.tsx",
   "raidConnections": "src/my-rspace/profile/RaidConnections/RaidConnectionsEntrypoint.tsx",
   "rorIntegration": "src/system-ror/RoRIntegration.tsx",
-  "snapGeneDialog": "src/tinyMCE/SnapGene/snapGeneDialog.jsx",
+  "snapGeneDialog": "src/tinyMCE/SnapGene/SnapGeneDialog.jsx",
   "structuredDocumentToolbar": "src/Toolbar/StructuredDocument/Toolbar.jsx",
   "sysadminUsers": "src/eln/sysadmin/users/index.tsx",
   "tinymceClustermarket": "src/tinyMCE/clustermarket/index.jsx",
@@ -42,7 +42,7 @@
   "tinymceOmero": "src/tinyMCE/omero/index.jsx",
   "tinymcePubchem": "src/tinyMCE/pubchem/index.tsx",
   "tinymcePyrat": "src/tinyMCE/pyrat/Pyrat.jsx",
-  "tinymceShortcuts": "src/tinyMCE/shortcutsPlugin/shortcuts.jsx",
+  "tinymceShortcuts": "src/tinyMCE/shortcutsPlugin/Shortcuts.jsx",
   "tinymceSidebarInfo": "src/tinyMCE/sidebarInfo.jsx",
   "tinymceStoichiometry": "src/tinyMCE/stoichiometry/index.tsx",
   "toastMessage": "src/components/ToastMessage.jsx",
@@ -50,4 +50,3 @@
   "workspaceToolbar": "src/Toolbar/Workspace/Toolbar.jsx",
   "pdfPreviewDialog": "src/modules/preview/PdfPreviewDialogEntrypoint.tsx"
 }
-
