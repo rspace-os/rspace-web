@@ -30,6 +30,7 @@ import com.researchspace.model.dtos.ExportSelection.ExportType;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.SysadminUserCreationHandler;
@@ -98,6 +99,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
   private @Autowired SysadminUserCreationHandler sysadminUserCreationHandler;
   private @Autowired UserApiKeyManager apiKeyMgr;
   private @Autowired IGroupCreationStrategy grpStrategy;
+  private @Autowired GroupManager groupManager;
   private @Autowired AuditTrailService auditService;
   private @Autowired IContentInitializer initialiser;
   private @Autowired UserEnablementUtils userEnablementUtils;
@@ -467,6 +469,37 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
 
     group = grpStrategy.createAndSaveGroup(group, group.getOwner(), usersToAdd);
     return new ApiGroupInfo(group);
+  }
+
+  @Override
+  @DeploymentProperty(DeploymentPropertyType.API_BETA_ENABLED)
+  public void deleteGroupIfNoLoginInPastYear(
+      ServletRequest req,
+      @PathVariable("id") Long groupId,
+      @RequestAttribute(name = "user") User sysadmin) {
+    assertIsSysadmin(sysadmin, req);
+    assertNoMemberLoggedInWithinTheLastYear(groupId);
+    Group deleted = groupManager.removeGroup(groupId, sysadmin);
+    auditService.notify(new GenericEvent(sysadmin, deleted, AuditAction.DELETE));
+  }
+
+  private void assertNoMemberLoggedInWithinTheLastYear(Long groupId) {
+    Group group = groupManager.getGroup(groupId);
+    Date cutoff = oneYearAgo();
+    User recentlyActive =
+        group.getMembers().stream()
+            .filter(u -> u.getLastLogin() != null)
+            .filter(u -> u.getLastLogin().after(cutoff))
+            .findFirst()
+            .orElse(null);
+    if (recentlyActive != null) {
+      throw new IllegalArgumentException(
+          "Cannot delete group "
+              + groupId
+              + ": member '"
+              + recentlyActive.getUsername()
+              + "' has logged in within the last year");
+    }
   }
 
   private Group apiGroupToGroup(GroupApiPost groupApiPost) {

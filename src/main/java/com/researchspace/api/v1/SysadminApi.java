@@ -138,4 +138,17 @@ public interface SysadminApi {
   ApiGroupInfo createGroup(
       ServletRequest req, GroupApiPost userApi, BindingResult errors, User sysadmin)
       throws BindException;
+
+  /**
+   * Deletes a group of any type (LAB_GROUP, PROJECT_GROUP, COLLABORATION_GROUP, including
+   * self-service lab groups). Will only succeed if no user has logged in for > One year. Restricted
+   * to callers with the sysadmin role from a whitelisted IP.
+   *
+   * @param req
+   * @param groupId id of the group to delete
+   * @param sysadmin subject; must have sysadmin role
+   */
+  @DeleteMapping("/groups/lastloginExceedsOneYear/{id}")
+  @ResponseStatus(code = HttpStatus.NO_CONTENT)
+  void deleteGroupIfNoLoginInPastYear(ServletRequest req, Long groupId, User sysadmin);
 }

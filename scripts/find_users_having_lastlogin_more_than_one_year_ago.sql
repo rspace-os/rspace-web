@@ -1,0 +1,3 @@
+SELECT id
+FROM User
+WHERE lastLogin < DATE_SUB(NOW(), INTERVAL 1 YEAR);
