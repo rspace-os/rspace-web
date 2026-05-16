@@ -1,7 +1,9 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import bundleEntries from "./bundleEntries.json";
-import { defineConfig, type PluginOption } from "vite";
+import { defineConfig } from "vitest/config";
+import type { Alias, PluginOption } from "vite";
+import react from "@vitejs/plugin-react-swc";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +15,41 @@ const shouldGenerateBuildStats = process.env.FRONTEND_BUILD_STATS === "true";
 const devServerHost = process.env.VITE_DEV_SERVER_HOST ?? "127.0.0.1";
 const devServerPort = Number(process.env.VITE_DEV_SERVER_PORT ?? "5173");
 
+const appAliases: Alias[] = [
+  { find: /^@\//, replacement: `${resolveFromRoot("src")}/` },
+  {
+    find: /^Styles$/,
+    replacement: resolveFromRoot("src/util/styles.ts"),
+  },
+];
+
+const vitestAliases: Alias[] = [
+  {
+    find: /^@mui\/material\/styles$/,
+    replacement: resolveFromRoot("node_modules/@mui/material/node/styles/index.js"),
+  },
+  {
+    find: /^@mui\/x-data-grid$/,
+    replacement: resolveFromRoot("src/test-stubs/MuiDataGridStub.tsx"),
+  },
+  {
+    find: /^.+\.css$/,
+    replacement: resolveFromRoot("src/test-stubs/CSSStub.js"),
+  },
+  {
+    find: /^.+\.(jpg|png)$/,
+    replacement: resolveFromRoot("src/test-stubs/ImageStub.js"),
+  },
+  {
+    find: /^.+\.svg$/,
+    replacement: resolveFromRoot("src/test-stubs/SVGStub.js"),
+  },
+  {
+    find: /^react-photoswipe-gallery$/,
+    replacement: resolveFromRoot("src/test-stubs/PhotoswipeStub.js"),
+  },
+];
+
 const resolvedBundleEntries = Object.fromEntries(
   Object.entries(bundleEntries).map(([name, relativePath]) => [
     name,
@@ -21,12 +58,10 @@ const resolvedBundleEntries = Object.fromEntries(
 ) satisfies Record<string, string>;
 
 export default defineConfig(async ({ mode }) => {
-  const { default: react } = await import("@vitejs/plugin-react-swc");
   const useStableFilenames = mode === "development";
+  const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [
-    react(),
-  ];
+  const plugins: PluginOption[] = [react()];
 
   if (shouldGenerateBuildStats) {
     const { visualizer } = await import("rollup-plugin-visualizer");
@@ -48,7 +83,8 @@ export default defineConfig(async ({ mode }) => {
     },
     plugins,
     resolve: {
-      tsconfigPaths: true,
+      alias: isVitest ? [...appAliases, ...vitestAliases] : appAliases,
+      ...(isVitest ? { externalConditions: ["require"] } : {}),
     },
     // HTTP requests for /ui/dist/* are reverse-proxied by Jetty (see
     // ViteDevServerProxyServlet), so the browser only sees same-origin URLs
@@ -81,17 +117,20 @@ export default defineConfig(async ({ mode }) => {
         },
       },
     },
+    ssr: {
+      resolve: {
+        externalConditions: ["require"],
+      },
+    },
+    test: {
+      environment: "jsdom",
+      setupFiles: ["./src/__tests__/setup.ts"],
+      include: ["**/?*.test.(js|cjs|mjs|jsx|ts|tsx)"],
+      testTimeout: 20000,
+      reporters: ["default", "junit"],
+      outputFile: {
+        junit: "./junit.xml",
+      },
+    },
   };
 });
-
-
-
-
-
-
-
-
-
-
-
-
