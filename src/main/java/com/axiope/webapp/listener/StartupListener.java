@@ -92,7 +92,8 @@ public class StartupListener implements ServletContextListener {
   void registerViteDevServerProxyIfEnabled(
       ApplicationContext applicationContext, ServletContext context) {
     Environment environment = applicationContext.getEnvironment();
-    if (!Boolean.parseBoolean(StringUtils.trimToEmpty(environment.getProperty("reactDevMode")))) {
+    if (!Boolean.parseBoolean(
+        StringUtils.trimToEmpty(environment.getProperty(BundleTag.REACT_DEV_MODE_PROPERTY)))) {
       return;
     }
     String configured =
