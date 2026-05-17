@@ -17,8 +17,10 @@ rspace_assert_url_safe() {
   local url="$1"
   case "${url}" in
     https://*) return 0 ;;
-    http://localhost*|http://127.0.0.1*) return 0 ;;
     http://*)
+      if [[ "${url}" =~ ^http://(localhost|127\.0\.0\.1)(:[0-9]+)?([/?#]|$) ]]; then
+        return 0
+      fi
       if [[ "${ALLOW_INSECURE:-0}" == "1" ]]; then
         echo "WARNING: sending apiKey over plain HTTP to ${url} (ALLOW_INSECURE=1)" >&2
         return 0
