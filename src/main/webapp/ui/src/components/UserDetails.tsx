@@ -10,11 +10,11 @@ import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
-import TimeAgo from "react-timeago";
 import axios from "@/common/axios";
 import { type PersonId } from "@/stores/definitions/Person";
 import Chip, { type ChipProps } from "@mui/material/Chip";
 import * as Parsers from "../util/parsers";
+import TimeAgoCustom from "./TimeAgoCustom";
 
 type UserDetailsArgs = {
   userId: PersonId;
@@ -164,7 +164,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
               subheader={
                 <>
                   {user && user.lastLogin && (
-                    <span>Last login: {<TimeAgo date={user.lastLogin} />}</span>
+                    <span>Last login: <TimeAgoCustom time={user.lastLogin} /></span>
                   )}
                 </>
               }
