@@ -475,14 +475,14 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
 
   @Override
   @DeploymentProperty(DeploymentPropertyType.API_BETA_ENABLED)
-  public void deleteGroup(
+  public void deleteGroupIfNoMemberLoggedInWithinOneYear(
       ServletRequest req,
       @PathVariable("id") Long groupId,
       @RequestAttribute(name = "user") User sysadmin) {
     assertIsSysadmin(sysadmin, req);
     Group deleted;
     try {
-      deleted = groupManager.removeGroupIfNoMemberLoggedInRecently(groupId, sysadmin);
+      deleted = groupManager.removeGroupIfNoMemberLoggedInWithinOneYear(groupId, sysadmin);
     } catch (ObjectRetrievalFailureException notFound) {
       throw new NotFoundException("No group with id=" + groupId);
     } catch (IllegalStateException recentLogin) {

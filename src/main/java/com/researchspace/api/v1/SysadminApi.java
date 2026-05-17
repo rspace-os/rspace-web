@@ -141,9 +141,8 @@ public interface SysadminApi {
 
   /**
    * Deletes a group of any type (LAB_GROUP, PROJECT_GROUP, COLLABORATION_GROUP, including
-   * self-service lab groups). The deletion is rejected unless every member of the group either has
-   * never logged in (lastLogin is null) or last logged in more than one year ago. Restricted to
-   * callers with the sysadmin role from a whitelisted IP.
+   * self-service lab groups). The deletion is rejected if any member last logged in less than one
+   * year ago. Restricted to callers with the sysadmin role from a whitelisted IP.
    *
    * @param req the servlet request, used for the IP-whitelist check
    * @param groupId id of the group to delete
@@ -151,5 +150,5 @@ public interface SysadminApi {
    */
   @DeleteMapping("/groups/{id}")
   @ResponseStatus(code = HttpStatus.NO_CONTENT)
-  void deleteGroup(ServletRequest req, Long groupId, User sysadmin);
+  void deleteGroupIfNoMemberLoggedInWithinOneYear(ServletRequest req, Long groupId, User sysadmin);
 }

@@ -308,51 +308,60 @@ public class SysadminApiControllerTest extends JavaxValidatorTest {
   }
 
   @Test
-  public void deleteGroupRejectedIfSubjectNotSysadmin() throws Exception {
+  public void deleteGroupIfNoMemberLoggedInWithinOneYearRejectedIfSubjectNotSysadmin()
+      throws Exception {
     Group toDelete = createAnyGroupWithId();
     assertExceptionThrown(
-        () -> controller.deleteGroup(request, toDelete.getId(), user),
+        () ->
+            controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, toDelete.getId(), user),
         AuthorizationException.class);
     verify(groupManager, never())
-        .removeGroupIfNoMemberLoggedInRecently(Mockito.anyLong(), Mockito.any(User.class));
+        .removeGroupIfNoMemberLoggedInWithinOneYear(Mockito.anyLong(), Mockito.any(User.class));
   }
 
   @Test
-  public void deleteGroupRejectedIfIpNotWhitelisted() throws Exception {
+  public void deleteGroupIfNoMemberLoggedInWithinOneYearRejectedIfIpNotWhitelisted()
+      throws Exception {
     Group toDelete = createAnyGroupWithId();
     mockWhiteListedIP(false, sysadmin);
     assertExceptionThrown(
-        () -> controller.deleteGroup(request, toDelete.getId(), sysadmin),
+        () ->
+            controller.deleteGroupIfNoMemberLoggedInWithinOneYear(
+                request, toDelete.getId(), sysadmin),
         AuthorizationException.class);
     verify(groupManager, never())
-        .removeGroupIfNoMemberLoggedInRecently(Mockito.anyLong(), Mockito.any(User.class));
+        .removeGroupIfNoMemberLoggedInWithinOneYear(Mockito.anyLong(), Mockito.any(User.class));
   }
 
   @Test
-  public void deleteGroupDelegatesToGroupManagerAndAudits() throws Exception {
+  public void deleteGroupDelegatesToGroupIfNoMemberLoggedInWithinOneYearManagerAndAudits()
+      throws Exception {
     mockWhiteListedIP(true, sysadmin);
     Group toDelete = createAnyGroupWithId();
-    when(groupManager.removeGroupIfNoMemberLoggedInRecently(toDelete.getId(), sysadmin))
+    when(groupManager.removeGroupIfNoMemberLoggedInWithinOneYear(toDelete.getId(), sysadmin))
         .thenReturn(toDelete);
 
-    controller.deleteGroup(request, toDelete.getId(), sysadmin);
+    controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, toDelete.getId(), sysadmin);
 
-    verify(groupManager).removeGroupIfNoMemberLoggedInRecently(toDelete.getId(), sysadmin);
+    verify(groupManager).removeGroupIfNoMemberLoggedInWithinOneYear(toDelete.getId(), sysadmin);
     verify(auditService).notify(Mockito.any(GenericEvent.class));
   }
 
   @Test
-  public void deleteGroupMapsServiceIllegalStateToIllegalArgumentWithGenericMessage()
-      throws Exception {
+  public void
+      deleteGroupIfNoMemberLoggedInWithinOneYearMapsServiceIllegalStateToIllegalArgumentWithGenericMessage()
+          throws Exception {
     mockWhiteListedIP(true, sysadmin);
     Group toDelete = createAnyGroupWithId();
-    when(groupManager.removeGroupIfNoMemberLoggedInRecently(toDelete.getId(), sysadmin))
+    when(groupManager.removeGroupIfNoMemberLoggedInWithinOneYear(toDelete.getId(), sysadmin))
         .thenThrow(new IllegalStateException("internal: user 'alice' logged in 5 days ago"));
 
     IllegalArgumentException ex =
         org.junit.Assert.assertThrows(
             IllegalArgumentException.class,
-            () -> controller.deleteGroup(request, toDelete.getId(), sysadmin));
+            () ->
+                controller.deleteGroupIfNoMemberLoggedInWithinOneYear(
+                    request, toDelete.getId(), sysadmin));
 
     // Generic message; no username leaked.
     org.junit.Assert.assertFalse(
@@ -362,13 +371,15 @@ public class SysadminApiControllerTest extends JavaxValidatorTest {
   }
 
   @Test
-  public void deleteGroupMapsObjectRetrievalFailureToNotFound() throws Exception {
+  public void deleteGroupIfNoMemberLoggedInWithinOneYearMapsObjectRetrievalFailureToNotFound()
+      throws Exception {
     mockWhiteListedIP(true, sysadmin);
-    when(groupManager.removeGroupIfNoMemberLoggedInRecently(999L, sysadmin))
+    when(groupManager.removeGroupIfNoMemberLoggedInWithinOneYear(999L, sysadmin))
         .thenThrow(new ObjectRetrievalFailureException(Group.class, 999L));
 
     assertExceptionThrown(
-        () -> controller.deleteGroup(request, 999L, sysadmin), javax.ws.rs.NotFoundException.class);
+        () -> controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, 999L, sysadmin),
+        javax.ws.rs.NotFoundException.class);
     verify(auditService, never()).notify(Mockito.any(GenericEvent.class));
   }
 

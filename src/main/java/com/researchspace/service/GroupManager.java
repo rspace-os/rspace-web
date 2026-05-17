@@ -111,7 +111,7 @@ public interface GroupManager {
    * @throws org.springframework.orm.ObjectRetrievalFailureException if no group with this id exists
    * @throws IllegalStateException if any member has logged in within the last year
    */
-  Group removeGroupIfNoMemberLoggedInRecently(Long groupId, User subject);
+  Group removeGroupIfNoMemberLoggedInWithinOneYear(Long groupId, User subject);
 
   /**
    * Returns the group from shareFolder (or any of the subfolders fo the share folder)

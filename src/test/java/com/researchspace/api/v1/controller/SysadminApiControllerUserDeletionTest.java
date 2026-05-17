@@ -7,7 +7,6 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -22,7 +21,6 @@ import com.researchspace.webapp.controller.UserExportHandler;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.concurrent.Future;
-import javax.servlet.ServletRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,21 +28,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
- * Spring transactional integration tests for the sysadmin user-deletion endpoints (both {@link
- * SysadminApiController#deleteAnyUserOlderThan1Year(ServletRequest, Date, Long, User)} and {@link
- * SysadminApiController#deleteTempUserOlderThan1Year(ServletRequest, Long, User)}).
- *
- * <p>Each test sets up a Group of one specific type with at least two members, makes the
- * user-to-delete the PI (LAB_GROUP, self-service LAB_GROUP, COLLABORATION_GROUP) or the group owner
- * (PROJECT_GROUP), then ages the user past the 1-year creation-date cut-off and calls the endpoint
- * as a sysadmin.
- *
- * <p>Expected behaviour:
+ * Spring transactional integration tests for the sysadmin user-deletion endpoints, covering only
+ * the scenarios NOT already exercised by lower-tier tests:
  *
  * <ul>
- *   <li>The non-temp endpoint goes through {@code isUserRemovable}, which runs the group-role guard
- *       and rejects with a "only admin or PI" / "owner of a labgroup" message.
+ *   <li>PROJECT_GROUP owner deletion is rejected — exercises the {@code
+ *       group.getOwner().equals(toDelete)} branch of {@code validateGroupMembershipCriteria}, which
+ *       no other test reaches (lab-group rejections fire on the earlier {@code isOnlyGroupPi}
+ *       branch, covered by {@code UserDeletionManagerTestIT.deletePi}).
+ *   <li>COLLABORATION_GROUP regular-member deletion succeeds — exercises the multi-group iteration
+ *       in {@code strictPreserveDataForGroup}, with the user-to-delete belonging to two groups.
+ *   <li>PROJECT_GROUP regular-member deletion succeeds — distinct membership semantics from
+ *       lab-group regular-member deletion already covered by {@code
+ *       SysadminUsersAPIControllerMVCIT.deleteRegularUserInGroup}.
  * </ul>
+ *
+ * <p>See also: {@code UserDeletionManagerTest}, {@code UserDeletionManagerTestIT}, and {@code
+ * SysadminUsersAPIControllerMVCIT} for the service- and HTTP-tier coverage this file deliberately
+ * does not duplicate.
  */
 public class SysadminApiControllerUserDeletionTest extends SysadminApiControllerTestSupport {
 
@@ -70,53 +71,6 @@ public class SysadminApiControllerUserDeletionTest extends SysadminApiController
         sysadminApiController, "userExportHandler", originalUserExportHandler);
   }
 
-  // ---- LAB_GROUP -----------------------------------------------------------
-
-  @Test
-  public void deleteAnyUserFailsWhenUserIsLabGroupPi() {
-    TestGroup tg = createTestGroup(2);
-    User pi = ageTwoYears(tg.getPi());
-    Group group = tg.getGroup();
-    assertTrue(
-        "precondition: PI should be sole PI of the lab group", group.getPiusers().size() == 1);
-
-    logoutAndLoginAsSysAdmin();
-    assertDeleteAnyUserRejectedWithGroupRoleMessage(pi);
-  }
-
-  // ---- self-service LAB_GROUP ---------------------------------------------
-
-  @Test
-  public void deleteAnyUserFailsWhenUserIsSelfServiceLabGroupPi() {
-    TestGroup tg = createTestGroup(2);
-    Group group = tg.getGroup();
-    group.setSelfService(true);
-    grpdao.save(group);
-    User pi = ageTwoYears(tg.getPi());
-    assertTrue(
-        "precondition: group should be self-service", grpdao.get(group.getId()).isSelfService());
-
-    logoutAndLoginAsSysAdmin();
-    assertDeleteAnyUserRejectedWithGroupRoleMessage(pi);
-  }
-
-  // ---- COLLABORATION_GROUP -------------------------------------------------
-
-  @Test
-  public void deleteAnyUserFailsWhenUserIsCollaborationGroupPi() {
-    TestGroup tg1 = createTestGroup(1);
-    TestGroup tg2 = createTestGroup(1);
-    logoutAndLoginAs(tg2.getPi());
-    Group collabGroup = createCollabGroupBetweenGroups(tg1.getGroup(), tg2.getGroup());
-    assertNotNull(collabGroup);
-    User pi = ageTwoYears(tg1.getPi());
-
-    logoutAndLoginAsSysAdmin();
-    assertDeleteAnyUserRejectedWithGroupRoleMessage(pi);
-  }
-
-  // ---- PROJECT_GROUP -------------------------------------------------------
-
   @Test
   public void deleteAnyUserFailsWhenUserIsProjectGroupOwner() throws Exception {
     User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("powner"));
@@ -128,62 +82,6 @@ public class SysadminApiControllerUserDeletionTest extends SysadminApiController
 
     logoutAndLoginAsSysAdmin();
     assertDeleteAnyUserRejectedWithGroupRoleMessage(aged);
-  }
-
-  // ---- successful deletion of non-PI / non-owner members ------------------
-
-  @Test
-  public void deleteAnyUserSucceedsForLabGroupRegularMember() {
-    TestGroup tg = createTestGroup(2);
-    ageOtherMembersLastLogin(tg, tg.u1());
-    User toDelete = ageTwoYears(tg.u1());
-
-    logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteAnyUserOlderThan1Year(
-        request, twoYearsAgo(), toDelete.getId(), sysadmin);
-
-    assertUserDeleted(toDelete);
-  }
-
-  @Test
-  public void deleteTempUserSucceedsForLabGroupRegularMember() {
-    TestGroup tg = createTestGroup(2);
-    User toDelete = makeTempAndAge(tg.u1());
-
-    logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteTempUserOlderThan1Year(request, toDelete.getId(), sysadmin);
-
-    assertUserDeleted(toDelete);
-  }
-
-  @Test
-  public void deleteAnyUserSucceedsForSelfServiceLabGroupRegularMember() {
-    TestGroup tg = createTestGroup(2);
-    Group group = tg.getGroup();
-    group.setSelfService(true);
-    grpdao.save(group);
-    ageOtherMembersLastLogin(tg, tg.u1());
-    User toDelete = ageTwoYears(tg.u1());
-
-    logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteAnyUserOlderThan1Year(
-        request, twoYearsAgo(), toDelete.getId(), sysadmin);
-
-    assertUserDeleted(toDelete);
-  }
-
-  @Test
-  public void deleteTempUserSucceedsForSelfServiceLabGroupRegularMember() {
-    TestGroup tg = createTestGroup(2);
-    Group group = tg.getGroup();
-    group.setSelfService(true);
-    grpdao.save(group);
-    User toDelete = makeTempAndAge(tg.u1());
-
-    logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteTempUserOlderThan1Year(request, toDelete.getId(), sysadmin);
-
-    assertUserDeleted(toDelete);
   }
 
   @Test
@@ -206,21 +104,6 @@ public class SysadminApiControllerUserDeletionTest extends SysadminApiController
   }
 
   @Test
-  public void deleteTempUserSucceedsForCollaborationGroupRegularMember() {
-    TestGroup tg1 = createTestGroup(1);
-    TestGroup tg2 = createTestGroup(1);
-    logoutAndLoginAs(tg2.getPi());
-    Group collabGroup = createCollabGroupBetweenGroups(tg1.getGroup(), tg2.getGroup());
-    assertNotNull(collabGroup);
-    User toDelete = makeTempAndAge(tg1.u1());
-
-    logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteTempUserOlderThan1Year(request, toDelete.getId(), sysadmin);
-
-    assertUserDeleted(toDelete);
-  }
-
-  @Test
   public void deleteAnyUserSucceedsForProjectGroupRegularMember() throws Exception {
     User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("powner"));
     User member = createAndSaveUserIfNotExists(getRandomAlphabeticString("pmember"));
@@ -237,21 +120,6 @@ public class SysadminApiControllerUserDeletionTest extends SysadminApiController
     assertUserDeleted(aged);
   }
 
-  @Test
-  public void deleteTempUserSucceedsForProjectGroupRegularMember() throws Exception {
-    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("powner"));
-    User member = createAndSaveUserIfNotExists(getRandomAlphabeticString("pmember"));
-    initialiseContentWithEmptyContent(owner, member);
-    Group projectGroup = createProjectGroupForUsers(owner, "", "", owner, member);
-    assertNotNull(projectGroup);
-    User toDelete = makeTempAndAge(member);
-
-    logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteTempUserOlderThan1Year(request, toDelete.getId(), sysadmin);
-
-    assertUserDeleted(toDelete);
-  }
-
   // ---- helpers -------------------------------------------------------------
 
   private User ageTwoYears(User user) {
@@ -261,13 +129,6 @@ public class SysadminApiControllerUserDeletionTest extends SysadminApiController
 
   private Date twoYearsAgo() {
     return localDateToDateUTC(LocalDate.now().minusYears(2));
-  }
-
-  private User makeTempAndAge(User user) {
-    User reloaded = userMgr.get(user.getId());
-    reloaded.setTempAccount(true);
-    modifyUserCreationDate(reloaded, localDateToDateUTC(LocalDate.now().minusYears(2)));
-    return userMgr.save(reloaded);
   }
 
   /**

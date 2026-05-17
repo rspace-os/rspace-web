@@ -838,7 +838,7 @@ public class GroupManagerImpl implements GroupManager {
   }
 
   @Override
-  public Group removeGroupIfNoMemberLoggedInRecently(Long groupId, User subject) {
+  public Group removeGroupIfNoMemberLoggedInWithinOneYear(Long groupId, User subject) {
     Group group = groupDao.get(groupId);
     Date cutoff = java.sql.Date.valueOf(java.time.LocalDate.now().minusYears(1));
     boolean hasRecentlyActiveMember =

@@ -28,7 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Spring transactional integration tests for the sysadmin "delete group" API endpoint ({@link
- * SysadminApiController#deleteGroup(ServletRequest, Long, User)}).
+ * SysadminApiController#deleteGroupIfNoMemberLoggedInWithinOneYear(ServletRequest, Long, User)}).
  *
  * <p>Each test sets up a Group of one specific {@link GroupType} (with at least two members and a
  * PI where the type requires one), invokes the endpoint as a sysadmin, and asserts that the
@@ -47,7 +47,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     assertHasAtLeastTwoMembersAndPi(labGroup);
 
     logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteGroup(request, labGroup.getId(), sysadmin);
+    sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+        request, labGroup.getId(), sysadmin);
 
     assertGroupDeleted(labGroup.getId());
   }
@@ -63,7 +64,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     assertHasAtLeastTwoMembersAndPi(selfServiceLabGroup);
 
     logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteGroup(request, selfServiceLabGroup.getId(), sysadmin);
+    sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+        request, selfServiceLabGroup.getId(), sysadmin);
 
     assertGroupDeleted(selfServiceLabGroup.getId());
   }
@@ -78,7 +80,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     assertTrue("project group should have >= 2 members", projectGroup.getMembers().size() >= 2);
 
     logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteGroup(request, projectGroup.getId(), sysadmin);
+    sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+        request, projectGroup.getId(), sysadmin);
 
     assertGroupDeleted(projectGroup.getId());
   }
@@ -93,7 +96,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     assertTrue("collab group should have at least 2 members", collabGroup.getMembers().size() >= 2);
 
     logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteGroup(request, collabGroup.getId(), sysadmin);
+    sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+        request, collabGroup.getId(), sysadmin);
 
     assertGroupDeleted(collabGroup.getId());
     // the constituent lab groups should still exist
@@ -114,7 +118,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
         sharingMgr.getSharedRecordsForUserAndGroup(sharer, labGroup).isEmpty());
 
     logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteGroup(request, labGroup.getId(), sysadmin);
+    sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+        request, labGroup.getId(), sysadmin);
 
     assertGroupDeleted(labGroup.getId());
   }
@@ -131,7 +136,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     shareRecordWithGroup(sharer, labGroup, doc);
 
     logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteGroup(request, labGroup.getId(), sysadmin);
+    sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+        request, labGroup.getId(), sysadmin);
 
     assertGroupDeleted(labGroup.getId());
   }
@@ -148,7 +154,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     sharingHandler.shareIntoSharedFolderOrNotebook(owner, communalFolder, doc.getId(), null);
 
     logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteGroup(request, projectGroup.getId(), sysadmin);
+    sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+        request, projectGroup.getId(), sysadmin);
 
     assertGroupDeleted(projectGroup.getId());
   }
@@ -166,7 +173,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     shareRecordWithGroup(sharer, collabGroup, doc);
 
     logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteGroup(request, collabGroup.getId(), sysadmin);
+    sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+        request, collabGroup.getId(), sysadmin);
 
     assertGroupDeleted(collabGroup.getId());
   }
@@ -184,7 +192,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     grpMgr.authorizePIToEditAll(labGroup.getId(), pi, true);
 
     logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteGroup(request, labGroup.getId(), sysadmin);
+    sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+        request, labGroup.getId(), sysadmin);
 
     assertGroupDeleted(labGroup.getId());
   }
@@ -206,7 +215,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     Group collabGroup = createCollabGroupBetweenGroups(tg1.getGroup(), tg2.getGroup());
 
     logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteGroup(request, collabGroup.getId(), sysadmin);
+    sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+        request, collabGroup.getId(), sysadmin);
 
     assertGroupDeleted(collabGroup.getId());
     // and the underlying lab groups still exist
@@ -218,7 +228,7 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
 
   @Test
   public void
-      sysadminCannotDeleteGroupIfNoLoginInPastYearWhenAMemberHasLoggedInWithinTheLastYear() {
+      sysadminCannotDeleteGroupIfNoMemberLoggedInWithinOneYearIfNoLoginInPastYearWhenAMemberHasLoggedInWithinTheLastYear() {
     TestGroup tg = createTestGroup(2);
     Group labGroup = tg.getGroup();
     User recentlyActive = tg.u1();
@@ -226,7 +236,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
 
     logoutAndLoginAsSysAdmin();
     try {
-      sysadminApiController.deleteGroup(request, labGroup.getId(), sysadmin);
+      sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+          request, labGroup.getId(), sysadmin);
       fail(
           "expected IllegalArgumentException because member "
               + recentlyActive.getUsername()
@@ -243,7 +254,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
   }
 
   @Test
-  public void sysadminCanDeleteGroupIfNoLoginInPastYearWhenAllMembersLastLoginIsOlderThanOneYear() {
+  public void
+      sysadminCanDeleteGroupIfNoMemberLoggedInWithinOneYearIfNoLoginInPastYearWhenAllMembersLastLoginIsOlderThanOneYear() {
     TestGroup tg = createTestGroup(2);
     Group labGroup = tg.getGroup();
     for (User u : tg.getUnameToUser().values()) {
@@ -251,7 +263,8 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
     }
 
     logoutAndLoginAsSysAdmin();
-    sysadminApiController.deleteGroup(request, labGroup.getId(), sysadmin);
+    sysadminApiController.deleteGroupIfNoMemberLoggedInWithinOneYear(
+        request, labGroup.getId(), sysadmin);
 
     assertGroupDeleted(labGroup.getId());
   }
