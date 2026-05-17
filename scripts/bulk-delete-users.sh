@@ -28,8 +28,10 @@
 # Required environment variables:
 #   inputFile      Path to a file containing one user ID per line.
 #   isTempUsers    "true" (case-insensitive) selects the temp-user-only endpoint
-#                  DELETE /api/v1/sysadmin/users/temp/{id}.
-#                  Any other value selects DELETE /api/v1/sysadmin/users/{id}.
+#                  DELETE /api/v1/sysadmin/users/temp/{id}; "false"
+#                  (case-insensitive) selects DELETE /api/v1/sysadmin/users/{id}.
+#                  Any other value (typos, "yes", "0", etc.) aborts the run so
+#                  the operator cannot silently hit the wrong endpoint.
 #
 # Optional environment variables:
 #   RSPACE_BASE_URL     RSpace server base URL (default http://localhost:8080).
@@ -60,9 +62,10 @@ and is held only in a mode-600 temp file (never on curl's command line).
 
 Required environment variables:
   inputFile     Path to a file containing one user ID per line.
-  isTempUsers   "true" (case-insensitive) to call the temp-user-only endpoint
-                (DELETE /api/v1/sysadmin/users/temp/{id}); any other value
-                calls DELETE /api/v1/sysadmin/users/{id}.
+  isTempUsers   "true" (case-insensitive) calls DELETE
+                /api/v1/sysadmin/users/temp/{id}; "false" (case-insensitive)
+                calls DELETE /api/v1/sysadmin/users/{id}. Any other value
+                aborts the run.
 
 Optional environment variables:
   RSPACE_BASE_URL     RSpace server base URL (default: http://localhost:8080).
@@ -98,6 +101,26 @@ fi
 
 rspace_assert_url_safe "${RSPACE_BASE_URL}" || exit 2
 
+# Normalise and STRICTLY validate isTempUsers before we even prompt for the
+# apiKey: only the literal strings "true" or "false" (case-insensitive) are
+# accepted. Anything else (typos like "tru", "yes", "0", "TRUEs", ...) aborts
+# the run, so the operator can never silently hit the wrong endpoint.
+is_temp_lower="$(printf '%s' "${IS_TEMP_USERS_ARG}" | tr '[:upper:]' '[:lower:]')"
+case "${is_temp_lower}" in
+  true)
+    ENDPOINT_PATH="/api/v1/sysadmin/users/temp"
+    DELETE_MODE="temp users"
+    ;;
+  false)
+    ENDPOINT_PATH="/api/v1/sysadmin/users"
+    DELETE_MODE="any users"
+    ;;
+  *)
+    echo "Error: isTempUsers must be exactly 'true' or 'false' (case-insensitive)," >&2
+    echo "       got: '${IS_TEMP_USERS_ARG}'" >&2
+    exit 2 ;;
+esac
+
 # --- prompt for apiKey (silent; written to a mode-600 temp file) ---------
 if [[ ! -t 0 ]]; then
   echo "Error: stdin is not a TTY; apiKey must be entered interactively." >&2
@@ -113,18 +136,6 @@ AUTH_HEADER_FILE="$(rspace_write_auth_header_file "${RSPACE_API_KEY}")"
 TMP_BODY="$(mktemp -t rspace-delete-body.XXXXXX)"
 trap 'rm -f "${AUTH_HEADER_FILE}" "${TMP_BODY}"' EXIT INT TERM HUP
 unset RSPACE_API_KEY
-
-# Normalise isTempUsers: only the literal string "true" (case-insensitive)
-# selects the temp endpoint; everything else falls through to the any-user
-# endpoint.
-is_temp_lower="$(printf '%s' "${IS_TEMP_USERS_ARG}" | tr '[:upper:]' '[:lower:]')"
-if [[ "${is_temp_lower}" == "true" ]]; then
-  ENDPOINT_PATH="/api/v1/sysadmin/users/temp"
-  DELETE_MODE="temp users"
-else
-  ENDPOINT_PATH="/api/v1/sysadmin/users"
-  DELETE_MODE="any users"
-fi
 
 # --- collect IDs (skip blanks; keep order) --------------------------------
 RAW_IDS=()

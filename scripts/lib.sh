@@ -66,8 +66,9 @@ rspace_curl() {
   local url="$1"; shift
   local attempt
   local status
+  local max_attempts=3
   status="000"
-  for attempt in 1 2 3; do
+  for attempt in $(seq 1 "${max_attempts}"); do
     : > "${body_out}"
     status=$(curl -sS -o "${body_out}" -w "%{http_code}" \
       --connect-timeout 10 --max-time 30 \
@@ -76,7 +77,13 @@ rspace_curl() {
       "$@" \
       "${url}") || status="000"
     case "${status}" in
-      000|5*) sleep "$((attempt * 2))" ;;
+      000|5*)
+        # Back off before the next attempt; skip the sleep on the final
+        # attempt since the loop is about to exit anyway.
+        if [[ "${attempt}" -lt "${max_attempts}" ]]; then
+          sleep "$((attempt * 2))"
+        fi
+        ;;
       404)
         # If we already retried, treat 404 as "already deleted" (idempotent).
         if [[ "${attempt}" -gt 1 ]]; then
