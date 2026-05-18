@@ -19,7 +19,7 @@ import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 
 /** Handles API actions around Inventory Sample. */
-public interface SampleApiManager extends InventoryApiManager {
+public interface SampleApiManager extends InventoryApiManager<Sample> {
 
   /**
    * Get All not-deleted samples that user can see. Optionally limit to samples belonging to
@@ -68,18 +68,6 @@ public interface SampleApiManager extends InventoryApiManager {
    * @return
    */
   Sample assertUserCanEditSample(Long id, User user);
-
-  /** Returns Sample that has a field with given id if it exists and user has read permission */
-  Sample assertUserCanReadSampleField(Long id, User user);
-
-  /**
-   * Returns Sample that has a field with given id if it exists and user has edit permission
-   *
-   * @param id id of a sample field
-   * @param user
-   * @return
-   */
-  Sample assertUserCanEditSampleField(Long id, User user);
 
   /**
    * Retuns Sample entity if it exists and user can delete/restore it

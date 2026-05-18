@@ -86,31 +86,6 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void testOpeningGalleryOnRootFolder() throws Exception {
-    MvcResult result =
-        mockMvc
-            .perform(
-                get(String.format("%s", GalleryController.GALLERY_URL))
-                    .principal(owner::getUsername))
-            .andExpect(status().isOk())
-            .andReturn();
-    ModelMap modelMap = result.getModelAndView().getModelMap();
-    assertNotNull(modelMap.get("groups"));
-    assertNotNull(modelMap.get("uniqueUsers"));
-    assertNull(result.getResolvedException());
-  }
-
-  @Test
-  public void galleryDialogTest() throws Exception {
-    assertNotNull(
-        mockMvc
-            .perform(get("/gallery/ajax/galleryDialog").principal(owner::getUsername))
-            .andReturn()
-            .getResponse()
-            .getContentAsString());
-  }
-
-  @Test
   public void testOpeningGalleryOnSpecificFolder() throws Exception {
     Long audioFolderId =
         recordManager

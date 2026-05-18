@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSortAmountUpAlt } from "@fortawesome/free-solid-svg-icons/faSortAmountUpAlt";
 import { faSortAmountDown } from "@fortawesome/free-solid-svg-icons/faSortAmountDown";
+import AnalyticsContext from "../stores/contexts/Analytics";
 
 const SortWrapper = styled.div`
   display: flex;
@@ -43,6 +44,7 @@ const SortWrapper = styled.div`
 export default function TreeSort(props) {
   const [orderBy, setOrderBy] = React.useState("name");
   const [sortOrder, setSortOrder] = React.useState("DESC");
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   function handleChangeOrderBy(event) {
     setOrderBy(event.target.value);
@@ -57,7 +59,7 @@ export default function TreeSort(props) {
   function applySettings(order, sort) {
     updateClientUISetting("treeSort", order + "." + sort);
     sortFileTreeBrowser(order, sort);
-    RS.trackEvent("user:sorts:file_tree:document_editor", { order, sort });
+    trackEvent("user:sorts:file_tree:document_editor", { order, sort });
   }
 
   useEffect(() => {

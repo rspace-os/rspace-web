@@ -73,10 +73,10 @@
                           <span
                             data-test-id="mini-profile-activator-${message.originator.id}"
                             class="user-details"
-                            data-userid="${message.originator.id}"
-                            data-uniqueid="${message.id}"
-                            data-firstname="${message.originator.firstName}"
-                            data-lastname="${message.originator.lastName}"
+                            data-user-id="${message.originator.id}"
+                            data-unique-id="${message.id}"
+                            data-first-name="${message.originator.firstName}"
+                            data-last-name="${message.originator.lastName}"
                             data-position="bottom_right"
                           ><a href="#" style="font-size: 14px; line-height:30px"><c:out value="${message.originator.firstName}" /> <c:out value="${message.originator.lastName}" /></a></span>
                             <c:choose>

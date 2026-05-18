@@ -57,16 +57,6 @@ const transformObject = <T, U extends keyof T, V>(
   map: { [K in U]: (t: T) => V }
 ): { [K in U]: V } => mapObject((k, v) => v(obj), map);
 
-export const getSortingSpecified =
-  <T extends { [k: string]: string }>(
-    order: Order,
-    orderBy: string,
-    map: { [K in keyof T]: (t: T) => string }
-  ): ((a: T, b: T) => -1 | 0 | 1) =>
-  (a: T, b: T) =>
-    (desc(transformObject(a, map), transformObject(b, map), orderBy) *
-      (order === "desc" ? 1 : -1)) as -1 | 0 | 1;
-
 /**
  * Returns a value for the `pageSizeOptions` prop of pagination controls; the
  * list of various page sizes that we support. Any sizes from the standard list

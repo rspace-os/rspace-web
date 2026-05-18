@@ -11,6 +11,7 @@ import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.api.v1.model.ApiTargetLocation;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
@@ -170,8 +171,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   }
 
   private void placeNewSubSamplesInRequestedContainersAndLocations(
-      List<ApiSubSample> subSamples,
-      List<ApiSampleWithFullSubSamples.ApiSampleSubSampleTargetLocation> targetLocations) {
+      List<ApiSubSample> subSamples, List<ApiTargetLocation> targetLocations) {
 
     for (int i = 0; i < subSamples.size(); i++) {
       ApiContainerInfo parentContainer = new ApiContainerInfo();

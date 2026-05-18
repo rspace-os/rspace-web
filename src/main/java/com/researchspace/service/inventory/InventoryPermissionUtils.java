@@ -12,6 +12,7 @@ import com.researchspace.model.UserGroup;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.elninventory.ListOfMaterials;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.model.inventory.MovableInventoryRecord;
@@ -166,6 +167,11 @@ public class InventoryPermissionUtils {
       }
       for (Container cont : container.getStoredContainers()) {
         if (canAccessDirectlyWithSharingPermission(cont, user)) {
+          return true;
+        }
+      }
+      for (Instrument instr : container.getStoredInstruments()) {
+        if (canAccessDirectlyWithSharingPermission(instr, user)) {
           return true;
         }
       }

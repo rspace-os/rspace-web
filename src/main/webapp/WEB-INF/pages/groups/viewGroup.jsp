@@ -191,10 +191,10 @@
                     <span
                       data-test-id="mini-profile-activator-${groupPI.id}"
                       class="user-details"
-                      data-userid="${groupPI.id}"
-                      data-firstName="${groupPI.firstName}"
-                      data-lastName="${groupPI.lastName}"
-                      data-uniqueid="${groupPI.id}"
+                      data-user-id="${groupPI.id}"
+                      data-first-name="${groupPI.firstName}"
+                      data-last-name="${groupPI.lastName}"
+                      data-unique-id="${groupPI.id}"
                       data-position="bottom_right"
                     >
                       <a href="#" data-test-id="mini-profile-activator-${groupPI.id}">
@@ -298,10 +298,10 @@
                     <span
                       data-test-id="mini-profile-activator-${ug.user.id}"
                       class="user-details"
-                      data-userid="${ug.user.id}"
-                      data-firstName="${ug.user.firstName}"
-                      data-lastName="${ug.user.lastName}"
-                      data-uniqueid="${ug.user.id}"
+                      data-user-id="${ug.user.id}"
+                      data-first-name="${ug.user.firstName}"
+                      data-last-name="${ug.user.lastName}"
+                      data-unique-id="${ug.user.id}"
                       data-position="bottom_right"
                     >
                       <a href="#" style="font-size: 14px; line-height:30px">
@@ -313,9 +313,9 @@
                     <span
                       data-test-id="mini-profile-activator-${ug.user.id}"
                       class="user-details"
-                      data-userid="${ug.user.id}"
+                      data-user-id="${ug.user.id}"
                       data-username="${ug.user.username}"
-                      data-uniqueid="${ug.user.username}"
+                      data-unique-id="${ug.user.username}"
                       data-display="username"
                       data-position="bottom_right"
                     >
@@ -410,10 +410,10 @@
                     <span
                       data-test-id="mini-profile-activator-${ug.user.id}"
                       class="user-details"
-                      data-userid="${ug.user.id}"
-                      data-firstName="${ug.user.firstName}"
-                      data-lastName="${ug.user.lastName}"
-                      data-uniqueid="${ug.user.id}"
+                      data-user-id="${ug.user.id}"
+                      data-first-name="${ug.user.firstName}"
+                      data-last-name="${ug.user.lastName}"
+                      data-unique-id="${ug.user.id}"
                       data-position="bottom_right"
                     >
                       <a href="#" style="font-size: 14px; line-height:30px">
@@ -425,9 +425,9 @@
                     <span
                       data-test-id="mini-profile-activator-${ug.user.id}"
                       class="user-details"
-                      data-userid="${ug.user.id}"
+                      data-user-id="${ug.user.id}"
                       data-username="${ug.user.username}"
-                      data-uniqueid="${ug.user.username}"
+                      data-unique-id="${ug.user.username}"
                       data-display="username"
                       data-position="bottom_right"
                     >

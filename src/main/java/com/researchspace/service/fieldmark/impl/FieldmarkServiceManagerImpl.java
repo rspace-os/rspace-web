@@ -15,8 +15,8 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
@@ -38,6 +38,7 @@ import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.fieldmark.FieldmarkServiceClientAdapter;
 import com.researchspace.service.fieldmark.FieldmarkServiceManager;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InstrumentApiManager;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -82,6 +83,7 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
   private @Autowired InventoryFileApiManager inventoryFileManager;
   private @Autowired ContainerApiManager containerApiMgr;
   private @Autowired SampleApiManager sampleApiMgr;
+  private @Autowired InstrumentApiManager instrumentApiManager;
 
   @Override
   public List<FieldmarkNotebook> getFieldmarkNotebookList(User user) {
@@ -145,7 +147,7 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
         }
         // for each ATTACHMENT field get "globalID" and "content" (having file identifier) and
         // then upload the right file
-        for (ApiSampleField currentField : createdSample.getFields()) {
+        for (ApiInventoryEntityField currentField : createdSample.getFields()) {
           if (ApiFieldType.ATTACHMENT.equals(currentField.getType())) {
             String sampleFieldGlobalId = currentField.getGlobalId();
 
@@ -212,7 +214,7 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
     throwBindExceptionIfErrors(bindingResult);
     String fileName = uploadPost.getFileName();
     GlobalIdentifier parentFieldGlobalId = new GlobalIdentifier(uploadPost.getParentGlobalId());
-    sampleApiMgr.assertUserCanEditSampleField(parentFieldGlobalId.getDbId(), user);
+    instrumentApiManager.assertUserCanEditInventoryEntityField(parentFieldGlobalId.getDbId(), user);
 
     MultipartFile file = new FieldmarkMultipartFile(fileExtractor.getFieldValue(), fileName);
     try (InputStream is = file.getInputStream()) {

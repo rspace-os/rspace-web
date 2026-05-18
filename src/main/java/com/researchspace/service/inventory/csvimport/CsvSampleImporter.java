@@ -1,12 +1,12 @@
 package com.researchspace.service.inventory.csvimport;
 
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleParseResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -16,7 +16,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.units.RSUnitDef;
 import jakarta.annotation.PostConstruct;
@@ -71,7 +71,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
     for (String columnName : sampleParseResult.getColumnNames()) {
       String fieldName = sampleParseResult.getFieldNameForColumnName().get(columnName);
       List<String> fieldValues = sampleParseResult.getColumnNameToValuesMap().get(columnName);
-      SampleField field =
+      InventoryEntityField field =
           importedFieldCreator.getSuggestedSampleFieldForNameAndValues(fieldName, fieldValues);
       template.addSampleField(field);
 
@@ -89,7 +89,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
   }
 
   private void populateResultWithRadioOptionsForColumn(
-      SampleField field,
+      InventoryEntityField field,
       String columnName,
       List<String> fieldValues,
       ApiInventoryImportSampleParseResult result) {
@@ -104,7 +104,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
   }
 
   private void populateResultWithQuantityTypeForColumn(
-      SampleField field,
+      InventoryEntityField field,
       String columnName,
       List<String> fieldValues,
       ApiInventoryImportSampleParseResult result) {
@@ -246,8 +246,9 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
               setDefaultFieldFromMappedColumn(apiSample, fieldName, value, user);
             }
           } else {
-            ApiSampleField sampleField = new ApiSampleField();
-            ApiSampleField templateField = template.getFields().get(apiSample.getFields().size());
+            ApiInventoryEntityField sampleField = new ApiInventoryEntityField();
+            ApiInventoryEntityField templateField =
+                template.getFields().get(apiSample.getFields().size());
             sampleField.setName(templateField.getName());
             sampleField.setType(templateField.getType());
             if (!StringUtils.isBlank(value)) {

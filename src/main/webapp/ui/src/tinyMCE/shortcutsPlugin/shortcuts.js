@@ -1,6 +1,6 @@
 "use strict";
 import React from "react";
-import update from "immutability-helper";
+import { produce } from "immer";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Grid from "@mui/material/Grid";
@@ -19,7 +19,6 @@ import {
 import ActionsTab from "./actionsTab";
 import SymbolsTab from "./symbolsTab";
 import { Alert, AlertTitle } from "@mui/material";
-import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faInfo } from "@fortawesome/free-solid-svg-icons/faInfo";
 import { faChevronUp } from "@fortawesome/free-solid-svg-icons/faChevronUp";
@@ -214,9 +213,6 @@ class Shortcuts extends React.Component {
     const isTwowithShift = isShiftwithsomeKey(combination);
 
     let errorMessage = "";
-    const actionShortcuts = this.state.actionShortcuts;
-    const symbolShortcuts = this.state.symbolShortcuts;
-
     this.setState((oldState) => {
       return {
         ...oldState,
@@ -245,14 +241,14 @@ class Shortcuts extends React.Component {
           hasError: false,
           symbolShortcuts:
             this.state.tab == 1
-              ? update(symbolShortcuts, {
-                  [key]: { $set: combination },
+              ? produce(oldState.symbolShortcuts, (draft) => {
+                  draft[key] = combination;
                 })
               : oldState.symbolShortcuts,
           actionShortcuts:
             this.state.tab == 0
-              ? update(actionShortcuts, {
-                  [key]: { $set: combination },
+              ? produce(oldState.actionShortcuts, (draft) => {
+                  draft[key] = combination;
                 })
               : oldState.actionShortcuts,
         };
@@ -305,22 +301,19 @@ class Shortcuts extends React.Component {
 
   resetInput = () => {
     if (this.state.hasError) {
-      const actionShortcuts = this.state.actionShortcuts;
-      const symbolShortcuts = this.state.symbolShortcuts;
-
       this.setState((oldState) => {
         return {
           ...oldState,
           symbolShortcuts:
             this.state.tab == 1
-              ? update(symbolShortcuts, {
-                  [this.state.selectedKey]: { $set: "" },
+              ? produce(oldState.symbolShortcuts, (draft) => {
+                  draft[this.state.selectedKey] = "";
                 })
               : oldState.symbolShortcuts,
           actionShortcuts:
             this.state.tab == 0
-              ? update(actionShortcuts, {
-                  [this.state.selectedKey]: { $set: "" },
+              ? produce(oldState.actionShortcuts, (draft) => {
+                  draft[this.state.selectedKey] = "";
                 })
               : oldState.actionShortcuts,
         };

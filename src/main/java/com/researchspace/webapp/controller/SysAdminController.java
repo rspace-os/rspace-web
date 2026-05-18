@@ -328,20 +328,6 @@ public class SysAdminController extends BaseController {
     return "system/promoteToPI";
   }
 
-  /*  @GetMapping("/ajax/grantPIRole")
-  public String getGrantUserPiRole(@RequestParam("userId") Long userId, Model model) {
-    model.addAttribute(new UserRoleChangeCmnd());
-    model.addAttribute("isVerificationPwdRequired", properties.isSSO());
-    return "system/grantPIRole";
-  }
-
-  @GetMapping("/ajax/revokePIRole")
-  public String getRevokeUserPiRole(@RequestParam("userId") Long userId, Model model) {
-    model.addAttribute(new UserRoleChangeCmnd());
-    model.addAttribute("isVerificationPwdRequired", properties.isSSO());
-    return "system/grantPIRole";
-  }*/
-
   /**
    * Promotes user to PI form submission
    *

@@ -37,7 +37,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 @Service("subSampleApiManager")
-public class SubSampleApiManagerImpl extends InventoryApiManagerImpl
+public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     implements SubSampleApiManager {
 
   private @Autowired SubSampleDao subSampleDao;
@@ -110,8 +110,8 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl
     return result;
   }
 
-  @SuppressWarnings("unchecked")
-  protected SubSample getIfExists(Long id) {
+  @Override
+  public SubSample getIfExists(Long id) {
     boolean exists = subSampleDao.exists(id);
     if (!exists) {
       throw new NotFoundException("No SubSample with id: " + id);

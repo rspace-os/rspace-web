@@ -23,6 +23,8 @@ import PrintedMaterialsListing from "./PrintedMaterialsListing";
 import { createRoot } from "react-dom/client";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import createAccentedTheme from "../../accentedTheme";
+import AnalyticsContext from "../../stores/contexts/Analytics";
+import Analytics from "../../components/Analytics";
 
 const FAB_SIZE = 48;
 
@@ -106,6 +108,7 @@ const MaterialsLauncher = observer(
     fabRightPadding: number;
   }) => {
     const { materialsStore } = useStores();
+    const { trackEvent } = React.useContext(AnalyticsContext);
 
     const [showMenu, setShowMenu] = useState(false);
     const [showDialog, _setShowDialog] = useState(false);
@@ -134,10 +137,9 @@ const MaterialsLauncher = observer(
                   disabled={!materialsStore.canEdit && fieldListCount === 0}
                   color="callToAction"
                   onClick={({ currentTarget }) => {
-                    // @ts-expect-error global
-                    RS.trackEvent("user:open:menu:list_of_materials", {
+                    trackEvent("user:open:menu:list_of_materials", {
                       fieldListCount,
-                    });  
+                    });
                     setShowMenu(true);
                     setAnchorEl(currentTarget);
                   }}
@@ -172,8 +174,7 @@ const MaterialsLauncher = observer(
                             <WrappingMenuItem
                               key={i}
                               onClick={() => {
-                                // @ts-expect-error global
-                                RS.trackEvent("user:open:list_of_materials"); //eslint-disable-line
+                                trackEvent("user:open:list_of_materials");
                                 materialsStore.setCurrentList(list);
                                 setShowDialog(true);
                                 handleClose();
@@ -259,6 +260,7 @@ type NewMaterialsListingArgs = {
 const NewMaterialsListing = observer(
   ({ elnFieldId }: NewMaterialsListingArgs) => {
     const { materialsStore } = useStores();
+    const { trackEvent } = React.useContext(AnalyticsContext);
     const [showDialog, _setShowDialog] = useState(false);
     const setShowDialog = (value: boolean) => {
       _setShowDialog(value);
@@ -277,8 +279,7 @@ const NewMaterialsListing = observer(
                     marginRight: "8px",
                   }}
                   onClick={({ currentTarget }) => {
-                    // @ts-expect-error global
-                    RS.trackEvent("user:create:list_of_materials"); //eslint-disable-line
+                    trackEvent("user:create:list_of_materials");
                     setShowDialog(true);
                     currentTarget.blur();
                     materialsStore.newListOfMaterials(parseInt(elnFieldId, 10));
@@ -305,41 +306,47 @@ function initListOfMaterials({
   makeWrapperRelative: boolean;
   fabRightPadding: number;
 }) {
-  let canEdit;
-  try {
-    // @ts-expect-error eslint does not recognise the global variable
-    canEdit = canBeEditable();  
-  } catch {
-    try {
-      // @ts-expect-error eslint does not recognise the global variable
-      canEdit = isEditable;  
-    } catch {
-      canEdit = null;
-    }
+  const globalWindow = window as Window & {
+    canBeEditable?: () => boolean;
+    isEditable?: boolean;
+  };
+  let canEdit: boolean | null = null;
+
+  if (typeof globalWindow.canBeEditable === "function") {
+    canEdit = globalWindow.canBeEditable();
+  } else if (typeof globalWindow.isEditable === "boolean") {
+    canEdit = globalWindow.isEditable;
   }
 
-  [...document.getElementsByClassName("invMaterialsListing")].forEach(
+  Array.from(document.getElementsByClassName("invMaterialsListing")).forEach(
     (wrapperDiv) => {
-      const root = createRoot(wrapperDiv);
+      const listingWrapper = wrapperDiv as HTMLDivElement;
+      const { fieldId, documentId } = listingWrapper.dataset;
+
+      if (!fieldId) return;
+
+      const root = createRoot(listingWrapper);
       root.render(
-        <MaterialsListing
-          // @ts-expect-error dataset does exist on HTMLDivElement
-          elnFieldId={wrapperDiv.dataset.fieldId}
-          canEdit={canEdit}
-          fabRightPadding={fabRightPadding}
-        />,
+        <Analytics>
+          <MaterialsListing
+            elnFieldId={fieldId}
+            canEdit={canEdit}
+            fabRightPadding={fabRightPadding}
+          />
+        </Analytics>,
       );
-      // @ts-expect-error style does exist on HTMLDivElement
-      if (makeWrapperRelative) wrapperDiv.style.position = "relative";
+      if (makeWrapperRelative) listingWrapper.style.position = "relative";
+
+      if (!documentId) return;
 
       const newButtonWrapper = document.querySelector(
-        // @ts-expect-error dataset does exist on HTMLDivElement
-        `.invMaterialsListing_new[data-field-id="${wrapperDiv.dataset.fieldId}"][data-document-id="${wrapperDiv.dataset.documentId}"]`,
+        `.invMaterialsListing_new[data-field-id="${fieldId}"][data-document-id="${documentId}"]`,
       );
       if (newButtonWrapper) {
         createRoot(newButtonWrapper).render(
-          // @ts-expect-error dataset does exist on HTMLDivElement
-          <NewMaterialsListing elnFieldId={wrapperDiv.dataset.fieldId} />,
+          <Analytics>
+            <NewMaterialsListing elnFieldId={fieldId} />
+          </Analytics>,
         );
       }
     },

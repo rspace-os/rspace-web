@@ -822,7 +822,7 @@ public class TestFactory {
    * @throws IOException
    */
   public static Container createListContainer(User owner) throws IOException {
-    Container listContainer = Container.createListContainer(true, true);
+    Container listContainer = Container.createListContainer(true, true, true);
     setContainerData(owner, listContainer);
     return listContainer;
   }
@@ -835,7 +835,7 @@ public class TestFactory {
    * @throws IOException
    */
   public static Container createGridContainer(User owner, int cols, int rows) throws IOException {
-    Container gridContainer = Container.createGridContainer(cols, rows, true, true);
+    Container gridContainer = Container.createGridContainer(cols, rows, true, true, true);
     setContainerData(owner, gridContainer);
     return gridContainer;
   }
@@ -848,7 +848,7 @@ public class TestFactory {
    * @throws IOException
    */
   public static Container createImageContainer(User owner) throws IOException {
-    Container imageContainer = Container.createImageContainer(true, true);
+    Container imageContainer = Container.createImageContainer(true, true, true);
     setContainerData(owner, imageContainer);
     imageContainer.createNewImageContainerLocation(3, 4);
     imageContainer.createNewImageContainerLocation(8, 10);

@@ -1,10 +1,16 @@
 <%@ include file="/common/taglibs.jsp"%>
+
+<script>
+  const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
+</script>
+
 <script src="<c:url value='/scripts/tinymceDialogUtils.js'/>"></script>
 
 <!-- Loading jQuery TinyMCE -->
 <script src="<c:url value='/scripts/tinymce/tinymce5109/dompurify.min.js'/>"></script>
 <script src="<c:url value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
 <script src="<c:url value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
+<script src="<c:url value='/ui/dist/tinymceGalleryUtils.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymce5_configuration.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_pasteHandler.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_scrollHandler.js'/>"></script>
@@ -12,7 +18,6 @@
 <script src="<c:url value='/scripts/bower_components/blueimp-file-upload/js/jquery.fileupload.js'/>"></script>
 <script src="<c:url value='/scripts/bower_components/blueimp-file-upload/js/jquery.iframe-transport.js'/>"></script>
 <script src="<c:url value='/scripts/pages/gallery/galleryFileUpload.js'/>"></script>
-
 
 <script src="<c:url value='/scripts/pages/workspace/editor/documentEdit.js'/>"></script>
 
@@ -86,7 +91,6 @@
     <jsp:param name="publicDocument" value="false"/>
   </jsp:include>
     </div>
-  <jsp:include page="../../mediaGallery.jsp" />
   <jsp:include page="include/messagingDialogs.jsp" />
 
   <div id="tempData" style="display: none"></div>
