@@ -1,9 +1,10 @@
 import "ketcher-react/dist/index.css";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -92,9 +93,16 @@ const KetcherDialog = ({
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const initialKet = useRef<string | null>(null);
 
   React.useEffect(() => {
-    if (isOpen) trackEvent("user:open:chemistry_editor", { readOnly });
+    if (isOpen) {
+      trackEvent("user:open:chemistry_editor", { readOnly });
+    } else {
+      initialKet.current = null;
+      setShowDiscardConfirm(false);
+    }
   }, [isOpen]);
 
   const onInsertClick = () => {
@@ -106,8 +114,34 @@ const KetcherDialog = ({
     void window.ketcher.setMolecule("");
   };
 
+  const handleCancelClick = async () => {
+    if (readOnly || initialKet.current === null) {
+      closeAndReset();
+      return;
+    }
+    try {
+      const currentKet = await window.ketcher?.getKet();
+      if (currentKet !== undefined && currentKet !== initialKet.current) {
+        setShowDiscardConfirm(true);
+      } else {
+        closeAndReset();
+      }
+    } catch (_e) {
+      closeAndReset();
+    }
+  };
+
+  const handleDialogClose = (
+    _event: object,
+    reason: "backdropClick" | "escapeKeyDown",
+  ) => {
+    if (reason === "backdropClick" || reason === "escapeKeyDown") {
+      void handleCancelClick();
+    }
+  };
+
   return (
-    <StyledDialog open={isOpen} onClose={handleClose} fullWidth maxWidth="xl">
+    <StyledDialog open={isOpen} onClose={handleDialogClose} fullWidth maxWidth="xl">
       <DialogTitle>{title}</DialogTitle>
       <DialogContent style={{ minHeight: "0" }}>
         <Stack sx={{ height: "100%" }}>
@@ -131,7 +165,15 @@ const KetcherDialog = ({
                   onChange?.();
                 });
                 window.ketcher = ketcher;
-                void ketcher.setMolecule(existingChem);
+                void ketcher
+                  .setMolecule(existingChem)
+                  .then(() => ketcher.getKet())
+                  .then((ket) => {
+                    initialKet.current = ket;
+                  })
+                  .catch(() => {
+                    initialKet.current = null;
+                  });
                 if (readOnly) {
                   ketcher.editor.setOptions(
                     JSON.stringify({ viewOnlyMode: true }),
@@ -151,7 +193,7 @@ const KetcherDialog = ({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={closeAndReset}>Cancel</Button>
+        <Button onClick={handleCancelClick}>Cancel</Button>
         {actionBtnText && (
           <ValidatingSubmitButton
             loading={false}
@@ -162,6 +204,28 @@ const KetcherDialog = ({
           </ValidatingSubmitButton>
         )}
       </DialogActions>
+      <Dialog open={showDiscardConfirm} onClose={() => setShowDiscardConfirm(false)}>
+        <DialogTitle>Discard changes?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You have unsaved changes. Are you sure you want to discard them?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDiscardConfirm(false)}>
+            Keep Editing
+          </Button>
+          <Button
+            onClick={() => {
+              setShowDiscardConfirm(false);
+              closeAndReset();
+            }}
+            color="error"
+          >
+            Discard
+          </Button>
+        </DialogActions>
+      </Dialog>
     </StyledDialog>
   );
 };
