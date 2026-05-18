@@ -181,6 +181,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DMPTOOL_APP_NAME:
         setSingleOAuthConnectionStatus(info, user, DMPTOOL_APP_NAME);
         return;
+      case DMPASSISTANT_APP_NAME:
+        setSingleOAuthConnectionStatus(info, user, DMPASSISTANT_APP_NAME);
+        return;
       case OWNCLOUD_APP_NAME:
         setSingleOAuthConnectionStatus(info, user, OWNCLOUD_APP_NAME);
         return;
@@ -668,6 +671,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case EGNYTE_APP_NAME:
       case PROTOCOLS_IO_APP_NAME:
       case DMPTOOL_APP_NAME:
+      case DMPASSISTANT_APP_NAME:
       case PYRAT_APP_NAME:
         return true;
     }

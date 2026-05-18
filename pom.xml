@@ -722,6 +722,16 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
+    <!--
+      WireMock standalone (shaded Jetty/Jackson/Guava) — drives the optional
+      MockDMPAssistantServer that activates with -Dmock-dmp-assistant=true.
+      Standalone variant avoids classpath conflicts with the host RSpace Jetty.
+    -->
+    <dependency>
+      <groupId>com.github.tomakehurst</groupId>
+      <artifactId>wiremock-jre8-standalone</artifactId>
+      <version>2.35.2</version>
+    </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
@@ -1452,7 +1462,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>2.22.0</version>
+      <version>RSDEV-1102-dmp-assistant-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
