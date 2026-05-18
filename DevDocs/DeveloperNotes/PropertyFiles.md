@@ -53,6 +53,12 @@ In this case, the Maven build flag `-DpropertyFileDirPlaceholder=\$\{propertyFil
 with the name of a runtime system property `${propertyFileDir}`. On the production server, `${propertyFileDir}` is
 defined in Tomcat configuration file. E.g. `-DpropertyFileDir=/etc/rspace`
 
+### JVM system properties (not Spring-managed)
+
+Some properties are read before the Spring context starts and must be passed as JVM arguments (`-D`), not in deployment property files.
+
+* **files.maxUploadSize** — Maximum individual file upload size in bytes. Default 52428800 (50MB). Spring 6 removed `CommonsMultipartResolver`, so multipart limits are now applied at servlet registration time by `DispatcherServletInitializer`, which reads this system property. Example: `-Dfiles.maxUploadSize=1000485760` for ~1GB.
+
 ## Adding a new property
 
 If this is a property that may need to be altered after deployment, or

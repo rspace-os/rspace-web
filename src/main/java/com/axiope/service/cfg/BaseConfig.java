@@ -301,9 +301,6 @@ public abstract class BaseConfig {
   @Value("${authorised.signup}")
   private String authorizedSignup;
 
-  @Value("${files.maxUploadSize}")
-  private String maxUploadSize;
-
   @Value("${email.enabled}")
   private String emailEnabled;
 
@@ -875,20 +872,6 @@ public abstract class BaseConfig {
 
   @Bean
   public MultipartResolver multipartResolver() {
-    if (maxUploadSize != null && !maxUploadSize.isBlank()) {
-      try {
-        Long.parseLong(maxUploadSize);
-        log.warn(
-            "files.maxUploadSize is now handled by the servlet container; configure multipart "
-                + "limits in the server instead. Value [{}] will be ignored here.",
-            maxUploadSize);
-      } catch (NumberFormatException nfe) {
-        log.warn(
-            "Couldn't parse files.maxUploadSize [{}]; multipart limits must be configured in "
-                + "the servlet container.",
-            maxUploadSize);
-      }
-    }
     return new StandardServletMultipartResolver();
   }
 
