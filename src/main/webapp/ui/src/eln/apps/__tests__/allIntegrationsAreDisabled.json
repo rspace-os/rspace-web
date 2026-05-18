@@ -140,6 +140,14 @@
         "onedrive.linking.enabled" : false
       }
     },
+    "DMPASSISTANT" : {
+      "name" : "DMPASSISTANT",
+      "displayName" : "DMP Assistant",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
     "DMPONLINE" : {
       "name" : "DMPONLINE",
       "displayName" : "DMPonline",
