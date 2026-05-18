@@ -1,0 +1,39 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="rsdev-dmp-assistant-a" context="run,dev-test" author="agent">
+        <comment>Create a new app - DMP Assistant</comment>
+        <insert tableName="App">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="label" type="STRING" value="DMP Assistant"/>
+            <column name="name" type="STRING" value="app.dmpassistant"/>
+            <column name="defaultEnabled" type="BOOLEAN" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="rsdev-dmp-assistant-b" context="run,dev-test" author="agent">
+        <comment>Create system properties for DMP Assistant</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value="DENIED"/>
+            <column name="name" type="STRING" value="dmpassistant.available"/>
+            <column name="type" type="NUMERIC" value="3"/>
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="dependent_id" type="NUMERIC" value="NULL"/>
+            <column name="descriptor_id" type="NUMERIC"
+                    valueComputed="(select id from PropertyDescriptor where name ='dmpassistant.available')"/>
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="value" type="String" value="DENIED"/>
+            <column name="property_id" type="NUMERIC"
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='dmpassistant.available')"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
