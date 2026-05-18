@@ -376,8 +376,10 @@ public class CommunityControllerMVCIT extends MVCTestBase {
     User existingUser1 = group1.getUserByPrefix("u1");
     logoutAndLoginAs(piUser1);
     Group collaborationGroup = createCollabGroupBetweenGroups(group1.getGroup(), group2.getGroup());
-    collaborationGroup.addMember(existingUser1, RoleInGroup.DEFAULT);
-    grpMgr.saveGroup(collaborationGroup, piUser1);
+    grpMgr.addUserToGroup(
+        existingUser1.getUsername(), collaborationGroup.getId(), RoleInGroup.DEFAULT);
+    existingUser1 = userMgr.get(existingUser1.getId());
+    collaborationGroup = grpMgr.getGroup(collaborationGroup.getId());
 
     // Check existingUser1 has a default role within the collaboration group
 
