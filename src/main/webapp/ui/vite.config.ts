@@ -117,6 +117,11 @@ export default defineConfig(async ({ mode }) => {
         },
       },
     },
+    ssr: {
+      resolve: {
+        externalConditions: ["require"],
+      },
+    },
     test: {
       environment: "jsdom",
       setupFiles: ["./src/__tests__/setup.ts"],
