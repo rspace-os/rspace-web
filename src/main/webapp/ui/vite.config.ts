@@ -58,7 +58,11 @@ const resolvedBundleEntries = Object.fromEntries(
 ) satisfies Record<string, string>;
 
 export default defineConfig(async ({ mode }) => {
-  const useStableFilenames = mode === "development";
+  // Always use stable (unhashed) filenames. Cache busting is handled by the
+  // Java backend appending a ?v=<version> query string to every asset URL, so
+  // embedding a content hash in the filename is unnecessary and would defeat
+  // the query-string versioning scheme.
+  const useStableFilenames = true;
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
   const plugins: PluginOption[] = [react()];
