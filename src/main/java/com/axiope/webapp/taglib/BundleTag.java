@@ -44,6 +44,13 @@ public class BundleTag extends TagSupport {
   static final String DEV_MODE_CACHE_ATTR = BundleTag.class.getName() + ".DEV_MODE";
   static final String RENDERED_ASSETS_ATTR = BundleTag.class.getName() + ".RENDERED_ASSETS";
   static final String REACT_PREAMBLE_DEDUPE_KEY = "script:module:inline:react-refresh-preamble";
+  /**
+   * Servlet context attribute that holds the cache-busting version token. Set at startup by {@link
+   * com.axiope.webapp.listener.StartupListener}: a random UUID in dev mode, or the RSpace version
+   * string in production. Appended as {@code ?v=<token>} to all local asset URLs.
+   */
+  public static final String CACHE_VERSION_ATTR = BundleTag.class.getName() + ".CACHE_VERSION";
+
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   private String bundle;
@@ -80,15 +87,15 @@ public class BundleTag extends TagSupport {
     }
 
     for (String styleUrl : assets.getStyles()) {
-      renderLinkTag("stylesheet", styleUrl);
+      renderLinkTag("stylesheet", withCacheVersion(styleUrl));
     }
 
     for (String preloadUrl : assets.getPreloads()) {
-      renderLinkTag("modulepreload", preloadUrl);
+      renderLinkTag("modulepreload", withCacheVersion(preloadUrl));
     }
 
     for (String scriptUrl : assets.getScripts()) {
-      renderModuleScriptTag(scriptUrl);
+      renderModuleScriptTag(withCacheVersion(scriptUrl));
     }
   }
 
@@ -187,6 +194,28 @@ public class BundleTag extends TagSupport {
     } catch (IOException e) {
       throw new JspException("Failed to render bundle tags", e);
     }
+  }
+
+  /**
+   * Appends the cache-busting version token as a {@code ?v=<token>} query parameter to local asset
+   * URLs (those under {@link #DIST_PUBLIC_PATH}). External and HMR URLs are returned unchanged.
+   * Returns the URL unchanged when no version token has been stored.
+   */
+  String withCacheVersion(String url) {
+    if (StringUtils.isBlank(url) || !url.startsWith(DIST_PUBLIC_PATH)) {
+      return url;
+    }
+    String version = getCacheVersion();
+    if (StringUtils.isBlank(version)) {
+      return url;
+    }
+    return url + "?v=" + version;
+  }
+
+  /** Returns the cache-busting version token stored in the servlet context, or {@code null}. */
+  String getCacheVersion() {
+    Object value = pageContext.getServletContext().getAttribute(CACHE_VERSION_ATTR);
+    return value instanceof String ? (String) value : null;
   }
 
   public static void preWarmManifestCache(ServletContext servletContext, boolean isDevMode) {

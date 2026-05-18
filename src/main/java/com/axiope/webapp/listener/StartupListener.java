@@ -6,6 +6,7 @@ import com.researchspace.Constants;
 import com.researchspace.properties.IPropertyHolder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -50,6 +51,7 @@ public class StartupListener implements ServletContextListener {
     setupContext(context);
     getProperties(propHolder, context);
     preWarmBundleManifestCache(ctx, context);
+    initCacheVersion(ctx, propHolder, context);
     registerViteDevServerProxyIfEnabled(ctx, context);
   }
 
@@ -82,6 +84,32 @@ public class StartupListener implements ServletContextListener {
   void preWarmBundleManifestCache(ApplicationContext applicationContext, ServletContext context) {
     boolean isDevMode = applicationContext.getEnvironment().acceptsProfiles(Profiles.of("run"));
     BundleTag.preWarmManifestCache(context, isDevMode);
+  }
+
+  /**
+   * Stores the cache-busting version token in the servlet context as {@link
+   * BundleTag#CACHE_VERSION_ATTR}.
+   *
+   * <ul>
+   *   <li><b>Dev ({@code run} profile):</b> a random UUID so every server restart forces browsers
+   *       to re-fetch assets (prevents stale JS/CSS after a rebuild + restart).
+   *   <li><b>Production:</b> the RSpace application version string (e.g. {@code 2.23.0}) so
+   *       browsers cache assets across requests within the same deployment and bust the cache on
+   *       upgrade.
+   * </ul>
+   */
+  void initCacheVersion(
+      ApplicationContext applicationContext, IPropertyHolder propHolder, ServletContext context) {
+    boolean isDevMode = applicationContext.getEnvironment().acceptsProfiles(Profiles.of("run"));
+    String cacheVersion;
+    if (isDevMode) {
+      cacheVersion = UUID.randomUUID().toString();
+      log.info("Dev mode: using random cache-buster version token '{}'", cacheVersion);
+    } else {
+      cacheVersion = propHolder.getVersionMessage();
+      log.info("Production mode: using RSpace version '{}' as cache-buster token", cacheVersion);
+    }
+    context.setAttribute(BundleTag.CACHE_VERSION_ATTR, cacheVersion);
   }
 
   /**
