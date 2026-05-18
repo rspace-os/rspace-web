@@ -119,10 +119,14 @@ const KetcherDialog = ({
       closeAndReset();
       return;
     }
-    const currentKet = await window.ketcher?.getKet();
-    if (currentKet !== undefined && currentKet !== initialKet.current) {
-      setShowDiscardConfirm(true);
-    } else {
+    try {
+      const currentKet = await window.ketcher?.getKet();
+      if (currentKet !== undefined && currentKet !== initialKet.current) {
+        setShowDiscardConfirm(true);
+      } else {
+        closeAndReset();
+      }
+    } catch (_e) {
       closeAndReset();
     }
   };
