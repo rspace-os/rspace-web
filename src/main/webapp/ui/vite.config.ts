@@ -58,10 +58,13 @@ const resolvedBundleEntries = Object.fromEntries(
 ) satisfies Record<string, string>;
 
 export default defineConfig(async ({ mode }) => {
-  // Always use stable (unhashed) filenames. Cache busting is handled by the
-  // Java backend appending a ?v=<version> query string to every asset URL, so
-  // embedding a content hash in the filename is unnecessary and would defeat
-  // the query-string versioning scheme.
+  /*
+   * Always use stable (unhashed) filenames. Cache busting is handled by the
+   * Java backend appending a ?v=<version> query string to every asset URL.
+   *
+   * TODO: Remove use of stable filenames and revert to build-time filenames
+   * once backend no longer handles loading
+   */
   const useStableFilenames = true;
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
