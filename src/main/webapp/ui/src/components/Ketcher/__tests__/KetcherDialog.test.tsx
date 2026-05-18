@@ -121,6 +121,28 @@ describe("KetcherDialog cancel confirmation", () => {
     );
   });
 
+  it("skips dirty check and closes immediately in read-only mode", async () => {
+    mockGetKet.mockResolvedValueOnce(INITIAL_KET);
+    mockGetKet.mockResolvedValue("changed-ket");
+    const user = userEvent.setup();
+
+    render(
+      <KetcherDialog
+        title="Test Ketcher"
+        handleClose={handleClose}
+        handleInsert={handleInsert}
+        readOnly
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(handleClose).toHaveBeenCalledOnce();
+    expect(
+      screen.queryByText("You have unsaved changes."),
+    ).not.toBeInTheDocument();
+  });
+
   it("closes the editor when Discard is clicked", async () => {
     mockGetKet.mockResolvedValueOnce(INITIAL_KET);
     mockGetKet.mockResolvedValue("changed-ket");

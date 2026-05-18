@@ -110,7 +110,7 @@ const KetcherDialog = ({
   };
 
   const handleCancelClick = async () => {
-    if (initialKet.current === null) {
+    if (readOnly || initialKet.current === null) {
       closeAndReset();
       return;
     }
