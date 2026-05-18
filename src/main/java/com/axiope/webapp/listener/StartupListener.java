@@ -6,7 +6,6 @@ import com.researchspace.Constants;
 import com.researchspace.properties.IPropertyHolder;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -91,8 +90,8 @@ public class StartupListener implements ServletContextListener {
    * BundleTag#CACHE_VERSION_ATTR}.
    *
    * <ul>
-   *   <li><b>Dev ({@code run} profile):</b> a random UUID so every server restart forces browsers
-   *       to re-fetch assets (prevents stale JS/CSS after a rebuild + restart).
+   *   <li><b>Dev ({@code run} profile):</b> nothing is stored here; {@link BundleTag} generates a
+   *       fresh UUID per request so every page hit forces browsers to re-fetch assets.
    *   <li><b>Production:</b> the RSpace application version string (e.g. {@code 2.23.0}) so
    *       browsers cache assets across requests within the same deployment and bust the cache on
    *       upgrade.
@@ -101,15 +100,12 @@ public class StartupListener implements ServletContextListener {
   void initCacheVersion(
       ApplicationContext applicationContext, IPropertyHolder propHolder, ServletContext context) {
     boolean isDevMode = applicationContext.getEnvironment().acceptsProfiles(Profiles.of("run"));
-    String cacheVersion;
-    if (isDevMode) {
-      cacheVersion = UUID.randomUUID().toString();
-      log.info("Dev mode: using random cache-buster version token '{}'", cacheVersion);
-    } else {
-      cacheVersion = propHolder.getVersionMessage();
+    if (!isDevMode) {
+      String cacheVersion = propHolder.getVersionMessage();
       log.info("Production mode: using RSpace version '{}' as cache-buster token", cacheVersion);
+      context.setAttribute(BundleTag.CACHE_VERSION_ATTR, cacheVersion);
     }
-    context.setAttribute(BundleTag.CACHE_VERSION_ATTR, cacheVersion);
+    // In dev mode, BundleTag generates a fresh UUID per request — nothing to store at startup.
   }
 
   /**

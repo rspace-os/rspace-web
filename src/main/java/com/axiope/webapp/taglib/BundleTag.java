@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
@@ -212,8 +213,24 @@ public class BundleTag extends TagSupport {
     return url + "?v=" + version;
   }
 
-  /** Returns the cache-busting version token stored in the servlet context, or {@code null}. */
+  /**
+   * Returns the cache-busting version token. In dev mode a fresh UUID is generated and stored as a
+   * request attribute so that every page hit gets a unique token (ensuring browsers always
+   * re-fetch assets after a rebuild), while multiple tag invocations within the same request share
+   * the same token. In production the application-version string stored in the servlet context at
+   * startup is returned.
+   */
   String getCacheVersion() {
+    if (isDevMode()) {
+      String requestAttr = CACHE_VERSION_ATTR + ".REQUEST";
+      Object existing = getRequest().getAttribute(requestAttr);
+      if (existing instanceof String) {
+        return (String) existing;
+      }
+      String uuid = UUID.randomUUID().toString();
+      getRequest().setAttribute(requestAttr, uuid);
+      return uuid;
+    }
     Object value = pageContext.getServletContext().getAttribute(CACHE_VERSION_ATTR);
     return value instanceof String ? (String) value : null;
   }
