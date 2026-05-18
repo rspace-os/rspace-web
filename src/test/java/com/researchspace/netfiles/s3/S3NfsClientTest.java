@@ -19,6 +19,8 @@ import com.researchspace.netfiles.NfsFileTreeNode;
 import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
+import com.researchspace.netfiles.WritableNfsClient;
+import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import java.io.File;
@@ -28,13 +30,144 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
-public class AwsS3ClientTest {
+public class S3NfsClientTest {
 
   private final S3Utilities s3Utilities = mock(S3Utilities.class);
-  private final AwsS3Client client = new AwsS3Client("testUser", s3Utilities);
+  private final S3NfsClient client = new S3NfsClient("testUser", s3Utilities);
+
+  /**
+   * Wires the source client's bucket name and returns a fresh destination client backed by its own
+   * mock {@link S3Utilities}. Use this in any test that exercises {@link S3NfsClient#copyObject}.
+   */
+  private DestClientFixture newDestClient(String sourceBucketName) {
+    when(s3Utilities.getBucketName()).thenReturn(sourceBucketName);
+    S3Utilities destS3Utilities = mock(S3Utilities.class);
+    return new DestClientFixture(new S3NfsClient("destUser", destS3Utilities), destS3Utilities);
+  }
+
+  /** Bundle of a destination client and its mock {@link S3Utilities} for verification. */
+  private static class DestClientFixture {
+    final S3NfsClient client;
+    final S3Utilities mockS3Utilities;
+
+    DestClientFixture(S3NfsClient client, S3Utilities mockS3Utilities) {
+      this.client = client;
+      this.mockS3Utilities = mockS3Utilities;
+    }
+  }
+
+  @Test
+  public void s3NfsClient_supportsWrite() {
+    assertTrue(client.supportsWrite());
+    assertTrue(client instanceof WritableNfsClient);
+  }
+
+  @Test
+  public void uploadFile_uploadsToS3AndReturnsKey() throws IOException {
+    File source = new File("Picture1.png");
+    String key = client.uploadFile(source, "dest/folder");
+
+    assertEquals("dest/folder/Picture1.png", key);
+    verify(s3Utilities).uploadToS3("dest/folder", source, Collections.emptyMap());
+  }
+
+  @Test
+  public void uploadFile_withMetadata_passesMetadataToS3Utilities() throws IOException {
+    File source = new File("Picture1.png");
+    Map<String, String> metadata = Map.of("rspace-user", "alice", "rspace-op", "copy");
+
+    String key = client.uploadFile(source, "dest/folder", metadata);
+
+    assertEquals("dest/folder/Picture1.png", key);
+    verify(s3Utilities).uploadToS3("dest/folder", source, metadata);
+  }
+
+  @Test
+  public void uploadFilesToNfs_withAttribution_callsUploadToS3WithPerRecordMetadata() {
+    File f1 = new File("file1.png");
+    File f2 = new File("file2.png");
+    WriteAttribution attribution = new WriteAttribution("alice", "move");
+
+    client.uploadFilesToNfs("dest", Map.of(123L, f1, 456L, f2), attribution);
+
+    verify(s3Utilities).uploadToS3("dest", f1, attribution.metadataForRecord(123L));
+    verify(s3Utilities).uploadToS3("dest", f2, attribution.metadataForRecord(456L));
+  }
+
+  @Test
+  public void deleteFile_callsS3DeleteWithSplitPath() throws IOException {
+    client.deleteFile("dest/folder/file.txt");
+
+    verify(s3Utilities).deleteFromS3("dest/folder", "file.txt");
+  }
+
+  @Test
+  public void copyObject_toAnotherS3Client_callsCopyObjectFromBucketOnDestination()
+      throws IOException {
+    DestClientFixture dest = newDestClient("source-bucket");
+
+    String resultKey = client.copyObject("source/file.txt", dest.client, "dest/file.txt");
+
+    verify(dest.mockS3Utilities)
+        .copyObjectFromBucket(
+            "source-bucket", "source/file.txt", "dest/file.txt", Collections.emptyMap());
+    assertEquals("dest/file.txt", resultKey);
+  }
+
+  @Test
+  public void copyObject_withMetadata_passesMetadataToCopyObjectFromBucket() throws IOException {
+    DestClientFixture dest = newDestClient("source-bucket");
+    Map<String, String> metadata = Map.of("rspace-user", "alice", "rspace-op", "transfer");
+
+    String resultKey = client.copyObject("source/file.txt", dest.client, "dest/file.txt", metadata);
+
+    verify(dest.mockS3Utilities)
+        .copyObjectFromBucket("source-bucket", "source/file.txt", "dest/file.txt", metadata);
+    assertEquals("dest/file.txt", resultKey);
+  }
+
+  @Test
+  public void copyObject_stripsLeadingSlashesFromBothSourceAndDestKeys() throws IOException {
+    DestClientFixture dest = newDestClient("source-bucket");
+
+    String resultKey = client.copyObject("/source/file.txt", dest.client, "/dest/file.txt");
+
+    verify(s3Utilities).getObjectDetails("source/file.txt");
+    verify(dest.mockS3Utilities)
+        .copyObjectFromBucket(
+            "source-bucket", "source/file.txt", "dest/file.txt", Collections.emptyMap());
+    assertEquals("dest/file.txt", resultKey);
+  }
+
+  @Test
+  public void copyObject_toNonS3Destination_throwsUnsupportedOperationException() {
+    WritableNfsClient nonS3Dest = mock(WritableNfsClient.class);
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> client.copyObject("source/file.txt", nonS3Dest, "dest/file.txt"));
+  }
+
+  @Test
+  public void copyObject_sourceOver5GB_throwsIOExceptionAndDoesNotCallCopy() {
+    DestClientFixture dest = newDestClient("source-bucket");
+    long fiveGbPlusOne = 5L * 1024L * 1024L * 1024L + 1L;
+    S3FolderContentItem huge =
+        new S3FolderContentItem("huge.bin", false, fiveGbPlusOne, Instant.now());
+    when(s3Utilities.getObjectDetails("source/huge.bin")).thenReturn(huge);
+
+    IOException ex =
+        assertThrows(
+            IOException.class,
+            () -> client.copyObject("source/huge.bin", dest.client, "dest/huge.bin"));
+    assertTrue(ex.getMessage().contains("5"));
+    verify(dest.mockS3Utilities, org.mockito.Mockito.never())
+        .copyObjectFromBucket(any(), any(), any());
+  }
 
   @Test
   public void testNfsFileTreeNodeConversion() {

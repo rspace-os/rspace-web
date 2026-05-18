@@ -54,6 +54,16 @@ public class ApiExternalStorageOperationInfo
 
   @Override
   public int compareTo(@NotNull ApiExternalStorageOperationInfo o) {
-    return recordId.compareTo(o.getRecordId());
+    Long otherRecordId = o.getRecordId();
+    if (recordId == null && otherRecordId == null) {
+      return 0;
+    }
+    if (recordId == null) {
+      return 1;
+    }
+    if (otherRecordId == null) {
+      return -1;
+    }
+    return recordId.compareTo(otherRecordId);
   }
 }

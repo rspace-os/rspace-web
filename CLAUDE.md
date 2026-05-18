@@ -35,12 +35,13 @@ When adding comments to Jira tickets:
 
 ### Java / Backend conventions
 - **Do NOT use Java 17+ language features** (no records, sealed classes, text blocks, pattern matching) — source level is Java 11
-- Do NOT use Spring Boot; Spring context is configured via `applicationContext-*.xml` files
+- Do NOT use Spring Boot; Spring context is configured via `applicationContext-*.xml` files. Component-scan is enabled on `com.researchspace.*` (see `applicationContext-service.xml`), so `@Service` / `@Component` / `@Repository` classes are auto-discovered — no XML entry needed for new managers
 - Follow the layering: `Controller → Service (Manager) → DAO → Hibernate/DB`
     - Controllers: input validation only — never call DAOs directly
     - Services: must be named ending in `Manager` for AOP transaction proxying
     - DAOs: assume an active transaction; use `sessionFactory.getCurrentSession()`
 - Prefer constructor injection; avoid `@Autowired` on fields
+- Bean Validation is **JSR-349 (1.1)**, not 2.0 — `javax.validation.constraints` includes `@NotNull`, `@Size`, `@Pattern` but does **NOT** include `@NotBlank` or `@NotEmpty`. Use `@NotNull` + `@Size(min = 1)` for not-empty semantics. Do not import `org.hibernate.validator.constraints.*` — stick to `javax.validation`
 - Security is **Apache Shiro** (not Spring Security); check permissions via `PermissionUtils.isPermitted()`
 - Use soft deletes — never hard-delete records
 - All schema changes via **Liquibase** changesets in `src/main/resources/sqlUpdates/`
@@ -49,12 +50,15 @@ When adding comments to Jira tickets:
 - Log caught exceptions at WARN or ERROR; no empty catch blocks; never log sensitive data
 
 ### Testing (backend)
-Three tiers — run in order:
+Four tiers — run in order:
 1. **Pure unit** (`*Test.java`, `-Dfast=true`): plain JUnit 5 + Mockito, no Spring context
 2. **Spring transactional** (`*Test.java`): Spring context, auto-rolled-back; extend `SpringTransactionalTest`
 3. **Integration/MVC** (`*IT.java`): real DB commits; extend `RealTransactionSpringTestBase` or `MVCTestBase`; runs in `mvn verify`
+4. **Real-connection / nightly** (`*Test.java` gated by `@RunWith(ConditionalTestRunner.class)` + `@RunIfSystemPropertyDefined("nightly")`): hits real external services (S3, iRODS, Egnyte, …); runs only when `-Dnightly` is passed. Credentials live in `deployments/dev/deployment.properties` under `*.realConnectionTest.*`
 
 Use JUnit 5 for new test classes. Do not mix assertion styles within a class.
+
+Test-only access to private fields: prefer `@Setter(AccessLevel.PACKAGE)` on the production class (existing example: `S3UtilitiesImpl.chunkedUploadMb*`, `s3Client`, `s3BucketName`) over reflection-based field injection in the test.
 
 ### Frontend conventions
 - Functional components with hooks only; use React Query for new state management

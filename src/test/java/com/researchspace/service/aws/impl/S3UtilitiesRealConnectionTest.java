@@ -42,6 +42,9 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   @Value("${s3.realConnectionTest.aws.bucketName}")
   private String awsS3bucketName;
 
+  @Value("${s3.realConnectionTest.aws.bucketName2}")
+  private String awsS3bucketName2;
+
   @Value("${s3.realConnectionTest.aws.accessKey}")
   private String awsAccessKey;
 
@@ -64,7 +67,10 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   private static final String UNIT_TESTS_FOLDER_NAME = "unitTests";
   private static final int UNIT_TESTS_FOLDER_CONTENT_COUNT = 3;
   private static final String UNIT_TESTS_SUBFOLDER_NAME = "unitTests subfolder";
-  private static final int UNIT_TESTS_SUBFOLDER_CONTENT_COUNT = 1;
+  private static final int UNIT_TESTS_SUBFOLDER_CONTENT_COUNT = 2;
+  private static final String S3_WRITE_TESTS_FOLDER_NAME = "s3writeTests";
+  private static final String S3_WRITE_TESTS_FOLDER_PATH =
+      UNIT_TESTS_FOLDER_NAME + "/" + UNIT_TESTS_SUBFOLDER_NAME + "/" + S3_WRITE_TESTS_FOLDER_NAME;
 
   private S3Utilities s3Utilities;
 
@@ -94,6 +100,71 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   public void testListFolderContentCloudflare() {
     initializeS3UtilitiesWithCloudflare();
     listFolderContentsScenario("testS3File-Cloudflare.txt");
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testUploadAndDeleteAWS() throws IOException {
+    initializeS3UtilitiesWithAWS();
+    uploadAndDeleteScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testUploadAndDeleteCloudflare() throws IOException {
+    initializeS3UtilitiesWithCloudflare();
+    uploadAndDeleteScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testCopyObjectFromBucketAWS() throws IOException {
+    initializeS3UtilitiesWithAWS();
+    copyObjectFromBucketScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testCopyObjectFromBucketCloudflare() throws IOException {
+    initializeS3UtilitiesWithCloudflare();
+    copyObjectFromBucketScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testCrossBucketCopyObjectAWS() throws IOException {
+    // Destination = primary AWS bucket (test instance). Source = rspace-s3-integration-dev,
+    // object at unit_test_do_not_remove/transfer_test.txt (content: "s3 transfer test 1").
+    initializeS3UtilitiesWithAWS();
+
+    String sourceBucket = awsS3bucketName2;
+    String sourceKey = "unit_test_do_not_remove/transfer_test.txt";
+    String expectedContent = "s3 transfer test 1";
+    String destFileName = "cross-bucket-copy-" + System.currentTimeMillis() + ".txt";
+    String destKey = S3_WRITE_TESTS_FOLDER_PATH + "/" + destFileName;
+
+    try {
+      s3Utilities.copyObjectFromBucket(sourceBucket, sourceKey, destKey);
+
+      // verify the copy landed in the primary bucket with correct size
+      S3FolderContentItem dest = s3Utilities.getObjectDetails(destKey);
+      assertTrue("cross-bucket copy destination should exist", dest != null && !dest.isFolder());
+      assertEquals(
+          "cross-bucket copy size mismatch",
+          Long.valueOf(expectedContent.getBytes().length),
+          dest.getSizeInBytes());
+
+      // download and verify content matches the source file
+      File roundTrip = File.createTempFile("cross-bucket-copy", ".txt");
+      try {
+        s3Utilities.downloadFromS3(destKey, roundTrip);
+        assertEquals(expectedContent, Files.readString(roundTrip.toPath()));
+      } finally {
+        roundTrip.delete();
+      }
+    } finally {
+      safeDeleteFromS3(S3_WRITE_TESTS_FOLDER_PATH, destFileName);
+    }
   }
 
   private void initializeS3UtilitiesWithAWS() {
@@ -182,5 +253,93 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     assertTrue("Expected to find file 'test image.png'", testS3File.isPresent());
     assertEquals(
         "Unexpected test image size", testS3PngFileSize, testS3File.get().getSizeInBytes());
+  }
+
+  private void uploadAndDeleteScenario() throws IOException {
+    String testContent = "real-connection-upload-test";
+    String fileName = "upload-test-" + System.currentTimeMillis() + ".txt";
+    File source = createTempFileWithName(fileName, testContent);
+    String s3Key = S3_WRITE_TESTS_FOLDER_PATH + "/" + fileName;
+
+    try {
+      s3Utilities.uploadToS3(S3_WRITE_TESTS_FOLDER_PATH, source);
+
+      // verify object is present with correct size
+      S3FolderContentItem uploaded = s3Utilities.getObjectDetails(s3Key);
+      assertTrue("uploaded object should exist", uploaded != null && !uploaded.isFolder());
+      assertEquals(
+          "uploaded object size mismatch",
+          Long.valueOf(testContent.getBytes().length),
+          uploaded.getSizeInBytes());
+
+      // round-trip: download and verify content
+      File roundTrip = File.createTempFile("upload-roundtrip", ".txt");
+      try {
+        s3Utilities.downloadFromS3(s3Key, roundTrip);
+        assertEquals(testContent, Files.readString(roundTrip.toPath()));
+      } finally {
+        roundTrip.delete();
+      }
+    } finally {
+      safeDeleteFromS3(S3_WRITE_TESTS_FOLDER_PATH, fileName);
+      source.delete();
+    }
+
+    // verify object is gone after delete
+    assertTrue(
+        "object should no longer exist after delete", s3Utilities.getObjectDetails(s3Key) == null);
+  }
+
+  private void copyObjectFromBucketScenario() throws IOException {
+    // upload a source object inside s3writeTests, then exercise CopyObject as a same-bucket
+    // server-side copy (sourceBucket == this instance's bucket).
+    String testContent = "real-connection-copy-test";
+    String sourceFileName = "copy-source-" + System.currentTimeMillis() + ".txt";
+    String destFileName = "copy-dest-" + System.currentTimeMillis() + ".txt";
+    File source = createTempFileWithName(sourceFileName, testContent);
+    String sourceKey = S3_WRITE_TESTS_FOLDER_PATH + "/" + sourceFileName;
+    String destKey = S3_WRITE_TESTS_FOLDER_PATH + "/" + destFileName;
+
+    try {
+      s3Utilities.uploadToS3(S3_WRITE_TESTS_FOLDER_PATH, source);
+
+      s3Utilities.copyObjectFromBucket(s3Utilities.getBucketName(), sourceKey, destKey);
+
+      // both source and dest should exist after CopyObject
+      S3FolderContentItem destDetails = s3Utilities.getObjectDetails(destKey);
+      assertTrue("copy destination should exist", destDetails != null && !destDetails.isFolder());
+      assertEquals(
+          "copy destination size mismatch",
+          Long.valueOf(testContent.getBytes().length),
+          destDetails.getSizeInBytes());
+      assertTrue(
+          "copy source should still exist (CopyObject does not delete source)",
+          s3Utilities.getObjectDetails(sourceKey) != null);
+    } finally {
+      safeDeleteFromS3(S3_WRITE_TESTS_FOLDER_PATH, sourceFileName);
+      safeDeleteFromS3(S3_WRITE_TESTS_FOLDER_PATH, destFileName);
+      source.delete();
+    }
+  }
+
+  /** Best-effort delete used in test cleanup; never throws so it can sit in a finally block. */
+  private void safeDeleteFromS3(String folderPath, String fileName) {
+    try {
+      s3Utilities.deleteFromS3(folderPath, fileName);
+    } catch (Exception e) {
+      log.warn("cleanup delete failed for {}/{}", folderPath, fileName, e);
+    }
+  }
+
+  /**
+   * Creates a temp file whose simple name equals {@code fileName} (so the resulting S3 object key
+   * matches the desired suffix), pre-populated with {@code content}.
+   */
+  private static File createTempFileWithName(String fileName, String content) throws IOException {
+    File scratch = File.createTempFile("s3-test-", ".tmp");
+    Files.writeString(scratch.toPath(), content);
+    File named = new File(scratch.getParentFile(), fileName);
+    assertTrue("temp file rename failed", scratch.renameTo(named));
+    return named;
   }
 }

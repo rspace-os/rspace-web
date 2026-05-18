@@ -1,6 +1,9 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.GalleryFilestoresApi;
+import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
@@ -15,8 +18,9 @@ import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
 import com.researchspace.netfiles.NfsTarget;
+import com.researchspace.service.FilestoreWriteManager;
 import com.researchspace.service.NfsFileHandler;
-import com.researchspace.service.NfsManager;
+import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.webapp.controller.DeploymentProperty;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,12 +32,16 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -45,9 +53,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiController
     implements GalleryFilestoresApi {
 
-  @Autowired private NfsManager nfsManager;
-  @Autowired private NfsFileHandler nfsFileHandler;
-  @Autowired private NfsFactory nfsFactory;
+  @Autowired @Setter NfsFileHandler nfsFileHandler;
+  @Autowired @Setter NfsFactory nfsFactory;
+  @Autowired RecordDeletionManager deletionManager;
+  @Autowired FilestoreWriteManager filestoreWriteManager;
 
   @Override
   public List<NfsFileStoreInfo> getUserFilestores(@RequestAttribute(name = "user") User user) {
@@ -220,5 +229,62 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     assertFilestoresApiEnabled(user);
     credentialsStore.removeUserCredentialsForFilesystem(user, filesystemId);
+  }
+
+  @Override
+  public ApiExternalStorageOperationResult moveToFilestore(
+      @PathVariable Long filestoreId,
+      @RequestBody @Valid ApiGalleryFilestoreOperationRequest request,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+
+    assertFilestoresApiEnabled(user);
+    throwBindExceptionIfErrors(errors);
+    FilestoreWriteManager.UploadOutcome outcome =
+        filestoreWriteManager.uploadToFilestore(
+            filestoreId, request, errors, user, FilestoreWriteManager.OPERATION_MOVE);
+
+    ApiExternalStorageOperationResult moveResult;
+    try {
+      moveResult =
+          ApiExternalStorageOperationResult.of(
+              deletionManager.deleteMediaFileSet(outcome.getSucceededMediaFiles(), user));
+    } catch (AuthorizationException | ObjectRetrievalFailureException e) {
+      log.error("Error deleting media files from RSpace: ", e);
+      errors.addError(new ObjectError("mediaFile", e.getMessage()));
+      throwBindExceptionIfErrors(errors);
+      return outcome.getOperationResult();
+    }
+    moveResult.addAll(outcome.getOperationResult().getFailedRecords());
+    return moveResult;
+  }
+
+  @Override
+  public ApiExternalStorageOperationResult copyToFilestore(
+      @PathVariable Long filestoreId,
+      @RequestBody @Valid ApiGalleryFilestoreOperationRequest request,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+
+    assertFilestoresApiEnabled(user);
+    throwBindExceptionIfErrors(errors);
+    return filestoreWriteManager
+        .uploadToFilestore(filestoreId, request, errors, user, FilestoreWriteManager.OPERATION_COPY)
+        .getOperationResult();
+  }
+
+  @Override
+  public ApiExternalStorageOperationResult transferBetweenFilestores(
+      @PathVariable Long filestoreId,
+      @RequestBody @Valid ApiGalleryFilestoreTransferRequest request,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+
+    assertFilestoresApiEnabled(user);
+    throwBindExceptionIfErrors(errors);
+    return filestoreWriteManager.transferBetweenFilestores(filestoreId, request, errors, user);
   }
 }

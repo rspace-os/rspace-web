@@ -1,13 +1,9 @@
 package com.researchspace.netfiles;
 
-import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.model.netfiles.NfsFileStore;
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
-import java.util.Map;
-import java.util.Set;
 
 /** Interface for clients providing connection to Network File Store */
 public interface NfsClient extends Serializable {
@@ -104,43 +100,10 @@ public interface NfsClient extends Serializable {
 
   /**
    * flag stating if the client supports write operations on the filestore (mainly file creation and
-   * delete)
+   * delete). Implementations that return {@code true} must also implement {@link
+   * WritableNfsClient}.
    */
-  default boolean supportWritePermission() {
-    return false;
-  }
-
-  /***
-   * Stores a list of files into a specific path of an external storage file system.
-   *
-   * @param destinationPath the path where you want to save the files
-   * @param mapRecordIdToFile the Map[recordId, File] of the files you want to upload
-   * @return the map of the file descriptors of the files saved
-   * @throws UnsupportedOperationException if any of the file cannot be deleted
-   */
-  default ApiExternalStorageOperationResult uploadFilesToNfs(
-      String destinationPath, Map<Long, File> mapRecordIdToFile)
-      throws UnsupportedOperationException {
-    if (!this.supportWritePermission()) {
-      throw new UnsupportedOperationException(
-          "The Operation is not supported by the NfsClient in use");
-    }
-    return null;
-  }
-
-  /***
-   * Delete a list of files from an external file system storage
-   *
-   * @param absolutePathFilenames the absolute path and filename to the external storage files that need to be deleted
-   * @return true when all the files are deleted
-   * @throws UnsupportedOperationException if one of the files cannot be deleted
-   */
-  default boolean deleteFilesFromNfs(Set<String> absolutePathFilenames)
-      throws UnsupportedOperationException {
-    if (!this.supportWritePermission()) {
-      throw new UnsupportedOperationException(
-          "The Operation is not supported by the NfsClient in use");
-    }
+  default boolean supportsWrite() {
     return false;
   }
 }

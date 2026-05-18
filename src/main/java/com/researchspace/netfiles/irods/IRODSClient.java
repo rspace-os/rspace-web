@@ -4,7 +4,6 @@ import com.researchspace.api.v1.model.ApiExternalStorageOperationInfo;
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.netfiles.NfsAbstractClient;
-import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsException;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
@@ -12,6 +11,7 @@ import com.researchspace.netfiles.NfsFileTreeOrderType;
 import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
+import com.researchspace.netfiles.WritableNfsClient;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +29,7 @@ import org.irods.jargon.core.pub.io.IRODSFileFactory;
 import org.irods.jargon.core.query.CollectionAndDataObjectListingEntry;
 
 @Slf4j
-public class IRODSClient extends NfsAbstractClient implements NfsClient {
+public class IRODSClient extends NfsAbstractClient implements WritableNfsClient {
 
   private final transient JargonFacade jargonFacade;
   private final IRODSAccount irodsAccount;
@@ -192,8 +192,21 @@ public class IRODSClient extends NfsAbstractClient implements NfsClient {
   }
 
   @Override
-  public boolean supportWritePermission() {
-    return true;
+  public String uploadFile(File source, String destDirectoryPath) {
+    throw new UnsupportedOperationException(
+        "IRODSClient.uploadFile primitive not yet wired up; use uploadFilesToNfs for now");
+  }
+
+  @Override
+  public void deleteFile(String absolutePath) {
+    throw new UnsupportedOperationException(
+        "IRODSClient.deleteFile primitive not yet wired up; use deleteFilesFromNfs for now");
+  }
+
+  @Override
+  public String copyObject(
+      String sourceAbsolutePath, WritableNfsClient destClient, String destAbsolutePath) {
+    throw new UnsupportedOperationException("iRODS cross-filestore copy is not supported yet");
   }
 
   @Override

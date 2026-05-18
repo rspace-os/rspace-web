@@ -23,7 +23,7 @@ import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
-import com.researchspace.netfiles.NfsClient;
+import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.testutils.NetFilesTestFactory;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.File;
@@ -42,7 +42,7 @@ public class NfsManagerTest extends SpringTransactionalTest {
   @Autowired private NfsDao nfsDao;
   @Autowired private UserManager userManager;
   @Mock private FileStore fileStore;
-  @Mock private NfsClient nfsClient;
+  @Mock private WritableNfsClient writableNfsClient;
 
   private NfsFileSystem testFileSystem;
 
@@ -156,13 +156,12 @@ public class NfsManagerTest extends SpringTransactionalTest {
   public void testUploadFiles() throws IOException, UnsupportedOperationException {
     List<EcatMediaFile> listRecordToMove = List.of(new EcatImage(), new EcatAudio());
 
-    when(nfsClient.supportWritePermission()).thenReturn(true);
     when(fileStore.findFile(any())).thenReturn(new File(""));
 
-    nfsMgr.uploadFilesToNfs(listRecordToMove, "", nfsClient);
+    nfsMgr.uploadFilesToNfs(listRecordToMove, "", writableNfsClient);
 
     verify(fileStore, times(2)).findFile(any());
-    verify(nfsClient).uploadFilesToNfs(any(), any());
+    verify(writableNfsClient).uploadFilesToNfs(any(), any());
   }
 
   @Test
