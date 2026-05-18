@@ -4,19 +4,9 @@ import com.axiope.webapp.dev.ViteDevServerProxyServlet;
 import com.axiope.webapp.taglib.BundleTag;
 import com.researchspace.Constants;
 import com.researchspace.properties.IPropertyHolder;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -61,7 +51,7 @@ public class StartupListener implements ServletContextListener {
     setupContext(context);
     getProperties(propHolder, context);
     preWarmBundleManifestCache(ctx, context);
-    initCacheVersion(propHolder, context);
+    initCacheVersion(ctx, propHolder, context);
     registerViteDevServerProxyIfEnabled(ctx, context);
   }
 
@@ -100,108 +90,26 @@ public class StartupListener implements ServletContextListener {
    * Stores the cache-busting version token in the servlet context as {@link
    * BundleTag#CACHE_VERSION_ATTR}.
    *
-   * <p>The token is a SHA-256 content hash computed over:
-   *
-   * <ol>
-   *   <li>All legacy static files listed in {@code /build-resources/resources_to_MD5_rename.txt}
-   *       (JS, CSS, TinyMCE plugins, etc. that are served outside of the Vite pipeline).
-   *   <li>The Vite build manifest ({@code /ui/dist/.vite/manifest.json}), representing the current
-   *       state of Vite-bundled assets.
-   * </ol>
-   *
-   * <p>Because the token is derived from actual file contents, it changes automatically whenever
-   * any static asset changes — regardless of whether the RSpace version string has been bumped.
-   * This is correct for both development restarts and production hotfix deployments. If no files
-   * can be read (e.g. a fresh checkout with no built UI), the RSpace version string is used as a
-   * fallback so the server still starts.
+   * <ul>
+   *   <li><b>Dev ({@code run} profile):</b> a random UUID so every server restart forces browsers
+   *       to re-fetch assets (prevents stale JS/CSS after a rebuild + restart).
+   *   <li><b>Production:</b> the RSpace application version string (e.g. {@code 2.23.0}) so
+   *       browsers cache assets across requests within the same deployment and bust the cache on
+   *       upgrade.
+   * </ul>
    */
-  void initCacheVersion(IPropertyHolder propHolder, ServletContext context) {
-    String hash = computeAssetHash(context);
+  void initCacheVersion(
+      ApplicationContext applicationContext, IPropertyHolder propHolder, ServletContext context) {
+    boolean isDevMode = applicationContext.getEnvironment().acceptsProfiles(Profiles.of("run"));
     String cacheVersion;
-    if (StringUtils.isNotBlank(hash)) {
-      cacheVersion = hash;
-      log.info("Cache-buster version token set from asset content hash: '{}'", cacheVersion);
+    if (isDevMode) {
+      cacheVersion = UUID.randomUUID().toString();
+      log.info("Dev mode: using random cache-buster version token '{}'", cacheVersion);
     } else {
       cacheVersion = propHolder.getVersionMessage();
-      log.warn(
-          "No static assets found to hash; falling back to version string '{}' as cache-buster"
-              + " token",
-          cacheVersion);
+      log.info("Production mode: using RSpace version '{}' as cache-buster token", cacheVersion);
     }
     context.setAttribute(BundleTag.CACHE_VERSION_ATTR, cacheVersion);
-  }
-
-  /**
-   * Computes a short hex token by SHA-256-hashing the contents of all legacy static files and the
-   * Vite manifest, in a deterministic order. Returns the first 16 hex characters of the digest, or
-   * an empty string if no readable files were found.
-   */
-  static String computeAssetHash(ServletContext servletContext) {
-    List<String> webPaths = new ArrayList<>();
-
-    // Legacy static files (JS, CSS, TinyMCE plugins, …).
-    String listResource = "/build-resources/resources_to_MD5_rename.txt";
-    try (InputStream listStream = servletContext.getResourceAsStream(listResource)) {
-      if (listStream != null) {
-        try (BufferedReader reader =
-            new BufferedReader(new InputStreamReader(listStream, StandardCharsets.UTF_8))) {
-          String line;
-          while ((line = reader.readLine()) != null) {
-            line = line.trim();
-            if (!line.isEmpty() && !line.startsWith("#")) {
-              webPaths.add("/" + line);
-            }
-          }
-        }
-      }
-    } catch (IOException e) {
-      log.warn("Failed to read legacy asset list from {}", listResource, e);
-    }
-
-    // Vite manifest — represents the state of all React bundles.
-    webPaths.add(BundleTag.VITE_MANIFEST_PATH);
-
-    // Sort for determinism across JVM restarts / OS platforms.
-    Collections.sort(webPaths);
-
-    MessageDigest digest;
-    try {
-      digest = MessageDigest.getInstance("SHA-256");
-    } catch (NoSuchAlgorithmException e) {
-      log.error("SHA-256 not available; cache version hash cannot be computed", e);
-      return "";
-    }
-
-    boolean anyFileRead = false;
-    for (String webPath : webPaths) {
-      try (InputStream resource = servletContext.getResourceAsStream(webPath)) {
-        if (resource == null) {
-          continue;
-        }
-        // Feed the path itself into the digest so renames are detected even if content is stable.
-        digest.update(webPath.getBytes(StandardCharsets.UTF_8));
-        try (DigestInputStream dis = new DigestInputStream(resource, digest)) {
-          byte[] buf = new byte[8192];
-          //noinspection StatementWithEmptyBody
-          while (dis.read(buf) != -1) {}
-        }
-        anyFileRead = true;
-      } catch (IOException e) {
-        log.warn("Failed to hash static asset {}", webPath, e);
-      }
-    }
-
-    if (!anyFileRead) {
-      return "";
-    }
-
-    byte[] digestBytes = digest.digest();
-    StringBuilder sb = new StringBuilder(32);
-    for (byte b : digestBytes) {
-      sb.append(String.format("%02x", b));
-    }
-    // 16 hex chars (64 bits) is ample for a cache-buster token.
-    return sb.substring(0, 16);
   }
 
   /**
