@@ -45,6 +45,7 @@ public class BundleTag extends TagSupport {
   static final String DEV_MODE_CACHE_ATTR = BundleTag.class.getName() + ".DEV_MODE";
   static final String RENDERED_ASSETS_ATTR = BundleTag.class.getName() + ".RENDERED_ASSETS";
   static final String REACT_PREAMBLE_DEDUPE_KEY = "script:module:inline:react-refresh-preamble";
+
   /**
    * Servlet context attribute that holds the cache-busting version token. Set at startup by {@link
    * com.axiope.webapp.listener.StartupListener}: a random UUID in dev mode, or the RSpace version
@@ -215,10 +216,10 @@ public class BundleTag extends TagSupport {
 
   /**
    * Returns the cache-busting version token. In dev mode a fresh UUID is generated and stored as a
-   * request attribute so that every page hit gets a unique token (ensuring browsers always
-   * re-fetch assets after a rebuild), while multiple tag invocations within the same request share
-   * the same token. In production the application-version string stored in the servlet context at
-   * startup is returned.
+   * request attribute so that every page hit gets a unique token (ensuring browsers always re-fetch
+   * assets after a rebuild), while multiple tag invocations within the same request share the same
+   * token. In production the application-version string stored in the servlet context at startup is
+   * returned.
    */
   String getCacheVersion() {
     if (isDevMode()) {

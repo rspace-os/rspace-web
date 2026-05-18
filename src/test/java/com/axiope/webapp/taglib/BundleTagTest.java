@@ -320,13 +320,13 @@ public class BundleTagTest {
     realTag.setBundle("appBar");
 
     assertEquals(TagSupport.SKIP_BODY, realTag.doStartTag());
-    assertTrue(output.toString().contains("src=\"/ui/dist/appBar-first.js\""));
+    assertTrue(output.toString().contains("src=\"/ui/dist/appBar-first.js?v="));
     assertEquals(1, realTag.refreshCount);
 
     output.setLength(0);
     requestAttributes.clear();
     assertEquals(TagSupport.SKIP_BODY, realTag.doStartTag());
-    assertTrue(output.toString().contains("src=\"/ui/dist/appBar-second.js\""));
+    assertTrue(output.toString().contains("src=\"/ui/dist/appBar-second.js?v="));
     assertEquals(2, realTag.refreshCount);
   }
 
