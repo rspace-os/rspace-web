@@ -379,7 +379,10 @@ p.attachmentP {
 
 img.attachmentIcon {
   display: block;
-  margin: 0 auto; }
+  margin: 0 auto;
+  /* Preserve aspect ratio */
+  height: auto;
+}
 
 img.historicalVersionImg {
   margin-bottom: -5px;
@@ -566,50 +569,6 @@ p.chem-attachment-css-wrapper span {
   vertical-align: text-bottom;
 }
 
-.attachmentPreviewPanel {
-  display: none;
-  float: left; }
-
-.pdfPreviewPanel {
-  display: inline-block; }
-
-.pdfPreviewMainPanel {
-  float: left;
-  max-width: 595px; 
-}
-
-.attachmentPreviewPanel .pdfPreviewMainPanel {
-  max-width: 465px;
-}
-
-.pdfPreviewCanvas {
-  height: 390px;
-  width: 460px;
-  margin: 3px;
-  cursor: zoom-in; 
-}
-
-div.pdfPreviewPageNumDiv {
-  visibility: hidden;
-  text-align: center;
-  line-height: normal;
-}
-
-.previewPageChangeDiv {
-  visibility: hidden;
-  float: left;
-  margin-top: 180px; }
-
-.previewNextPageBtn, .previewPreviousPageBtn {
-  width: 30px;
-  padding: 6px;
-  cursor: pointer; }
-
-.attachmentPreviewInfoPanel {
-  display: none;
-  float: right;
-  width: 280px;
-  padding: 10px 7px; }
 
 div.infoPanelCaptionDiv {
   margin: 0px 0px 20px 13px; }

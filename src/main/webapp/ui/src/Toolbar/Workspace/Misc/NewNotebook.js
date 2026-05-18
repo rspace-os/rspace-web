@@ -9,12 +9,14 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 export default function NewNotebook() {
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const [error, setError] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
+  const { trackEvent } = React.useContext(AnalyticsContext);
 
   useEffect(() => {
     $(document).on("click", "#createNotebook", () => {
@@ -48,7 +50,7 @@ export default function NewNotebook() {
     );
     $("body").append(form);
     form.submit();
-    RS.trackEvent("user:create:notebook:workspace");
+    trackEvent("user:create:notebook:workspace");
   }
 
   const focusUsernameInputField = (input) => {

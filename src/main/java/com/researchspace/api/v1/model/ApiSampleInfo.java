@@ -122,6 +122,9 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
   public ApiSampleInfo(Sample sample) {
     super(sample);
 
+    if (sample.getQuantityInfo() != null) {
+      setQuantity(new ApiQuantityInfo(sample));
+    }
     // Sample will have null quantity without subsamples, but for API we should rather return zero
     if (getQuantity() == null) {
       setQuantity(new ApiQuantityInfo(BigDecimal.ZERO, sample.getDefaultUnitId()));

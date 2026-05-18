@@ -1,15 +1,16 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import axios from "@/common/axios";
 import {
   Filestore,
   GalleryFile,
   LocalGalleryFile,
   RemoteFile,
 } from "@/eln/gallery/useGalleryListing";
+import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
 import * as ArrayUtils from "@/util/ArrayUtils";
 import { IsValid, IsInvalid } from "@/components/ValidatingSubmitButton";
 import GalleryEntrypoint from "@/tinyMCE/gallery/GalleryEntrypoint";
+import { addFromGallery } from "@/tinyMCE/gallery/utils";
 import RsSet from "@/util/set";
 
 declare global {
@@ -19,8 +20,6 @@ declare global {
   }
 
   interface Window {
-    // this is defined in ../../../scripts/pages/workspace/mediaGalleryManager.js
-    addFromGallery: (fileData: unknown) => void;
     RS: RSGlobal;
   }
 }
@@ -47,21 +46,30 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
           files.toArray(),
         );
         localFiles.forEach((file) => {
-          void axios
-            .get(
-              `/workspace/getRecordInformation?recordId=${file.id}`,
-            )
-            .then((response) => {
-              window.addFromGallery(
-                (response.data as { data: unknown }).data,
-              );
-            })
-            .catch(() => {
+          const recordId = file.id;
+
+          if (recordId === null) {
+            window.RS.confirm?.(
+              `Could not insert file "${file.name}"`,
+              "error",
+            );
+            return;
+          }
+
+          void (async () => {
+            try {
+              const recordInformation = await getWorkspaceRecordInformationAjax({
+                recordId,
+              });
+              addFromGallery(recordInformation);
+            } catch (e) {
+              console.error(e);
               window.RS.confirm?.(
                 `Could not insert file "${file.name}"`,
                 "error",
               );
-            });
+            }
+          })();
         });
         const remoteFiles = ArrayUtils.filterClass(
           RemoteFile,
@@ -156,8 +164,8 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
 
   return {
     getMetadata: () => ({
-      name: 'Example plugin',
-      url: 'http://exampleplugindocsurl.com'
+      name: 'RSpace Gallery Plugin',
+      url: 'https://www.researchspace.com/',
     })
   };
 });

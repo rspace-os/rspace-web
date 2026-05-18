@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
-import com.researchspace.api.v1.model.ApiSampleField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
@@ -12,7 +12,7 @@ public class SampleTemplateFieldPostValidator extends SampleTemplateFieldValidat
 
   @Override
   public void validate(Object target, Errors errors) {
-    ApiSampleField apiTemplateField = (ApiSampleField) target;
+    ApiInventoryEntityField apiTemplateField = (ApiInventoryEntityField) target;
 
     // check field name
     String fieldName = apiTemplateField.getName();

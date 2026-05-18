@@ -204,14 +204,14 @@ $(document).ready(function() {
     });
     
     $(document).on('click', '#addBatchGroupLnk', function() {
-        var group = { uniqueName : "Group" + RS.randomAlphanumeric(4) }; 
+        var group = { uniqueName : "Group" + Math.random().toString(36).slice(-4)};
         addBatchTableRow($('#groupsToCreateTableBody'), getBatchGroupRowTemplate(), group);
         toggleTables();
         return false;
     });
 
     $(document).on('click', '#addBatchCommunityLnk', function() {
-        var community = { uniqueName : "Comm" + RS.randomAlphanumeric(4) }; 
+        var community = { uniqueName : "Comm" + Math.random().toString(36).slice(-4)};
         addBatchTableRow($('#communitiesToCreateTableBody'), getBatchCommunityRowTemplate(), community);
         toggleTables();
         return false;

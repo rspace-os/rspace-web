@@ -163,13 +163,6 @@ export function fromCommonUnit(
  * Specifics for working with dates and times
  */
 
-/**
- * Converts a number of milliseconds to a number of days
- */
-export function msToDays(ms: number): number {
-  return ms / (1000 * 60 * 60 * 24);
-}
-
 type DatePrecision =
   | "year"
   | "month"

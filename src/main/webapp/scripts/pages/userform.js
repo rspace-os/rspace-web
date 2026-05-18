@@ -63,54 +63,70 @@ function initPhotoTakingArea() {
   }
   photoTakingInitialised = true;
 
-  RS.onVideoInputAvailable(function() {
-
-    $('#takePhotoTabLink').show();
-    var videoArea = document.getElementById('profileImageVideo');
-    
-    // Trigger photo take
-    $("#profileImageVideoSnap").on("click", function(e) {
-      if (videoStream) {
-        var canvas = document.getElementById('profileImageVideoCanvas');
-        var scale = photoMaxDimension / Math.max(videoArea.videoWidth, videoArea.videoHeight); 
-        var canvasWidth = videoArea.videoWidth * scale;
-        var canvasHeight = videoArea.videoHeight * scale;
-        canvas.width = canvasWidth;
-        canvas.height = canvasHeight;
-
-        // for non-square pictures, so they align to video
-        $(canvas).css('margin-top', (photoMaxDimension - canvasHeight) / 2);
-        $(canvas).css('margin-left', (photoMaxDimension - canvasWidth) / 2);
-
-        var context = canvas.getContext('2d');
-        context.drawImage(videoArea, 0, 0, canvasWidth, canvasHeight);
-        photoSnapped = true;
-      }
-    });
-    
-    $("#takePhotoTabLink").on("click", function(e) {
-      var videoCfg = {
-        video: {
-          width: {min: photoMaxDimension, ideal: photoMaxDimension},
-          height: {min: photoMaxDimension, ideal: photoMaxDimension}
-        }
-      };
-      navigator.mediaDevices.getUserMedia(videoCfg)
-        .then(function(stream) {
-          videoStream = stream;
-          videoArea.srcObject = videoStream;
-          videoArea.play();
-        })
-        .catch(function(err) {
-          apprise('Sorry, there are some problems with accessing your camera');
-          console.log('error: ' + err.name + " - " + err.message);
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !navigator.mediaDevices.enumerateDevices) {
+    console.log('browser doesn\'t support enumerateDevices()');
+  } else {
+    navigator.mediaDevices.enumerateDevices()
+      .then(function (devices) {
+        var videoInputAvailable = false;
+        devices.forEach(function (device) {
+          if (device.kind == 'videoinput') {
+            videoInputAvailable = true;
+            return false;
+          }
         });
-    });
-  
-    $("#uploadImageTabLink").on("click", function(e) {
-      stopVideoStream();
-    });
-  });
+        if (!videoInputAvailable) {
+          console.log('no videoinput device available');
+          return;
+        }
+
+        $('#takePhotoTabLink').show();
+        var videoArea = document.getElementById('profileImageVideo');
+
+        // Trigger photo take
+        $("#profileImageVideoSnap").on("click", function(e) {
+          if (videoStream) {
+            var canvas = document.getElementById('profileImageVideoCanvas');
+            var scale = photoMaxDimension / Math.max(videoArea.videoWidth, videoArea.videoHeight);
+            var canvasWidth = videoArea.videoWidth * scale;
+            var canvasHeight = videoArea.videoHeight * scale;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+
+            // for non-square pictures, so they align to video
+            $(canvas).css('margin-top', (photoMaxDimension - canvasHeight) / 2);
+            $(canvas).css('margin-left', (photoMaxDimension - canvasWidth) / 2);
+
+            var context = canvas.getContext('2d');
+            context.drawImage(videoArea, 0, 0, canvasWidth, canvasHeight);
+            photoSnapped = true;
+          }
+        });
+
+        $("#takePhotoTabLink").on("click", function(e) {
+          var videoCfg = {
+            video: {
+              width: {min: photoMaxDimension, ideal: photoMaxDimension},
+              height: {min: photoMaxDimension, ideal: photoMaxDimension}
+            }
+          };
+          navigator.mediaDevices.getUserMedia(videoCfg)
+            .then(function(stream) {
+              videoStream = stream;
+              videoArea.srcObject = videoStream;
+              videoArea.play();
+            })
+            .catch(function(err) {
+              apprise('Sorry, there are some problems with accessing your camera');
+              console.log('error: ' + err.name + " - " + err.message);
+            });
+        });
+
+        $("#uploadImageTabLink").on("click", function(e) {
+          stopVideoStream();
+        });
+      });
+  }
 
   $('#uploadImageTabs').tabs();
 }

@@ -789,7 +789,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
             () -> containerApiMgr.updateApiContainer(storedContentUpdate, testUser));
     assertEquals(
         "Cannot set canStoreContainers to false, as this container is already storing"
-            + " subcontainers",
+            + " containers",
         iae.getMessage());
     storedContentUpdate.setCanStoreContainers(true);
     storedContentUpdate.setCanStoreSamples(false);

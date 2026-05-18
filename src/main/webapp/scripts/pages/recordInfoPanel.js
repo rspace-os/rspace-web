@@ -41,7 +41,7 @@ function generate$RecordInfoPanel(info) {
   }
   $newInfoPanel.find('.infoPanelRevisionInfoDiv').toggle(isVersionView);
   if (isVersionView) {
-      var oidNoVersion = RS.getGlobalIdWithoutVersionId(info.oid.idString);
+      var oidNoVersion = info.oid.idString.split('v')[0];
       $newInfoPanel.find('.infoPanel-objectIdLatestLink')
           .attr('href', '/globalId/' + oidNoVersion)
           .text(oidNoVersion);
@@ -586,7 +586,41 @@ function _rerunToggleWopiActionElem() {
 
 $(document).ready(function () {
   initRecordInfoDialog();
-  RS.checkSnapgeneAvailablity();
+  var requests = {
+    snapgene_available: {
+      url: '/deploymentproperties/ajax/property',
+      type: 'GET',
+      data: { name: 'snapgene.available' }
+    },
+    snapgene_running: {
+      url: '/molbiol/dna/serviceStatus',
+      type: 'GET'
+    }
+  };
+
+  var reqPromises = Object.keys(requests).map(function (key) {
+    return $.ajax({
+      url: requests[key].url,
+      type: requests[key].type,
+      data: requests[key].data
+    });
+  });
+
+  Promise.all(reqPromises).then(function (res) {
+    var isAvailable = false;
+    res.map(function (item) {
+      isAvailable = isAvailable || item == "ALLOWED";
+    });
+
+    if (isAvailable) {
+      RS.saveUserSetting('snapgene-available', "true");
+      $('.snapGenePanel .previewActionLink').removeClass('hidden');
+    } else {
+      RS.saveUserSetting('snapgene-available', "false");
+    }
+  }).catch(function () {
+    RS.saveUserSetting('snapgene-available', "false");
+  });
 
   if (collaboraPreviewAvailable) {
     initCollaboraPreviews();

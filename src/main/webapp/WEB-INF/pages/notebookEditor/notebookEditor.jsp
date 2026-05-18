@@ -1,10 +1,14 @@
 <%@ include file="/common/taglibs.jsp"%>
 <c:url var="createFromTemplateURL" value="/workspace/editor/structuredDocument/create/${selectedNotebookId}"></c:url>
 <jsp:include page="notebookHeader.jsp" />
+
+  <script>
+    const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
+  </script>
+
   <script src="<c:url value='/scripts/pages/journal.js'/>"></script>
   <script>journal(jQuery)</script>
   <script src="<c:url value='/scripts/bower_components/blueimp-file-upload/js/jquery.fileupload.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/gallery/galleryFileUpload.js'/>"></script>
   <script src="<c:url value='/scripts/pages/gallery/galleryFileUpload.js'/>"></script>
 
   <script src="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
@@ -38,7 +42,7 @@
       <div
         id="toolbar2"
         data-workspace-folder-id="${workspaceFolderId}"
-        data-can-create-record="${permDTO.createRecord}",
+        data-can-create-record="${permDTO.createRecord}"
         data-settings-key="${settingsKey}"
         data-pio-enabled="${pioEnabled}"
         data-evernote-enabled="${evernoteEnabled}"
@@ -53,7 +57,6 @@
     </div>
   </div>
   <jsp:include page="notebookFooter.jsp" />
-  <jsp:include page="../mediaGallery.jsp" />
   <jsp:include page="../workspace/editor/include/messagingDialogs.jsp" />
   <axt:createFromTemplateDlg />
   <!-- Dialog upon Create-Other Documents -->
