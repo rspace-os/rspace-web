@@ -1,5 +1,5 @@
 import React from "react";
-import { screen, waitForElementToBeRemoved } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { render } from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -116,8 +116,10 @@ describe("KetcherDialog cancel confirmation", () => {
     await user.click(screen.getByRole("button", { name: "Keep Editing" }));
 
     expect(handleClose).not.toHaveBeenCalled();
-    await waitForElementToBeRemoved(() =>
-      screen.queryByText(/You have unsaved changes/),
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/You have unsaved changes/),
+      ).not.toBeInTheDocument(),
     );
   });
 

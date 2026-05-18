@@ -97,7 +97,12 @@ const KetcherDialog = ({
   const initialKet = useRef<string | null>(null);
 
   React.useEffect(() => {
-    if (isOpen) trackEvent("user:open:chemistry_editor", { readOnly });
+    if (isOpen) {
+      trackEvent("user:open:chemistry_editor", { readOnly });
+    } else {
+      initialKet.current = null;
+      setShowDiscardConfirm(false);
+    }
   }, [isOpen]);
 
   const onInsertClick = () => {
@@ -115,7 +120,7 @@ const KetcherDialog = ({
       return;
     }
     const currentKet = await window.ketcher?.getKet();
-    if (currentKet && currentKet !== initialKet.current) {
+    if (currentKet !== undefined && currentKet !== initialKet.current) {
       setShowDiscardConfirm(true);
     } else {
       closeAndReset();
@@ -127,7 +132,7 @@ const KetcherDialog = ({
     reason: "backdropClick" | "escapeKeyDown",
   ) => {
     if (reason === "backdropClick" || reason === "escapeKeyDown") {
-      handleCancelClick();
+      void handleCancelClick();
     }
   };
 
