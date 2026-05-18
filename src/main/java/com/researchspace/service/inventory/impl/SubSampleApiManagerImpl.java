@@ -142,6 +142,8 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
               apiSubSample.getIdentifiers(), dbSubSample, user);
       contentChanged |= apiSubSample.applyChangesToDatabaseSubSample(dbSubSample, user);
       contentChanged |= saveIncomingSubSampleImage(dbSubSample, apiSubSample, user);
+      com.researchspace.api.v1.controller.InventoryFieldNameUniquenessValidator
+          .assertNoDuplicateFieldNames(dbSubSample);
       boolean moveSuccessful =
           moveHelper.moveRecordToTargetParentAndLocation(
               dbSubSample,

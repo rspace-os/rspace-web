@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
-
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiInstrument;
@@ -160,6 +160,26 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
     assertNotNull(created);
     assertEquals(1, created.getExtraFields().size());
     assertEquals("extra content", created.getExtraFields().get(0).getContent());
+  }
+
+  @Test
+  public void instrumentCreateRejectsDuplicateExtraFieldNames() {
+    ApiInstrument request = new ApiInstrument();
+    request.setName("instrument-with-dup-extras");
+
+    ApiExtraField one = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    one.setName("dup");
+    one.setContent("a");
+    ApiExtraField two = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    two.setName("dup");
+    two.setContent("b");
+    request.setExtraFields(List.of(one, two));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> instrumentApiMgr.createNewApiInstrument(request, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
   }
 
   @Test

@@ -110,6 +110,8 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     }
     saveSharingACLForIncomingApiInvRec(invRec, apiInvRec);
 
+    com.researchspace.api.v1.controller.InventoryFieldNameUniquenessValidator
+        .assertNoDuplicateFieldNamesInRequest(invRec, null, apiInvRec.getExtraFields());
     for (ApiExtraField apiExtraField : apiInvRec.getExtraFields()) {
       ExtraField extraField =
           recordFactory.createExtraField(

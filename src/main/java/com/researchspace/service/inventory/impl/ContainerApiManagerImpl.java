@@ -236,6 +236,8 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
     apiContainer.applyChangesToDatabaseGridLayout(newContainer);
     apiContainer.applyContainerContentFlagsToDatabaseContainer(newContainer);
 
+    com.researchspace.api.v1.controller.InventoryFieldNameUniquenessValidator
+        .assertNoDuplicateFieldNames(newContainer);
     Container savedContainer = containerDao.save(newContainer);
     saveIncomingContainerImages(savedContainer, apiContainer, user);
     publishAuditEventsForCreatedContainer(user, savedContainer);
@@ -314,6 +316,8 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
                 user);
       }
 
+      com.researchspace.api.v1.controller.InventoryFieldNameUniquenessValidator
+          .assertNoDuplicateFieldNames(dbContainer);
       if (contentChanged) {
         dbContainer.setModificationDate(new Date());
         dbContainer.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);

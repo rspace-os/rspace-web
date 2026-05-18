@@ -111,6 +111,8 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
     }
     setLocationForNewInstrument(apiInstrument, instrumentToSave, user);
 
+    com.researchspace.api.v1.controller.InventoryFieldNameUniquenessValidator
+        .assertNoDuplicateFieldNames(instrumentToSave);
     Instrument savedInstrument = instrumentDao.save(instrumentToSave);
     saveIncomingInstrumentImage(savedInstrument, apiInstrument, user);
 
