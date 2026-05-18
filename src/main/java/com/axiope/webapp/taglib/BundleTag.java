@@ -36,7 +36,7 @@ public class BundleTag extends TagSupport {
   static final String DIST_PUBLIC_PATH = "/ui/dist/";
   static final String VITE_CLIENT_PATH = "@vite/client";
   static final String REACT_REFRESH_PATH = "@react-refresh";
-  static final String REACT_DEV_MODE_PROPERTY = "reactDevMode";
+  public static final String REACT_DEV_MODE_PROPERTY = "reactDevMode";
   static final String MANIFEST_CACHE_ATTR = BundleTag.class.getName() + ".MANIFEST_CACHE";
   static final String ENTRYPOINTS_CACHE_ATTR = BundleTag.class.getName() + ".ENTRYPOINTS_CACHE";
   static final String REQUEST_MANIFEST_CACHE_ATTR =
