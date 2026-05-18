@@ -8,10 +8,10 @@ import DialogActions from "@mui/material/DialogActions";
 import Grid from "@mui/material/Grid";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import DnaPreview from "./dnaPreview";
-import EnzymeTable from "./enzymeTable";
-import FastaView from "./fastaView";
-import OrfTable from "./orfTable";
+import DnaPreview from "./DnaPreview";
+import EnzymeTable from "./EnzymeTable";
+import FastaView from "./FastaView";
+import OrfTable from "./OrfTable";
 import { createRoot } from "react-dom/client";
 
 function a11yProps(index) {

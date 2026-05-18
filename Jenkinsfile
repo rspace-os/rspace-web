@@ -34,12 +34,11 @@ pipeline {
     // these are defined in Jenkins global tool configurations. The JDK is the one used to run the Jenkins build, it does
     // not set the maven toolchain, this is set in the ./mvnw command line
 
-    //tools {
-        // maven 'maven3.8.1'
+    tools {
         // this is the JDK used to run maven itself
         // the toolchain settings just affect compilation
-        //jdk 'OPEN-JDK-11'
-    //  }
+        jdk 'OPEN-JDK-17'
+    }
 
     environment {
         BUILD_FAILURE_EMAIL_LIST = 'dev@researchspace.com'
@@ -287,7 +286,7 @@ pipeline {
             steps {
                 echo 'Building feature branch'
                 sh '''
-                ./mvnw clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
+                ./mvnw clean package -DskipTests=true -DrenameResourcesMD5=true \
                 -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                 -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
@@ -314,7 +313,7 @@ pipeline {
             steps {
                 echo "Building prodRelease .war package"
                  sh '''
-                 ./mvnw clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
+                 ./mvnw clean package -DskipTests=true -DrenameResourcesMD5=true \
                 -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
                 -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \

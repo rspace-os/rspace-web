@@ -241,11 +241,11 @@
 </script>
 
   <!-- MJJA React Scripts -->
-<script src="<c:url value='/ui/dist/myLabGroups.js'/>"></script>
+<rst:bundle bundle="myLabGroups" />
   <!--End MJJA React Scripts -->
 
 <!-- Other React Scripts -->
-<script src="<c:url value='/ui/dist/groupUserActivity.js'/>"></script>
-<script src="<c:url value='/ui/dist/groupEditBar.js'/>"></script>
-<script src="<c:url value='/ui/dist/memberAutoshareStatusWrapper.js'/>"></script>
+<rst:bundle bundle="groupUserActivity" />
+<rst:bundle bundle="groupEditBar" />
+<rst:bundle bundle="memberAutoshareStatusWrapper" />
 <!--End React Scripts -->

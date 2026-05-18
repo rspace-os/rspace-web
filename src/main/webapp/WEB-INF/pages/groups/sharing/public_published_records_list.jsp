@@ -2,7 +2,6 @@
 <%@ include file="/common/meta.jsp"%>
 
 <head>
-  <script src="<c:url value='/public/ui/dist/runtime.js'/>"></script>
   <link rel="stylesheet" href="<c:url value='/styles/bootstrap-custom-flat.css'/>" />
   <link media="all" href="<c:url value='/styles/simplicity/theme.css'/>" rel="stylesheet" />
   <link media="print" href="<c:url value='/styles/simplicity/print.css'/>" rel="stylesheet" />
@@ -76,6 +75,6 @@
   </div>
 
   <!-- Import React search -->
-  <script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
+  <rst:bundle bundle="baseSearch" />
 
 </body>

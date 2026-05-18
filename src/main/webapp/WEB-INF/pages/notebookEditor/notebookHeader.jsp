@@ -60,7 +60,7 @@
         var entryCount = ${entryCount};
     </script>
     <script src="<c:url value='/scripts/tags/shareDlg.js'/>"></script>
-    <script src="<c:url value='/ui/dist/tinymceGalleryUtils.js'/>"></script>
+    <rst:bundle bundle="tinymceGalleryUtils" />
     <script	src="<c:url value='/scripts/pages/coreEditor.js'/>"></script>
     <script src="<c:url value='/scripts/pages/notebookEditor.js'/>"></script>
 </head>

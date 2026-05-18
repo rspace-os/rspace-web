@@ -42,8 +42,8 @@
 
 <!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
-<script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
-<script src="<c:url value='/ui/dist/sysadminUsers.js'/>"></script>
+<rst:bundle bundle="baseSearch" />
+<rst:bundle bundle="sysadminUsers" />
 <!--End React Scripts -->
 </body>
 </html>

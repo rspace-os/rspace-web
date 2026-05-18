@@ -6,11 +6,25 @@
 
 <script src="<c:url value='/scripts/tinymceDialogUtils.js'/>"></script>
 
-<!-- Loading jQuery TinyMCE -->
+<!-- Load the legacy TinyMCE 5 runtime first, then preload Vite-managed helper bundles. -->
 <script src="<c:url value='/scripts/tinymce/tinymce5109/dompurify.min.js'/>"></script>
 <script src="<c:url value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
 <script src="<c:url value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
-<script src="<c:url value='/ui/dist/tinymceGalleryUtils.js'/>"></script>
+<rst:bundle bundle="tinymceGalleryUtils" />
+<script>
+  window.RSTinyMCEPluginBundleLoaderUrl = "<c:url value='/scripts/viteBundleLoader.mjs'/>";
+  window.RSTinyMCEPluginBundles = Object.assign(
+    {},
+    window.RSTinyMCEPluginBundles,
+    {
+      gallery: "tinymceGallery",
+      pyrat: "tinymcePyrat",
+      stoichiometry: "tinymceStoichiometry",
+      identifiers: "tinymceIdentifiers",
+      pubchem: "tinymcePubchem",
+    },
+  );
+</script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymce5_configuration.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_pasteHandler.js'/>"></script>
 <script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_scrollHandler.js'/>"></script>
@@ -96,15 +110,15 @@
   <div id="tempData" style="display: none"></div>
 
   <!-- React Scripts -->
-  <script src="<c:url value='/ui/dist/structuredDocumentToolbar.js'/>"></script>
-  <script src="<c:url value='/ui/dist/fileTreeToolbar.js'/>"></script>
-  <script src="<c:url value='/ui/dist/tinymceSidebarInfo.js'/>"></script>
-  <script src="<c:url value='/ui/dist/InternalLink.js'/>"></script>
-  <script src="<c:url value='/ui/dist/materialsListing.js'/>"></script>
-    <script src="<c:url value='/ui/dist/externalWorkFlows.js'/>"></script>
-    <script src="<c:url value='/ui/dist/jupyterNotebooks.js'/>"></script>
-  <script src="<c:url value='/ui/dist/associatedInventoryRecords.js'/>"></script>
-  <script src="<c:url value='/ui/dist/tinymceKetcher.js'/>"></script>
-  <script src="<c:url value='/ui/dist/ketcherViewer.js'/>"></script>
+  <rst:bundle bundle="structuredDocumentToolbar" />
+  <rst:bundle bundle="fileTreeToolbar" />
+  <rst:bundle bundle="tinymceSidebarInfo" />
+  <rst:bundle bundle="internalLink" />
+  <rst:bundle bundle="materialsListing" />
+  <rst:bundle bundle="externalWorkFlows" />
+  <rst:bundle bundle="jupyterNotebooks" />
+  <rst:bundle bundle="associatedInventoryRecords" />
+  <rst:bundle bundle="tinymceKetcher" />
+  <rst:bundle bundle="ketcherViewer" />
 
   <!--End React Scripts -->

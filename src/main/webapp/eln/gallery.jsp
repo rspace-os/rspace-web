@@ -1,3 +1,4 @@
+<%@ include file="/common/taglibs.jsp"%>
 <!DOCTYPE html>
 <html lang="en" style="-webkit-text-size-adjust: none;">
   <head>
@@ -6,9 +7,15 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=2.0"
     />
-    <title>Apps</title>
-    <script src="/../ui/dist/runtime.js"></script>
-    <script src="/../ui/dist/apps.js"></script>
+    <title>RSpace Gallery</title>
+    <rst:viteClient />
+    <rst:bundle bundle="gallery" />
+    <style>
+      html, body, #app, #app > div, #app > div > div {
+        height: 100%;
+        overscroll-behavior: none;
+      }
+    </style>
 
   </head>
 
@@ -17,3 +24,4 @@
     <div id="app"></div>
   </body>
 </html>
+

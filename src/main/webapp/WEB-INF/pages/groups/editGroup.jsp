@@ -40,5 +40,5 @@
 <div id="newLabGroup"></div>
 
 <!-- React Scripts -->
-<script src="<c:url value='/ui/dist/newLabGroup.js'/>"></script>
+<rst:bundle bundle="newLabGroup" />
 <!--End React Scripts -->

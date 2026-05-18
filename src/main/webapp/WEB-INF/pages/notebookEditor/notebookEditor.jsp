@@ -62,10 +62,9 @@
   <!-- Dialog upon Create-Other Documents -->
   <axt:formCreateMenuDialog parentFolderId="${selectedNotebookId}"></axt:formCreateMenuDialog>
   <!-- React Scripts -->
-  <script src="<c:url value='/ui/dist/notebookToolbar.js'/>"></script>
-  <script src="<c:url value='/ui/dist/fileTreeToolbar.js'/>"></script>
-  <script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
-  <script src="<c:url value='/ui/dist/materialsListing.js'/>"></script>
-  <script src="<c:url value='/ui/dist/externalWorkFlows.js'/>"></script>
-  <script src="<c:url value='/ui/dist/jupyterNotebooks.js'/>"></script>
+  <rst:bundle bundle="notebookToolbar" />
+  <rst:bundle bundle="fileTreeToolbar" />
+  <rst:bundle bundle="materialsListing" />
+  <rst:bundle bundle="externalWorkFlows" />
+  <rst:bundle bundle="jupyterNotebooks" />
   <!--End React Scripts -->

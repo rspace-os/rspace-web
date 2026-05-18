@@ -13,6 +13,7 @@
       }
     </script>
     <%@ include file="/common/meta.jsp"%>
+    <rst:viteClient />
     <title>
         <decorator:title /> | <fmt:message key="webapp.name" />
     </title>

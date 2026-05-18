@@ -78,9 +78,14 @@ Launch in jetty:
 
 ```bash
 mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
--Dspring.profiles.active=run \
--DgenerateReactDist \
+-Dspring.profiles.active=run -DreactDevMode=true \
 -Dlog4j2.configurationFile=log4j2-dev.xml
+```
+
+When `-DreactDevMode=true` is set, start the Vite dev server in a separate
+terminal for Hot Module Replacement:
+```bash
+cd src/main/webapp/ui && npm ci --force && npm run serve
 ```
 
 In all these cases, the DB is wiped and recreated from scratch from

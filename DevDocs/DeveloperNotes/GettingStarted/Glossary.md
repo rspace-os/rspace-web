@@ -565,7 +565,7 @@ person class that has properties for name and age.
    rest of the codebase and an interface that it exposes.
 
 2. JavaScript modules, specifically, have a long and complicated history. This
-   project uses Webpack so we use [ECMAScript modules](https://webpack.js.org/guides/ecma-script-modules/)
+   project uses Vite so we use [ECMAScript modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)
    using [ES2015 import statements](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import)
    and export to expose only some code constructs to the rest of the codebase.
 
@@ -891,12 +891,12 @@ The Web Content Accessibility Guidelines is an international standard
 (currently on version 2.2) on ensuring that Web content is accessible to people
 with disabilities.
 
-### Webpack
+### Vite
 
-A third-party tool for bundling JavaScript modules into a single script that
-can be downloaded by the user's browser. As part of this bundling process,
-other operations can be included with the use of plugins such as stripping out
-type annotations, converting JSX syntax, and minification.
+A modern build tool for JavaScript and TypeScript projects. It serves source
+files as native ES modules during development (enabling near-instant Hot Module
+Replacement) and uses Rolldown for optimised production bundles. Vite replaced
+Webpack in this project.
 
 ### Well-plate
 

@@ -656,8 +656,8 @@
 	</tr>
 </script>
 
-<script src="<c:url value='/ui/dist/accountActivity.js'/>"></script>
-<script src="<c:url value='/ui/dist/groupActivity.js'/>"></script>
-<script src="<c:url value='/ui/dist/oAuth.js'/>"></script>
-<script src="<c:url value='/ui/dist/connectedApps.js'/>"></script>
-<script src="<c:url value='/ui/dist/labgroupsTable.js'/>"></script>
+<rst:bundle bundle="accountActivity" />
+<rst:bundle bundle="groupActivity" />
+<rst:bundle bundle="oAuth" />
+<rst:bundle bundle="connectedApps" />
+<rst:bundle bundle="labgroupsTable" />

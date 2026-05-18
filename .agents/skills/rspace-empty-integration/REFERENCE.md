@@ -495,17 +495,16 @@ Two additions in their respective alphabetical groups:
 
 ```
 scripts/externalTinymcePlugins/<name>/plugin.min.js
-ui/dist/tinymce<Name>.js
 ```
 
 > **Do not** add `ui/dist/externalWorkFlows.js`. That bundle is Galaxy-specific.
 
-### `src/main/webapp/ui/webpack.config.mjs`
+### `src/main/webapp/ui/bundleEntries.json`
 
-In the `entry: { … }` block, alongside the other `tinymce*` entries:
+Add a new entry to the JSON object, alongside the other `tinymce*` entries:
 
-```js
-tinymce<Name>: "./src/tinyMCE/<name>/index.tsx",
+```json
+"tinymce<Name>": "src/tinyMCE/<name>/index.tsx",
 ```
 
 > **Do not** add an `externalWorkFlows` entry.
@@ -547,7 +546,7 @@ tinymce<Name>: "./src/tinyMCE/<name>/index.tsx",
   `defaultDeployment.properties`.
 - Editing `notebookEditor.jsp`, `structuredDocument.jsp`, `textField.jsp`, or
   `journal.js`.
-- Adding an `externalWorkFlows`-shaped webpack entry or `ui/dist` bundle.
+- Adding an `externalWorkFlows`-shaped bundle entry or `ui/dist` bundle.
 - Adding `addMenuItem('opt<Name>', …)` or `window.insertActions.set(…)` blocks
   in `plugin.min.js`.
 - Adding `enabledFileRepositories += " <name>"` or

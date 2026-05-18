@@ -1,3 +1,4 @@
+<%@ include file="/common/taglibs.jsp"%>
 <!DOCTYPE html>
 <html lang="en" style="-webkit-text-size-adjust: none;">
   <head>
@@ -6,9 +7,9 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>RSpace Inventory</title>
-    <script src="/../ui/dist/runtime.js"></script>
-    <script src="/../ui/dist/inventoryEntry.js"></script>
+    <title>About RSpace</title>
+    <rst:viteClient />
+    <rst:bundle bundle="about" />
     <style>
       html, body, #app, #app > div, #app > div > div {
         height: 100%;
@@ -22,6 +23,7 @@
 
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="app"></div>
+    <div id="about-page"></div>
   </body>
 </html>
+

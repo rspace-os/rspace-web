@@ -551,15 +551,15 @@ See  <a href="https://researchspace.helpdocs.io/article/8qekgz9y5b-the-lab-admin
 </script>
 
   <!-- MJJA React Scripts -->
-<script src="<c:url value='/ui/dist/myLabGroups.js'/>"></script>
+<rst:bundle bundle="myLabGroups" />
   <!--End MJJA React Scripts -->
 
 
 <!-- Other React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
-<script src="<c:url value='/ui/dist/exportModal.js'/>"></script>
-<script src="<c:url value='/ui/dist/groupUserActivity.js'/>"></script>
-<script src="<c:url value='/ui/dist/groupEditBar.js'/>"></script>
-<script src="<c:url value='/ui/dist/memberAutoshareStatusWrapper.js'/>"></script>
-<script src="<c:url value='/ui/dist/raidConnections.js'/>"></script>
+<rst:bundle bundle="exportModal" />
+<rst:bundle bundle="groupUserActivity" />
+<rst:bundle bundle="groupEditBar" />
+<rst:bundle bundle="memberAutoshareStatusWrapper" />
+<rst:bundle bundle="raidConnections" />
 <!--End React Scripts -->

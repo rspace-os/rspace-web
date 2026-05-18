@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from "react";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
-import SymbolsMenu from "./symbolsMenu";
+import SymbolsMenu from "./SymbolsMenu";
 import { humanize } from "../../util/shortcuts";
 
 export default function SymbolsTab(props) {
