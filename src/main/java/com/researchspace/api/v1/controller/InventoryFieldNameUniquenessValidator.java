@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
@@ -87,6 +88,9 @@ public final class InventoryFieldNameUniquenessValidator {
     }
     if (extraFields != null) {
       for (ApiExtraField extraField : extraFields) {
+        if (extraField.isDeleteFieldRequest()) {
+          continue;
+        }
         rejectIfDuplicate(seen, extraField.getName());
       }
     }
