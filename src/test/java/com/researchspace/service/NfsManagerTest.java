@@ -161,7 +161,7 @@ public class NfsManagerTest extends SpringTransactionalTest {
     nfsMgr.uploadFilesToNfs(listRecordToMove, "", writableNfsClient);
 
     verify(fileStore, times(2)).findFile(any());
-    verify(writableNfsClient).uploadFilesToNfs(any(), any());
+    verify(writableNfsClient).uploadFilesToNfs(any(), any(), any());
   }
 
   @Test
