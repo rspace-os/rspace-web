@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 
 /** Information about resource generated after copy/moving a single item to an external storage */
@@ -54,16 +55,6 @@ public class ApiExternalStorageOperationInfo
 
   @Override
   public int compareTo(@NotNull ApiExternalStorageOperationInfo o) {
-    Long otherRecordId = o.getRecordId();
-    if (recordId == null && otherRecordId == null) {
-      return 0;
-    }
-    if (recordId == null) {
-      return 1;
-    }
-    if (otherRecordId == null) {
-      return -1;
-    }
-    return recordId.compareTo(otherRecordId);
+    return ObjectUtils.compare(recordId, o.getRecordId(), true);
   }
 }

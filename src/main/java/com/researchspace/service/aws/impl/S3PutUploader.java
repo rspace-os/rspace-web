@@ -11,6 +11,7 @@ import java.util.function.Function;
 import javax.ws.rs.core.EntityTag;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.util.DigestUtils;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -32,7 +33,7 @@ public class S3PutUploader extends AbstractS3Uploader implements Function<File, 
       String s3ArchivePath,
       Map<String, String> objectMetadata) {
     super(s3Client, s3BucketName, s3ArchivePath);
-    this.objectMetadata = objectMetadata == null ? Collections.emptyMap() : objectMetadata;
+    this.objectMetadata = ObjectUtils.defaultIfNull(objectMetadata, Collections.emptyMap());
   }
 
   @Override

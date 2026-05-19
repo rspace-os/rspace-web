@@ -13,6 +13,7 @@ import java.util.function.Function;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jsoup.helper.Validate;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.SdkHttpResponse;
@@ -51,7 +52,7 @@ public class S3MultipartChunkedUploader extends AbstractS3Uploader
         chunkSizeMb * FileUtils.ONE_MB >= AWS_MIN_CHUNK_SIZE_BYTES,
         "Chunking threshold must be >= 5Mb");
     this.chunkSizeMb = chunkSizeMb;
-    this.objectMetadata = objectMetadata == null ? Collections.emptyMap() : objectMetadata;
+    this.objectMetadata = ObjectUtils.defaultIfNull(objectMetadata, Collections.emptyMap());
   }
 
   private static final int S3_UPLOAD_FAILED_CODE = 500;
