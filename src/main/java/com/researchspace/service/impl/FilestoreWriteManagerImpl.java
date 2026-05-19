@@ -149,15 +149,24 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
 
     // /transfer has no RSpace record context, so recordNames and recordId are both null.
     WriteAttribution attribution = new WriteAttribution(user.getUsername(), null);
+    // The request paths are relative to each filestore's configured root (logicPath strips the
+    // filestore path prefix). Prepend the filestore root to recover the absolute S3 key.
+    String sourceFilestoreRootPath = resolveAbsoluteFilestorePath(sourceFilestore);
+    String destFilestoreRootPath = resolveAbsoluteFilestorePath(destFilestore);
+    String absoluteSourcePath =
+        StringUtils.isBlank(sourceFilestoreRootPath)
+            ? request.getSourcePath()
+            : sourceFilestoreRootPath + "/" + StringUtils.stripStart(request.getSourcePath(), "/");
+    String absoluteDestPath =
+        StringUtils.isBlank(destFilestoreRootPath)
+            ? request.getDestPath()
+            : destFilestoreRootPath + "/" + request.getDestPath();
     ApiExternalStorageOperationResult result = new ApiExternalStorageOperationResult();
     try {
       sourceClient.copyObject(
-          request.getSourcePath(),
-          destClient,
-          request.getDestPath(),
-          attribution.metadataForRecord(null));
+          absoluteSourcePath, destClient, absoluteDestPath, attribution.metadataForRecord(null));
       if (request.isDeleteSource()) {
-        sourceClient.deleteFile(request.getSourcePath());
+        sourceClient.deleteFile(absoluteSourcePath);
       }
       result.add(
           new ApiExternalStorageOperationInfo(null, null, request.getSourcePath(), true, null));

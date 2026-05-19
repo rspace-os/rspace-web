@@ -22,6 +22,7 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
 import com.researchspace.model.User;
+import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsAuthentication;
@@ -337,5 +338,88 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         () ->
             controller.transferBetweenFilestores(
                 srcId, request, new BeanPropertyBindingResult(request, "request"), user));
+  }
+
+  @Test
+  void transferBetweenFilestores_sourceFilestoreHasConfiguredRootPath_prependsRootToSourceKey()
+      throws BindException, IOException {
+    Long srcId = 10L;
+    Long dstId = 20L;
+    NfsFileStore srcFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user);
+    srcFilestore.setPath("src-root");
+    when(nfsManager.getNfsFileStore(srcId)).thenReturn(srcFilestore);
+    when(nfsManager.getNfsFileStore(dstId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
+    WritableNfsClient srcClient = mock(WritableNfsClient.class);
+    WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
+    when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    // sourcePath may have a leading '/' — this is what RemoteFile.remotePath returns (relative to
+    // filestore root, not bucket root)
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("/file.png", dstId, "file.png", false);
+
+    controller.transferBetweenFilestores(
+        srcId, request, new BeanPropertyBindingResult(request, "request"), user);
+
+    verify(srcClient).copyObject(eq("src-root/file.png"), eq(destClient), any(), any());
+  }
+
+  @Test
+  void transferBetweenFilestores_destFilestoreHasConfiguredRootPath_prependsRootToDestKey()
+      throws BindException, IOException {
+    Long srcId = 10L;
+    Long dstId = 20L;
+    when(nfsManager.getNfsFileStore(srcId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user));
+    NfsFileStore dstFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user);
+    dstFilestore.setPath("dst-root");
+    when(nfsManager.getNfsFileStore(dstId)).thenReturn(dstFilestore);
+    WritableNfsClient srcClient = mock(WritableNfsClient.class);
+    WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
+    when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("/file.png", dstId, "file.png", false);
+
+    controller.transferBetweenFilestores(
+        srcId, request, new BeanPropertyBindingResult(request, "request"), user);
+
+    verify(srcClient).copyObject(any(), eq(destClient), eq("dst-root/file.png"), any());
+  }
+
+  @Test
+  void transferBetweenFilestores_sourceHasRootPathAndDeleteTrue_deleteFileUsesAbsoluteKey()
+      throws BindException, IOException {
+    Long srcId = 10L;
+    Long dstId = 20L;
+    NfsFileStore srcFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user);
+    srcFilestore.setPath("src-root");
+    when(nfsManager.getNfsFileStore(srcId)).thenReturn(srcFilestore);
+    when(nfsManager.getNfsFileStore(dstId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
+    WritableNfsClient srcClient = mock(WritableNfsClient.class);
+    WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
+    when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("/file.png", dstId, "file.png", true);
+
+    controller.transferBetweenFilestores(
+        srcId, request, new BeanPropertyBindingResult(request, "request"), user);
+
+    verify(srcClient).deleteFile("src-root/file.png");
   }
 }
