@@ -4,7 +4,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.record.Snippet;
-import jakarta.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Controller;

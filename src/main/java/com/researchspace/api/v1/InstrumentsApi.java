@@ -6,7 +6,7 @@ package com.researchspace.api.v1;
 
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.model.User;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
