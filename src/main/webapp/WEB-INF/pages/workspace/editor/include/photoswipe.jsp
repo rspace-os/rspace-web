@@ -1,40 +1,38 @@
 <%@ include file="/common/taglibs.jsp" %>
 
-    <head>
-        <link rel="stylesheet" href="<c:url value='/scripts/bower_components/photoswipe/dist/photoswipe.css'/>" />
-        <link rel="stylesheet"
-            href="<c:url value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
+    <link rel="stylesheet" href="<c:url value='/scripts/bower_components/photoswipe/dist/photoswipe.css'/>" />
+    <link rel="stylesheet"
+        href="<c:url value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
 
-        <script src="<c:url value='/scripts/bower_components/photoswipe/dist/photoswipe.min.js'/>"></script>
-        <script src="<c:url value='/scripts/bower_components/photoswipe/dist/photoswipe-ui-default.min.js'/>"></script>
-        <script src="<c:url value='/scripts/pages/photoswipe.js'/>"></script>
+    <script src="<c:url value='/scripts/bower_components/photoswipe/dist/photoswipe.min.js'/>"></script>
+    <script src="<c:url value='/scripts/bower_components/photoswipe/dist/photoswipe-ui-default.min.js'/>"></script>
+    <script src="<c:url value='/scripts/pages/photoswipe.js'/>"></script>
 
-        <style>
-            .pswp {
-                z-index: 10000200 !important;
-                /* so it's on top of gallery dialog */
-            }
+    <style>
+        .pswp {
+            z-index: 10000200 !important;
+            /* so it's on top of gallery dialog */
+        }
 
-            .pswp__img {
-                background-color: white;
-            }
+        .pswp__img {
+            background-color: white;
+        }
 
-            .pswp__caption__center {
-                text-align: center;
-            }
+        .pswp__caption__center {
+            text-align: center;
+        }
 
-            .publicNextArrowText,
-            .publicPrevArrowText {
-                background-color: white;
-                text-align: center;
-                color:white;
-                width:200px;
-                padding:15px;
-                font-size:20px;
-                line-height:18px;
-            }
-        </style>
-    </head>
+        .publicNextArrowText,
+        .publicPrevArrowText {
+            background-color: white;
+            text-align: center;
+            color:white;
+            width:200px;
+            padding:15px;
+            font-size:20px;
+            line-height:18px;
+        }
+    </style>
 
     <!-- Root element of PhotoSwipe. Must have class pswp. -->
     <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">

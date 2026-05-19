@@ -2,8 +2,6 @@
 <c:url var="createFromTemplateURL" value="/workspace/editor/structuredDocument/create/${selectedNotebookId}"></c:url>
 <jsp:include page="notebookHeader.jsp" />
 
-<body>
-
   <script>
     const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
   </script>
