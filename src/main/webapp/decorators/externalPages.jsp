@@ -9,15 +9,15 @@
 		</title>
 
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link href="<c:url value='/scripts/bower_components/bootstrap/dist/css/bootstrap.min.css'/>" rel="stylesheet" />
-		<link href="<c:url value='/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css'/>"
+		<link href="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/css/bootstrap.min.css'/>" rel="stylesheet" />
+		<link href="<rst:assetUrl value='/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css'/>"
 			rel="stylesheet" />
-		<link media="all" href="<c:url value='/styles/simplicity/tools.css'/>" rel="stylesheet" />
-		<link media="all" href="<c:url value='/styles/simplicity/layout.css'/>" rel="stylesheet" />
-		<link media="all" href="<c:url value='/styles/public.css'/>" rel="stylesheet" />
-		<script src="<c:url value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
-		<script src="<c:url value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
-		<script src="<c:url value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
+		<link media="all" href="<rst:assetUrl value='/styles/simplicity/tools.css'/>" rel="stylesheet" />
+		<link media="all" href="<rst:assetUrl value='/styles/simplicity/layout.css'/>" rel="stylesheet" />
+		<link media="all" href="<rst:assetUrl value='/styles/public.css'/>" rel="stylesheet" />
+		<script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
+		<script src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
+		<script src="<rst:assetUrl value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
 
 		<link rel="icon" type="image/png" href="<c:url value="/images/favicon.png"/>"/>
 

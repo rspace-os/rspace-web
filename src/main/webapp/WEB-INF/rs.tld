@@ -148,4 +148,20 @@
         <tag-class>com.axiope.webapp.taglib.ViteClientTag</tag-class>
     </tag>
 
+    <tag>
+        <name>assetUrl</name>
+        <tag-class>com.axiope.webapp.taglib.AssetUrlTag</tag-class>
+        <attribute>
+            <name>value</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>cacheVersion</name>
+        <tag-class>com.axiope.webapp.taglib.CacheVersionTag</tag-class>
+    </tag>
+
 </taglib>

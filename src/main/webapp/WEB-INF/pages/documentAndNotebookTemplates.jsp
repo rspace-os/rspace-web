@@ -327,5 +327,5 @@
 <rst:bundle bundle="exportModal" />
 <rst:bundle bundle="PreviewInfo" />
 <rst:bundle bundle="snapGeneDialog" />
-<script src="<c:url value='/scripts/tinymceDialogUtils.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tinymceDialogUtils.js'/>"></script>
 <!--End React Scripts -->

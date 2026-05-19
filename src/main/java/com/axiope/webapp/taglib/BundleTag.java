@@ -11,7 +11,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
@@ -22,10 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 
 @Setter
 public class BundleTag extends TagSupport {
@@ -37,21 +32,12 @@ public class BundleTag extends TagSupport {
   static final String DIST_PUBLIC_PATH = "/ui/dist/";
   static final String VITE_CLIENT_PATH = "@vite/client";
   static final String REACT_REFRESH_PATH = "@react-refresh";
-  public static final String REACT_DEV_MODE_PROPERTY = "reactDevMode";
   static final String MANIFEST_CACHE_ATTR = BundleTag.class.getName() + ".MANIFEST_CACHE";
   static final String ENTRYPOINTS_CACHE_ATTR = BundleTag.class.getName() + ".ENTRYPOINTS_CACHE";
   static final String REQUEST_MANIFEST_CACHE_ATTR =
       BundleTag.class.getName() + ".REQUEST_MANIFEST_CACHE";
-  static final String DEV_MODE_CACHE_ATTR = BundleTag.class.getName() + ".DEV_MODE";
   static final String RENDERED_ASSETS_ATTR = BundleTag.class.getName() + ".RENDERED_ASSETS";
   static final String REACT_PREAMBLE_DEDUPE_KEY = "script:module:inline:react-refresh-preamble";
-
-  /**
-   * Servlet context attribute that holds the cache-busting version token. Set at startup by {@link
-   * com.axiope.webapp.listener.StartupListener}: a random UUID in dev mode, or the RSpace version
-   * string in production. Appended as {@code ?v=<token>} to all local asset URLs.
-   */
-  public static final String CACHE_VERSION_ATTR = BundleTag.class.getName() + ".CACHE_VERSION";
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -214,30 +200,12 @@ public class BundleTag extends TagSupport {
     return url + "?v=" + version;
   }
 
-  /**
-   * Returns the cache-busting version token. In dev mode a fresh UUID is generated and stored as a
-   * request attribute so that every page hit gets a unique token (ensuring browsers always re-fetch
-   * assets after a rebuild), while multiple tag invocations within the same request share the same
-   * token. In production the application-version string stored in the servlet context at startup is
-   * returned.
-   */
   String getCacheVersion() {
-    if (isDevMode()) {
-      String requestAttr = CACHE_VERSION_ATTR + ".REQUEST";
-      Object existing = getRequest().getAttribute(requestAttr);
-      if (existing instanceof String) {
-        return (String) existing;
-      }
-      String uuid = UUID.randomUUID().toString();
-      getRequest().setAttribute(requestAttr, uuid);
-      return uuid;
-    }
-    Object value = pageContext.getServletContext().getAttribute(CACHE_VERSION_ATTR);
-    return value instanceof String ? (String) value : null;
+    return FrontendCacheVersion.resolve(pageContext.getServletContext(), getRequest(), isDevMode());
   }
 
   public static void preWarmManifestCache(ServletContext servletContext, boolean isDevMode) {
-    servletContext.setAttribute(DEV_MODE_CACHE_ATTR, isDevMode);
+    FrontendCacheVersion.rememberDevMode(servletContext, isDevMode);
 
     if (isDevMode) {
       servletContext.removeAttribute(MANIFEST_CACHE_ATTR);
@@ -303,40 +271,11 @@ public class BundleTag extends TagSupport {
   }
 
   boolean isDevMode() {
-    ServletContext servletContext = pageContext.getServletContext();
-    Object cachedValue = servletContext.getAttribute(DEV_MODE_CACHE_ATTR);
-    if (cachedValue instanceof Boolean) {
-      return (Boolean) cachedValue;
-    }
-
-    boolean isReactDevMode = isReactDevMode();
-    if (isReactDevMode) {
-      servletContext.setAttribute(DEV_MODE_CACHE_ATTR, Boolean.TRUE);
-      return true;
-    }
-
-    WebApplicationContext applicationContext =
-        WebApplicationContextUtils.getWebApplicationContext(servletContext);
-    if (applicationContext == null) {
-      return false;
-    }
-
-    Environment environment = applicationContext.getEnvironment();
-    boolean isDevMode = environment.acceptsProfiles(Profiles.of("run"));
-
-    servletContext.setAttribute(DEV_MODE_CACHE_ATTR, isDevMode);
-    return isDevMode;
+    return FrontendCacheVersion.isDevMode(pageContext.getServletContext());
   }
 
   boolean isReactDevMode() {
-    ServletContext servletContext = pageContext.getServletContext();
-    WebApplicationContext applicationContext =
-        WebApplicationContextUtils.getWebApplicationContext(servletContext);
-    if (applicationContext != null) {
-      return isTrue(applicationContext.getEnvironment().getProperty(REACT_DEV_MODE_PROPERTY));
-    }
-
-    return Boolean.getBoolean(REACT_DEV_MODE_PROPERTY);
+    return FrontendCacheVersion.isReactDevMode(pageContext.getServletContext());
   }
 
   HttpServletRequest getRequest() {
@@ -366,10 +305,6 @@ public class BundleTag extends TagSupport {
   static String toDevServerUrlStatic(String relativePath) {
     String normalizedPath = relativePath.startsWith("/") ? relativePath.substring(1) : relativePath;
     return DIST_PUBLIC_PATH + normalizedPath;
-  }
-
-  static boolean isTrue(String value) {
-    return Boolean.parseBoolean(StringUtils.trimToEmpty(value));
   }
 
   static final class ChunkManifest {

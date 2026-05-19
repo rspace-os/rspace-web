@@ -64,8 +64,8 @@ public class BundleTagTest {
 
   @Before
   public void setUp() throws Exception {
-    originalReactDevModeProperty = System.getProperty(BundleTag.REACT_DEV_MODE_PROPERTY);
-    System.clearProperty(BundleTag.REACT_DEV_MODE_PROPERTY);
+    originalReactDevModeProperty = System.getProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
+    System.clearProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
     manifest = BundleTag.ChunkManifest.fromBundles(new LinkedHashMap<>());
     tag = new TestBundleTag();
     tag.setPageContext(pageContext);
@@ -132,9 +132,10 @@ public class BundleTagTest {
   @After
   public void tearDown() {
     if (originalReactDevModeProperty == null) {
-      System.clearProperty(BundleTag.REACT_DEV_MODE_PROPERTY);
+      System.clearProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
     } else {
-      System.setProperty(BundleTag.REACT_DEV_MODE_PROPERTY, originalReactDevModeProperty);
+      System.setProperty(
+          FrontendCacheVersion.REACT_DEV_MODE_PROPERTY, originalReactDevModeProperty);
     }
   }
 
@@ -236,7 +237,8 @@ public class BundleTagTest {
 
     BundleTag.preWarmManifestCache(servletContext, false);
 
-    assertEquals(Boolean.FALSE, servletContextAttributes.get(BundleTag.DEV_MODE_CACHE_ATTR));
+    assertEquals(
+        Boolean.FALSE, servletContextAttributes.get(FrontendCacheVersion.DEV_MODE_CACHE_ATTR));
     Object cachedManifest = servletContextAttributes.get(BundleTag.MANIFEST_CACHE_ATTR);
     assertTrue(cachedManifest instanceof BundleTag.ChunkManifest);
     assertEquals(
@@ -248,7 +250,8 @@ public class BundleTagTest {
   public void preWarmManifestCacheSkipsBundleCachingInDevMode() {
     BundleTag.preWarmManifestCache(servletContext, true);
 
-    assertEquals(Boolean.TRUE, servletContextAttributes.get(BundleTag.DEV_MODE_CACHE_ATTR));
+    assertEquals(
+        Boolean.TRUE, servletContextAttributes.get(FrontendCacheVersion.DEV_MODE_CACHE_ATTR));
     assertTrue(!servletContextAttributes.containsKey(BundleTag.MANIFEST_CACHE_ATTR));
     verify(servletContext, never()).getResourceAsStream(BundleTag.VITE_MANIFEST_PATH);
     verify(servletContext).removeAttribute(BundleTag.MANIFEST_CACHE_ATTR);

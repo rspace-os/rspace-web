@@ -39,8 +39,8 @@ public class ViteClientTagTest {
 
   @Before
   public void setUp() throws Exception {
-    originalReactDevModeProperty = System.getProperty(BundleTag.REACT_DEV_MODE_PROPERTY);
-    System.clearProperty(BundleTag.REACT_DEV_MODE_PROPERTY);
+    originalReactDevModeProperty = System.getProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
+    System.clearProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
     output.setLength(0);
     requestAttributes.clear();
 
@@ -72,9 +72,10 @@ public class ViteClientTagTest {
   @After
   public void tearDown() {
     if (originalReactDevModeProperty == null) {
-      System.clearProperty(BundleTag.REACT_DEV_MODE_PROPERTY);
+      System.clearProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
     } else {
-      System.setProperty(BundleTag.REACT_DEV_MODE_PROPERTY, originalReactDevModeProperty);
+      System.setProperty(
+          FrontendCacheVersion.REACT_DEV_MODE_PROPERTY, originalReactDevModeProperty);
     }
   }
 

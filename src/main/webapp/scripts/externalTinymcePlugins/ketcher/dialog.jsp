@@ -6,8 +6,8 @@
   <rst:viteClient />
   <rst:bundle bundle="tinymceKetcher" />
   <rst:bundle bundle="ketcherViewer" />
-  <script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
-  <script src="/scripts/global.js"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
 </head>
 <body>
 <input type="hidden" class="fieldId" data-id=""/>

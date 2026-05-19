@@ -3,16 +3,16 @@
     <title>Admin login</title>
     <meta name="heading" content="<fmt:message key='login.heading'/>"/>
 
-    <script src="<c:url value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 
-    <link href="/styles/sign-in-up-common.css" rel="stylesheet">
-    <link href="/styles/bootstrap-custom-flat.css" rel="stylesheet">
-    <link href="/styles/simplicity/header.css" rel="stylesheet">
-    <link href="/styles/authentication/login.css" rel="stylesheet">
+    <link href="<rst:assetUrl value='/styles/sign-in-up-common.css'/>" rel="stylesheet">
+    <link href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" rel="stylesheet">
+    <link href="<rst:assetUrl value='/styles/simplicity/header.css'/>" rel="stylesheet">
+    <link href="<rst:assetUrl value='/styles/authentication/login.css'/>" rel="stylesheet">
     
     <%-- key icon. FontAwesome doesn't work for some reason. Futher investigation is needed. --%>
-    <link href="<c:url value='/styles/fontello-key/css/fontello.css'/>" rel="stylesheet"> 
-    <script src="<c:url value='/scripts/global.js'/>"></script>
+    <link href="<rst:assetUrl value='/styles/fontello-key/css/fontello.css'/>" rel="stylesheet"> 
+    <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
 </head>
 
 <div class="page"> 

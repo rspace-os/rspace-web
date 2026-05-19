@@ -7,8 +7,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.TagSupport;
 import org.apache.commons.text.StringEscapeUtils;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /**
  * Emits the Vite HMR runtime ({@code @vite/client}) into the page head when {@code reactDevMode} is
@@ -52,13 +50,7 @@ public class ViteClientTag extends TagSupport {
   }
 
   boolean isHmrEnabled() {
-    WebApplicationContext applicationContext =
-        WebApplicationContextUtils.getWebApplicationContext(pageContext.getServletContext());
-    if (applicationContext != null) {
-      return Boolean.parseBoolean(
-          applicationContext.getEnvironment().getProperty(BundleTag.REACT_DEV_MODE_PROPERTY, ""));
-    }
-    return Boolean.getBoolean(BundleTag.REACT_DEV_MODE_PROPERTY);
+    return FrontendCacheVersion.isReactDevMode(pageContext.getServletContext());
   }
 
   @SuppressWarnings("unchecked")

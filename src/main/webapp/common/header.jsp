@@ -6,7 +6,7 @@
 </c:if>
 
 <rst:hasDeploymentProperty name="cloud" value="true">
-  <script src="<c:url value='/scripts/pages/signup/google-signin.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/signup/google-signin.js'/>"></script>
   <script src="https://accounts.google.com/gsi/client?onload=onLoad" async defer></script>
 </rst:hasDeploymentProperty>
 
@@ -142,7 +142,7 @@
 
     <rst:hasDeploymentProperty name="standalone" value="false">
       <c:if test="${empty sessionScope.com_rs_timezone or  sessionScope.firstRequest == true}">
-        <script src="<c:url value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
+        <script src="<rst:assetUrl value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
         <script type="text/javascript">
           $(document).ready(function () {
             // this will be run on 1st pageload in session or

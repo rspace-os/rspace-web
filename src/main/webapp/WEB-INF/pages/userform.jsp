@@ -6,9 +6,9 @@
 	</title>
 	<meta name="heading" content="<fmt:message key='userProfile.heading'/>" />
 	<meta name="menu" content="UserMenu" />
-	<link rel="stylesheet" href="<c:url value='/styles/userform.css'/>" />
-	<script src="<c:url value='/scripts/pages/messaging/messageCreation.js'/>"></script>
-	<script src="<c:url value='/scripts/pages/userform.js'/>"></script>
+	<link rel="stylesheet" href="<rst:assetUrl value='/styles/userform.css'/>" />
+	<script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
+	<script src="<rst:assetUrl value='/scripts/pages/userform.js'/>"></script>
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp"></jsp:include>
 

@@ -186,6 +186,11 @@ npm ci --force
 npm run serve
 ```
 
+Legacy `rst:assetUrl` references under `/scripts/**` and `/styles/**` do not add the `?v=`
+cache-busting token in dev mode by default. To opt back in while debugging legacy frontend asset
+changes, add `-DlegacyAssetCacheBustingInDevMode=true` to the Maven command. Production always
+keeps cache busting enabled.
+
 **NOTE:** dont skip the tests compilation when cleaning the DB this way else existing data will not be deleted.
 - you can skip test compilation phase by adding -Dmaven.test.skip=true
 - you may find this useful if you want to apply new liquibase updates without deleting existing data.

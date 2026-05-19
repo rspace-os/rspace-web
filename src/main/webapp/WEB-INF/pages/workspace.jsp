@@ -21,45 +21,45 @@
 
 <head>
   <meta name="heading" content="Workspace" />
-  <link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace.css'/>" />
 
   <!-- moved to default.jsp -->
-  <!-- <link rel="stylesheet" href="<c:url value='/styles/bootstrap-custom-flat.css'/>" /> -->
+  <!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
 
-  <link rel="stylesheet" href="<c:url value='/styles/dropbox.css'/>" />
-  <link rel="stylesheet" href="<c:url value='/styles/journal.css'/>" />
-  <link rel="stylesheet" href="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" />
-  <link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-widgets.css'/>" />
-  <link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-toolbar.css'/>" />
-  <link rel="stylesheet" href="<c:url value='/styles/fontello.css'/>" />
-  <link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-extra-icons.css'/>" />
-  <link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-dialogs.css'/>" />
-  <link rel="stylesheet" href="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
-  <link rel="stylesheet" href="<c:url value='/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css'/>" />
-  <link rel="stylesheet" href="<c:url value='/styles/tags/fileTreeBrowser.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/dropbox.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/journal.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-widgets.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-toolbar.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/fontello.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-extra-icons.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-dialogs.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/tags/fileTreeBrowser.css'/>" />
 
-  <script src="/scripts/pages/workspace/clientUISettings.js"></script>
-  <script src="<c:url value='/scripts/bower_components/jquery.scrollTo/jquery.scrollTo.min.js'/>"></script>
-  <script src="<c:url value='/scripts/bower_components/jquery.fancytree/dist/jquery.fancytree-all.min.js'/>"></script>
-  <script src="<c:url value='/scripts/tags/fileTreeBrowser.js'/>"></script>
-  <script src="<c:url value='/scripts/tags/fileTreeBrowserSorter.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/workspace/crudops.js'/>"></script>
-  <script src="<c:url value='/scripts/jqueryFileTree/jqueryFileTreeSorter.js'/>"></script>
-  <script src="<c:url value='/scripts/bower_components/jqui-multi-dates-picker/jquery-ui.multidatespicker.js'/>"></script>
-  <script src="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/jquery.scrollTo/jquery.scrollTo.min.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/jquery.fancytree/dist/jquery.fancytree-all.min.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/tags/fileTreeBrowser.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/tags/fileTreeBrowserSorter.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/workspace/crudops.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTreeSorter.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/jqui-multi-dates-picker/jquery-ui.multidatespicker.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 
-  <script src="<c:url value='/scripts/pages/workspace.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/workspace/workspaceSearch.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/messaging/notifications.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/messaging/messages.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/workspace.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/workspace/workspaceSearch.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/messaging/notifications.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
 
-  <script src="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/messaging/messageCreation.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/workspace/calendarDialog.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/workspace/calendarDialog.js'/>"></script>
 
   <!-- Moved to default.jsp -->
-  <!-- <script src="<c:url value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script> -->
+  <!-- <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script> -->
 </head>
 
 <div

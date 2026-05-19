@@ -6,11 +6,11 @@
   <meta name="menu" content="MainMenu" />
 
   <!-- moved to default.jsp -->
-  <!-- <link rel="stylesheet" href="<c:url value='/styles/bootstrap-custom-flat.css'/>" /> -->
+  <!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
 
-  <link rel="stylesheet" href="<c:url value='/styles/system.css'/>" />
-  <script src="<c:url value='/scripts/pages/system/groupList.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/utils/columnSortToggle.js'/>"></script>
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+  <script src="<rst:assetUrl value='/scripts/pages/system/groupList.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/utils/columnSortToggle.js'/>"></script>
 </head>
 <div id="topSection" class="bootstrap-custom-flat">
   <jsp:include page="/WEB-INF/pages/system/topBar.jsp"></jsp:include>

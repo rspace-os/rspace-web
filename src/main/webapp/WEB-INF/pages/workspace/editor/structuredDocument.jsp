@@ -4,15 +4,15 @@
   const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
 </script>
 
-<script src="<c:url value='/scripts/tinymceDialogUtils.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tinymceDialogUtils.js'/>"></script>
 
 <!-- Load the legacy TinyMCE 5 runtime first, then preload Vite-managed helper bundles. -->
-<script src="<c:url value='/scripts/tinymce/tinymce5109/dompurify.min.js'/>"></script>
-<script src="<c:url value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
-<script src="<c:url value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/dompurify.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
 <rst:bundle bundle="tinymceGalleryUtils" />
 <script>
-  window.RSTinyMCEPluginBundleLoaderUrl = "<c:url value='/scripts/viteBundleLoader.mjs'/>";
+  window.RSTinyMCEPluginBundleLoaderUrl = "<rst:assetUrl value='/scripts/viteBundleLoader.mjs'/>";
   window.RSTinyMCEPluginBundles = Object.assign(
     {},
     window.RSTinyMCEPluginBundles,
@@ -25,18 +25,18 @@
     },
   );
 </script>
-<script src="<c:url value='/scripts/pages/workspace/editor/tinymce5_configuration.js'/>"></script>
-<script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_pasteHandler.js'/>"></script>
-<script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_scrollHandler.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/workspace/editor/tinymce5_configuration.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/workspace/editor/tinymceRS_pasteHandler.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/workspace/editor/tinymceRS_scrollHandler.js'/>"></script>
 
-<script src="<c:url value='/scripts/bower_components/blueimp-file-upload/js/jquery.fileupload.js'/>"></script>
-<script src="<c:url value='/scripts/bower_components/blueimp-file-upload/js/jquery.iframe-transport.js'/>"></script>
-<script src="<c:url value='/scripts/pages/gallery/galleryFileUpload.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/blueimp-file-upload/js/jquery.fileupload.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/blueimp-file-upload/js/jquery.iframe-transport.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/gallery/galleryFileUpload.js'/>"></script>
 
-<script src="<c:url value='/scripts/pages/workspace/editor/documentEdit.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/workspace/editor/documentEdit.js'/>"></script>
 
-<script src="<c:url value='/scripts/pages/messaging/notifications.js'/>"></script>
-<script src="<c:url value='/scripts/pages/messaging/messages.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/messaging/notifications.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
 <script>
   const enforceOntologies = "${enforce_ontologies}" === "true";
   const allowBioOntologies = "${allow_bioOntologies}"  === "true";

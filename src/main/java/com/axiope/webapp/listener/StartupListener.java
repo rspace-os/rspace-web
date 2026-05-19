@@ -2,6 +2,7 @@ package com.axiope.webapp.listener;
 
 import com.axiope.webapp.dev.ViteDevServerProxyServlet;
 import com.axiope.webapp.taglib.BundleTag;
+import com.axiope.webapp.taglib.FrontendCacheVersion;
 import com.researchspace.Constants;
 import com.researchspace.properties.IPropertyHolder;
 import java.util.HashMap;
@@ -87,11 +88,11 @@ public class StartupListener implements ServletContextListener {
 
   /**
    * Stores the cache-busting version token in the servlet context as {@link
-   * BundleTag#CACHE_VERSION_ATTR}.
+   * FrontendCacheVersion#CACHE_VERSION_ATTR}.
    *
    * <ul>
-   *   <li><b>Dev ({@code run} profile):</b> nothing is stored here; {@link BundleTag} generates a
-   *       fresh UUID per request so every page hit forces browsers to re-fetch assets.
+   *   <li><b>Dev ({@code run} profile):</b> nothing is stored here; {@link FrontendCacheVersion}
+   *       generates a fresh UUID per request so every page hit forces browsers to re-fetch assets.
    *   <li><b>Production:</b> the RSpace application version string (e.g. {@code 2.23.0}) so
    *       browsers cache assets across requests within the same deployment and bust the cache on
    *       upgrade.
@@ -103,9 +104,9 @@ public class StartupListener implements ServletContextListener {
     if (!isDevMode) {
       String cacheVersion = propHolder.getVersionMessage();
       log.info("Production mode: using RSpace version '{}' as cache-buster token", cacheVersion);
-      context.setAttribute(BundleTag.CACHE_VERSION_ATTR, cacheVersion);
+      context.setAttribute(FrontendCacheVersion.CACHE_VERSION_ATTR, cacheVersion);
     }
-    // In dev mode, BundleTag generates a fresh UUID per request — nothing to store at startup.
+    // In dev mode, FrontendCacheVersion generates a fresh UUID per request.
   }
 
   /**
@@ -117,7 +118,8 @@ public class StartupListener implements ServletContextListener {
       ApplicationContext applicationContext, ServletContext context) {
     Environment environment = applicationContext.getEnvironment();
     if (!Boolean.parseBoolean(
-        StringUtils.trimToEmpty(environment.getProperty(BundleTag.REACT_DEV_MODE_PROPERTY)))) {
+        StringUtils.trimToEmpty(
+            environment.getProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY)))) {
       return;
     }
     String configured =

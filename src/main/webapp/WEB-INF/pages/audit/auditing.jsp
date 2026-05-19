@@ -5,9 +5,9 @@
     <title><fmt:message key="audit.title"/></title>
     <meta name="heading" content="<fmt:message key='audit.heading'/>"/>
     <meta name="menu" content="MainMenu"/>
-    <script src="<c:url value='/scripts/pages/audit.js'/>"></script>
-    <script src="<c:url value='/scripts/pages/messaging/messageCreation.js'/>"></script>   
-	<link rel="stylesheet" href="<c:url value='/styles/audit.css'/>" />
+    <script src="<rst:assetUrl value='/scripts/pages/audit.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>   
+	<link rel="stylesheet" href="<rst:assetUrl value='/styles/audit.css'/>" />
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
 <p style="visibility:hidden;">Text</p>

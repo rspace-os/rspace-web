@@ -3,10 +3,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta charset="UTF-8">
     <title><spring:message code="system.communityList.button.label" /></title>
-    <link rel="stylesheet" href="<c:url value='/styles/system.css'/>" />
-    <script src="<c:url value='/scripts/pages/system/system.js'/>"></script>
-    <script src="<c:url value='/scripts/pages/system/community.js'/>"></script>
-    <script src="<c:url value='/scripts/pages/system/community_settings_mod.js'/>"></script>
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+    <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/system/community.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/system/community_settings_mod.js'/>"></script>
     <script type="text/javascript">
         RS.communityId = ${community.id};
         var view = ${view};
