@@ -20,6 +20,16 @@ public interface WritableNfsClient extends NfsClient {
   }
 
   /**
+   * Returns whether this backend supports server-side object transfer. When true, {@link
+   * #copyObject(String, WritableNfsClient, String)} can execute without streaming data through the
+   * RSpace server. Defaults to {@code false}; backends that implement server-side copy (e.g. S3)
+   * override this.
+   */
+  default boolean supportsServerSideTransfer() {
+    return false;
+  }
+
+  /**
    * Uploads a single file to the destination directory on the remote filestore. The remote name is
    * taken from {@code source.getName()}.
    *
@@ -51,6 +61,20 @@ public interface WritableNfsClient extends NfsClient {
   String copyObject(
       String sourceAbsolutePath, WritableNfsClient destClient, String destAbsolutePath)
       throws IOException;
+
+  /**
+   * Variant of {@link #copyObject(String, WritableNfsClient, String)} that carries audit
+   * attribution metadata. Default ignores metadata and delegates to the no-metadata variant — only
+   * backends with native metadata support (e.g. S3) override this.
+   */
+  default String copyObject(
+      String sourceAbsolutePath,
+      WritableNfsClient destClient,
+      String destAbsolutePath,
+      Map<String, String> metadata)
+      throws IOException {
+    return copyObject(sourceAbsolutePath, destClient, destAbsolutePath);
+  }
 
   /**
    * Batch upload a set of files to the destination directory on the remote filestore. Default

@@ -17,7 +17,6 @@ import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.netfiles.WriteAttribution;
-import com.researchspace.netfiles.s3.S3NfsClient;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.FilestoreWriteManager;
@@ -53,8 +52,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       Long filestoreId,
       ApiGalleryFilestoreOperationRequest request,
       BindingResult errors,
-      User user,
-      String operation)
+      User user)
       throws BindException {
 
     Set<Long> recordIds = request.getRecordIds();
@@ -69,7 +67,10 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
 
     // S3 (and any other backend that overrides the attribution-aware batch) gets per-object audit
     // metadata; backends that ignore attribution just see the legacy upload path.
-    WriteAttribution attribution = new WriteAttribution(user.getUsername(), operation);
+    Map<Long, String> recordNames =
+        mediaFileMapById.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getName()));
+    WriteAttribution attribution = new WriteAttribution(user.getUsername(), recordNames);
 
     ApiExternalStorageOperationResult operationResult = new ApiExternalStorageOperationResult();
     Set<EcatMediaFile> succeededMediaFiles = new LinkedHashSet<>();
@@ -140,20 +141,21 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     WritableNfsClient sourceClient = resolveWritableClient(user, sourceFilestore, null, errors);
     WritableNfsClient destClient = resolveWritableClient(user, destFilestore, null, errors);
 
-    // /transfer has no RSpace record context, so the result entry's recordId is null.
-    WriteAttribution attribution = new WriteAttribution(user.getUsername(), OPERATION_TRANSFER);
+    if (!sourceClient.supportsServerSideTransfer() || !destClient.supportsServerSideTransfer()) {
+      throw new UnsupportedOperationException(
+          "Filestore-to-filestore transfer currently supports only S3↔S3; "
+              + "source and destination filestores must both be S3");
+    }
+
+    // /transfer has no RSpace record context, so recordNames and recordId are both null.
+    WriteAttribution attribution = new WriteAttribution(user.getUsername(), null);
     ApiExternalStorageOperationResult result = new ApiExternalStorageOperationResult();
     try {
-      if (sourceClient instanceof S3NfsClient) {
-        ((S3NfsClient) sourceClient)
-            .copyObject(
-                request.getSourcePath(),
-                destClient,
-                request.getDestPath(),
-                attribution.metadataForRecord(null));
-      } else {
-        sourceClient.copyObject(request.getSourcePath(), destClient, request.getDestPath());
-      }
+      sourceClient.copyObject(
+          request.getSourcePath(),
+          destClient,
+          request.getDestPath(),
+          attribution.metadataForRecord(null));
       if (request.isDeleteSource()) {
         sourceClient.deleteFile(request.getSourcePath());
       }

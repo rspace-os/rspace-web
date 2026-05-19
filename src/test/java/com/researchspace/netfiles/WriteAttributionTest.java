@@ -9,26 +9,38 @@ import org.junit.jupiter.api.Test;
 class WriteAttributionTest {
 
   @Test
-  void metadataForRecord_withRecordId_includesAllThreeKeys() {
-    WriteAttribution a = new WriteAttribution("alice", "copy");
+  void metadataForRecord_withRecordIdAndName_includesAllThreeKeys() {
+    WriteAttribution a = new WriteAttribution("alice", Map.of(123L, "My Image"));
 
     Map<String, String> m = a.metadataForRecord(123L);
 
     assertEquals("alice", m.get("rspace-user"));
-    assertEquals("copy", m.get("rspace-op"));
     assertEquals("123", m.get("rspace-record-id"));
+    assertEquals("My Image", m.get("rspace-record-name"));
     assertEquals(3, m.size());
   }
 
   @Test
-  void metadataForRecord_nullRecordId_omitsRecordIdKey() {
-    WriteAttribution a = new WriteAttribution("alice", "transfer");
+  void metadataForRecord_nullRecordNames_omitsRecordName() {
+    WriteAttribution a = new WriteAttribution("alice", null);
+
+    Map<String, String> m = a.metadataForRecord(123L);
+
+    assertEquals("alice", m.get("rspace-user"));
+    assertEquals("123", m.get("rspace-record-id"));
+    assertFalse(m.containsKey("rspace-record-name"));
+    assertEquals(2, m.size());
+  }
+
+  @Test
+  void metadataForRecord_nullRecordId_omitsRecordIdAndName() {
+    WriteAttribution a = new WriteAttribution("alice", null);
 
     Map<String, String> m = a.metadataForRecord(null);
 
     assertEquals("alice", m.get("rspace-user"));
-    assertEquals("transfer", m.get("rspace-op"));
     assertFalse(m.containsKey("rspace-record-id"));
-    assertEquals(2, m.size());
+    assertFalse(m.containsKey("rspace-record-name"));
+    assertEquals(1, m.size());
   }
 }

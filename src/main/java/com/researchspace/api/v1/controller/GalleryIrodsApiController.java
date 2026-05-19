@@ -167,8 +167,7 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
     ApiGalleryFilestoreOperationRequest request =
         new ApiGalleryFilestoreOperationRequest(recordIds, credentials);
     return filestoreWriteManager
-        .uploadToFilestore(
-            filestorePathId, request, errors, user, FilestoreWriteManager.OPERATION_COPY)
+        .uploadToFilestore(filestorePathId, request, errors, user)
         .getOperationResult();
   }
 
@@ -182,8 +181,7 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
     ApiGalleryFilestoreOperationRequest request =
         new ApiGalleryFilestoreOperationRequest(recordIds, credentials);
     FilestoreWriteManager.UploadOutcome outcome =
-        filestoreWriteManager.uploadToFilestore(
-            filestorePathId, request, errors, user, FilestoreWriteManager.OPERATION_MOVE);
+        filestoreWriteManager.uploadToFilestore(filestorePathId, request, errors, user);
 
     ApiExternalStorageOperationResult moveResult;
     try {

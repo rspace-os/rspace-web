@@ -1969,6 +1969,23 @@ paths:
         Uploads Gallery items to the destination filestore identified by `filestoreId`, then
         deletes the RSpace records and creates an `ExternalStorageLocation` link for each success.
         Backends without write support return **501**.
+
+
+        **S3 filestore** (no credentials needed):
+
+        ```json
+
+        {"recordIds": [123, 456]}
+
+        ```
+
+        **iRODS filestore** (credentials required):
+
+        ```json
+
+        {"recordIds": [123, 456], "credentials": {"username": "irods-user", "password": "irods-password"}}
+
+        ```
       consumes:
         - application/json
       produces:
@@ -2001,6 +2018,23 @@ paths:
         Uploads Gallery items to the destination filestore identified by `filestoreId` and creates
         an `ExternalStorageLocation` link for each success. RSpace records are kept. Backends
         without write support return **501**.
+
+
+        **S3 filestore** (no credentials needed):
+
+        ```json
+
+        {"recordIds": [123, 456]}
+
+        ```
+
+        **iRODS filestore** (credentials required):
+
+        ```json
+
+        {"recordIds": [123, 456], "credentials": {"username": "irods-user", "password": "irods-password"}}
+
+        ```
       consumes:
         - application/json
       produces:
@@ -4581,9 +4615,6 @@ definitions:
         $ref: '#/definitions/IrodsCredentials'
     example:
       recordIds: [123, 456]
-      credentials:
-        username: usernameIrods
-        password: passwordIrods
   GalleryFilestoreTransferRequest:
     description: Body for `POST /gallery/filestores/{filestoreId}/transfer`.
     required:

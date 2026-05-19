@@ -162,6 +162,11 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
   }
 
   @Override
+  public boolean supportsServerSideTransfer() {
+    return true;
+  }
+
+  @Override
   public String uploadFile(File source, String destDirectoryPath) throws IOException {
     return uploadFile(source, destDirectoryPath, java.util.Collections.emptyMap());
   }
@@ -170,12 +175,21 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
    * S3-specific overload that attaches user-defined object metadata (e.g. RSpace username, op,
    * record id) to the PutObject request. See {@link
    * com.researchspace.service.aws.S3Utilities#uploadToS3(String, java.io.File, java.util.Map)}.
+   *
+   * <p>Leading and trailing slashes on {@code destDirectoryPath} are stripped before use, so a
+   * filestore path like {@code /my-folder} behaves identically to {@code my-folder}. This keeps
+   * uploads consistent with {@link #createFileTree}, which also normalises the path.
    */
   public String uploadFile(
       File source, String destDirectoryPath, java.util.Map<String, String> metadata)
       throws IOException {
-    s3Utilities.uploadToS3(destDirectoryPath, source, metadata);
-    return joinPath(destDirectoryPath, source.getName());
+    String normalizedDir = stripStartAndEndSlashFromPath(destDirectoryPath);
+    if (s3Utilities.isFileInS3(normalizedDir, source.getName())) {
+      throw new IOException(
+          "File already exists at destination: " + joinPath(normalizedDir, source.getName()));
+    }
+    s3Utilities.uploadToS3(normalizedDir, source, metadata);
+    return joinPath(normalizedDir, source.getName());
   }
 
   /**
@@ -226,13 +240,14 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
    * S3-specific overload that attaches user-defined object metadata to the CopyObject request.
    * Non-empty metadata sets {@code MetadataDirective.REPLACE}; empty preserves source metadata.
    */
+  @Override
   public String copyObject(
       String sourceAbsolutePath,
       WritableNfsClient destClient,
       String destAbsolutePath,
       java.util.Map<String, String> metadata)
       throws IOException {
-    if (!(destClient instanceof S3NfsClient)) {
+    if (!destClient.supportsServerSideTransfer()) {
       throw new UnsupportedOperationException(
           "Cross-filestore copy from S3 only supports S3 destinations");
     }

@@ -242,8 +242,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     assertFilestoresApiEnabled(user);
     throwBindExceptionIfErrors(errors);
     FilestoreWriteManager.UploadOutcome outcome =
-        filestoreWriteManager.uploadToFilestore(
-            filestoreId, request, errors, user, FilestoreWriteManager.OPERATION_MOVE);
+        filestoreWriteManager.uploadToFilestore(filestoreId, request, errors, user);
 
     ApiExternalStorageOperationResult moveResult;
     try {
@@ -271,7 +270,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     assertFilestoresApiEnabled(user);
     throwBindExceptionIfErrors(errors);
     return filestoreWriteManager
-        .uploadToFilestore(filestoreId, request, errors, user, FilestoreWriteManager.OPERATION_COPY)
+        .uploadToFilestore(filestoreId, request, errors, user)
         .getOperationResult();
   }
 

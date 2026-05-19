@@ -36,6 +36,20 @@ public class S3UtilitiesTest {
   }
 
   @Test
+  public void buildKeyFromFilePath_blankArchivePath_returnsFilenameOnly() {
+    File file = new File("my_audio.wav");
+    S3PutUploader uploader = new S3PutUploader(null, "bucket", "");
+    assertEquals("my_audio.wav", uploader.buildKeyFromFilePath(file));
+  }
+
+  @Test
+  public void buildKeyFromFilePath_nonBlankArchivePath_prependsPathWithSlash() {
+    File file = new File("my_audio.wav");
+    S3PutUploader uploader = new S3PutUploader(null, "bucket", "uploads/2024");
+    assertEquals("uploads/2024/my_audio.wav", uploader.buildKeyFromFilePath(file));
+  }
+
+  @Test
   public void getUploadStrategyForFileSize() {
     S3UtilitiesImpl impl = new S3UtilitiesImpl();
     impl.setChunkedUploadMbThreshold(1);
@@ -54,7 +68,7 @@ public class S3UtilitiesTest {
     impl.setChunkedUploadMbSize(5);
     File subThreshold = RSpaceTestUtils.getResource("adrenaline.smiles");
     File requiresChunking = RSpaceTestUtils.getResource("weather_data2.csv");
-    Map<String, String> metadata = Map.of("rspace-user", "alice", "rspace-op", "copy");
+    Map<String, String> metadata = Map.of("rspace-user", "alice", "rspace-record-id", "42");
 
     S3PutUploader putUploader = (S3PutUploader) impl.getS3Uploader(null, subThreshold, metadata);
     S3MultipartChunkedUploader chunkedUploader =
@@ -143,7 +157,7 @@ public class S3UtilitiesTest {
   public void copyObjectFromBucket_withMetadata_attachesMetadataAndReplaceDirective() {
     S3Client mockS3Client = mock(S3Client.class);
     S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "dest-bucket");
-    Map<String, String> metadata = Map.of("rspace-user", "alice", "rspace-op", "transfer");
+    Map<String, String> metadata = Map.of("rspace-user", "alice");
 
     impl.copyObjectFromBucket("source-bucket", "src/file.txt", "dst/file.txt", metadata);
 

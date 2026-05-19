@@ -78,7 +78,7 @@ public class S3NfsClientTest {
   @Test
   public void uploadFile_withMetadata_passesMetadataToS3Utilities() throws IOException {
     File source = new File("Picture1.png");
-    Map<String, String> metadata = Map.of("rspace-user", "alice", "rspace-op", "copy");
+    Map<String, String> metadata = Map.of("rspace-user", "alice", "rspace-record-id", "42");
 
     String key = client.uploadFile(source, "dest/folder", metadata);
 
@@ -87,10 +87,43 @@ public class S3NfsClientTest {
   }
 
   @Test
+  public void uploadFile_leadingSlashInDestPath_stripsLeadingSlash() throws IOException {
+    File source = new File("Picture1.png");
+
+    String key = client.uploadFile(source, "/dest/folder");
+
+    assertEquals("dest/folder/Picture1.png", key);
+    verify(s3Utilities).uploadToS3("dest/folder", source, Collections.emptyMap());
+  }
+
+  @Test
+  public void uploadFile_emptyDestPath_uploadsToRootAndReturnsFilename() throws IOException {
+    File source = new File("Picture1.png");
+
+    String key = client.uploadFile(source, "");
+
+    assertEquals("Picture1.png", key);
+    verify(s3Utilities).uploadToS3("", source, Collections.emptyMap());
+  }
+
+  @Test
+  public void uploadFile_destinationKeyAlreadyExists_throwsIOExceptionAndDoesNotUpload()
+      throws IOException {
+    when(s3Utilities.isFileInS3("dest/folder", "Picture1.png")).thenReturn(true);
+
+    IOException ex =
+        assertThrows(
+            IOException.class, () -> client.uploadFile(new File("Picture1.png"), "dest/folder"));
+    assertTrue(ex.getMessage().contains("already exists"));
+    verify(s3Utilities, org.mockito.Mockito.never()).uploadToS3(any(), any(), any());
+  }
+
+  @Test
   public void uploadFilesToNfs_withAttribution_callsUploadToS3WithPerRecordMetadata() {
     File f1 = new File("file1.png");
     File f2 = new File("file2.png");
-    WriteAttribution attribution = new WriteAttribution("alice", "move");
+    WriteAttribution attribution =
+        new WriteAttribution("alice", Map.of(123L, "file1", 456L, "file2"));
 
     client.uploadFilesToNfs("dest", Map.of(123L, f1, 456L, f2), attribution);
 
@@ -121,7 +154,7 @@ public class S3NfsClientTest {
   @Test
   public void copyObject_withMetadata_passesMetadataToCopyObjectFromBucket() throws IOException {
     DestClientFixture dest = newDestClient("source-bucket");
-    Map<String, String> metadata = Map.of("rspace-user", "alice", "rspace-op", "transfer");
+    Map<String, String> metadata = Map.of("rspace-user", "alice");
 
     String resultKey = client.copyObject("source/file.txt", dest.client, "dest/file.txt", metadata);
 

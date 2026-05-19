@@ -27,17 +27,9 @@ public interface FilestoreWriteManager {
     private Set<EcatMediaFile> succeededMediaFiles;
   }
 
-  /** Operation names recorded in S3 object metadata for audit traceability. */
-  String OPERATION_MOVE = "move";
-
-  String OPERATION_COPY = "copy";
-  String OPERATION_TRANSFER = "transfer";
-
   /**
    * Uploads RSpace media files to a writable filestore and creates an {@code
-   * ExternalStorageLocation} row per success. The {@code operation} string (typically {@link
-   * #OPERATION_MOVE} or {@link #OPERATION_COPY}) is recorded in backend-native audit metadata so
-   * shared-IAM writes can be traced back to the originating RSpace user.
+   * ExternalStorageLocation} row per success.
    *
    * @param filestoreId destination filestore id
    * @return per-file results plus the media files that succeeded (caller may delete them for a move
@@ -48,8 +40,7 @@ public interface FilestoreWriteManager {
       Long filestoreId,
       ApiGalleryFilestoreOperationRequest request,
       BindingResult errors,
-      User user,
-      String operation)
+      User user)
       throws BindException;
 
   /**

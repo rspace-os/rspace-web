@@ -156,7 +156,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void transferBetweenFilestores_distinctS3Filestores_returnsSuccessResult()
+  void transferBetweenFilestores_transferCapableFilestores_returnsSuccessResult()
       throws BindException, IOException {
     Long srcId = 10L;
     Long dstId = 20L;
@@ -164,7 +164,11 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user));
     when(nfsManager.getNfsFileStore(dstId))
         .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
-    when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(nfsClientLoggedIn);
+    WritableNfsClient srcClient = mock(WritableNfsClient.class);
+    WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
+    when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
     when(user.getUsername()).thenReturn(USERNAME);
 
     ApiGalleryFilestoreTransferRequest request =
@@ -189,6 +193,8 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
     WritableNfsClient srcClient = mock(WritableNfsClient.class);
     WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
     when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
     when(user.getUsername()).thenReturn(USERNAME);
 
@@ -199,7 +205,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         controller.transferBetweenFilestores(
             srcId, request, new BeanPropertyBindingResult(request, "request"), user);
 
-    verify(srcClient).copyObject("src/file.txt", destClient, "dst/file.txt");
+    verify(srcClient).copyObject(any(), any(), any(), any());
     verify(srcClient).deleteFile("src/file.txt");
     assertTrue(result.getFileInfoDetails().iterator().next().getSucceeded());
   }
@@ -215,6 +221,8 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
     WritableNfsClient srcClient = mock(WritableNfsClient.class);
     WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
     when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
     when(user.getUsername()).thenReturn(USERNAME);
 
@@ -224,7 +232,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.transferBetweenFilestores(
         srcId, request, new BeanPropertyBindingResult(request, "request"), user);
 
-    verify(srcClient).copyObject(any(), any(), any());
+    verify(srcClient).copyObject(any(), any(), any(), any());
     verify(srcClient, never()).deleteFile(anyString());
   }
 
@@ -239,7 +247,9 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
     WritableNfsClient srcClient = mock(WritableNfsClient.class);
     WritableNfsClient destClient = mock(WritableNfsClient.class);
-    doThrow(new IOException("boom")).when(srcClient).copyObject(any(), any(), any());
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
+    doThrow(new IOException("boom")).when(srcClient).copyObject(any(), any(), any(), any());
     when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
     when(user.getUsername()).thenReturn(USERNAME);
 
@@ -257,7 +267,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void transferBetweenFilestores_onS3Source_invokesCopyObjectWithTransferAttribution()
+  void transferBetweenFilestores_passesTransferAttributionToCopyObject()
       throws BindException, IOException {
     Long srcId = 10L;
     Long dstId = 20L;
@@ -265,10 +275,10 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user));
     when(nfsManager.getNfsFileStore(dstId))
         .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
-    com.researchspace.netfiles.s3.S3NfsClient srcClient =
-        org.mockito.Mockito.mock(com.researchspace.netfiles.s3.S3NfsClient.class);
-    com.researchspace.netfiles.s3.S3NfsClient destClient =
-        org.mockito.Mockito.mock(com.researchspace.netfiles.s3.S3NfsClient.class);
+    WritableNfsClient srcClient = mock(WritableNfsClient.class);
+    WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
     when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
     when(user.getUsername()).thenReturn("alice");
 
@@ -278,9 +288,32 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.transferBetweenFilestores(
         srcId, request, new BeanPropertyBindingResult(request, "request"), user);
 
-    WriteAttribution expected = new WriteAttribution("alice", "transfer");
+    WriteAttribution expected = new WriteAttribution("alice", null);
     verify(srcClient)
         .copyObject("src/file.txt", destClient, "dst/file.txt", expected.metadataForRecord(null));
+  }
+
+  @Test
+  void transferBetweenFilestores_backendNotSupportingTransfer_throwsUnsupportedOperation() {
+    Long srcId = 10L;
+    Long dstId = 20L;
+    when(nfsManager.getNfsFileStore(srcId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user));
+    when(nfsManager.getNfsFileStore(dstId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
+    // writable but supportsServerSideTransfer() == false — must be rejected
+    WritableNfsClient nonTransferCapable = mock(WritableNfsClient.class);
+    when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(nonTransferCapable);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", false);
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () ->
+            controller.transferBetweenFilestores(
+                srcId, request, new BeanPropertyBindingResult(request, "request"), user));
   }
 
   @Test
