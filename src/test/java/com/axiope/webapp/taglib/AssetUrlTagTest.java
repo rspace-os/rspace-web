@@ -1,6 +1,7 @@
 package com.axiope.webapp.taglib;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -93,6 +94,42 @@ public class AssetUrlTagTest {
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
 
     assertEquals("/scripts/global.js?v=2.23.0", output.toString());
+  }
+
+  @Test
+  public void cachesResolvedUrlsInProductionMode() throws JspException {
+    servletContextAttributes.put(FrontendCacheVersion.DEV_MODE_CACHE_ATTR, Boolean.FALSE);
+    servletContextAttributes.put(FrontendCacheVersion.CACHE_VERSION_ATTR, "2.23.0");
+    tag.setValue("/scripts/global.js");
+
+    assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
+
+    @SuppressWarnings("unchecked")
+    Map<String, String> cache =
+        (Map<String, String>) servletContextAttributes.get(AssetUrlTag.PRODUCTION_URL_CACHE_ATTR);
+    assertEquals(1, cache.size());
+    assertTrue(cache.containsValue("/scripts/global.js?v=2.23.0"));
+
+    output.setLength(0);
+    AssetUrlTag second = new AssetUrlTag();
+    second.setPageContext(pageContext);
+    second.setValue("/scripts/global.js");
+
+    assertEquals(TagSupport.SKIP_BODY, second.doStartTag());
+    assertEquals("/scripts/global.js?v=2.23.0", output.toString());
+    assertEquals(1, cache.size());
+  }
+
+  @Test
+  public void doesNotPopulateProductionCacheInDevMode() throws JspException {
+    servletContextAttributes.put(FrontendCacheVersion.DEV_MODE_CACHE_ATTR, Boolean.TRUE);
+    System.setProperty(
+        FrontendCacheVersion.LEGACY_ASSET_CACHE_BUSTING_IN_DEV_MODE_PROPERTY, "true");
+    tag.setValue("/scripts/global.js");
+
+    assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
+
+    assertFalse(servletContextAttributes.containsKey(AssetUrlTag.PRODUCTION_URL_CACHE_ATTR));
   }
 
   @Test

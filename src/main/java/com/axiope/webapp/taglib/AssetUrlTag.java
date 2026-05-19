@@ -1,6 +1,9 @@
 package com.axiope.webapp.taglib;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.TagSupport;
@@ -23,6 +26,8 @@ import org.apache.commons.text.StringEscapeUtils;
 public class AssetUrlTag extends TagSupport {
 
   private static final long serialVersionUID = 1L;
+  static final String PRODUCTION_URL_CACHE_ATTR =
+      AssetUrlTag.class.getName() + ".PRODUCTION_URL_CACHE";
 
   private String value;
 
@@ -57,6 +62,28 @@ public class AssetUrlTag extends TagSupport {
     if (StringUtils.isBlank(version)) {
       return resolved;
     }
+    if (devMode) {
+      return appendVersion(resolved, version);
+    }
+    String cacheKey = resolved + "\n" + version;
+    return getProductionUrlCache()
+        .computeIfAbsent(cacheKey, key -> appendVersion(resolved, version));
+  }
+
+  private Map<String, String> getProductionUrlCache() {
+    ServletContext servletContext = pageContext.getServletContext();
+    Object existing = servletContext.getAttribute(PRODUCTION_URL_CACHE_ATTR);
+    if (existing instanceof Map) {
+      @SuppressWarnings("unchecked")
+      Map<String, String> cached = (Map<String, String>) existing;
+      return cached;
+    }
+    Map<String, String> created = new ConcurrentHashMap<>();
+    servletContext.setAttribute(PRODUCTION_URL_CACHE_ATTR, created);
+    return created;
+  }
+
+  private String appendVersion(String resolved, String version) {
     char separator = resolved.indexOf('?') >= 0 ? '&' : '?';
     return resolved + separator + "v=" + version;
   }
