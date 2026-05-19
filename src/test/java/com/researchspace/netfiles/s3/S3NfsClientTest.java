@@ -199,7 +199,22 @@ public class S3NfsClientTest {
             () -> client.copyObject("source/huge.bin", dest.client, "dest/huge.bin"));
     assertTrue(ex.getMessage().contains("5"));
     verify(dest.mockS3Utilities, org.mockito.Mockito.never())
-        .copyObjectFromBucket(any(), any(), any());
+        .copyObjectFromBucket(any(), any(), any(), any());
+  }
+
+  @Test
+  public void copyObject_destinationKeyAlreadyExists_throwsIOExceptionAndDoesNotCopy() {
+    DestClientFixture dest = newDestClient("source-bucket");
+    when(dest.mockS3Utilities.getObjectDetails("dest/file.txt"))
+        .thenReturn(new S3FolderContentItem("file.txt", false, 100L, Instant.now()));
+
+    IOException ex =
+        assertThrows(
+            IOException.class,
+            () -> client.copyObject("source/file.txt", dest.client, "dest/file.txt"));
+    assertTrue(ex.getMessage().contains("already exists"));
+    verify(dest.mockS3Utilities, org.mockito.Mockito.never())
+        .copyObjectFromBucket(any(), any(), any(), any());
   }
 
   @Test

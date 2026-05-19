@@ -265,6 +265,10 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
               + " bytes (5 GB); multipart copy is not yet supported");
     }
     S3NfsClient destS3 = (S3NfsClient) destClient;
+    S3FolderContentItem destDetails = destS3.s3Utilities.getObjectDetails(destKey);
+    if (destDetails != null && !destDetails.isFolder()) {
+      throw new IOException("File already exists at destination: " + destKey);
+    }
     destS3.s3Utilities.copyObjectFromBucket(
         s3Utilities.getBucketName(), sourceKey, destKey, metadata);
     return destKey;
