@@ -16,7 +16,6 @@ import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GALAXY_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.JOVE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.MSTEAMS_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.NEXTCLOUD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.OMERO_APP_NAME;
@@ -78,7 +77,7 @@ import org.springframework.test.web.servlet.MvcResult;
     })
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 29;
+  final int TOTAL_INTEGRATIONS = 28;
   Principal mockPrincipal = null;
 
   @Autowired private UserConnectionManager userConnectionManager;
@@ -129,7 +128,6 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(RAID_APP_NAME, new String[] {RAID_CONFIGURED_SERVERS});
     expectedOptions.put(CLUSTERMARKET_APP_NAME, new String[] {});
     expectedOptions.put(DRYAD_APP_NAME, new String[] {});
-    expectedOptions.put(JOVE_APP_NAME, new String[] {});
     expectedOptions.put(DMPONLINE_APP_NAME, new String[] {});
     expectedOptions.put(DMPTOOL_APP_NAME, new String[] {});
     expectedOptions.put(ARGOS_APP_NAME, new String[] {});

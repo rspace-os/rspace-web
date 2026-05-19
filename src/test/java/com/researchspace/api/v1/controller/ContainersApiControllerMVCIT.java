@@ -184,7 +184,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
                     imageContainer.getId()))
             .andExpect(status().isOk())
             .andReturn();
-    assertEquals(102469, result.getResponse().getContentAsByteArray().length);
+    assertEquals(87958, result.getResponse().getContentAsByteArray().length);
 
     result =
         mockMvc
@@ -210,7 +210,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
                     imageContainer.getId()))
             .andExpect(status().isOk())
             .andReturn();
-    assertEquals(168434, result.getResponse().getContentAsByteArray().length);
+    assertEquals(124580, result.getResponse().getContentAsByteArray().length);
 
     // retrieve attachment
     result =

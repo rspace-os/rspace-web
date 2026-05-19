@@ -56,7 +56,6 @@
 
   <script src="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
   <script src="<c:url value='/scripts/pages/messaging/messageCreation.js'/>"></script>
-  <script src="<c:url value='/scripts/jquery.history.js'/>"></script>
   <script src="<c:url value='/scripts/pages/workspace/calendarDialog.js'/>"></script>
 
   <!-- Moved to default.jsp -->

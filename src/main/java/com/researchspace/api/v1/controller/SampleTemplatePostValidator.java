@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import com.researchspace.api.v1.model.ApiSampleField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
@@ -16,7 +16,7 @@ public class SampleTemplatePostValidator extends SampleTemplateValidator {
   }
 
   @Override
-  protected Validator getIncomingFieldValidator(ApiSampleField incomingField) {
+  protected Validator getIncomingFieldValidator(ApiInventoryEntityField incomingField) {
     return templateFieldPostValidator;
   }
 

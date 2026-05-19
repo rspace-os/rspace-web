@@ -5,7 +5,7 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -54,7 +54,7 @@ public class CsvContainerExporter extends InventoryItemCsvExporter {
     return columnNames;
   }
 
-  protected String getColumnNameForContainerField(SampleField sf) {
+  protected String getColumnNameForContainerField(InventoryEntityField sf) {
     String connectedTemplateGlobalId = sf.getTemplateField().getSample().getGlobalIdentifier();
     return String.format("%s (%s, %s)", sf.getName(), sf.getType(), connectedTemplateGlobalId);
   }

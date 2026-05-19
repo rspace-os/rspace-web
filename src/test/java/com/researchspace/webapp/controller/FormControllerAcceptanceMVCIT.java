@@ -499,7 +499,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     InputStream is = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
     byte[] rawBytes = IOUtils.toByteArray(is);
     // this is too big, should be thumbnailed
-    assertEquals(72169, rawBytes.length);
+    assertEquals(47326, rawBytes.length);
     MockMultipartFile mf =
         new MockMultipartFile("file", "Picture1.png", "multipart/form-data", rawBytes);
 

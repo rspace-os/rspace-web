@@ -49,6 +49,7 @@ public class ExportToFileConfig implements StructuredDocumentHTMLViewConfig, IEx
   private boolean annotations = true;
   private boolean restartPageNumberPerDoc = true;
   private boolean includeFieldLastModifiedDate = true;
+  private boolean includeExternalWorkflowData = true;
 
   @NotNull private ExportPageSize pageSize = ExportPageSize.A4;
 

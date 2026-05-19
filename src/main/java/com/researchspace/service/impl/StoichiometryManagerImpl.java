@@ -163,6 +163,20 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   }
 
   @Override
+  public Stoichiometry createReactionlessFromArchive(
+      StoichiometryDTO existing, Record record, User user) {
+    Stoichiometry stoichiometry = createEmpty(record, user);
+    if (existing.getMolecules() != null) {
+      for (StoichiometryMoleculeDTO moleculeDTO : existing.getMolecules()) {
+        RSChemElement chemElement = createNewRsChemElement(user, moleculeDTO);
+        StoichiometryMolecule molecule = buildMolecule(moleculeDTO, stoichiometry, chemElement);
+        stoichiometry.addMolecule(molecule);
+      }
+    }
+    return save(stoichiometry);
+  }
+
+  @Override
   public Stoichiometry update(StoichiometryUpdateDTO stoichiometryUpdate, User user) {
     Stoichiometry stoichiometry = get(stoichiometryUpdate.getId());
     if (stoichiometry == null) {
@@ -185,12 +199,14 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
                 () ->
                     new StoichiometryException(
                         "No stoichiometry found for reaction id " + sourceParentReactionId));
+    return copy(originalStoich, newParentReaction, newParentReaction.getRecord(), user);
+  }
 
+  @Override
+  public Stoichiometry copy(
+      Stoichiometry originalStoich, RSChemElement newParentReaction, Record newRecord, User user) {
     Stoichiometry newStoich =
-        Stoichiometry.builder()
-            .parentReaction(newParentReaction)
-            .record(newParentReaction.getRecord())
-            .build();
+        Stoichiometry.builder().parentReaction(newParentReaction).record(newRecord).build();
     newStoich = save(newStoich);
 
     if (originalStoich.getMolecules() != null) {

@@ -87,6 +87,9 @@ public class ApiSubSampleInfo extends ApiInventoryRecordInfo {
   public ApiSubSampleInfo(SubSample subSample) {
     super(subSample);
 
+    if (subSample.getQuantityInfo() != null) {
+      setQuantity(new ApiQuantityInfo(subSample));
+    }
     if (subSample.getParentLocation() != null) {
       parentLocation = new ApiContainerLocation(subSample.getParentLocation());
       populateParentContainers(subSample.getParentContainer());

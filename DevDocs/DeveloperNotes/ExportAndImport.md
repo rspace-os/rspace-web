@@ -24,6 +24,10 @@ Galaxy export: d8cb04959c12bfe5feb49334450b0c26efa2ad17 RSDEV-910
 
 Stoichiometries: RSDEV-948 https://github.com/rspace-os/rspace-web/pull/642
 
+Reaction-less Stoichiometries (no parent reaction drawing): RSDEV-1091 — completes the round-trip
+for the reaction-less Stoichiometry tables introduced by RSDEV-874 by populating molecules from the
+archive on import.
+
 ## Export
 
  - ExportObjectGenerator add a call in `createAssociateFiles` to explicitly import new data. See for example 
@@ -58,8 +62,28 @@ called `recordFolder.getName() + "_externalWorkflows.xml"` is written by the `XM
 
  - Key class in `AbstractImporterStrategyImpl`. Imports that have a global component (and hence need `ArchivalDocumentParserRef`)
 can be called from `insertToDatabase`. See `importExternalWorkFlows`. Imports that are purely field based and need GalleryItems etc to have already been imported
-go in `setFieldAssociates`. See `importChemElementsAndStoichiometries` or `importEmptyStoichiometries`. These imports use a map
+go in `setFieldAssociates`. See `importChemElementsAndStoichiometries`. These imports use a map
 of the IDs of GalleryItems from the Archive and the new IDs as they are imported into the DB, see `Map<String, EcatMediaFile> oldIdToNewGalleryItem`
+
+### Stoichiometries (reaction-linked vs reaction-less)
+
+The frontend renders Stoichiometry tables in two flavours, both with a JSON `data-stoichiometry-table` attribute:
+
+- **Reaction-linked**: the JSON sits on a chem `<img>` element. `parentReactionId` in the archived `StoichiometryDTO` references the chem element's id.
+- **Reaction-less** (RSDEV-874): rendered as `<div data-stoichiometry-table-only="true" data-stoichiometry-table='{...}'>`. `parentReactionId` is `null`. Created in the UI via the `/stoichiometry` slash command or the toolbar icon.
+
+Both flavours are extracted by the same JSoup selector in `StoichiometryReader` (`getElementsByAttribute("data-stoichiometry-table")`), so export needs no special-casing.
+
+Import (in `StoichiometryImporter`) splits cleanly:
+
+- `importStoichiometries(ArchivalGalleryMetadata, RSChemElement)` is called once per archived chem element from inside the chem-element loop in `AbstractImporterStrategyImpl.importChemElementsAndStoichiometries`. It matches archived stoichiometries by `parentReactionId == oldChemElement.getId()`.
+- `importReactionlessStoichiometries(Set<Long> archivedChemElementIds)` is called once after the chem-element loop. It handles every archived stoichiometry with `parentReactionId == null`, creating a new `Stoichiometry` bound to the importing field's structured document. It also emits a `log.warn` for orphan stoichs whose non-null `parentReactionId` doesn't match any chem element in the archive (otherwise silently dropped, like the reaction-linked branch).
+
+Molecule persistence is identical for both flavours: each `StoichiometryMolecule` row gets a fresh `RSChemElement` created from the DTO's SMILES — the `rs_chem_id` column is NOT NULL in the schema. See `StoichiometryManagerImpl.createReactionlessFromArchive(...)` and `createNewFromDataWithoutInventoryLinks(...)`. Inventory links are stripped at export time (`StoichiometryExporter.java:39`); the importer trusts the contract.
+
+Field HTML rewriting is shared via `StoichiometryReader.createReplacementHtmlContentForTargetStoichiometryInFieldData(...)`, which rewrites only the `data-stoichiometry-table` attribute value, leaving every other attribute (including `data-stoichiometry-table-only`) untouched.
+
+Revision (`StoichiometryDTO.revision`) is left as `null` in the rewritten HTML during import; `StoichiometryImportRevisionFixupManager` (RSDEV-1084) runs post-commit to query Envers and patch in the real revision number using the same generic `data-stoichiometry-table` selector — so the reaction-less branch is fixed up automatically.
 
 - `ArchiveParserImpl` needs to be modified if new import documents (eg ExternalWorkFlows) are to be imported and read into the
   `ArchivalDocumentParserRef` class.

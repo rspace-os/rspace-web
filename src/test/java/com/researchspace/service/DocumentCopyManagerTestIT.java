@@ -3,6 +3,7 @@ package com.researchspace.service;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.core.util.MediaUtils;
@@ -17,12 +18,15 @@ import com.researchspace.model.EcatImageAnnotation;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RSMath;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.views.RecordCopyResult;
+import com.researchspace.service.archive.export.StoichiometryReader;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -183,6 +187,77 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     assertColumnIndicesAreTheSameForFieldsAndFormss(copy);
   }
 
+  @Test
+  public void testCopyStructuredDocumentUpdatesReactionLinkedStoichiometryReference()
+      throws Exception {
+    RSForm anyForm = formDao.getAll().get(0);
+    StructuredDocument document =
+        recordMgr.createNewStructuredDocument(
+            user.getRootFolder().getId(), anyForm.getId(), user, true);
+    Field textField = document.getTextFields().get(0);
+
+    InputStream molInput = getClass().getResourceAsStream("/TestResources/Amfetamine.mol");
+    String chemElementMolString = IOUtils.toString(molInput, StandardCharsets.UTF_8);
+    molInput.close();
+
+    RSChemElement originalChem = addChemElementToField(document, textField, chemElementMolString);
+    Stoichiometry originalStoichiometry = createReactionLinkedStoichiometry(document, originalChem);
+    Long originalRevision = 5L;
+    textField.setFieldData(
+        createReactionLinkedStoichiometryHtml(
+            originalChem.getId(), originalStoichiometry.getId(), originalRevision));
+    fieldMgr.save(textField, user);
+
+    StructuredDocument copy =
+        (StructuredDocument) documentCopyManager.copy(document, "copy", user, null).getUniqueCopy();
+    Field copiedField = copy.getTextFields().get(0);
+    List<RSChemElement> copiedChemElements =
+        chemDao.getAllChemElementsFromField(copiedField.getId());
+    assertEquals(1, copiedChemElements.size());
+
+    List<StoichiometryDTO> copiedRefs =
+        new StoichiometryReader()
+            .extractStoichiometriesFromFieldContents(copiedField.getFieldData());
+    assertEquals(1, copiedRefs.size());
+    assertNotEquals(originalStoichiometry.getId(), copiedRefs.get(0).getId());
+    assertNull(copiedRefs.get(0).getRevision());
+
+    Stoichiometry copiedStoichiometry = stoichiometryMgr.get(copiedRefs.get(0).getId());
+    assertEquals(copy.getId(), copiedStoichiometry.getRecord().getId());
+    assertEquals(
+        copiedChemElements.get(0).getId(), copiedStoichiometry.getParentReaction().getId());
+  }
+
+  @Test
+  public void testCopyStructuredDocumentUpdatesStandaloneStoichiometryReference() throws Exception {
+    RSForm anyForm = formDao.getAll().get(0);
+    StructuredDocument document =
+        recordMgr.createNewStructuredDocument(
+            user.getRootFolder().getId(), anyForm.getId(), user, true);
+    Field textField = document.getTextFields().get(0);
+
+    Stoichiometry originalStoichiometry = stoichiometryService.createEmpty(document.getId(), user);
+    Long originalRevision = 2L;
+    textField.setFieldData(
+        createStandaloneStoichiometryHtml(originalStoichiometry.getId(), originalRevision));
+    fieldMgr.save(textField, user);
+
+    StructuredDocument copy =
+        (StructuredDocument) documentCopyManager.copy(document, "copy", user, null).getUniqueCopy();
+    Field copiedField = copy.getTextFields().get(0);
+
+    List<StoichiometryDTO> copiedRefs =
+        new StoichiometryReader()
+            .extractStoichiometriesFromFieldContents(copiedField.getFieldData());
+    assertEquals(1, copiedRefs.size());
+    assertNotEquals(originalStoichiometry.getId(), copiedRefs.get(0).getId());
+    assertNull(copiedRefs.get(0).getRevision());
+
+    Stoichiometry copiedStoichiometry = stoichiometryMgr.get(copiedRefs.get(0).getId());
+    assertEquals(copy.getId(), copiedStoichiometry.getRecord().getId());
+    assertNull(copiedStoichiometry.getParentReaction());
+  }
+
   private RSChemElement addChemElementToField(StructuredDocument record, Field field, String mol) {
     RSChemElement chem = new RSChemElement();
     chem.setChemElements(mol);
@@ -198,6 +273,35 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     recordDao.save(record); // with updated field
 
     return chem;
+  }
+
+  private Stoichiometry createReactionLinkedStoichiometry(
+      StructuredDocument document, RSChemElement originalChem) {
+    Stoichiometry stoichiometry = stoichiometryMgr.createEmpty(document, user);
+    stoichiometry.setParentReaction(originalChem);
+    return stoichiometryMgr.save(stoichiometry);
+  }
+
+  private String createReactionLinkedStoichiometryHtml(
+      Long chemElementId, Long stoichiometryId, Long stoichiometryRevision) {
+    return "<img id=\""
+        + chemElementId
+        + "\" class=\"chem\" src=\"/chemical/getImageChem/"
+        + chemElementId
+        + "/1\" data-stoichiometry-table='{\"id\":"
+        + stoichiometryId
+        + ",\"revision\":"
+        + stoichiometryRevision
+        + "}' alt=\"image\"/>";
+  }
+
+  private String createStandaloneStoichiometryHtml(
+      Long stoichiometryId, Long stoichiometryRevision) {
+    return "<div data-stoichiometry-table-only=\"true\" data-stoichiometry-table='{\"id\":"
+        + stoichiometryId
+        + ",\"revision\":"
+        + stoichiometryRevision
+        + "}'>placeholder</div>";
   }
 
   private EcatImageAnnotation addSketchToField(StructuredDocument parent, Field txtFld) {

@@ -46,7 +46,7 @@ pipeline {
         CI = 'true'
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
-        AWS_TOMCAT_AMI = 'ami-0a87ca4c9e75c2d8c'
+        AWS_TOMCAT_AMI = 'ami-0ccb4189a68a02c7d'
         APP_VERSION = readMavenPom().getVersion()
 
         NODE_OPTIONS="--max-old-space-size=5120 --conditions=require"
@@ -116,8 +116,8 @@ pipeline {
                 dir('src/main/webapp/ui') {
                     echo 'Installing npm packages'
                     sh 'node -v'
-                    sh 'npx -y npm@11.11.1 -v'
-                    sh 'npx -y npm@11.11.1 ci --force'
+                    sh 'npx -y npm@11.14.1 -v'
+                    sh 'npx -y npm@11.14.1 ci --force'
                 }
             }
         }

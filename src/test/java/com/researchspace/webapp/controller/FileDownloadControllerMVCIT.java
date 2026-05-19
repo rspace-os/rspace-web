@@ -111,7 +111,7 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
     MockHttpServletResponse currentRevResponse = currentRevImageResult.getResponse();
 
     assertTrue(currentRevResponse.getHeader("Content-Disposition").contains("Picture2"));
-    assertEquals(388489, currentRevResponse.getContentAsByteArray().length);
+    assertEquals(289399, currentRevResponse.getContentAsByteArray().length);
 
     // download first revision of image
     MvcResult firstRevImageResult =
@@ -122,6 +122,6 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
     assertNull(firstRevImageResult.getResolvedException());
     MockHttpServletResponse firstRevResponse = firstRevImageResult.getResponse();
     assertTrue(firstRevResponse.getHeader("Content-Disposition").contains("Picture1"));
-    assertEquals(72169, firstRevResponse.getContentAsByteArray().length);
+    assertEquals(47326, firstRevResponse.getContentAsByteArray().length);
   }
 }

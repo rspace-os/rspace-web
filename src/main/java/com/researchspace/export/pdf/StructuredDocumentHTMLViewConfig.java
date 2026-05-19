@@ -42,4 +42,15 @@ public interface StructuredDocumentHTMLViewConfig {
   default boolean isIncludeFieldLastModifiedDate() {
     return false;
   }
+
+  /**
+   * Whether external workflow data summaries should be appended to each field. Default is <code>
+   * false</code> because generic HTML previews should not include export-only summaries.
+   *
+   * @return <code>true</code> if external workflow data should be included, <code>false</code>
+   *     otherwise.
+   */
+  default boolean isIncludeExternalWorkflowData() {
+    return false;
+  }
 }

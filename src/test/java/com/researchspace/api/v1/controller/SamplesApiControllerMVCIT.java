@@ -13,10 +13,10 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.model.ApiSample;
-import com.researchspace.api.v1.model.ApiSampleField;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -1103,7 +1103,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSampleWithFullSubSamples createdSample =
         mvcUtils.getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
 
-    ApiSampleField timeField =
+    ApiInventoryEntityField timeField =
         createdSample.getFields().stream()
             .filter(f -> f.getType().equals(ApiFieldType.TIME))
             .findFirst()

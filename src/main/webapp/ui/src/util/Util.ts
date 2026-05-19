@@ -231,24 +231,10 @@ export const listToObject = <T extends string | number | symbol, V>(
 ): { [k: string]: V } => Object.fromEntries(list.map((x) => [x, f(x)]));
 
 /**
- * Creates a set from an object by filtering out the keys that have a falsy
- * value.
- */
-export const objectToSet = <K extends string | number | symbol>(
-  obj: Record<K, boolean>
-): Set<K> => new Set((Object.keys(obj) as Array<K>).filter((k) => obj[k]));
-
-/**
  * Returns a promise the resolves after a given number of milliseconds.
  */
 export const sleep = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
-
-/**
- * Checks that an object has no keys.
- */
-export const isEmptyObject = (obj: object): boolean =>
-  typeof obj === "object" && Boolean(obj) && Object.keys(obj).length === 0;
 
 /**
  * Explicitly execute a function that returns a promise whilst ignoring its

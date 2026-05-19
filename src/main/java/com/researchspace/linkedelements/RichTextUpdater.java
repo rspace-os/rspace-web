@@ -7,6 +7,8 @@ import static com.researchspace.core.util.FieldParserConstants.CHEM_IMG_CLASSNAM
 import static com.researchspace.core.util.FieldParserConstants.DATA_TYPE_ANNOTATION;
 import static com.researchspace.core.util.FieldParserConstants.EXTERNALLINK_BADGE_CLASSNAME;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.researchspace.core.util.FieldParserConstants;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.NumberUtils;
@@ -91,6 +93,10 @@ public class RichTextUpdater {
   public static final String DATA_ID = "data-id";
   public static final String DATA_TYPE = "data-type";
   public static final String OBJECT = "object";
+
+  static final String DATA_STOICHIOMETRY_TABLE = "data-stoichiometry-table";
+  static final String DATA_STOICHIOMETRY_TABLE_ONLY = "data-stoichiometry-table-only";
+  private static final ObjectMapper STOICHIOMETRY_OBJECT_MAPPER = new ObjectMapper();
 
   private final Random randomGenerator = new Random();
 
@@ -557,6 +563,66 @@ public class RichTextUpdater {
       }
     }
     return d.body().html();
+  }
+
+  public String updateStoichiometryIdsInCopy(Map<Long, Long> oldId2NewId, String fieldData) {
+    if (StringUtils.isBlank(fieldData) || oldId2NewId.isEmpty()) {
+      return fieldData;
+    }
+    Document d = Jsoup.parse(fieldData);
+    for (Element el : d.getElementsByTag("img")) {
+      if (isChemImage(el)) {
+        rewriteStoichiometryAttribute(el, oldId2NewId);
+      }
+    }
+    for (Element el : d.select("div[" + DATA_STOICHIOMETRY_TABLE_ONLY + "=true]")) {
+      rewriteStoichiometryAttribute(el, oldId2NewId);
+    }
+    return d.body().html();
+  }
+
+  public List<Long> findStandaloneStoichiometryIds(String fieldData) {
+    List<Long> ids = new ArrayList<>();
+    if (StringUtils.isBlank(fieldData)) {
+      return ids;
+    }
+    Document d = Jsoup.parse(fieldData);
+    for (Element el : d.select("div[" + DATA_STOICHIOMETRY_TABLE_ONLY + "=true]")) {
+      String raw = el.attr(DATA_STOICHIOMETRY_TABLE);
+      if (raw.isEmpty()) {
+        continue;
+      }
+      try {
+        long id = STOICHIOMETRY_OBJECT_MAPPER.readTree(raw).path("id").asLong(-1);
+        if (id >= 0) {
+          ids.add(id);
+        }
+      } catch (Exception e) {
+        log.warn(
+            "Could not parse data-stoichiometry-table attribute '{}': {}", raw, e.getMessage());
+      }
+    }
+    return ids;
+  }
+
+  private void rewriteStoichiometryAttribute(Element el, Map<Long, Long> oldId2NewId) {
+    String raw = el.attr(DATA_STOICHIOMETRY_TABLE);
+    if (raw.isEmpty()) {
+      return;
+    }
+    try {
+      ObjectNode node = (ObjectNode) STOICHIOMETRY_OBJECT_MAPPER.readTree(raw);
+      long oldId = node.path("id").asLong(-1);
+      Long newId = oldId2NewId.get(oldId);
+      if (newId == null) {
+        return;
+      }
+      node.put("id", newId);
+      node.remove("revision");
+      el.attr(DATA_STOICHIOMETRY_TABLE, STOICHIOMETRY_OBJECT_MAPPER.writeValueAsString(node));
+    } catch (Exception e) {
+      log.warn("Could not update data-stoichiometry-table attribute '{}': {}", raw, e.getMessage());
+    }
   }
 
   public String generateURLStringForEcatChemistryFileAfterError(EcatChemistryFile chemistryFile) {

@@ -4,6 +4,7 @@
 <head> 
 <!-- Import React and Toast messages on any page that has a  header -->
   <script src="<c:url value='/public/ui/dist/runtime.js'/>"></script>
+  <script src="<c:url value='/public/ui/dist/pdfPreviewDialog.js'/>"></script>
 
   <script>
     //if we dont delete id_tokens (Oauth tokens that identify the user) then using the public link can result in actual logged in users being switched

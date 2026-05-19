@@ -139,7 +139,6 @@ export type IntegrationStates = {
   GOOGLEDRIVE: IntegrationState<{
     ["googledrive.linking.enabled"]: Optional<boolean>;
   }>;
-  JOVE: IntegrationState<emptyObject>;
   MSTEAMS: IntegrationState<
       Array<
           Optional<{
@@ -588,10 +587,6 @@ function decodeGoogleDrive(
   };
 }
 
-function decodeJove(data: FetchedState): IntegrationStates["JOVE"] {
-  return {mode: parseState(data), credentials: {}};
-}
-
 function decodeMsTeams(data: FetchedState): IntegrationStates["MSTEAMS"] {
   return {
     mode: parseState(data),
@@ -906,7 +901,6 @@ function decodeIntegrationStates(data: {
     GALAXY: decodeGalaxy(data.GALAXY),
     GITHUB: decodeGitHub(data.GITHUB),
     GOOGLEDRIVE: decodeGoogleDrive(data.GOOGLEDRIVE),
-    JOVE: decodeJove(data.JOVE),
     MSTEAMS: decodeMsTeams(data.MSTEAMS),
     NEXTCLOUD: decodeNextCloud(data.NEXTCLOUD),
     OMERO: decodeOmero(data.OMERO),
@@ -1220,14 +1214,6 @@ const encodeIntegrationState = <I extends Integration>(
         }))
         .orElse({}),
       },
-    };
-  }
-  if (integration === "JOVE") {
-    return {
-      name: "JOVE",
-      available: data.mode !== "UNAVAILABLE",
-      enabled: data.mode === "ENABLED",
-      options: {},
     };
   }
   if (integration === "MSTEAMS") {
@@ -1558,8 +1544,6 @@ export function useIntegrationsEndpoint(): {
                 return decodeGoogleDrive(
                     responseData.data
                 ) as IntegrationStates[I];
-              case "JOVE":
-                return decodeJove(responseData.data) as IntegrationStates[I];
               case "MSTEAMS":
                 return decodeMsTeams(responseData.data) as IntegrationStates[I];
               case "NEXTCLOUD":
@@ -1669,8 +1653,6 @@ export function useIntegrationsEndpoint(): {
           return decodeGitHub(response.data.data) as IntegrationStates[I];
         case "GOOGLEDRIVE":
           return decodeGoogleDrive(response.data.data) as IntegrationStates[I];
-        case "JOVE":
-          return decodeJove(response.data.data) as IntegrationStates[I];
         case "MSTEAMS":
           return decodeMsTeams(response.data.data) as IntegrationStates[I];
         case "NEXTCLOUD":

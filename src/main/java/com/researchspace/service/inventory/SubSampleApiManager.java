@@ -13,7 +13,7 @@ import com.researchspace.service.inventory.impl.SubSampleDuplicateConfig;
 import java.util.List;
 
 /** Handles API actions around Inventory SubSample. */
-public interface SubSampleApiManager extends InventoryApiManager {
+public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
 
   /**
    * Get not-deleted subsamples that user can see. Optionally limit to samples belonging to a

@@ -126,21 +126,15 @@ function setUpShareDialog() {
   };
 
   createShareDialog("Publish", idsToShareGetter, onshare, '#publish-dialog');
-  createShareDialog("Share", idsToShareGetter, onshare );
 }
 
 function setUpExportDialogs() {
   var getExportSelectionForExportDlg = function () {
     return getExportSelectionFromSelectedDocuments(getSelectedIdsNamesAndTypes());
   }
-  $('.exportIcon.newExport').click(function (e) {
+  $('#exportRecords').click(function (e) {
     e.preventDefault();
     RS.exportModal.openWithExportSelection(getExportSelectionForExportDlg());
-  });
-  $('.exportIcon.oldExport').click(function (e) {
-    e.preventDefault();
-    RS.getExportSelectionForExportDlg = getExportSelectionForExportDlg;
-    openExportArchiveDlg();
   });
 }
 
@@ -258,28 +252,6 @@ function calculateOptionDisplay(chbox$) {
       chboxTDs$.find("input[name='offlineStatus'][value='OTHER_EDIT']").size() > 0;
   $('#startOfflineWork').toggle(!cantOffline && startOfflineWork);
   $('#endOfflineWork').toggle(!cantOffline && !startOfflineWork);
-}
-
-/*
- * Displays 'revisions' link Argument is a jQuery wrapped clicked checkbox.
- */
-function showRevisionsLinkIfSelectedChBoxIsForStructuredDoc(chbox$) { }
-
-/* Probably not used anywhere */
-function selectPdfFolder(folderId) {
-  $.post(createURL('/workspace/ajax/view/') + folderId + "/0",
-      function (result) {
-        $('#record_list').hide(effect, effectDuration);
-        setTimeout(function () {
-          $('#record_list').empty();
-          $('#record_list').html(result);
-          $('#record_list').show(effect, effectDuration);
-          // TODO Check if we should update workspaceSettings.parentFolderId instead !
-          recordId = folderId;
-          init();
-        }, effectDuration);
-      }
-  );
 }
 
 function depositDataShare(fname) {

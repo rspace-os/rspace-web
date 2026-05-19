@@ -61,7 +61,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 
 @Slf4j
-public abstract class InventoryApiManagerImpl implements InventoryApiManager {
+public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
+    implements InventoryApiManager<T> {
 
   static final int THUMBNAIL_MAX_SIZE_IN_PX = 150;
   final Long DEFAULT_ICON_ID = -1L;
@@ -389,8 +390,6 @@ public abstract class InventoryApiManagerImpl implements InventoryApiManager {
       movableInvRec.moveToNewParent(targetOwnerWorkbench);
     }
   }
-
-  abstract <T extends InventoryRecord> T getIfExists(Long id);
 
   /**
    * Locks the item for edit (if it wasn't locked before), or extend the pre-existing lock.
