@@ -53,7 +53,7 @@ public interface InstrumentsApi {
       throws BindException;
 
   @DeleteMapping(value = "/{id}")
-  ApiInstrument deleteInstrument(Long id, boolean forceDelete, User user);
+  ApiInstrument deleteInstrument(Long id, User user);
 
   @PutMapping(value = "/{id}/restore")
   ApiInstrument restoreDeletedInstrument(Long id, User user);

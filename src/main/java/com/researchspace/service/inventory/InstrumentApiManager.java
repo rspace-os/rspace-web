@@ -44,8 +44,8 @@ public interface InstrumentApiManager extends InventoryApiManager<InstrumentEnti
   /** Updates the instrument with the provided data. */
   ApiInstrument updateApiInstrument(ApiInstrument apiInstrument, User user);
 
-  /** Soft-deletes the instrument. */
-  ApiInstrument markInstrumentAsDeleted(Long instrumentId, boolean forceDelete, User user);
+  /** Soft-deletes the instrument, removing it from its parent container if stored in one. */
+  ApiInstrument markInstrumentAsDeleted(Long instrumentId, User user);
 
   /** Restores a previously soft-deleted instrument. */
   ApiInstrument restoreDeletedInstrument(Long instrumentId, User user);

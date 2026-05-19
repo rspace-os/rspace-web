@@ -20,6 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -33,10 +34,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 @ApiController
 public class InstrumentsApiController extends BaseApiInventoryController implements InstrumentsApi {
 
-  @Autowired private InstrumentApiPostValidator instrumentApiPostValidator;
-  @Autowired private InstrumentApiPostFullValidator instrumentApiPostFullValidator;
-  @Autowired private InstrumentApiPutValidator instrumentApiPutValidator;
-  @Autowired private InventoryAuditApiManager inventoryAuditMgr;
+  @Autowired
+  private InstrumentApiPostValidator instrumentApiPostValidator;
+  @Autowired
+  private InstrumentApiPostFullValidator instrumentApiPostFullValidator;
+  @Autowired
+  private InstrumentApiPutValidator instrumentApiPutValidator;
+  @Autowired
+  private InventoryAuditApiManager inventoryAuditMgr;
 
   @Value("${inventory.instrument.enabled:false}")
   private boolean inventoryInstrumentEnabled;
@@ -56,6 +61,7 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @AllArgsConstructor
   @NoArgsConstructor
   public static class ApiInstrumentFullPut {
+
     ApiInstrument apiInstrument;
     User user;
     // may be null
@@ -143,7 +149,9 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     if (errorMsg.isEmpty() && instrumentApiMgr.nameExistsForUser(name, user)) {
       errorMsg = "There is already an instrument named [" + name + "]";
     }
-    return String.format("{ \"valid\": %s, \"message\": \"%s\" }", errorMsg.isEmpty(), errorMsg);
+    return String.format(
+        "{ \"valid\": %s, \"message\": \"%s\" }",
+        errorMsg.isEmpty(), StringEscapeUtils.escapeJson(errorMsg));
   }
 
   @Override
@@ -165,14 +173,11 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
 
   @Override
   public ApiInstrument deleteInstrument(
-      @PathVariable Long id,
-      @RequestParam(name = "forceDelete", required = false) boolean forceDelete,
-      @RequestAttribute(name = "user") User user) {
+      @PathVariable Long id, @RequestAttribute(name = "user") User user) {
     assertIsInventoryInstrumentEnabled();
     instrumentApiMgr.assertUserCanDeleteInstrument(id, user);
 
-    ApiInstrument result = instrumentApiMgr.markInstrumentAsDeleted(id, forceDelete, user);
-    return result;
+    return instrumentApiMgr.markInstrumentAsDeleted(id, user);
   }
 
   @Override

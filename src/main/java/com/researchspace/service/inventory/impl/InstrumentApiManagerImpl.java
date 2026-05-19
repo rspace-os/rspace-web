@@ -246,12 +246,15 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
   }
 
   @Override
-  public ApiInstrument markInstrumentAsDeleted(Long instrumentId, boolean forceDelete, User user) {
+  public ApiInstrument markInstrumentAsDeleted(Long instrumentId, User user) {
     Instrument dbInstrument = assertUserCanDeleteInstrument(instrumentId, user);
     boolean temporaryLock = lockItemForEdit(dbInstrument, user);
     try {
       dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
       if (!dbInstrument.isDeleted()) {
+        // Detach from parent container before marking deleted, so the container's
+        // location slot and count are updated consistently (mirrors SubSampleApiManagerImpl).
+        dbInstrument.removeFromCurrentParent();
         dbInstrument.setRecordDeleted(true);
         instrumentDao.save(dbInstrument);
         publisher.publishEvent(new InventoryDeleteEvent(dbInstrument, user));
@@ -261,7 +264,9 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
         unlockItemAfterEdit(dbInstrument, user);
       }
     }
-    return getInstrumentById(dbInstrument.getId(), user);
+    ApiInstrument deleted = getInstrumentById(dbInstrument.getId(), user);
+    updateOntologyOnRecordChanges(deleted, user);
+    return deleted;
   }
 
   @Override
@@ -271,6 +276,10 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
     try {
       dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
       if (dbInstrument.isDeleted()) {
+        // Move the restored instrument to the user's workbench, since the original
+        // container location is no longer available (mirrors SubSampleApiManagerImpl).
+        Container workbench = containerDao.getWorkbenchForUser(user);
+        dbInstrument.moveToNewParent(workbench);
         dbInstrument.setRecordDeleted(false);
         instrumentDao.save(dbInstrument);
         publisher.publishEvent(new InventoryRestoreEvent(dbInstrument, user));
@@ -280,7 +289,9 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
         unlockItemAfterEdit(dbInstrument, user);
       }
     }
-    return getInstrumentById(dbInstrument.getId(), user);
+    ApiInstrument restored = getInstrumentById(dbInstrument.getId(), user);
+    updateOntologyOnRecordChanges(restored, user);
+    return restored;
   }
 
   @Override

@@ -257,7 +257,7 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
     assertFalse(created.isDeleted());
 
     ApiInstrument deleted =
-        instrumentApiMgr.markInstrumentAsDeleted(created.getId(), false, testUser);
+        instrumentApiMgr.markInstrumentAsDeleted(created.getId(), testUser);
 
     assertTrue(deleted.isDeleted());
     verify(mockPublisher).publishEvent(Mockito.any(InventoryDeleteEvent.class));
@@ -266,7 +266,7 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
   @Test
   public void restoreDeletedInstrument_restoresFromDeleted() {
     ApiInstrument created = createBasicInstrumentForUser(testUser, "restore-test");
-    instrumentApiMgr.markInstrumentAsDeleted(created.getId(), false, testUser);
+    instrumentApiMgr.markInstrumentAsDeleted(created.getId(), testUser);
 
     ApiInstrument restored = instrumentApiMgr.restoreDeletedInstrument(created.getId(), testUser);
 

@@ -184,7 +184,6 @@ paths:
 
         | Body | Explanation |
         | --- | --- |
-        `{}` | Updates Instrument's last modified date only.
         `{ "name": "new name", "description": "new description" }` | Updates instrument name and description.
         `{ "extraFields": [ { "id": 21, "content": "...updated" }, { "newFieldRequest": true, "name": "my field", "content": "new field" }, { "id": 22, "deleteFieldRequest": true } ] }` | Updates extra field 21, deletes extra field 22, and creates a new text extra field.
 

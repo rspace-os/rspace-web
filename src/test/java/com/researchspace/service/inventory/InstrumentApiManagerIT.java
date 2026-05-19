@@ -120,7 +120,7 @@ public class InstrumentApiManagerIT extends RealTransactionSpringTestBase {
     assertFalse(created.isDeleted());
 
     ApiInstrument deleted =
-        instrumentApiMgr.markInstrumentAsDeleted(created.getId(), false, testUser);
+        instrumentApiMgr.markInstrumentAsDeleted(created.getId(), testUser);
     assertTrue(deleted.isDeleted());
 
     // deleted instrument still appears when including deleted records

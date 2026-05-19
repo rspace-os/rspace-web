@@ -1,7 +1,8 @@
 package com.researchspace.service.inventory.csvexport;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
@@ -79,9 +80,10 @@ public class CsvInstrumentExporterTest extends SpringTransactionalTest {
         instrumentExporter
             .getCsvCommentFragmentForInstruments(ExportScope.USER, CsvExportMode.COMPACT, user)
             .toString();
-    assertTrue(csvComment.startsWith("# " + instrumentExporter.CSV_COMMENT_HEADER), csvComment);
-    assertTrue(csvComment.contains("# Exported content: INSTRUMENTS"), csvComment);
-    assertTrue(csvComment.contains("# Export scope: USER"), csvComment);
-    assertTrue(csvComment.contains("# Export mode: COMPACT"), csvComment);
+    assertTrue(csvComment, csvComment.startsWith("# " + instrumentExporter.CSV_COMMENT_HEADER));
+    assertTrue(csvComment, csvComment.contains("# Exported content: INSTRUMENTS"));
+    assertTrue(csvComment, csvComment.contains("# Export scope: USER"));
+    assertTrue(csvComment, csvComment.contains("# Export mode: COMPACT"));
+    assertTrue(csvComment, csvComment.contains("# Export mode: COMPACT"));
   }
 }
