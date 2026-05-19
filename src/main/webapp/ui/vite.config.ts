@@ -18,6 +18,18 @@ const devServerPort = Number(process.env.VITE_DEV_SERVER_PORT ?? "5173");
 const appAliases: Alias[] = [
   { find: /^@\//, replacement: `${resolveFromRoot("src")}/` },
   {
+    find: /^@mui\/icons-material\/(.+)$/,
+    replacement: `${resolveFromRoot("node_modules/@mui/icons-material/esm")}/$1`,
+  },
+  {
+    find: /^@mui\/system\/(.+)$/,
+    replacement: `${resolveFromRoot("node_modules/@mui/system/esm")}/$1`,
+  },
+  {
+    find: /^@mui\/utils\/(.+)$/,
+    replacement: `${resolveFromRoot("node_modules/@mui/utils/esm")}/$1`,
+  },
+  {
     find: /^Styles$/,
     replacement: resolveFromRoot("src/util/styles.ts"),
   },
@@ -92,6 +104,14 @@ export default defineConfig(async ({ mode }) => {
     resolve: {
       alias: isVitest ? [...appAliases, ...vitestAliases] : appAliases,
       ...(isVitest ? { externalConditions: ["require"] } : {}),
+    },
+    // Vite 8's Rolldown optimizer currently emits broken MUI Material chunks
+    // where createTheme runs before its color initializers. Serve Material and
+    // icons as ESM source, while explicitly pre-bundling their CJS peers.
+    // TODO: Remove this when Material UI is updated beyond v5
+    optimizeDeps: {
+      include: ["react-dom", "react-is", "react/jsx-runtime"],
+      exclude: ["@mui/icons-material", "@mui/material"],
     },
     // HTTP requests for /ui/dist/* are reverse-proxied by Jetty (see
     // ViteDevServerProxyServlet), so the browser only sees same-origin URLs
