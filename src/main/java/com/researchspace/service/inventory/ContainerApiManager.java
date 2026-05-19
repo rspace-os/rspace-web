@@ -130,7 +130,6 @@ public interface ContainerApiManager extends InventoryApiManager<Container> {
       Long parentId,
       String ownedBy,
       InventorySearchType searchType,
-      InventorySearchDeletedOption deletedItemsOption,
       PaginationCriteria<InventoryRecord> pgCrit,
       User user);
 

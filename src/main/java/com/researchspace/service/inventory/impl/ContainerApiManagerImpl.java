@@ -188,7 +188,6 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
       Long containerId,
       String ownedBy,
       InventorySearchType searchType,
-      InventorySearchDeletedOption deletedItemsOption,
       PaginationCriteria<InventoryRecord> pgCrit,
       User user) {
 
@@ -200,11 +199,10 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
         || searchType == InventorySearchType.TEMPLATE) {
       return ApiInventorySearchResult.emptyResult();
     }
-    boolean includeDeletedItems = InventorySearchDeletedOption.INCLUDE.equals(deletedItemsOption);
+
     List<InventoryRecord> children = new ArrayList<InventoryRecord>();
     for (ContainerLocation location : container.getLocations()) {
-      if (location.getStoredRecord() != null
-          && (includeDeletedItems || !location.getStoredRecord().isDeleted())) {
+      if (location.getStoredRecord() != null) {
         children.add(location.getStoredRecord());
       }
     }

@@ -57,7 +57,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .getCurrentSession()
             .createQuery(
                 "select count(i) from Instrument i where "
-                    + connectSqlConditionsWithAnd(deletedFragment)
+                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='Instrument' ")
                     + permittedFragment,
                 Long.class);
     Query<Long> countQueryWithParams =
@@ -73,7 +73,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .getCurrentSession()
             .createQuery(
                 "from Instrument where "
-                    + connectSqlConditionsWithAnd(deletedFragment)
+                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='Instrument' ")
                     + permittedFragment
                     + orderByFragment,
                 Instrument.class)

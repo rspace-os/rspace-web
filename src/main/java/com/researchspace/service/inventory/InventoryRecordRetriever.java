@@ -51,6 +51,10 @@ public class InventoryRecordRetriever {
         return getSubSampleIfExists(id);
       case CONTAINER:
         return getContainerIfExists(id);
+      case INSTRUMENT:
+        return getInstrumentIfExists(id);
+      case INSTRUMENT_TEMPLATE:
+        return getInstrumentTemplateIfExists(id);
       default:
         throw new IllegalArgumentException("Unsupported type: " + type);
     }

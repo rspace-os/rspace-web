@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static  org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.model.record.BaseRecord;

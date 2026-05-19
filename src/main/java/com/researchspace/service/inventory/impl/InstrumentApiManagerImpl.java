@@ -208,6 +208,7 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
   @Override
   public ApiInstrument updateApiInstrument(ApiInstrument apiInstrument, User user) {
     Instrument dbInstrument = assertUserCanEditInstrument(apiInstrument.getId(), user);
+    ApiInstrument apiInstrumentOriginal = new ApiInstrument(dbInstrument);
     boolean temporaryLock = lockItemForEdit(dbInstrument, user);
     try {
       dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
@@ -234,7 +235,11 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
         unlockItemAfterEdit(dbInstrument, user);
       }
     }
-    return getInstrumentById(dbInstrument.getId(), user);
+
+    ApiInstrument apiInstrumentResult = new ApiInstrument(dbInstrument);
+    populateOutgoingApiInstrumentEntity(apiInstrumentResult, dbInstrument, user);
+    updateOntologyOnUpdate(apiInstrumentOriginal, apiInstrumentResult, user);
+    return apiInstrumentResult;
   }
 
   private void saveDbInstrumentUpdate(Instrument dbInstrument, User user) {
@@ -264,9 +269,11 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
         unlockItemAfterEdit(dbInstrument, user);
       }
     }
-    ApiInstrument deleted = getInstrumentById(dbInstrument.getId(), user);
-    updateOntologyOnRecordChanges(deleted, user);
-    return deleted;
+
+    ApiInstrument apiInstrumentResult = new ApiInstrument(dbInstrument);
+    populateOutgoingApiInstrumentEntity(apiInstrumentResult, dbInstrument, user);
+    updateOntologyOnRecordChanges(apiInstrumentResult, user);
+    return apiInstrumentResult;
   }
 
   @Override
@@ -289,9 +296,10 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
         unlockItemAfterEdit(dbInstrument, user);
       }
     }
-    ApiInstrument restored = getInstrumentById(dbInstrument.getId(), user);
-    updateOntologyOnRecordChanges(restored, user);
-    return restored;
+    ApiInstrument apiInstrumentResult = new ApiInstrument(dbInstrument);
+    populateOutgoingApiInstrumentEntity(apiInstrumentResult, dbInstrument, user);
+    updateOntologyOnRecordChanges(apiInstrumentResult, user);
+    return apiInstrumentResult;
   }
 
   @Override
@@ -332,7 +340,7 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
     setWorkbenchAsParentForNewInstrument(copy, user);
     copy = instrumentDao.save(copy);
     publisher.publishEvent(new InventoryCreationEvent(copy, user));
-    return getInstrumentById(copy.getId(), user);
+    return new ApiInstrument(copy);
   }
 
   @Override
@@ -342,14 +350,14 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
 
   @Override
   public Instrument assertUserCanDeleteInstrument(Long dbId, User user) {
-    Instrument instrument = (Instrument) getIfExists(dbId);
+    Instrument instrument = instrumentDao.get(dbId);
     invPermissions.assertUserCanDeleteInventoryRecord(instrument, user);
     return instrument;
   }
 
   @Override
   public Instrument assertUserCanTransferInstrument(Long dbId, User user) {
-    Instrument instrument = (Instrument) getIfExists(dbId);
+    Instrument instrument = instrumentDao.get(dbId);
     invPermissions.assertUserCanTransferInventoryRecord(instrument, user);
     return instrument;
   }

@@ -1,6 +1,5 @@
 package com.researchspace.service.inventory.csvexport;
 
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

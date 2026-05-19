@@ -34,14 +34,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 @ApiController
 public class InstrumentsApiController extends BaseApiInventoryController implements InstrumentsApi {
 
-  @Autowired
-  private InstrumentApiPostValidator instrumentApiPostValidator;
-  @Autowired
-  private InstrumentApiPostFullValidator instrumentApiPostFullValidator;
-  @Autowired
-  private InstrumentApiPutValidator instrumentApiPutValidator;
-  @Autowired
-  private InventoryAuditApiManager inventoryAuditMgr;
+  @Autowired private InstrumentApiPostValidator instrumentApiPostValidator;
+  @Autowired private InstrumentApiPostFullValidator instrumentApiPostFullValidator;
+  @Autowired private InstrumentApiPutValidator instrumentApiPutValidator;
+  @Autowired private InventoryAuditApiManager inventoryAuditMgr;
 
   @Value("${inventory.instrument.enabled:false}")
   private boolean inventoryInstrumentEnabled;
