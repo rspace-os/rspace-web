@@ -59,7 +59,11 @@ public class StoichiometryReader {
         StoichiometryDTO extracted =
             new ObjectMapper().readValue(stoichiometryAttribute, StoichiometryDTO.class);
         if (Objects.equals(extracted.getId(), stoichiometryId)) {
-          stoichiometryElement.removeAttr("data-stoichiometry-table");
+          if ("true".equals(stoichiometryElement.attr("data-stoichiometry-table-only"))) {
+            stoichiometryElement.remove();
+          } else {
+            stoichiometryElement.removeAttr("data-stoichiometry-table");
+          }
         }
       } catch (Exception e) {
         log.warn("Could not parse data-stoichiometry-table attribute: {}", e.getMessage());

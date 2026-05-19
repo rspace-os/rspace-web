@@ -359,25 +359,59 @@ public class StoichiometryServiceImplTest {
 
     service.syncFieldHtml(10L, 7L, user);
 
-    verify(fieldManager).save(argThat(f -> f.getFieldData().contains("\"revision\":7")), eq(user));
+    verify(fieldManager)
+        .save(argThat(f -> f.getFieldData().contains("revision&quot;:7")), eq(user));
   }
 
   @Test
-  void syncFieldHtml_whenDeleteCase_removesAttribute() throws Exception {
+  void syncFieldHtml_whenDeleteCaseOnChemImageOverlay_stripsAttributeKeepsImage() throws Exception {
     Stoichiometry stoich = makeStoichiometryWithReaction(1L);
     stoich.setId(10L);
     when(stoichiometryManager.get(10L)).thenReturn(stoich);
 
     StructuredDocument doc = TestFactory.createAnySD();
     Field field = doc.getFields().get(0);
-    field.setFieldData("<p><img data-stoichiometry-table='{\"id\":10,\"revision\":3}' /></p>");
+    field.setFieldData(
+        "<p><img id=\"chem-1\" data-stoichiometry-table='{\"id\":10,\"revision\":3}' /></p>");
     when(fieldManager.getFieldsByRecordId(anyLong(), any())).thenReturn(List.of(field));
     when(fieldManager.save(any(), any())).thenReturn(field);
 
     service.syncFieldHtml(10L, null, user);
 
     verify(fieldManager)
-        .save(argThat(f -> !f.getFieldData().contains("data-stoichiometry-table")), eq(user));
+        .save(
+            argThat(
+                f ->
+                    !f.getFieldData().contains("data-stoichiometry-table")
+                        && f.getFieldData().contains("id=\"chem-1\"")),
+            eq(user));
+  }
+
+  @Test
+  void syncFieldHtml_whenDeleteCaseOnStandaloneTable_removesWholeElement() throws Exception {
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+
+    StructuredDocument doc = TestFactory.createAnySD();
+    Field field = doc.getFields().get(0);
+    field.setFieldData(
+        "<p>before</p><div data-stoichiometry-table-only=\"true\""
+            + " data-stoichiometry-table='{\"id\":10,\"revision\":3}'>table</div><p>after</p>");
+    when(fieldManager.getFieldsByRecordId(anyLong(), any())).thenReturn(List.of(field));
+    when(fieldManager.save(any(), any())).thenReturn(field);
+
+    service.syncFieldHtml(10L, null, user);
+
+    verify(fieldManager)
+        .save(
+            argThat(
+                f ->
+                    !f.getFieldData().contains("data-stoichiometry-table")
+                        && !f.getFieldData().contains("table")
+                        && f.getFieldData().contains("before")
+                        && f.getFieldData().contains("after")),
+            eq(user));
   }
 
   @Test
@@ -399,6 +433,7 @@ public class StoichiometryServiceImplTest {
   private Stoichiometry makeStoichiometryWithReaction(Long reactionId) throws Exception {
     RSChemElement parent = TestFactory.createChemElement(null, reactionId);
     Record record = TestFactory.createAnySD();
+    record.setId(100L);
     parent.setRecord(record);
     Stoichiometry s = new Stoichiometry();
     s.setId(1L);
