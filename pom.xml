@@ -1639,7 +1639,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>18893aec22</version>
+      <version>20c91d2247</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
