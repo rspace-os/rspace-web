@@ -13,6 +13,7 @@ import * as ArrayUtils from "../../../util/ArrayUtils";
 function handleErrors(
   response: unknown,
   successMessage = "Successfully moved the files to S3.",
+  partialFailureMessage = "Moving some files to S3 failed.",
 ): Alert {
   const data = Parsers.objectPath(["data"], response)
     .flatMap(Parsers.isObject)
@@ -76,7 +77,7 @@ function handleErrors(
               ).map((details) =>
                 mkAlert({
                   variant: "warning",
-                  message: "Moving some files to S3 failed.",
+                  message: partialFailureMessage,
                   details,
                   isInfinite: true,
                 }),
@@ -149,6 +150,9 @@ export default function useS3Filestores(): FetchingData.Fetched<
             operation === "copy"
               ? "Successfully copied the files to S3."
               : "Successfully moved the files to S3.",
+            operation === "copy"
+              ? "Copying some files to S3 failed."
+              : "Moving some files to S3 failed.",
           ),
         );
       } catch (e) {
@@ -188,7 +192,11 @@ export default function useS3Filestores(): FetchingData.Fetched<
             { sourcePath, destFilestoreId: id, destPath, deleteSource },
           );
           addAlert(
-            handleErrors(response, "Successfully transferred the files to S3."),
+            handleErrors(
+              response,
+              "Successfully transferred the files to S3.",
+              "Transferring some files to S3 failed.",
+            ),
           );
         }
       } catch (e) {

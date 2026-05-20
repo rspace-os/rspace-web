@@ -397,6 +397,33 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
+  void transferBetweenFilestores_destPathWithLeadingSlash_doesNotProduceDoubleSlashInKey()
+      throws BindException, IOException {
+    Long srcId = 10L;
+    Long dstId = 20L;
+    when(nfsManager.getNfsFileStore(srcId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user));
+    NfsFileStore dstFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user);
+    dstFilestore.setPath("dst-root");
+    when(nfsManager.getNfsFileStore(dstId)).thenReturn(dstFilestore);
+    WritableNfsClient srcClient = mock(WritableNfsClient.class);
+    WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
+    when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("/file.png", dstId, "/file.png", false);
+
+    controller.transferBetweenFilestores(
+        srcId, request, new BeanPropertyBindingResult(request, "request"), user);
+
+    verify(srcClient).copyObject(any(), eq(destClient), eq("dst-root/file.png"), any());
+  }
+
+  @Test
   void transferBetweenFilestores_sourceHasRootPathAndDeleteTrue_deleteFileUsesAbsoluteKey()
       throws BindException, IOException {
     Long srcId = 10L;

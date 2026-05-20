@@ -160,7 +160,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     String absoluteDestPath =
         StringUtils.isBlank(destFilestoreRootPath)
             ? request.getDestPath()
-            : destFilestoreRootPath + "/" + request.getDestPath();
+            : destFilestoreRootPath + "/" + StringUtils.stripStart(request.getDestPath(), "/");
     ApiExternalStorageOperationResult result = new ApiExternalStorageOperationResult();
     try {
       sourceClient.copyObject(
