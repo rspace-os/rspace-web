@@ -38,6 +38,7 @@ public class StoichiometryReader {
     Document doc = Jsoup.parse(htmlContent);
     Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");
     ObjectMapper mapper = new ObjectMapper();
+    boolean modified = false;
     for (Element stoichiometryElement : stoichiometryElements) {
       String stoichiometryAttribute = stoichiometryElement.attr("data-stoichiometry-table");
       try {
@@ -46,6 +47,7 @@ public class StoichiometryReader {
         if (Objects.equals(extracted.getId(), target.getId())) {
           stoichiometryElement.attr(
               "data-stoichiometry-table", mapper.writeValueAsString(newStoichiometry));
+          modified = true;
         }
       } catch (Exception e) {
         log.warn(
@@ -55,13 +57,17 @@ public class StoichiometryReader {
             e);
       }
     }
-    return doc.body().html();
+    // Avoid returning a Jsoup-normalised string when nothing matched: callers compare against the
+    // original to decide whether to persist, and Jsoup's parse/serialise round-trip is rarely
+    // byte-identical to the input.
+    return modified ? doc.body().html() : htmlContent;
   }
 
   @SneakyThrows
   public String removeFromFieldHtml(String htmlContent, Long stoichiometryId) {
     Document doc = Jsoup.parse(htmlContent);
     Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");
+    boolean modified = false;
     for (Element stoichiometryElement : stoichiometryElements) {
       String stoichiometryAttribute = stoichiometryElement.attr("data-stoichiometry-table");
       try {
@@ -73,6 +79,7 @@ public class StoichiometryReader {
           } else {
             stoichiometryElement.removeAttr("data-stoichiometry-table");
           }
+          modified = true;
         }
       } catch (Exception e) {
         log.warn(
@@ -82,6 +89,6 @@ public class StoichiometryReader {
             e);
       }
     }
-    return doc.body().html();
+    return modified ? doc.body().html() : htmlContent;
   }
 }
