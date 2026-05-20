@@ -7,6 +7,7 @@ const state =
   window.__rsTinyMcePluginBundleLoaderState ??=
   {
     loadedAssets: new Set(),
+    loadingAssets: new Map(),
     manifestPromise: null,
     entriesPromise: null,
   };
@@ -71,14 +72,40 @@ const appendLink = (rel, href) => {
 const appendModuleScript = (src) => {
   const key = `script:module:${src}`;
   if (state.loadedAssets.has(key)) {
-    return;
+    return Promise.resolve();
   }
 
-  const script = document.createElement("script");
-  script.type = "module";
-  script.src = src;
-  document.head.appendChild(script);
-  state.loadedAssets.add(key);
+  if (state.loadingAssets.has(key)) {
+    return state.loadingAssets.get(key);
+  }
+
+  // Necessary only for TinyMCE
+  const scriptLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.type = "module";
+    script.src = src;
+    script.addEventListener(
+      "load",
+      () => {
+        state.loadedAssets.add(key);
+        state.loadingAssets.delete(key);
+        resolve();
+      },
+      { once: true },
+    );
+    script.addEventListener(
+      "error",
+      () => {
+        state.loadingAssets.delete(key);
+        reject(new Error(`Failed to load TinyMCE Vite bundle script: ${src}`));
+      },
+      { once: true },
+    );
+    document.head.appendChild(script);
+  });
+
+  state.loadingAssets.set(key, scriptLoadPromise);
+  return scriptLoadPromise;
 };
 
 const getBundleEntry = (manifest, bundleName) => {
@@ -181,6 +208,7 @@ const getBundleAssets = (manifest, bundleName) => {
 
 const loadBundlesFromManifest = async (bundles) => {
   const manifest = await getManifest();
+  const scriptLoadPromises = [];
 
   for (const bundleName of bundles) {
     const assets = getBundleAssets(manifest, bundleName);
@@ -191,13 +219,16 @@ const loadBundlesFromManifest = async (bundles) => {
       appendLink("modulepreload", href);
     }
     for (const src of assets.scripts) {
-      appendModuleScript(src);
+      scriptLoadPromises.push(appendModuleScript(src));
     }
   }
+
+  await Promise.all(scriptLoadPromises);
 };
 
 const loadBundlesFromDevServer = async (bundles) => {
   const entries = await getBundleEntries();
+  const scriptLoadPromises = [];
 
   for (const bundleName of bundles) {
     const entryPath = entries[bundleName];
@@ -208,8 +239,10 @@ const loadBundlesFromDevServer = async (bundles) => {
       continue;
     }
 
-    appendModuleScript(normaliseAssetUrl(entryPath));
+    scriptLoadPromises.push(appendModuleScript(normaliseAssetUrl(entryPath)));
   }
+
+  await Promise.all(scriptLoadPromises);
 };
 
 export async function loadTinyMCEPluginBundles(bundleNames) {
