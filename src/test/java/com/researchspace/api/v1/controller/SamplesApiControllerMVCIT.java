@@ -578,10 +578,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is4xxClientError())
             .andReturn();
     error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertApiErrorContainsMessage(
-        error,
-        "description is a reserved field name, "
-            + "please choose a name other than description/expiry date/name/source/tags");
+    assertApiErrorContainsMessage(error, "description is a reserved field name");
 
     // finally, a correct call
     json =
@@ -1166,5 +1163,31 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
         + time
         + "\"}, {}, {}],"
         + " \"expiryDate\":null, \"name\": \"sample1\" }";
+  }
+
+  /**
+   * RSDEV-1066 smoke test: a single MVCIT proving the controller→manager→validator chain returns
+   * 4xx for an extra-field duplicate. Edge cases (case-only, whitespace, delete-add, rename) are
+   * covered by pure unit tests in {@code InventoryFieldNameUniquenessValidatorTest} and by
+   * Spring-transactional manager-level tests in {@code InventoryExtraFieldUniquenessTest}.
+   */
+  @Test
+  public void postSampleRejectsDuplicateExtraFieldNamesSmoke() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    String json =
+        "{ \"name\": \"dup-extra-sample\","
+            + " \"extraFields\": ["
+            + " { \"name\": \"dup\", \"type\": \"text\", \"content\": \"a\" },"
+            + " { \"name\": \"dup\", \"type\": \"text\", \"content\": \"b\" } ] }";
+
+    MvcResult result =
+        this.mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/samples", anyUser, json))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertApiErrorContainsMessage(error, "duplicate");
   }
 }

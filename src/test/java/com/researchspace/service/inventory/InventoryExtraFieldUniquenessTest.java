@@ -12,6 +12,7 @@ import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -155,6 +156,341 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
   }
 
+  // ---------- Sample: case-only, whitespace, reserved, delete-add, rename ----------
+
+  @Test
+  public void sampleCreateRejectsCaseOnlyDuplicateExtraFieldNames() {
+    ApiSampleWithFullSubSamples toCreate = new ApiSampleWithFullSubSamples(getRandomName(10));
+    toCreate.setExtraFields(List.of(extraField("Foo", "a"), extraField("foo", "b")));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> sampleApiMgr.createNewApiSample(toCreate, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void sampleCreateTrimsBeforeCompare() {
+    ApiSampleWithFullSubSamples toCreate = new ApiSampleWithFullSubSamples(getRandomName(10));
+    toCreate.setExtraFields(List.of(extraField("Foo", "a"), extraField(" Foo ", "b")));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> sampleApiMgr.createNewApiSample(toCreate, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void sampleCreateRejectsExtraFieldNamedAfterUILabel() {
+    // Proves core-model verifyFieldNameAllowed is wired into the Sample create path.
+    ApiSampleWithFullSubSamples toCreate = new ApiSampleWithFullSubSamples(getRandomName(10));
+    toCreate.setExtraFields(List.of(extraField("Subsamples", "x")));
+
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> sampleApiMgr.createNewApiSample(toCreate, testUser));
+    assertTrue(
+        iae.getMessage().contains("'Subsamples'"),
+        "Expected message to mention 'Subsamples', got: " + iae.getMessage());
+  }
+
+  @Test
+  public void sampleUpdateRejectsDuplicateExtraFieldNames() {
+    ApiSampleWithFullSubSamples created = createSampleWithExtraField("solo", "ok");
+
+    ApiSampleWithFullSubSamples update = new ApiSampleWithFullSubSamples();
+    update.setId(created.getId());
+    update.setExtraFields(List.of(newExtraField("more", "a"), newExtraField("more", "b")));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> sampleApiMgr.updateApiSample(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void sampleUpdateRejectsCaseOnlyDuplicateExtraFieldNames() {
+    ApiSampleWithFullSubSamples created = createSampleWithExtraField("solo", "ok");
+
+    ApiSampleWithFullSubSamples update = new ApiSampleWithFullSubSamples();
+    update.setId(created.getId());
+    update.setExtraFields(List.of(newExtraField("Foo", "a"), newExtraField("foo", "b")));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> sampleApiMgr.updateApiSample(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void sampleUpdateAllowsDeleteAndAddSameExtraFieldName() {
+    ApiSampleWithFullSubSamples created = createSampleWithExtraField("A", "v1");
+    Long existingId = created.getExtraFields().get(0).getId();
+
+    ApiSampleWithFullSubSamples update = new ApiSampleWithFullSubSamples();
+    update.setId(created.getId());
+    ApiExtraField toDelete = new ApiExtraField();
+    toDelete.setId(existingId);
+    toDelete.setDeleteFieldRequest(true);
+    update.setExtraFields(List.of(toDelete, newExtraField("A", "v2")));
+
+    ApiSample updated = sampleApiMgr.updateApiSample(update, testUser);
+    long activeAs =
+        updated.getExtraFields().stream()
+            .filter(ef -> "A".equals(ef.getName()))
+            .filter(ef -> "v2".equals(ef.getContent()))
+            .count();
+    assertEquals(1L, activeAs);
+  }
+
+  @Test
+  public void sampleUpdateRejectsRenameIntoExistingExtraField() {
+    ApiSampleWithFullSubSamples created =
+        createSampleWithExtraFields(extraField("A", "vA"), extraField("B", "vB"));
+    Long bId =
+        created.getExtraFields().stream()
+            .filter(ef -> "B".equals(ef.getName()))
+            .findFirst()
+            .orElseThrow()
+            .getId();
+
+    ApiSampleWithFullSubSamples update = new ApiSampleWithFullSubSamples();
+    update.setId(created.getId());
+    ApiExtraField renamed = new ApiExtraField();
+    renamed.setId(bId);
+    renamed.setName("A");
+    update.setExtraFields(List.of(renamed));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> sampleApiMgr.updateApiSample(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  // ---------- SubSample: case-only, whitespace, reserved, delete-add, rename ----------
+
+  @Test
+  public void subSampleUpdateRejectsCaseOnlyDuplicateExtraFieldNames() {
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
+    ApiSubSampleInfo first = sample.getSubSamples().get(0);
+
+    ApiSubSample update = new ApiSubSample();
+    update.setId(first.getId());
+    update.setExtraFields(List.of(newExtraField("Foo", "a"), newExtraField("foo", "b")));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> subSampleApiMgr.updateApiSubSample(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void subSampleUpdateTrimsBeforeCompare() {
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
+    ApiSubSampleInfo first = sample.getSubSamples().get(0);
+
+    ApiSubSample update = new ApiSubSample();
+    update.setId(first.getId());
+    update.setExtraFields(List.of(newExtraField("Foo", "a"), newExtraField(" Foo ", "b")));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> subSampleApiMgr.updateApiSubSample(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void subSampleUpdateRejectsExtraFieldNamedAfterUILabel() {
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
+    ApiSubSampleInfo first = sample.getSubSamples().get(0);
+
+    ApiSubSample update = new ApiSubSample();
+    update.setId(first.getId());
+    update.setExtraFields(List.of(newExtraField("Notes", "x")));
+
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> subSampleApiMgr.updateApiSubSample(update, testUser));
+    assertTrue(
+        iae.getMessage().contains("'Notes'"),
+        "Expected message to mention 'Notes', got: " + iae.getMessage());
+  }
+
+  @Test
+  public void subSampleUpdateAllowsDeleteAndAddSameExtraFieldName() {
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
+    ApiSubSampleInfo first = sample.getSubSamples().get(0);
+
+    // Seed one extra field "A" on the subsample
+    ApiSubSample seed = new ApiSubSample();
+    seed.setId(first.getId());
+    seed.setExtraFields(List.of(newExtraField("A", "v1")));
+    ApiSubSample seeded = subSampleApiMgr.updateApiSubSample(seed, testUser);
+    Long existingId =
+        seeded.getExtraFields().stream()
+            .filter(ef -> "A".equals(ef.getName()))
+            .findFirst()
+            .orElseThrow()
+            .getId();
+
+    // Now delete A and add a new A in the same PUT
+    ApiSubSample update = new ApiSubSample();
+    update.setId(first.getId());
+    ApiExtraField toDelete = new ApiExtraField();
+    toDelete.setId(existingId);
+    toDelete.setDeleteFieldRequest(true);
+    update.setExtraFields(List.of(toDelete, newExtraField("A", "v2")));
+
+    ApiSubSample updated = subSampleApiMgr.updateApiSubSample(update, testUser);
+    long activeAs =
+        updated.getExtraFields().stream()
+            .filter(ef -> "A".equals(ef.getName()))
+            .filter(ef -> "v2".equals(ef.getContent()))
+            .count();
+    assertEquals(1L, activeAs);
+  }
+
+  @Test
+  public void subSampleUpdateRejectsRenameIntoExistingExtraField() {
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
+    ApiSubSampleInfo first = sample.getSubSamples().get(0);
+
+    // Seed two extra fields "A" and "B"
+    ApiSubSample seed = new ApiSubSample();
+    seed.setId(first.getId());
+    seed.setExtraFields(List.of(newExtraField("A", "vA"), newExtraField("B", "vB")));
+    ApiSubSample seeded = subSampleApiMgr.updateApiSubSample(seed, testUser);
+    Long bId =
+        seeded.getExtraFields().stream()
+            .filter(ef -> "B".equals(ef.getName()))
+            .findFirst()
+            .orElseThrow()
+            .getId();
+
+    ApiSubSample update = new ApiSubSample();
+    update.setId(first.getId());
+    ApiExtraField renamed = new ApiExtraField();
+    renamed.setId(bId);
+    renamed.setName("A");
+    update.setExtraFields(List.of(renamed));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> subSampleApiMgr.updateApiSubSample(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  // ---------- Container: case-only, whitespace (update), update reserved, delete-add, rename ----
+
+  @Test
+  public void containerCreateRejectsCaseOnlyDuplicateExtraFieldNames() {
+    ApiContainer toCreate = new ApiContainer();
+    toCreate.setName(getRandomName(10));
+    toCreate.setExtraFields(List.of(extraField("Foo", "a"), extraField("foo", "b")));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> containerApiMgr.createNewApiContainer(toCreate, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void containerUpdateTrimsBeforeCompare() {
+    ApiContainer created = createContainerWithExtraField("solo", "ok");
+
+    ApiContainer update = new ApiContainer();
+    update.setId(created.getId());
+    update.setExtraFields(List.of(newExtraField("Foo", "a"), newExtraField(" Foo ", "b")));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> containerApiMgr.updateApiContainer(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void containerUpdateRejectsCaseOnlyDuplicateExtraFieldNames() {
+    ApiContainer created = createContainerWithExtraField("solo", "ok");
+
+    ApiContainer update = new ApiContainer();
+    update.setId(created.getId());
+    update.setExtraFields(List.of(newExtraField("Foo", "a"), newExtraField("foo", "b")));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> containerApiMgr.updateApiContainer(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void containerUpdateRejectsExtraFieldNamedAfterUILabel() {
+    ApiContainer created = createContainerWithExtraField("solo", "ok");
+
+    ApiContainer update = new ApiContainer();
+    update.setId(created.getId());
+    update.setExtraFields(List.of(newExtraField("Type", "x")));
+
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> containerApiMgr.updateApiContainer(update, testUser));
+    assertTrue(
+        iae.getMessage().contains("'Type'"),
+        "Expected message to mention 'Type', got: " + iae.getMessage());
+  }
+
+  @Test
+  public void containerUpdateAllowsDeleteAndAddSameExtraFieldName() {
+    ApiContainer created = createContainerWithExtraField("A", "v1");
+    Long existingId = created.getExtraFields().get(0).getId();
+
+    ApiContainer update = new ApiContainer();
+    update.setId(created.getId());
+    ApiExtraField toDelete = new ApiExtraField();
+    toDelete.setId(existingId);
+    toDelete.setDeleteFieldRequest(true);
+    update.setExtraFields(List.of(toDelete, newExtraField("A", "v2")));
+
+    ApiContainer updated = containerApiMgr.updateApiContainer(update, testUser);
+    long activeAs =
+        updated.getExtraFields().stream()
+            .filter(ef -> "A".equals(ef.getName()))
+            .filter(ef -> "v2".equals(ef.getContent()))
+            .count();
+    assertEquals(1L, activeAs);
+  }
+
+  @Test
+  public void containerUpdateRejectsRenameIntoExistingExtraField() {
+    ApiContainer toCreate = new ApiContainer();
+    toCreate.setName(getRandomName(10));
+    toCreate.setExtraFields(List.of(extraField("A", "vA"), extraField("B", "vB")));
+    ApiContainer created = containerApiMgr.createNewApiContainer(toCreate, testUser);
+    Long bId =
+        created.getExtraFields().stream()
+            .filter(ef -> "B".equals(ef.getName()))
+            .findFirst()
+            .orElseThrow()
+            .getId();
+
+    ApiContainer update = new ApiContainer();
+    update.setId(created.getId());
+    ApiExtraField renamed = new ApiExtraField();
+    renamed.setId(bId);
+    renamed.setName("A");
+    update.setExtraFields(List.of(renamed));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> containerApiMgr.updateApiContainer(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  // ---------- helpers ----------
+
   private ApiExtraField extraField(String name, String content) {
     ApiExtraField f = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
     f.setName(name);
@@ -166,5 +502,22 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiExtraField f = extraField(name, content);
     f.setNewFieldRequest(true);
     return f;
+  }
+
+  private ApiSampleWithFullSubSamples createSampleWithExtraField(String name, String content) {
+    return createSampleWithExtraFields(extraField(name, content));
+  }
+
+  private ApiSampleWithFullSubSamples createSampleWithExtraFields(ApiExtraField... fields) {
+    ApiSampleWithFullSubSamples toCreate = new ApiSampleWithFullSubSamples(getRandomName(10));
+    toCreate.setExtraFields(List.of(fields));
+    return sampleApiMgr.createNewApiSample(toCreate, testUser);
+  }
+
+  private ApiContainer createContainerWithExtraField(String name, String content) {
+    ApiContainer toCreate = new ApiContainer();
+    toCreate.setName(getRandomName(10));
+    toCreate.setExtraFields(List.of(extraField(name, content)));
+    return containerApiMgr.createNewApiContainer(toCreate, testUser);
   }
 }
