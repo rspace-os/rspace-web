@@ -220,6 +220,29 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals("ok2s", updatedTemplate.getSubSampleAlias().getPlural());
   }
 
+  /** RSDEV-1067: a template default unit must be a mass, volume, or dimensionless unit. */
+  @Test
+  public void createTemplate_rejectsNonAmountDefaultUnit() throws Exception {
+    ApiSampleTemplatePost templatePost = createValidSampleTemplatePostNoFields();
+    templatePost.setDefaultUnitId(RSUnitDef.NANOMOLAR.getId()); // id 11 — ticket repro
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertEquals(1, error.getErrors().size());
+    String rendered = error.getErrors().get(0);
+    assertTrue(
+        rendered.startsWith("defaultUnitId:"),
+        "error should be on defaultUnitId, was: " + rendered);
+    assertTrue(
+        rendered.contains(String.valueOf(RSUnitDef.NANOMOLAR.getId())),
+        "error should mention the rejected unit id, was: " + rendered);
+  }
+
   @Test
   public void postSampleTemplateYaml() throws Exception {
     String yamlString =

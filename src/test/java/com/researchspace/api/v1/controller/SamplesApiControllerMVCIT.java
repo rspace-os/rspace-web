@@ -784,6 +784,27 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertApiErrorContainsMessage(error, "subSamplesCount supported values are 1-100, was [101]");
   }
 
+  /** RSDEV-1067: a sample's quantity unit must be a mass, volume, or dimensionless unit. */
+  @Test
+  public void createSample_rejectsNonAmountQuantityUnit() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    // unitId 11 = NanoMolar — passes existence check, fails isAmount()
+    String nonAmountQuantityJSON =
+        "{ \"name\": \"sampleWithBadUnit\", "
+            + "\"quantity\": { \"numericValue\": \"1.0\", \"unitId\": \"11\" } }";
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/samples", anyUser, nonAmountQuantityJSON))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertApiErrorContainsMessage(error, "unit of amount");
+  }
+
   @SuppressWarnings("rawtypes")
   @Test
   public void validateNameForNewSample() throws Exception {

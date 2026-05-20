@@ -477,6 +477,21 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     return result;
   }
 
+  /** RSDEV-1067: a container's quantity unit must be a mass, volume, or dimensionless unit. */
+  @Test
+  public void createContainer_rejectsNonAmountQuantityUnit() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    // unitId 11 = NanoMolar — passes existence check, fails isAmount()
+    String nonAmountQuantityJSON =
+        "{ \"name\": \"containerWithBadUnit\",\"cType\": \"LIST\", "
+            + "\"quantity\": { \"numericValue\": \"1.0\", \"unitId\": \"11\" } }";
+    MvcResult result = postCreateContainerExpecting4xx(anyUser, apiKey, nonAmountQuantityJSON);
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertApiErrorContainsMessage(error, "unit of amount");
+  }
+
   @Test
   public void containerUpdateErrors() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
