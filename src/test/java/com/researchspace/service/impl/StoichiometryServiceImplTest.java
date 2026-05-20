@@ -339,6 +339,7 @@ public class StoichiometryServiceImplTest {
     Stoichiometry stoich = makeStoichiometryWithReaction(1L);
     stoich.setId(10L);
     when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
     when(fieldManager.getFieldsByRecordId(anyLong(), any())).thenReturn(Collections.emptyList());
 
     assertDoesNotThrow(() -> service.syncFieldHtml(10L, 7L, user));
@@ -350,6 +351,7 @@ public class StoichiometryServiceImplTest {
     Stoichiometry stoich = makeStoichiometryWithReaction(1L);
     stoich.setId(10L);
     when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
 
     StructuredDocument doc = TestFactory.createAnySD();
     Field field = doc.getFields().get(0);
@@ -368,6 +370,7 @@ public class StoichiometryServiceImplTest {
     Stoichiometry stoich = makeStoichiometryWithReaction(1L);
     stoich.setId(10L);
     when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
 
     StructuredDocument doc = TestFactory.createAnySD();
     Field field = doc.getFields().get(0);
@@ -392,6 +395,7 @@ public class StoichiometryServiceImplTest {
     Stoichiometry stoich = makeStoichiometryWithReaction(1L);
     stoich.setId(10L);
     when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
 
     StructuredDocument doc = TestFactory.createAnySD();
     Field field = doc.getFields().get(0);
@@ -419,6 +423,7 @@ public class StoichiometryServiceImplTest {
     Stoichiometry stoich = makeStoichiometryWithReaction(1L);
     stoich.setId(10L);
     when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
 
     StructuredDocument doc = TestFactory.createAnySD();
     Field field = doc.getFields().get(0);
@@ -428,6 +433,17 @@ public class StoichiometryServiceImplTest {
     service.syncFieldHtml(10L, 7L, user);
 
     verify(fieldManager, never()).save(any(), any());
+  }
+
+  @Test
+  void syncFieldHtml_whenUserLacksWritePermission_throws() throws Exception {
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(false);
+
+    assertThrows(AuthorizationException.class, () -> service.syncFieldHtml(10L, 7L, user));
+    verify(fieldManager, never()).getFieldsByRecordId(anyLong(), any());
   }
 
   private Stoichiometry makeStoichiometryWithReaction(Long reactionId) throws Exception {

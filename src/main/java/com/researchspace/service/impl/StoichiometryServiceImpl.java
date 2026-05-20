@@ -215,6 +215,10 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       log.warn("Cannot sync field HTML: stoichiometry {} has no owning record", stoichiometryId);
       return;
     }
+    if (!hasPermissions(record, user, PermissionType.WRITE)) {
+      throw new AuthorizationException(
+          "User does not have write permissions on document containing stoichiometry");
+    }
     List<Field> fields = fieldManager.getFieldsByRecordId(record.getId(), user);
     for (Field field : fields) {
       String fieldData = field.getFieldData();
