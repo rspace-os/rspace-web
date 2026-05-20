@@ -2,6 +2,8 @@
 <c:url var="createFromTemplateURL" value="/workspace/editor/structuredDocument/create/${selectedNotebookId}"></c:url>
 <jsp:include page="notebookHeader.jsp" />
 
+<body>
+
   <script>
     const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
   </script>
@@ -67,3 +69,5 @@
   <script src="<c:url value='/ui/dist/externalWorkFlows.js'/>"></script>
   <script src="<c:url value='/ui/dist/jupyterNotebooks.js'/>"></script>
   <!--End React Scripts -->
+</body>
+</html>
