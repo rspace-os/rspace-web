@@ -231,7 +231,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     assertEquals(
         "Unexpected testS3File.txt size", testS3TxtFileSize, testS3File.get().getSizeInBytes());
     assertEquals(
-        LocalDate.of(2026, 4, 17),
+        LocalDate.of(2026, 5, 20),
         testS3File.get().getLastModified().atZone(ZoneOffset.UTC).toLocalDate());
 
     // find the subfolder
