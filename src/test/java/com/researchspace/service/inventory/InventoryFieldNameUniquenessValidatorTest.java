@@ -1,4 +1,4 @@
-package com.researchspace.api.v1.controller;
+package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -31,7 +31,7 @@ class InventoryFieldNameUniquenessValidatorTest {
     MapBindingResult errors = newErrors();
 
     InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
-        null, null, List.of(extraField("dup"), extraField("dup")), errors);
+        null, List.of(extraField("dup"), extraField("dup")), errors);
 
     assertEquals(1, errors.getErrorCount());
     assertEquals("extraFields[1].name", errors.getFieldErrors().get(0).getField());
@@ -46,7 +46,7 @@ class InventoryFieldNameUniquenessValidatorTest {
     MapBindingResult errors = newErrors();
 
     InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
-        null, null, List.of(extraField("Foo"), extraField("foo")), errors);
+        null, List.of(extraField("Foo"), extraField("foo")), errors);
 
     assertEquals(1, errors.getErrorCount());
     assertEquals("extraFields[1].name", errors.getFieldErrors().get(0).getField());
@@ -59,7 +59,7 @@ class InventoryFieldNameUniquenessValidatorTest {
     MapBindingResult errors = newErrors();
 
     InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
-        null, null, List.of(extraField("Foo"), extraField(" Foo ")), errors);
+        null, List.of(extraField("Foo"), extraField(" Foo ")), errors);
 
     assertEquals(1, errors.getErrorCount());
     assertEquals("extraFields[1].name", errors.getFieldErrors().get(0).getField());
@@ -75,7 +75,7 @@ class InventoryFieldNameUniquenessValidatorTest {
     fieldToDelete.setDeleteFieldRequest(true);
 
     InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
-        null, List.of(fieldToDelete, sampleField("A")), null, errors);
+        List.of(fieldToDelete, sampleField("A")), null, errors);
 
     // The first occurrence is marked for delete, so the second "A" is the only live entry.
     assertFalse(errors.hasErrors());
@@ -86,7 +86,6 @@ class InventoryFieldNameUniquenessValidatorTest {
     MapBindingResult errors = newErrors();
 
     InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
-        null,
         null,
         List.of(extraField(null), extraField(""), extraField("   "), extraField("only")),
         errors);
@@ -99,7 +98,7 @@ class InventoryFieldNameUniquenessValidatorTest {
     MapBindingResult errors = newErrors();
 
     InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
-        null, List.of(sampleField("X")), List.of(extraField("x")), errors);
+        List.of(sampleField("X")), List.of(extraField("x")), errors);
 
     assertEquals(1, errors.getErrorCount());
     assertEquals("extraFields[0].name", errors.getFieldErrors().get(0).getField());
@@ -110,7 +109,7 @@ class InventoryFieldNameUniquenessValidatorTest {
     MapBindingResult errors = newErrors();
 
     InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
-        null, List.of(sampleField("A"), sampleField("a")), null, errors);
+        List.of(sampleField("A"), sampleField("a")), null, errors);
 
     assertEquals(1, errors.getErrorCount());
     assertEquals("fields[1].name", errors.getFieldErrors().get(0).getField());
@@ -212,7 +211,6 @@ class InventoryFieldNameUniquenessValidatorTest {
     MapBindingResult errors = newErrors();
 
     InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
-        null,
         List.of(sampleField("A"), sampleField("B")),
         List.of(extraField("B"), extraField("C")),
         errors);

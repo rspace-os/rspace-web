@@ -1,4 +1,4 @@
-package com.researchspace.api.v1.controller;
+package com.researchspace.service.inventory;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiExtraField;
@@ -111,22 +111,21 @@ public final class InventoryFieldNameUniquenessValidator {
   }
 
   /**
-   * Validator-layer entry-point: walks the incoming fields[] and extraFields[] arrays and rejects
-   * the SECOND occurrence of any case-insensitive name match. Errors are added with explicit nested
-   * paths (e.g. {@code fields[1].name}, {@code extraFields[0].name}) so API clients can pinpoint
-   * the problematic entry. Used from the Spring {@link org.springframework.validation.Validator}s
-   * before the request reaches the manager.
+   * Validator-layer entry-point: walks the incoming {@code fields[]} and {@code extraFields[]}
+   * arrays and rejects the SECOND occurrence of any case-insensitive name match. Errors are added
+   * with explicit nested paths (e.g. {@code fields[1].name}, {@code extraFields[0].name}) so API
+   * clients can pinpoint the problematic entry. Used from the Spring {@link
+   * org.springframework.validation.Validator}s before the request reaches the manager.
    *
-   * <p>Comparison is case-insensitive after trimming, matching the manager-layer paths.
+   * <p>Comparison is case-insensitive after trimming, matching the manager-layer paths. Entries in
+   * {@code fields[]} marked {@code deleteFieldRequest} are skipped; null or blank names are
+   * skipped.
    *
    * <p>Like the manager-layer methods, this entry-point does NOT enforce collisions with displayed
    * labels — that is owned by core-model.
    */
   public static void rejectDuplicatesInPayload(
-      InventoryRecord record,
-      List<ApiInventoryEntityField> fields,
-      List<ApiExtraField> extraFields,
-      Errors errors) {
+      List<ApiInventoryEntityField> fields, List<ApiExtraField> extraFields, Errors errors) {
     Set<String> seen = new HashSet<>();
     if (fields != null) {
       for (int i = 0; i < fields.size(); i++) {

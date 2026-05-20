@@ -28,6 +28,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -236,8 +237,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
     apiContainer.applyChangesToDatabaseGridLayout(newContainer);
     apiContainer.applyContainerContentFlagsToDatabaseContainer(newContainer);
 
-    com.researchspace.api.v1.controller.InventoryFieldNameUniquenessValidator
-        .assertNoDuplicateFieldNames(newContainer);
+    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(newContainer);
     Container savedContainer = containerDao.save(newContainer);
     saveIncomingContainerImages(savedContainer, apiContainer, user);
     publishAuditEventsForCreatedContainer(user, savedContainer);
@@ -316,8 +316,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
                 user);
       }
 
-      com.researchspace.api.v1.controller.InventoryFieldNameUniquenessValidator
-          .assertNoDuplicateFieldNames(dbContainer);
+      InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(dbContainer);
       if (contentChanged) {
         dbContainer.setModificationDate(new Date());
         dbContainer.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);

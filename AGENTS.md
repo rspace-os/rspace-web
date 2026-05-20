@@ -199,6 +199,8 @@ Controller  →  Service (Manager)  →  DAO  →  Hibernate/DB
 - **DAOs** (`com.researchspace.dao`): assume an active transaction; use `sessionFactory.getCurrentSession()`
 - **Legacy core** (`com.axiope`): older DAOs, model, search components
 
+**No upward dependencies.** Imports flow downward only. A class in `com.researchspace.service.*` must never import from `com.researchspace.*.controller.*`, and a class in `com.researchspace.dao.*` must never import from `com.researchspace.service.*` or `com.researchspace.*.controller.*`. If a helper, validator, or utility is used by service-layer code, it belongs in the service layer — even if it is also called from a controller. A fully-qualified reference to a higher-layer package is a smell: stop, classify the target type's layer, and relocate it before merging.
+
 ### Frontend structure
 
 ```

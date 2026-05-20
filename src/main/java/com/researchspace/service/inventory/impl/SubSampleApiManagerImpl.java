@@ -23,6 +23,7 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -142,8 +143,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
               apiSubSample.getIdentifiers(), dbSubSample, user);
       contentChanged |= apiSubSample.applyChangesToDatabaseSubSample(dbSubSample, user);
       contentChanged |= saveIncomingSubSampleImage(dbSubSample, apiSubSample, user);
-      com.researchspace.api.v1.controller.InventoryFieldNameUniquenessValidator
-          .assertNoDuplicateFieldNames(dbSubSample);
+      InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(dbSubSample);
       boolean moveSuccessful =
           moveHelper.moveRecordToTargetParentAndLocation(
               dbSubSample,

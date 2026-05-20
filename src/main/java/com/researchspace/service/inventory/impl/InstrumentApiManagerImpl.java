@@ -28,6 +28,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.inventory.InstrumentApiManager;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import java.io.IOException;
@@ -111,8 +112,7 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
     }
     setLocationForNewInstrument(apiInstrument, instrumentToSave, user);
 
-    com.researchspace.api.v1.controller.InventoryFieldNameUniquenessValidator
-        .assertNoDuplicateFieldNames(instrumentToSave);
+    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(instrumentToSave);
     Instrument savedInstrument = instrumentDao.save(instrumentToSave);
     saveIncomingInstrumentImage(savedInstrument, apiInstrument, user);
 
