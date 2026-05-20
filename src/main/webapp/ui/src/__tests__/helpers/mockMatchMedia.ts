@@ -1,7 +1,9 @@
 import { vi } from "vitest";
 
 export function mockMatchMedia(): void {
-  Object.defineProperty(window, "matchMedia", {
+  if (typeof globalThis.matchMedia === "function") return;
+
+  Object.defineProperty(globalThis, "matchMedia", {
     writable: true,
     value: vi.fn().mockImplementation((query: string) => ({
       matches: false,
