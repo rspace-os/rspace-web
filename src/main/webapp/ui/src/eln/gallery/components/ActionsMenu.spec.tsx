@@ -59,8 +59,11 @@ const feature = test.extend<{
     "a share success alert should be visible": () => Promise<void>;
     "the share dialog should close": () => Promise<void>;
     "there shouldn't be any axe violations": () => Promise<void>;
+    "the 'Move to S3' option should be visible": () => Promise<void>;
+    "there shouldn't be any MUI styling errors": () => Promise<void>;
   };
   networkRequests: Array<URL>;
+  consoleErrors: Array<string>;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -124,7 +127,7 @@ const feature = test.extend<{
       },
     });
   },
-  Then: async ({ page, networkRequests }, use) => {
+  Then: async ({ page, networkRequests, consoleErrors }, use) => {
     await use({
       "the actions menu should be visible": async () => {
         await expect(
@@ -244,16 +247,33 @@ const feature = test.extend<{
           }),
         ).toEqual([]);
       },
+      "the 'Move to S3' option should be visible": async () => {
+        await expect(
+          page.getByRole("menuitem", { name: /move to s3/i }),
+        ).toBeVisible({ timeout: 5000 });
+      },
+      "there shouldn't be any MUI styling errors": async () => {
+        const muiErrors = consoleErrors.filter((msg) =>
+          /MUI.*Unsupported|MUI error #9/i.test(msg),
+        );
+        expect(muiErrors).toHaveLength(0);
+      },
     });
   },
   networkRequests: async ({}, use) => {
     await use([]);
   },
+  consoleErrors: async ({}, use) => {
+    await use([]);
+  },
 
 });
-feature.beforeEach(async ({ router, page, networkRequests }) => {
+feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
   page.on("request", (request) => {
     networkRequests.push(new URL(request.url()));
+  });
+  page.on("console", (msg) => {
+    if (msg.type() === "error") consoleErrors.push(msg.text());
   });
   await router.route("/session/ajax/analyticsProperties", (route) => {
     return route.fulfill({
@@ -519,8 +539,9 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
   });
 
 });
-feature.afterEach(({ networkRequests }) => {
+feature.afterEach(({ networkRequests, consoleErrors }) => {
   networkRequests.splice(0, networkRequests.length);
+  consoleErrors.splice(0, consoleErrors.length);
 });
 test.describe("ActionsMenu", () => {
   test.describe("Should have no axe violations", () => {
@@ -691,6 +712,17 @@ test.describe("ActionsMenu", () => {
         await When["the user saves the share dialog"]();
         await Then["a share success alert should be visible"]();
         await Then["the share dialog should close"]();
+      },
+    );
+  });
+  test.describe("S3 menu item", () => {
+    feature(
+      "Opening the actions menu for an S3-capable file should not produce MUI styling errors",
+      async ({ Given, When, Then }) => {
+        await Given["the actions menu with a non-folder is mounted"]();
+        await When["the user clicks the actions menu button"]();
+        await Then["the 'Move to S3' option should be visible"]();
+        await Then["there shouldn't be any MUI styling errors"]();
       },
     );
   });
