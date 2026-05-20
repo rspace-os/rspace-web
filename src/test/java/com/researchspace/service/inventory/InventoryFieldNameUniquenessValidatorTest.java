@@ -82,6 +82,21 @@ class InventoryFieldNameUniquenessValidatorTest {
   }
 
   @Test
+  void rejectDuplicatesInPayload_extraFieldDeleteRequestSkipped_noError() {
+    MapBindingResult errors = newErrors();
+
+    ApiExtraField extraFieldToDelete = extraField("A");
+    extraFieldToDelete.setDeleteFieldRequest(true);
+
+    InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
+        null, List.of(extraFieldToDelete, extraField("A")), errors);
+
+    // The first occurrence is marked for delete, so the second "A" is the only live entry —
+    // mirrors the delete-A-then-add-A idiom on the PUT path.
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
   void rejectDuplicatesInPayload_nullAndBlankNamesSkipped_noError() {
     MapBindingResult errors = newErrors();
 

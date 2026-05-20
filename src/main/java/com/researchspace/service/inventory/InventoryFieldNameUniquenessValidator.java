@@ -136,6 +136,9 @@ public final class InventoryFieldNameUniquenessValidator {
     if (extraFields != null) {
       for (int i = 0; i < extraFields.size(); i++) {
         ApiExtraField extraField = extraFields.get(i);
+        if (extraField.isDeleteFieldRequest()) {
+          continue;
+        }
         rejectIfDuplicate(seen, extraField.getName(), "extraFields[" + i + "].name", errors);
       }
     }
