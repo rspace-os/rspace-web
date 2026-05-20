@@ -11,7 +11,6 @@ import userEvent from "@testing-library/user-event";
 import { when } from "vitest-when";
 import Zenodo from "../Zenodo";
 import { Optional } from "../../../../util/optional";
-import "@/__tests__/__mocks__/matchMedia";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
 const update = vi.fn<(state: IntegrationStates["ZENODO"]) => IntegrationStates["ZENODO"]>();

@@ -8,7 +8,6 @@ import { templateAttrs } from "../../../../stores/models/__tests__/TemplateModel
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
 import "@/__tests__/__mocks__/resizeObserver";
-import "@/__tests__/__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 import { type AxiosResponse } from "@/common/axios";
 

@@ -3,7 +3,6 @@ import React from "react";
 import { waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line vitest/no-mocks-import
-import "@/__tests__/__mocks__/matchMedia";
 
 const rootRenderCalls: Array<{
   container: Element;

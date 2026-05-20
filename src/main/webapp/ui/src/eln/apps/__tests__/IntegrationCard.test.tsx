@@ -9,7 +9,6 @@ import IntegrationCard from "../IntegrationCard";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 
-import "@/__tests__/__mocks__/matchMedia";
 describe("IntegrationCard", () => {
   test("Name should be shown.", () => {
     render(

@@ -13,7 +13,6 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import Search from "../../../../stores/models/Search";
-import "@/__tests__/__mocks__/matchMedia";
 import Dialog from "@mui/material/Dialog";
 import {
   makeMockSubSample,

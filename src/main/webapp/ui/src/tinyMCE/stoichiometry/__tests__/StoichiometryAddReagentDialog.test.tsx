@@ -3,7 +3,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import "@/__tests__/__mocks__/matchMedia";
 import materialTheme from "@/theme";
 import StoichiometryAddReagentDialog from "@/tinyMCE/stoichiometry/StoichiometryAddReagentDialog";
 

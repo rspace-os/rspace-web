@@ -14,7 +14,6 @@ import Alerts from "../../../../components/Alerts/Alerts";
 import { observable } from "mobx";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
-import "@/__tests__/__mocks__/matchMedia";
 describe("Dataverse", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {

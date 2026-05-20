@@ -1,5 +1,4 @@
 import { test, describe, expect, vi } from 'vitest';
-import "@/__tests__/__mocks__/matchMedia";
 import React from "react";
 import { render } from "@testing-library/react";
 import Sidebar from "../Sidebar";

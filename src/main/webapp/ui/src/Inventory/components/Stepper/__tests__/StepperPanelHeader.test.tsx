@@ -13,7 +13,6 @@ import {
   useFormSectionError,
   setFormSectionError,
 } from "../StepperPanelHeader";
-import "@/__tests__/__mocks__/matchMedia";
 import fc from "fast-check";
 import Collapse from "@mui/material/Collapse";
 import * as ArrayUtils from "../../../../util/ArrayUtils";

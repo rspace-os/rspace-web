@@ -15,7 +15,6 @@ import { observable } from "mobx";
 import { render, within } from "@/__tests__/customQueries";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
-import "@/__tests__/__mocks__/matchMedia";
 
 const broadcastHandlers: Array<
   (e: MessageEvent<GitHubConnectedMessage>) => void

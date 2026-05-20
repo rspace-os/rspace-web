@@ -3,7 +3,6 @@ import React,
   { useState } from "react";
 import { render, screen } from "@testing-library/react";
 import StepperPanel from "../StepperPanel";
-import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import SynchroniseFormSections from "../SynchroniseFormSections";

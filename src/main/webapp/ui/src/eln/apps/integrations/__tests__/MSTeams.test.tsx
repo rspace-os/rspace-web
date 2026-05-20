@@ -10,7 +10,6 @@ import Alerts from "../../../../components/Alerts/Alerts";
 import { observable } from "mobx";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
-import "@/__tests__/__mocks__/matchMedia";
 describe("MSTeams", () => {
   describe("Should render correctly.", () => {
     test("Channel names should be shown in a table.", async () => {
