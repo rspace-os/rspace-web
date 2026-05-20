@@ -2975,9 +2975,9 @@ paths:
           type: boolean
           default: false
           description: >
-            When true, updates the embedded stoichiometry reference in the owning document field HTML
-            to reflect the new revision. Defaults to false. Set to true when calling the API directly;
-            leave false when calling from the UI (which handles its own field update).
+            When true, updates the embedded stoichiometry reference in the owning document field
+            HTML to reflect the new revision. Leave false (the default) if your client writes the
+            field HTML itself.
         - in: body
           name: body
           required: true
@@ -3021,8 +3021,8 @@ paths:
           default: false
           description: >
             When true, removes the stoichiometry reference from the owning document field HTML
-            before deletion. Defaults to false. Set to true when calling the API directly;
-            leave false when calling from the UI (which handles its own field update).
+            before deletion. Leave false (the default) if your client writes the field HTML
+            itself.
       responses:
         '200':
           description: Deletion result
@@ -3514,9 +3514,9 @@ definitions:
         type: boolean
         default: false
         description: >
-          When true, updates the embedded stoichiometry reference in the owning document field HTML
-          to reflect the new revision. Defaults to false. Set to true when calling the API directly;
-          leave false when calling from the UI (which handles its own field update).
+          When true, updates the embedded stoichiometry reference in the owning document field
+          HTML to reflect the new revision. Leave false (the default) if your client writes the
+          field HTML itself.
     example:
       stoichiometryId: 42
       linkIds: [1234, 1235]
