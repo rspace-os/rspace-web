@@ -2,15 +2,12 @@ import { TextEncoder, TextDecoder } from "node:util";
 import { vi, expect, afterEach, afterAll } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import createFetchMock from "vitest-fetch-mock";
-import { mockMatchMedia } from "@/__tests__/helpers/mockMatchMedia";
 import {
   silenceConsole,
   silenceProcessOutput,
 } from "@/__tests__/helpers/silenceConsole";
 import { setup, toBeAccessible } from "@sa11y/vitest";
 import { cleanup } from "@testing-library/react";
-
-mockMatchMedia();
 
 function createStorageMock() {
   const storage = new Map<string, string>();
@@ -84,5 +81,22 @@ if (typeof globalThis.sessionStorage !== "object") {
     configurable: true,
     writable: true,
     value: createStorageMock(),
+  });
+}
+
+if (typeof globalThis.matchMedia !== "function") {
+  Object.defineProperty(globalThis, "matchMedia", {
+    configurable: true,
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(), // deprecated
+      removeListener: vi.fn(), // deprecated
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
   });
 }
