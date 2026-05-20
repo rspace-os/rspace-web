@@ -464,7 +464,7 @@ test.describe("MoveToS3", () => {
       "Clicking Transfer calls the transfer endpoint and shows a success alert",
       async ({ Given, When, Then }) => {
         await Given["the Move to S3 dialog in transfer mode is mounted"]();
-        await Then["the dialog title 'Move to S3' should be visible"]();
+        await Then["the dialog title 'Transfer to S3' should be visible"]();
         await When[
           "the user opens the filestore dropdown and selects 'My S3 Bucket'"
         ]();
