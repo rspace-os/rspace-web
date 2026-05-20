@@ -121,6 +121,9 @@ describe("NewNote", () => {
     await user.click(screen.getByRole("button", { name: /create note/i }));
 
     expect(createNote).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert", { name: "Warning" })).toHaveTextContent(
+      "Notes are not editable",
+    );
   });
 
   test("sets and unsets the dirty flag in preview mode", async () => {
