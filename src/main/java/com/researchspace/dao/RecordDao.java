@@ -1,6 +1,7 @@
 package com.researchspace.dao;
 
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
@@ -185,4 +186,13 @@ public interface RecordDao extends GenericDao<Record, Long> {
 
   void transferTemplates(
       User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName);
+
+  /**
+   * Returns all gallery items owned by originalOwner that are linked via FieldAttachment to any of
+   * the given template IDs.
+   */
+  List<EcatMediaFile> getGalleryItemsForTemplates(List<Long> templateIds, User originalOwner);
+
+  /** Updates FileProperty.fileOwner for the given media file IDs. */
+  void updateFilePropertyOwnerForMediaFiles(List<Long> mediaIds, String newOwnerUsername);
 }

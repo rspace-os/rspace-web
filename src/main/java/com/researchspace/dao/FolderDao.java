@@ -138,4 +138,12 @@ public interface FolderDao extends GenericDao<Folder, Long> {
   Optional<Folder> getImportFolder(User subject);
 
   Long getLabGroupFolderIdForUser(User user);
+
+  /**
+   * Returns the parent folder of the given record (folder or media file), or null if none exists.
+   *
+   * @param childId the ID of the record whose parent folder is sought
+   * @return the parent Folder, or null
+   */
+  Folder getParentFolder(Long childId);
 }

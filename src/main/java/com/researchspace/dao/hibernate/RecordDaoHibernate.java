@@ -787,4 +787,64 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
             .setParameter("ids", templateIds);
     query.executeUpdate();
   }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public List<EcatMediaFile> getGalleryItemsForTemplates(
+      List<Long> templateIds, User originalOwner) {
+    return getSession()
+        .createQuery(
+            "SELECT DISTINCT m FROM EcatMediaFile m"
+                + " JOIN FieldAttachment fa ON fa.mediaFile = m"
+                + " JOIN Field f ON fa.field = f"
+                + " WHERE f.structuredDocument.id IN :templateIds"
+                + " AND m.owner = :originalOwner"
+                + " AND fa.deleted = false")
+        .setParameter("templateIds", templateIds)
+        .setParameter("originalOwner", originalOwner)
+        .list();
+  }
+
+  @Override
+  public void updateFilePropertyOwnerForMediaFiles(List<Long> mediaIds, String newOwnerUsername) {
+    getSession()
+        .createNativeQuery(
+            "UPDATE FileProperty fp"
+                + " INNER JOIN EcatMediaFile em ON em.fileProperty_id = fp.id"
+                + " SET fp.fileOwner = :newOwnerUsername, fp.fileUser = :newOwnerUsername"
+                + " WHERE em.id IN :mediaIds")
+        .setParameter("newOwnerUsername", newOwnerUsername)
+        .setParameter("mediaIds", mediaIds)
+        .executeUpdate();
+
+    getSession()
+        .createNativeQuery(
+            "UPDATE FileProperty fp"
+                + " INNER JOIN EcatImage ei ON ei.thumbnailImageFP_id = fp.id"
+                + " SET fp.fileOwner = :newOwnerUsername, fp.fileUser = :newOwnerUsername"
+                + " WHERE ei.id IN :mediaIds")
+        .setParameter("newOwnerUsername", newOwnerUsername)
+        .setParameter("mediaIds", mediaIds)
+        .executeUpdate();
+
+    getSession()
+        .createNativeQuery(
+            "UPDATE FileProperty fp"
+                + " INNER JOIN EcatDocumentFile edf ON edf.docThumbnailFP_id = fp.id"
+                + " SET fp.fileOwner = :newOwnerUsername, fp.fileUser = :newOwnerUsername"
+                + " WHERE edf.id IN :mediaIds")
+        .setParameter("newOwnerUsername", newOwnerUsername)
+        .setParameter("mediaIds", mediaIds)
+        .executeUpdate();
+
+    getSession()
+        .createNativeQuery(
+            "UPDATE FileProperty fp"
+                + " INNER JOIN Thumbnail t ON t.thumbnailFP_id = fp.id"
+                + " SET fp.fileOwner = :newOwnerUsername, fp.fileUser = :newOwnerUsername"
+                + " WHERE t.sourceId IN :mediaIds")
+        .setParameter("newOwnerUsername", newOwnerUsername)
+        .setParameter("mediaIds", mediaIds)
+        .executeUpdate();
+  }
 }

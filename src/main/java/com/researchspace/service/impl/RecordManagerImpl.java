@@ -1469,4 +1469,15 @@ public class RecordManagerImpl implements RecordManager {
       User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName) {
     recordDao.transferTemplates(originalOwner, newOwner, templateIds, updatedOriginalOwnerName);
   }
+
+  @Override
+  public List<EcatMediaFile> getGalleryItemsForTemplates(
+      List<Long> templateIds, User originalOwner) {
+    return recordDao.getGalleryItemsForTemplates(templateIds, originalOwner);
+  }
+
+  @Override
+  public void updateFilePropertyOwnerForMediaFiles(List<Long> mediaIds, String newOwnerUsername) {
+    recordDao.updateFilePropertyOwnerForMediaFiles(mediaIds, newOwnerUsername);
+  }
 }

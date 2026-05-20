@@ -62,17 +62,19 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     }
     User toDelete = userDao.get(userId);
 
-    Optional<String> saveResourcesListError = saveFilestoreResourcesTempList(toDelete);
-    if (saveResourcesListError.isPresent()) {
-      return new ServiceOperationResult<>(null, false, saveResourcesListError.get());
-    }
-
     if (recordDao.hasUserSharedTemplatesUsedByOtherUsers(toDelete)) {
       templateTransferService.transferOwnership(toDelete, subject);
     }
 
     if (formDao.hasUserPublishedFormsUsedInOtherRecords(toDelete)) {
       formTransferService.transferOwnership(toDelete, subject);
+    }
+
+    // Collect filestore resources after transfers so that any gallery items whose FileProperty
+    // owner was updated to the new owner are excluded from the deletion list.
+    Optional<String> saveResourcesListError = saveFilestoreResourcesTempList(toDelete);
+    if (saveResourcesListError.isPresent()) {
+      return new ServiceOperationResult<>(null, false, saveResourcesListError.get());
     }
 
     if (policy.isForceDelete()) {

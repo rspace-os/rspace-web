@@ -2,8 +2,10 @@ package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.RecordGroupSharingDao;
+import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
@@ -33,6 +35,8 @@ class TemplateTransferServiceTest {
   @Mock RecordGroupSharingDao recordGroupSharingDao;
 
   @Mock RecordDao recordDao;
+
+  @Mock FolderDao folderDao;
 
   @Mock FolderManager folderManager;
 
@@ -64,6 +68,7 @@ class TemplateTransferServiceTest {
         new TemplateTransferService(
             auditTrailService,
             recordGroupSharingDao,
+            folderDao,
             folderManager,
             recordManager,
             recordSharingHandler);
@@ -144,6 +149,7 @@ class TemplateTransferServiceTest {
         new TemplateTransferService(
             auditTrailService,
             recordGroupSharingDao,
+            folderDao,
             folderManager,
             recordManager,
             recordSharingHandler);
@@ -207,6 +213,173 @@ class TemplateTransferServiceTest {
             newOwner,
             List.of(1L),
             originalOwner.getUsername() + TemplateTransferService.DELETED_USER_NAME_SUFFIX);
+  }
+
+  @Test
+  void transferOwnership_transfersGalleryItemsLinkedFromTemplates() {
+    templateTransferService =
+        new TemplateTransferService(
+            auditTrailService,
+            recordGroupSharingDao,
+            folderDao,
+            folderManager,
+            recordManager,
+            recordSharingHandler);
+
+    User originalOwner = new User();
+    originalOwner.setUsername("original");
+    User newOwner = new User();
+    newOwner.setUsername("new");
+
+    // one template with one gallery item in "Images" subfolder
+    BaseRecord template1 = Mockito.mock(BaseRecord.class);
+    Mockito.when(template1.getId()).thenReturn(1L);
+    Mockito.when(recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
+        .thenReturn(List.of(template1));
+    Mockito.when(recordGroupSharingDao.getRecordGroupSharingsForRecord(1L))
+        .thenReturn(Collections.emptyList());
+
+    // template folder setup (needed by determineDeletedTemplatesFolder)
+    Folder templateRoot = new Folder();
+    templateRoot.setId(100L);
+    Mockito.when(folderManager.getTemplateFolderForUser(newOwner)).thenReturn(templateRoot);
+    Mockito.when(folderManager.getSubFolders(templateRoot)).thenReturn(Collections.emptyList());
+    Folder deletedUsersTemplates = new Folder();
+    deletedUsersTemplates.setId(200L);
+    Mockito.when(
+            folderManager.createNewFolder(
+                templateRoot.getId(),
+                TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER,
+                newOwner))
+        .thenReturn(deletedUsersTemplates);
+    Mockito.when(folderManager.getSubFolders(deletedUsersTemplates))
+        .thenReturn(Collections.emptyList());
+    Folder deletedUserTemplateFolder = new Folder();
+    deletedUserTemplateFolder.setId(300L);
+    Mockito.when(
+            folderManager.createNewFolder(
+                deletedUsersTemplates.getId(), originalOwner.getUsername(), newOwner))
+        .thenReturn(deletedUserTemplateFolder);
+
+    // gallery item linked from template
+    EcatMediaFile image = Mockito.mock(EcatMediaFile.class);
+    Mockito.when(image.getId()).thenReturn(10L);
+    Mockito.when(recordManager.getGalleryItemsForTemplates(List.of(1L), originalOwner))
+        .thenReturn(List.of(image));
+
+    // original owner's gallery root (ID=50), item is in "Images" subfolder (ID=51)
+    Folder originalGalleryRoot = new Folder();
+    originalGalleryRoot.setId(50L);
+    Folder imagesFolder = new Folder();
+    imagesFolder.setId(51L);
+    imagesFolder.setName("Images");
+    Mockito.when(folderManager.getGalleryRootFolderForUser(originalOwner))
+        .thenReturn(originalGalleryRoot);
+    // item's parent is imagesFolder; imagesFolder's parent is gallery root → path = ["Images"]
+    Mockito.when(folderDao.getParentFolder(10L)).thenReturn(imagesFolder);
+    Mockito.when(folderDao.getParentFolder(51L)).thenReturn(originalGalleryRoot);
+
+    // new owner's gallery root (ID=60); structure: Gallery/Images/Deleted Users/<username>/
+    Folder newOwnerGalleryRoot = new Folder();
+    newOwnerGalleryRoot.setId(60L);
+    Mockito.when(folderManager.getGalleryRootFolderForUser(newOwner))
+        .thenReturn(newOwnerGalleryRoot);
+    Mockito.when(folderManager.getSubFolders(newOwnerGalleryRoot))
+        .thenReturn(Collections.emptyList());
+    Folder newOwnerImagesFolder = new Folder();
+    newOwnerImagesFolder.setId(61L);
+    Mockito.when(folderManager.createNewFolder(newOwnerGalleryRoot.getId(), "Images", newOwner))
+        .thenReturn(newOwnerImagesFolder);
+    Mockito.when(folderManager.getSubFolders(newOwnerImagesFolder))
+        .thenReturn(Collections.emptyList());
+    Folder deletedUsersGallery = new Folder();
+    deletedUsersGallery.setId(62L);
+    Mockito.when(
+            folderManager.createNewFolder(
+                newOwnerImagesFolder.getId(),
+                TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER,
+                newOwner))
+        .thenReturn(deletedUsersGallery);
+    Mockito.when(folderManager.getSubFolders(deletedUsersGallery))
+        .thenReturn(Collections.emptyList());
+    Folder userGalleryFolder = new Folder();
+    userGalleryFolder.setId(63L);
+    Mockito.when(
+            folderManager.createNewFolder(
+                deletedUsersGallery.getId(), originalOwner.getUsername(), newOwner))
+        .thenReturn(userGalleryFolder);
+
+    templateTransferService.transferOwnership(originalOwner, newOwner);
+
+    // gallery item moved to Gallery/Images/Deleted Users/original (relPath[1:] is empty)
+    Mockito.verify(recordManager)
+        .moveUsersRecordsToFolder(List.of(10L), originalOwner, userGalleryFolder);
+    // ownership transferred
+    Mockito.verify(recordManager)
+        .transferTemplates(
+            originalOwner,
+            newOwner,
+            List.of(10L),
+            originalOwner.getUsername() + TemplateTransferService.DELETED_USER_NAME_SUFFIX);
+    // FileProperty owner updated
+    Mockito.verify(recordManager)
+        .updateFilePropertyOwnerForMediaFiles(List.of(10L), newOwner.getUsername());
+  }
+
+  @Test
+  void transferOwnership_skipsGalleryTransferWhenNoItemsLinkedFromTemplates() {
+    templateTransferService =
+        new TemplateTransferService(
+            auditTrailService,
+            recordGroupSharingDao,
+            folderDao,
+            folderManager,
+            recordManager,
+            recordSharingHandler);
+
+    User originalOwner = new User();
+    originalOwner.setUsername("original");
+    User newOwner = new User();
+    newOwner.setUsername("new");
+
+    BaseRecord template1 = Mockito.mock(BaseRecord.class);
+    Mockito.when(template1.getId()).thenReturn(1L);
+    Mockito.when(recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
+        .thenReturn(List.of(template1));
+    Mockito.when(recordGroupSharingDao.getRecordGroupSharingsForRecord(1L))
+        .thenReturn(Collections.emptyList());
+
+    Folder templateRoot = new Folder();
+    templateRoot.setId(100L);
+    Mockito.when(folderManager.getTemplateFolderForUser(newOwner)).thenReturn(templateRoot);
+    Mockito.when(folderManager.getSubFolders(templateRoot)).thenReturn(Collections.emptyList());
+    Folder deletedUsersTemplates = new Folder();
+    deletedUsersTemplates.setId(200L);
+    Mockito.when(
+            folderManager.createNewFolder(
+                templateRoot.getId(),
+                TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER,
+                newOwner))
+        .thenReturn(deletedUsersTemplates);
+    Mockito.when(folderManager.getSubFolders(deletedUsersTemplates))
+        .thenReturn(Collections.emptyList());
+    Folder deletedUserFolder = new Folder();
+    deletedUserFolder.setId(300L);
+    Mockito.when(
+            folderManager.createNewFolder(
+                deletedUsersTemplates.getId(), originalOwner.getUsername(), newOwner))
+        .thenReturn(deletedUserFolder);
+
+    // no gallery items linked from the template
+    Mockito.when(recordManager.getGalleryItemsForTemplates(List.of(1L), originalOwner))
+        .thenReturn(Collections.emptyList());
+
+    templateTransferService.transferOwnership(originalOwner, newOwner);
+
+    // no gallery-related folder or file operations should occur
+    Mockito.verify(folderManager, Mockito.never()).getGalleryRootFolderForUser(Mockito.any());
+    Mockito.verify(recordManager, Mockito.never())
+        .updateFilePropertyOwnerForMediaFiles(Mockito.any(), Mockito.any());
   }
 
   private void assertAuditEvent(

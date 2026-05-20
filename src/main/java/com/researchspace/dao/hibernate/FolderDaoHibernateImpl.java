@@ -67,6 +67,17 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   }
 
   @Override
+  public Folder getParentFolder(Long childId) {
+    Query<Folder> q =
+        getSession()
+            .createQuery(
+                "SELECT rtf.folder FROM RecordToFolder rtf WHERE rtf.record.id = :childId",
+                Folder.class);
+    q.setParameter("childId", childId);
+    return getFirstResultOrNull(q);
+  }
+
+  @Override
   public ISearchResults<TreeViewItem> getFolderListingForTreeView(
       Long folderId, PaginationCriteria<TreeViewItem> pgCrit) {
 

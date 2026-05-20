@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.PaginationObject;
 import com.researchspace.model.EcatImage;
+import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -456,4 +457,13 @@ public class RecordManagerStub implements RecordManager {
   @Override
   public void transferTemplates(
       User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName) {}
+
+  @Override
+  public List<EcatMediaFile> getGalleryItemsForTemplates(
+      List<Long> templateIds, User originalOwner) {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public void updateFilePropertyOwnerForMediaFiles(List<Long> mediaIds, String newOwnerUsername) {}
 }

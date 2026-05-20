@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.EcatImage;
+import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -695,4 +696,13 @@ public interface RecordManager {
    */
   void transferTemplates(
       User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName);
+
+  /**
+   * Returns all gallery items owned by originalOwner that are linked via FieldAttachment to any of
+   * the given template IDs.
+   */
+  List<EcatMediaFile> getGalleryItemsForTemplates(List<Long> templateIds, User originalOwner);
+
+  /** Updates FileProperty.fileOwner for the given media file IDs. */
+  void updateFilePropertyOwnerForMediaFiles(List<Long> mediaIds, String newOwnerUsername);
 }
