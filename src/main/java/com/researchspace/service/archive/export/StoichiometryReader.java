@@ -37,13 +37,22 @@ public class StoichiometryReader {
       String htmlContent, StoichiometryDTO target, IdAndRevision newStoichiometry) {
     Document doc = Jsoup.parse(htmlContent);
     Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");
+    ObjectMapper mapper = new ObjectMapper();
     for (Element stoichiometryElement : stoichiometryElements) {
       String stoichiometryAttribute = stoichiometryElement.attr("data-stoichiometry-table");
-      ObjectMapper mapper = new ObjectMapper();
-      StoichiometryDTO extracted = mapper.readValue(stoichiometryAttribute, StoichiometryDTO.class);
-      if (Objects.equals(extracted.getId(), target.getId())) {
-        stoichiometryElement.attr(
-            "data-stoichiometry-table", mapper.writeValueAsString(newStoichiometry));
+      try {
+        StoichiometryDTO extracted =
+            mapper.readValue(stoichiometryAttribute, StoichiometryDTO.class);
+        if (Objects.equals(extracted.getId(), target.getId())) {
+          stoichiometryElement.attr(
+              "data-stoichiometry-table", mapper.writeValueAsString(newStoichiometry));
+        }
+      } catch (Exception e) {
+        log.warn(
+            "Could not parse data-stoichiometry-table attribute (target id {}): raw value=[{}]",
+            target.getId(),
+            stoichiometryAttribute,
+            e);
       }
     }
     return doc.body().html();
@@ -66,7 +75,11 @@ public class StoichiometryReader {
           }
         }
       } catch (Exception e) {
-        log.warn("Could not parse data-stoichiometry-table attribute: {}", e.getMessage());
+        log.warn(
+            "Could not parse data-stoichiometry-table attribute (removing id {}): raw value=[{}]",
+            stoichiometryId,
+            stoichiometryAttribute,
+            e);
       }
     }
     return doc.body().html();

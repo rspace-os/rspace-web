@@ -71,7 +71,7 @@ public class StoichiometryApiController extends BaseApiController implements Sto
         stoichiometryService.update(stoichiometryId, stoichiometryUpdateDTO, user);
     // Get latest revision number after updated
     Long newRevision = getLatestRevisionNumber(stoichiometry.getId());
-    if (updateFieldHtml) {
+    if (updateFieldHtml && newRevision != null) {
       stoichiometryService.syncFieldHtml(stoichiometryId, newRevision, user);
     }
     return StoichiometryMapper.toDTO(stoichiometry, newRevision);
@@ -90,7 +90,7 @@ public class StoichiometryApiController extends BaseApiController implements Sto
     StockDeductionResult result =
         stoichiometryInventoryLinkManager.deductStock(stoichiometryId, linkIds, user);
     result.setRevisionNumber(getLatestRevisionNumber(stoichiometryId));
-    if (request.isUpdateFieldHtml()) {
+    if (request.isUpdateFieldHtml() && result.getRevisionNumber() != null) {
       stoichiometryService.syncFieldHtml(stoichiometryId, result.getRevisionNumber(), user);
     }
     return result;

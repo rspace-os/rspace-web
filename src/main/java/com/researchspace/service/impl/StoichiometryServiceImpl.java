@@ -150,6 +150,9 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   @Override
   public void delete(long stoichiometryId, User user, boolean updateFieldHtml) {
     Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
+    if (stoichiometry == null) {
+      throw new NotFoundException("Stoichiometry with id " + stoichiometryId + " not found");
+    }
     Record owningRecord = stoichiometry.getRecord();
     if (!hasPermissions(owningRecord, user, PermissionType.WRITE)) {
       throw new AuthorizationException(
