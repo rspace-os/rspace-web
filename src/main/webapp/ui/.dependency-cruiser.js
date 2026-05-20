@@ -37,21 +37,6 @@ module.exports = {
         path: "node_modules/axios/dist/node/axios.cjs",
       },
     },
-
-    {
-      name: "react-image-editor is deprecated",
-      severity: "error",
-      from: {
-        pathNot: [
-          // once the old gallery is removed, we can remove the dependency and stop using `--force` when calling `npm install`
-          "^src/Gallery",
-        ],
-      },
-      to: {
-        path: "@toast-ui/react-image-editor",
-      },
-    },
-
     // this rule is disabled because cycles are generally not an issue, but the rule can be useful when debugging some issues.
     /*
     {
@@ -133,7 +118,6 @@ module.exports = {
           "src/tinyMCE/pyrat/Pyrat.js",
           "src/tinyMCE/clustermarket/index.js",
           "src/tinyMCE/omero/index.js",
-          "src/tinyMCE/jove/index.tsx",
           "src/tinyMCE/pubchem/index.tsx",
           "src/tinyMCE/inventory/identifiers/index.tsx",
           "src/components/BaseSearch.js",

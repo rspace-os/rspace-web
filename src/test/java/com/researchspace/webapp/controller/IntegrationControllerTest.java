@@ -12,7 +12,6 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.IntegrationsHandlerImpl;
 import com.researchspace.testutils.BaseManagerTestCaseBase.MockPrincipal;
 import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
@@ -38,6 +37,8 @@ public class IntegrationControllerTest {
   User subject;
   Principal principal;
 
+  private final int INTEGRATIONS_AMOUNT = 28;
+
   @Before
   public void setup() {
     msgSource = new StaticMessageSource();
@@ -51,10 +52,9 @@ public class IntegrationControllerTest {
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(subject);
     when(handler.getIntegration(Mockito.eq(subject), Mockito.anyString()))
         .thenReturn(new IntegrationInfo());
-    int integrationsNumber = IntegrationsHandlerImpl.booleanIntegrationPrefs.size() + 24;
     AjaxReturnObject<Map<String, IntegrationInfo>> infos =
         integrationCtrller.getAllIntegrationsInfo(new MockPrincipal(subject.getUsername()));
-    assertEquals(integrationsNumber, infos.getData().size());
+    assertEquals(INTEGRATIONS_AMOUNT, infos.getData().size());
   }
 
   @Test

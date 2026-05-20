@@ -27,6 +27,7 @@ import FormControl from "@mui/material/FormControl";
 import { type UseState } from "../../util/types";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ThemeProvider } from "@mui/material/styles";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
 const TABLE_HEADER_CELLS = [
   { id: "bookingID" as const, numeric: false, label: "Booking ID" },
@@ -85,6 +86,7 @@ function Clustermarket({
   defaultBookingType = BookingType.BOOKED,
   clustermarket_web_url,
 }: ClustermarketArgs): React.ReactNode {
+  const { trackEvent } = React.useContext(AnalyticsContext);
   const [bookings, setBookings]: UseState<Array<BookingAndEquipmentDetails>> =
     useState([] as Array<BookingAndEquipmentDetails>);
   const [equipment, setEquipment]: UseState<
@@ -190,8 +192,7 @@ function Clustermarket({
             );
           setEquipment(equipmentTableRows);
 
-          // @ts-expect-error global
-          RS.trackEvent("FetchClustermarketEquipmentData", {
+          trackEvent("FetchClustermarketEquipmentData", {
             count: equipmentTableRows.length,
             bookingType: bookingType,
             isMaintenance: isMaintenance,
@@ -206,8 +207,7 @@ function Clustermarket({
             );
           setBookings(bookingTableRows);
 
-          // @ts-expect-error global
-          RS.trackEvent("FetchClustermarketBookingData", {
+          trackEvent("FetchClustermarketBookingData", {
             count: bookingTableRows.length,
             bookingType: bookingType,
             isMaintenance: isMaintenance,

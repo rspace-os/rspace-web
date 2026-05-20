@@ -19,7 +19,7 @@ export function useClustermarketEndpoint(): {
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully disconnected from Clustermarket.",
+          message: "Successfully disconnected from Calira.",
         })
       );
     } catch (e) {
@@ -27,7 +27,7 @@ export function useClustermarketEndpoint(): {
       addAlert(
         mkAlert({
           variant: "error",
-          message: "Could not disconnect from Clustermarket.",
+          message: "Could not disconnect from Calira.",
         })
       );
     }

@@ -3,7 +3,7 @@ import SkipToContentMenu from "../../components/SkipToContentMenu";
 import { LandmarksProvider } from "../../components/LandmarksContext";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
-import { ThemeProvider, styled, lighten, useTheme } from "@mui/material/styles";
+import { ThemeProvider, styled, lighten } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import {
   SELECTED_OR_FOCUS_BLUE,
@@ -49,14 +49,10 @@ import PlaceholderLabel from "./components/PlaceholderLabel";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import SidebarToggle from "../../components/AppBar/SidebarToggle";
 import GoogleLoginProvider from "../../components/GoogleLoginProvider";
-import BroadcastIcon from "@mui/icons-material/Campaign";
-import Alert from "@mui/material/Alert";
-import Link from "@mui/material/Link";
 import * as Parsers from "../../util/parsers";
 import axios from "@/common/axios";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import RsSet from "../../util/set";
-import docLinks from "../../assets/DocLinks";
 import Stack from "@mui/material/Stack";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import Result from "@/util/result";
@@ -101,7 +97,6 @@ const WholePage = styled(
       section: GallerySection;
     }) => string;
   }) => {
-    const theme = useTheme();
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
     const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
       PREFERENCES.GALLERY_SORT_BY,
@@ -235,25 +230,6 @@ const WholePage = styled(
                           supportsSkipToContent: true,
                         }}
                       />
-                      <Box sx={{ borderBottom: theme.borders.card }}>
-                        <Alert
-                          icon={<BroadcastIcon fontSize="inherit" />}
-                          severity="info"
-                        >
-                          Welcome to the{" "}
-                          <Link href={docLinks.gallery}>new Gallery!</Link> If
-                          you encounter any issues, please let us know by
-                          emailing{" "}
-                          <Link href="mailto:support@researchspace.com">
-                            support
-                          </Link>{" "}
-                          and using the{" "}
-                          <Link target="_self" href="/oldGallery">
-                            old Gallery
-                          </Link>{" "}
-                          in the meantime.
-                        </Alert>
-                      </Box>
                       <Box
                         sx={{ display: "flex", minHeight: "0", flexGrow: 1 }}
                         component="main"

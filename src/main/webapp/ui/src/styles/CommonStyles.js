@@ -39,11 +39,3 @@ export const CardWrapper = styled.div`
     background-color: transparent !important;
   }
 `;
-
-export const DialogWrapper = styled.div`
-  [class^="MuiPaper-root"] {
-    [class^="MuiDialogActions] {
-
-    }
-  }
-`;

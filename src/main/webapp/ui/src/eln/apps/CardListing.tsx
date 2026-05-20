@@ -225,15 +225,6 @@ function CardListing({
     [update, integrationStates.GOOGLEDRIVE],
   );
 
-  const joveUpdate = React.useCallback(
-    (newState: IntegrationStates["JOVE"]) => {
-      void runInAction(async () => {
-        integrationStates.JOVE = await update("JOVE", newState);
-      });
-    },
-    [update, integrationStates.JOVE],
-  );
-
   const chemistryUpdate = React.useCallback(
     (newState: IntegrationStates["CHEMISTRY"]) => {
       void runInAction(async () => {
@@ -356,6 +347,7 @@ function CardListing({
       )}
       {integrationStates.API_DIRECT.mode === mode && <ApiDirect />}
       {integrationStates.API_DIRECT.mode === mode && <Jupyter />}
+      {integrationStates.API_DIRECT.mode === mode && <Jove />}
       {integrationStates.BOX.mode === mode && (
         <Box integrationState={integrationStates.BOX} update={boxUpdate} />
       )}
@@ -454,9 +446,6 @@ function CardListing({
           integrationState={integrationStates.GOOGLEDRIVE}
           update={googleDriveUpdate}
         />
-      )}
-      {integrationStates.JOVE.mode === mode && (
-        <Jove integrationState={integrationStates.JOVE} update={joveUpdate} />
       )}
       {integrationStates.NEXTCLOUD.mode === mode && (
         <NextCloud

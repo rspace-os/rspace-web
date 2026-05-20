@@ -117,7 +117,7 @@ jobs:
 
       - name: Run fast tests
         run: |
-          ./mvnw clean test -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
+          ./mvnw clean test -U -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 

@@ -78,8 +78,6 @@
 	<!-- Convenient way to map URLs to JSPs w/o having a Controller -->
 	<mvc:view-controller path="/import/archiveImport" view-name="import/archiveImport" />
 	<mvc:view-controller path="/import/archiveImportReport" view-name="import/archiveImportReport" />
-	<mvc:view-controller path="/styleGuide" view-name="styleGuide/styleGuide" />
-	<mvc:view-controller path="/tools" view-name="tools/tools" />
 	<mvc:view-controller path="/admin" view-name="admin/admin" />
 	<mvc:view-controller path="/public/signupConfirmation" view-name="public/signupConfirmation" />
 	<mvc:view-controller path="/public/awaitingAuthorisation" view-name="public/awaitingAuthorisation" />

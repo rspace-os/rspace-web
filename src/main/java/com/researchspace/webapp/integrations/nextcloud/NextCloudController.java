@@ -205,12 +205,7 @@ public class NextCloudController extends BaseOAuth2Controller {
     return OauthAuthorizationError.builder().appName("nextCloud");
   }
 
-  /**
-   * Gets the access token id there is one, else returns empty string.
-   *
-   * @param subject
-   * @return
-   */
+  /** Likely unused? */
   @GetMapping("/accessCredentials")
   public @ResponseBody Map<String, String> getAccessCredentials(Principal subject) {
     Optional<UserConnection> connection =
@@ -228,6 +223,7 @@ public class NextCloudController extends BaseOAuth2Controller {
     }
   }
 
+  /** Likely unused? */
   @GetMapping("/refreshToken")
   public @ResponseBody Map<String, String> refreshAccessCredentials(Principal subject) {
     Optional<UserConnection> connectionOption =
@@ -278,6 +274,7 @@ public class NextCloudController extends BaseOAuth2Controller {
     }
   }
 
+  /** Likely unused? */
   @GetMapping("/sessionInfo")
   @ResponseBody
   public Map<String, String> getNextCloudCredentialsFromSession(HttpSession session) {
@@ -287,6 +284,7 @@ public class NextCloudController extends BaseOAuth2Controller {
     return map;
   }
 
+  /** Likely unused? */
   @PostMapping("/sessionInfo")
   @ResponseBody
   public String saveNextCloudCredentialsToSession(

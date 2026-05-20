@@ -229,10 +229,10 @@
                                 <td class="workspace-record-ownerName" data-uname="${record.owner.username}">
                                     <div    data-test-id="mini-profile-activator-${record.owner.id}"
                                             class="user-details"
-                                            data-userid="${record.owner.id}"
-                                            data-firstName="${record.owner.firstName}"
-                                            data-lastName="${record.owner.lastName}"
-                                            data-uniqueid="${record.globalIdentifier}"
+                                            data-user-id="${record.owner.id}"
+                                            data-first-name="${record.owner.firstName}"
+                                            data-last-name="${record.owner.lastName}"
+                                            data-unique-id="${record.globalIdentifier}"
                                             data-position="bottom_left">
                                         <a href="#" style="font-size: 14px; line-height:30px">${record.owner.firstName}&nbsp;${record.owner.lastName}</a>
                                     </div>

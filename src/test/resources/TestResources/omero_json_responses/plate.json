@@ -76,15 +76,15 @@
     "RowNamingConvention": "letter",
     "Columns": 12,
     "Rows": 8,
-    "url:screens": "https://idr.openmicroscopy.org/api/v0/m/plates/422/screens/",
-    "url:wells": "https://idr.openmicroscopy.org/api/v0/m/plates/422/wells/",
-    "url:plateacquisitions": "https://idr.openmicroscopy.org/api/v0/m/plates/422/plateacquisitions/",
+    "url:screens": "http://localhost:1080/api/v0/m/plates/422/screens/",
+    "url:wells": "http://localhost:1080/api/v0/m/plates/422/wells/",
+    "url:plateacquisitions": "http://localhost:1080/api/v0/m/plates/422/plateacquisitions/",
     "omero:wellsampleIndex": [
       0,
       0
     ],
     "url:wellsampleindex_wells": [
-      "https://idr.openmicroscopy.org/api/v0/m/plates/422/wellsampleindex/0/wells/"
+      "http://localhost:1080/api/v0/m/plates/422/wellsampleindex/0/wells/"
     ]
   }
 }

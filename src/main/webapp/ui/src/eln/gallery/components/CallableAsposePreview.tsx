@@ -21,8 +21,16 @@ import Result from "../../../util/result";
  * network call then an error toast is shown.
  */
 
+export type AsposePreviewDetails = {
+  documentId: number;
+  fileExtension: string;
+  revisionId?: number | null;
+  publicView?: boolean;
+};
+
 const AsposePreviewContext = React.createContext({
   setFile: (_file: GalleryFile) => Promise.resolve(),
+  setDetails: (_details: AsposePreviewDetails) => Promise.resolve(),
   loading: false,
 });
 
@@ -36,18 +44,28 @@ export function useAsposePreview(): {
    */
   openAsposePreview: (file: GalleryFile) => Promise<void>;
 
+  /**
+   * Preview a document by using its ids/extension rather than a GalleryFile.
+   */
+  openAsposePreviewFromDetails: (details: AsposePreviewDetails) => Promise<void>;
+
   loading: boolean;
 } {
-  const { setFile: openAsposePreview, loading } =
+  const {
+    setFile: openAsposePreview,
+    setDetails: openAsposePreviewFromDetails,
+    loading,
+  } =
     React.useContext(AsposePreviewContext);
   return {
     openAsposePreview,
+    openAsposePreviewFromDetails,
     loading,
   };
 }
 
 /**
- * This components provides a mechanism for any other component that is its
+ * This component provides a mechanism for any other component that is its
  * descendent to trigger the previewing of a document by passing the GalleryFile
  * to a call to `useAsposePreview`'s `openAsposePreview`. Just do something like
  *    const { openAsposePreview } = useImagePreview();
@@ -65,13 +83,16 @@ export function CallableAsposePreview({
   const { openPdfPreview } = usePdfPreview();
   const { addAlert } = React.useContext(AlertContext);
 
-  const setFile = async (file: GalleryFile) => {
-    setLoading(true);
-    try {
+  const openConvertedFile = React.useCallback(
+    async ({
+      documentId,
+      fileExtension,
+      revisionId = null,
+      publicView = false,
+    }: AsposePreviewDetails) => {
+      const revisionUrlSuffix = revisionId != null ? `&revision=${revisionId}` : "";
       const { data } = await axios.get<unknown>(
-        "/Streamfile/ajax/convert/" +
-          idToString(file.id).elseThrow() +
-          "?outputFormat=pdf"
+        `/Streamfile/ajax/convert/${documentId}?outputFormat=pdf${revisionUrlSuffix}`,
       );
       const fileName = Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
@@ -80,27 +101,36 @@ export function CallableAsposePreview({
         .orElse(null);
       if (fileName) {
         openPdfPreview(
-          "/Streamfile/direct/" +
-            idToString(file.id).elseThrow() +
-            "?fileName=" +
-            fileName
+          (publicView ? "/public/publicView" : "") +
+            `/Streamfile/direct/${documentId}?fileName=${fileName}`,
         );
-      } else {
-        Parsers.isObject(data)
-          .flatMap(Parsers.isNotNull)
-          .flatMap(Parsers.getValueWithKey("exceptionMessage"))
-          .flatMap(Parsers.isString)
-          .do((msg) => {
-            throw new Error(msg);
-          });
-        Parsers.objectPath(["error", "errorMessages"], data)
-          .flatMap(Parsers.isArray)
-          .flatMap(ArrayUtils.head)
-          .flatMap(Parsers.isString)
-          .do((msg) => {
-            throw new Error(msg);
-          });
+        return;
       }
+      Parsers.isObject(data)
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.getValueWithKey("exceptionMessage"))
+        .flatMap(Parsers.isString)
+        .do((msg) => {
+          throw new Error(msg);
+        });
+      Parsers.objectPath(["error", "errorMessages"], data)
+        .flatMap(Parsers.isArray)
+        .flatMap(ArrayUtils.head)
+        .flatMap(Parsers.isString)
+        .do((msg) => {
+          throw new Error(msg);
+        });
+      throw new Error(
+        `Could not generate a PDF preview for .${fileExtension} documents.`,
+      );
+    },
+    [openPdfPreview],
+  );
+
+  const setDetails = async (details: AsposePreviewDetails) => {
+    setLoading(true);
+    try {
+      await openConvertedFile(details);
     } catch (e) {
       if (!(e instanceof Error)) throw new Error("Unknown error");
       addAlert(
@@ -115,9 +145,16 @@ export function CallableAsposePreview({
     }
   };
 
+  const setFile = async (file: GalleryFile) => {
+    await setDetails({
+      documentId: Number(idToString(file.id).elseThrow()),
+      fileExtension: file.extension ?? "",
+    });
+  };
+
   return (
     <>
-      <AsposePreviewContext.Provider value={{ setFile, loading }}>
+      <AsposePreviewContext.Provider value={{ setFile, setDetails, loading }}>
         {children}
       </AsposePreviewContext.Provider>
     </>

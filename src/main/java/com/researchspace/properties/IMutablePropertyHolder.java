@@ -64,9 +64,5 @@ public interface IMutablePropertyHolder extends IPropertyHolder {
 
   void setMinUsernameLength(Integer minUsernameLength);
 
-  void setJoveApiUrl(String joveApiUrl);
-
-  void setJoveApiKey(String joveApiKey);
-
   void setRsDevUnsafeMoveAllowed(String unsafeMoveAllowed);
 }

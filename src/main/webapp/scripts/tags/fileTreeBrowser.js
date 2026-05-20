@@ -137,7 +137,10 @@ function selectFileTreeBrowserRecordById(recordId) {
     return;
   }
     
-  fileTreeBrowserCurrentBreadcrumbIds = RS.getBreadcrumbIds('editorBcrumb');
+  fileTreeBrowserCurrentBreadcrumbIds = [];
+  $.each($("#breadcrumbTag_editorBcrumb").data('bcrumb') || [], function (i, elem) {
+    fileTreeBrowserCurrentBreadcrumbIds.push(elem.id);
+  });
   fileTreeBrowserRecordId = recordId;
 
   // remove previous selection

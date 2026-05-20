@@ -1,6 +1,8 @@
 package com.researchspace.service.inventory.impl;
 
 import com.researchspace.core.util.MediaUtils;
+import com.researchspace.dao.InstrumentEntityDao;
+import com.researchspace.dao.InventoryEntityFieldDao;
 import com.researchspace.dao.InventoryFileDao;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.files.service.FileStore;
@@ -9,10 +11,11 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.field.SampleField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FileDuplicateStrategy;
@@ -44,6 +47,8 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
   private @Autowired InventoryFileDao inventoryFileDao;
   private @Autowired InventoryPermissionUtils invPermissions;
   private @Autowired SampleDao sampleDao;
+  private @Autowired InstrumentEntityDao<Instrument> instrumentEntityDao;
+  private @Autowired InventoryEntityFieldDao inventoryEntityFieldDao;
   private @Autowired MessageSourceUtils messages;
   private @Autowired IRecordFactory recordFactory;
   private @Autowired BaseRecordManager baseRecordManager;
@@ -128,7 +133,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
 
     if (GlobalIdPrefix.SF.equals(globalIdToAttachTo.getPrefix())) {
       Sample sample = (Sample) invRec;
-      SampleField field = sample.getFieldById(globalIdToAttachTo.getDbId()).orElse(null);
+      InventoryEntityField field = sample.getFieldById(globalIdToAttachTo.getDbId()).orElse(null);
       if (field == null) {
         throwNotFoundException(globalIdToAttachTo.getDbId(), "Sample field");
       }
@@ -147,10 +152,20 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
    */
   private GlobalIdentifier getGlobalIdOfParentInventoryItem(GlobalIdentifier invRecGlobalId) {
     if (GlobalIdPrefix.SF.equals(invRecGlobalId.getPrefix())) {
-      GlobalIdentifier parentInvItemOid =
-          sampleDao.getSampleGlobalIdFromFieldId(invRecGlobalId.getDbId());
+      InventoryEntityField field = inventoryEntityFieldDao.get(invRecGlobalId.getDbId());
+      GlobalIdentifier parentInvItemOid;
+      String whatsMissed = "";
+      if (field.getSample() != null) {
+        parentInvItemOid = sampleDao.getSampleGlobalIdFromFieldId(invRecGlobalId.getDbId());
+        whatsMissed = "Sample";
+      } else {
+        parentInvItemOid =
+            inventoryEntityFieldDao.getInstrumentEntityGlobalIdFromFieldId(
+                invRecGlobalId.getDbId());
+        whatsMissed = "Instrument Entity";
+      }
       if (parentInvItemOid == null) {
-        throwNotFoundException(invRecGlobalId.getDbId(), "Sample field");
+        throwNotFoundException(invRecGlobalId.getDbId(), whatsMissed + " field");
       }
       return parentInvItemOid;
     }
