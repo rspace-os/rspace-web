@@ -1,36 +1,49 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect } from "vitest";
 import React from "react";
 import { render } from "@testing-library/react";
 import ErrorBoundary from "../ErrorBoundary";
+import { ErrorComponent } from "../ErrorBoundary.story";
 
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+
 function AlwaysError(): React.ReactNode {
   throw new Error("foo");
-
 }
+
+function withSilencedErrors(assertions: () => void) {
+  const restoreConsole = silenceConsole(["error"], [/./]);
+  const errorHandler = (event: ErrorEvent) => {
+    event.preventDefault();
+  };
+  window.addEventListener("error", errorHandler);
+  try {
+    assertions();
+  } finally {
+    window.removeEventListener("error", errorHandler);
+    restoreConsole();
+  }
+}
+
 describe("ErrorBoundary", () => {
   test("Reports the support email address.", () => {
-    /*
-     * This is needed because the `render` function will report any errors
-     * using console.error, even though the ErrorBoundary catches them, which
-     * just pollutes the output of the vitest CLI runner
-     */
-
-    const restoreConsole = silenceConsole(["error"], [/./]);
-    const errorHandler = (event: ErrorEvent) => {
-      event.preventDefault();
-    };
-    window.addEventListener("error", errorHandler);
-    try {
+    withSilencedErrors(() => {
       const { container } = render(
         <ErrorBoundary>
           <AlwaysError />
         </ErrorBoundary>
       );
       expect(container).toHaveTextContent("support@researchspace.com");
-    } finally {
-      window.removeEventListener("error", errorHandler);
-      restoreConsole();
-    }
+    });
+  });
+
+  test("Shows a custom fallback message when a child throws.", () => {
+    withSilencedErrors(() => {
+      const { container } = render(
+        <ErrorBoundary message="Something went wrong.">
+          <ErrorComponent />
+        </ErrorBoundary>
+      );
+      expect(container).toHaveTextContent("Something went wrong.");
+    });
   });
 });

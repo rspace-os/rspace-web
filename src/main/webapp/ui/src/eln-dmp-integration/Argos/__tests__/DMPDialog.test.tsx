@@ -1,5 +1,4 @@
-import { test, describe, expect, beforeEach, vi } from 'vitest';
-import "@/__tests__/__mocks__/matchMedia";
+import { test, describe, expect, beforeEach, vi } from "vitest";
 import React from "react";
 import { screen, waitFor, fireEvent, render } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
@@ -13,6 +12,21 @@ const mockAxios = new MockAdapter(axios);
 
 describe("DMPDialog", () => {
   beforeEach(() => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener() {},
+        removeListener() {},
+        addEventListener() {},
+        removeEventListener() {},
+        dispatchEvent() {
+          return false;
+        },
+      })),
+    );
     mockAxios.resetHistory();
     mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
       data: "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MzQzNDI5NTYsImV4cCI6MTczNDM0NjU1NiwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.HCKre3g_P1wmGrrrnQncvFeT9pAePFSc4UPuyP5oehI",
@@ -97,7 +111,73 @@ describe("DMPDialog", () => {
         rowIndex: 0,
       })
     ).toHaveTextContent("Foo");
+  });
 
+  test("Importing a selected DMP should call the import endpoint.", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("gallery", vi.fn());
+    mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
+      data: {
+        totalCount: 2,
+        data: [
+          {
+            id: "e27789f1-de35-4b4a-9587-a46d131c366e",
+            label: "Foo",
+            grant: "Foo's grant",
+            createdAt: 0,
+            modifiedAt: 0,
+          },
+        ],
+      },
+      error: null,
+      errorMsg: null,
+      success: true,
+    });
+    mockAxios.onPost(
+      "/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e",
+    ).reply(200);
+
+    render(<DMPDialog open={true} setOpen={() => {}} />);
+    await screen.findByText("Foo");
+    await user.click(
+      screen.getByRole("radio", { name: "Select plan: Foo" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Import" }));
+
+    expect(mockAxios.history.post).toHaveLength(1);
+    expect(mockAxios.history.post[0]?.url).toBe(
+      "/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e",
+    );
+    // @ts-expect-error gallery is a test stubbed global
+    expect(globalThis.gallery).toHaveBeenCalled();
+  });
+
+  test("Should be accessible once loaded.", async () => {
+    mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
+      data: {
+        totalCount: 2,
+        data: [
+          {
+            id: "e27789f1-de35-4b4a-9587-a46d131c366e",
+            label: "Foo",
+            grant: "Foo's grant",
+            createdAt: 0,
+            modifiedAt: 0,
+          },
+        ],
+      },
+      error: null,
+      errorMsg: null,
+      success: true,
+    });
+
+    render(<DMPDialog open={true} setOpen={() => {}} />);
+    await screen.findByRole("dialog");
+    await screen.findByText("Foo");
+    /* eslint-disable @typescript-eslint/no-unsafe-call */
+    // @ts-expect-error toBeAccessible is provided by @sa11y/vitest
+    await expect(screen.getByRole("dialog")).toBeAccessible();
+    /* eslint-enable @typescript-eslint/no-unsafe-call */
   });
   describe.skip("Pagination should work.", () => {
     test(
@@ -314,4 +394,3 @@ describe("DMPDialog", () => {
     );
   });
 });
-
