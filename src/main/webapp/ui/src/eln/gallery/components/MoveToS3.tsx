@@ -1,5 +1,5 @@
 import React from "react";
-import { ThemeProvider, styled } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
 import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
@@ -30,12 +30,6 @@ import useS3Filestores, {
   type S3TransferSource,
 } from "./useS3Filestores";
 
-const CustomDialog = styled(Dialog)(() => ({
-  "& .MuiDialog-container > .MuiPaper-root": {
-    width: "530px",
-    maxWidth: "530px",
-  },
-}));
 
 const NoFilestoreAlert = () => (
   <Alert severity="error">
@@ -136,12 +130,13 @@ function MoveCopyDialog({
     : (selectedIds ?? []).length;
 
   return (
-    <CustomDialog
+    <Dialog
       open={dialogOpen}
       onClose={() => setDialogOpen(false)}
       onKeyDown={(e) => {
         e.stopPropagation();
       }}
+      PaperProps={{ sx: { width: "530px", maxWidth: "530px" } }}
     >
       <AppBar
         variant="dialog"
@@ -301,7 +296,7 @@ function MoveCopyDialog({
           </DialogActions>
         </Box>
       </Box>
-    </CustomDialog>
+    </Dialog>
   );
 }
 

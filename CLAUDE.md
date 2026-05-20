@@ -64,6 +64,7 @@ Test-only access to private fields: prefer `@Setter(AccessLevel.PACKAGE)` on the
 - Functional components with hooks only; use React Query for new state management
 - Import `render`/`within` from `@/__tests__/customQueries`, not directly from `@testing-library/react`
 - Axios for API calls; DOMPurify for any user-generated HTML
+- Do not use `styled()` from `@mui/material/styles` in new code; use the `sx` prop or `PaperProps={{ sx: ... }}` for MUI component overrides instead
 - Run `npm run lint` and `npm run tsc` before committing
 
 ### API Documentation

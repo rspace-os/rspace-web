@@ -1,5 +1,5 @@
 import React from "react";
-import { ThemeProvider, styled } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
 import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
@@ -32,21 +32,6 @@ import docLinks from "../../../assets/DocLinks";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
 
-const CustomDialog = styled(Dialog)(() => ({
-  "& .MuiDialog-container > .MuiPaper-root": {
-    width: "530px",
-    maxWidth: "530px",
-    height: "calc(90% - 32px)", // 16px margin above and below dialog
-  },
-  "& .MuiDialogContent-root": {
-    height: "calc(100% - 48px)", // 32px being the height of DialogActions + its own 16px of padding
-    overflowY: "auto",
-    paddingBottom: 0,
-  },
-  "& form": {
-    height: "100%",
-  },
-}));
 
 const CustomFieldset = withStyles<
   { children: React.ReactNode },
@@ -202,11 +187,20 @@ function MoveCopyDialog({
   };
 
   return (
-    <CustomDialog
+    <Dialog
       open={dialogOpen}
       onClose={() => setDialogOpen(false)}
       onKeyDown={(e) => {
         e.stopPropagation();
+      }}
+      PaperProps={{ sx: { width: "530px", maxWidth: "530px", height: "calc(90% - 32px)" } }}
+      sx={{
+        "& .MuiDialogContent-root": {
+          height: "calc(100% - 48px)", // 32px being the height of DialogActions + its own 16px of padding
+          overflowY: "auto",
+          paddingBottom: 0,
+        },
+        "& form": { height: "100%" },
       }}
     >
       <AppBar
@@ -390,7 +384,7 @@ function MoveCopyDialog({
           </DialogActions>
         </Box>
       </Box>
-    </CustomDialog>
+    </Dialog>
   );
 }
 
