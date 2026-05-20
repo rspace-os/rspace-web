@@ -205,9 +205,8 @@ paths:
     delete:
       summary: Delete an Instrument
       description: |
-        Mark instrument as deleted, so it won't appear in Inventory UI and default listings.
-
-        Delete action will stop by default if the instrument is stored inside a container. This can be overridden by passing `forceDelete=true`.
+        Mark instrument as deleted, so it won't appear in Inventory UI and default listings. 
+        The instrument will also be removed from its current location.
 
         This action requires `UPDATE` permission to the Instrument.
 
@@ -215,11 +214,6 @@ paths:
         - Instruments (not enabled)
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
-        - in: query
-          name: forceDelete
-          description: Proceed with instrument deletion even if it is currently stored inside a container.
-          default: false
-          type: boolean
       responses:
         '200':
           description: Deleted instrument object.

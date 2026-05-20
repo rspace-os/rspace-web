@@ -350,42 +350,42 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
 
   @Override
   public Instrument assertUserCanDeleteInstrument(Long dbId, User user) {
-    Instrument instrument = instrumentDao.get(dbId);
+    Instrument instrument = (Instrument) getIfExists(dbId);
     invPermissions.assertUserCanDeleteInventoryRecord(instrument, user);
     return instrument;
   }
 
   @Override
   public Instrument assertUserCanTransferInstrument(Long dbId, User user) {
-    Instrument instrument = instrumentDao.get(dbId);
+    Instrument instrument = (Instrument) getIfExists(dbId);
     invPermissions.assertUserCanTransferInventoryRecord(instrument, user);
     return instrument;
   }
 
   @Override
   public Instrument assertUserCanEditInstrument(Long dbId, User user) {
-    Instrument instrument = instrumentDao.get(dbId);
+    Instrument instrument = (Instrument) getIfExists(dbId);
     invPermissions.assertUserCanEditInventoryRecord(instrument, user);
     return instrument;
   }
 
   @Override
   public Instrument assertUserCanReadInstrument(Long dbId, User user) {
-    Instrument instrument = instrumentDao.get(dbId);
+    Instrument instrument = (Instrument) getIfExists(dbId);
     invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(instrument, user);
     return instrument;
   }
 
   @Override
   public InstrumentTemplate assertUserCanEditInstrumentTemplate(Long dbId, User user) {
-    InstrumentTemplate instrumentTemplate = instrumentTemplateDao.get(dbId);
+    InstrumentTemplate instrumentTemplate = (InstrumentTemplate) getIfExists(dbId);
     invPermissions.assertUserCanEditInventoryRecord(instrumentTemplate, user);
     return instrumentTemplate;
   }
 
   @Override
   public InstrumentTemplate assertUserCanReadInstrumentTemplate(Long dbId, User user) {
-    InstrumentTemplate instrumentTemplate = instrumentTemplateDao.get(dbId);
+    InstrumentTemplate instrumentTemplate = (InstrumentTemplate) getIfExists(dbId);
     invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(instrumentTemplate, user);
     return instrumentTemplate;
   }

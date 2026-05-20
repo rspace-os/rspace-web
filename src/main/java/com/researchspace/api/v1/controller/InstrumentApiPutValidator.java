@@ -22,5 +22,6 @@ public class InstrumentApiPutValidator extends InstrumentApiValidator implements
     validateTags(apiInstrumentPut.getTags(), errors);
     validateInventoryRecordQuantity(apiInstrumentPut, errors);
     validateExtraFields(apiInstrumentPut, errors);
+    validateNotNullAndBlank("name", apiInstrumentPut.getName(), errors);
   }
 }

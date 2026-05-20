@@ -21,9 +21,19 @@ public class InstrumentApiPutValidatorTest extends InventoryRecordValidationTest
   }
 
   @Test
-  public void emptyNameOnPutIsAccepted() {
+  public void emptyNameOnPutIsNotAccepted() {
     ApiInstrument apiInstrument = new ApiInstrument();
     apiInstrument.setName(" ");
+    Errors e = new BeanPropertyBindingResult(apiInstrument, "instrumentPut");
+    validator.validate(apiInstrument, e);
+    assertEquals(1, e.getErrorCount());
+  }
+
+  @Test
+  public void nullNameOnPutIsAccepted() {
+    ApiInstrument apiInstrument = new ApiInstrument();
+    apiInstrument.setName(null);
+    apiInstrument.setDescription("updated");
     Errors e = new BeanPropertyBindingResult(apiInstrument, "instrumentPut");
     validator.validate(apiInstrument, e);
     assertEquals(0, e.getErrorCount());
