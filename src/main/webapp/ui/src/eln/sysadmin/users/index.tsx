@@ -1557,7 +1557,7 @@ export const UsersPage = (): React.ReactNode => {
     DataGridColumn.newColumnWithValueMapper<"role", User>(
       "role",
       (role) => {
-        const roles = role.split(/[\s,]+/).filter(Boolean);
+        const roles = role.split(",");
         const labels = [];
         if (roles.includes("ROLE_ADMIN")) labels.push("Admin");
         if (roles.includes("ROLE_PI")) labels.push("PI");
