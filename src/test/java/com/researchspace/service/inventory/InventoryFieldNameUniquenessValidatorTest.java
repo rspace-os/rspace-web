@@ -124,7 +124,7 @@ class InventoryFieldNameUniquenessValidatorTest {
             ApiRuntimeException.class,
             () ->
                 InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-                    null, null, List.of(extraField("dup"), extraField("dup"))));
+                    null, List.of(extraField("dup"), extraField("dup"))));
     assertEquals(
         InventoryFieldNameUniquenessValidator.DUPLICATE_NAME_ERROR_CODE, ex.getErrorCode());
     assertEquals("dup", ex.getArgs()[0]);
@@ -137,7 +137,7 @@ class InventoryFieldNameUniquenessValidatorTest {
             ApiRuntimeException.class,
             () ->
                 InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-                    null, null, List.of(extraField("Foo"), extraField("foo"))));
+                    null, List.of(extraField("Foo"), extraField("foo"))));
     // Original casing of the second occurrence preserved
     assertEquals("foo", ex.getArgs()[0]);
   }
@@ -149,7 +149,7 @@ class InventoryFieldNameUniquenessValidatorTest {
             ApiRuntimeException.class,
             () ->
                 InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-                    null, null, List.of(extraField("Foo"), extraField(" Foo "))));
+                    null, List.of(extraField("Foo"), extraField(" Foo "))));
     assertEquals("Foo", ex.getArgs()[0]);
   }
 
@@ -159,15 +159,13 @@ class InventoryFieldNameUniquenessValidatorTest {
     fieldToDelete.setDeleteFieldRequest(true);
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-        null, List.of(fieldToDelete, sampleField("A")), null);
+        List.of(fieldToDelete, sampleField("A")), null);
   }
 
   @Test
   void assertNoDuplicateFieldNamesInRequest_nullAndBlankNamesSkipped_doesNotThrow() {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-        null,
-        null,
-        List.of(extraField(null), extraField(""), extraField("   "), extraField("only")));
+        null, List.of(extraField(null), extraField(""), extraField("   "), extraField("only")));
   }
 
   @Test
@@ -177,13 +175,13 @@ class InventoryFieldNameUniquenessValidatorTest {
             ApiRuntimeException.class,
             () ->
                 InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-                    null, List.of(sampleField("X")), List.of(extraField("x"))));
+                    List.of(sampleField("X")), List.of(extraField("x"))));
     assertEquals("x", ex.getArgs()[0]);
   }
 
   @Test
   void assertNoDuplicateFieldNamesInRequest_nullLists_doesNotThrow() {
-    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(null, null, null);
+    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(null, null);
   }
 
   // ---------- helpers ----------

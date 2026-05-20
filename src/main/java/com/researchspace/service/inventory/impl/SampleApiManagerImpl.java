@@ -743,7 +743,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
 
   private void createFields(ApiSampleTemplatePost apiSample, Sample sample) {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-        sample, apiSample.getFields(), null);
+        apiSample.getFields(), null);
     for (ApiInventoryEntityField field : apiSample.getFields()) {
       InventoryEntityField toAdd = apiFieldToModelFieldFactory.apiInventoryFieldToModelField(field);
       sample.addSampleField(toAdd);
@@ -776,7 +776,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   private boolean createDeleteRequestedFieldsInDbSampleTemplate(
       ApiSampleWithoutSubSamples apiSample, Sample dbTemplate) {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-        dbTemplate, apiSample.getFields(), null);
+        apiSample.getFields(), null);
     boolean changed = false;
     for (ApiInventoryEntityField apiField : apiSample.getFields()) {
       if (apiField.isNewFieldRequest()) {

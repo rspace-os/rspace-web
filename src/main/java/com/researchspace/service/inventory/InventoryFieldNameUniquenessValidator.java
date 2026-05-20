@@ -75,22 +75,19 @@ public final class InventoryFieldNameUniquenessValidator {
    * Required because {@code InventoryRecord.addExtraField} silently dedups via {@code
    * extraFields.contains(toAdd)} (two fresh ExtraField instances created with the same name in the
    * same millisecond compare equal via their EditInfo), so a post-mutation check on the entity
-   * cannot see the duplicate the user submitted.
+   * cannot see the duplicate the user submitted. Throws {@link ApiRuntimeException} with error code
+   * {@link #DUPLICATE_NAME_ERROR_CODE} on the second occurrence.
    *
    * <p>Entries marked {@code deleteFieldRequest} are skipped, so deleting and re-adding a name in
    * the same request is allowed by this check (the post-mutation check enforces the same property).
-   * Comparison is case-insensitive after trimming.
+   * Comparison is case-insensitive after trimming; null or blank names are skipped.
    *
-   * @param record reserved for future use (label-collision is owned by core-model); currently
-   *     unused but retained on the signature for symmetry with the manager-layer paths.
    * @param fields the incoming SampleField / InventoryEntityField list, or null. Entries marked
    *     {@code deleteFieldRequest} are skipped.
    * @param extraFields the incoming ExtraField list, or null.
    */
   public static void assertNoDuplicateFieldNamesInRequest(
-      InventoryRecord record,
-      List<ApiInventoryEntityField> fields,
-      List<ApiExtraField> extraFields) {
+      List<ApiInventoryEntityField> fields, List<ApiExtraField> extraFields) {
     Set<String> seen = new HashSet<>();
     if (fields != null) {
       for (ApiInventoryEntityField field : fields) {

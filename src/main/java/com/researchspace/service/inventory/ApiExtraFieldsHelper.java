@@ -87,7 +87,7 @@ public class ApiExtraFieldsHelper implements Validator {
       User user) {
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-        parentInvRec, null, incomingFields);
+        null, incomingFields);
     boolean changed = false;
     if (!CollectionUtils.isEmpty(incomingFields)) {
       for (ApiExtraField apiField : incomingFields) {
