@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, expect, test } from "vitest";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   DynamicLandmarksExample,
@@ -78,10 +78,6 @@ describe("SkipToContentMenu", () => {
     });
 
     await user.keyboard("{Escape}");
-
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
     await waitFor(() => {
       expect(menu).toHaveStyle({ opacity: "0" });
     });

@@ -7,42 +7,42 @@ import SidebarToggle from "../SidebarToggle";
 function renderSidebarToggle(
   props: Partial<React.ComponentProps<typeof SidebarToggle>> = {},
 ) {
-  let sidebarOpen = props.sidebarOpen ?? true;
-  const setSidebarOpen = (newSidebarOpen: boolean) => {
-    sidebarOpen = newSidebarOpen;
-  };
+  function Harness() {
+    const [sidebarOpen, setSidebarOpen] = React.useState(props.sidebarOpen ?? true);
+    return (
+      <>
+        <header>
+          <h1>A simple page</h1>
+          <SidebarToggle
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            sidebarId="sidebar"
+            {...props}
+          />
+        </header>
+        <main>
+          <div id="sidebar" />
+          <div data-testid="sidebar-open">{String(sidebarOpen)}</div>
+        </main>
+      </>
+    );
+  }
 
-  const view = render(
-    <>
-      <header>
-        <h1>A simple page</h1>
-        <SidebarToggle
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-          sidebarId="sidebar"
-          {...props}
-        />
-      </header>
-      <main>
-        <div id="sidebar" />
-      </main>
-    </>,
-  );
+  const view = render(<Harness />);
 
   return {
     ...view,
-    getSidebarOpen: () => sidebarOpen,
   };
 }
 
 describe("SidebarToggle", () => {
   test("clicking the button toggles the sidebar state", async () => {
     const user = userEvent.setup();
-    const { getSidebarOpen } = renderSidebarToggle({ sidebarOpen: false });
+    renderSidebarToggle({ sidebarOpen: false });
 
     await user.click(screen.getByRole("button"));
 
-    expect(getSidebarOpen()).toBe(true);
+    expect(screen.getByTestId("sidebar-open")).toHaveTextContent("true");
   });
 
   test("is accessible", async () => {

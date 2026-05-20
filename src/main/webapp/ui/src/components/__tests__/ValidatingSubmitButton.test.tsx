@@ -111,7 +111,10 @@ describe("ValidatingSubmitButton", () => {
   test("Shows and then clears the progress indicator.", async () => {
     const { rerender } = renderButton({ progress: 10 });
 
-    expect(screen.getByRole("progressbar")).toBeVisible();
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "10",
+    );
 
     rerender(
       <ThemeProvider theme={materialTheme}>
