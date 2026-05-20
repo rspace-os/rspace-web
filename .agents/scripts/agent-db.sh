@@ -83,6 +83,7 @@ gc() {
     fi
   done
   [[ $removed -gt 0 ]] && info "gc: removed $removed orphaned container(s)"
+  return 0
 }
 
 # --- Start --------------------------------------------------------------
@@ -164,11 +165,17 @@ patch_jdbc() {
 # --- Schema init --------------------------------------------------------
 
 init_schema() {
-  local toplevel
+  local toplevel port
   toplevel=$(git rev-parse --show-toplevel)
-  info "initialising schema (drop-recreate-db)"
+  read_state || die "no .agent-db.env — cannot determine container port"
+  port="$AGENT_DB_PORT"
+  info "initialising schema (drop-recreate-db) against 127.0.0.1:${port}"
+  # sql-maven-plugin's drop-recreate-db phase reads jdbc.url.maven from pom.xml
+  # (default jdbc:mysql://localhost:3306). Override it to point at the
+  # container so we don't wipe the developer's local DB.
   (cd "$toplevel" && ./mvnw test \
     -Denvironment=drop-recreate-db \
+    -Djdbc.url.maven="jdbc:mysql://127.0.0.1:${port}" \
     -Dtest=NoSuchTest \
     -DfailIfNoTests=false \
     -Dfast=false \
