@@ -163,7 +163,7 @@ public class ViteDevServerProxyServlet extends HttpServlet {
         .asIterator()
         .forEachRemaining(
             name -> {
-              if (HOP_BY_HOP.contains(name.toLowerCase())) {
+              if (HOP_BY_HOP.contains(name.toLowerCase(Locale.ROOT))) {
                 return;
               }
               req.getHeaders(name)
@@ -178,7 +178,7 @@ public class ViteDevServerProxyServlet extends HttpServlet {
         .map()
         .forEach(
             (name, values) -> {
-              if (HOP_BY_HOP.contains(name.toLowerCase())) {
+              if (HOP_BY_HOP.contains(name.toLowerCase(Locale.ROOT))) {
                 return;
               }
               if (CONTENT_TYPE_HEADER.equalsIgnoreCase(name)) {

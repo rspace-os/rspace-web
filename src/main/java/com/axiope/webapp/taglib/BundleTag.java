@@ -197,7 +197,8 @@ public class BundleTag extends TagSupport {
     if (StringUtils.isBlank(version)) {
       return url;
     }
-    return url + "?v=" + version;
+    char separator = url.indexOf('?') >= 0 ? '&' : '?';
+    return url + separator + "v=" + version;
   }
 
   String getCacheVersion() {

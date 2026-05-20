@@ -1,6 +1,7 @@
 package com.axiope.webapp.dev;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,6 +19,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
@@ -158,6 +161,38 @@ public class ViteDevServerProxyServletTest {
 
     assertEquals("application/javascript", responseContentType.get());
     verify(response, never()).setContentType("text/javascript");
+  }
+
+  @Test
+  public void filtersHopByHopRequestHeadersUsingLocaleIndependentLowercasing() throws Exception {
+    Locale originalLocale = Locale.getDefault();
+    AtomicReference<HttpRequest> proxiedRequest = new AtomicReference<>();
+    try {
+      Locale.setDefault(new Locale("tr", "TR"));
+      when(request.getRequestURI()).thenReturn("/ui/dist/src/entries/tinymceGallery.tsx");
+      when(request.getHeaderNames())
+          .thenReturn(Collections.enumeration(List.of("KEEP-ALIVE", "X-Test")));
+      when(request.getHeaders("KEEP-ALIVE"))
+          .thenReturn(Collections.enumeration(List.of("timeout=5")));
+      when(request.getHeaders("X-Test")).thenReturn(Collections.enumeration(List.of("value")));
+      when(upstreamResponse.headers())
+          .thenReturn(HttpHeaders.of(Collections.emptyMap(), (a, b) -> true));
+      when(client.send(
+              any(HttpRequest.class),
+              org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
+          .thenAnswer(
+              invocation -> {
+                proxiedRequest.set(invocation.getArgument(0, HttpRequest.class));
+                return upstreamResponse;
+              });
+
+      servlet.service(request, response);
+
+      assertFalse(proxiedRequest.get().headers().firstValue("KEEP-ALIVE").isPresent());
+      assertEquals("value", proxiedRequest.get().headers().firstValue("X-Test").orElse(null));
+    } finally {
+      Locale.setDefault(originalLocale);
+    }
   }
 
   @Test

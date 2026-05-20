@@ -35,6 +35,10 @@ public final class FrontendCacheVersion {
   public static final String DEV_MODE_CACHE_ATTR =
       FrontendCacheVersion.class.getName() + ".DEV_MODE";
 
+  /** Servlet context attribute caching whether Vite HMR is enabled. */
+  static final String REACT_DEV_MODE_CACHE_ATTR =
+      FrontendCacheVersion.class.getName() + ".REACT_DEV_MODE";
+
   /** Spring environment / system property that toggles Vite HMR. */
   public static final String REACT_DEV_MODE_PROPERTY = "reactDevMode";
 
@@ -107,14 +111,24 @@ public final class FrontendCacheVersion {
 
   /** Returns {@code true} when Vite HMR is enabled via the {@code reactDevMode} property. */
   public static boolean isReactDevMode(ServletContext servletContext) {
+    Object cachedValue = servletContext.getAttribute(REACT_DEV_MODE_CACHE_ATTR);
+    if (cachedValue instanceof Boolean) {
+      return (Boolean) cachedValue;
+    }
+
     WebApplicationContext applicationContext =
         WebApplicationContextUtils.getWebApplicationContext(servletContext);
+    boolean reactDevMode;
     if (applicationContext != null) {
-      return Boolean.parseBoolean(
-          StringUtils.trimToEmpty(
-              applicationContext.getEnvironment().getProperty(REACT_DEV_MODE_PROPERTY)));
+      reactDevMode =
+          Boolean.parseBoolean(
+              StringUtils.trimToEmpty(
+                  applicationContext.getEnvironment().getProperty(REACT_DEV_MODE_PROPERTY)));
+    } else {
+      reactDevMode = Boolean.getBoolean(REACT_DEV_MODE_PROPERTY);
     }
-    return Boolean.getBoolean(REACT_DEV_MODE_PROPERTY);
+    servletContext.setAttribute(REACT_DEV_MODE_CACHE_ATTR, reactDevMode);
+    return reactDevMode;
   }
 
   /**

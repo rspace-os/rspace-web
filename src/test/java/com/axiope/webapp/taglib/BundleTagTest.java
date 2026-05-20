@@ -400,6 +400,15 @@ public class BundleTagTest {
     assertEquals(1, realTag.refreshCount);
   }
 
+  @Test
+  public void withCacheVersionAppendsUsingAmpersandWhenUrlAlreadyHasQueryString() {
+    servletContextAttributes.put(FrontendCacheVersion.CACHE_VERSION_ATTR, "2.23.0");
+
+    assertEquals(
+        "/ui/dist/appBar.js?lang=en&v=2.23.0",
+        tag.withCacheVersion("/ui/dist/appBar.js?lang=en"));
+  }
+
   private ByteArrayInputStream manifestStream(String bundleName, String scriptPath) {
     String json =
         "{"
