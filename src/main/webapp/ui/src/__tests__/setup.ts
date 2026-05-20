@@ -86,7 +86,6 @@ if (typeof globalThis.sessionStorage !== "object") {
 
 if (typeof globalThis.matchMedia !== "function") {
   Object.defineProperty(globalThis, "matchMedia", {
-    configurable: true,
     writable: true,
     value: vi.fn().mockImplementation((query: string) => ({
       matches: false,
