@@ -75,6 +75,7 @@ import { useSnippetPreview } from "./CallableSnippetPreview";
 import { ShareDialog } from "@/components/ShareDialog";
 import { Menu } from "@/components/DialogBoundary";
 import useWhoAmI from "@/hooks/api/useWhoAmI";
+import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -319,9 +320,15 @@ function ActionsMenu({
   const { openFolder } = useFolderOpen();
   const { openSnippetPreview } = useSnippetPreview();
   const fetchedCurrentUser = useWhoAmI();
+  const netfilestoresEnabled = useDeploymentProperty("netfilestores.enabled");
 
   const currentUser =
     FetchingData.getSuccessValue(fetchedCurrentUser).orElse(null);
+
+  const showNetfileActions = FetchingData.getSuccessValue(netfilestoresEnabled)
+    .flatMap(Parsers.isBoolean)
+    .flatMap(Parsers.isTrue)
+    .orElse(false);
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
@@ -936,95 +943,99 @@ function ActionsMenu({
                 .orElse(null)}
             </Suspense>
           </EventBoundary>
-          <AccentMenuItem
-            title="Move to iRODS"
-            subheader={moveToIrodsAllowed
-              .get()
-              .map(() => "")
-              .orElseGet(([e]) => e.message)}
-            backgroundColor={IRODS_COLOR.background}
-            foregroundColor={IRODS_COLOR.contrastText}
-            avatar={<CardMedia image={IrodsLogo} />}
-            onClick={() => {
-              setIrodsOpen(true);
-            }}
-            compact
-            disabled={moveToIrodsAllowed.get().isError}
-            aria-haspopup="dialog"
-          />
-          {Result.all(
-            ...selection
-              .asSet()
-              .toArray()
-              .map(({ id }) => idToString(id)),
-          )
-            .map((selectedIds) => (
-              <MoveToIrods
-                key={selectedIds.join(",")}
-                selectedIds={selectedIds}
-                dialogOpen={irodsOpen}
-                setDialogOpen={(newState) => {
-                  setIrodsOpen(newState);
+          {showNetfileActions && (
+            <>
+              <AccentMenuItem
+                title="Move to iRODS"
+                subheader={moveToIrodsAllowed
+                  .get()
+                  .map(() => "")
+                  .orElseGet(([e]) => e.message)}
+                backgroundColor={IRODS_COLOR.background}
+                foregroundColor={IRODS_COLOR.contrastText}
+                avatar={<CardMedia image={IrodsLogo} />}
+                onClick={() => {
+                  setIrodsOpen(true);
+                }}
+                compact
+                disabled={moveToIrodsAllowed.get().isError}
+                aria-haspopup="dialog"
+              />
+              {Result.all(
+                ...selection
+                  .asSet()
+                  .toArray()
+                  .map(({ id }) => idToString(id)),
+              )
+                .map((selectedIds) => (
+                  <MoveToIrods
+                    key={selectedIds.join(",")}
+                    selectedIds={selectedIds}
+                    dialogOpen={irodsOpen}
+                    setDialogOpen={(newState) => {
+                      setIrodsOpen(newState);
+                      if (!newState) {
+                        setActionsMenuAnchorEl(null);
+                        void refreshListing();
+                      }
+                    }}
+                  />
+                ))
+                .orElse(null)}
+              <AccentMenuItem
+                title="Move to S3"
+                subheader={moveToS3Allowed
+                  .get()
+                  .map(() => "")
+                  .orElseGet(([e]) => e.message)}
+                backgroundColor={IRODS_COLOR.background}
+                avatarBackgroundColor="#ffffff"
+                foregroundColor={IRODS_COLOR.contrastText}
+                avatar={<CardMedia image={S3Logo} />}
+                onClick={() => {
+                  setS3Open(true);
+                }}
+                compact
+                disabled={moveToS3Allowed.get().isError}
+                aria-haspopup="dialog"
+              />
+              {(() => {
+                const sources = s3TransferSources.get();
+                const onClose = (newState: boolean) => {
+                  setS3Open(newState);
                   if (!newState) {
                     setActionsMenuAnchorEl(null);
                     void refreshListing();
                   }
-                }}
-              />
-            ))
-            .orElse(null)}
-          <AccentMenuItem
-            title="Move to S3"
-            subheader={moveToS3Allowed
-              .get()
-              .map(() => "")
-              .orElseGet(([e]) => e.message)}
-            backgroundColor={IRODS_COLOR.background}
-            avatarBackgroundColor="#ffffff"
-            foregroundColor={IRODS_COLOR.contrastText}
-            avatar={<CardMedia image={S3Logo} />}
-            onClick={() => {
-              setS3Open(true);
-            }}
-            compact
-            disabled={moveToS3Allowed.get().isError}
-            aria-haspopup="dialog"
-          />
-          {(() => {
-            const sources = s3TransferSources.get();
-            const onClose = (newState: boolean) => {
-              setS3Open(newState);
-              if (!newState) {
-                setActionsMenuAnchorEl(null);
-                void refreshListing();
-              }
-            };
-            if (sources !== null) {
-              return (
-                <MoveToS3
-                  key={sources.map((s) => s.sourcePath).join(",")}
-                  transferSources={sources}
-                  dialogOpen={s3Open}
-                  setDialogOpen={onClose}
-                />
-              );
-            }
-            return Result.all(
-              ...selection
-                .asSet()
-                .toArray()
-                .map(({ id }) => idToString(id)),
-            )
-              .map((selectedIds) => (
-                <MoveToS3
-                  key={selectedIds.join(",")}
-                  selectedIds={selectedIds}
-                  dialogOpen={s3Open}
-                  setDialogOpen={onClose}
-                />
-              ))
-              .orElse(null);
-          })()}
+                };
+                if (sources !== null) {
+                  return (
+                    <MoveToS3
+                      key={sources.map((s) => s.sourcePath).join(",")}
+                      transferSources={sources}
+                      dialogOpen={s3Open}
+                      setDialogOpen={onClose}
+                    />
+                  );
+                }
+                return Result.all(
+                  ...selection
+                    .asSet()
+                    .toArray()
+                    .map(({ id }) => idToString(id)),
+                )
+                  .map((selectedIds) => (
+                    <MoveToS3
+                      key={selectedIds.join(",")}
+                      selectedIds={selectedIds}
+                      dialogOpen={s3Open}
+                      setDialogOpen={onClose}
+                    />
+                  ))
+                  .orElse(null);
+              })()}
+            </>
+          )}
           <Divider aria-orientation="horizontal" />
           {/*
            * We hide the log out option rather than disabling it because it

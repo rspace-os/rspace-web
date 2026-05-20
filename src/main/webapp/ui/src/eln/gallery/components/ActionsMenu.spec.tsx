@@ -60,6 +60,8 @@ const feature = test.extend<{
     "the share dialog should close": () => Promise<void>;
     "there shouldn't be any axe violations": () => Promise<void>;
     "the 'Move to S3' option should be visible": () => Promise<void>;
+    "the 'Move to iRODS' option should not be in the document": () => Promise<void>;
+    "the 'Move to S3' option should not be in the document": () => Promise<void>;
     "there shouldn't be any MUI styling errors": () => Promise<void>;
   };
   networkRequests: Array<URL>;
@@ -251,6 +253,16 @@ const feature = test.extend<{
         await expect(
           page.getByRole("menuitem", { name: /move to s3/i }),
         ).toBeVisible({ timeout: 5000 });
+      },
+      "the 'Move to iRODS' option should not be in the document": async () => {
+        await expect(
+          page.getByRole("menuitem", { name: /move to irods/i }),
+        ).not.toBeAttached({ timeout: 5000 });
+      },
+      "the 'Move to S3' option should not be in the document": async () => {
+        await expect(
+          page.getByRole("menuitem", { name: /move to s3/i }),
+        ).not.toBeAttached({ timeout: 5000 });
       },
       "there shouldn't be any MUI styling errors": async () => {
         const muiErrors = consoleErrors.filter((msg) =>
@@ -718,11 +730,27 @@ test.describe("ActionsMenu", () => {
   test.describe("S3 menu item", () => {
     feature(
       "Opening the actions menu for an S3-capable file should not produce MUI styling errors",
-      async ({ Given, When, Then }) => {
+      async ({ Given, When, Then, router }) => {
+        await router.route("/deploymentproperties/ajax/property*", (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify(true),
+          }),
+        );
         await Given["the actions menu with a non-folder is mounted"]();
         await When["the user clicks the actions menu button"]();
         await Then["the 'Move to S3' option should be visible"]();
         await Then["there shouldn't be any MUI styling errors"]();
+      },
+    );
+    feature(
+      "Move to iRODS and Move to S3 should be hidden when netfilestores is disabled",
+      async ({ Given, When, Then }) => {
+        await Given["the actions menu with a non-folder is mounted"]();
+        await When["the user clicks the actions menu button"]();
+        await Then["the 'Move to iRODS' option should not be in the document"]();
+        await Then["the 'Move to S3' option should not be in the document"]();
       },
     );
   });
