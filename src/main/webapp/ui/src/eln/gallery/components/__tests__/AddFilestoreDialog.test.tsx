@@ -51,7 +51,7 @@ describe("AddFilestoreDialog", () => {
   beforeEach(() => {
     getMock.mockReset();
     postMock.mockReset();
-    getMock.mockImplementation(async (url: string) => {
+    getMock.mockImplementation((url: string) => {
       if (url === "filesystems") {
         return {
           data: [
@@ -100,8 +100,7 @@ describe("AddFilestoreDialog", () => {
     await user.click(await screen.findByRole("radio", { name: /irods test/i }));
     await user.click(screen.getByRole("button", { name: /choose filesystem/i }));
 
-    const folder = await screen.findByRole("treeitem", { name: /^test$/i });
-    await user.click(folder);
+    await user.click(await screen.findByText("test"));
     await user.click(screen.getByRole("button", { name: /choose folder/i }));
 
     await user.type(screen.getByRole("textbox", { name: /filestore name/i }), "My filestore");
@@ -128,6 +127,7 @@ describe("AddFilestoreDialog", () => {
     await screen.findByRole("radio", { name: /irods test/i });
 
     // @ts-expect-error toBeAccessible is provided by @sa11y/vitest
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await expect(baseElement).toBeAccessible();
   });
 });

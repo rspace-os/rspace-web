@@ -66,10 +66,11 @@ describe("CallableSnippetPreview", () => {
     );
 
     const dialog = await screen.findByRole("dialog");
-    expect(dialog.querySelectorAll("th")).toHaveLength(3);
-    expect(dialog.querySelectorAll("td")).toHaveLength(6);
-    expect(screen.getByText("Header 1")).toBeVisible();
-    expect(screen.getByText("Cell 1")).toBeVisible();
+    expect(dialog).toBeVisible();
+    expect(screen.getAllByRole("columnheader")).toHaveLength(3);
+    expect(screen.getAllByRole("cell")).toHaveLength(6);
+    expect(screen.getByRole("columnheader", { name: "Header 1" })).toBeVisible();
+    expect(screen.getByRole("cell", { name: "Cell 1" })).toBeVisible();
   });
 
   test("renders an error message when loading fails", async () => {
@@ -97,6 +98,7 @@ describe("CallableSnippetPreview", () => {
     await screen.findByText(/test snippet content/i);
 
     // @ts-expect-error toBeAccessible is provided by @sa11y/vitest
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await expect(baseElement).toBeAccessible();
   });
 });

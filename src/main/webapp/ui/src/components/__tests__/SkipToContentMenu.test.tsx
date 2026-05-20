@@ -2,7 +2,6 @@ import { describe, expect, test } from "vitest";
 import React from "react";
 import userEvent from "@testing-library/user-event";
 import { render, screen, waitFor } from "@/__tests__/customQueries";
-import "@/__tests__/__mocks__/matchMedia";
 import {
   DynamicLandmarksExample,
   SimpleTestExample,
@@ -29,7 +28,8 @@ describe("SkipToContentMenu", () => {
     await user.tab();
     await user.keyboard("{Enter}");
 
-    expect(screen.getByText("Header Content").parentElement).toHaveFocus();
+    // eslint-disable-next-line testing-library/no-node-access
+    expect(document.activeElement).toHaveTextContent("Header Content");
   });
 
   test("supports arrow-key navigation between landmarks", async () => {
@@ -51,6 +51,7 @@ describe("SkipToContentMenu", () => {
     render(<DynamicLandmarksExample />);
 
     await user.click(screen.getByRole("button", { name: /show extra landmarks/i }));
+    await user.tab();
     await user.tab();
 
     expect(screen.getByRole("button", { name: "Skip to Sidebar" })).toBeVisible();

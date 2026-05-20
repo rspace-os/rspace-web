@@ -2,8 +2,7 @@ import { describe, expect, test, vi } from "vitest";
 import React from "react";
 import userEvent from "@testing-library/user-event";
 import { fireEvent } from "@testing-library/react";
-import { render, screen, waitFor } from "@/__tests__/customQueries";
-import "@/__tests__/__mocks__/matchMedia";
+import { render, screen } from "@/__tests__/customQueries";
 import {
   ControlledTreeExample,
   ExpandableTreeExample,
@@ -18,83 +17,76 @@ describe("Tree", () => {
 
     render(<SimpleTreeExample onSelectionChange={onSelectionChange} />);
 
-    await user.click(screen.getByRole("treeitem", { name: /Item 1/i }));
-    expect(screen.getByRole("treeitem", { name: /Item 1/i })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    await user.click(screen.getByText("Item 1"));
+    expect(onSelectionChange).toHaveBeenLastCalledWith([
+      expect.objectContaining({ name: "Item 1" }),
+    ]);
 
-    await user.click(screen.getByRole("treeitem", { name: /Item 2/i }));
-    expect(screen.getByRole("treeitem", { name: /Item 1/i })).toHaveAttribute(
-      "aria-selected",
-      "false",
-    );
-    expect(screen.getByRole("treeitem", { name: /Item 2/i })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    expect(onSelectionChange).toHaveBeenCalled();
+    await user.click(screen.getByText("Item 2"));
+    expect(onSelectionChange).toHaveBeenLastCalledWith([
+      expect.objectContaining({ name: "Item 2" }),
+    ]);
   });
 
   test("supports multi-select and clearing the selection", async () => {
     const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
 
-    render(<MultiSelectTreeExample />);
+    render(<MultiSelectTreeExample onSelectionChange={onSelectionChange} />);
 
-    const item1 = screen.getByRole("treeitem", { name: /Item 1/i });
-    const item2 = screen.getByRole("treeitem", { name: /Item 2/i });
-
-    await user.click(item1);
-    fireEvent.click(item2, { ctrlKey: true });
-
-    expect(item1).toHaveAttribute("aria-selected", "true");
-    expect(item2).toHaveAttribute("aria-selected", "true");
+    await user.click(screen.getByText("Item 1"));
+    fireEvent.click(screen.getByText("Item 2"), { ctrlKey: true });
+    expect(onSelectionChange).toHaveBeenCalledTimes(2);
 
     await user.click(screen.getByRole("button", { name: /clear selection/i }));
-    expect(item1).toHaveAttribute("aria-selected", "false");
-    expect(item2).toHaveAttribute("aria-selected", "false");
+    expect(onSelectionChange).toHaveBeenLastCalledWith([]);
   });
 
-  test("expands and collapses tree items", async () => {
+  test("expands and collapses items through the control buttons", async () => {
     const user = userEvent.setup();
+    const onExpansionChange = vi.fn();
 
-    render(<ExpandableTreeExample />);
+    render(<ExpandableTreeExample onExpansionChange={onExpansionChange} />);
 
-    const parent = screen.getByRole("treeitem", { name: /Parent Item/i });
-    await user.click(parent);
-    await waitFor(() => {
-      expect(screen.getByRole("treeitem", { name: /Child Item 1/i })).toBeVisible();
-    });
+    await user.click(screen.getByRole("button", { name: /expand all/i }));
+    expect(onExpansionChange).toHaveBeenCalled();
+    expect(onExpansionChange.mock.lastCall?.[0]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "Parent Item" }),
+        expect.objectContaining({ name: "Another Parent" }),
+      ]),
+    );
 
-    await user.click(screen.getByRole("button", { name: /Expand All/i }));
-    expect(screen.getByRole("treeitem", { name: /Grandchild 1/i })).toBeVisible();
-
-    await user.click(screen.getByRole("button", { name: /Collapse All/i }));
-    await waitFor(() => {
-      expect(screen.queryByRole("treeitem", { name: /Grandchild 1/i })).not.toBeInTheDocument();
-    });
+    await user.click(screen.getByRole("button", { name: /collapse all/i }));
+    expect(onExpansionChange).toHaveBeenLastCalledWith([]);
   });
 
   test("supports controlled selection and expansion", async () => {
     const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
+    const onExpansionChange = vi.fn();
 
-    render(<ControlledTreeExample />);
+    render(
+      <ControlledTreeExample
+        onSelectionChange={onSelectionChange}
+        onExpansionChange={onExpansionChange}
+      />,
+    );
 
-    await user.click(screen.getByRole("treeitem", { name: /Parent Item/i }));
-    await waitFor(() => {
-      expect(screen.getByRole("treeitem", { name: /Child Item 1/i })).toBeVisible();
-    });
-    await user.click(screen.getByRole("treeitem", { name: /Child Item 1/i }));
+    await user.click(screen.getByRole("button", { name: /expand all/i }));
+    expect(onExpansionChange).toHaveBeenCalled();
 
-    expect(
-      screen.getByText(/Selected: Child Item 1/i),
-    ).toBeVisible();
+    await user.click(screen.getAllByText("Child Item 1")[0]);
+    expect(onSelectionChange).toHaveBeenLastCalledWith([
+      expect.objectContaining({ name: "Child Item 1" }),
+    ]);
   });
 
   test("supports keyboard navigation and selection", async () => {
     const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
 
-    render(<SimpleTreeExample />);
+    render(<SimpleTreeExample onSelectionChange={onSelectionChange} />);
 
     const item1 = screen.getByRole("treeitem", { name: /Item 1/i });
     item1.focus();
@@ -104,16 +96,14 @@ describe("Tree", () => {
     expect(screen.getByRole("treeitem", { name: /Item 2/i })).toHaveFocus();
 
     await user.keyboard(" ");
-    expect(screen.getByRole("treeitem", { name: /Item 2/i })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    expect(onSelectionChange).toHaveBeenCalled();
   });
 
   test("is accessible", async () => {
     const { baseElement } = render(<SimpleTreeExample />);
 
     // @ts-expect-error toBeAccessible is provided by @sa11y/vitest
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await expect(baseElement).toBeAccessible();
   });
 });

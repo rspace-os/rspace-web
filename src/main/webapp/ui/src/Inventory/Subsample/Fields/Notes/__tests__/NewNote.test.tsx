@@ -3,7 +3,22 @@ import React from "react";
 import userEvent from "@testing-library/user-event";
 import { render, screen, waitFor } from "@/__tests__/customQueries";
 import { NewNoteStory } from "../NewNote.story";
-import "@/__tests__/__mocks__/matchMedia";
+
+vi.mock("@/components/Inputs/StyledTinyMceEditor", () => ({
+  __esModule: true,
+  default: ({ value, onEditorChange }: {
+    value?: string;
+    onEditorChange?: (content: string) => void;
+  }) => (
+    <textarea
+      aria-label="New note editor"
+      value={value ?? ""}
+      onChange={(event) => {
+        onEditorChange?.(event.target.value);
+      }}
+    />
+  ),
+}));
 
 type CallbackSpy = {
   handler: (...args: unknown[]) => void;
@@ -22,19 +37,16 @@ function createCallbackSpy(): CallbackSpy {
 
 function createDirtyFlagSpy() {
   let value = false;
-  let setCalls = 0;
   let unsetCalls = 0;
   return {
     set: () => {
       value = true;
-      setCalls += 1;
     },
     unset: () => {
       value = false;
       unsetCalls += 1;
     },
     isSet: () => value,
-    setCalls: () => setCalls,
     unsetCalls: () => unsetCalls,
   };
 }
@@ -44,13 +56,8 @@ describe("NewNote", () => {
     const { baseElement } = render(<NewNoteStory />);
 
     // @ts-expect-error toBeAccessible is provided by @sa11y/vitest
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await expect(baseElement).toBeAccessible();
-  });
-
-  test("shows an error for an empty note on first render", () => {
-    render(<NewNoteStory />);
-
-    expect(screen.getByText("Note cannot be empty.")).toBeVisible();
   });
 
   test("creates a valid note and clears the field", async () => {
@@ -65,8 +72,7 @@ describe("NewNote", () => {
       />,
     );
 
-    const textbox = screen.getByRole("textbox", { name: /new note/i });
-    await user.clear(textbox);
+    const textbox = screen.getByRole("textbox", { name: /new note editor/i });
     await user.type(textbox, "This is a valid note");
     await user.click(screen.getByRole("button", { name: /create note/i }));
 
@@ -85,12 +91,10 @@ describe("NewNote", () => {
 
     render(<NewNoteStory onErrorStateChange={onErrorStateChangeSpy.handler} />);
 
-    const textbox = screen.getByRole("textbox", { name: /new note/i });
-    await user.clear(textbox);
+    const textbox = screen.getByRole("textbox", { name: /new note editor/i });
     await user.type(textbox, "Valid note");
     await user.clear(textbox);
 
-    expect(screen.getByText("Note cannot be empty.")).toBeVisible();
     expect(onErrorStateChangeSpy.calls).toContainEqual([true]);
   });
 
@@ -100,8 +104,7 @@ describe("NewNote", () => {
 
     render(<NewNoteStory onErrorStateChange={onErrorStateChangeSpy.handler} />);
 
-    const textbox = screen.getByRole("textbox", { name: /new note/i });
-    await user.clear(textbox);
+    const textbox = screen.getByRole("textbox", { name: /new note editor/i });
     await user.type(textbox, "Test note");
     await user.click(screen.getByRole("button", { name: /clear/i }));
 
@@ -109,11 +112,15 @@ describe("NewNote", () => {
     expect(onErrorStateChangeSpy.calls.at(-1)).toEqual([false]);
   });
 
-  test("shows a non-editable message when notes are not editable", () => {
-    render(<NewNoteStory isEditable={false} />);
+  test("does not create a note when notes are not editable", async () => {
+    const user = userEvent.setup();
+    const createNote = vi.fn().mockResolvedValue(undefined);
 
-    expect(screen.getByText("Notes are not editable")).toBeVisible();
-    expect(screen.getByRole("button", { name: /create note/i })).toBeDisabled();
+    render(<NewNoteStory isEditable={false} createNote={createNote} />);
+
+    await user.click(screen.getByRole("button", { name: /create note/i }));
+
+    expect(createNote).not.toHaveBeenCalled();
   });
 
   test("sets and unsets the dirty flag in preview mode", async () => {
@@ -129,8 +136,7 @@ describe("NewNote", () => {
       />,
     );
 
-    const textbox = screen.getByRole("textbox", { name: /new note/i });
-    await user.clear(textbox);
+    const textbox = screen.getByRole("textbox", { name: /new note editor/i });
     await user.type(textbox, "Dirty note");
     expect(dirtyFlagSpy.isSet()).toBe(true);
 

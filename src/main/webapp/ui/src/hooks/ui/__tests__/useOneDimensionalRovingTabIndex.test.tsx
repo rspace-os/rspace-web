@@ -2,7 +2,6 @@ import { describe, expect, test } from "vitest";
 import React from "react";
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@/__tests__/customQueries";
-import "@/__tests__/__mocks__/matchMedia";
 import {
   HorizontalExample,
   SimpleExample,

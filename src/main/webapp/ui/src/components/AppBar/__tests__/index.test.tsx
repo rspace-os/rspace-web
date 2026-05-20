@@ -2,18 +2,44 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import React from "react";
 import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@/__tests__/customQueries";
-import "@/__tests__/__mocks__/matchMedia";
 import { SimplePageWithAppBar } from "../index.story";
 import { type UiNavigationData } from "../useUiNavigationData";
 
-const mockUseUiNavigationData = vi.fn();
-const mockUseWhoAmI = vi.fn();
+const mockUseUiNavigationData = vi.fn<
+  () => { tag: "success"; value: UiNavigationData }
+>();
+const mockUseWhoAmI = vi.fn<
+  () => {
+    tag: "success";
+    value: {
+      id: number;
+      username: string;
+      firstName: string;
+      lastName: string;
+      hasPiRole: boolean;
+      hasSysAdminRole: boolean;
+      email: string;
+      bench: null;
+      workbenchId: number;
+      getBench: () => Promise<never>;
+      isCurrentUser: boolean;
+      fullName: string;
+      label: string;
+    };
+  }
+>();
 
 vi.mock("../../../hooks/browser/useViewportDimensions", () => ({
   default: () => ({ isViewportSmall: false }),
 }));
 
+vi.mock("../../Help/HelpDocs", () => ({
+  __esModule: true,
+  default: () => <button aria-label="Open Help">Help</button>,
+}));
+
 vi.mock("../useUiNavigationData", () => ({
+  __esModule: true,
   default: () => mockUseUiNavigationData(),
 }));
 
@@ -190,7 +216,13 @@ describe("AppBar", () => {
   });
 
   test("renders accessibility tips before help on dialog variants", () => {
-    render(<SimplePageWithAppBar variant="dialog" currentPage="Test Page" />);
+    render(
+      <SimplePageWithAppBar
+        variant="dialog"
+        currentPage="Test Page"
+        accessibilityTips={{ supportsSkipToContent: true }}
+      />,
+    );
 
     const accessibilityTipsButton = screen.getByRole("button", {
       name: /accessibility tips/i,

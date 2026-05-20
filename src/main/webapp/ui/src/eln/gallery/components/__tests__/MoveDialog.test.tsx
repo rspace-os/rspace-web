@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import React from "react";
 import { render, screen } from "@/__tests__/customQueries";
 import { MoveDialogStory } from "../MoveDialog.story";
-import type { GalleryFileListing } from "../../useGalleryListing";
 
 const mockUseGalleryListing = vi.fn();
 const mockUseGalleryActions = vi.fn();
@@ -12,15 +11,22 @@ vi.mock("@/hooks/browser/useViewportDimensions", () => ({
   default: () => ({ isViewportVerySmall: false }),
 }));
 
+vi.mock("../TreeView", () => ({
+  __esModule: true,
+  default: () => <div>Mocked tree view</div>,
+}));
+
 vi.mock("../../useGalleryListing", () => ({
   __esModule: true,
-  useGalleryListing: (...args: unknown[]) => mockUseGalleryListing(...args),
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  useGalleryListing: (args: unknown) => mockUseGalleryListing(args),
 }));
 
 vi.mock("../../useGalleryActions", () => ({
   __esModule: true,
   rootDestination: () => ({ type: "root" }),
   folderDestination: (folder: unknown) => ({ type: "folder", folder }),
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   useGalleryActions: () => mockUseGalleryActions(),
 }));
 
@@ -39,23 +45,25 @@ vi.mock("../../useGallerySelection", () => ({
   }),
 }));
 
-vi.mock("@/stores/contexts/Analytics", () => ({
-  __esModule: true,
-  default: {
-    Provider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    Consumer: ({ children }: { children: (value: unknown) => React.ReactNode }) =>
-      children({ trackEvent: () => {} }),
-    _currentValue: { trackEvent: () => {} },
-  },
-}));
+vi.mock("@/stores/contexts/Analytics", async () => {
+  const react = await import("react");
+  return {
+    __esModule: true,
+    default: react.createContext({
+      trackEvent: () => {},
+    }),
+  };
+});
 
 beforeEach(() => {
-  const listing: GalleryFileListing = {
-    parentId: 1,
-    items: { totalHits: 0, results: [] },
-  } as GalleryFileListing;
   mockUseGalleryListing.mockReturnValue({
-    galleryListing: { tag: "success", value: listing },
+    galleryListing: {
+      tag: "success",
+      value: {
+        parentId: 1,
+        items: { totalHits: 0, results: [] },
+      },
+    },
     refreshListing: vi.fn(),
   });
   mockUseGalleryActions.mockReturnValue({ moveFiles: vi.fn() });

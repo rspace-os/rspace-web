@@ -77,6 +77,7 @@ describe("SidebarToggle", () => {
     );
 
     // @ts-expect-error toBeAccessible is provided by @sa11y/vitest
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await expect(baseElement).toBeAccessible();
   });
 });
