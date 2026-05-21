@@ -70,14 +70,6 @@ const resolvedBundleEntries = Object.fromEntries(
 ) satisfies Record<string, string>;
 
 export default defineConfig(async ({ mode }) => {
-  /*
-   * Always use stable (unhashed) filenames. Cache busting is handled by the
-   * Java backend appending a ?v=<version> query string to every asset URL.
-   *
-   * TODO: Remove use of stable filenames and revert to build-time filenames
-   * once backend no longer handles loading
-   */
-  const useStableFilenames = true;
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
   const plugins: PluginOption[] = [react()];
@@ -134,13 +126,9 @@ export default defineConfig(async ({ mode }) => {
       rolldownOptions: {
         input: resolvedBundleEntries,
         output: {
-          entryFileNames: useStableFilenames ? "[name].js" : "[name]-[hash].js",
-          chunkFileNames: useStableFilenames
-            ? "chunks/[name].js"
-            : "chunks/[name]-[hash].js",
-          assetFileNames: useStableFilenames
-            ? "assets/[name][extname]"
-            : "assets/[name]-[hash][extname]",
+          entryFileNames: "[name]-[hash].js",
+          chunkFileNames: "chunks/[name]-[hash].js",
+          assetFileNames: "assets/[name]-[hash][extname]",
         },
       },
     },
