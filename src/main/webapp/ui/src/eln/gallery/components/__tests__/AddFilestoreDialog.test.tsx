@@ -28,7 +28,7 @@ vi.mock("@/hooks/auth/useOauthToken", () => ({
   }),
 }));
 
-vi.mock("./FilestoreLoginDialog", () => ({
+vi.mock("../FilestoreLoginDialog", () => ({
   useFilestoreLogin: () => ({
     login: () => Promise.resolve(true),
   }),
