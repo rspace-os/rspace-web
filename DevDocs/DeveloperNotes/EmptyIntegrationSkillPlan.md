@@ -40,17 +40,17 @@ The skill / human implementer needs four pieces of data:
 
 ## Files created (9)
 
-| Path                                                                                | Purpose                                                                 |
-| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `src/main/resources/sqlUpdates/changeLog-<ticket>.xml`                               | Liquibase: App row + sysadmin PropertyDescriptor / SystemProperty.      |
-| `src/main/webapp/ui/src/assets/branding/<name>/index.ts`                             | Exports `LOGO_COLOR` HSL.                                               |
-| `src/main/webapp/ui/src/assets/branding/<name>/logo.svg`                             | 100×100 placeholder logo.                                               |
-| `src/main/webapp/ui/src/eln/apps/integrations/<Name>.tsx`                            | Apps-page card (Chemistry-style simple toggle).                         |
-| `src/main/webapp/scripts/externalTinymcePlugins/<name>/plugin.min.js`                | TinyMCE plugin: registers icon + toolbar button + dialog opener.        |
-| `src/main/webapp/scripts/externalTinymcePlugins/<name>/dialog.html`                  | Dialog body host that loads the React bundle (rewritten to JSP at runtime).  |
-| `src/main/webapp/ui/src/tinyMCE/<name>/index.tsx`                                    | Mounts React component into `#tinymce-<name>`.                          |
-| `src/main/webapp/ui/src/tinyMCE/<name>/<Name>.tsx`                                   | Empty React component.                                                  |
-| `src/main/webapp/ui/src/tinyMCE/<name>/__tests__/<Name>.test.tsx`                    | Vitest smoke test.                                                      |
+| Path                                                                  | Purpose                                                            |
+|-----------------------------------------------------------------------|--------------------------------------------------------------------|
+| `src/main/resources/sqlUpdates/changeLog-<ticket>.xml`                | Liquibase: App row + sysadmin PropertyDescriptor / SystemProperty. |
+| `src/main/webapp/ui/src/assets/branding/<name>/index.ts`              | Exports `LOGO_COLOR` HSL.                                          |
+| `src/main/webapp/ui/src/assets/branding/<name>/logo.svg`              | 100×100 placeholder logo.                                          |
+| `src/main/webapp/ui/src/eln/apps/integrations/<Name>.tsx`             | Apps-page card (Chemistry-style simple toggle).                    |
+| `src/main/webapp/scripts/externalTinymcePlugins/<name>/plugin.min.js` | TinyMCE plugin: registers icon + toolbar button + dialog opener.   |
+| `src/main/webapp/scripts/externalTinymcePlugins/<name>/dialog.jsp`    | Dialog body host that loads the React bundle.                      |
+| `src/main/webapp/ui/src/tinyMCE/<name>/index.tsx`                     | Mounts React component into `#tinymce-<name>`.                     |
+| `src/main/webapp/ui/src/tinyMCE/<name>/<Name>.tsx`                    | Empty React component.                                             |
+| `src/main/webapp/ui/src/tinyMCE/<name>/__tests__/<Name>.test.tsx`     | Vitest smoke test.                                                 |
 
 ## Files modified (16)
 
