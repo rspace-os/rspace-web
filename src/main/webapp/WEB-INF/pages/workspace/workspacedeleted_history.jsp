@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<script src="<c:url value ='/scripts/pages/rspace/workspaceDeletedHistory.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/rspace/workspaceDeletedHistory.js' />"></script>
 <title>Deleted documents</title>
 <head>
     <meta name="heading" content="History"/>
