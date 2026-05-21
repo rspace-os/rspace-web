@@ -30,6 +30,7 @@ import com.researchspace.model.dtos.ExportSelection.ExportType;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.SysadminUserCreationHandler;
@@ -55,6 +56,7 @@ import javax.servlet.ServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -68,6 +70,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -98,6 +101,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
   private @Autowired SysadminUserCreationHandler sysadminUserCreationHandler;
   private @Autowired UserApiKeyManager apiKeyMgr;
   private @Autowired IGroupCreationStrategy grpStrategy;
+  private @Autowired GroupManager groupManager;
   private @Autowired AuditTrailService auditService;
   private @Autowired IContentInitializer initialiser;
   private @Autowired UserEnablementUtils userEnablementUtils;
@@ -467,6 +471,31 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
 
     group = grpStrategy.createAndSaveGroup(group, group.getOwner(), usersToAdd);
     return new ApiGroupInfo(group);
+  }
+
+  @Override
+  @DeploymentProperty(DeploymentPropertyType.API_BETA_ENABLED)
+  public void deleteGroupIfNoMemberLoggedInWithinOneYear(
+      ServletRequest req,
+      @PathVariable("id") Long groupId,
+      @RequestAttribute(name = "user") User sysadmin) {
+    assertIsSysadmin(sysadmin, req);
+    Group deleted;
+    try {
+      deleted = groupManager.removeGroupIfNoMemberLoggedInWithinOneYear(groupId, sysadmin);
+    } catch (ObjectRetrievalFailureException notFound) {
+      throw new NotFoundException("No group with id=" + groupId);
+    } catch (IllegalStateException recentLogin) {
+      // Generic message to the client; full detail (group id + reason) to the security log only.
+      SECURITY_LOG.warn(
+          "Sysadmin {} attempted to delete group {} but rejected: {}",
+          sysadmin.getUsername(),
+          groupId,
+          recentLogin.getMessage());
+      throw new IllegalArgumentException(
+          "Cannot delete group " + groupId + ": a member has logged in within the last year.");
+    }
+    auditService.notify(new GenericEvent(sysadmin, deleted, AuditAction.DELETE));
   }
 
   private Group apiGroupToGroup(GroupApiPost groupApiPost) {
