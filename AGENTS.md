@@ -158,6 +158,12 @@ npx vitest run src/components/MyComponent/__tests__/MyComponent.test.tsx
 
 Message bundles live in `src/main/resources/bundles/` with subdirectories per module (`dashboard/`, `workspace/`, `gallery/`, `groups/`, `inventory/`, `admin/`, `apps/`, `system/`, `public/`). Spring's `ReloadableResourceBundleMessageSource` loads them. The main bundle is `ApplicationResources.properties`.
 
+**Rule — externalize all user-displayed text in backend code.** Any string that can reach a user must be resolved from a message bundle key, not hard-coded as a Java string literal. This covers, at minimum: validation and error messages, exception messages surfaced to the UI or API, email subjects and bodies, notification text, audit/event descriptions shown to users, and API error responses.
+
+- **New backend code:** every user-facing string MUST be a bundle key from day one. Add the key to the module-specific bundle under `src/main/resources/bundles/` (e.g., `inventory/`, `workspace/`) or to `ApplicationResources.properties` if cross-cutting. Resolve via the injected `MessageSource` / `MessageSourceUtils` — do not instantiate a new message source per call.
+- **Refactored code:** when you touch a method, class, or block that contains hard-coded user-displayed strings, externalize those strings into the appropriate bundle as part of the refactor. Treat this as in-scope cleanup, not a separate task — the rule travels with the code you are already changing.
+- **Out of scope:** log messages, internal exception messages that are never shown to users, debug output, and developer-facing tooling text. Comments and Javadoc remain in English.
+
 ## Configuration
 
 ### Property File Layering
