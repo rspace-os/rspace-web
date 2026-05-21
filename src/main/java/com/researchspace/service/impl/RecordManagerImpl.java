@@ -572,8 +572,19 @@ public class RecordManagerImpl implements RecordManager {
 
   @Override
   public BaseRecord getRecordWithFields(long recordId, User user) {
-    return getRecordWithLazyLoadedProperties(
-        recordId, user, new DocumentFieldInitializationPolicy(), false);
+    BaseRecord rec =
+        getRecordWithLazyLoadedProperties(
+            recordId, user, new DocumentFieldInitializationPolicy(), false);
+    // H6: getTempRecord() is now a lazy proxy. Initialise it inside this
+    // transactional method so callers (e.g. StructuredDocumentController.
+    // prepareDocumentForView) can read its properties after the session closes.
+    if (rec instanceof StructuredDocument) {
+      Record temp = ((StructuredDocument) rec).getTempRecord();
+      if (temp != null) {
+        Hibernate.initialize(temp);
+      }
+    }
+    return rec;
   }
 
   @Override
