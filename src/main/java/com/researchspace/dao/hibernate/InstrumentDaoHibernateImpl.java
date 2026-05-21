@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
-@Repository(value = "InstrumentDao")
+@Repository(value = "instrumentDao")
 public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument, Long>
     implements InstrumentDao {
 
