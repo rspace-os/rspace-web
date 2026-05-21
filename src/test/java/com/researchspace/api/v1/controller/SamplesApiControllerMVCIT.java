@@ -29,6 +29,7 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -782,6 +783,29 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     error = getErrorFromJsonResponseBody(result, ApiError.class);
     assertApiErrorContainsMessage(error, "subSamplesCount supported values are 1-100, was [101]");
+  }
+
+  /** RSDEV-1067: a sample's quantity unit must be a mass, volume, or dimensionless unit. */
+  @Test
+  public void createSample_rejectsNonAmountQuantityUnit() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    // NanoMolar — passes existence check, fails isAmount()
+    String nonAmountQuantityJSON =
+        String.format(
+            "{ \"name\": \"sampleWithBadUnit\", "
+                + "\"quantity\": { \"numericValue\": \"1.0\", \"unitId\": \"%d\" } }",
+            RSUnitDef.NANOMOLAR.getId());
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/samples", anyUser, nonAmountQuantityJSON))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertApiErrorContainsMessage(error, "unit of amount");
   }
 
   @SuppressWarnings("rawtypes")

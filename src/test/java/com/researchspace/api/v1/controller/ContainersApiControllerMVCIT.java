@@ -28,6 +28,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
@@ -475,6 +476,23 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is4xxClientError())
             .andReturn();
     return result;
+  }
+
+  /** RSDEV-1067: a container's quantity unit must be a mass, volume, or dimensionless unit. */
+  @Test
+  public void createContainer_rejectsNonAmountQuantityUnit() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    // NanoMolar — passes existence check, fails isAmount()
+    String nonAmountQuantityJSON =
+        String.format(
+            "{ \"name\": \"containerWithBadUnit\",\"cType\": \"LIST\", "
+                + "\"quantity\": { \"numericValue\": \"1.0\", \"unitId\": \"%d\" } }",
+            RSUnitDef.NANOMOLAR.getId());
+    MvcResult result = postCreateContainerExpecting4xx(anyUser, apiKey, nonAmountQuantityJSON);
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertApiErrorContainsMessage(error, "unit of amount");
   }
 
   @Test
