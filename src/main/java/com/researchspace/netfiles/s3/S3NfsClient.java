@@ -265,12 +265,11 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
               + " bytes (5 GB); multipart copy is not yet supported");
     }
     S3NfsClient destS3 = (S3NfsClient) destClient;
-    S3FolderContentItem destDetails = destS3.s3Utilities.getObjectDetails(destKey);
+    S3FolderContentItem destDetails = destS3.getObjectDetails(destKey);
     if (destDetails != null && !destDetails.isFolder()) {
       throw new IOException("File already exists at destination: " + destKey);
     }
-    destS3.s3Utilities.copyObjectFromBucket(
-        s3Utilities.getBucketName(), sourceKey, destKey, metadata);
+    destS3.copyObjectFromBucket(s3Utilities.getBucketName(), sourceKey, destKey, metadata);
     return destKey;
   }
 
@@ -290,6 +289,18 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
     NfsFileDetails nfsDetails = new NfsFileDetails(getFileNameFromPath(pathToDownload));
     nfsDetails.setRemoteInputStream(new TempFileDeletingInputStream(tmpFile));
     return nfsDetails;
+  }
+
+  S3FolderContentItem getObjectDetails(String key) {
+    return s3Utilities.getObjectDetails(key);
+  }
+
+  void copyObjectFromBucket(
+      String sourceBucketName,
+      String sourceKey,
+      String destKey,
+      java.util.Map<String, String> metadata) {
+    s3Utilities.copyObjectFromBucket(sourceBucketName, sourceKey, destKey, metadata);
   }
 
   /** InputStream wrapper that deletes its backing temp file when the stream is closed. */

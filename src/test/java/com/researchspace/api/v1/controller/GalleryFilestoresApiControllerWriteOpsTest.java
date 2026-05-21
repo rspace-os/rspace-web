@@ -44,6 +44,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 
@@ -141,6 +142,29 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
+  void copyToFilestore_multipleInvalidRecordIds_allErrorsReported() {
+    when(baseRecordManager.retrieveMediaFile(any(), eq(789L)))
+        .thenThrow(new ObjectRetrievalFailureException("EcatMediaFile", "789"));
+    when(baseRecordManager.retrieveMediaFile(any(), eq(987L)))
+        .thenThrow(new ObjectRetrievalFailureException("EcatMediaFile", "987"));
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(
+            Set.of(789L, 987L), new ApiNfsCredentials(null, USERNAME, PASSWORD));
+
+    BindException ex =
+        assertThrows(
+            BindException.class,
+            () ->
+                controller.copyToFilestore(
+                    validFilestorePathId,
+                    request,
+                    new BeanPropertyBindingResult(request, "request"),
+                    user));
+
+    assertEquals(2, ex.getAllErrors().size());
+  }
+
+  @Test
   void transferBetweenFilestores_sameSourceAndDestFilestoreId_throwsUnsupportedOperation() {
     ApiGalleryFilestoreTransferRequest request =
         new ApiGalleryFilestoreTransferRequest(
@@ -154,6 +178,37 @@ class GalleryFilestoresApiControllerWriteOpsTest {
                 request,
                 new BeanPropertyBindingResult(request, "request"),
                 user));
+  }
+
+  @Test
+  void transferBetweenFilestores_sameAbsoluteKeyAcrossTwoFilestores_throwsUnsupportedOperation() {
+    // Two distinct filestores sharing the same root path (same underlying bucket) with the same
+    // relative path resolve to an identical S3 key — a self-copy that must be rejected.
+    Long srcId = 10L;
+    Long dstId = 20L;
+    NfsFileStore srcFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user);
+    srcFilestore.setPath("shared-root");
+    NfsFileStore dstFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user);
+    dstFilestore.setPath("shared-root");
+    when(nfsManager.getNfsFileStore(srcId)).thenReturn(srcFilestore);
+    when(nfsManager.getNfsFileStore(dstId)).thenReturn(dstFilestore);
+    WritableNfsClient srcClient = mock(WritableNfsClient.class);
+    WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
+    when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("file.png", dstId, "file.png", false);
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () ->
+            controller.transferBetweenFilestores(
+                srcId, request, new BeanPropertyBindingResult(request, "request"), user));
   }
 
   @Test

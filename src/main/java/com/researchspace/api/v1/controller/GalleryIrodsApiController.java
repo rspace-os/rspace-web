@@ -7,10 +7,8 @@ import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsClientType;
-import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
-import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FilestoreWriteManager;
@@ -196,32 +194,6 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
     }
     moveResult.addAll(outcome.getOperationResult().getFailedRecords());
     return moveResult;
-  }
-
-  /**
-   * Resolves an absolute iRODS path from a filestore's relative path and the filesystem's
-   * configured {@code IRODS_HOME_DIR}.
-   *
-   * <p>Kept for backwards compatibility with existing tests. The unified handler uses the
-   * equivalent logic in {@link GalleryFilestoresApiController#resolveAbsoluteFilestorePath}.
-   */
-  protected String getAbsoluteFilestorePathForIrods(NfsFileStore nfsFileStore) {
-    String irodsHomePath =
-        nfsFileStore.getFileSystem().getClientOption(NfsFileSystemOption.IRODS_HOME_DIR);
-    String filestorePath = nfsFileStore.getPath();
-    if (StringUtils.isBlank(irodsHomePath)) {
-      irodsHomePath = "";
-    }
-    if (StringUtils.isBlank(filestorePath)) {
-      filestorePath = "";
-    }
-    if (filestorePath.startsWith(irodsHomePath)) {
-      return filestorePath;
-    }
-    if (StringUtils.endsWith(irodsHomePath, "/") && StringUtils.startsWith(filestorePath, "/")) {
-      return StringUtils.stripEnd(irodsHomePath, "/") + filestorePath;
-    }
-    return irodsHomePath + filestorePath;
   }
 
   @NotNull

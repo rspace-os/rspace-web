@@ -161,6 +161,10 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
         StringUtils.isBlank(destFilestoreRootPath)
             ? request.getDestPath()
             : destFilestoreRootPath + "/" + StringUtils.stripStart(request.getDestPath(), "/");
+    if (absoluteSourcePath.equals(absoluteDestPath)) {
+      throw new UnsupportedOperationException(
+          "Source and destination resolve to the same S3 key: " + absoluteSourcePath);
+    }
     ApiExternalStorageOperationResult result = new ApiExternalStorageOperationResult();
     try {
       sourceClient.copyObject(
@@ -205,10 +209,9 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
         filesRetrieved.add(baseRecordManager.retrieveMediaFile(user, recordId));
       } catch (ObjectRetrievalFailureException ex) {
         errors.addError(new ObjectError("recordIds", ex.getMessage()));
-      } finally {
-        throwBindExceptionIfErrors(errors);
       }
     }
+    throwBindExceptionIfErrors(errors);
     return filesRetrieved;
   }
 
