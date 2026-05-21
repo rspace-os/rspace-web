@@ -29,6 +29,7 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -790,10 +791,12 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
 
-    // unitId 11 = NanoMolar — passes existence check, fails isAmount()
+    // NanoMolar — passes existence check, fails isAmount()
     String nonAmountQuantityJSON =
-        "{ \"name\": \"sampleWithBadUnit\", "
-            + "\"quantity\": { \"numericValue\": \"1.0\", \"unitId\": \"11\" } }";
+        String.format(
+            "{ \"name\": \"sampleWithBadUnit\", "
+                + "\"quantity\": { \"numericValue\": \"1.0\", \"unitId\": \"%d\" } }",
+            RSUnitDef.NANOMOLAR.getId());
     MvcResult result =
         this.mockMvc
             .perform(

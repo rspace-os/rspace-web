@@ -28,6 +28,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
@@ -483,10 +484,12 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
 
-    // unitId 11 = NanoMolar — passes existence check, fails isAmount()
+    // NanoMolar — passes existence check, fails isAmount()
     String nonAmountQuantityJSON =
-        "{ \"name\": \"containerWithBadUnit\",\"cType\": \"LIST\", "
-            + "\"quantity\": { \"numericValue\": \"1.0\", \"unitId\": \"11\" } }";
+        String.format(
+            "{ \"name\": \"containerWithBadUnit\",\"cType\": \"LIST\", "
+                + "\"quantity\": { \"numericValue\": \"1.0\", \"unitId\": \"%d\" } }",
+            RSUnitDef.NANOMOLAR.getId());
     MvcResult result = postCreateContainerExpecting4xx(anyUser, apiKey, nonAmountQuantityJSON);
     ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
     assertApiErrorContainsMessage(error, "unit of amount");

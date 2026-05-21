@@ -224,12 +224,40 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
   @Test
   public void createTemplate_rejectsNonAmountDefaultUnit() throws Exception {
     ApiSampleTemplatePost templatePost = createValidSampleTemplatePostNoFields();
-    templatePost.setDefaultUnitId(RSUnitDef.NANOMOLAR.getId()); // id 11 — ticket repro
+    templatePost.setDefaultUnitId(RSUnitDef.NANOMOLAR.getId()); // ticket repro
 
     MvcResult result =
         mockMvc
             .perform(
                 createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertEquals(1, error.getErrors().size());
+    String rendered = error.getErrors().get(0);
+    assertTrue(
+        rendered.startsWith("defaultUnitId:"),
+        "error should be on defaultUnitId, was: " + rendered);
+    assertTrue(
+        rendered.contains(String.valueOf(RSUnitDef.NANOMOLAR.getId())),
+        "error should mention the rejected unit id, was: " + rendered);
+  }
+
+  /** RSDEV-1067: PUT must also reject a non-mass/volume/dimensionless default unit. */
+  @Test
+  public void updateTemplate_rejectsNonAmountDefaultUnit() throws Exception {
+    // create a valid template first
+    ApiSampleTemplatePost templatePost = createValidSampleTemplatePostNoFields();
+    ApiSample savedTemplate = postValidSampleTemplate(templatePost);
+
+    // attempt to PUT a defaultUnitId that is not mass/volume/dimensionless
+    ApiSampleTemplate templateUpdate = new ApiSampleTemplate();
+    templateUpdate.setDefaultUnitId(RSUnitDef.NANOMOLAR.getId());
+    String updateUrl = "/sampleTemplates/" + savedTemplate.getId();
+
+    MvcResult result =
+        mockMvc
+            .perform(createBuilderForPutWithJSONBody(apiKey, updateUrl, anyUser, templateUpdate))
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
