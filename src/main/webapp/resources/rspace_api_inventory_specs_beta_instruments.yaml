@@ -74,6 +74,32 @@ paths:
           $ref: '#/responses/NotFound'
 
   /instruments:
+    get:
+      summary: Get all Instruments visible to the current User
+      description: >
+        Returns a paginated list of summary information about Instruments visible to the current user.
+
+        | Request | Explanation |
+
+        | --- | --- |
+
+        /instruments?pageSize=10| Gets first 10 instruments
+
+        /instruments?ownedBy=user1a| Gets page of instruments owned by user1a (assuming current user can see them)
+
+      produces:
+        - application/json
+      tags:
+        - Instruments (not enabled)
+      parameters:
+        - $ref: '#/parameters/ownedByParam'
+        - $ref: '#/parameters/deletedItemsParam'
+        - $ref: '#/parameters/pageNumberParam'
+        - $ref: '#/parameters/pageSizeParam'
+        - $ref: '#/parameters/orderByParam'
+      responses:
+        '200':
+          description: A list of InstrumentInfo objects.
     post:
       summary: Create a new Instrument
       description: >-
@@ -141,6 +167,213 @@ paths:
       responses:
         '200':
           description: An Instrument
+          schema:
+            $ref: '#/definitions/Instrument'
+        '404':
+          $ref: '#/responses/NotFound'
+    put:
+      summary: Update an Instrument
+      description: |
+        Updates an existing Instrument. This endpoint allows updating properties of the instrument and its fields. Use `/instruments/{instrumentId}/actions/changeOwner` to transfer ownership.
+
+        Extra fields can be updated, added and deleted as part of the update action. To create a new extra field, include its definition with `newFieldRequest` set to `true`. To delete an extra field, include a `deleteFieldRequest` property set to `true`.
+
+        This endpoint requires `UPDATE` permission to the Instrument.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+        | --- | --- |
+        `{ "name": "new name", "description": "new description" }` | Updates instrument name and description.
+        `{ "extraFields": [ { "id": 21, "content": "...updated" }, { "newFieldRequest": true, "name": "my field", "content": "new field" }, { "id": 22, "deleteFieldRequest": true } ] }` | Updates extra field 21, deletes extra field 22, and creates a new text extra field.
+
+      tags:
+        - Instruments (not enabled)
+      parameters:
+        - $ref: '#/parameters/instrumentIdParam'
+        - $ref: '#/parameters/instrumentBodyParam'
+      responses:
+        '200':
+          description: >-
+            Success - instrument is updated.
+        '404':
+          $ref: '#/responses/NotFound'
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+        '500':
+          $ref: '#/responses/LicenseProblem'
+    delete:
+      summary: Delete an Instrument
+      description: |
+        Mark instrument as deleted, so it won't appear in Inventory UI and default listings. 
+        The instrument will also be removed from its current location.
+
+        This action requires `UPDATE` permission to the Instrument.
+
+      tags:
+        - Instruments (not enabled)
+      parameters:
+        - $ref: '#/parameters/instrumentIdParam'
+      responses:
+        '200':
+          description: Deleted instrument object.
+          schema:
+            $ref: '#/definitions/Instrument'
+
+  '/instruments/{instrumentId}/restore':
+    put:
+      summary: Restore a deleted Instrument
+      description: |
+        Restores a previously deleted instrument.
+      tags:
+        - Instruments (not enabled)
+      parameters:
+        - $ref: '#/parameters/instrumentIdParam'
+      responses:
+        '200':
+          description: >-
+            Success - instrument is restored.
+        '404':
+          $ref: '#/responses/NotFound'
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+        '500':
+          $ref: '#/responses/LicenseProblem'
+
+  '/instruments/{instrumentId}/image/{timestamp}':
+    get:
+      summary: Gets the full image connected to the Instrument
+      description:
+        Returns full image uploaded for the instrument.
+      produces:
+        - image/png
+      tags:
+        - Instruments (not enabled)
+      parameters:
+        - $ref: '#/parameters/instrumentIdParam'
+        - $ref: '#/parameters/timeStampParam'
+      responses:
+        '200':
+          description: File as bytes.
+          schema:
+            type: file
+
+  '/instruments/{instrumentId}/thumbnail/{timestamp}':
+    get:
+      summary: Gets the thumbnail image connected to the Instrument
+      description:
+        Returns a reduced-size image uploaded for the instrument.
+      produces:
+        - image/png
+      tags:
+        - Instruments (not enabled)
+      parameters:
+        - $ref: '#/parameters/instrumentIdParam'
+        - $ref: '#/parameters/timeStampParam'
+      responses:
+        '200':
+          description: File as bytes.
+          schema:
+            type: file
+
+  '/instruments/validateNameForNewInstrument':
+    get:
+      summary: Check if a given string is valid for naming a new Instrument
+      tags:
+        - Instruments (not enabled)
+      consumes:
+        - text/plain
+      parameters:
+        - in: query
+          name: name
+          type: string
+          required: true
+          description: Name to check.
+      responses:
+        '200':
+          description: JSON object with 'valid' field (true/false) and 'message' field if there is a problem with the name
+          schema:
+            type: string
+
+  '/instruments/{instrumentId}/actions/changeOwner':
+    put:
+      summary: Transfer the Instrument to a new owner
+      description: |
+        Updates the `owner` field of an existing Instrument. No other changes are processed. Use `/instruments/{instrumentId}` PUT to update other fields.
+
+        This action requires `CHANGE_OWNER` permission to the instrument.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+        | --- | --- |
+        `{ "owner": { "username": "newOwner" } }` | Changes owner of an instrument to newOwner (requires `CHANGE_OWNER` permission). |
+
+      tags:
+        - Instruments (not enabled)
+      parameters:
+        - $ref: '#/parameters/instrumentIdParam'
+        - $ref: '#/parameters/instrumentBodyParam'
+      responses:
+        '200':
+          description: >-
+            Success - instrument owner is updated.
+        '404':
+          $ref: '#/responses/NotFound'
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+        '500':
+          $ref: '#/responses/LicenseProblem'
+
+  '/instruments/{instrumentId}/actions/duplicate':
+    post:
+      summary: Duplicate an Instrument
+      description: |
+        Generates a copy of the instrument, including fields, extra fields and images.
+
+        This action requires `UPDATE` permission to the Instrument.
+      produces:
+        - application/json
+      tags:
+        - Instruments (not enabled)
+      parameters:
+        - $ref: '#/parameters/instrumentIdParam'
+      responses:
+        '201':
+          description: The new, duplicate instrument.
+          schema:
+            $ref: '#/definitions/Instrument'
+
+  '/instruments/{instrumentId}/revisions':
+    get:
+      summary: Gets historical revisions of the Instrument
+      description:
+        Returns list of historical revisions saved for the Instrument, starting from the earliest revision.
+      produces:
+        - application/json
+      tags:
+        - Instruments (not enabled)
+      parameters:
+        - $ref: '#/parameters/instrumentIdParam'
+      responses:
+        '200':
+          description: A list of revision information objects.
+
+  '/instruments/{instrumentId}/revisions/{revisionId}':
+    get:
+      summary: Gets a historical revision of the Instrument
+      description:
+        Returns full details of a historical revision saved for the Instrument.
+      produces:
+        - application/json
+      tags:
+        - Instruments (not enabled)
+      parameters:
+        - $ref: '#/parameters/instrumentIdParam'
+        - $ref: '#/parameters/revisionIdParam'
+      responses:
+        '200':
+          description: An Instrument, as it was at the requested historical revision
           schema:
             $ref: '#/definitions/Instrument'
         '404':
@@ -3624,6 +3857,13 @@ parameters:
     format: int64
     required: true
     description: A unique identifier of the instrument.
+  instrumentBodyParam:
+    name: instrument
+    in: body
+    description: 'An Instrument object'
+    required: true
+    schema:
+      $ref: '#/definitions/Instrument'
   sampleBodyParam:
     name: sample
     in: body

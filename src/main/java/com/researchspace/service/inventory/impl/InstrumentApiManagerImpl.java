@@ -1,28 +1,42 @@
 package com.researchspace.service.inventory.impl;
 
+import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentEntity;
+import com.researchspace.api.v1.model.ApiInstrumentEntityInfo;
+import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
-import com.researchspace.dao.InstrumentEntityDao;
+import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.InventoryEntityFieldDao;
+import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
+import com.researchspace.model.events.InventoryDeleteEvent;
+import com.researchspace.model.events.InventoryEditingEvent;
+import com.researchspace.model.events.InventoryRestoreEvent;
+import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.inventory.InstrumentApiManager;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,8 +46,8 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
 
   public static final String INSTRUMENT_DEFAULT_NAME = "Generic Instrument";
 
-  private @Autowired InstrumentEntityDao<Instrument> instrumentDao;
-  private @Autowired InstrumentEntityDao<InstrumentTemplate> instrumentTemplateDao;
+  private @Autowired InstrumentDao instrumentDao;
+  private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired InventoryEntityFieldDao inventoryEntityFieldDao;
   private @Autowired SampleApiManager sampleApiManager;
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
@@ -159,6 +173,29 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
   }
 
   @Override
+  public ApiInstrumentSearchResult getInstrumentsForUser(
+      PaginationCriteria<Instrument> pgCrit,
+      String ownedBy,
+      InventorySearchDeletedOption deletedOption,
+      User user) {
+
+    ISearchResults<Instrument> dbInstruments =
+        instrumentDao.getInstrumentsForUser(pgCrit, ownedBy, deletedOption, user);
+    List<ApiInstrumentEntityInfo> instrumentInfos = new ArrayList<>();
+    for (Instrument instrument : dbInstruments.getResults()) {
+      ApiInstrumentEntityInfo apiInstrument = new ApiInstrumentEntityInfo(instrument);
+      setOtherFieldsForOutgoingApiInventoryRecord(apiInstrument, instrument, user);
+      instrumentInfos.add(apiInstrument);
+    }
+
+    ApiInstrumentSearchResult result = new ApiInstrumentSearchResult();
+    result.setTotalHits(dbInstruments.getTotalHits());
+    result.setPageNumber(dbInstruments.getPageNumber());
+    result.setItems(instrumentInfos);
+    return result;
+  }
+
+  @Override
   public ApiInstrument getApiInstrumentById(Long id, User user) {
     return getInstrumentById(id, user);
   }
@@ -169,29 +206,186 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
   }
 
   @Override
+  public ApiInstrument updateApiInstrument(ApiInstrument apiInstrument, User user) {
+    Instrument dbInstrument = assertUserCanEditInstrument(apiInstrument.getId(), user);
+    ApiInstrument apiInstrumentOriginal = new ApiInstrument(dbInstrument);
+    boolean temporaryLock = lockItemForEdit(dbInstrument, user);
+    try {
+      dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
+      boolean contentChanged =
+          extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseInstrument(
+              apiInstrument, dbInstrument, user);
+      contentChanged |=
+          barcodesHelper.createDeleteRequestedBarcodes(
+              apiInstrument.getBarcodes(), dbInstrument, user);
+      contentChanged |=
+          identifiersHelper.createDeleteRequestedIdentifiers(
+              apiInstrument.getIdentifiers(), dbInstrument, user);
+      contentChanged |=
+          identifiersHelper.createAssignRequestedIdentifiers(
+              apiInstrument.getIdentifiers(), dbInstrument, user);
+      contentChanged |= apiInstrument.applyChangesToDatabaseInstrument(dbInstrument, user);
+      contentChanged |= saveSharingACLForIncomingApiInvRec(dbInstrument, apiInstrument);
+      contentChanged |= saveIncomingInstrumentImage(dbInstrument, apiInstrument, user);
+      if (contentChanged) {
+        saveDbInstrumentUpdate(dbInstrument, user);
+      }
+    } finally {
+      if (temporaryLock) {
+        unlockItemAfterEdit(dbInstrument, user);
+      }
+    }
+
+    ApiInstrument apiInstrumentResult = new ApiInstrument(dbInstrument);
+    populateOutgoingApiInstrumentEntity(apiInstrumentResult, dbInstrument, user);
+    updateOntologyOnUpdate(apiInstrumentOriginal, apiInstrumentResult, user);
+    return apiInstrumentResult;
+  }
+
+  private void saveDbInstrumentUpdate(Instrument dbInstrument, User user) {
+    dbInstrument.setModificationDate(new Date());
+    dbInstrument.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
+    dbInstrument.increaseVersion();
+    instrumentDao.save(dbInstrument);
+    publisher.publishEvent(new InventoryEditingEvent(dbInstrument, user));
+  }
+
+  @Override
+  public ApiInstrument markInstrumentAsDeleted(Long instrumentId, User user) {
+    Instrument dbInstrument = assertUserCanDeleteInstrument(instrumentId, user);
+    boolean temporaryLock = lockItemForEdit(dbInstrument, user);
+    try {
+      dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
+      if (!dbInstrument.isDeleted()) {
+        // Detach from parent container before marking deleted, so the container's
+        // location slot and count are updated consistently (mirrors SubSampleApiManagerImpl).
+        dbInstrument.removeFromCurrentParent();
+        dbInstrument.setRecordDeleted(true);
+        instrumentDao.save(dbInstrument);
+        publisher.publishEvent(new InventoryDeleteEvent(dbInstrument, user));
+      }
+    } finally {
+      if (temporaryLock) {
+        unlockItemAfterEdit(dbInstrument, user);
+      }
+    }
+
+    ApiInstrument apiInstrumentResult = new ApiInstrument(dbInstrument);
+    populateOutgoingApiInstrumentEntity(apiInstrumentResult, dbInstrument, user);
+    updateOntologyOnRecordChanges(apiInstrumentResult, user);
+    return apiInstrumentResult;
+  }
+
+  @Override
+  public ApiInstrument restoreDeletedInstrument(Long instrumentId, User user) {
+    Instrument dbInstrument = assertUserCanDeleteInstrument(instrumentId, user);
+    boolean temporaryLock = lockItemForEdit(dbInstrument, user);
+    try {
+      dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
+      if (dbInstrument.isDeleted()) {
+        // Move the restored instrument to the user's workbench, since the original
+        // container location is no longer available (mirrors SubSampleApiManagerImpl).
+        Container workbench = containerDao.getWorkbenchForUser(user);
+        dbInstrument.moveToNewParent(workbench);
+        dbInstrument.setRecordDeleted(false);
+        instrumentDao.save(dbInstrument);
+        publisher.publishEvent(new InventoryRestoreEvent(dbInstrument, user));
+      }
+    } finally {
+      if (temporaryLock) {
+        unlockItemAfterEdit(dbInstrument, user);
+      }
+    }
+    ApiInstrument apiInstrumentResult = new ApiInstrument(dbInstrument);
+    populateOutgoingApiInstrumentEntity(apiInstrumentResult, dbInstrument, user);
+    updateOntologyOnRecordChanges(apiInstrumentResult, user);
+    return apiInstrumentResult;
+  }
+
+  @Override
+  public ApiInstrument changeApiInstrumentOwner(ApiInstrument apiInstrument, User user) {
+    Validate.notNull(apiInstrument.getOwner(), "'owner' field not present");
+    Validate.notNull(apiInstrument.getOwner().getUsername(), "'owner.username' field not present");
+
+    assertUserCanTransferInstrument(apiInstrument.getId(), user);
+    Instrument dbInstrument = (Instrument) getIfExists(apiInstrument.getId());
+    boolean temporaryLock = lockItemForEdit(dbInstrument, user);
+    try {
+      dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
+      User originalOwner = dbInstrument.getOwner();
+      String newOwnerUsername = apiInstrument.getOwner().getUsername();
+      if (!originalOwner.getUsername().equals(newOwnerUsername)) {
+        Validate.isTrue(
+            userManager.userExists(newOwnerUsername),
+            "Target user [" + newOwnerUsername + "] not found");
+        User newOwner = userManager.getUserByUsername(newOwnerUsername);
+        dbInstrument.setOwner(newOwner);
+        moveItemBetweenWorkbenches(dbInstrument, originalOwner, newOwner);
+        instrumentDao.save(dbInstrument);
+        publisher.publishEvent(
+            new InventoryTransferEvent(dbInstrument, user, originalOwner, newOwner));
+      }
+    } finally {
+      if (temporaryLock) {
+        unlockItemAfterEdit(dbInstrument, user);
+      }
+    }
+    return getInstrumentById(dbInstrument.getId(), user);
+  }
+
+  @Override
+  public ApiInstrument duplicateInstrument(Long instrumentId, User user) {
+    Instrument dbInstrument = assertUserCanReadInstrument(instrumentId, user);
+    Instrument copy = (Instrument) dbInstrument.copy(user);
+    setWorkbenchAsParentForNewInstrument(copy, user);
+    copy = instrumentDao.save(copy);
+    publisher.publishEvent(new InventoryCreationEvent(copy, user));
+    return new ApiInstrument(copy);
+  }
+
+  @Override
+  public boolean nameExistsForUser(String name, User user) {
+    return !instrumentDao.findInstrumentsByName(name, user).isEmpty();
+  }
+
+  @Override
+  public Instrument assertUserCanDeleteInstrument(Long dbId, User user) {
+    Instrument instrument = (Instrument) getIfExists(dbId);
+    invPermissions.assertUserCanDeleteInventoryRecord(instrument, user);
+    return instrument;
+  }
+
+  @Override
+  public Instrument assertUserCanTransferInstrument(Long dbId, User user) {
+    Instrument instrument = (Instrument) getIfExists(dbId);
+    invPermissions.assertUserCanTransferInventoryRecord(instrument, user);
+    return instrument;
+  }
+
+  @Override
   public Instrument assertUserCanEditInstrument(Long dbId, User user) {
-    Instrument instrument = instrumentDao.get(dbId);
+    Instrument instrument = (Instrument) getIfExists(dbId);
     invPermissions.assertUserCanEditInventoryRecord(instrument, user);
     return instrument;
   }
 
   @Override
   public Instrument assertUserCanReadInstrument(Long dbId, User user) {
-    Instrument instrument = instrumentDao.get(dbId);
+    Instrument instrument = (Instrument) getIfExists(dbId);
     invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(instrument, user);
     return instrument;
   }
 
   @Override
   public InstrumentTemplate assertUserCanEditInstrumentTemplate(Long dbId, User user) {
-    InstrumentTemplate instrumentTemplate = instrumentTemplateDao.get(dbId);
+    InstrumentTemplate instrumentTemplate = (InstrumentTemplate) getIfExists(dbId);
     invPermissions.assertUserCanEditInventoryRecord(instrumentTemplate, user);
     return instrumentTemplate;
   }
 
   @Override
   public InstrumentTemplate assertUserCanReadInstrumentTemplate(Long dbId, User user) {
-    InstrumentTemplate instrumentTemplate = instrumentTemplateDao.get(dbId);
+    InstrumentTemplate instrumentTemplate = (InstrumentTemplate) getIfExists(dbId);
     invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(instrumentTemplate, user);
     return instrumentTemplate;
   }
@@ -231,7 +425,7 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
   }
 
   private ApiInstrument getInstrumentById(Long id, User user) {
-    Instrument instrument = assertUserCanReadInstrument(id, user);
+    Instrument instrument = instrumentDao.get(id);
     publisher.publishEvent(new InventoryAccessEvent(instrument, user));
     ApiInstrument result = new ApiInstrument(instrument);
     populateOutgoingApiInstrumentEntity(result, instrument, user);
@@ -239,7 +433,7 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
   }
 
   private ApiInstrumentEntity getInstrumentTemplateById(Long id, User user) {
-    InstrumentTemplate instrumentTemplate = assertUserCanReadInstrumentTemplate(id, user);
+    InstrumentTemplate instrumentTemplate = instrumentTemplateDao.get(id);
     publisher.publishEvent(new InventoryAccessEvent(instrumentTemplate, user));
     ApiInstrumentTemplate result = new ApiInstrumentTemplate(instrumentTemplate);
     populateOutgoingApiInstrumentEntity(result, instrumentTemplate, user);
