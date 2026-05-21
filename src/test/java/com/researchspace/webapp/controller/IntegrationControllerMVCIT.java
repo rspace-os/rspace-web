@@ -77,7 +77,7 @@ import org.springframework.test.web.servlet.MvcResult;
     })
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 28;
+  final int TOTAL_INTEGRATIONS = 29;
   Principal mockPrincipal = null;
 
   @Autowired private UserConnectionManager userConnectionManager;
