@@ -28,6 +28,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
  */
 public class StartupListener implements ServletContextListener {
   public static final String RS_DEPLOY_PROPS_CTX_ATTR_NAME = "RS_DEPLOY_PROPS";
+  static final String VITE_DEV_SERVER_ORIGIN_PROPERTY = "viteDevServerOrigin";
   private static final Logger log = LoggerFactory.getLogger(StartupListener.class);
 
   /** {@inheritDoc} */
@@ -39,13 +40,13 @@ public class StartupListener implements ServletContextListener {
     // object already exists
     Map<String, Object> config = (HashMap<String, Object>) context.getAttribute(Constants.CONFIG);
     if (config == null) {
-      config = new HashMap<String, Object>();
+      config = new HashMap<>();
     }
     if (context.getInitParameter(Constants.CSS_THEME) != null) {
       config.put(Constants.CSS_THEME, context.getInitParameter(Constants.CSS_THEME));
     }
     ApplicationContext ctx = getApplicationContext(context);
-    IPropertyHolder propHolder = (IPropertyHolder) ctx.getBean(IPropertyHolder.class);
+    IPropertyHolder propHolder = ctx.getBean(IPropertyHolder.class);
     context.setAttribute(Constants.CONFIG, config);
 
     setupContext(context);
@@ -123,11 +124,10 @@ public class StartupListener implements ServletContextListener {
       return;
     }
     String configured =
-        StringUtils.trimToEmpty(environment.getProperty("ui.vite.devServer.origin"));
+        StringUtils.trimToEmpty(environment.getProperty(VITE_DEV_SERVER_ORIGIN_PROPERTY));
     String origin = configured.isEmpty() ? ViteDevServerProxyServlet.DEFAULT_ORIGIN : configured;
     if (configured.isEmpty()) {
-      log.info(
-          "reactDevMode=true, ui.vite.devServer.origin unset — using default origin {}", origin);
+      log.info("reactDevMode=true, viteDevServerOrigin unset — using default origin {}", origin);
     }
     try {
       ServletRegistration.Dynamic registration =

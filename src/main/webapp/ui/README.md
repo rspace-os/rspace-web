@@ -80,10 +80,11 @@ When `-DreactDevMode=true`, JSP-emitted asset URLs stay root-relative
 (`/ui/dist/...`). `ViteDevServerProxyServlet` reverse-proxies those requests
 from Jetty to the Vite dev server, so the browser never sees the dev server's
 origin for HTTP module fetches. The dev server's port can be overridden via
-the `ui.vite.devServer.origin` property (or `VITE_DEV_SERVER_PORT` env var for
-the Vite side). The HMR WebSocket is **not** proxied — the `@vite/client`
-script connects directly to the dev server using `hmr.clientPort` from
-`vite.config.ts`.
+the optional Maven/system flag
+`-DviteDevServerOrigin=http://127.0.0.1:5174` (or
+`VITE_DEV_SERVER_PORT` env var for the Vite side). The HMR WebSocket is **not**
+proxied — the `@vite/client` script connects directly to the dev server using
+`hmr.clientPort` from `vite.config.ts`.
 
 ## Testing Strategy
 

@@ -42,7 +42,7 @@ public class ViteDevServerProxyServlet extends HttpServlet {
   private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
   private static final String CONTENT_TYPE_HEADER = "content-type";
 
-  /** Default Vite dev server origin used when {@code ui.vite.devServer.origin} is unset. */
+  /** Default Vite dev server origin used when {@code -DviteDevServerOrigin} is unset. */
   public static final String DEFAULT_ORIGIN = "http://127.0.0.1:5173";
 
   // Hop-by-hop headers per RFC 7230 — must not be forwarded by a proxy.
