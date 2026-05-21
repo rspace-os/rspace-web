@@ -83,6 +83,17 @@ public class PostLoginHandlerImplTest {
   }
 
   @Test
+  public void afterInitActionsSkippedWhenUserAlreadyContentInitialised() {
+    setupAsFirstLogin();
+    anyUser.setContentInitialized(true);
+    TestAfterHelper afterHelper = createAfterHelper(AFTER_INIT_REDIRECT);
+    postLoginHandler.setPostFirstLoginActions(toList(afterHelper));
+    assertNull(postLoginHandler.handlePostLogin(anyUser, mockSession));
+    assertEquals(0, afterHelper.invocationCountSpy);
+    assertNoContentInitIsInvoked();
+  }
+
+  @Test
   public void onlyAnyLoginRedirect() {
     postLoginHandler.setPostAnyLoginActions(createAnyLoginActions(ANY_LOGIN_REDIRECT));
     anyUser.setContentInitialized(true);

@@ -74,10 +74,16 @@ public class PostLoginHandlerImpl implements PostLoginHandler {
     if (!isBlank(redirect)) {
       return redirect;
     }
+    // When the user arrives with contentInitialized=true (e.g. sysadmin pre-seeded the
+    // account), initializeUserContent returns null and after-init actions have nothing
+    // to operate on. Skip them rather than passing null downstream and NPEing.
+    boolean skipAfterInit = user.isContentInitialized();
     InitializedContent initializedContent = initializeUserContent(user);
-    redirect = postContentInitialize(user, session, initializedContent);
-    if (!isBlank(redirect)) {
-      return redirect;
+    if (!skipAfterInit) {
+      redirect = postContentInitialize(user, session, initializedContent);
+      if (!isBlank(redirect)) {
+        return redirect;
+      }
     }
     // this globally marks all first login handlers as having run once
     session.setAttribute(FIRST_LOGIN_HANDLED, true);
