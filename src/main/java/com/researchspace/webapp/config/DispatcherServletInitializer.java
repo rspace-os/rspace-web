@@ -5,18 +5,38 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.ServletRegistration;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
- * Registers the DispatcherServlet programmatically so that multipart limits can be read from the
- * JVM system property {@code files.maxUploadSize} at startup. This replaces the static {@code
- * <servlet>} / {@code <multipart-config>} block that was previously in web.xml.
+ * Registers the DispatcherServlet programmatically so that multipart upload limits can be resolved
+ * at startup, before the Spring context exists. This replaces the static {@code <servlet>} / {@code
+ * <multipart-config>} block that was previously in web.xml.
  *
- * <p>Spring 6 removed {@code CommonsMultipartResolver}, which previously read the property from
- * Spring config. The replacement {@code StandardServletMultipartResolver} has no size setter —
- * limits must be applied at the servlet-container level via {@link MultipartConfigElement}.
+ * <p>Spring 6 removed {@code CommonsMultipartResolver}, which previously read the limit from Spring
+ * config. The replacement {@code StandardServletMultipartResolver} has no size setter — limits must
+ * be applied at the servlet-container level via {@link MultipartConfigElement}, which is set here
+ * at servlet-registration time (before Spring loads, so {@code @Value} is not an option).
+ *
+ * <p>Resolution order for {@code files.maxUploadSize}:
+ *
+ * <ol>
+ *   <li>JVM system property {@code -Dfiles.maxUploadSize=<bytes>} if set.
+ *   <li>{@code files.maxUploadSize} key in {@code ${propertyFileDir}/deployment.properties} if the
+ *       {@code propertyFileDir} JVM system property is set and the file is readable.
+ *   <li>Default: 50 MB.
+ * </ol>
+ *
+ * <p>Note: the servlet container's connector may impose its own ceiling (Tomcat's {@code
+ * maxSwallowSize} in particular — keep it {@code -1} or larger than the configured upload limit so
+ * oversize uploads get a clean 413 rather than a connection reset).
  */
 public class DispatcherServletInitializer implements ServletContextListener {
 
@@ -24,6 +44,8 @@ public class DispatcherServletInitializer implements ServletContextListener {
 
   static final long DEFAULT_MAX_FILE_SIZE = 52_428_800L; // 50 MB
   static final String PROPERTY_NAME = "files.maxUploadSize";
+  static final String PROPERTY_FILE_DIR = "propertyFileDir";
+  static final String DEPLOYMENT_PROPERTIES_FILE = "deployment.properties";
 
   @Override
   public void contextInitialized(ServletContextEvent sce) {
@@ -38,35 +60,68 @@ public class DispatcherServletInitializer implements ServletContextListener {
     dispatcher.addMapping("/app/*", "/offline/*");
     dispatcher.setMultipartConfig(new MultipartConfigElement("", maxFileSize, maxRequestSize, 0));
 
-    log.info(
-        "Registered DispatcherServlet with multipart max-file-size={} bytes"
-            + " (from {} system property: {})",
-        maxFileSize,
-        PROPERTY_NAME,
-        System.getProperty(PROPERTY_NAME) != null ? "yes" : "no, using default");
+    log.info("Registered DispatcherServlet with multipart max-file-size={} bytes", maxFileSize);
   }
 
-  private long resolveMaxFileSize() {
-    String value = System.getProperty(PROPERTY_NAME);
-    if (value != null) {
-      try {
-        long parsed = Long.parseLong(value);
-        if (parsed > 0) {
-          return parsed;
-        }
-        log.warn(
-            "{} must be positive, got {}; using default {}",
-            PROPERTY_NAME,
-            value,
-            DEFAULT_MAX_FILE_SIZE);
-      } catch (NumberFormatException e) {
-        log.warn(
-            "Could not parse {} value '{}'; using default {}",
-            PROPERTY_NAME,
-            value,
-            DEFAULT_MAX_FILE_SIZE);
-      }
+  long resolveMaxFileSize() {
+    Long fromSysProp = parsePositiveLong(System.getProperty(PROPERTY_NAME), "system property");
+    if (fromSysProp != null) {
+      log.info("Resolved {} from JVM system property: {}", PROPERTY_NAME, fromSysProp);
+      return fromSysProp;
     }
+
+    Long fromDeploymentFile = readFromDeploymentProperties();
+    if (fromDeploymentFile != null) {
+      return fromDeploymentFile;
+    }
+
+    log.info("Using default {} of {} bytes", PROPERTY_NAME, DEFAULT_MAX_FILE_SIZE);
     return DEFAULT_MAX_FILE_SIZE;
+  }
+
+  private Long readFromDeploymentProperties() {
+    String dir = System.getProperty(PROPERTY_FILE_DIR);
+    if (dir == null || dir.isBlank()) {
+      return null;
+    }
+    // Strip the Spring Resource "file:" prefix used in prod (e.g.
+    // -DpropertyFileDir=file:/etc/rspace/).
+    if (dir.startsWith("file:")) {
+      dir = dir.substring("file:".length());
+    }
+    Path file = Paths.get(dir, DEPLOYMENT_PROPERTIES_FILE);
+    if (!Files.isReadable(file)) {
+      log.warn(
+          "{} system property is set but {} is not readable; skipping", PROPERTY_FILE_DIR, file);
+      return null;
+    }
+    Properties props = new Properties();
+    try (InputStream in = Files.newInputStream(file)) {
+      props.load(in);
+    } catch (IOException e) {
+      log.warn("Failed to read {}: {}; skipping", file, e.getMessage());
+      return null;
+    }
+    Long parsed = parsePositiveLong(props.getProperty(PROPERTY_NAME), file.toString());
+    if (parsed != null) {
+      log.info("Resolved {} from {}: {}", PROPERTY_NAME, file, parsed);
+    }
+    return parsed;
+  }
+
+  private Long parsePositiveLong(String value, String source) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      long parsed = Long.parseLong(value.trim());
+      if (parsed > 0) {
+        return parsed;
+      }
+      log.warn("{} from {} must be positive, got {}; ignoring", PROPERTY_NAME, source, value);
+    } catch (NumberFormatException e) {
+      log.warn("Could not parse {} value '{}' from {}; ignoring", PROPERTY_NAME, value, source);
+    }
+    return null;
   }
 }
