@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.controller.ApiControllerAdvice;
 import com.researchspace.api.v1.controller.ContainersApiController;
+import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportInstrumentsSettings;
 import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportSamplesSettings;
 import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportSettings;
 import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportSettingsPost;
@@ -9,9 +10,14 @@ import com.researchspace.api.v1.controller.InventoryImportPostFullValidator.ApiI
 import com.researchspace.api.v1.controller.SampleTemplatesApiController;
 import com.researchspace.api.v1.controller.SamplesApiController;
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.ApiInventoryBulkOperationRecordResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
+import com.researchspace.api.v1.model.ApiInventoryImportInstrumentImportResult;
+import com.researchspace.api.v1.model.ApiInventoryImportInstrumentParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportPartialResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
@@ -33,12 +39,14 @@ import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.InventoryImportManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.service.inventory.csvimport.CsvContainerImporter;
+import com.researchspace.service.inventory.csvimport.CsvInstrumentImporter;
 import com.researchspace.service.inventory.csvimport.CsvSampleImporter;
 import com.researchspace.service.inventory.csvimport.CsvSubSampleImporter;
 import com.researchspace.service.inventory.csvimport.exception.InventoryImportException;
@@ -72,6 +80,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
   @Autowired private ContainerApiManager containerManager;
   @Autowired private SampleApiManager sampleManager;
   @Autowired private SubSampleApiManager subSampleManager;
+  @Autowired private InstrumentEntityApiManager instrumentApiMgr;
 
   @Autowired private InventoryBulkOperationHandler bulkOperationHandler;
   @Autowired protected InventoryPermissionUtils invPermissions;
@@ -80,6 +89,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
   @Autowired private CsvContainerImporter containerCsvImporter;
   @Autowired private CsvSampleImporter sampleCsvImporter;
   @Autowired private CsvSubSampleImporter subSampleCsvImporter;
+  @Autowired private CsvInstrumentImporter instrumentCsvImporter;
   @Autowired private InventoryIdentifierApiManager inventoryIdentifierManager;
 
   @Override
@@ -101,6 +111,12 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
   }
 
   @Override
+  public ApiInventoryImportInstrumentParseResult parseInstrumentsCsvFile(
+      String filename, InputStream inputStream, User createdBy) throws IOException {
+    return instrumentCsvImporter.parseInstrumentsCsvFile(filename, inputStream, createdBy);
+  }
+
+  @Override
   public ApiInventoryImportResult importInventoryCsvFiles(
       ApiInventoryImportPostFull importPostFull, User user) throws IOException {
 
@@ -108,6 +124,8 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
 
     ApiInventoryImportSettingsPost importSettings = importPostFull.getImportSettings();
     ApiInventoryImportSamplesSettings sampleSettings = importSettings.getSampleSettings();
+    ApiInventoryImportInstrumentsSettings instrumentSettings =
+        importSettings.getInstrumentSettings();
 
     // first deal with sample template (if present)
     if (sampleSettings != null) {
@@ -117,6 +135,14 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
       log.info("templateInfo: {} ", templateInfo);
 
       csvResult.setSampleResult(createSampleResultWithRequestedTemplate(templateInfo, user));
+    }
+
+    // and deal with instrument template (if present)
+    if (instrumentSettings != null) {
+      log.info("create/retrieve requested instrument template");
+      csvResult.setInstrumentResult(
+          createInstrumentResultWithRequestedTemplate(
+              instrumentSettings.getTemplateId(), instrumentSettings.getTemplateInfo(), user));
     }
 
     readCsvFiles(csvResult, importPostFull, user);
@@ -149,8 +175,38 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
       importResult.getSubSampleResult().setStatus(InventoryBulkOperationStatus.COMPLETED);
     }
 
+    if (csvResult.getInstrumentResult() != null) {
+      importInstruments(importResult, csvResult);
+      importResult.getInstrumentResult().setStatus(InventoryBulkOperationStatus.COMPLETED);
+    }
+
     reloadContainersInImportResult(importResult);
     return importResult;
+  }
+
+  ApiInventoryImportInstrumentImportResult createInstrumentResultWithRequestedTemplate(
+      Long templateId, ApiInstrumentTemplatePost templateInfo, User user) {
+
+    ApiInventoryImportInstrumentImportResult templateResult =
+        new ApiInventoryImportInstrumentImportResult();
+    ApiInstrumentTemplate template;
+    try {
+      if (templateId != null) {
+        template = instrumentApiMgr.getApiInstrumentTemplateById(templateId, user);
+        templateResult.addExistingTemplateResult(template);
+      } else {
+        template = instrumentApiMgr.createInstrumentTemplate(templateInfo, user);
+        templateResult.addCreatedTemplateResult(template);
+      }
+    } catch (Exception e) {
+      log.warn("Error on creating/retrieving instrument template", e);
+      ApiError error = bulkOperationHandler.convertExceptionToApiError(e);
+      templateResult.addTemplateError(convertToTemplateErrorException(e));
+      ApiInventoryImportResult importResult = new ApiInventoryImportResult(user);
+      importResult.setInstrumentResult(templateResult);
+      throw new InventoryImportException(error, importResult);
+    }
+    return templateResult;
   }
 
   ApiInventoryImportSampleImportResult createSampleResultWithRequestedTemplate(
@@ -183,7 +239,6 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
   }
 
   private ApiError convertToTemplateErrorException(Exception e) {
-    log.warn("problem with template to use for import: " + e.getMessage(), e);
     return bulkOperationHandler.convertExceptionToApiError(e);
   }
 
@@ -195,18 +250,23 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
     ApiInventoryImportSamplesSettings sampleSettings = importSettings.getSampleSettings();
     ApiInventoryImportSettings containerSettings = importSettings.getContainerSettings();
     ApiInventoryImportSettings subSampleSettings = importSettings.getSubSampleSettings();
+    ApiInventoryImportInstrumentsSettings instrumentSettings =
+        importSettings.getInstrumentSettings();
 
     MultipartFile containersFile = importPostFull.getContainersFile();
     MultipartFile samplesFile = importPostFull.getSamplesFile();
     MultipartFile subSamplesFile = importPostFull.getSubSamplesFile();
+    MultipartFile instrumentsFile = importPostFull.getInstrumentsFile();
 
-    setFileNamesInImportResult(csvResult, containersFile, samplesFile, subSamplesFile);
+    setFileNamesInImportResult(
+        csvResult, containersFile, samplesFile, subSamplesFile, instrumentsFile);
 
     try (InputStream containersIS =
             containersFile != null ? containersFile.getInputStream() : null;
         InputStream samplesIS = samplesFile != null ? samplesFile.getInputStream() : null;
-        InputStream subSamplesIS =
-            subSamplesFile != null ? subSamplesFile.getInputStream() : null) {
+        InputStream subSamplesIS = subSamplesFile != null ? subSamplesFile.getInputStream() : null;
+        InputStream instrumentsIS =
+            instrumentsFile != null ? instrumentsFile.getInputStream() : null) {
 
       // read containers
       if (containerSettings != null && containersIS != null) {
@@ -245,6 +305,20 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
             subSamplesIS, subSampleFieldMappings, csvResult, user);
         prevalidateSubSamples(csvResult);
       }
+
+      // read instruments
+      if (instrumentSettings != null && instrumentsIS != null) {
+        log.info("reading instruments file");
+        Map<String, String> fieldMappings = instrumentSettings.getFieldMappings();
+        log.info("instrument fieldMappings: {} ", fieldMappings);
+
+        boolean templateRetrieved =
+            csvResult.getInstrumentResult().getTemplate().getRecord() != null;
+        if (templateRetrieved) {
+          instrumentCsvImporter.readCsvIntoImportResult(
+              instrumentsIS, fieldMappings, csvResult, user);
+        }
+      }
     }
   }
 
@@ -252,7 +326,8 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
       ApiInventoryImportResult importResult,
       MultipartFile containersFile,
       MultipartFile samplesFile,
-      MultipartFile subSamplesFile) {
+      MultipartFile subSamplesFile,
+      MultipartFile instrumentsFile) {
 
     importResult.setContainerCsvFilename(
         containersFile != null ? containersFile.getOriginalFilename() : null);
@@ -260,6 +335,8 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         samplesFile != null ? samplesFile.getOriginalFilename() : null);
     importResult.setSubSampleCsvFilename(
         subSamplesFile != null ? subSamplesFile.getOriginalFilename() : null);
+    importResult.setInstrumentCsvFilename(
+        instrumentsFile != null ? instrumentsFile.getOriginalFilename() : null);
   }
 
   void prevalidateContainers(ApiInventoryImportResult csvResult) {
@@ -891,6 +968,33 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         importResult.getSubSampleResult().changeIntoErrorResult(importedSubSample, error);
         throw new InventoryImportException(error, importResult);
       }
+    }
+  }
+
+  void importInstruments(
+      ApiInventoryImportResult importResult, ApiInventoryImportResult csvResult) {
+
+    ApiInventoryImportInstrumentImportResult instrumentCsvResult = csvResult.getInstrumentResult();
+    ApiInventoryImportInstrumentImportResult instrumentImportResult =
+        instrumentCsvResult.copyWithTemplateResultAndImportIdsOnly();
+    importResult.setInstrumentResult(instrumentImportResult);
+
+    int instrumentCount = 0;
+    for (ApiInventoryBulkOperationRecordResult toImport : instrumentCsvResult.getResults()) {
+      ApiInstrument instrumentToImport = (ApiInstrument) toImport.getRecord();
+      try {
+        ApiInstrument importedInstrument =
+            instrumentApiMgr.createNewApiInstrument(
+                instrumentToImport, importResult.getCurrentUser());
+        assignIdentifier(importResult.getCurrentUser(), instrumentToImport, importedInstrument);
+        instrumentImportResult.addSuccessResult(importedInstrument);
+      } catch (Exception e) {
+        log.warn("Error on saving instrument from line: " + (instrumentCount + 1), e);
+        ApiError error = bulkOperationHandler.convertExceptionToApiError(e);
+        instrumentImportResult.addError(error);
+        throw new InventoryImportException(error, importResult);
+      }
+      instrumentCount++;
     }
   }
 
