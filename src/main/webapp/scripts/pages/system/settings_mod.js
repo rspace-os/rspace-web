@@ -141,6 +141,7 @@ define(function() {
     function saveSetting($settingRow) {
 
         var settingName = $settingRow.data('name');
+        var settingLabel = $settingRow.data('label') || settingName;
         var newValue = _get$InputFieldForRow($settingRow).val();
 
         RS.blockPage("Saving...");
@@ -152,10 +153,10 @@ define(function() {
         var jqxhr = $.post("/deploymentproperties/ajax/updateProperty", data);
         jqxhr.done(function(result) {
             if (result.errorMsg) {
-                apprise('System Setting \'' + settingName + '\' couldn\'t be updated.');
+                apprise('System Setting \'' + settingLabel + '\' couldn\'t be updated.');
             } else {
                 var safeResult = RS.escapeHtml(result.data);
-                $().toastmessage('showSuccessToast', 'System Setting \'' + settingName + '\' updated to \'' + safeResult + '\'');
+                $().toastmessage('showSuccessToast', 'System Setting \'' + settingLabel + '\' updated to \'' + safeResult + '\'');
                 settings[settingName] = result.data;
                 $settingRow.find('.settingViewDiv .settingValue').html(safeResult || '&nbsp;');
                 toggleSettingMode($settingRow);
