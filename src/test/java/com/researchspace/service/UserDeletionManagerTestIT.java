@@ -8,6 +8,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
+import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTableWhere;
 
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -696,7 +697,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setStoichiometryMolecule(savedMolecule);
     link.setInventoryRecord(subSample);
-    stoichiometryInventoryLinkDao.save(link);
+    Long linkId = stoichiometryInventoryLinkDao.save(link).getId();
 
     User sysadmin = logoutAndLoginAsSysAdmin();
     UserDeletionPolicy policy = unrestrictedDeletionPolicy();
@@ -705,6 +706,62 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     assertTrue(result.isSucceeded());
     assertUserNotExist(userToDelete);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  @Test
+  public void testDeleteUserOwningStoichiometryLinkedToOtherUsersInventory() throws Exception {
+    // Inventory belongs to a different user from the one being deleted, so
+    // deleteInventoryItems cannot clean up the link row — the SQL in
+    // deleteRecords (joined via BaseRecord.owner_id) is the only thing that
+    // can remove it before the StoichiometryMolecule delete runs.
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(inventoryOwner);
+    Sample sample = sampleDao.get(apiSample.getId());
+
+    RSpaceTestUtils.logout();
+    User userToDelete = createInitAndLoginAnyUser();
+
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(userToDelete, "Chemistry doc");
+
+    RSChemElement chemElement = RSChemElement.builder().chemElements("CCO").record(doc).build();
+    chemElement = rsChemElementMgr.save(chemElement, userToDelete);
+
+    Stoichiometry stoichiometry =
+        Stoichiometry.builder().parentReaction(chemElement).record(doc).build();
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+
+    RSChemElement moleculeChemElement =
+        RSChemElement.builder().chemElements("C2H6O").record(doc).build();
+    moleculeChemElement = rsChemElementMgr.save(moleculeChemElement, userToDelete);
+
+    StoichiometryMolecule molecule =
+        StoichiometryMolecule.builder()
+            .stoichiometry(stoichiometry)
+            .rsChemElement(moleculeChemElement)
+            .role(MoleculeRole.REACTANT)
+            .formula("C2H6O")
+            .name("Ethanol")
+            .smiles("CCO")
+            .molecularWeight(46.07)
+            .build();
+    stoichiometry.addMolecule(molecule);
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+    StoichiometryMolecule savedMolecule = stoichiometry.getMolecules().get(0);
+
+    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
+    link.setStoichiometryMolecule(savedMolecule);
+    link.setInventoryRecord(sample);
+    Long linkId = stoichiometryInventoryLinkDao.save(link).getId();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(userToDelete.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(userToDelete);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
   }
 
   @Test
@@ -746,7 +803,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setStoichiometryMolecule(savedMolecule);
     link.setInventoryRecord(sample);
-    stoichiometryInventoryLinkDao.save(link);
+    Long linkId = stoichiometryInventoryLinkDao.save(link).getId();
 
     User sysadmin = logoutAndLoginAsSysAdmin();
     UserDeletionPolicy policy = unrestrictedDeletionPolicy();
@@ -755,6 +812,19 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     assertTrue(result.isSucceeded());
     assertUserNotExist(inventoryOwner);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  private void assertStoichiometryInventoryLinkAndAuditDeleted(Long linkId) {
+    String where = "id = " + linkId;
+    assertEquals(
+        "StoichiometryInventoryLink row should have been deleted",
+        0,
+        countRowsInTableWhere(jdbcTemplate, "StoichiometryInventoryLink", where));
+    assertEquals(
+        "StoichiometryInventoryLink_AUD rows should have been deleted",
+        0,
+        countRowsInTableWhere(jdbcTemplate, "StoichiometryInventoryLink_AUD", where));
   }
 
   @Test
