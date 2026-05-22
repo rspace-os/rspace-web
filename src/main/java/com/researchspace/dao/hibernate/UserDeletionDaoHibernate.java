@@ -174,7 +174,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     // Delete StoichiometryInventoryLink rows targeting this user's inventory items.
     // The link's FKs to Sample/SubSample/Container/InstrumentEntity have no
     // ON DELETE CASCADE, so we must remove them before the inventory rows.
-    // Order: _AUD first, then main (matches the file convention).
+    // Order in this block: _AUD first, then main.
 
     // sample_id targets
     execute(
