@@ -16,6 +16,7 @@ These instructions apply to the entire repository unless a deeper `AGENTS.md` ov
 - Check for nested `AGENTS.md` files before editing files in subdirectories.
 - When searching the repo, prefer `rg` and `rg --files`.
 - Do not edit minified files unless the user explicitly asks for it.
+- Plan documents (design notes, multi-step implementation plans, scratch analyses) must be written to the `.claude/` folder, which is gitignored. Never place plan files at the repository root or anywhere else inside `src/`. The `.claude/` folder is the only sanctioned location for ephemeral working notes that should not be committed.
 
 ## Project Overview
 
@@ -323,8 +324,8 @@ DevDocs/                           # Developer documentation
 
 ## Agent-Specific Config Files
 
-- **AGENTS.md** (this file): Primary instructions for all AI agents
-- **CLAUDE.md**: Points to AGENTS.md — for Claude Code / Anthropic agents
+- **AGENTS.md**: Primary instructions for all AI agents. We make a copy of Agents.md in this file.
+- **CLAUDE.md**: A copy of AGENTS.md — for Claude Code / Anthropic agents
 - **.github/copilot-instructions.md**: Quick-reference for GitHub Copilot — points to AGENTS.md
 
 ## Repo-Local Agent Skills

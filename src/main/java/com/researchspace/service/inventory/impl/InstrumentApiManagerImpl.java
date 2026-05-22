@@ -229,6 +229,7 @@ public class InstrumentApiManagerImpl extends InventoryApiManagerImpl<Instrument
       contentChanged |= apiInstrument.applyChangesToDatabaseInstrument(dbInstrument, user);
       contentChanged |= saveSharingACLForIncomingApiInvRec(dbInstrument, apiInstrument);
       contentChanged |= saveIncomingInstrumentImage(dbInstrument, apiInstrument, user);
+      InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(dbInstrument);
       if (contentChanged) {
         saveDbInstrumentUpdate(dbInstrument, user);
       }

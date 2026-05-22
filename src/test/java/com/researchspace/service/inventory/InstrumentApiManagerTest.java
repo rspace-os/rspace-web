@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
+
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiExtraField;
@@ -269,6 +270,135 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
     assertEquals("renamed instrument", updated.getName());
     assertEquals("updated description", updated.getDescription());
     verify(mockPublisher).publishEvent(Mockito.any(InventoryEditingEvent.class));
+  }
+
+  @Test
+  public void instrumentUpdateRejectsDuplicateExtraFieldNames() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "update-dup-extras");
+
+    ApiInstrument update = new ApiInstrument();
+    update.setId(created.getId());
+    ApiExtraField one = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    one.setName("dup");
+    one.setContent("a");
+    one.setNewFieldRequest(true);
+    ApiExtraField two = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    two.setName("dup");
+    two.setContent("b");
+    two.setNewFieldRequest(true);
+    update.setExtraFields(List.of(one, two));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> instrumentApiMgr.updateApiInstrument(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void instrumentUpdateRejectsCaseOnlyDuplicateExtraFieldNames() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "update-case-dup-extras");
+
+    ApiInstrument update = new ApiInstrument();
+    update.setId(created.getId());
+    ApiExtraField one = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    one.setName("Foo");
+    one.setContent("a");
+    one.setNewFieldRequest(true);
+    ApiExtraField two = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    two.setName("foo");
+    two.setContent("b");
+    two.setNewFieldRequest(true);
+    update.setExtraFields(List.of(one, two));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> instrumentApiMgr.updateApiInstrument(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void instrumentUpdateTrimsBeforeCompare() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "update-trim-extras");
+
+    ApiInstrument update = new ApiInstrument();
+    update.setId(created.getId());
+    ApiExtraField one = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    one.setName("Foo");
+    one.setContent("a");
+    one.setNewFieldRequest(true);
+    ApiExtraField two = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    two.setName(" Foo ");
+    two.setContent("b");
+    two.setNewFieldRequest(true);
+    update.setExtraFields(List.of(one, two));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> instrumentApiMgr.updateApiInstrument(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void instrumentUpdateRejectsAddingDuplicateOfExistingExtraField() {
+    // seed an instrument with one extra "solo"
+    ApiInstrument seed = new ApiInstrument();
+    seed.setName("update-existing-dup-extras");
+    ApiExtraField first = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    first.setName("solo");
+    first.setContent("v1");
+    seed.setExtraFields(List.of(first));
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(seed, testUser);
+
+    // PUT another new extra with the same name → caught by post-mutation entity check
+    ApiInstrument update = new ApiInstrument();
+    update.setId(created.getId());
+    ApiExtraField duplicate = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    duplicate.setName("solo");
+    duplicate.setContent("v2");
+    duplicate.setNewFieldRequest(true);
+    update.setExtraFields(List.of(duplicate));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> instrumentApiMgr.updateApiInstrument(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void instrumentUpdateAllowsDeleteAndAddSameExtraFieldName() {
+    // seed with one extra "A"
+    ApiInstrument seed = new ApiInstrument();
+    seed.setName("update-delete-add-extras");
+    ApiExtraField first = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    first.setName("A");
+    first.setContent("v1");
+    seed.setExtraFields(List.of(first));
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(seed, testUser);
+    Long existingId = created.getExtraFields().get(0).getId();
+
+    // delete A and add a new A in the same PUT
+    ApiInstrument update = new ApiInstrument();
+    update.setId(created.getId());
+    ApiExtraField toDelete = new ApiExtraField();
+    toDelete.setId(existingId);
+    toDelete.setDeleteFieldRequest(true);
+    ApiExtraField replacement = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    replacement.setName("A");
+    replacement.setContent("v2");
+    replacement.setNewFieldRequest(true);
+    update.setExtraFields(List.of(toDelete, replacement));
+
+    ApiInstrument updated = instrumentApiMgr.updateApiInstrument(update, testUser);
+    long activeAs =
+        updated.getExtraFields().stream()
+            .filter(ef -> "A".equals(ef.getName()))
+            .filter(ef -> "v2".equals(ef.getContent()))
+            .count();
+    assertEquals(1L, activeAs);
   }
 
   @Test
