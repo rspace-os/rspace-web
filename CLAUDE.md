@@ -2,6 +2,15 @@
 
 See [AGENTS.md](./AGENTS.md) for full project context (build, test, architecture, conventions).
 
+## Plans and working files
+
+When asked to write an implementation plan, design doc, or any other agent-authored
+working file (notes, scratch analyses, investigation summaries), save it under
+`.claude/plans/` at the repo root — e.g. `.claude/plans/RSDEV-1108-plan.md`. The
+`.claude/` directory is gitignored, so these files stay local to the developer's
+checkout and do not pollute the repo or PRs. Do not save plan files at the repo
+root or inside `src/`. If `.claude/plans/` does not exist, create it.
+
 ## PR Descriptions
 
 When creating or updating GitHub pull request descriptions:
