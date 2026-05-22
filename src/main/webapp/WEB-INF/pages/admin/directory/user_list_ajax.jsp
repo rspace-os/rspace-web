@@ -58,11 +58,13 @@
 					</td>
 					</rst:hasDeploymentProperty>
 					<td>
-						<c:forEach items="${user.groups}" var="group">
-              <c:if test="${!(group.privateProfile and applicationScope['RS_DEPLOY_PROPS']['profileHidingEnabled'] and not subject.isConnectedToGroup(group))}">
-              	<a href="/groups/view/${group.id}"> ${group.displayName} </a>
-              </c:if>
-						</c:forEach>
+						<ul style="margin: 0; padding: 0;">
+							<c:forEach items="${user.groups}" var="group">
+							  <c:if test="${!(group.privateProfile and applicationScope['RS_DEPLOY_PROPS']['profileHidingEnabled'] and not subject.isConnectedToGroup(group))}">
+								<li><a href="/groups/view/${group.id}"> ${group.displayName}</a></li>
+							  </c:if>
+							</c:forEach>
+						</ul>
 					</td>
 					<td style="word-wrap: break-word;">
 						${user.userInfo.email}
