@@ -12,6 +12,7 @@ import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.core.util.TransformerUtils;
+import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
@@ -27,6 +28,8 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.oauth.UserConnection;
@@ -37,6 +40,7 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
+import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
@@ -81,6 +85,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired JdbcTemplate jdbcTemplate;
   private @Autowired StoichiometryManager stoichiometryMgr;
   private @Autowired RSChemElementManager rsChemElementMgr;
+  private @Autowired StoichiometryInventoryLinkDao stoichiometryInventoryLinkDao;
 
   @Before
   public void setUp() throws Exception {
@@ -651,6 +656,105 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     assertTrue(result.isSucceeded());
     assertUserNotExist(userToDelete);
+  }
+
+  @Test
+  public void testDeleteUserWithStoichiometryAndInventoryLink() throws Exception {
+    User userToDelete = createInitAndLoginAnyUser();
+
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(userToDelete, "Chemistry doc");
+
+    RSChemElement chemElement = RSChemElement.builder().chemElements("CCO").record(doc).build();
+    chemElement = rsChemElementMgr.save(chemElement, userToDelete);
+
+    Stoichiometry stoichiometry =
+        Stoichiometry.builder().parentReaction(chemElement).record(doc).build();
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+
+    RSChemElement moleculeChemElement =
+        RSChemElement.builder().chemElements("C2H6O").record(doc).build();
+    moleculeChemElement = rsChemElementMgr.save(moleculeChemElement, userToDelete);
+
+    StoichiometryMolecule molecule =
+        StoichiometryMolecule.builder()
+            .stoichiometry(stoichiometry)
+            .rsChemElement(moleculeChemElement)
+            .role(MoleculeRole.REACTANT)
+            .formula("C2H6O")
+            .name("Ethanol")
+            .smiles("CCO")
+            .molecularWeight(46.07)
+            .build();
+    stoichiometry.addMolecule(molecule);
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+    StoichiometryMolecule savedMolecule = stoichiometry.getMolecules().get(0);
+
+    ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(userToDelete);
+    Sample sample = sampleDao.get(apiSample.getId());
+    SubSample subSample = sample.getSubSamples().get(0);
+
+    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
+    link.setStoichiometryMolecule(savedMolecule);
+    link.setInventoryRecord(subSample);
+    stoichiometryInventoryLinkDao.save(link);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(userToDelete.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(userToDelete);
+  }
+
+  @Test
+  public void testDeleteUserOwningInventoryLinkedFromOtherUsersStoichiometry() throws Exception {
+    User stoichOwner = createInitAndLoginAnyUser();
+
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(stoichOwner, "Chemistry doc");
+
+    RSChemElement chemElement = RSChemElement.builder().chemElements("CCO").record(doc).build();
+    chemElement = rsChemElementMgr.save(chemElement, stoichOwner);
+
+    Stoichiometry stoichiometry =
+        Stoichiometry.builder().parentReaction(chemElement).record(doc).build();
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+
+    RSChemElement moleculeChemElement =
+        RSChemElement.builder().chemElements("C2H6O").record(doc).build();
+    moleculeChemElement = rsChemElementMgr.save(moleculeChemElement, stoichOwner);
+
+    StoichiometryMolecule molecule =
+        StoichiometryMolecule.builder()
+            .stoichiometry(stoichiometry)
+            .rsChemElement(moleculeChemElement)
+            .role(MoleculeRole.REACTANT)
+            .formula("C2H6O")
+            .name("Ethanol")
+            .smiles("CCO")
+            .molecularWeight(46.07)
+            .build();
+    stoichiometry.addMolecule(molecule);
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+    StoichiometryMolecule savedMolecule = stoichiometry.getMolecules().get(0);
+
+    RSpaceTestUtils.logout();
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(inventoryOwner);
+    Sample sample = sampleDao.get(apiSample.getId());
+
+    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
+    link.setStoichiometryMolecule(savedMolecule);
+    link.setInventoryRecord(sample);
+    stoichiometryInventoryLinkDao.save(link);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(inventoryOwner.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(inventoryOwner);
   }
 
   @Test
