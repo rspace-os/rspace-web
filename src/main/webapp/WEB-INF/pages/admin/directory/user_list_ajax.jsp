@@ -71,9 +71,9 @@
 					</td>
 					<td>
 						<c:if test="${not empty user.orcidId}">
-							<a class="orcidIdLink" target="_blank" href="http://orcid.org/${user.orcidId}">
-								<img class="orcidIdImg" src="/images/integrations/orcid-small.png" style="vertical-align: text-bottom;" />
-								http://orcid.org/${user.orcidId}
+							<a class="orcidIdLink" target="_blank" href="https://orcid.org/${user.orcidId}">
+								<img class="orcidIdImg" src="/images/integrations/orcid-small.png" style="vertical-align: text-bottom;" alt="ORCiD Logo" />
+								https://orcid.org/${user.orcidId}
 							</a>
 							<br />
 						</c:if> 
