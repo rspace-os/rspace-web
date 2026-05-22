@@ -215,6 +215,7 @@ export interface GalleryFile {
   readonly canDelete: Result<null>;
   readonly canRename: Result<null>;
   readonly canMoveToIrods: Result<null>;
+  readonly canMoveToS3: Result<null>;
   readonly canBeExported: Result<null>;
   readonly canBeMoved: Result<null>;
   readonly canUploadNewVersion: Result<null>;
@@ -508,6 +509,12 @@ export class LocalGalleryFile implements GalleryFile {
     return Result.Ok(null);
   }
 
+  get canMoveToS3(): Result<null> {
+    if (this.isSystemFolder)
+      return Result.Error([new Error("Cannot move system folders to S3.")]);
+    return Result.Ok(null);
+  }
+
   get canBeExported(): Result<null> {
     return Result.Ok(null);
   }
@@ -658,6 +665,10 @@ export class Filestore implements GalleryFile {
 
   get canMoveToIrods(): Result<null> {
     return Result.Error([new Error("Cannot move filestores to iRODS.")]);
+  }
+
+  get canMoveToS3(): Result<null> {
+    return Result.Error([new Error("Cannot move filestores to S3.")]);
   }
 
   get canBeExported(): Result<null> {
@@ -874,6 +885,23 @@ export class RemoteFile implements GalleryFile {
           this.isFolder ? "folders" : "files"
         } stored in filestores to iRODS.`,
       ),
+    ]);
+  }
+
+  get canMoveToS3(): Result<null> {
+    if (this.isFolder) {
+      return Result.Error([new Error("Cannot transfer folders to S3.")]);
+    }
+    const parentFilestore = this.path[0];
+    if (
+      parentFilestore instanceof Filestore &&
+      parentFilestore.filesystemType === "S3" &&
+      parentFilestore.id !== null
+    ) {
+      return Result.Ok(null);
+    }
+    return Result.Error([
+      new Error("Can only transfer files stored in an S3 filestore."),
     ]);
   }
 

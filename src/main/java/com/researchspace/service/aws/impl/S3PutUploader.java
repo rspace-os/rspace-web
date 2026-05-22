@@ -5,9 +5,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Map;
 import java.util.function.Function;
 import javax.ws.rs.core.EntityTag;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.util.DigestUtils;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -17,15 +21,30 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 @Slf4j
 public class S3PutUploader extends AbstractS3Uploader implements Function<File, SdkHttpResponse> {
 
+  @Getter private final Map<String, String> objectMetadata;
+
   S3PutUploader(S3Client s3Client, String s3BucketName, String s3ArchivePath) {
+    this(s3Client, s3BucketName, s3ArchivePath, Collections.emptyMap());
+  }
+
+  S3PutUploader(
+      S3Client s3Client,
+      String s3BucketName,
+      String s3ArchivePath,
+      Map<String, String> objectMetadata) {
     super(s3Client, s3BucketName, s3ArchivePath);
+    this.objectMetadata = ObjectUtils.defaultIfNull(objectMetadata, Collections.emptyMap());
   }
 
   @Override
   public SdkHttpResponse apply(File file) {
     try {
-      PutObjectRequest putObjectRequest =
-          PutObjectRequest.builder().bucket(s3BucketName).key(buildKeyFromFilePath(file)).build();
+      PutObjectRequest.Builder putObjectRequestBuilder =
+          PutObjectRequest.builder().bucket(s3BucketName).key(buildKeyFromFilePath(file));
+      if (!objectMetadata.isEmpty()) {
+        putObjectRequestBuilder.metadata(objectMetadata);
+      }
+      PutObjectRequest putObjectRequest = putObjectRequestBuilder.build();
 
       PutObjectResponse putObjectResponse =
           s3Client.putObject(putObjectRequest, file.getAbsoluteFile().toPath());

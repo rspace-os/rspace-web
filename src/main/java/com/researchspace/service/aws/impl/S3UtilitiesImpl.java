@@ -30,6 +30,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -39,6 +40,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -55,26 +57,30 @@ public class S3UtilitiesImpl implements S3Utilities {
   @Setter(AccessLevel.PACKAGE)
   private Integer chunkedUploadMbSize;
 
-  private String s3BucketName;
+  @Getter
+  @Setter(AccessLevel.PACKAGE)
+  private String bucketName;
 
-  @Getter private S3Client s3Client;
+  @Getter
+  @Setter(AccessLevel.PACKAGE)
+  private S3Client s3Client;
 
-  protected void initializeS3ClientWithAwsDefaults(String s3Region, String s3BucketName) {
-    initializeS3Client(null, s3Region, s3BucketName, false, null, null);
+  protected void initializeS3ClientWithAwsDefaults(String s3Region, String bucketName) {
+    initializeS3Client(null, s3Region, bucketName, false, null, null);
   }
 
   /** Initializes s3 client used by this S3Utilities instance */
   protected void initializeS3Client(
       String s3url,
       String s3Region,
-      String s3BucketName,
+      String bucketName,
       boolean pathStyleAccessEnabled,
       String accessKeyId,
       String secretAccessKey) {
 
-    Validate.notBlank(s3BucketName, "s3BucketName must be set for initialization");
+    Validate.notBlank(bucketName, "bucketName must be set for initialization");
     Validate.notBlank(s3Region, "s3Region must be set for initialization");
-    this.s3BucketName = s3BucketName;
+    this.bucketName = bucketName;
 
     try {
       S3ClientBuilder s3ClientBuilder = S3Client.builder().region(Region.of(s3Region));
@@ -92,13 +98,12 @@ public class S3UtilitiesImpl implements S3Utilities {
       }
 
       s3Client = s3ClientBuilder.build();
-      HeadBucketRequest headBucketRequest =
-          HeadBucketRequest.builder().bucket(s3BucketName).build();
+      HeadBucketRequest headBucketRequest = HeadBucketRequest.builder().bucket(bucketName).build();
       s3Client.headBucket(headBucketRequest);
 
     } catch (Exception e) {
       s3Client = null;
-      log.error("Error building S3 client with region {} and bucket {}", s3Region, s3BucketName, e);
+      log.error("Error building S3 client with region {} and bucket {}", s3Region, bucketName, e);
       throw e;
     }
   }
@@ -108,7 +113,7 @@ public class S3UtilitiesImpl implements S3Utilities {
     String fullPath = StringUtils.isBlank(folderPath) ? fileName : folderPath + "/" + fileName;
     try {
       HeadObjectRequest headObjectRequest =
-          HeadObjectRequest.builder().bucket(s3BucketName).key(fullPath).build();
+          HeadObjectRequest.builder().bucket(bucketName).key(fullPath).build();
       s3Client.headObject(headObjectRequest);
       return true;
     } catch (S3Exception e) {
@@ -117,37 +122,45 @@ public class S3UtilitiesImpl implements S3Utilities {
         return false;
       }
       log.error(
-          "Error while making head object request for bucket {} and file {}",
-          s3BucketName,
-          fullPath);
+          "Error while making head object request for bucket {} and file {}", bucketName, fullPath);
       throw e;
     } catch (Exception e) {
       log.error(
-          "Error while making head object request for bucket {} and file {}",
-          s3BucketName,
-          fullPath);
+          "Error while making head object request for bucket {} and file {}", bucketName, fullPath);
       throw e;
     }
   }
 
   @Override
   public SdkHttpResponse uploadToS3(String folderPath, File file) {
-    return getS3Uploader(folderPath, file).apply(file);
+    return uploadToS3(folderPath, file, java.util.Collections.emptyMap());
+  }
+
+  @Override
+  public SdkHttpResponse uploadToS3(
+      String folderPath, File file, java.util.Map<String, String> metadata) {
+    return getS3Uploader(folderPath, file, metadata).apply(file);
   }
 
   protected Function<File, SdkHttpResponse> getS3Uploader(String folderPath, File file) {
+    return getS3Uploader(folderPath, file, java.util.Collections.emptyMap());
+  }
+
+  protected Function<File, SdkHttpResponse> getS3Uploader(
+      String folderPath, File file, java.util.Map<String, String> metadata) {
     if ((file.length() <= AWS_PUT_FILE_LIMIT)
         && (chunkedUploadMbThreshold * FileUtils.ONE_MB > file.length())) {
-      return new S3PutUploader(s3Client, s3BucketName, folderPath);
+      return new S3PutUploader(s3Client, bucketName, folderPath, metadata);
     }
-    return new S3MultipartChunkedUploader(s3Client, s3BucketName, folderPath, chunkedUploadMbSize);
+    return new S3MultipartChunkedUploader(
+        s3Client, bucketName, folderPath, chunkedUploadMbSize, metadata);
   }
 
   @Override
   public void downloadFromS3(String filePath, File destinationFile) {
     try {
       GetObjectRequest getObjectRequest =
-          GetObjectRequest.builder().bucket(s3BucketName).key(filePath).build();
+          GetObjectRequest.builder().bucket(bucketName).key(filePath).build();
       try (ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest)) {
         Files.copy(response, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
       }
@@ -169,7 +182,7 @@ public class S3UtilitiesImpl implements S3Utilities {
     try {
       ListObjectsV2Request listRequest =
           ListObjectsV2Request.builder()
-              .bucket(s3BucketName)
+              .bucket(bucketName)
               .prefix(folderPrefixToQuery)
               .delimiter("/")
               .build();
@@ -220,21 +233,20 @@ public class S3UtilitiesImpl implements S3Utilities {
     }
     try {
       HeadObjectRequest headObjectRequest =
-          HeadObjectRequest.builder().bucket(s3BucketName).key(path).build();
+          HeadObjectRequest.builder().bucket(bucketName).key(path).build();
       HeadObjectResponse response = s3Client.headObject(headObjectRequest);
       return new S3FolderContentItem(
           getLeafName(path), false, response.contentLength(), response.lastModified());
     } catch (S3Exception e) {
       if (e.statusCode() != 404) {
-        log.error(
-            "Error while getting object details for bucket {} and path {}", s3BucketName, path);
+        log.error("Error while getting object details for bucket {} and path {}", bucketName, path);
         throw e;
       }
       // Not a file - check if it's a virtual folder (has content with this prefix)
       String folderPrefix = getFolderPrefixToQuery(path);
       ListObjectsV2Request listRequest =
           ListObjectsV2Request.builder()
-              .bucket(s3BucketName)
+              .bucket(bucketName)
               .prefix(folderPrefix)
               .delimiter("/")
               .maxKeys(1)
@@ -247,7 +259,7 @@ public class S3UtilitiesImpl implements S3Utilities {
       }
       return null;
     } catch (Exception e) {
-      log.error("Error while getting object details for bucket {} and path {}", s3BucketName, path);
+      log.error("Error while getting object details for bucket {} and path {}", bucketName, path);
       throw e;
     }
   }
@@ -256,7 +268,7 @@ public class S3UtilitiesImpl implements S3Utilities {
     try {
       String folderKey = path.endsWith("/") ? path : path + "/";
       HeadObjectRequest headObjectRequest =
-          HeadObjectRequest.builder().bucket(s3BucketName).key(folderKey).build();
+          HeadObjectRequest.builder().bucket(bucketName).key(folderKey).build();
       s3Client.headObject(headObjectRequest);
       return true;
     } catch (S3Exception e) {
@@ -293,11 +305,45 @@ public class S3UtilitiesImpl implements S3Utilities {
     String s3Key = StringUtils.isNotBlank(folderPath) ? folderPath + "/" + fileName : fileName;
     try {
       DeleteObjectRequest deleteObjectRequest =
-          DeleteObjectRequest.builder().bucket(s3BucketName).key(s3Key).build();
+          DeleteObjectRequest.builder().bucket(bucketName).key(s3Key).build();
 
       return s3Client.deleteObject(deleteObjectRequest);
     } catch (Exception e) {
       log.error("Failed to delete object {} from S3", s3Key, e);
+      throw e;
+    }
+  }
+
+  @Override
+  public void copyObjectFromBucket(String sourceBucket, String sourceKey, String destKey) {
+    copyObjectFromBucket(sourceBucket, sourceKey, destKey, java.util.Collections.emptyMap());
+  }
+
+  @Override
+  public void copyObjectFromBucket(
+      String sourceBucket,
+      String sourceKey,
+      String destKey,
+      java.util.Map<String, String> metadata) {
+    try {
+      CopyObjectRequest.Builder builder =
+          CopyObjectRequest.builder()
+              .sourceBucket(sourceBucket)
+              .sourceKey(sourceKey)
+              .destinationBucket(bucketName)
+              .destinationKey(destKey);
+      if (metadata != null && !metadata.isEmpty()) {
+        builder.metadata(metadata).metadataDirective(MetadataDirective.REPLACE);
+      }
+      s3Client.copyObject(builder.build());
+    } catch (Exception e) {
+      log.error(
+          "Failed to copy object from {}/{} to {}/{}",
+          sourceBucket,
+          sourceKey,
+          bucketName,
+          destKey,
+          e);
       throw e;
     }
   }

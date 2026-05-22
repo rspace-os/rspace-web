@@ -4,6 +4,7 @@ import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 
@@ -29,6 +30,12 @@ public interface S3Utilities {
    * @throws ExportFailureException if an exception occurs during the export
    */
   SdkHttpResponse uploadToS3(String folderPath, File file);
+
+  /**
+   * Variant of {@link #uploadToS3(String, File)} that attaches user-defined S3 object metadata
+   * (translated to {@code x-amz-meta-*} headers on the wire). Pass an empty map for no metadata.
+   */
+  SdkHttpResponse uploadToS3(String folderPath, File file, Map<String, String> metadata);
 
   /**
    * Downloads a file from S3 to a local file.
@@ -65,4 +72,30 @@ public interface S3Utilities {
    * @throws ExportFailureException
    */
   DeleteObjectResponse deleteFromS3(String folderPath, String fileName);
+
+  /**
+   * Server-side copies an object from another bucket (the source) into this S3Utilities's bucket
+   * (the destination). Uses S3 {@code CopyObject}, so data does not flow through the RSpace server.
+   * Requires that the configured credentials grant {@code GetObject} on the source and {@code
+   * PutObject} on the destination.
+   *
+   * @param sourceBucket the source S3 bucket name
+   * @param sourceKey the source object key
+   * @param destKey the destination object key (within this instance's bucket)
+   */
+  void copyObjectFromBucket(String sourceBucket, String sourceKey, String destKey);
+
+  /**
+   * Variant of {@link #copyObjectFromBucket(String, String, String)} that overrides the destination
+   * object's user-defined metadata. A non-empty {@code metadata} map causes {@code
+   * MetadataDirective.REPLACE} to be applied, so the destination object will carry exactly the
+   * given map. An empty map preserves the source object's metadata (default COPY directive).
+   */
+  void copyObjectFromBucket(
+      String sourceBucket, String sourceKey, String destKey, Map<String, String> metadata);
+
+  /**
+   * @return the configured S3 bucket name for this instance
+   */
+  String getBucketName();
 }

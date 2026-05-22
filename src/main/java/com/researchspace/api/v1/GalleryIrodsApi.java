@@ -42,17 +42,11 @@ public interface GalleryIrodsApi {
   ApiExternalStorageInfo getExternalLocationsInfo(List<Long> recordIds, User user);
 
   /***
-   * Performs the copy of a list of files (specified by recordIds) into the IRODS path
-   * specified by the filestorePathId
-   *
-   * @param recordIds the array of the record IDs you want to copy
-   * @param filestorePathId the filestore id for the IRODS path
-   * @param credentials Username and password for the IRODS account
-   * @param errors
-   * @param user
-   * @throws BindException
-   * @return the details of the copy operation file by file
+   * @deprecated Use {@code POST /api/v1/gallery/filestores/{filestoreId}/copy} (see {@link
+   *     GalleryFilestoresApi}) instead. This endpoint delegates to that handler internally and
+   *     will be removed in a future release.
    */
+  @Deprecated
   @PostMapping(
       value = "/copy",
       produces = MediaType.APPLICATION_JSON_VALUE,
@@ -67,17 +61,11 @@ public interface GalleryIrodsApi {
       throws BindException;
 
   /***
-   * Performs the move of a list of files (specified by recordIds) into the IRODS path
-   * specified by the filestorePathId
-   *
-   * @param recordIds the array of the record IDs you want to move
-   * @param filestorePathId the filestore id for the IRODS path
-   * @param credentials username and password for the IRODS account
-   * @param errors
-   * @param user
-   * @throws BindException
-   * @return the details of the move operation file by file
+   * @deprecated Use {@code POST /api/v1/gallery/filestores/{filestoreId}/move} (see {@link
+   *     GalleryFilestoresApi}) instead. This endpoint delegates to that handler internally and
+   *     will be removed in a future release.
    */
+  @Deprecated
   @PostMapping(
       value = "/move",
       produces = MediaType.APPLICATION_JSON_VALUE,
