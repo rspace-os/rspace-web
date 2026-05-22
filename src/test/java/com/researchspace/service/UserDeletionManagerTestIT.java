@@ -10,9 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTableWhere;
 
+import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.core.util.TransformerUtils;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatMediaFile;
@@ -29,6 +32,8 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -87,6 +92,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired StoichiometryManager stoichiometryMgr;
   private @Autowired RSChemElementManager rsChemElementMgr;
   private @Autowired StoichiometryInventoryLinkDao stoichiometryInventoryLinkDao;
+  private @Autowired InstrumentDao instrumentDao;
 
   @Before
   public void setUp() throws Exception {
@@ -662,33 +668,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   @Test
   public void testDeleteUserWithStoichiometryAndInventoryLink() throws Exception {
     User userToDelete = createInitAndLoginAnyUser();
-
-    StructuredDocument doc = createBasicDocumentInRootFolderWithText(userToDelete, "Chemistry doc");
-
-    RSChemElement chemElement = RSChemElement.builder().chemElements("CCO").record(doc).build();
-    chemElement = rsChemElementMgr.save(chemElement, userToDelete);
-
-    Stoichiometry stoichiometry =
-        Stoichiometry.builder().parentReaction(chemElement).record(doc).build();
-    stoichiometry = stoichiometryMgr.save(stoichiometry);
-
-    RSChemElement moleculeChemElement =
-        RSChemElement.builder().chemElements("C2H6O").record(doc).build();
-    moleculeChemElement = rsChemElementMgr.save(moleculeChemElement, userToDelete);
-
-    StoichiometryMolecule molecule =
-        StoichiometryMolecule.builder()
-            .stoichiometry(stoichiometry)
-            .rsChemElement(moleculeChemElement)
-            .role(MoleculeRole.REACTANT)
-            .formula("C2H6O")
-            .name("Ethanol")
-            .smiles("CCO")
-            .molecularWeight(46.07)
-            .build();
-    stoichiometry.addMolecule(molecule);
-    stoichiometry = stoichiometryMgr.save(stoichiometry);
-    StoichiometryMolecule savedMolecule = stoichiometry.getMolecules().get(0);
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(userToDelete);
 
     ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(userToDelete);
     Sample sample = sampleDao.get(apiSample.getId());
@@ -721,33 +701,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     RSpaceTestUtils.logout();
     User userToDelete = createInitAndLoginAnyUser();
-
-    StructuredDocument doc = createBasicDocumentInRootFolderWithText(userToDelete, "Chemistry doc");
-
-    RSChemElement chemElement = RSChemElement.builder().chemElements("CCO").record(doc).build();
-    chemElement = rsChemElementMgr.save(chemElement, userToDelete);
-
-    Stoichiometry stoichiometry =
-        Stoichiometry.builder().parentReaction(chemElement).record(doc).build();
-    stoichiometry = stoichiometryMgr.save(stoichiometry);
-
-    RSChemElement moleculeChemElement =
-        RSChemElement.builder().chemElements("C2H6O").record(doc).build();
-    moleculeChemElement = rsChemElementMgr.save(moleculeChemElement, userToDelete);
-
-    StoichiometryMolecule molecule =
-        StoichiometryMolecule.builder()
-            .stoichiometry(stoichiometry)
-            .rsChemElement(moleculeChemElement)
-            .role(MoleculeRole.REACTANT)
-            .formula("C2H6O")
-            .name("Ethanol")
-            .smiles("CCO")
-            .molecularWeight(46.07)
-            .build();
-    stoichiometry.addMolecule(molecule);
-    stoichiometry = stoichiometryMgr.save(stoichiometry);
-    StoichiometryMolecule savedMolecule = stoichiometry.getMolecules().get(0);
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(userToDelete);
 
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setStoichiometryMolecule(savedMolecule);
@@ -767,33 +721,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   @Test
   public void testDeleteUserOwningInventoryLinkedFromOtherUsersStoichiometry() throws Exception {
     User stoichOwner = createInitAndLoginAnyUser();
-
-    StructuredDocument doc = createBasicDocumentInRootFolderWithText(stoichOwner, "Chemistry doc");
-
-    RSChemElement chemElement = RSChemElement.builder().chemElements("CCO").record(doc).build();
-    chemElement = rsChemElementMgr.save(chemElement, stoichOwner);
-
-    Stoichiometry stoichiometry =
-        Stoichiometry.builder().parentReaction(chemElement).record(doc).build();
-    stoichiometry = stoichiometryMgr.save(stoichiometry);
-
-    RSChemElement moleculeChemElement =
-        RSChemElement.builder().chemElements("C2H6O").record(doc).build();
-    moleculeChemElement = rsChemElementMgr.save(moleculeChemElement, stoichOwner);
-
-    StoichiometryMolecule molecule =
-        StoichiometryMolecule.builder()
-            .stoichiometry(stoichiometry)
-            .rsChemElement(moleculeChemElement)
-            .role(MoleculeRole.REACTANT)
-            .formula("C2H6O")
-            .name("Ethanol")
-            .smiles("CCO")
-            .molecularWeight(46.07)
-            .build();
-    stoichiometry.addMolecule(molecule);
-    stoichiometry = stoichiometryMgr.save(stoichiometry);
-    StoichiometryMolecule savedMolecule = stoichiometry.getMolecules().get(0);
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(stoichOwner);
 
     RSpaceTestUtils.logout();
     User inventoryOwner = createInitAndLoginAnyUser();
@@ -813,6 +741,87 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertTrue(result.isSucceeded());
     assertUserNotExist(inventoryOwner);
     assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  @Test
+  public void testDeleteUserOwningContainerLinkedFromOtherUsersStoichiometry() throws Exception {
+    // Exercises the container_id join in deleteInventoryItems.
+    User stoichOwner = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(stoichOwner);
+
+    RSpaceTestUtils.logout();
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiContainer apiContainer = createBasicContainerForUser(inventoryOwner);
+    Container container = containerDao.get(apiContainer.getId());
+
+    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
+    link.setStoichiometryMolecule(savedMolecule);
+    link.setInventoryRecord(container);
+    Long linkId = stoichiometryInventoryLinkDao.save(link).getId();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(inventoryOwner.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(inventoryOwner);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  @Test
+  public void testDeleteUserOwningInstrumentLinkedFromOtherUsersStoichiometry() throws Exception {
+    // Exercises the instrumentEntity_id join in deleteInventoryItems.
+    User stoichOwner = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(stoichOwner);
+
+    RSpaceTestUtils.logout();
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiInstrument apiInstrument = createBasicInstrumentForUser(inventoryOwner);
+    Instrument instrument = instrumentDao.get(apiInstrument.getId());
+
+    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
+    link.setStoichiometryMolecule(savedMolecule);
+    link.setInventoryRecord(instrument);
+    Long linkId = stoichiometryInventoryLinkDao.save(link).getId();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(inventoryOwner.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(inventoryOwner);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  private StoichiometryMolecule createStoichiometryWithMoleculeForUser(User user) throws Exception {
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "Chemistry doc");
+
+    RSChemElement chemElement = RSChemElement.builder().chemElements("CCO").record(doc).build();
+    chemElement = rsChemElementMgr.save(chemElement, user);
+
+    Stoichiometry stoichiometry =
+        Stoichiometry.builder().parentReaction(chemElement).record(doc).build();
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+
+    RSChemElement moleculeChemElement =
+        RSChemElement.builder().chemElements("C2H6O").record(doc).build();
+    moleculeChemElement = rsChemElementMgr.save(moleculeChemElement, user);
+
+    StoichiometryMolecule molecule =
+        StoichiometryMolecule.builder()
+            .stoichiometry(stoichiometry)
+            .rsChemElement(moleculeChemElement)
+            .role(MoleculeRole.REACTANT)
+            .formula("C2H6O")
+            .name("Ethanol")
+            .smiles("CCO")
+            .molecularWeight(46.07)
+            .build();
+    stoichiometry.addMolecule(molecule);
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+    return stoichiometry.getMolecules().get(0);
   }
 
   private void assertStoichiometryInventoryLinkAndAuditDeleted(Long linkId) {
