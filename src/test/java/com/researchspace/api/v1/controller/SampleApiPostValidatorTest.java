@@ -9,6 +9,7 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -195,5 +196,44 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
     ApiSubSample apiSubSample = new ApiSubSample();
     apiSubSample.setQuantity(quantity);
     full.getSubSamples().add(apiSubSample);
+  }
+
+  @Test
+  public void rejectsDuplicateExtraFieldNamesOnSample() {
+    ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
+    full.setName("s1");
+    full.getExtraFields().add(extraField("Notes"));
+    full.getExtraFields().add(extraField("notes")); // case-insensitive duplicate
+
+    Errors e = new BeanPropertyBindingResult(full, "fullpost");
+    validator.validate(full, e);
+    assertEquals(1, e.getErrorCount());
+    assertEquals("extraFields[1].name", e.getFieldError().getField());
+    assertEquals(
+        InventoryFieldNameUniquenessValidator.DUPLICATE_NAME_ERROR_CODE,
+        e.getFieldError().getCode());
+  }
+
+  @Test
+  public void rejectsDuplicateExtraFieldNamesWithinSubsample() {
+    ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
+    full.setName("s1");
+    addSubsample(full, createValidQuantity());
+    full.getSubSamples().get(0).getExtraFields().add(extraField("X"));
+    full.getSubSamples().get(0).getExtraFields().add(extraField(" X")); // trim-equal duplicate
+
+    Errors e = new BeanPropertyBindingResult(full, "fullpost");
+    validator.validate(full, e);
+    assertEquals(1, e.getErrorCount());
+    assertEquals("subSamples[0].extraFields[1].name", e.getFieldError().getField());
+    assertEquals(
+        InventoryFieldNameUniquenessValidator.DUPLICATE_NAME_ERROR_CODE,
+        e.getFieldError().getCode());
+  }
+
+  private ApiExtraField extraField(String name) {
+    ApiExtraField ef = new ApiExtraField();
+    ef.setName(name);
+    return ef;
   }
 }

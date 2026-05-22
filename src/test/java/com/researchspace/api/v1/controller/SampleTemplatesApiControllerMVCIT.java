@@ -272,6 +272,30 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
   }
 
   @Test
+  public void postSampleTemplateRejectsDuplicateFieldNames() throws Exception {
+    // RSDEV-1066: API must reject a template with two same-named fields up-front (400),
+    // mirroring the UI's "All field names must be distinct" rule.
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("dup-fields-template");
+    templatePost.getFields().add(createBasicApiSampleField("dup", ApiFieldType.STRING, "first"));
+    templatePost.getFields().add(createBasicApiSampleField("dup", ApiFieldType.STRING, "second"));
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertTrue(
+        error.getErrors().stream().anyMatch(e -> e.contains("fields[1].name")),
+        "Expected error path fields[1].name, got: " + error.getErrors());
+    assertTrue(
+        error.getErrors().stream().anyMatch(e -> e.contains("dup")),
+        "Expected the duplicate name 'dup' in the error, got: " + error.getErrors());
+  }
+
+  @Test
   public void postSampleTemplateYaml() throws Exception {
     String yamlString =
         FileUtils.readFileToString(

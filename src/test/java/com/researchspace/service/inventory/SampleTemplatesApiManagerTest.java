@@ -9,6 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
 import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
@@ -235,6 +238,142 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         "'Description' is not a valid name for a field, "
             + "as there is a default property with this name.",
         iae.getMessage());
+  }
+
+  // RSDEV-1066: Inventory fields must have unique names
+  // -----------------------------------------------------------------
+
+  @Test
+  public void templateCreateRejectsDuplicateSampleFieldNames() {
+    ApiSampleTemplatePost post = getTemplatePostForTestTemplateWithTextField();
+    post.getFields().add(createBasicApiSampleField("text", ApiFieldType.STRING, "another text"));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> sampleApiMgr.createSampleTemplate(post, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void templatePutRejectsExtraFieldWithSameNameAsSampleField() {
+    // ApiSampleTemplatePost cannot carry extraFields (POST surface), so the cross-collection
+    // collision is exercised via PUT, which uses ApiSampleTemplate (extends ApiSample, which
+    // includes extraFields).
+    ApiSampleTemplatePost post = getTemplatePostForTestTemplateWithTextField();
+    ApiSampleTemplate created = sampleApiMgr.createSampleTemplate(post, testUser);
+
+    ApiSampleTemplate update = new ApiSampleTemplate();
+    update.setId(created.getId());
+    ApiExtraField extra = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    extra.setName("text"); // same name as the existing SampleField
+    extra.setContent("collides with sample field");
+    extra.setNewFieldRequest(true);
+    update.setExtraFields(List.of(extra));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> sampleApiMgr.updateApiSampleTemplate(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void templateCreateRejectsFieldNamedAfterUILabel() {
+    // RSDEV-1066: SampleTemplate's displayed-label set includes "Subsample Alias", so
+    // core-model's verifyFieldNameAllowed rejects the field at Sample.addSampleField time
+    // with the legacy reserved-name IAE.
+    ApiSampleTemplatePost post = getTemplatePostForTestTemplateWithTextField();
+    post.getFields().add(createBasicApiSampleField("Subsample Alias", ApiFieldType.STRING, "v"));
+
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> sampleApiMgr.createSampleTemplate(post, testUser));
+    assertEquals(
+        "'Subsample Alias' is not a valid name for a field, "
+            + "as there is a default property with this name.",
+        iae.getMessage());
+  }
+
+  @Test
+  public void templateCreateTrimsBeforeCompare() {
+    ApiSampleTemplatePost post = getTemplatePostForTestTemplateWithTextField();
+    post.getFields().add(createBasicApiSampleField(" text", ApiFieldType.STRING, "leading space"));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class, () -> sampleApiMgr.createSampleTemplate(post, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void templatePutRejectsAddingDuplicateOfExistingFieldName() {
+    ApiSampleTemplatePost post = getTemplatePostForTestTemplateWithTextField();
+    ApiSampleTemplate created = sampleApiMgr.createSampleTemplate(post, testUser);
+    assertEquals(1, created.getFields().size());
+
+    ApiSampleTemplate update = new ApiSampleTemplate();
+    update.setId(created.getId());
+    ApiInventoryEntityField newField =
+        createBasicApiSampleField("text", ApiFieldType.STRING, "would collide");
+    newField.setNewFieldRequest(true);
+    update.getFields().add(newField);
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> sampleApiMgr.updateApiSampleTemplate(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void templatePutAllowsRenamingBToAWhileDeletingA() {
+    ApiSampleTemplatePost post = new ApiSampleTemplatePost();
+    post.setName("two-field template");
+    post.getFields().add(createBasicApiSampleField("A", ApiFieldType.STRING, "av"));
+    post.getFields().add(createBasicApiSampleField("B", ApiFieldType.STRING, "bv"));
+    ApiSampleTemplate created = sampleApiMgr.createSampleTemplate(post, testUser);
+    assertEquals(2, created.getFields().size());
+
+    Long aFieldId = created.getFields().get(0).getId();
+    Long bFieldId = created.getFields().get(1).getId();
+
+    ApiSampleTemplate update = new ApiSampleTemplate();
+    update.setId(created.getId());
+    ApiInventoryEntityField deleteA = new ApiInventoryEntityField();
+    deleteA.setId(aFieldId);
+    deleteA.setDeleteFieldRequest(true);
+    update.getFields().add(deleteA);
+    ApiInventoryEntityField renameB = new ApiInventoryEntityField();
+    renameB.setId(bFieldId);
+    renameB.setName("A");
+    update.getFields().add(renameB);
+
+    ApiSampleTemplate result = sampleApiMgr.updateApiSampleTemplate(update, testUser);
+    assertEquals(1, result.getFields().size());
+    assertEquals("A", result.getFields().get(0).getName());
+  }
+
+  @Test
+  public void templatePutRejectsRenamingTwoFieldsToSameName() {
+    ApiSampleTemplatePost post = new ApiSampleTemplatePost();
+    post.setName("two-field template");
+    post.getFields().add(createBasicApiSampleField("A", ApiFieldType.STRING, "av"));
+    post.getFields().add(createBasicApiSampleField("B", ApiFieldType.STRING, "bv"));
+    ApiSampleTemplate created = sampleApiMgr.createSampleTemplate(post, testUser);
+
+    ApiSampleTemplate update = new ApiSampleTemplate();
+    update.setId(created.getId());
+    ApiInventoryEntityField renameB = new ApiInventoryEntityField();
+    renameB.setId(created.getFields().get(1).getId());
+    renameB.setName("A");
+    update.getFields().add(renameB);
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> sampleApiMgr.updateApiSampleTemplate(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
   }
 
   @Test
