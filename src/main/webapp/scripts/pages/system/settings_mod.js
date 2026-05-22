@@ -194,8 +194,10 @@ define(function() {
         var settingRowTemplate = $('#systemSettingRowTemplate').html();
 
         $.each(settingsToPrint, function(i, name) {
+            var labelOverride = $('#systemSettingsLabels').find('div[id="' + name + '.label"]').text();
             var templateData = {
                     "name": name,
+                    "label": labelOverride || name,
                     "value": RS.escapeHtml(settings[name]) || '&nbsp;',
                     "description": $('#systemSettingsDescriptions').find('div[id="' + name + '.description"]').text()
             };

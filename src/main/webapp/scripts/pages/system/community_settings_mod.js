@@ -193,8 +193,10 @@ function _printSettings(settingsToPrint) {
         else
             value = values[0]; // show community setting value if it is available
 
+        var labelOverride = $('#systemSettingsLabels').find('div[id="' + name + '.label"]').text();
         var templateData = {
                 "name": name,
+                "label": labelOverride || name,
                 "value": RS.escapeHtml(value) || '&nbsp;',
                 "description": $('#systemSettingsDescriptions').find('div[id="' + name + '.description"]').text(),
                 "disabled": values[1] === "DENIED"

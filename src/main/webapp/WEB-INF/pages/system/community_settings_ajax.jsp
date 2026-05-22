@@ -24,7 +24,7 @@
     <script type="html/text" id="systemSettingRowTemplate" style="display:none">
         <div class="settingRow" data-name="{{setting.name}}">
             <div class="settingName bootstrap-custom-flat">
-                 <a data-content="{{setting.description}}">{{setting.name}}</a>
+                 <a data-content="{{setting.description}}">{{setting.label}}</a>
             </div>
             <div class="settingViewDiv">
                 <div class="settingValue">{{{setting.value}}}</div>
@@ -78,6 +78,10 @@
         <div id="group_autosharing.available.description"><spring:message code="system.property.description.group_autosharing.available" /></div>
         <div id="public_sharing.description"><spring:message code="system.property.description.public_sharing" /></div>
         <div id="publicdocs_allow_seo.description"><spring:message code="system.property.description.publicdocs_allow_seo" /></div>
+    </div>
+
+    <div id="systemSettingsLabels" style="display:none">
+        <div id="clustermarket.available.label"><spring:message code="system.property.label.clustermarket.available" /></div>
     </div>
 
 </div>
