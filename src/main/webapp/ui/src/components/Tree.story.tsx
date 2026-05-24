@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ThemeProvider } from "@mui/material/styles";
-import { Button, Box, Typography } from "@mui/material";
+import { Button, Box, Stack, Typography } from "@mui/material";
 import theme from "../theme";
 import { Tree, TreeItem } from "./Tree";
 
@@ -178,10 +178,10 @@ export const ExpandableTreeExample = ({
         <Typography variant="h5" gutterBottom>
           Expandable Tree
         </Typography>
-        <Box sx={{ mb: 2, gap: 1, display: "flex" }}>
+        <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Button onClick={expandAll}>Expand All</Button>
           <Button onClick={collapseAll}>Collapse All</Button>
-        </Box>
+        </Stack>
         <Tree
           getId={(item) => item.id}
           expandedItems={expandedItems}
@@ -257,11 +257,11 @@ export const ControlledTreeExample = ({
         <Typography variant="h5" gutterBottom>
           Controlled Tree (Selection + Expansion)
         </Typography>
-        <Box sx={{ mb: 2, gap: 1, display: "flex" }}>
+        <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Button onClick={expandAll}>Expand All</Button>
           <Button onClick={collapseAll}>Collapse All</Button>
           <Button onClick={clearSelection}>Clear Selection</Button>
-        </Box>
+        </Stack>
         <Tree
           getId={(item) => item.id}
           selectedItems={selectedItem}

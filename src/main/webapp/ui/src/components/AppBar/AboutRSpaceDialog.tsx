@@ -28,14 +28,7 @@ export function AboutRSpaceContent(): React.ReactElement {
   const version = useApplicationVersion();
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        py: 2,
-      }}
-    >
+    <Stack sx={{ py: 2, alignItems: "center" }}>
       <Box
         sx={{
           width: 80,
@@ -154,7 +147,7 @@ export function AboutRSpaceContent(): React.ReactElement {
           </Stack>
         </Typography>
       </Box>
-    </Box>
+    </Stack>
   );
 }
 

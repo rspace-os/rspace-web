@@ -1048,12 +1048,10 @@ export function ShareDialog({
                                       }}
                                     >
                                       <TableCell>
-                                        <Box
-                                          sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 1,
-                                          }}
+                                        <Stack
+                                          direction="row"
+                                          spacing={1}
+                                          sx={{ alignItems: "center" }}
                                         >
                                           {newShare.recipientType === "USER" ? (
                                             <Typography variant="body2">
@@ -1068,7 +1066,7 @@ export function ShareDialog({
                                               {newShare.recipientName}
                                             </Typography>
                                           )}
-                                        </Box>
+                                        </Stack>
                                       </TableCell>
                                       <TableCell>
                                         <Chip
@@ -1341,12 +1339,12 @@ export function ShareDialog({
 
                         return Array.from(uniqueShares.values()).map(
                           ({ share, documentCount }) => (
-                            <Box
+                            <Stack
+                              direction="row"
+                              spacing={2}
                               key={`${share.recipientType}-${share.recipientId}`}
                               sx={{
-                                display: "flex",
                                 alignItems: "center",
-                                gap: 2,
                                 p: 2,
                                 borderRadius: 1,
                                 backgroundColor: "action.hover",
@@ -1495,7 +1493,7 @@ export function ShareDialog({
                                   Change Folder
                                 </Button>
                               )}
-                            </Box>
+                            </Stack>
                           ),
                         );
                       })()}

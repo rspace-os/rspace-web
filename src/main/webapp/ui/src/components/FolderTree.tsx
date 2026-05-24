@@ -1,6 +1,7 @@
 import React from "react";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
@@ -184,7 +185,7 @@ const TreeItemContent = ({
   const hasMorePages = folders.length < totalHits;
 
   const labelContent = (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
       <span>{folder.name}</span>
       {folder.type !== "NOTEBOOK" && (
         <IconButtonWithTooltip
@@ -198,7 +199,7 @@ const TreeItemContent = ({
           sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}
         />
       )}
-    </Box>
+    </Stack>
   );
 
   return (

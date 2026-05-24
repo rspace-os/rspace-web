@@ -4,7 +4,7 @@ import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
 import FormLabel from "@mui/material/FormLabel";
 import FormHelperText from "@mui/material/FormHelperText";
-import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
 import { Heading } from "../DynamicHeadingLevel";
 
@@ -97,7 +97,14 @@ function CustomFormControl({
         "& .Mui-disabled::before": { borderBottom: "0px !important" },
       }}
     >
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
+      <Stack
+        direction="row"
+        sx={{
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
         {typeof label !== "undefined" && (
           <FormLabel
             component="legend"
@@ -114,7 +121,7 @@ function CustomFormControl({
           </FormLabel>
         )}
         {actions}
-      </Box>
+      </Stack>
       <FormGroup style={{ display: inline ? "inline" : "inherit", flexWrap }}>
         {children}
       </FormGroup>
