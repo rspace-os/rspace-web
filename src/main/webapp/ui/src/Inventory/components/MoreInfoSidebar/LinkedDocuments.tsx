@@ -17,7 +17,6 @@ import ApiService from "../../../common/InvApiService";
 import GlobalIdLink from "../../../components/GlobalId";
 import { type Factory } from "../../../stores/definitions/Factory";
 import RsSet, { unionWith } from "../../../util/set";
-import Grid from "@mui/material/Grid";
 import Skeleton from "@mui/material/Skeleton";
 import NoValue from "../../../components/NoValue";
 import {
@@ -156,32 +155,30 @@ function LinkedDocuments({
   }, [open]);
 
   return (
-    <Grid>
-      <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
-        <FormLabel component="legend">Linked Documents</FormLabel>
-        <FormGroup>
-          <Button
-            variant="outlined"
-            disableElevation
-            onClick={() => {
-              setOpen(true);
-            }}
-            disabled={!factory}
-          >
-            Show Linked Documents
-          </Button>
-          <Dialog open={open} onClose={() => setOpen(false)}>
-            <DialogTitle>Linked Documents</DialogTitle>
-            <DialogContent>
-              <DialogContents state={state} />
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setOpen(false)}>Close</Button>
-            </DialogActions>
-          </Dialog>
-        </FormGroup>
-      </FormControl>
-    </Grid>
+    <FormControl component="fieldset" sx={{ alignItems: "flex-start" }}>
+      <FormLabel component="legend">Linked Documents</FormLabel>
+      <FormGroup>
+        <Button
+          variant="outlined"
+          disableElevation
+          onClick={() => {
+            setOpen(true);
+          }}
+          disabled={!factory}
+        >
+          Show Linked Documents
+        </Button>
+        <Dialog open={open} onClose={() => setOpen(false)}>
+          <DialogTitle>Linked Documents</DialogTitle>
+          <DialogContent>
+            <DialogContents state={state} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
+      </FormGroup>
+    </FormControl>
   );
 }
 

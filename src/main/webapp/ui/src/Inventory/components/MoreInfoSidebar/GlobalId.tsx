@@ -1,10 +1,9 @@
-import React, { type ComponentType } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import GlobalIdLink from "../../../components/GlobalId";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import Grid from "@mui/material/Grid";
 
 type GlobalIdArgs = {
   record: InventoryRecord;
@@ -12,12 +11,10 @@ type GlobalIdArgs = {
 
 function GlobalId({ record }: GlobalIdArgs): React.ReactNode {
   return (
-    <Grid>
-      <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
-        <FormLabel component="legend">Global ID</FormLabel>
-        <GlobalIdLink record={record} />
-      </FormControl>
-    </Grid>
+    <FormControl component="fieldset" sx={{ alignItems: "flex-start" }}>
+      <FormLabel component="legend">Global ID</FormLabel>
+      <GlobalIdLink record={record} />
+    </FormControl>
   );
 }
 

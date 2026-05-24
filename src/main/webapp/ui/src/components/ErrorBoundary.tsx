@@ -1,4 +1,4 @@
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
 import React from "react";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 
@@ -27,9 +27,9 @@ function Container({
   const applyTopOfViewport =
     topOfViewport === false || topOfViewport === null;
   return (
-    <Grid
-      container
+    <Box
       sx={{
+        display: "flex",
         alignItems: "center",
         justifyContent: "center",
         flexDirection: "column",
@@ -47,7 +47,7 @@ function Container({
       }}
     >
       {children}
-    </Grid>
+    </Box>
   );
 }
 
@@ -104,9 +104,7 @@ export default class ErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <Container topOfViewport={this.props.topOfViewport}>
-          <Grid>
-            <p>{this.message}</p>
-          </Grid>
+          <p>{this.message}</p>
         </Container>
       );
     }

@@ -1,4 +1,3 @@
-import Grid from "@mui/material/Grid";
 import Alert, { type AlertColor } from "@mui/material/Alert";
 import React from "react";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -17,11 +16,9 @@ export default function HelpTextAlert({
   severity,
 }: HelpTextAlertProps): React.ReactNode {
   return condition ? (
-    <Grid>
-      <Alert severity={severity}>
-        {title && <AlertTitle>{title}</AlertTitle>}
-        {text}
-      </Alert>
-    </Grid>
+    <Alert severity={severity}>
+      {title && <AlertTitle>{title}</AlertTitle>}
+      {text}
+    </Alert>
   ) : null;
 }

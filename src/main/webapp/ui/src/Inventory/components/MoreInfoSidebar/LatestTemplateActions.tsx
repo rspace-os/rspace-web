@@ -6,7 +6,6 @@ import FormLabel from "@mui/material/FormLabel";
 import Button from "@mui/material/Button";
 import TemplateModel from "../../../stores/models/TemplateModel";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import Grid from "@mui/material/Grid";
 
 type LatestTemplateActionsArgs = {
   record: InventoryRecord;
@@ -19,22 +18,20 @@ function LatestTemplateActions({
     return null;
 
   return (
-    <Grid>
-      <FormControl component="fieldset">
-        <FormLabel component="legend">Update Samples</FormLabel>
-        <FormGroup>
-          <Button
-            variant="outlined"
-            disableElevation
-            onClick={() => {
-              void record.updateSamplesToLatest();
-            }}
-          >
-            Update Samples
-          </Button>
-        </FormGroup>
-      </FormControl>
-    </Grid>
+    <FormControl component="fieldset">
+      <FormLabel component="legend">Update Samples</FormLabel>
+      <FormGroup>
+        <Button
+          variant="outlined"
+          disableElevation
+          onClick={() => {
+            void record.updateSamplesToLatest();
+          }}
+        >
+          Update Samples
+        </Button>
+      </FormGroup>
+    </FormControl>
   );
 }
 

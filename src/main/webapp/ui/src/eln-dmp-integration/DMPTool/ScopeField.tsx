@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import RadioField, {
   type RadioOption,
 } from "../../components/Inputs/RadioField";
@@ -30,27 +30,22 @@ export default function ScopeField({
   };
 
   return (
-    <Grid container direction="row" spacing={2}>
-      <Grid>
-        <RadioField
-          value={currentScope}
-          name="DMP Scope Options"
-          onChange={(e) => onScopeSwitch(e.target.value as Scope | null)}
-          options={scopeOptions}
-          disabled={false}
-          labelPlacement="top"
-          row
-          smallText={true}
-        />
-      </Grid>
+    <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start" }}>
+      <RadioField
+        value={currentScope}
+        name="DMP Scope Options"
+        onChange={(e) => onScopeSwitch(e.target.value as Scope | null)}
+        options={scopeOptions}
+        disabled={false}
+        labelPlacement="top"
+        row
+        smallText={true}
+      />
 
-      <Grid>
-        <Typography variant="body2">
-          Select a scope to get the latest plans.
-          <br /> Select a plan and click &quot;Import&quot; to add it to the
-          Gallery.
-        </Typography>
-      </Grid>
-    </Grid>
+      <Typography variant="body2">
+        Select a scope to get the latest plans.
+        <br /> Select a plan and click &quot;Import&quot; to add it to the Gallery.
+      </Typography>
+    </Stack>
   );
 }

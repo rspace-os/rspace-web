@@ -22,7 +22,7 @@ import Link from "@mui/material/Link";
 import docLinks from "../../assets/DocLinks";
 import Divider from "@mui/material/Divider";
 import CardHeader from "@mui/material/CardHeader";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { type Hsl } from "../../accentedTheme";
 function hsl(
@@ -231,8 +231,7 @@ function IntegrationCard<Credentials>({
   } as const;
   return (
     <ThemeProvider
-      theme={createTheme({
-        ...(theme as any as ThemeOptions),
+      theme={createTheme(theme as unknown as ThemeOptions, {
         components: {
           MuiLink: {
             defaultProps: {
@@ -475,15 +474,15 @@ function IntegrationCard<Credentials>({
         }}
       >
         <DialogTitle>
-          <Grid
-            container
+          <Stack
             direction="row"
             sx={{
               flexWrap: "nowrap",
+              alignItems: "flex-start",
             }}
             spacing={1}
           >
-            <Grid>
+            <Box>
               <Box sx={cardMediaWrapperSx}>
                 <CardMedia
                   component="img"
@@ -492,14 +491,14 @@ function IntegrationCard<Credentials>({
                   role="presentation"
                 />
               </Box>
-            </Grid>
-            <Grid>
+            </Box>
+            <Box>
               {name}
               <Typography variant="body2" component="div">
                 {explanatoryText}
               </Typography>
-            </Grid>
-          </Grid>
+            </Box>
+          </Stack>
         </DialogTitle>
         <DialogContent>
           <section>

@@ -8,6 +8,7 @@ import {
   type OptionsId,
 } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
 import { Optional } from "../../../util/optional";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -187,7 +188,7 @@ const DialogContent = observer(
             copyOfState.credentials.push(
               observable({ ...newlySavedConfig, dirty: false }),
             );
-          } catch (e) {
+          } catch {
             throw new Error("Save completed but cannot show results.");
           }
         });
@@ -211,267 +212,226 @@ const DialogContent = observer(
     }
 
     return (
-      <>
-        <Grid container spacing={1} sx={{ flexDirection: "column", mt: 1 }}>
-          <Grid container sx={{ flexDirection: "column" }} spacing={1}>
-            {observableConfigs.map((config, i) => (
-              <Grid key={i}>
-                <Card variant="outlined">
-                  <form
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      void saveExistingConfig(config, i);
-                    }}
-                    aria-label={`Configured DSW with label ${config.DSW_ALIAS}`}
+      <Stack spacing={1} sx={{ mt: 1 }}>
+        <Stack spacing={1}>
+          {observableConfigs.map((config, i) => (
+            <Card key={i} variant="outlined">
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void saveExistingConfig(config, i);
+                }}
+                aria-label={`Configured DSW with label ${config.DSW_ALIAS}`}
+              >
+                <CardContent>
+                  <Stack spacing={2}>
+                    <TextField
+                      fullWidth
+                      value={config.DSW_ALIAS}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          config.DSW_ALIAS = value;
+                          config.dirty = true;
+                        });
+                      }}
+                      label="Label"
+                      error={config.DSW_ALIAS === ""}
+                      helperText={
+                        config.DSW_ALIAS === "" && "Label is required."
+                      }
+                    />
+                    <TextField
+                      fullWidth
+                      value={config.DSW_URL}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          config.DSW_URL = value;
+                          config.dirty = true;
+                        });
+                      }}
+                      label="Server URL"
+                      error={config.DSW_URL === ""}
+                      helperText={config.DSW_URL === "" && "URL is required."}
+                    />
+                    <TextField
+                      fullWidth
+                      value={config.DSW_APIKEY}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          config.DSW_APIKEY = value;
+                          config.dirty = true;
+                        });
+                      }}
+                      type="password"
+                      label="API key"
+                      error={config.DSW_APIKEY === ""}
+                      helperText={
+                        config.DSW_APIKEY === "" && "API key is required."
+                      }
+                    />
+                  </Stack>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    onClick={doNotAwait(async () => {
+                      trackEvent("user:delete:dsw_connection:apps");
+                      try {
+                        await deleteAppOptions("DSW", config.optionsId);
+                        runInAction(() => {
+                          const deletedIndex = observableConfigs.findIndex(
+                            (c) => c === config,
+                          );
+                          observableConfigs.splice(deletedIndex, 1);
+                          integrationState.credentials.splice(deletedIndex, 1);
+                        });
+                        addAlert(
+                          mkAlert({
+                            variant: "success",
+                            message: "Successfully deleted configuration.",
+                          }),
+                        );
+                      } catch (e) {
+                        if (e instanceof Error)
+                          addAlert(
+                            mkAlert({
+                              variant: "error",
+                              title: "Could not delete configuration.",
+                              message: e.message,
+                            }),
+                          );
+                      }
+                    })}
                   >
-                    <CardContent>
-                      <Grid
-                        container
-                        sx={{ flexDirection: "column" }}
-                        spacing={2}
-                      >
-                        <Grid>
-                          <TextField
-                            fullWidth
-                            value={config.DSW_ALIAS}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                config.DSW_ALIAS = value;
-                                config.dirty = true;
-                              });
-                            }}
-                            label="Label"
-                            error={config.DSW_ALIAS === ""}
-                            helperText={
-                              config.DSW_ALIAS === "" && "Label is required."
-                            }
-                          />
-                        </Grid>
-                        <Grid>
-                          <TextField
-                            fullWidth
-                            value={config.DSW_URL}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                config.DSW_URL = value;
-                                config.dirty = true;
-                              });
-                            }}
-                            label="Server URL"
-                            error={config.DSW_URL === ""}
-                            helperText={
-                              config.DSW_URL === "" && "URL is required."
-                            }
-                          />
-                        </Grid>
-                        <Grid>
-                          <TextField
-                            fullWidth
-                            value={config.DSW_APIKEY}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                config.DSW_APIKEY = value;
-                                config.dirty = true;
-                              });
-                            }}
-                            type="password"
-                            label="API key"
-                            error={config.DSW_APIKEY === ""}
-                            helperText={
-                              config.DSW_APIKEY === "" && "API key is required."
-                            }
-                          />
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                    <CardActions>
-                      <Button
-                        onClick={doNotAwait(async () => {
-                          trackEvent("user:delete:dsw_connection:apps");
-                          try {
-                            await deleteAppOptions("DSW", config.optionsId);
-                            runInAction(() => {
-                              const deletedIndex = observableConfigs.findIndex(
-                                (c) => c === config,
-                              );
-                              observableConfigs.splice(deletedIndex, 1);
-                              integrationState.credentials.splice(
-                                deletedIndex,
-                                1,
-                              );
-                            });
-                            addAlert(
-                              mkAlert({
-                                variant: "success",
-                                message: "Successfully deleted configuration.",
-                              }),
-                            );
-                          } catch (e) {
-                            if (e instanceof Error)
-                              addAlert(
-                                mkAlert({
-                                  variant: "error",
-                                  title: "Could not delete configuration.",
-                                  message: e.message,
-                                }),
-                              );
-                          }
-                        })}
-                      >
-                        Delete
-                      </Button>
-                      <Button
-                        disabled={config.dirty}
-                        onClick={doNotAwait(async () => {
-                          try {
-                            await test(config.DSW_ALIAS);
-                            addAlert(
-                              mkAlert({
-                                variant: "success",
-                                message: "Connection details are valid.",
-                              }),
-                            );
-                          } catch (e) {
-                            if (e instanceof Error)
-                              addAlert(
-                                mkAlert({
-                                  variant: "error",
-                                  title: "Connection details are not valid.",
-                                  message: e.message,
-                                }),
-                              );
-                          }
-                        })}
-                      >
-                        Test
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={
-                          config.DSW_ALIAS === "" ||
-                          config.DSW_URL === "" ||
-                          config.DSW_APIKEY === ""
-                        }
-                      >
-                        Save
-                      </Button>
-                    </CardActions>
-                  </form>
-                </Card>
-              </Grid>
-            ))}
-            {newConfig && (
-              <Grid key={null}>
-                <Card variant="outlined">
-                  <form
-                    onSubmit={(event) => {
-                      trackEvent("user:create:dsw_connection:apps");
-                      event.preventDefault();
-                      void saveNewConfig(newConfig);
+                    Delete
+                  </Button>
+                  <Button
+                    disabled={config.dirty}
+                    onClick={doNotAwait(async () => {
+                      try {
+                        await test(config.DSW_ALIAS);
+                        addAlert(
+                          mkAlert({
+                            variant: "success",
+                            message: "Connection details are valid.",
+                          }),
+                        );
+                      } catch (e) {
+                        if (e instanceof Error)
+                          addAlert(
+                            mkAlert({
+                              variant: "error",
+                              title: "Connection details are not valid.",
+                              message: e.message,
+                            }),
+                          );
+                      }
+                    })}
+                  >
+                    Test
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={
+                      config.DSW_ALIAS === "" ||
+                      config.DSW_URL === "" ||
+                      config.DSW_APIKEY === ""
+                    }
+                  >
+                    Save
+                  </Button>
+                </CardActions>
+              </form>
+            </Card>
+          ))}
+          {newConfig && (
+            <Card variant="outlined">
+              <form
+                onSubmit={(event) => {
+                  trackEvent("user:create:dsw_connection:apps");
+                  event.preventDefault();
+                  void saveNewConfig(newConfig);
+                }}
+              >
+                <CardContent>
+                  <Stack spacing={2}>
+                    <TextField
+                      fullWidth
+                      value={newConfig.DSW_ALIAS}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          newConfig.DSW_ALIAS = value;
+                        });
+                      }}
+                      label="Label"
+                      error={newConfig.DSW_ALIAS === ""}
+                      helperText={
+                        newConfig.DSW_ALIAS === "" && "Label is required."
+                      }
+                    />
+                    <TextField
+                      fullWidth
+                      value={newConfig.DSW_URL}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          newConfig.DSW_URL = value;
+                        });
+                      }}
+                      label="Server URL"
+                      error={newConfig.DSW_URL === ""}
+                      helperText={newConfig.DSW_URL === "" && "URL is required."}
+                    />
+                    <TextField
+                      fullWidth
+                      value={newConfig.DSW_APIKEY}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          newConfig.DSW_APIKEY = value;
+                        });
+                      }}
+                      type="password"
+                      label="API key"
+                      error={newConfig.DSW_APIKEY === ""}
+                      helperText={
+                        newConfig.DSW_APIKEY === "" && "API key is required."
+                      }
+                    />
+                  </Stack>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setNewConfig(null);
                     }}
                   >
-                    <CardContent>
-                      <Grid
-                        container
-                        sx={{ flexDirection: "column" }}
-                        spacing={2}
-                      >
-                        <Grid>
-                          <TextField
-                            fullWidth
-                            value={newConfig.DSW_ALIAS}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                newConfig.DSW_ALIAS = value;
-                              });
-                            }}
-                            label="Label"
-                            error={newConfig.DSW_ALIAS === ""}
-                            helperText={
-                              newConfig.DSW_ALIAS === "" && "Label is required."
-                            }
-                          />
-                        </Grid>
-                        <Grid>
-                          <TextField
-                            fullWidth
-                            value={newConfig.DSW_URL}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                newConfig.DSW_URL = value;
-                              });
-                            }}
-                            label="Server URL"
-                            error={newConfig.DSW_URL === ""}
-                            helperText={
-                              newConfig.DSW_URL === "" && "URL is required."
-                            }
-                          />
-                        </Grid>
-                        <Grid>
-                          <TextField
-                            fullWidth
-                            value={newConfig.DSW_APIKEY}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                newConfig.DSW_APIKEY = value;
-                              });
-                            }}
-                            type="password"
-                            label="API key"
-                            error={newConfig.DSW_APIKEY === ""}
-                            helperText={
-                              newConfig.DSW_APIKEY === "" &&
-                              "API key is required."
-                            }
-                          />
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                    <CardActions>
-                      <Button
-                        variant="outlined"
-                        onClick={() => {
-                          setNewConfig(null);
-                        }}
-                      >
-                        Delete
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        // always disabled because it cannot be tested until saved
-                        disabled
-                        onClick={() => {}}
-                      >
-                        Test
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        type="submit"
-                        disabled={
-                          newConfig.DSW_ALIAS === "" ||
-                          newConfig.DSW_URL === "" ||
-                          newConfig.DSW_APIKEY === ""
-                        }
-                      >
-                        Save
-                      </Button>
-                    </CardActions>
-                  </form>
-                </Card>
-              </Grid>
-            )}
-          </Grid>
-          <Grid>
-            <Grid container direction="row" spacing={1}>
-              <Grid>
-                <AddButton newConfig={newConfig} setNewConfig={setNewConfig} />
-              </Grid>
-              <Grid></Grid>
-            </Grid>
-          </Grid>
-        </Grid>
-      </>
+                    Delete
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    // always disabled because it cannot be tested until saved
+                    disabled
+                    onClick={() => {}}
+                  >
+                    Test
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    type="submit"
+                    disabled={
+                      newConfig.DSW_ALIAS === "" ||
+                      newConfig.DSW_URL === "" ||
+                      newConfig.DSW_APIKEY === ""
+                    }
+                  >
+                    Save
+                  </Button>
+                </CardActions>
+              </form>
+            </Card>
+          )}
+        </Stack>
+        <AddButton newConfig={newConfig} setNewConfig={setNewConfig} />
+      </Stack>
     );
   },
 );

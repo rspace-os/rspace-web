@@ -1,8 +1,8 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
 import Divider from "@mui/material/Divider";
+import Stack from "@mui/material/Stack";
 import { Heading } from "@/components/DynamicHeadingLevel";
 
 type TitledBoxArgs = {
@@ -19,11 +19,10 @@ function TitledBox({
   border = false,
 }: TitledBoxArgs): React.ReactNode {
   return (
-    <Grid
-      container
+    <Box
       sx={(theme) => ({
+        display: "flex",
         flexDirection: "column",
-        flexWrap: "nowrap",
         maxHeight: "100%",
         backgroundColor: "white !important",
         ...(border
@@ -37,9 +36,9 @@ function TitledBox({
     >
       {title !== null && typeof title !== "undefined" && (
         <>
-          <Grid sx={{ px: 2, py: 1 }}>
-            <Grid container direction="row" sx={{ alignItems: "center" }}>
-              <Grid style={{ flexGrow: 1 }}>
+          <Box sx={{ px: 2, py: 1 }}>
+            <Stack direction="row" sx={{ alignItems: "center" }}>
+              <Box sx={{ flexGrow: 1 }}>
                 <Heading
                   variant="h5"
                   sx={{
@@ -48,16 +47,15 @@ function TitledBox({
                 >
                   {title}
                 </Heading>
-              </Grid>
-            </Grid>
-          </Grid>
-          <Grid>
+              </Box>
+            </Stack>
+          </Box>
+          <Box>
             <Divider orientation="horizontal" />
-          </Grid>
+          </Box>
         </>
       )}
       <Box
-        component={Grid}
         sx={(theme) => ({
           p: theme.spacing(2),
           overflow: "auto",
@@ -66,7 +64,7 @@ function TitledBox({
       >
         {children}
       </Box>
-    </Grid>
+    </Box>
   );
 }
 

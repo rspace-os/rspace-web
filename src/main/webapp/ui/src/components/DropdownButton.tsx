@@ -1,7 +1,7 @@
 //@flow strict
 
 import React from "react";
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import CustomTooltip from "./CustomTooltip";
@@ -24,7 +24,7 @@ const DropdownButton = ({
   title,
   sx,
 }: DropdownButtonArgs) => (
-  <Grid>
+  <Box>
     <CustomTooltip title={title ?? ""} aria-label="">
       <Button
         endIcon={<KeyboardArrowDownIcon />}
@@ -50,7 +50,7 @@ const DropdownButton = ({
       </Button>
     </CustomTooltip>
     {children}
-  </Grid>
+  </Box>
 );
 
 export default DropdownButton;
