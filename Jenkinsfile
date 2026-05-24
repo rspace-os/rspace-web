@@ -116,7 +116,7 @@ pipeline {
                     echo 'Installing npm packages'
                     sh 'node -v'
                     sh 'npx -y npm@11.14.1 -v'
-                    sh 'npx -y npm@11.14.1 ci --force'
+                    sh 'npx -y npm@11.14.1 ci'
                 }
             }
         }

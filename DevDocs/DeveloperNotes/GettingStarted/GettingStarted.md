@@ -182,7 +182,7 @@ local Vite dev server for Hot Module Replacement (HMR). Start the Vite dev
 server in a separate terminal:
 ```bash
 cd src/main/webapp/ui
-npm ci --force
+npm ci
 npm run serve
 ```
 

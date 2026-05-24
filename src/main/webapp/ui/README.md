@@ -57,14 +57,14 @@ instead use React Context and custom hooks for state management.
 To build the codebase you will need to have Node.js and NPM installed. Maven
 builds the production frontend bundle by default. This can be quite slow and is
 not necessary for frontend development, instead run the maven command with
-`-DreactDevMode=true` but in a separate terminal run `npm install --force` and
-then `npm --force run serve` from this directory to start a process that watches
+`-DreactDevMode=true` but in a separate terminal run `npm install` and
+then `npm run serve` from this directory to start a process that watches
 for changes to the React code and recompiles it as necessary. This is much
 faster and provides a better development experience, with shorter feedback loops
 and source maps for easier debugging.
 
-The frontend build now uses Vite by default. `npm --force run build` and
-`npm --force run serve` both target the Vite configuration in `vite.config.ts`,
+The frontend build now uses Vite by default. `npm run build` and
+`npm run serve` both target the Vite configuration in `vite.config.ts`,
 emitting the main browser bundles into `dist`. Production builds use hashed
 filenames, while the development watch build keeps stable filenames to reduce
 stale-asset issues during JSP-driven development.

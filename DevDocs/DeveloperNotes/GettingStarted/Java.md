@@ -85,7 +85,7 @@ mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
 When `-DreactDevMode=true` is set, start the Vite dev server in a separate
 terminal for Hot Module Replacement:
 ```bash
-cd src/main/webapp/ui && npm ci --force && npm run serve
+cd src/main/webapp/ui && npm ci && npm run serve
 ```
 
 In all these cases, the DB is wiped and recreated from scratch from

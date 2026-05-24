@@ -79,7 +79,7 @@ Access at `http://localhost:8080`. Test users: `user1a`–`user8h`, admin: `sysa
 
 ```bash
 cd src/main/webapp/ui
-npm ci --force
+npm ci
 npm run serve  # Vite dev server
 ```
 
