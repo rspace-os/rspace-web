@@ -222,7 +222,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
   }
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <link rel="stylesheet" href="/styles/simplicity/typo.css" />
       <link rel="stylesheet" href="/styles/simplicity/typoEdit.css" />
       <CssBaseline />

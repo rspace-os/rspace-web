@@ -192,7 +192,7 @@ const MaterialsListing = observer(
     }, [loading]);
 
     return !loading ? (
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
           <AlwaysNewWindowNavigationContext>
             {materialsStore.fieldLists.has(parseInt(elnFieldId, 10)) && (
@@ -223,7 +223,7 @@ const NewMaterialsListing = observer(
     };
     return (
       <Box sx={{ "@media print": { display: "none" } }}>
-        <StyledEngineProvider injectFirst>
+        <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider theme={materialTheme}>
             <AlwaysNewWindowNavigationContext>
               <div className="bootstrap-custom-flat">

@@ -18,7 +18,7 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <StyledEngineProvider injectFirst>
+        <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider
             theme={{
               ...materialTheme,

@@ -745,7 +745,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   };
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <RadioGroup
           row

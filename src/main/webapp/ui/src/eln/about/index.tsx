@@ -5,7 +5,6 @@ import { AboutRSpaceContent } from "../../components/AppBar/AboutRSpaceDialog";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import createAccentedTheme from "../../accentedTheme";
-import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../../components/DialogBoundary";
 import { ACCENT_COLOR as OTHER_COLOR } from "../../assets/branding/rspace/other";
@@ -13,6 +12,7 @@ import Analytics from "../../components/Analytics";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("about-page");
@@ -28,7 +28,7 @@ window.addEventListener("load", () => {
   const wrapper = document.createElement("div");
   shadow.appendChild(wrapper);
 
-  const cache = createCache({
+  const cache = createMuiCssLayerCache({
     key: "css",
     prepend: true,
     container: shadow,

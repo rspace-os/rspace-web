@@ -75,7 +75,7 @@ export function PdfPreviewDialogFromGlobalEvent(): React.ReactNode {
 
 export function PdfPreviewDialogWrapper(): React.ReactNode {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <ErrorBoundary topOfViewport>
           <Alerts>

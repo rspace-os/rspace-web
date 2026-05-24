@@ -39,7 +39,7 @@ class CreateGroupStep1 extends React.Component {
   render() {
     return (
       <div style={this.styles.container}>
-        <StyledEngineProvider injectFirst>
+        <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider theme={materialTheme}>
             <h3>Group Name</h3>
             <p>Enter a name to identify the new group</p>

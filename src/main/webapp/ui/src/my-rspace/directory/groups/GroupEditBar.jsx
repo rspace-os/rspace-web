@@ -156,7 +156,7 @@ class GroupEditBar extends React.Component {
 
   render() {
     return (
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={theme}>
           <CardWrapper>
             <Card>

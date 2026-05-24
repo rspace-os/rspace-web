@@ -148,7 +148,7 @@ function EnableAutoshareDialog({
 
 export default function WrappedEnableAutosharingDialog(props) {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <EnableAutoshareDialog {...props} />
       </ThemeProvider>

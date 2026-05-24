@@ -95,7 +95,7 @@ export default function Snackbars() {
  */
 function WrappedSnackbars() {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <Snackbars />
       </ThemeProvider>

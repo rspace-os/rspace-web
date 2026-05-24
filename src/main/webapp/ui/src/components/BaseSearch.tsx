@@ -87,7 +87,7 @@ export default function WrappedBaseSearch(
   props: React.ComponentProps<typeof BaseSearch>
 ) {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <BaseSearch {...props} />
       </ThemeProvider>

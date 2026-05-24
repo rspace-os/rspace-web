@@ -64,7 +64,7 @@ class PubchemPlugin {
       while (true) {
         const newProps: React.ComponentProps<typeof ImportDialog> = yield;
         root.render(
-          <StyledEngineProvider injectFirst>
+          <StyledEngineProvider injectFirst enableCssLayer>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
               <Analytics>
                 <ErrorBoundary>

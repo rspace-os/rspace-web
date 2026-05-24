@@ -242,7 +242,7 @@ function RoRIntegration(): React.ReactNode {
 
   return (
     <>
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
           <div>
             <h1>Research Organization Registry (ROR) Integration</h1>

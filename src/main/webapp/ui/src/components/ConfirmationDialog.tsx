@@ -147,7 +147,7 @@ export function createConfirmationDialog(payload: ConfirmActionPayload) {
   };
 
   root.render(
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <ConfirmationDialog
           {...payload}

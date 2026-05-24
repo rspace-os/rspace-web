@@ -147,12 +147,19 @@ class WorkspaceToolbar extends React.Component {
   };
 
   handleOpen = (idx, event) => {
+    // Capture the anchor element synchronously, because by the time the
+    // setState updater runs, React may have nulled out `event.currentTarget`
+    // (it is only valid during the synchronous event handler). If we read it
+    // inside the updater we can end up with a null anchor, which causes the
+    // Menu to render in the top-left corner of the viewport rather than next
+    // to the button that opened it.
+    const anchor = event.currentTarget;
     this.setState((prevState) => ({
       open: produce(prevState.open, (draft) => {
         draft[idx] = true;
       }),
       anchorEl: produce(prevState.anchorEl, (draft) => {
-        draft[idx] = event.currentTarget;
+        draft[idx] = anchor;
       }),
     }));
   };
@@ -537,7 +544,7 @@ class WorkspaceToolbar extends React.Component {
 
   render() {
     return (
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
           <Analytics>
             <BaseToolbar content={this.content()} />

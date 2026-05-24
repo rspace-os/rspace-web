@@ -136,7 +136,7 @@ function GroupAutoshareManager({
   }
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         {loaded && !autoshareStatus && (
           <>
@@ -213,7 +213,7 @@ function GroupAutoshareManager({
 
 export default function WrappedGroupAutoshareManager(props) {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <GroupAutoshareManager {...props} />
       </ThemeProvider>

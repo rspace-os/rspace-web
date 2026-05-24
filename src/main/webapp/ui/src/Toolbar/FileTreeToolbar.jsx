@@ -59,7 +59,7 @@ export default function FileTreeToolbar() {
   }
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <BaseToolbar content={content()} />
       </ThemeProvider>

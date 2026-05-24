@@ -15,7 +15,7 @@ export default function ConnectedAppsTrigger(props) {
   };
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         {!open && (
           <div style={{ width: "690px", padding: "0px 15px" }}>

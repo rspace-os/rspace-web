@@ -369,6 +369,18 @@ export default function TagsCombobox({
       }
     },
   });
+  const { ref: autocompleteInputRef, ...inputProps } = getInputProps();
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const setInputRef = (node: HTMLInputElement | null) => {
+    inputRef.current = node;
+    if (typeof autocompleteInputRef === "function") {
+      autocompleteInputRef(node);
+    } else if (autocompleteInputRef) {
+      (autocompleteInputRef as React.MutableRefObject<HTMLInputElement | null>).current =
+        node;
+    }
+  };
 
   /*
    * Whenever tags are added or removed from `value`, update the set of
@@ -424,9 +436,7 @@ export default function TagsCombobox({
        * already be set.
        */
       setTimeout(() => {
-        (
-          getInputProps().ref as React.RefObject<HTMLInputElement>
-        ).current?.focus();
+        inputRef.current?.focus();
       }, 0);
     }
   }, [anchorEl]);
@@ -485,6 +495,7 @@ export default function TagsCombobox({
           <TextField
             variant="standard"
             label="Filter suggested tags"
+            inputRef={setInputRef}
             onFocus={() => {
               /*
                * When the user taps on the "Add Tag" button we open the Popover
@@ -596,7 +607,7 @@ export default function TagsCombobox({
               },
 
               htmlInput: {
-                ...getInputProps(),
+                ...inputProps,
                 id: textFieldId,
                 value: filter,
               },

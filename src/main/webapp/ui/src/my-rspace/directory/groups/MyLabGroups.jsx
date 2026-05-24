@@ -61,7 +61,7 @@ class MyLabGroups extends React.Component {
 
   render() {
     return (
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
           <div style={styles.actions}>
             <h3>Members</h3>

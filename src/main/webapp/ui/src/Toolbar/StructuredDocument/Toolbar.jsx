@@ -264,7 +264,7 @@ class StructuredDocumentToolbar extends React.Component {
 
   render() {
     return (
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
           <Analytics>
             <BaseToolbar content={this.content()} />

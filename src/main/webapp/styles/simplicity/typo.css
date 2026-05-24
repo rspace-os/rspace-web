@@ -93,16 +93,9 @@ body td.field-value-inner span[style*="line-height: 36pt;"], body .journalPagePa
   line-height: 64px !important;
 }
 
-div {
-  font-size: 1em; }
-
-img {
-  border: 0; }
-
 /* LINKS */
-button, button:link, button:active, a, a:link, a:active {
-  color: #1465b7;
-  text-decoration: none !important; }
+a, a:link, a:active {
+  text-decoration: none; }
 
 a:visited {
   color: #1465b7;
@@ -114,18 +107,6 @@ a:hover {
 
 /* END LINKS */
 /* HEADINGS */
-h1, h2, h3, h4, h5, h6 {
-  font-family: arial, sans-serif;
-  font-weight: normal;
-  color: black;
-  padding: 0; }
-
-h1 {
-  font-size: 30px;
-  letter-spacing: -1px;
-  margin: 0 0 0.5em 0;
-}
-
 div#branding h1 {
   font-size: 2.6em;
   letter-spacing: -1px;
@@ -137,33 +118,7 @@ div#branding p {
   margin: 0;
   line-height: 1em; }
 
-h2 {
-  font-size: 20px;
-  margin: 0 0 0.5em 0; }
-
-h3 {
-  font-size: 17px;
-  margin: 0 0 0.5em 0; }
-
-h4 {
-  font-size: 17px;
-  margin: 0 0 0.25em 0; }
-
-h5 {
-  font-size: 14px;
-  margin: 0 0 0.25em 0; }
-
-h6 {
-  font-size: 14px;
-  margin: 0 }
-/* END HEADINGS */
-
 /* TEXT */
-p {
-  font-size: 1em;
-  margin: 0 0 1.5em 0;
-  padding: 0;
-  line-height: 1.4em; }
 
 blockquote {
   border-left: 10px solid #ddd;
@@ -211,11 +166,6 @@ dl dd {
 
 /* END LISTS */
 /* TABLE */
-table {
-  font-size: 1em;
-  margin: 0 0 1.5em 0;
-  padding: 0; }
-
 table caption {
   font-weight: bold;
   margin: 0 0 0 0;
@@ -294,18 +244,18 @@ Update: 2005-12-18
 .table tfoot th {
   font-weight: bold; }
 
-.table tbody td a {
-  background: transparent;
-  text-decoration: underline; }
+/*.table tbody td a {*/
+/*  background: transparent;*/
+/*  text-decoration: underline; }*/
 
-.table tbody td a:hover {
-  background: transparent;
-  text-decoration: underline; }
+/*.table tbody td a:hover {*/
+/*  background: transparent;*/
+/*  text-decoration: underline; }*/
 
-.table tbody th a {
-  background: transparent;
-  text-decoration: underline;
-  font-weight: bold; }
+/*.table tbody th a {*/
+/*  background: transparent;*/
+/*  text-decoration: underline;*/
+/*  font-weight: bold; }*/
 
 .table tbody th, .table tbody td {
   text-align: left; }

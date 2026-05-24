@@ -5,11 +5,11 @@ import AppBar from "../components/AppBar";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import createAccentedTheme from "../accentedTheme";
-import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
 import Analytics from "../components/Analytics";
 import { color, currentPage } from "@/util/pageBranding";
+import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
 
 window.addEventListener("load", () => {
   /*
@@ -27,7 +27,7 @@ window.addEventListener("load", () => {
   const wrapper = document.createElement("div");
   shadow.appendChild(wrapper);
 
-  const cache = createCache({
+  const cache = createMuiCssLayerCache({
     key: "css",
     prepend: true,
     container: shadow,

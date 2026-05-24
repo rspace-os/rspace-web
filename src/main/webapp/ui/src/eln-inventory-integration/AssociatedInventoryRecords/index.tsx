@@ -9,6 +9,7 @@ import RsSet from "../../util/set";
 import { type InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import Analytics from "@/components/Analytics";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 
 type ListingContentsProps = {
   setOfRecords: RsSet<InventoryRecord>;
@@ -109,9 +110,11 @@ if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
     <Analytics>
-      <AssociatedInventoryRecords
-        elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)}
-      />
+      <MuiCssLayerProvider>
+        <AssociatedInventoryRecords
+          elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)}
+        />
+      </MuiCssLayerProvider>
     </Analytics>,
   );
 }

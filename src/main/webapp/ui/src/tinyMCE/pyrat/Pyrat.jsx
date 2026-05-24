@@ -620,7 +620,7 @@ class PyratPlugin {
       while (true) {
         const newProps = yield;
         root.render(
-          <StyledEngineProvider injectFirst>
+          <StyledEngineProvider injectFirst enableCssLayer>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
               <PyratDialog
                 editor={editor}

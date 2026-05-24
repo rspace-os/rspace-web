@@ -37,7 +37,7 @@ function App(): React.ReactNode {
       peopleStore.currentUser ? (
         <>
           <GoogleLoginProvider />
-          <StyledEngineProvider injectFirst>
+          <StyledEngineProvider injectFirst enableCssLayer>
             <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
               <Analytics>
                 <Router />

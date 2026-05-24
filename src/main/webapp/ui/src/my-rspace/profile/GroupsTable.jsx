@@ -84,7 +84,7 @@ export default function GroupsTable(props) {
   };
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <div style={{ width: "690px", padding: "0px 15px" }}>
           <div

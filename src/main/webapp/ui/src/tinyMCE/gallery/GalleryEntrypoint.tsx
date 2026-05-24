@@ -26,7 +26,7 @@ const GalleryEntrypoint = ({
   validateSelection?: (file: GalleryFile) => Result<null>;
 }) => (
   <QueryClientProvider client={queryClient}>
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <Alerts>
           <DialogBoundary>

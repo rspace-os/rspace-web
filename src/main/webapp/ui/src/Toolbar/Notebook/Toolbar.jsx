@@ -165,7 +165,7 @@ class NotebookToolbar extends React.Component {
 
   render() {
     return (
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
           <BaseToolbar content={this.content()} />
         </ThemeProvider>

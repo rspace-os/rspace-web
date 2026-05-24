@@ -133,7 +133,7 @@ function DisableAutoshareDialog({
 
 export default function WrappedDisableAutoshareDialog(props) {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <DisableAutoshareDialog {...props} />
       </ThemeProvider>

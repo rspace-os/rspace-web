@@ -427,7 +427,7 @@ function ExportDialog({
   };
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <Confirm>
           <Dialog

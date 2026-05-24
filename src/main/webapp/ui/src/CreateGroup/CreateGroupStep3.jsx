@@ -184,7 +184,7 @@ class createGroupStep3 extends React.Component {
 
     return (
       <div style={this.styles.container}>
-        <StyledEngineProvider injectFirst>
+        <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider theme={materialTheme}>
             <Grid container spacing={8}>
               <Grid size={6}>

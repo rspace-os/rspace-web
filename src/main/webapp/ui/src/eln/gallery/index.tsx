@@ -479,7 +479,7 @@ const queryClient = new QueryClient();
 
 export function Gallery() {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <CssBaseline />
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <Alerts>

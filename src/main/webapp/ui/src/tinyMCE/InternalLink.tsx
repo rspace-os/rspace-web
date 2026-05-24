@@ -464,7 +464,7 @@ export default function InternalLink(
  */
 function WrappedInternalLink(props: InternalLinkProps): React.ReactElement {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <InternalLink {...props} />
       </ThemeProvider>

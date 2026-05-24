@@ -24,6 +24,7 @@ import { faInfo } from "@fortawesome/free-solid-svg-icons/faInfo";
 import { faChevronUp } from "@fortawesome/free-solid-svg-icons/faChevronUp";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons/faChevronDown";
 import { createRoot } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 
 const used = config.used.split(" ");
 const forbidden = config.forbidden.split(" ");
@@ -453,5 +454,9 @@ class Shortcuts extends React.Component {
 document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-shortcuts");
   const root = createRoot(domContainer);
-  root.render(<Shortcuts />);
+  root.render(
+    <MuiCssLayerProvider>
+      <Shortcuts />
+    </MuiCssLayerProvider>,
+  );
 });

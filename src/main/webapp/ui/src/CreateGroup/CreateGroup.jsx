@@ -282,7 +282,7 @@ class CreateGroup extends React.Component {
     return (
       <>
         <div>
-          <StyledEngineProvider injectFirst>
+          <StyledEngineProvider injectFirst enableCssLayer>
             <ThemeProvider theme={materialTheme}>
               <Button
                 variant="contained"

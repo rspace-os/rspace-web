@@ -26,7 +26,7 @@ const theme = createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR));
 
 const StoichiometryDialogEntrypoint = (props: StandaloneDialogInnerProps) => {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <CssBaseline />
       <ThemeProvider theme={theme}>
         <Analytics>

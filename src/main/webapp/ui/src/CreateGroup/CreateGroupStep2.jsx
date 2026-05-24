@@ -136,7 +136,7 @@ class createGroupStep2 extends React.Component {
   render() {
     return (
       <div style={this.styles.container}>
-        <StyledEngineProvider injectFirst>
+        <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider theme={materialTheme}>
             <h3>Select PI</h3>
             <RadioGroup

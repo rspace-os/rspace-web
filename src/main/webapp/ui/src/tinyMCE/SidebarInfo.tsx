@@ -214,7 +214,7 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
 
 function SidebarInfoEntrypoint(props: SidebarInfoProps) {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <SidebarInfo {...props} />
       </ThemeProvider>

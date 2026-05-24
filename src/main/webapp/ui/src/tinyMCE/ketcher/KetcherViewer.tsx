@@ -5,6 +5,7 @@ import axios from "@/common/axios";
 import Analytics from "../../components/Analytics";
 import CircularProgress from "@mui/material/CircularProgress";
 import Backdrop from "@mui/material/Backdrop";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 const KetcherDialog = React.lazy(
   () => import("../../components/Ketcher/KetcherDialog"),
 );
@@ -158,7 +159,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const root = createRoot(wrapperDiv);
       root.render(
         <Analytics>
-          <KetcherViewer />
+          <MuiCssLayerProvider>
+            <KetcherViewer />
+          </MuiCssLayerProvider>
         </Analytics>,
       );
     }

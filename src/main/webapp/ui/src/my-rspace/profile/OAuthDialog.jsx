@@ -134,7 +134,7 @@ export default function OAuthDialog(props) {
   };
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <Tooltip title="Add a new app" enterDelay={100}>
           <IconButton color="inherit" onClick={handleClickOpen}>

@@ -140,7 +140,7 @@ function PreviewInfoFrame({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <CssBaseline />
         <ThemeProvider theme={theme}>
           <Box

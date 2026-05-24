@@ -135,7 +135,7 @@ export default function NewLabGroup() {
   }
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <form noValidate autoComplete="off">
           <Grid container>

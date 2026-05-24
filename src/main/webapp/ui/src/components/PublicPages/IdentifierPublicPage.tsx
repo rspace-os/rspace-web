@@ -18,6 +18,7 @@ import React, {
   type ReactElement,
 } from "react";
 import { createRoot } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import { observer } from "mobx-react-lite";
 import { ThemeProvider, type Theme } from "@mui/material/styles";
 import materialTheme from "../../theme";
@@ -887,7 +888,11 @@ window.addEventListener("load", (_e) => {
   const rsPublicId = location.pathname.split("/")[3];
   if (domContainer) {
     const root = createRoot(domContainer);
-    root.render(<IdentifierPublicPage publicId={rsPublicId} />);
+    root.render(
+      <MuiCssLayerProvider>
+        <IdentifierPublicPage publicId={rsPublicId} />
+      </MuiCssLayerProvider>,
+    );
   }
 });
 

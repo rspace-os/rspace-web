@@ -316,7 +316,7 @@ function Clustermarket({
     return <ErrorView errorReason={errorReason} errorMessage={errorMessage} />;
   }
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <FormControl>
           <RadioGroup
