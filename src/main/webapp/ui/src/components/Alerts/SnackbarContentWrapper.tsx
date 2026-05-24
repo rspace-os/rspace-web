@@ -35,7 +35,6 @@ const variantIcon = {
 };
 
 type SnackbarContentWrapperArgs = {
-  className?: string;
   onClose: () => void;
   alert: AlertType;
   setExpanded: (newExpanded: boolean) => void;
@@ -49,7 +48,6 @@ const SnackbarContentWrapper = forwardRef<
 >(
   (
     {
-      className,
       onClose,
       alert,
       expanded,
@@ -63,18 +61,15 @@ const SnackbarContentWrapper = forwardRef<
     const theme = useTheme();
     const Icon = variantIcon[alert.variant];
     const nameId = useId();
-    const backgroundColor =
-      alert.variant === "success"
-        ? green[600]
-        : alert.variant === "error"
-          ? theme.palette.error.main
-          : alert.variant === "warning"
-            ? theme.palette.warning.main
-            : undefined;
+    const backgroundColorByVariant: Partial<Record<AlertType["variant"], string>> = {
+      success: green[600],
+      error: theme.palette.error.main,
+      warning: theme.palette.warning.main,
+    };
+    const backgroundColor = backgroundColorByVariant[alert.variant];
 
     const standardSnackbarContent = (
-      <Grid>
-        <Grid container sx={{ flexWrap: "nowrap" }}>
+      <Grid container sx={{ flexWrap: "nowrap" }}>
           <Grid>
             <Badge
               badgeContent={alert.detailsCount}
@@ -154,23 +149,21 @@ const SnackbarContentWrapper = forwardRef<
             )}
             {alert.allowClosing && <DismissButton onClose={onClose} />}
           </Grid>
-        </Grid>
       </Grid>
     );
 
     const detailedSnackbarContent = (
-      <Grid size={12}>
-        <Box sx={{ mt: 2 }}>
-          <Grid
-            container
-            spacing={1}
-            sx={{
-              maxHeight: isViewportVerySmall
-                ? "calc(100vh - 210px)"
-                : "max(175px, 50vh)",
-              overflowY: "auto",
-            }}
-          >
+      <Grid size={12} sx={{ mt: 2 }}>
+        <Grid
+          container
+          spacing={1}
+          sx={{
+            maxHeight: isViewportVerySmall
+              ? "calc(100vh - 210px)"
+              : "max(175px, 50vh)",
+            overflowY: "auto",
+          }}
+        >
             {alert.details.map(({ record, variant, title, help }, index) => (
               <Grid key={index} size={12}>
                 <Alert
@@ -212,8 +205,7 @@ const SnackbarContentWrapper = forwardRef<
                 </Alert>
               </Grid>
             )}
-          </Grid>
-        </Box>
+        </Grid>
       </Grid>
     );
 
@@ -221,7 +213,6 @@ const SnackbarContentWrapper = forwardRef<
       <SnackbarContent
         {...other}
         data-test-id="toast-content"
-        className={className}
         ref={ref}
         aria-labelledby={nameId}
         sx={{
@@ -247,8 +238,6 @@ const SnackbarContentWrapper = forwardRef<
     );
   },
 );
-
-SnackbarContentWrapper.displayName = "SnackbarContentWrapper";
 
 /**
  * The actual content of the alert toast.
