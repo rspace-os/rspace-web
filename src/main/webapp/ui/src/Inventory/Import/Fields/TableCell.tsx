@@ -37,5 +37,4 @@ function TableCell({
   );
 }
 
-TableCell.displayName = "TableCell";
 export default TableCell;

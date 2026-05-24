@@ -46,5 +46,4 @@ function CustomToggleButton({
   return disabled ? button : <Tooltip title={title}>{button}</Tooltip>;
 }
 
-CustomToggleButton.displayName = "CustomToggleButton";
 export default CustomToggleButton;

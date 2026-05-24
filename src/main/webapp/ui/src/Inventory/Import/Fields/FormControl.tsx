@@ -23,5 +23,4 @@ function UploadFormControl(props: UploadFormControlArgs): React.ReactNode {
   );
 }
 
-UploadFormControl.displayName = "UploadFormControl";
 export default UploadFormControl;

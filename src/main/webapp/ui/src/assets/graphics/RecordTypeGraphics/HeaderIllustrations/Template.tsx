@@ -79,5 +79,4 @@ function SampleTemplate(): React.ReactNode {
   );
 }
 
-SampleTemplate.displayName = "SampleTemplate";
 export default SampleTemplate;

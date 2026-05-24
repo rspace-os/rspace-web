@@ -81,5 +81,4 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
   );
 }
 
-NoResults.displayName = "NoResults";
 export default NoResults;

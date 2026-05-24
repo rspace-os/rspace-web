@@ -18,5 +18,4 @@ function IgsnIcon({ color, style }: IgsnIconArgs): React.ReactNode {
   );
 }
 
-IgsnIcon.displayName = "IgsnIcon";
 export default IgsnIcon;

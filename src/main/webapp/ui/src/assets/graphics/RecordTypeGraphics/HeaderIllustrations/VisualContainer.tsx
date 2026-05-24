@@ -90,5 +90,4 @@ function VisualContainer(): React.ReactNode {
   );
 }
 
-VisualContainer.displayName = "VisualContainer";
 export default VisualContainer;

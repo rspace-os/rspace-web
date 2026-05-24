@@ -48,5 +48,4 @@ function Container(): React.ReactNode {
   );
 }
 
-Container.displayName = "Container";
 export default Container;

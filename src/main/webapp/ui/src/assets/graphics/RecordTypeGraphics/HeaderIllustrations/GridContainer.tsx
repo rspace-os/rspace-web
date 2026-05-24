@@ -60,5 +60,4 @@ function GridContainer(): React.ReactNode {
   );
 }
 
-GridContainer.displayName = "GridContainer";
 export default GridContainer;

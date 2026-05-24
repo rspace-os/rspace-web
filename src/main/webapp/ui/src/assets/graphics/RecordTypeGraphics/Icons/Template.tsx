@@ -18,5 +18,4 @@ function TemplateIcon({ color, style }: TemplateIconArgs): React.ReactNode {
   );
 }
 
-TemplateIcon.displayName = "TemplateIcon";
 export default TemplateIcon;

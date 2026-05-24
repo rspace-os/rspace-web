@@ -629,5 +629,4 @@ function SubSample(): React.ReactNode {
   );
 }
 
-SubSample.displayName = "SubSample";
 export default SubSample;

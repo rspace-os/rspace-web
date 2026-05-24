@@ -29,5 +29,4 @@ function OverlayLoadingSpinner(): React.ReactNode {
   );
 }
 
-OverlayLoadingSpinner.displayName = "OverlayLoadingSpinner";
 export default OverlayLoadingSpinner;

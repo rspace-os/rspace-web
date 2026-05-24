@@ -26,5 +26,4 @@ function CustomToggleButtonGroup(
   );
 }
 
-CustomToggleButtonGroup.displayName = "CustomToggleButtonGroup";
 export default CustomToggleButtonGroup;

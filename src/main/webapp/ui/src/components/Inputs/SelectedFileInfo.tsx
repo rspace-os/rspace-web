@@ -107,5 +107,4 @@ function SelectedFileInfo({
   );
 }
 
-SelectedFileInfo.displayName = "SelectedFileInfo ";
 export default SelectedFileInfo;

@@ -65,5 +65,4 @@ function ListContainer(): React.ReactNode {
   );
 }
 
-ListContainer.displayName = "ListContainer";
 export default ListContainer;

@@ -39,5 +39,4 @@ function EmptyListing({ parentGlobalId }: EmptyListingArgs): React.ReactNode {
   );
 }
 
-EmptyListing.displayName = "EmptyListing";
 export default EmptyListing;

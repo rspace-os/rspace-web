@@ -36,5 +36,4 @@ function MyBenchIcon({ size, color }: MyBenchIconArgs): React.ReactNode {
   );
 }
 
-MyBenchIcon.displayName = "MyBenchIcon";
 export default MyBenchIcon;

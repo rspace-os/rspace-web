@@ -587,5 +587,4 @@ function Sample(): React.ReactNode {
   );
 }
 
-Sample.displayName = "Sample";
 export default Sample;
