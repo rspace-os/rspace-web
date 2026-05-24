@@ -61,7 +61,7 @@
 						<ul style="margin: 0; padding: 0;">
 							<c:forEach items="${user.groups}" var="group">
 							  <c:if test="${!(group.privateProfile and applicationScope['RS_DEPLOY_PROPS']['profileHidingEnabled'] and not subject.isConnectedToGroup(group))}">
-								<li><a href="/groups/view/${group.id}">${group.displayName}</a></li>
+								<li><a href="/groups/view/${group.id}">${group.displayName}</a><br />(${group.groupType.label})</li>
 							  </c:if>
 							</c:forEach>
 						</ul>
