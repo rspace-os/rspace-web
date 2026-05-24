@@ -8,42 +8,7 @@ import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import CardHeader from "@mui/material/CardHeader";
 import SimpleRecordsTable from "../SimpleRecordsTable";
-function CustomHeader({
-  open,
-  setOpen,
-  title,
-}: {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  title: string;
-}): React.ReactNode {
-  return (
-    <CardHeader
-      sx={{ height: 48, p: "0 0 0 12px" }}
-      title={`${title} (Click to ${open ? "close" : "expand"} list)`}
-      onClick={() => setOpen(!open)}
-      action={
-        <IconButton onClick={() => setOpen(!open)}>
-          <ExpandCollapseIcon open={open} />
-        </IconButton>
-      }
-      slotProps={{
-        action: { sx: { m: 0, height: "100%", alignItems: "center", display: "flex" } },
-        title: { variant: "body1" },
-      }}
-    />
-  );
-}
 
-/*
- * The RecordLike type variable is used to reference the subtype of Record that
- * this component will likely be called with. In all liklihood, the caller of
- * this component will pass an RsSet<InventoryRecord>, RsSet<Container>, etc.
- * The code in this component MUST not mutate the `records` set, and in fact
- * should be prevented from doing so because of this type variable. It is
- * unfortunate that Flow does not provide a ReadOnlySet utility type like
- * ReadOnlyArray.
- */
 type BatchEditingItemsTableArgs<RecordLike extends Record> = {
   records: RsSet<RecordLike>;
   label: string;
@@ -54,13 +19,22 @@ function BatchEditingItemsTable<RecordLike extends Record>({
 }: BatchEditingItemsTableArgs<RecordLike>): React.ReactNode {
   const [open, setOpen] = React.useState(false);
   return (
-    <Box
-      sx={{
-        my: 1,
-      }}
-    >
+    <Box sx={{ my: 1 }}>
       <Card variant="outlined">
-        <CustomHeader title={label} open={open} setOpen={setOpen} />
+        <CardHeader
+          sx={{ height: 48, p: "0 0 0 12px" }}
+          title={`${label} (Click to ${open ? "close" : "expand"} list)`}
+          onClick={() => setOpen(!open)}
+          action={
+            <IconButton>
+              <ExpandCollapseIcon open={open} />
+            </IconButton>
+          }
+          slotProps={{
+            action: { sx: { m: 0, height: "100%", alignItems: "center", display: "flex" } },
+            title: { variant: "body1" },
+          }}
+        />
         <SimpleRecordsTable
           open={open}
           records={records.toArray((a, b) => (a.id ?? -1) - (b.id ?? -1))}
