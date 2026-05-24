@@ -2,14 +2,20 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import bundleEntries from "./bundleEntries.json";
 import { defineConfig } from "vitest/config";
-import type { Alias, PluginOption } from "vite";
+import type { Alias, PluginOption, UserConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import browserslist from "browserslist";
+import browserslistToEsbuild from "browserslist-to-esbuild";
+import { browserslistToTargets } from "lightningcss";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const resolveFromRoot = (relativePath: string) =>
   path.resolve(__dirname, relativePath);
+
+const esbuildTargets = browserslistToEsbuild();
+const lightningCssTargets = browserslistToTargets(browserslist());
 
 const shouldGenerateBuildStats = process.env.FRONTEND_BUILD_STATS === "true";
 const devServerHost = process.env.VITE_DEV_SERVER_HOST ?? "127.0.0.1";
@@ -87,7 +93,7 @@ export default defineConfig(async ({ mode }) => {
     );
   }
 
-  return {
+  const config: UserConfig = {
     base: "/ui/dist/",
     define: {
       global: "globalThis",
@@ -131,6 +137,14 @@ export default defineConfig(async ({ mode }) => {
           assetFileNames: "assets/[name]-[hash][extname]",
         },
       },
+      target: esbuildTargets as NonNullable<UserConfig["build"]>["target"],
+      cssTarget: esbuildTargets as NonNullable<UserConfig["build"]>["cssTarget"],
+    },
+    css: {
+      transformer: "lightningcss",
+      lightningcss: {
+        targets: lightningCssTargets,
+      },
     },
     ssr: {
       resolve: {
@@ -148,4 +162,5 @@ export default defineConfig(async ({ mode }) => {
       },
     },
   };
+  return config;
 });
