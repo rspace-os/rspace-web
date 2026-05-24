@@ -11,6 +11,7 @@ import {
   ariaValueMin,
   ariaValueMax,
 } from "@/util/progress";
+import { mergeSx } from "@/modules/common/utils/styles";
 
 type SubmitSpinnerButtonArgs = {
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -26,10 +27,6 @@ type SubmitSpinnerButtonArgs = {
   sx?: SxProps<Theme>;
 };
 
-const isSxArray = (
-  value: SxProps<Theme>,
-): value is Extract<SxProps<Theme>, readonly unknown[]> => Array.isArray(value);
-
 function SubmitSpinnerButton({
   onClick,
   disabled,
@@ -43,11 +40,10 @@ function SubmitSpinnerButton({
   color = "callToAction",
   sx,
 }: SubmitSpinnerButtonArgs): React.ReactNode {
-  const composedSx: SxProps<Theme> = sx
-    ? isSxArray(sx)
-      ? [{ position: "relative", overflow: "hidden" }, ...sx]
-      : [{ position: "relative", overflow: "hidden" }, sx]
-    : { position: "relative", overflow: "hidden" };
+  const composedSx: SxProps<Theme> = mergeSx(
+    { position: "relative", overflow: "hidden" },
+    sx,
+  );
 
   return (
     <Button

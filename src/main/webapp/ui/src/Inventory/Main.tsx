@@ -1,6 +1,7 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import { type SxProps, type Theme } from "@mui/material/styles";
+import { mergeSx } from "@/modules/common/utils/styles";
 
 type MainArgs = {
   children: React.ReactNode;
@@ -13,18 +14,11 @@ const baseSx: SxProps<Theme> = {
   height: "100%",
 };
 
-const isSxArray = (value: SxProps<Theme>): value is Extract<SxProps<Theme>, readonly unknown[]> =>
-  Array.isArray(value);
-
 export default React.forwardRef<HTMLElement, MainArgs>(function Main(
   { children, sx, ...htmlAttributes },
   ref,
 ) {
-  const composedSx: SxProps<Theme> = sx
-    ? isSxArray(sx)
-      ? [baseSx, ...sx]
-      : [baseSx, sx]
-    : baseSx;
+  const composedSx: SxProps<Theme> = mergeSx(baseSx, sx);
 
   return (
     <Box

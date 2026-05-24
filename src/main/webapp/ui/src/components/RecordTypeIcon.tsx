@@ -72,8 +72,10 @@ export default function RecordTypeIcon({
     case "template":
       icon = (
         <TemplateIcon
-          color={color ?? theme.palette.record.sampleTemplate.fg}
-          style={style}
+          sx={{
+            color: color ?? theme.palette.record.sampleTemplate.fg,
+            ...style,
+          }}
         />
       );
       break;

@@ -2,9 +2,7 @@ import React from "react";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
-
-const asSxArray = (s: SxProps<Theme> | undefined) =>
-  Array.isArray(s) ? s : s ? [s] : [];
+import { asSxArray } from "@/modules/common/utils/styles";
 
 export function StyledMenu({
   sx,

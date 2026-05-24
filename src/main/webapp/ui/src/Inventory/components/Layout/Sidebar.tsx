@@ -12,7 +12,7 @@ import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import useNavigateHelpers from "../../useNavigateHelpers";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import NavigateContext from "../../../stores/contexts/Navigate";
-import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/igsn";
+import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/IgsnIcon";
 import { useLandmark } from "../../../components/LandmarksContext";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -312,7 +312,7 @@ const IgsnNavItem = observer(
       <DrawerTab
         label="IGSN IDs"
         selected={/identifiers\/igsn/.test(window.location.pathname)}
-        icon={<IgsnIcon style={{ width: "16px", height: "16px" }} />}
+        icon={<IgsnIcon sx={{ width: "16px", height: "16px" }} />}
         index={index}
         tabIndex={tabIndex}
         ref={getRef(index)}

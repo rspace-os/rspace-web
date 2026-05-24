@@ -16,9 +16,11 @@ import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import {
   alpha,
   lighten,
-  SxProps,
+  type SxProps,
+  type Theme,
   useTheme,
 } from "@mui/material/styles";
+import { mergeSx } from "../../../modules/common/utils/styles";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
@@ -134,12 +136,11 @@ const StyledBreadcrumb = React.forwardRef<
     label: React.ReactNode;
     icon?: React.ReactNode;
     onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
-    style?: React.CSSProperties;
     tabIndex: number;
-    sx?: SxProps;
+    sx?: SxProps<Theme>;
   }
->(({ label, icon, onClick, style, tabIndex, sx }, ref) => (
-  <Box ref={ref} onClick={onClick} style={style} tabIndex={tabIndex} sx={sx}>
+>(({ label, icon, onClick, tabIndex, sx }, ref) => (
+  <Box ref={ref} onClick={onClick} tabIndex={tabIndex} sx={sx}>
     <Chip
       clickable
       component={ReactRouterLink}
@@ -256,7 +257,7 @@ const BreadcrumbLink = React.forwardRef<
     section: GallerySection;
     setSelectedSection: (section: GallerySection) => void;
     tabIndex: number;
-    sx?: SxProps;
+    sx?: SxProps<Theme>;
   }
 >(({ folder, section, setSelectedSection, tabIndex, sx }, ref) => {
   const { setNodeRef: setDropRef, isOver } = useDroppable({
@@ -293,18 +294,6 @@ const BreadcrumbLink = React.forwardRef<
         if (typeof ref === "function") ref(node);
         else ref.current = node;
       }}
-      style={{
-        ...(dndInProgress && !isOver
-          ? {
-              animation: "drop 2s linear infinite",
-            }
-          : {}),
-        ...(isOver
-          ? {
-              border: SELECTED_OR_FOCUS_BORDER,
-            }
-          : {}),
-      }}
       tabIndex={tabIndex}
       label={
         folder?.name ?? getByKey(section, gallerySectionLabel).orElse("UNKNOWN")
@@ -316,7 +305,13 @@ const BreadcrumbLink = React.forwardRef<
               icon,
             }))
             .orElse({}))}
-      sx={sx}
+      sx={mergeSx(
+        dndInProgress && !isOver
+          ? { animation: "drop 2s linear infinite" }
+          : undefined,
+        isOver ? { border: SELECTED_OR_FOCUS_BORDER } : undefined,
+        sx,
+      )}
     />
   );
 });
