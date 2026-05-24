@@ -8,32 +8,6 @@ import { faSortAmountUpAlt } from "@fortawesome/free-solid-svg-icons/faSortAmoun
 import { faSortAmountDown } from "@fortawesome/free-solid-svg-icons/faSortAmountDown";
 import AnalyticsContext from "../stores/contexts/Analytics";
 
-const selectSx = {
-  background: "white",
-  height: "100%",
-  padding: 0,
-  borderRadius: 1,
-  boxShadow:
-    "0px 1px 3px 0px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12)",
-  "&::before, &::after": {
-    display: "none",
-  },
-  "& .MuiSelect-selectMenu": {
-    paddingLeft: 10,
-    height: 35,
-    display: "flex",
-    alignItems: "center",
-  },
-};
-
-const getSelectSx = (paddingLeft) => ({
-  ...selectSx,
-  "& .MuiSelect-selectMenu": {
-    ...selectSx["& .MuiSelect-selectMenu"],
-    paddingLeft,
-  },
-});
-
 /**
  * Sorting controls for the workspace file tree.
  */
@@ -44,6 +18,23 @@ export default function TreeSort({
   const [orderBy, setOrderBy] = React.useState("name");
   const [sortOrder, setSortOrder] = React.useState("DESC");
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const selectSx = {
+    background: "white",
+    height: "100%",
+    padding: 0,
+    borderRadius: 1,
+    boxShadow:
+      "0px 1px 3px 0px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 2px 1px -1px rgba(0,0,0,0.12)",
+    "&::before, &::after": {
+      display: "none",
+    },
+    "& .MuiSelect-selectMenu": {
+      paddingLeft: selectPaddingLeft,
+      height: 35,
+      display: "flex",
+      alignItems: "center",
+    },
+  };
 
   function applySettings(order, sort) {
     updateClientUISetting("treeSort", order + "." + sort);
@@ -86,7 +77,7 @@ export default function TreeSort({
         value={orderBy}
         onChange={handleChangeOrderBy}
         variant="standard"
-        sx={{ ...getSelectSx(selectPaddingLeft), mr: "10px" }}
+        sx={{ ...selectSx, mr: "10px" }}
       >
         <MenuItem value="name" data-test-id="order-name">
           Name
@@ -106,7 +97,7 @@ export default function TreeSort({
         value={sortOrder}
         onChange={handleChangeSortOrder}
         variant="standard"
-        sx={getSelectSx(selectPaddingLeft)}
+        sx={selectSx}
       >
         <MenuItem value="ASC" data-test-id="sort-asc">
           <FontAwesomeIcon
