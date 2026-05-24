@@ -1,6 +1,7 @@
 import React from "react";
 import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
@@ -63,26 +64,23 @@ export default function PdfExport({
   updateExportDetails,
 }: PdfExportArgs): React.ReactNode {
   return (
-    <Grid container sx={{ flexDirection: "column" }} spacing={2}>
-      <Grid>
-        <TextField
-          variant="standard"
-          error={
-            validations.submitAttempt &&
-            !validations.inputValidations.exportName
-          }
-          id="name"
-          label="File name *"
-          helperText="Name your file"
-          value={exportName}
-          onChange={({ target: { value } }) =>
-            updateExportDetails("exportName", value)
-          }
-          margin="normal"
-          fullWidth
-          data-test-id="pdf-name"
-        />
-      </Grid>
+    <Stack spacing={2}>
+      <TextField
+        variant="standard"
+        error={
+          validations.submitAttempt && !validations.inputValidations.exportName
+        }
+        id="name"
+        label="File name *"
+        helperText="Name your file"
+        value={exportName}
+        onChange={({ target: { value } }) =>
+          updateExportDetails("exportName", value)
+        }
+        margin="normal"
+        fullWidth
+        data-test-id="pdf-name"
+      />
       <Grid container>
         <Grid sx={{ mt: 2 }} size={5}>
           <InputLabel htmlFor="pageSize">Page format: </InputLabel>
@@ -144,28 +142,27 @@ export default function PdfExport({
           </Select>
         </Grid>
       </Grid>
-      <Grid container sx={{ flexDirection: "column" }}>
+      <Stack>
         {(Object.keys(checkboxes) as Array<keyof typeof checkboxes>).map(
           (k) => (
-            <Grid key={k}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={rest[k]}
-                    onChange={({ target: { checked } }) =>
-                      updateExportDetails(k, checked)
-                    }
-                    color="primary"
-                    data-test-id={k}
-                    slotProps={{ input: { role: "checkbox" } }}
-                  />
-                }
-                label={checkboxes[k]}
-              />
-            </Grid>
+            <FormControlLabel
+              key={k}
+              control={
+                <Switch
+                  checked={rest[k]}
+                  onChange={({ target: { checked } }) =>
+                    updateExportDetails(k, checked)
+                  }
+                  color="primary"
+                  data-test-id={k}
+                  slotProps={{ input: { role: "checkbox" } }}
+                />
+              }
+              label={checkboxes[k]}
+            />
           ),
         )}
-      </Grid>
-    </Grid>
+      </Stack>
+    </Stack>
   );
 }

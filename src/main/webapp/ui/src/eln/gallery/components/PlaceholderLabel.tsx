@@ -1,5 +1,5 @@
 import React from "react";
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
 
 /**
  * Simple label for displaying a message about the status of the listing e.g.
@@ -11,9 +11,9 @@ export default function PlaceholderLabel({
   children: React.ReactNode;
 }): React.ReactNode {
   return (
-    <Grid
-      container
+    <Box
       sx={{
+        display: "flex",
         justifyContent: "stretch",
         alignItems: "stretch",
         height: "100%",
@@ -30,7 +30,7 @@ export default function PlaceholderLabel({
         },
       }}
     >
-      <Grid
+      <Box
         sx={{
           p: 1,
           pt: 2,
@@ -39,7 +39,7 @@ export default function PlaceholderLabel({
         role="status"
       >
         {children}
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   );
 }

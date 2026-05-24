@@ -5,7 +5,8 @@ import SearchContext from "../../../stores/contexts/Search";
 import SearchViewComponent from "../../Search/SearchView";
 import Search from "../../Search/Search";
 import { menuIDs } from "../../../util/menuIDs";
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import SampleModel from "../../../stores/models/SampleModel";
 import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
 import Collapse from "@mui/material/Collapse";
@@ -46,13 +47,13 @@ function SubsampleListing({ sample }: SubsampleListingArgs): React.ReactNode {
   };
 
   return (
-    <Grid container direction="row" sx={{ flexWrap: "nowrap" }} spacing={1}>
-      <Grid sx={{ pl: 0, ml: -2 }}>
+    <Stack direction="row" spacing={1}>
+      <Box sx={{ pl: 0, ml: -2 }}>
         <IconButton onClick={() => setSearchOpen(!searchOpen)} sx={{ p: 1 }}>
           <ExpandCollapseIcon open={searchOpen} />
         </IconButton>
-      </Grid>
-      <Grid sx={{ flexGrow: 1 }}>
+      </Box>
+      <Box sx={{ flexGrow: 1 }}>
         <Collapse
           in={searchOpen}
           collapsedSize={44}
@@ -69,23 +70,15 @@ function SubsampleListing({ sample }: SubsampleListingArgs): React.ReactNode {
             }}
           >
             <InnerSearchNavigationContext>
-              <Grid container sx={{ flexDirection: "column" }} spacing={1}>
-                <Grid>
-                  <Search
-                    handleSearch={handleSearch}
-                    TABS={TABS}
-                    size="small"
-                  />
-                </Grid>
-                <Grid>
-                  <SearchViewComponent contextMenuId={menuIDs.RESULTS} />
-                </Grid>
-              </Grid>
+              <Stack spacing={1}>
+                <Search handleSearch={handleSearch} TABS={TABS} size="small" />
+                <SearchViewComponent contextMenuId={menuIDs.RESULTS} />
+              </Stack>
             </InnerSearchNavigationContext>
           </SearchContext.Provider>
         </Collapse>
-      </Grid>
-    </Grid>
+      </Box>
+    </Stack>
   );
 }
 

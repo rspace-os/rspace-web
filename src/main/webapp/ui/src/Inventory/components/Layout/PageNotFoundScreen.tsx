@@ -1,21 +1,16 @@
 import React from "react";
-import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 
 export default function PageNotFoundScreen(): React.ReactNode {
   return (
-    <Grid container>
-      <Grid>
-        <Box sx={{ p: 1 }}>
-          <h1>Page not found.</h1>
-          <p>
-            The page was not found. You can try again, or use your ‘back’ button
-            to return to your previous location and navigate from there, or use
-            the sidebar to navigate to your samples and containers. If you can’t
-            resolve the problem, please contact an administrator.
-          </p>
-        </Box>
-      </Grid>
-    </Grid>
+    <Box sx={{ p: 1 }}>
+      <h1>Page not found.</h1>
+      <p>
+        The page was not found. You can try again, or use your ‘back’ button to
+        return to your previous location and navigate from there, or use the
+        sidebar to navigate to your samples and containers. If you can’t resolve
+        the problem, please contact an administrator.
+      </p>
+    </Box>
   );
 }

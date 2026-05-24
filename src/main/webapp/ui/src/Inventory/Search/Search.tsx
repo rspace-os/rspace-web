@@ -5,7 +5,8 @@ import SearchFeedback from "./components/SearchFeedback";
 import { type SearchView } from "../../stores/definitions/Search";
 import SearchDisplayControls from "./components/SearchDisplayControls";
 import SearchParameterControls from "./components/SearchParameterControls";
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import SearchParameterChips from "./components/SearchParameterChips";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
@@ -25,55 +26,36 @@ function MainSearch({
   searchbarAdornment,
 }: MainSearchArgs): React.ReactNode {
   return (
-    <Grid container sx={{ flexDirection: "column" }} spacing={1}>
-      <Grid>
-        <Grid
-          container
-          direction="row"
-          spacing={1}
-          sx={{ alignItems: "center", flexWrap: "nowrap" }}
-        >
-          <Grid sx={{ flexGrow: 1 }}>
-            <Searchbar handleSearch={handleSearch} />
-          </Grid>
-          <Grid>
-            <HelpLinkIcon
-              link={docLinks.search}
-              title="Info on searching Inventory."
-            />
-          </Grid>
-          {size === "small" && (
-            <Grid>
-              <SearchDisplayControls TABS={TABS} />
-            </Grid>
-          )}
-          {Boolean(searchbarAdornment) && <Grid>{searchbarAdornment}</Grid>}
-        </Grid>
-      </Grid>
-      <Grid sx={{ pt: 0 }}>
+    <Stack spacing={1}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+        <Box sx={{ flexGrow: 1 }}>
+          <Searchbar handleSearch={handleSearch} />
+        </Box>
+        <HelpLinkIcon
+          link={docLinks.search}
+          title="Info on searching Inventory."
+        />
+        {size === "small" && <SearchDisplayControls TABS={TABS} />}
+        {Boolean(searchbarAdornment) && searchbarAdornment}
+      </Stack>
+      <Box sx={{ pt: 0 }}>
         <SearchParameterControls />
-      </Grid>
-      <Grid sx={{ maxWidth: "100% !important" }}>
+      </Box>
+      <Box sx={{ maxWidth: "100% !important" }}>
         <SearchParameterChips />
-      </Grid>
+      </Box>
       {size === "default" && (
         <>
-          <Grid>
-            <Divider orientation="horizontal" sx={{ my: 0.75 }} />
-          </Grid>
-          <Grid>
-            <Grid container direction="row" spacing={1} sx={{ flexWrap: "nowrap" }}>
-              <Grid sx={{ flexGrow: 1 }}>
-                <SearchFeedback />
-              </Grid>
-              <Grid>
-                <SearchDisplayControls TABS={TABS} />
-              </Grid>
-            </Grid>
-          </Grid>
+          <Divider orientation="horizontal" sx={{ my: 0.75 }} />
+          <Stack direction="row" spacing={1}>
+            <Box sx={{ flexGrow: 1 }}>
+              <SearchFeedback />
+            </Box>
+            <SearchDisplayControls TABS={TABS} />
+          </Stack>
         </>
       )}
-    </Grid>
+    </Stack>
   );
 }
 
