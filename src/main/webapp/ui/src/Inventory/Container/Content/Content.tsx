@@ -59,7 +59,7 @@ function _Content() {
   const fromCType = activeResult.cType.toUpperCase();
   const TABS: SearchViewType[] = ["LIST", "TREE", "CARD"];
   if (fromCType === "IMAGE" || fromCType === "GRID")
-    TABS.unshift(fromCType as SearchViewType);
+    TABS.unshift(fromCType);
 
   const handleSearch = (query: string) => {
     const params = {

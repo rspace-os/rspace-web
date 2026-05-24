@@ -236,7 +236,8 @@ export default function Filter({
               onChange={(event) => handleFilterChange(event, key, config)}
               fullWidth
               slotProps={{
-                htmlInput: config.type === "number" ? { inputMode: "numeric" } : {},
+                htmlInput:
+                  config.type === "number" ? { inputMode: "numeric" } : {},
               }}
             />
           </Grid>

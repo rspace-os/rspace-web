@@ -71,7 +71,7 @@ export default function WordExport({
             fullWidth
             value={pageSize}
             onChange={({ target: { value } }) =>
-              updateExportDetails("pageSize", value as PageSize)
+              updateExportDetails("pageSize", value)
             }
             inputProps={{ id: pageSizeId }}
             data-test-id="word-size"

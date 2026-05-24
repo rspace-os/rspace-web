@@ -138,7 +138,12 @@ function EnableAutoshareDialog({
             disabled={waiting || done}
           >
             Confirm
-            {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
+            {waiting && (
+              <CircularProgress
+                size={20}
+                sx={{ position: "absolute", margin: "0 auto" }}
+              />
+            )}
           </Button>
         </DialogActions>
       </Dialog>

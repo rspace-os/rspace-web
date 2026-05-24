@@ -32,7 +32,7 @@ export default function ActionsTab(props) {
           onKeyUp={props.onKeyUp}
           margin="dense"
           slotProps={{
-            htmlInput: { style: { lineHeight: "20px" } }
+            htmlInput: { style: { lineHeight: "20px" } },
           }}
         />
       </Grid>

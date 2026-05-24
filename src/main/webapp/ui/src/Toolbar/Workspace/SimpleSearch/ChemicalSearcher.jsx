@@ -245,7 +245,7 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
         fullWidth
         maxWidth="xl"
         slotProps={{
-          paper: { style: { maxHeight: "90vh", minHeight: "90vh" } }
+          paper: { style: { maxHeight: "90vh", minHeight: "90vh" } },
         }}
       >
         <DialogTitle>Chemical Search</DialogTitle>

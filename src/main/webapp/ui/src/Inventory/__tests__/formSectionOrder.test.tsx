@@ -111,7 +111,7 @@ window.fetch = vi.fn(() =>
     bodyUsed: false,
   } as Response)
 
-) as any;
+);
 type MakeRootStoreArgs = {
   activeResult: InventoryRecord | null;
   batchEditingRecords?: Array<InventoryRecord>;
@@ -172,7 +172,7 @@ function getSectionNames(
 describe("Form Section Order", () => {
   test("Across all of the forms, all of the sections should be in a consistent order.", () => {
     window.ResizeObserver =
-      ResizeObserver as unknown as typeof global.ResizeObserver;
+      ResizeObserver;
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     window.scrollTo = vi.fn() as any;

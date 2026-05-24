@@ -1019,7 +1019,7 @@ export default class SampleModel
             );
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,
-            this.subSamples[0] as SubSample,
+            this.subSamples[0],
           );
         },
       },

@@ -51,7 +51,7 @@ function TreeProvider<Item, Id extends string>({
   return (
     <TreeContext.Provider
       value={{
-        idMap: idMap as Map<string, unknown>,
+        idMap: idMap,
         getId: getId as (t: unknown) => string,
       }}
     >

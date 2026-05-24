@@ -118,7 +118,7 @@ export default function UserList({ listTitle, onSelect, selected, users }) {
         onChange={handleSearch}
         data-test-id={`user-search-${listTitleId}`}
         slotProps={{
-          htmlInput: { spellcheck: "false" }
+          htmlInput: { spellcheck: "false" },
         }}
       />
       {visibleUsers.length === 0 && (

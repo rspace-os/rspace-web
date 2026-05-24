@@ -81,7 +81,7 @@ export default function NewNotebook() {
               aria-describedby="component-error-text"
               data-test-id="new-notebook-name"
               slotProps={{
-                htmlInput: { "aria-label": "New notebook name" }
+                htmlInput: { "aria-label": "New notebook name" },
               }}
             />
             <FormHelperText id="component-error-text">{error}</FormHelperText>

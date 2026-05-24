@@ -121,9 +121,9 @@ export default function ResultsTable({
                     </TableCell>
                     {visibleHeaderCells.map((cell, i) => (
                       // owner and responsible person could have the same name
-                      (<TableCell key={`${cell.id}${i}`}>
+                      <TableCell key={`${cell.id}${i}`}>
                         {animal[cell.id]}
-                      </TableCell>)
+                      </TableCell>
                     ))}
                   </TableRow>
                 );
@@ -132,7 +132,18 @@ export default function ResultsTable({
           </TableBody>
         </Table>
       </TableContainer>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", left: 0, bottom: 0, width: "calc(100% - 16px)", ml: "8px", backgroundColor: "#f6f6f6" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          left: 0,
+          bottom: 0,
+          width: "calc(100% - 16px)",
+          ml: "8px",
+          backgroundColor: "#f6f6f6",
+        }}
+      >
         <Typography
           sx={{ pl: "16px" }}
           component="span"

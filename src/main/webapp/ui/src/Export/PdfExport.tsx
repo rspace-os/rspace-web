@@ -91,7 +91,7 @@ export default function PdfExport({
             fullWidth
             value={pageSize}
             onChange={({ target: { value } }) =>
-              updateExportDetails("pageSize", value as PageSize)
+              updateExportDetails("pageSize", value)
             }
             inputProps={{ name: "pageSize", id: "pageSize" }}
             data-test-id="pdf-size"
@@ -127,7 +127,7 @@ export default function PdfExport({
             fullWidth
             value={dateType}
             onChange={({ target: { value } }) =>
-              updateExportDetails("dateType", value as "EXP" | "NEW" | "UPD")
+              updateExportDetails("dateType", value)
             }
             inputProps={{ name: "dateType", id: "dateType" }}
             data-test-id="date-type"

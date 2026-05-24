@@ -458,7 +458,11 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
   }
   return (
     <Grid container spacing={1}>
-      <Grid container sx={{ justifyContent: "flex-start", alignItems: "center" }} size={12}>
+      <Grid
+        container
+        sx={{ justifyContent: "flex-start", alignItems: "center" }}
+        size={12}
+      >
         <FilterButton showFilter={showFilter} setShowFilter={setShowFilter} />
         <ColumnVisibilitySettingsButton
           showSettings={showSettings}

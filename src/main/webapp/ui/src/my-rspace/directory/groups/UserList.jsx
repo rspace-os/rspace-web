@@ -69,7 +69,7 @@ class UserList extends React.Component {
               .split(" ")
               .join("-")}`}
             slotProps={{
-              htmlInput: { spellcheck: "false" }
+              htmlInput: { spellcheck: "false" },
             }}
           />
           <List

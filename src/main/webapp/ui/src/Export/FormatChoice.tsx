@@ -21,6 +21,15 @@ import {
 
 export type ArchiveType = "pdf" | "doc" | "xml" | "html" | "eln";
 
+type RepoOption = {
+  _label?: string;
+  metadataLanguages?: Repo["metadataLanguages"];
+};
+
+type RepoUiConfig = Omit<Repo, "repoCfg"> & {
+  options: Record<string, RepoOption>;
+};
+
 const WORD_ERRORS = [
   "Word export is only available for a single document, and you have selected more than one.",
   "Word export is only available for a single document, and you've selected a folder.",
@@ -70,7 +79,7 @@ function FormatChoice({
 
     axios
       .get<
-        | Array<Omit<Repo, "repoCfg"> & { options: object }>
+        | Array<RepoUiConfig>
         | { exceptionMessage: string }
       >(url)
       .then((response) => {
@@ -85,44 +94,54 @@ function FormatChoice({
           return;
         }
         setMsgBlockingRepoChoice(Optional.empty());
+
+        const normalizedRepos = repos.flatMap<Repo>((repo) => {
+          const baseRepo = {
+            repoName: repo.repoName,
+            displayName: repo.displayName,
+            subjects: repo.subjects,
+            license: repo.license,
+            linkedDMPs: repo.linkedDMPs,
+          };
+
+          if (repo.repoName === "app.dataverse") {
+            /*
+             * On the apps page, users can configure multiple dataverses, so
+             * here we process that so each dataverse config is treated as a
+             * separate repository. The `keys` for each option is the string
+             * of a integer, and so too is `repoCfg`, but that is not really
+             * an important detail.
+             */
+            const keys = Object.keys(repo.options);
+            if (keys.length) {
+              return keys.map<Repo>((k) => ({
+                ...baseRepo,
+                repoCfg: k,
+                label: repo.options[k]?._label,
+                metadataLanguages: repo.options[k]?.metadataLanguages,
+              }));
+            }
+            return [];
+          }
+
+          /*
+           * On the apps page, users can only configure a just one
+           * destination for each of the other repository services so we
+           * just copy the object from the API
+           */
+          return [
+            {
+              ...baseRepo,
+              repoCfg: -1,
+              label: repo.label,
+              metadataLanguages: repo.metadataLanguages,
+            },
+          ];
+        });
+
         exportConfigUpdate(
           "repoData",
-          repos.flatMap((repo) => {
-            if (repo.repoName === "app.dataverse") {
-              /*
-               * On the apps page, users can configure multiple dataverses, so
-               * here we process that so each dataverse config is treated as a
-               * separate repository. The `keys` for each option is the string
-               * of a integer, and so too is `repoCfg`, but that is not really
-               * an important detail.
-               */
-              const keys = Object.keys(repo.options);
-              if (keys.length) {
-                return keys.map(
-                  (k) =>
-                    (({
-                      ...repo,
-                      repoCfg: k,
-
-                      //@ts-expect-error Options is poorly typed
-                      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                      label: repo.options[k]._label,
-
-                      //@ts-expect-error Options is poorly typed
-                      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                      metadataLanguages: repo.options[k].metadataLanguages
-                    }) as Repo),
-                );
-              }
-              return [];
-            }
-            /*
-             * On the apps page, users can only configure a just one
-             * destination for each of the other repository services so we
-             * just copy the object from the API
-             */
-            return [{ repoCfg: -1, ...repo }];
-          }),
+          normalizedRepos,
         );
       })
       .catch(() => {

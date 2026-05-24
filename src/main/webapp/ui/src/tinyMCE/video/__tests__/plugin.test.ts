@@ -89,7 +89,7 @@ function instantiatePlugin() {
   ).tinymce = {
     PluginManager: {
       add: (name, plugin) => {
-        registeredPlugins.set(name, plugin as (editor: EditorStub) => void);
+        registeredPlugins.set(name, plugin);
       },
     },
   };

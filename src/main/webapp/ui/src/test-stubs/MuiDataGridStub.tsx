@@ -127,7 +127,7 @@ export const useGridApiContext = () => {
       current: {
         exportDataAsCsv: () => {},
       },
-    } as React.MutableRefObject<{ exportDataAsCsv: () => void }>)
+    })
   );
 };
 
@@ -216,7 +216,7 @@ export function DataGrid<Row>({
       current: {
         exportDataAsCsv: () => {},
       },
-    } as React.MutableRefObject<{ exportDataAsCsv: () => void }>);
+    });
 
   const selectedIds = toSelectedIds(rowSelectionModel);
   const effectiveColumnVisibility = {

@@ -104,7 +104,7 @@ describe("calculateMoles", () => {
   });
 
   it("returns null when molecular weight is null or non-positive", () => {
-    expect(calculateMoles(20, null as unknown as number)).toBeNull();
+    expect(calculateMoles(20, null)).toBeNull();
     expect(calculateMoles(20, 0)).toBeNull();
     expect(calculateMoles(20, -1)).toBeNull();
   });

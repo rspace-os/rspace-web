@@ -133,9 +133,7 @@ function ExportRepo({
 }: ExportRepoArgs): React.ReactNode {
   const [state] = useState(
     observable({
-      inputValidations: STANDARD_VALIDATIONS as
-        | typeof STANDARD_VALIDATIONS
-        | typeof DRYAD_VALIDATIONS,
+      inputValidations: STANDARD_VALIDATIONS,
       submitAttempt: false,
       repoChoice: repoDetails.repoChoice,
       title: repoDetails.meta.title,
@@ -145,7 +143,7 @@ function ExportRepo({
       publish: repoDetails.meta.publish,
       authors: repoDetails.meta.authors,
       contacts: repoDetails.meta.contacts,
-      otherProperties: {} as Record<string, string>,
+      otherProperties: {},
       linkDMP: false,
       selectedPlans: [] as Array<DMPUserInternalId>,
       crossrefFunders: [] as Array<{ name: string }>,
@@ -175,7 +173,11 @@ function ExportRepo({
 
       if (repo.repoName === "app.dryad") {
         validations = { ...DRYAD_VALIDATIONS };
-        if (Object.keys(state.otherProperties.funder).length !== 0)
+        if (
+          "funder" in state.otherProperties &&
+          typeof state.otherProperties.funder === "string" &&
+          state.otherProperties.funder.length !== 0
+        )
           validations.crossrefFunder = true;
       }
 

@@ -35,15 +35,17 @@ interface RaidConnectionsAddFormProps {
   handleCloseForm: () => void;
 }
 
+const defaultValues: RaidConnectionsAddFormValues = {
+  raidOption: null,
+};
+
 const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAddFormProps) => {
   const { data } = useGetAvailableRaidIdentifiersAjaxQuery();
   const queryClient = useQueryClient();
   const mutation = useAddRaidIdentifierMutation({ groupId });
 
   const form = useForm({
-    defaultValues: {
-      raidOption: null,
-    } as RaidConnectionsAddFormValues,
+    defaultValues,
     validators: {
       onChange: RaidConnectionsFormSchema,
     },
@@ -69,7 +71,7 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
     return <>Error loading RAiD identifier options: {data.errorMsg}</>;
   }
 
-  const options = data.data.map((option) => ({
+  const options: Array<RaidOption> = data.data.map((option) => ({
     label: `${option.raidTitle} (${option.raidIdentifier})`,
     raidServerAlias: option.raidServerAlias,
     raidIdentifier: option.raidIdentifier,

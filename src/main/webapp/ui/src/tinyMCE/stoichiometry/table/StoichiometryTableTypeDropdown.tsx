@@ -40,7 +40,7 @@ export default function StoichiometryTableTypeDropdown({
   const ariaLabel = `Select type for ${rowName ?? "molecule"}`;
 
   const handleChange = (event: SelectChangeEvent<EditableMolecule["role"]>) => {
-    const nextValue = event.target.value as EditableMolecule["role"];
+    const nextValue = event.target.value;
     void onChangeValue(nextValue);
     onClose?.();
   };

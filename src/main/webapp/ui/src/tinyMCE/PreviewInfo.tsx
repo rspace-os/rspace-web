@@ -223,7 +223,7 @@ export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
 }
 
 function render(attributes: PreviewInfoItem, element: Element) {
-  const root = createRoot(element as HTMLElement);
+  const root = createRoot(element);
   root.render(<PreviewInfo item={{ ...attributes }} />);
 }
 

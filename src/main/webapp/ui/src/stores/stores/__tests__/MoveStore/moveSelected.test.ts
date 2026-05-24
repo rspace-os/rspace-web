@@ -98,7 +98,7 @@ describe("action: moveSelected", () => {
             status: 200,
             statusText: "OK",
             headers: {},
-            config: {} as unknown,
+            config: {},
             data: {
               errorCount: 0,
               results: [

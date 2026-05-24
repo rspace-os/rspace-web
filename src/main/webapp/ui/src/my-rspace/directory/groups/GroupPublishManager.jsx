@@ -127,12 +127,17 @@ function GroupPublishManager({
   function DialogButtons(props) {
     return (
       <>
-          <Button onClick={props.onCancel} sx={{ color: "grey" }}>
+        <Button onClick={props.onCancel} sx={{ color: "grey" }}>
           Cancel
         </Button>
         <Button onClick={props.onConfirm} color="primary" disabled={waiting}>
           Confirm
-            {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
+          {waiting && (
+            <CircularProgress
+              size={20}
+              sx={{ position: "absolute", margin: "0 auto" }}
+            />
+          )}
         </Button>
       </>
     );

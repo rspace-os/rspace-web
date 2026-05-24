@@ -296,7 +296,7 @@ function PrintDialog({
         }),
         true,
       );
-      const file = new File([data as BlobPart], "", { type: "image/png" });
+      const file = new File([data], "", { type: "image/png" });
       return URL.createObjectURL(file);
     };
 

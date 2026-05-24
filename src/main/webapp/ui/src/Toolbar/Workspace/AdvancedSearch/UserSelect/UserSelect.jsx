@@ -12,7 +12,6 @@ export default function UserSelect(props) {
     props.updateSelected(value, "username");
   }
 
-
   useEffect(() => {
     const fetchData = async () => {
       const result = await axios(

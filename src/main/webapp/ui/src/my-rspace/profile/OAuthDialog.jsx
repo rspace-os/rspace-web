@@ -171,7 +171,7 @@ export default function OAuthDialog(props) {
                   value={appName}
                   onChange={handleChange}
                   slotProps={{
-                    htmlInput: { "aria-label": "App name" }
+                    htmlInput: { "aria-label": "App name" },
                   }}
                 />
               </form>
@@ -186,7 +186,7 @@ export default function OAuthDialog(props) {
                     value={clientId}
                     style={{ marginRight: "10px", width: "calc(100% - 55px)" }}
                     slotProps={{
-                      htmlInput: { "aria-label": "Client ID" }
+                      htmlInput: { "aria-label": "Client ID" },
                     }}
                   />
                   <Tooltip title="Copy" enterDelay={100}>
@@ -206,7 +206,7 @@ export default function OAuthDialog(props) {
                     value={unhashedClientSecret}
                     style={{ marginRight: "10px", width: "calc(100% - 55px)" }}
                     slotProps={{
-                      htmlInput: { "aria-label": "Client secret" }
+                      htmlInput: { "aria-label": "Client secret" },
                     }}
                   />
                   <Tooltip title="Copy" enterDelay={100}>

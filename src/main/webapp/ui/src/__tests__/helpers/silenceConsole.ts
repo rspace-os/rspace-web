@@ -69,7 +69,7 @@ export const silenceProcessOutput = (
           }
           return true;
         }
-        return originalWrite(chunk as any, encoding, callback as any);
+        return originalWrite(chunk as any, encoding, callback);
       }
     );
     return () => spy.mockRestore();

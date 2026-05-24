@@ -115,10 +115,10 @@ function LocationsImageMarkersDialog({
     useEffect(() => {
       const c = cardParent.current;
       if (c) {
-        c.addEventListener(LOCATION_TAPPED_EVENT, l as EventListener);
+        c.addEventListener(LOCATION_TAPPED_EVENT, l);
       }
       return () =>
-        c?.removeEventListener(LOCATION_TAPPED_EVENT, l as EventListener);
+        c?.removeEventListener(LOCATION_TAPPED_EVENT, l);
     });
 
     return (

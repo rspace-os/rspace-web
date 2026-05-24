@@ -20,7 +20,7 @@ function CustomToggleButtonGroup(
         border: theme.borders.section,
         backgroundColor: theme.palette.background.default,
         display: "flex !important",
-        ...((props.sx as object) ?? {}),
+        ...((props.sx) ?? {}),
       }}
     />
   );

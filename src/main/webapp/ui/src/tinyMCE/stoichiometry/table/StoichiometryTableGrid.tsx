@@ -149,7 +149,7 @@ export default function StoichiometryTableGrid({
         sortable: false,
         minWidth: 160,
         valueFormatter: (value) =>
-          getRoleExportValue(value as string | null | undefined),
+          getRoleExportValue(value),
         renderCell: ({ row }) => {
           if (!roleColumnEditable) {
             return <StoichiometryTableRoleChip role={row.role || ""} />;

@@ -33,7 +33,7 @@ export default function MenuWithSelectedState({
         }}
         variant={currentState !== defaultState ? "contained" : "outlined"}
         sx={({ spacing, ...t }) => {
-          const theme = { spacing, ...t } as typeof Theme;
+          const theme = { spacing, ...t };
           return {
             padding: theme.spacing(0, 1.5, 0, 0),
             minWidth: "unset",
