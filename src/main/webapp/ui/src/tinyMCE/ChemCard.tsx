@@ -251,10 +251,9 @@ export default function ChemCard(props: ChemCardProps) {
   if (!Number.isNaN(chemId) && chemId < 0) {
     return (
       <Card
-        sx={cardSx}
-        elevation={props.inline ? 0 : 4}
-        style={
-          props.inline
+        sx={{
+          ...cardSx,
+          ...(props.inline
             ? {
                 height:
                   Number(props.height) < 200
@@ -270,18 +269,18 @@ export default function ChemCard(props: ChemCardProps) {
                 width: "200px",
                 border: "1px solid #eee",
                 backgroundColor: "#fafafa",
-              }
-        }
+              }),
+        }}
+        elevation={props.inline ? 0 : 4}
       />
     );
   }
 
   return (
     <Card
-      sx={cardSx}
-      elevation={props.inline ? 0 : 4}
-      style={
-        props.inline
+      sx={{
+        ...cardSx,
+        ...(props.inline
           ? {
               height:
                 Number(props.height) < 200
@@ -290,8 +289,9 @@ export default function ChemCard(props: ChemCardProps) {
               overflowY: "auto",
               margin: "0px",
             }
-          : {}
-      }
+          : {}),
+      }}
+      elevation={props.inline ? 0 : 4}
     >
       {!props.inline && (
         <CardHeader

@@ -85,8 +85,12 @@ function DnaPreview({
       role="tabpanel"
       direction="column"
       spacing={2}
-      sx={{ flexGrow: 1 }}
-      style={{ display: show ? "flex" : "none", minHeight: 0, height: "100%" }}
+      sx={{
+        flexGrow: 1,
+        display: show ? "flex" : "none",
+        minHeight: 0,
+        height: "100%",
+      }}
       aria-labelledby={idOfDnaPreviewTab}
     >
       <Stack direction="row" spacing={1}>
@@ -333,8 +337,7 @@ function RestrictionSites({
       spacing={2}
       component="section"
       role="tabpanel"
-      style={{ display: show ? "flex" : "none" }}
-      sx={{ flexWrap: "nowrap" }}
+      sx={{ flexWrap: "nowrap", display: show ? "flex" : "none" }}
       aria-labelledby={idOfRestrictionSitesTab}
     >
       <Grid sx={{ flexGrow: 1 }}>
@@ -600,10 +603,9 @@ function OrfTable({
     <Grid
       container
       spacing={2}
-      sx={{ flexWrap: "nowrap" }}
+      sx={{ flexWrap: "nowrap", display: show ? "flex" : "none" }}
       component="section"
       role="tabpanel"
-      style={{ display: show ? "flex" : "none" }}
       aria-labelledby={idOfOrfTableTab}
     >
       <Grid sx={{ minWidth: 0 }}>

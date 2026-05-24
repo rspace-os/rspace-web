@@ -63,7 +63,7 @@ const AddButton = ({
     color="callToAction"
     startIcon={
       <AddIcon
-        style={{
+        sx={{
           marginLeft: drawerOpen ? "0px" : "11px",
         }}
       />

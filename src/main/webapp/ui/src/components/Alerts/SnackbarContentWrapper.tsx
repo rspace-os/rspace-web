@@ -94,8 +94,11 @@ const SnackbarContentWrapper = forwardRef<
           </Grid>
           <Grid>
             <Box
-              sx={{ pl: 1, pt: 0.25, pr: 2, whiteSpace: "normal" }}
-              style={{
+              sx={{
+                pl: 1,
+                pt: 0.25,
+                pr: 2,
+                whiteSpace: "normal",
                 overflowWrap: "anywhere",
                 hyphens: "auto",
               }}

@@ -38,7 +38,7 @@ function LoadingList({
   }, [pageNumber, loading]);
 
   return (
-    <BatchGridContainer ref={ref} style={{ marginTop: 0 }}>
+    <BatchGridContainer ref={ref} sx={{ marginTop: 0 }}>
       {[...take(incrementForever(), count)].map((i) => (
         <Grid
           key={i}

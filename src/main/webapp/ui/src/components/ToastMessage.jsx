@@ -7,6 +7,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import InfoIcon from "@mui/icons-material/Info";
 import WarningIcon from "@mui/icons-material/Warning";
 import CloseIcon from "@mui/icons-material/Close";
+import Box from "@mui/material/Box";
 import { amber, green } from "@mui/material/colors";
 import IconButton from "@mui/material/IconButton";
 import Snackbar from "@mui/material/Snackbar";
@@ -185,19 +186,20 @@ const MySnackbarContentWrapper = forwardRef(
         aria-describedby="client-snackbar"
         sx={{ backgroundColor }}
         message={
-          <span
+          <Box
+            component="span"
             id="client-snackbar"
-            style={{ display: "flex", alignItems: "center" }}
+            sx={{ display: "flex", alignItems: "center" }}
           >
             <Icon
-              style={{
+              sx={{
                 ...iconStyle,
                 opacity: 0.9,
-                marginRight: theme.spacing(1),
+                mr: 1,
               }}
             />
             <div dangerouslySetInnerHTML={{ __html: message }} />
-          </span>
+          </Box>
         }
         action={[
           <IconButton

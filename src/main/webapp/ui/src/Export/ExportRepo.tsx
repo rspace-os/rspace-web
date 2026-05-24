@@ -316,9 +316,8 @@ function ExportRepo({
   return (
     <Grid
       container
-      sx={{ flexDirection: "column" }}
+      sx={{ flexDirection: "column", width: "100%" }}
       spacing={1}
-      style={{ width: "100%" }}
     >
       <Grid size={12}>
         <FormControl component="fieldset">

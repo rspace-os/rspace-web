@@ -91,7 +91,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         onClick={(event) => setAnchorEl(event.currentTarget)}
         startIcon={
           <AddIcon
-            style={{
+            sx={{
               marginLeft: uiStore.sidebarOpen ? "0px" : "11px",
             }}
           />

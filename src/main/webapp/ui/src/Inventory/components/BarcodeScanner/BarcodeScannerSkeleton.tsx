@@ -76,8 +76,11 @@ export default function BarcodeScannerSkeleton({
       <Grid
         container
         direction="row"
-        sx={{ justifyContent: "space-around" }}
-        style={{ width: "100%", marginBottom: "8px" }}
+        sx={{
+          justifyContent: "space-around",
+          width: "100%",
+          marginBottom: "8px",
+        }}
       >
         <HelpTextAlert
           severity="info"

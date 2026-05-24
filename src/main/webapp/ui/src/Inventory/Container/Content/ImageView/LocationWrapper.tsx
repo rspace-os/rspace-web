@@ -48,6 +48,8 @@ function LocationWrapper({
       component="div"
       sx={(theme) => ({
         position: "absolute",
+        left: location.x,
+        top: location.y,
         borderRadius: 5,
         display: "flex",
         alignItems: "center",
@@ -56,7 +58,6 @@ function LocationWrapper({
         height: theme.spacing(5),
         pointerEvents: "none",
       })}
-      style={{ left: location.x, top: location.y }}
       ref={cellRef}
     >
       <DragAndDrop.Dropzone location={location}>

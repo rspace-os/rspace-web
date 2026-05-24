@@ -662,6 +662,23 @@ const FileCard = observer(
                 boxShadow: selected
                   ? "none"
                   : `hsl(${ACCENT_COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
+                ...dropStyle,
+                ...inGroupBeingDraggedStyle,
+                ...fileUploadDropping,
+                /*
+                 * We don't need the outline as the selected styles will indicate
+                 * which item has focus
+                 */
+                outline: "none",
+                /*
+                 * This way, the animation takes the same amount of time (36ms) for
+                 * each row of cards
+                 */
+                transitionDelay: window.matchMedia(
+                  "(prefers-reduced-motion: reduce)",
+                ).matches
+                  ? "0s"
+                  : `${(index + 1) * cardWidth[viewportDimensions.viewportSize] * 3}ms !important`,
               })}
               /*
                * These are for dragging files from outside the browser
@@ -709,25 +726,6 @@ const FileCard = observer(
               tabIndex={tabIndex}
               onFocus={onFocus}
               onBlur={onBlur}
-              style={{
-                ...dropStyle,
-                ...inGroupBeingDraggedStyle,
-                ...fileUploadDropping,
-                /*
-                 * We don't need the outline as the selected styles will indicate
-                 * which item has focus
-                 */
-                outline: "none",
-                /*
-                 * This way, the animation takes the same amount of time (36ms) for
-                 * each row of cards
-                 */
-                transitionDelay: window.matchMedia(
-                  "(prefers-reduced-motion: reduce)",
-                ).matches
-                  ? "0s"
-                  : `${(index + 1) * cardWidth[viewportDimensions.viewportSize] * 3}ms !important`,
-              }}
               /*
                * We conditionally just add the onKeyDown when file has an
                * `open` action (which is to say it is a folder), leaving the
