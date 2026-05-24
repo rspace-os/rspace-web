@@ -339,13 +339,15 @@ const CustomTreeItem = observer(
           }
           /*
            * These are for dragging files from outside the browser
-           */ onDrop={onDrop}
+           */
+          onDrop={onDrop}
           onDragOver={onDragOver}
           onDragEnter={onDragEnter}
           onDragLeave={onDragLeave}
           /*
            * These are for dragging files between folders within the gallery
-           */ ref={(node) => {
+           */
+          ref={(node) => {
             setDropRef(node);
             setDragRef(node);
           }}
