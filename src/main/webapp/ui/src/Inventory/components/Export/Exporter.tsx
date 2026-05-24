@@ -11,28 +11,6 @@ import { type ExportOptions } from "../../../stores/definitions/Search";
 import Alert from "@mui/material/Alert";
 import { ExportOptionsWrapper } from "./ExportDialog";
 
-
-function FullHeightCardContent({
-  paddingless = false,
-  ...props
-}: { paddingless?: boolean } & React.ComponentProps<typeof CardContent>): React.ReactNode {
-  return (
-    <CardContent
-      {...props}
-      sx={(theme) => ({
-        flexGrow: 1,
-        overflowY: "auto",
-        display: "flex",
-        flexDirection: "column",
-        padding: `${theme.spacing(paddingless ? 0 : 2)} !important`,
-        paddingTop: "0 !important",
-        overflowX: "hidden",
-      })}
-    />
-  );
-}
-
-
 type ExporterArgs = {
   elevation?: number;
   header?: React.ReactNode;
@@ -67,7 +45,17 @@ function Exporter({
       sx={{ height: "100%", width: "100%", display: "flex", flexDirection: "column" }}
     >
       {Boolean(header) && <CardHeader title={header} sx={{ flexWrap: "nowrap" }} />}
-      <FullHeightCardContent paddingless={paddingless}>
+      <CardContent
+        sx={(theme) => ({
+          flexGrow: 1,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          padding: `${theme.spacing(paddingless ? 0 : 2)} !important`,
+          paddingTop: "0 !important",
+          overflowX: "hidden",
+        })}
+      >
         <Box sx={{ mb: 1 }}>
           <ExportOptionsWrapper
             exportOptions={exportOptions}
@@ -81,7 +69,7 @@ function Exporter({
             <Alert severity="info">{selectionHelpText}</Alert>
           </Box>
         )}
-      </FullHeightCardContent>
+      </CardContent>
       {showActions && (
         <CardActions>
           <>
