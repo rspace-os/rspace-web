@@ -16,7 +16,6 @@ import Grid from "@mui/material/Grid";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
-import { styled } from "@mui/material/styles";
 import NumberField from "../../../components/Inputs/NumberField";
 import InputAdornment from "@mui/material/InputAdornment";
 import { FormLabel } from "@mui/material";
@@ -41,7 +40,7 @@ const Label = ({ min, max, unitId }: LabelArgs): React.ReactNode => {
   const absoluteZeroInUnitId = temperatureFromTo(
     CELSIUS,
     unitId,
-    ABSOLUTE_ZERO
+    ABSOLUTE_ZERO,
   );
   if (min < absoluteZeroInUnitId || max < absoluteZeroInUnitId)
     return <>One or more values are below absolute zero.</>;
@@ -60,7 +59,7 @@ type TemperatureButtonArgs = {
 };
 
 const TemperatureButton = (props: TemperatureButtonArgs) => (
-  <Grid item xs={props.wide ? 12 : 6}>
+  <Grid size={props.wide ? 12 : 6}>
     <Button
       sx={{ width: "100%" }}
       onClick={props.onClick}
@@ -99,7 +98,7 @@ function SpecifiedStorageTemperature({
 }: SpecifiedStorageTemperatureArgs): React.ReactNode {
   if (storageTempMin.unitId !== storageTempMax.unitId)
     throw new Error(
-      "Unit IDs of storageTempMin and storageTempMax are not the same."
+      "Unit IDs of storageTempMin and storageTempMax are not the same.",
     );
   const unitId: TemperatureScale = storageTempMin.unitId;
   const minValue: number = storageTempMin.numericValue;
@@ -157,7 +156,7 @@ function SpecifiedStorageTemperature({
     setTemperatures({ storageTempMin: newMinTemp, storageTempMax: newMaxTemp });
     onErrorStateChange(
       !validateTemperature(newMinTemp).isError ||
-        !validateTemperature(newMaxTemp).isError
+        !validateTemperature(newMaxTemp).isError,
     );
   };
 
@@ -172,7 +171,7 @@ function SpecifiedStorageTemperature({
     setTemperatures({ storageTempMin: newMinTemp, storageTempMax: newMaxTemp });
     onErrorStateChange(
       !validateTemperature(newMinTemp).isError ||
-        !validateTemperature(newMaxTemp).isError
+        !validateTemperature(newMaxTemp).isError,
     );
   };
 
@@ -191,9 +190,9 @@ function SpecifiedStorageTemperature({
         <>
           <Label min={min} max={max} unitId={unitId} />
           {!disabled && (
-            <Box mt={2}>
-              <Grid container direction="column" spacing={1}>
-                <Grid item>
+            <Box sx={{ mt: 2 }}>
+              <Grid container sx={{ flexDirection: "column" }} spacing={1}>
+                <Grid>
                   <FormLabel sx={{ pr: 1 }} htmlFor={unitSelectId}>
                     Unit
                   </FormLabel>
@@ -213,9 +212,9 @@ function SpecifiedStorageTemperature({
                 </Grid>
                 {!disabled && (
                   <>
-                    <Grid item>
+                    <Grid>
                       <Grid container direction="row" spacing={1}>
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                           <NumberField
                             value={minField}
                             onChange={(e) => {
@@ -228,16 +227,18 @@ function SpecifiedStorageTemperature({
                                 .isError
                             }
                             fullWidth
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  Min
-                                </InputAdornment>
-                              ),
+                            slotProps={{
+                              input: {
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    Min
+                                  </InputAdornment>
+                                ),
+                              },
                             }}
                           />
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                           <NumberField
                             value={maxField}
                             onChange={(e) => {
@@ -250,25 +251,27 @@ function SpecifiedStorageTemperature({
                                 .isError
                             }
                             fullWidth
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  Max
-                                </InputAdornment>
-                              ),
+                            slotProps={{
+                              input: {
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    Max
+                                  </InputAdornment>
+                                ),
+                              },
                             }}
                           />
                         </Grid>
                       </Grid>
                     </Grid>
-                    <Grid item>
+                    <Grid>
                       <Grid container direction="row" spacing={1}>
                         <TemperatureButton
                           label="Ambient"
                           onClick={() => {
                             handleButtonPressed(
                               temperatureFromTo(CELSIUS, unitId, 15),
-                              temperatureFromTo(CELSIUS, unitId, 30)
+                              temperatureFromTo(CELSIUS, unitId, 30),
                             );
                           }}
                         />
@@ -277,7 +280,7 @@ function SpecifiedStorageTemperature({
                           onClick={() => {
                             handleButtonPressed(
                               temperatureFromTo(CELSIUS, unitId, 3),
-                              temperatureFromTo(CELSIUS, unitId, 5)
+                              temperatureFromTo(CELSIUS, unitId, 5),
                             );
                           }}
                         />
@@ -286,7 +289,7 @@ function SpecifiedStorageTemperature({
                           onClick={() => {
                             handleButtonPressed(
                               temperatureFromTo(CELSIUS, unitId, -30),
-                              temperatureFromTo(CELSIUS, unitId, -18)
+                              temperatureFromTo(CELSIUS, unitId, -18),
                             );
                           }}
                         />
@@ -295,7 +298,7 @@ function SpecifiedStorageTemperature({
                           onClick={() => {
                             handleButtonPressed(
                               temperatureFromTo(CELSIUS, unitId, -80),
-                              temperatureFromTo(CELSIUS, unitId, -70)
+                              temperatureFromTo(CELSIUS, unitId, -70),
                             );
                           }}
                         />
@@ -307,13 +310,13 @@ function SpecifiedStorageTemperature({
                               temperatureFromTo(
                                 CELSIUS,
                                 unitId,
-                                LIQUID_NITROGEN
+                                LIQUID_NITROGEN,
                               ),
                               temperatureFromTo(
                                 CELSIUS,
                                 unitId,
-                                LIQUID_NITROGEN
-                              )
+                                LIQUID_NITROGEN,
+                              ),
                             );
                           }}
                         />

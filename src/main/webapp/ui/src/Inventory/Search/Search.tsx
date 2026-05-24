@@ -6,7 +6,6 @@ import { type SearchView } from "../../stores/definitions/Search";
 import SearchDisplayControls from "./components/SearchDisplayControls";
 import SearchParameterControls from "./components/SearchParameterControls";
 import Grid from "@mui/material/Grid";
-import { makeStyles } from "tss-react/mui";
 import Divider from "@mui/material/Divider";
 import SearchParameterChips from "./components/SearchParameterChips";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
@@ -19,75 +18,55 @@ type MainSearchArgs = {
   searchbarAdornment?: React.ReactNode;
 };
 
-const useStyles = makeStyles()((theme) => ({
-  middleSection: {
-    paddingTop: 0,
-  },
-  grow: {
-    flexGrow: 1,
-  },
-  divider: {
-    margin: theme.spacing(0.75, 0),
-  },
-  searchParameterChips: {
-    maxWidth: "100% !important",
-  },
-}));
-
 function MainSearch({
   size = "default",
   handleSearch,
   TABS = ["LIST", "TREE", "CARD"],
   searchbarAdornment,
 }: MainSearchArgs): React.ReactNode {
-  const { classes } = useStyles();
-
   return (
-    <Grid container direction="column" spacing={1}>
-      <Grid item>
+    <Grid container sx={{ flexDirection: "column" }} spacing={1}>
+      <Grid>
         <Grid
           container
           direction="row"
-          wrap="nowrap"
           spacing={1}
-          alignItems="center"
+          sx={{ alignItems: "center", flexWrap: "nowrap" }}
         >
-          <Grid item className={classes.grow}>
+          <Grid sx={{ flexGrow: 1 }}>
             <Searchbar handleSearch={handleSearch} />
           </Grid>
-          <Grid item>
+          <Grid>
             <HelpLinkIcon
               link={docLinks.search}
               title="Info on searching Inventory."
             />
           </Grid>
           {size === "small" && (
-            <Grid item>
+            <Grid>
               <SearchDisplayControls TABS={TABS} />
             </Grid>
           )}
-          {Boolean(searchbarAdornment) && (
-            <Grid item>{searchbarAdornment}</Grid>
-          )}
+          {Boolean(searchbarAdornment) && <Grid>{searchbarAdornment}</Grid>}
         </Grid>
       </Grid>
-      <Grid item className={classes.middleSection}>
+      <Grid sx={{ pt: 0 }}>
         <SearchParameterControls />
       </Grid>
-      <Grid item className={classes.searchParameterChips}>
+      <Grid sx={{ maxWidth: "100% !important" }}>
         <SearchParameterChips />
       </Grid>
       {size === "default" && (
         <>
-          <Grid item>
-            <Divider orientation="horizontal" className={classes.divider} />
+          <Grid>
+            <Divider orientation="horizontal" sx={{ my: 0.75 }} />
           </Grid>
-          <Grid item>
-            <Grid container direction="row" wrap="nowrap" spacing={1}>
-              <Grid item className={classes.grow}>
+          <Grid>
+            <Grid container direction="row" spacing={1} sx={{ flexWrap: "nowrap" }}>
+              <Grid sx={{ flexGrow: 1 }}>
                 <SearchFeedback />
               </Grid>
-              <Grid item>
+              <Grid>
                 <SearchDisplayControls TABS={TABS} />
               </Grid>
             </Grid>

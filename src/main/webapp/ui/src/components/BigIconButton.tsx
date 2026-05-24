@@ -1,6 +1,5 @@
 import Button from "@mui/material/Button";
 import React from "react";
-import { styled } from "@mui/material/styles";
 import ListItemText from "@mui/material/ListItemText";
 import ListItem from "@mui/material/ListItem";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
@@ -26,16 +25,6 @@ type BigIconButtonArgs = {
   component?: string;
 };
 
-const CustomButton = styled(Button)(({ theme }) => ({
-  textTransform: "none",
-  boxShadow:
-    "0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12)",
-  "& .MuiAvatar-root": {
-    backgroundColor: theme.palette.primary.background,
-    color: theme.palette.standardIcon.main,
-  },
-}));
-
 export default function BigIconButton({
   label,
   icon,
@@ -44,12 +33,21 @@ export default function BigIconButton({
   component,
 }: BigIconButtonArgs): React.ReactNode {
   return (
-    <CustomButton
+    <Button
       fullWidth
       color="primary"
       variant="outlined"
       onClick={onClick}
       {...(component ? { component } : {})}
+      sx={(theme) => ({
+        textTransform: "none",
+        boxShadow:
+          "0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12)",
+        "& .MuiAvatar-root": {
+          backgroundColor: theme.palette.primary.background,
+          color: theme.palette.standardIcon.main,
+        },
+      })}
     >
       <ListItem disablePadding>
         <ListItemAvatar>
@@ -57,6 +55,6 @@ export default function BigIconButton({
         </ListItemAvatar>
         <ListItemText primary={label} secondary={explanatoryText} />
       </ListItem>
-    </CustomButton>
+    </Button>
   );
 }

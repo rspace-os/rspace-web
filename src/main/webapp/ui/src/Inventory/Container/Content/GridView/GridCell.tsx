@@ -3,46 +3,8 @@ import { observer } from "mobx-react-lite";
 import TableCell from "@mui/material/TableCell";
 import useResizeObserver from "../../../components/ResizeObserver";
 import { type Location } from "../../../../stores/definitions/Container";
-import { styled } from "@mui/material/styles";
 import * as DragAndDrop from "../DragAndDrop";
 import { runInAction } from "mobx";
-
-interface StyledCellProps {
-  width: string;
-  hoverEffect: boolean;
-}
-
-const StyledCell = styled(
-
-  React.forwardRef<
-    HTMLTableCellElement,
-    StyledCellProps & React.ComponentProps<typeof TableCell> & { theme?: any }
-  >(({ width: _width, hoverEffect: _hoverEffect, ...rest }, ref) => (
-    <TableCell {...rest} ref={ref} />
-  ))
-)(
-  ({
-    theme,
-    width,
-    hoverEffect,
-  }: {
-    theme: { palette: { grey: Record<number, string> } };
-    width: string;
-    hoverEffect: boolean;
-  }) => ({
-    color: "grey",
-    borderBottom: "none",
-    "&:hover, &:focus": { backgroundColor: theme.palette.grey[200] },
-    "&:active": {},
-    /*
-     * This padding is chosen so that a 96-well plate can be shown, without
-     * scrolling, on a typical desktop monitor.
-     */
-    padding: "3px !important",
-    width,
-    background: hoverEffect ? "rgba(0, 0, 0, 0.04)" : "unset",
-  })
-);
 
 const calculateLocationGeometry = (
   tableCellRef: React.RefObject<HTMLTableCellElement>,
@@ -119,7 +81,7 @@ function GridCell({
   });
 
   return (
-    <StyledCell
+    <TableCell
       aria-selected={location.selected}
       ref={cellRef}
       align="center"
@@ -140,12 +102,20 @@ function GridCell({
           columnsUnderHover.delete(columnIndex);
         });
       }}
-      hoverEffect={hoverEffect}
+      sx={(theme) => ({
+        color: "grey",
+        borderBottom: "none",
+        "&:hover, &:focus": { backgroundColor: theme.palette.grey[200] },
+        "&:active": {},
+        padding: "3px !important",
+        width,
+        background: hoverEffect ? "rgba(0, 0, 0, 0.04)" : "unset",
+      })}
     >
       <DragAndDrop.Dropzone location={location}>
         {children}
       </DragAndDrop.Dropzone>
-    </StyledCell>
+    </TableCell>
   );
 }
 

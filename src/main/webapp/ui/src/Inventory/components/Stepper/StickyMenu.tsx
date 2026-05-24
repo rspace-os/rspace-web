@@ -1,7 +1,7 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
-import { withStyles } from "Styles";
+import { useTheme } from "@mui/material/styles";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import Box from "@mui/material/Box";
 import ExtendedContextMenu from "../ContextMenu/ExtendedContextMenu";
@@ -9,34 +9,56 @@ import Alert from "@mui/material/Alert";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import theme, { RecordPalette } from "../../../theme";
 
-const MenuWrapper = withStyles<
-  {
-    children: React.ReactNode;
-    recordType: keyof typeof theme.palette.record;
-    isSingleColumnLayout: boolean;
-  },
-  { root: string }
->((theme, { recordType, isSingleColumnLayout }) => ({
-  root: {
-    backgroundColor: (theme.palette.record[recordType] as RecordPalette).bg,
-    borderBottomLeftRadius: isSingleColumnLayout ? 0 : theme.spacing(1),
-    borderBottomRightRadius: 0,
-    borderBottom: theme.borders.section,
-    color: `${theme.palette.text.primary} !important`,
-  },
-}))(({ children, classes }) => <div className={classes.root}>{children}</div>);
+function MenuWrapper({
+  children,
+  recordType,
+  isSingleColumnLayout,
+}: {
+  children: React.ReactNode;
+  recordType: keyof typeof theme.palette.record;
+  isSingleColumnLayout: boolean;
+}): React.ReactNode {
+  const muiTheme = useTheme();
+  return (
+    <div
+      style={{
+        backgroundColor: (
+          muiTheme.palette.record[recordType] as RecordPalette
+        ).bg,
+        borderBottomLeftRadius: isSingleColumnLayout ? 0 : muiTheme.spacing(1),
+        borderBottomRightRadius: 0,
+        borderBottom: muiTheme.borders.section,
+        color: muiTheme.palette.text.primary,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
-const RoundedWhiteContainer = withStyles<
-  { children: React.ReactNode; isSingleColumnLayout: boolean },
-  { root: string }
->((theme, { isSingleColumnLayout }) => ({
-  root: {
-    borderTopLeftRadius: theme.spacing(1),
-    borderTopRightRadius: isSingleColumnLayout ? theme.spacing(1) : 0,
-    borderBottomLeftRadius: isSingleColumnLayout ? 0 : theme.spacing(0.75),
-    backgroundColor: theme.palette.background.alt,
-  },
-}))(({ children, classes }) => <div className={classes.root}>{children}</div>);
+function RoundedWhiteContainer({
+  children,
+  isSingleColumnLayout,
+}: {
+  children: React.ReactNode;
+  isSingleColumnLayout: boolean;
+}): React.ReactNode {
+  const muiTheme = useTheme();
+  return (
+    <div
+      style={{
+        borderTopLeftRadius: muiTheme.spacing(1),
+        borderTopRightRadius: isSingleColumnLayout ? muiTheme.spacing(1) : 0,
+        borderBottomLeftRadius: isSingleColumnLayout
+          ? 0
+          : muiTheme.spacing(0.75),
+        backgroundColor: muiTheme.palette.background.alt,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 type StickyMenuArgs = {
   stickyAlert?: React.ReactElement<typeof Alert> | null;
@@ -70,7 +92,7 @@ function StickyMenu({ stickyAlert }: StickyMenuArgs): React.ReactNode {
         isSingleColumnLayout={isSingleColumnLayout}
       >
         <RoundedWhiteContainer isSingleColumnLayout={isSingleColumnLayout}>
-          <Box ml={0.5} pt={0.5}>
+          <Box sx={{ ml: 0.5, pt: 0.5 }}>
             <ExtendedContextMenu
               menuID="stepper"
               prefixActions={prefixActions}

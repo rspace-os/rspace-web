@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { DialogContentText } from "@mui/material";
 import Button from "@mui/material/Button";
 import materialTheme from "../../../theme";
-import { makeStyles } from "tss-react/mui";
 import axios from "@/common/axios";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -12,17 +11,6 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
 import { ThemeProvider } from "@mui/material/styles";
 
-const useStyles = makeStyles()(() => ({
-  publishManager: {
-    margin: "0 0 0.5em 15px",
-  },
-
-  loading: {
-    position: "absolute",
-    margin: "0 auto",
-  },
-}));
-
 function GroupSeoManager({
   groupId,
   groupDisplayName,
@@ -31,7 +19,6 @@ function GroupSeoManager({
   isGroupSeoAllowed,
   canManagePublish,
 }) {
-  const { classes } = useStyles();
   const [seoAllowedStatus, setSeoAllowedStatus] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -97,7 +84,7 @@ function GroupSeoManager({
           <Tooltip title={title} aria-label={title}>
             <div>
               <Button
-                className={classes.publishManager}
+                sx={{ margin: "0 0 0.5em 15px" }}
                 variant="outlined"
                 size="small"
                 disabled
@@ -117,7 +104,7 @@ function GroupSeoManager({
         {isLabGroup && !isCloud && isGroupSeoAllowed && canManagePublish && (
           <>
             <Button
-              className={classes.publishManager}
+              sx={{ margin: "0 0 0.5em 15px" }}
               onClick={props.callback}
               variant="outlined"
               size="small"
@@ -133,14 +120,12 @@ function GroupSeoManager({
   function DialogButtons(props) {
     return (
       <>
-        <Button onClick={props.onCancel} style={{ color: "grey" }}>
+          <Button onClick={props.onCancel} sx={{ color: "grey" }}>
           Cancel
         </Button>
         <Button onClick={props.onConfirm} color="primary" disabled={waiting}>
           Confirm
-          {waiting && (
-            <CircularProgress size={20} className={classes.loading} />
-          )}
+            {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
         </Button>
       </>
     );

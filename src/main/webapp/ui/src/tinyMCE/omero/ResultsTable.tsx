@@ -1,5 +1,4 @@
-
-import React, { type ComponentType, forwardRef } from "react";
+import React, { forwardRef } from "react";
 import { FormControlLabel, TableContainer } from "@mui/material";
 import Table from "@mui/material/Table";
 import EnhancedTableHead, {
@@ -10,85 +9,10 @@ import { getSorting, stableSort } from "../../util/table";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import Checkbox from "@mui/material/Checkbox";
-import { makeStyles } from "tss-react/mui";
 import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 import { Order } from "./Enums";
 import type { OmeroItem } from "./OmeroTypes";
-import clsx from "clsx";
-
-const useStyles = makeStyles()(() => ({
-  tableContainer: {
-    marginBottom: "40px",
-  },
-  img: {
-    "&:hover": {
-      border: "10px solid green",
-      opactity: "1",
-    },
-  },
-  tableHead: {
-    background: "#F6F6F6",
-  },
-  tableRow: {
-    "&.Mui-selected": {
-      backgroundColor: "#e3f2fd",
-    },
-    "&.Mui-selected:hover": {
-      backgroundColor: "#e3f2fd",
-    },
-  },
-  formControlLabel: {},
-  tableCell: {
-    "&.MuiTableCell-root": {
-      padding: "5px 5px 10px 5px",
-      wordWrap: "break-word",
-    },
-  },
-
-  tableFooterContainer: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    position: "fixed",
-    left: "0",
-    bottom: "0",
-    width: "calc(100% - 16px)",
-    marginLeft: "8px",
-    backgroundColor: "#f6f6f6",
-  },
-  selectedRowCounter: {
-    paddingLeft: "16px",
-  },
-  project: {
-    backgroundColor: "#EFEFEF",
-  },
-  boldText: {
-    fontWeight: "bold",
-  },
-  nameText: {
-    fontWeight: "bold",
-    fontSize: "16px",
-  },
-  screen: {
-    backgroundColor: "#edfcfc",
-  },
-  dataset: {
-    backgroundColor: "#F4F4F4",
-  },
-  plate: {
-    backgroundColor: "#f5fcfc",
-  },
-  well: {
-    backgroundColor: "#edebeb",
-  },
-  omeroImg: {
-    backgroundColor: "#FCFCFC",
-  },
-  type: {
-    color: "#37393b",
-  },
-}));
-
 function getLinkToOmero(item: OmeroItem, omero_web_url: string): string {
   if (item.type !== "plateAcquisition") {
     return omero_web_url + "webclient/?show=" + item.type + "-" + item.id;
@@ -111,7 +35,7 @@ function getLinkToOmero(item: OmeroItem, omero_web_url: string): string {
 export const omeroSort = (
   results: Array<OmeroItem>,
   order: "asc" | "desc",
-  orderBy: string
+  orderBy: string,
 ): Array<OmeroItem> => {
   const sorted = stableSort(results, getSorting(order, orderBy));
   const notTopParent: Array<OmeroItem> = [];
@@ -130,7 +54,7 @@ export const omeroSort = (
 //2) User can select children for insertion into doc without selecting parent
 const itemHasNoParent = (
   item: OmeroItem,
-  allItems: Array<OmeroItem>
+  allItems: Array<OmeroItem>,
 ): boolean => {
   if (item.type === "project" || item.type === "screen") {
     return true;
@@ -138,13 +62,12 @@ const itemHasNoParent = (
   return !allItems.some(
     (potentialParent) =>
       potentialParent.name === item.parentName &&
-      potentialParent.type === item.parentType
+      potentialParent.type === item.parentType,
   );
 };
-
 const insertChildrenAfterTheirParent = (
   parents: Array<OmeroItem>,
-  children: Array<OmeroItem>
+  children: Array<OmeroItem>,
 ): void => {
   if (!children || children.length === 0) {
     return;
@@ -158,25 +81,24 @@ const insertChildrenAfterTheirParent = (
         (aParent) =>
           aParent.id === child.parentId &&
           child.type === type &&
-          aParent.type === child.parentType
+          aParent.type === child.parentType,
       );
       if (parentOfThisChild && parentOfThisChild.length > 0) {
         if (
           !parentsHavingChildren.some(
-            (testee) => testee.name === parentOfThisChild[0].name
+            (testee) => testee.name === parentOfThisChild[0].name,
           )
         ) {
           parentsHavingChildren.push(parentOfThisChild[0]);
         }
       }
     });
-
     parentsHavingChildren.forEach((parent) => {
       const matchingChildren = children.filter(
         (child) =>
           parent.id === child.parentId &&
           child.type === type &&
-          parent.type === child.parentType
+          parent.type === child.parentType,
       );
       const insertPointForMatchingChildren = parents.findIndex((testee) => {
         return testee.id === parent.id && testee.type === parent.type;
@@ -184,14 +106,14 @@ const insertChildrenAfterTheirParent = (
       parents.splice(
         insertPointForMatchingChildren + 1,
         0,
-        ...matchingChildren
+        ...matchingChildren,
       );
     });
   });
 };
 type ResultsTableArgs = {
   populateOmeroItemWithFetchedChildrenOrShowHiddenChildren: (
-    item: OmeroItem
+    item: OmeroItem,
   ) => Promise<void>;
   hideChildren: (item: OmeroItem, showGrid?: boolean) => void;
   onRowClick: (id: string) => void;
@@ -208,7 +130,7 @@ type ResultsTableArgs = {
   addDetailsToItem: (item: OmeroItem) => Promise<void>;
   addGridOfThumbnailsToItem: (item: OmeroItem, pos: number) => Promise<void>;
 };
-const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
+const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
   (
     {
       populateOmeroItemWithFetchedChildrenOrShowHiddenChildren,
@@ -227,9 +149,8 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
       addDetailsToItem,
       addGridOfThumbnailsToItem,
     },
-    ref
+    ref,
   ) => {
-    const { classes } = useStyles();
     const renderWells = (
       wells:
         | OmeroItem["imageGridDetails"][number][number][number]
@@ -251,10 +172,9 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
         return <React.Fragment key={key}>{well}</React.Fragment>;
       });
     };
-
     function handleRequestSort(
       event: React.MouseEvent<HTMLSpanElement>,
-      property: string
+      property: string,
     ): void {
       const isDesc =
         orderBy === findOrderByTerm(property) && order === Order.desc;
@@ -262,10 +182,8 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
       const orderByValue = findOrderByTerm(property);
       setOrderBy(orderByValue);
     }
-
     const findOrderByTerm = (property: string): string =>
       property === "path" ? "name" : "firstDescription";
-
     const itemHasFetchableChildren = (item: OmeroItem): boolean => {
       return (
         item.type === "plate" ||
@@ -279,39 +197,38 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
       return item.showingChildren
         ? "hide children"
         : isDataSetOrPlateAcquistion(item)
-        ? "show children"
-        : item.type === "plate" && item.childCounts > 1
-        ? "show plateAcquisitions "
-        : item.type === "plate"
-        ? " show grid of wells  "
-        : item.type === "project"
-        ? "show datasets"
-        : item.type === "screen"
-        ? "show plates"
-        : "";
+          ? "show children"
+          : item.type === "plate" && item.childCounts > 1
+            ? "show plateAcquisitions "
+            : item.type === "plate"
+              ? " show grid of wells  "
+              : item.type === "project"
+                ? "show datasets"
+                : item.type === "screen"
+                  ? "show plates"
+                  : "";
     };
-
     const toggleSelected = (item: OmeroItem): void => {
       item.selected = !item.selected;
     };
-
     const makeOnClick = (item: OmeroItem) => {
-      const onClick = (): void => {
+      return (): void => {
         toggleSelected(item);
         onRowClick(item.type + "_" + item.id);
       };
-      return onClick;
     };
-
     return (
       <>
-        <TableContainer className={classes.tableContainer} ref={ref as any}>
+        <TableContainer sx={{ mb: "40px" }} ref={ref}>
           <Table
             aria-label="item search results"
-            sx={{ display: "table", overflowX: "auto" }}
+            sx={{
+              display: "table",
+              overflowX: "auto",
+            }}
           >
             <EnhancedTableHead
-              headStyle={classes.tableHead}
+              headSx={{ background: "#F6F6F6" }}
               headCells={visibleHeaderCells}
               order={order}
               orderBy={orderBy}
@@ -329,12 +246,16 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
               numSelected={selectedItemIds.length}
               rowCount={results.length}
             />
-            <TableBody sx={{ width: "100%" }}>
+            <TableBody
+              sx={{
+                width: "100%",
+              }}
+            >
               {omeroSort(results, order, orderBy)
                 .filter((item) => !(item.hide || item.hideAsIndirectDescendant))
                 .filter(
                   (item) =>
-                    item.type !== "well sample" && (item.type as any) !== "well"
+                    item.type !== "well sample" && item.type !== "well",
                 )
                 .map((item, index) => {
                   const isItemSelected =
@@ -343,21 +264,17 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                   return (
                     <TableRow
                       id={labelId}
-                      className={
-                        item.type === "project"
-                          ? clsx([classes.tableRow, classes.project])
-                          : item.type === "screen"
-                          ? clsx([classes.tableRow, classes.screen])
-                          : item.type === "plate"
-                          ? clsx([classes.tableRow, classes.plate])
-                          : item.type === "dataset"
-                          ? clsx([classes.tableRow, classes.dataset])
-                          : (item.type as any) === "well"
-                          ? clsx([classes.tableRow, classes.well])
-                          : item.type === "image"
-                          ? clsx([classes.tableRow, classes.omeroImg])
-                          : classes.tableRow
-                      }
+                      sx={{
+                        "&.Mui-selected": { backgroundColor: "#e3f2fd" },
+                        "&.Mui-selected:hover": { backgroundColor: "#e3f2fd" },
+                        backgroundColor:
+                          item.type === "project" ? "#EFEFEF"
+                          : item.type === "screen" ? "#edfcfc"
+                          : item.type === "plate" ? "#f5fcfc"
+                          : item.type === "dataset" ? "#F4F4F4"
+                          : item.type === "image" ? "#FCFCFC"
+                          : undefined,
+                      }}
                       hover
                       tabIndex={-1}
                       role="checkbox"
@@ -372,17 +289,16 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                                 padding: "0px 0px 0px 28px",
                               }
                             : item.type === "project" || item.type === "screen"
-                            ? {
-                                padding: "0px 0px 0px 16px",
-                              }
-                            : item.type === "image" ||
-                              (item.type as any) === "well"
-                            ? {
-                                padding: "0px 0px 0px 40px",
-                              }
-                            : {
-                                padding: "0px 0px 0px 0px",
-                              }
+                              ? {
+                                  padding: "0px 0px 0px 16px",
+                                }
+                              : item.type === "image"
+                                ? {
+                                    padding: "0px 0px 0px 40px",
+                                  }
+                                : {
+                                    padding: "0px 0px 0px 0px",
+                                  }
                         }
                       >
                         {!item.gridShown && (
@@ -390,24 +306,28 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                             data-testid={`checkbox-${item.type}-${item.id}`}
                             color="primary"
                             checked={isItemSelected}
-                            inputProps={{ "aria-labelledby": labelId }}
                             size="small"
                             onClick={makeOnClick(item)}
+                            slotProps={{
+                              input: {
+                                "aria-labelledby": labelId,
+                              },
+                            }}
                           />
                         )}
                       </TableCell>
                       {visibleHeaderCells.map((cell, i) => (
                         <TableCell
-                          className={classes.tableCell}
                           key={`${cell.id}${i}`}
                           data-testid={`${cell.id}${index}`}
-                          sx={
-                            cell.id === "description" && item.imageGridDetails
+                          sx={{
+                            "&.MuiTableCell-root": { padding: "5px 5px 10px 5px", wordWrap: "break-word" },
+                            ...(cell.id === "description" && item.imageGridDetails
                               ? { whiteSpace: "nowrap" }
                               : cell.id === "description"
-                              ? { align: "left" }
-                              : undefined
-                          }
+                                ? { align: "left" }
+                                : undefined),
+                          }}
                           width={cell.id === "path" ? "25%" : "75%"}
                           id={`${cell.id}_tablecell_${item.type}${item.id}`}
                         >
@@ -416,14 +336,12 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                             <>
                               {item.imageGridDetails.map((wellList, rowIndex) =>
                                 wellList.map((wells, columnIndex) => (
-                                  <div
-                                    key={`${rowIndex}-${columnIndex}`}
-                                  >
+                                  <div key={`${rowIndex}-${columnIndex}`}>
                                     {renderWells(wells, rowIndex, columnIndex)}
                                   </div>
-                                ))
+                                )),
                               )}
-                              <div className={classes.nameText}>
+                              <div style={{ fontWeight: "bold", fontSize: "16px" }}>
                                 {item.paths}
                               </div>
                             </>
@@ -432,18 +350,18 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                               <div
                                 id={`${item.type}_name_display_${item.id}`}
                                 data-testid={`${item.type}_name_display_${item.id}`}
-                                className={classes.nameText}
+                                style={{ fontWeight: "bold", fontSize: "16px" }}
                               >
                                 {item.name}
                               </div>
-                              <div className={classes.boldText}>
+                              <div style={{ fontWeight: "bold" }}>
                                 {item.displayType ?? item.type}
                               </div>
                               <div>
                                 {item.fetched ? (
                                   <span
                                     id={`${item.type}_details_fetched_${item.id}`}
-                                    className={classes.boldText}
+                                    style={{ fontWeight: "bold" }}
                                   >
                                     details fetched
                                   </span>
@@ -495,14 +413,14 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                                           onClick={() => {
                                             void addGridOfThumbnailsToItem(
                                               item,
-                                              pos
+                                              pos,
                                             );
                                           }}
                                         >
                                           <span
                                             id={`${item.type}_show_grid_${item.id}`}
                                             data-testid={`${item.type}_show_grid_${item.id}`}
-                                            className={classes.boldText}
+                                            style={{ fontWeight: "bold" }}
                                           >
                                             show grid of wells for field{" "}
                                             {pos + 1}
@@ -525,7 +443,7 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                                       <span
                                         id={`${item.type}_show_grid_${item.id}`}
                                         data-testid={`${item.type}_show_grid_${item.id}`}
-                                        className={classes.boldText}
+                                        style={{ fontWeight: "bold" }}
                                       >
                                         show image grid{" "}
                                         {item.childCounts !== 0
@@ -551,15 +469,19 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                                         }}
                                         checked={Boolean(item.fetchLarge)}
                                         color="primary"
-                                        inputProps={{
-                                          "aria-label": "get large thumbnail",
+                                        slotProps={{
+                                          input: {
+                                            "aria-label": "get large thumbnail",
+                                          },
                                         }}
                                       />
                                     }
                                     slotProps={{
                                       typography: {
-                                        fontSize: "0.75em",
-                                        fontWeight: "900",
+                                        sx: {
+                                          fontSize: "0.75em",
+                                          fontWeight: "900",
+                                        },
                                       },
                                     }}
                                     label={`large thumbnail`}
@@ -587,19 +509,21 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                                       `${item.type}_name_display_${item.id}`
                                     }
                                     onClick={() => {
-                                      item.showingChildren
-                                        ? hideChildren(item)
-                                        : void populateOmeroItemWithFetchedChildrenOrShowHiddenChildren(
-                                            item
-                                          );
+                                      if (item.showingChildren) {
+                                        hideChildren(item);
+                                      } else {
+                                        void populateOmeroItemWithFetchedChildrenOrShowHiddenChildren(
+                                          item,
+                                        );
+                                      }
                                     }}
                                   >
                                     {getFetchText(item)}{" "}
                                     {isDataSetOrPlateAcquistion(item)
                                       ? "[" + item.addedChildren.length + "]"
                                       : item.childCounts !== 0
-                                      ? "[" + item.childCounts + "]"
-                                      : "[1]"}
+                                        ? "[" + item.childCounts + "]"
+                                        : "[1]"}
                                   </a>
                                 )}
                               </div>
@@ -607,7 +531,7 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                                 <div
                                   id={`${item.type}_link_parent_${item.id}`}
                                   data-testid={`${item.type}_link_parent_${item.id}`}
-                                  className={classes.boldText}
+                                  style={{ fontWeight: "bold" }}
                                 >
                                   <a
                                     href={
@@ -623,7 +547,7 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
                           ) : (
                             <>
                               {item.descriptionElems}
-                              <div className={classes.nameText}>
+                              <div style={{ fontWeight: "bold", fontSize: "16px" }}>
                                 {item.paths}
                               </div>
                             </>
@@ -636,15 +560,14 @@ const ResultsTable: ComponentType<ResultsTableArgs> = forwardRef(
             </TableBody>
           </Table>
         </TableContainer>
-        <div className={classes.tableFooterContainer}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: "fixed", left: 0, bottom: 0, width: "calc(100% - 16px)", ml: "8px", backgroundColor: "#f6f6f6" }}>
           <Typography component="span" variant="body2" color="textPrimary">
             Selected: {selectedItemIds.length}
           </Typography>
-        </div>
+        </Box>
       </>
     );
-  }
+  },
 );
-
 ResultsTable.displayName = "ResultsTable";
 export default ResultsTable;

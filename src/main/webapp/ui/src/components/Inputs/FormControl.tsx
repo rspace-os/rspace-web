@@ -4,63 +4,41 @@ import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
 import FormLabel from "@mui/material/FormLabel";
 import FormHelperText from "@mui/material/FormHelperText";
-import { makeStyles } from "tss-react/mui";
-import { withStyles } from "Styles";
+import Box from "@mui/material/Box";
+import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
 import { Heading } from "../DynamicHeadingLevel";
 
-const useStyles = makeStyles()(() => ({
-  formControl: {
-    "& .MuiInputBase-root.Mui-disabled, & .MuiFormControlLabel-label.Mui-disabled":
-      {
-        color: "black",
-        "& input": {
-          WebkitTextFillColor: "unset",
-        },
-        "& .MuiSvgIcon-root.MuiSelect-icon": {
-          display: "none",
-        },
-      },
-    "& .MuiSelect-root.MuiSelect-select.MuiSelect-outlined": {
-      padding: "11px 10px 10px 10px",
-    },
-    "& .Mui-disabled::before": {
-      borderBottom: "0px !important",
-    },
-  },
-  label: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-}));
 
-const FullLabel = withStyles<
-  {
-    explanation?: React.ReactNode;
-    explanationId: string;
-    label?: string;
-    disabled?: boolean;
-  },
-  { explanationText: string }
->((theme) => ({
-  explanationText: {
-    fontWeight: 400,
-    lineHeight: 1.5,
-    marginTop: theme.spacing(0.5),
-  },
-}))(({ classes, label, explanation, explanationId, disabled }) => {
+function FullLabel({
+  label,
+  explanation,
+  explanationId,
+  disabled: _disabled,
+}: {
+  explanation?: React.ReactNode;
+  explanationId: string;
+  label?: string;
+  disabled?: boolean;
+}): React.ReactNode {
+  const theme = useTheme();
   return (
     <>
       <Heading>{label}</Heading>
       {explanation && (
-        <div className={classes.explanationText} id={explanationId}>
+        <div
+          style={{
+            fontWeight: 400,
+            lineHeight: 1.5,
+            marginTop: theme.spacing(0.5),
+          }}
+          id={explanationId}
+        >
           {explanation}
         </div>
       )}
     </>
   );
-});
+}
 
 export type FormControlArgs = {
   label?: string;
@@ -70,6 +48,7 @@ export type FormControlArgs = {
   inline?: boolean;
   actions?: React.ReactNode;
   classes?: { formLabel?: string };
+  slotProps?: { label?: { sx?: SxProps<Theme> } };
   dataTestId?: string;
   required?: boolean;
   explanation?: React.ReactNode;
@@ -86,6 +65,7 @@ function CustomFormControl({
   inline = false,
   actions = <div></div>,
   classes = {},
+  slotProps,
   dataTestId,
   required,
   explanation,
@@ -93,7 +73,6 @@ function CustomFormControl({
   flexWrap = "initial",
   disabled,
 }: FormControlArgs): React.ReactNode {
-  const { classes: additionalClasses } = useStyles();
   const explanationId = useId();
 
   return (
@@ -105,13 +84,25 @@ function CustomFormControl({
       aria-label={ariaLabel ?? label}
       {...(explanation ? { "aria-describedby": explanationId } : {})}
       fullWidth
-      className={additionalClasses.formControl}
+      sx={{
+        "& .MuiInputBase-root.Mui-disabled, & .MuiFormControlLabel-label.Mui-disabled":
+          {
+            color: "black",
+            "& input": { WebkitTextFillColor: "unset" },
+            "& .MuiSvgIcon-root.MuiSelect-icon": { display: "none" },
+          },
+        "& .MuiSelect-root.MuiSelect-select.MuiSelect-outlined": {
+          padding: "11px 10px 10px 10px",
+        },
+        "& .Mui-disabled::before": { borderBottom: "0px !important" },
+      }}
     >
-      <div className={additionalClasses.label}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
         {typeof label !== "undefined" && (
           <FormLabel
             component="legend"
             classes={{ root: classes.formLabel ?? "" }}
+            sx={slotProps?.label?.sx}
             required={required}
           >
             <FullLabel
@@ -123,7 +114,7 @@ function CustomFormControl({
           </FormLabel>
         )}
         {actions}
-      </div>
+      </Box>
       <FormGroup style={{ display: inline ? "inline" : "inherit", flexWrap }}>
         {children}
       </FormGroup>

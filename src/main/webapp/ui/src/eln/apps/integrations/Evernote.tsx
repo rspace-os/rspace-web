@@ -17,7 +17,12 @@ type EvernoteArgs = {
  */
 function Evernote({ integrationState, update }: EvernoteArgs): React.ReactNode {
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12
+      }}>
       <IntegrationCard
         name="Evernote"
         integrationState={integrationState}

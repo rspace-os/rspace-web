@@ -17,7 +17,7 @@ export default function HelpTextAlert({
   severity,
 }: HelpTextAlertProps): React.ReactNode {
   return condition ? (
-    <Grid item>
+    <Grid>
       <Alert severity={severity}>
         {title && <AlertTitle>{title}</AlertTitle>}
         {text}

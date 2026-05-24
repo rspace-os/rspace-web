@@ -8,7 +8,12 @@ import Typography from "@mui/material/Typography";
 
 function Jupyter(): React.ReactNode {
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12
+      }}>
       <IntegrationCard
         name="Jupyter Notebook Synchronisation"
         explanatoryText="Save Jupyter notebooks and attached data to RSpace automatically. On each run, save version, attach updated data, and view notebooks directly in RSpace."

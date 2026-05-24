@@ -166,24 +166,28 @@ export default function OAuthDialog(props) {
                   autoFocus
                   id="name"
                   placeholder="App name"
-                  inputProps={{ "aria-label": "App name" }}
                   type="text"
                   fullWidth
                   value={appName}
                   onChange={handleChange}
+                  slotProps={{
+                    htmlInput: { "aria-label": "App name" }
+                  }}
                 />
               </form>
             )}
             {created && (
               <Grid container>
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <TextField
                     inputRef={clientIdRef}
                     label="Client ID"
                     variant="filled"
                     value={clientId}
                     style={{ marginRight: "10px", width: "calc(100% - 55px)" }}
-                    inputProps={{ "aria-label": "Client ID" }}
+                    slotProps={{
+                      htmlInput: { "aria-label": "Client ID" }
+                    }}
                   />
                   <Tooltip title="Copy" enterDelay={100}>
                     <IconButton
@@ -194,14 +198,16 @@ export default function OAuthDialog(props) {
                     </IconButton>
                   </Tooltip>
                 </Grid>
-                <Grid item xs={12} style={{ marginTop: "10px" }}>
+                <Grid style={{ marginTop: "10px" }} size={12}>
                   <TextField
                     inputRef={clientSecretRef}
                     label="Client Secret"
                     variant="filled"
                     value={unhashedClientSecret}
                     style={{ marginRight: "10px", width: "calc(100% - 55px)" }}
-                    inputProps={{ "aria-label": "Client secret" }}
+                    slotProps={{
+                      htmlInput: { "aria-label": "Client secret" }
+                    }}
                   />
                   <Tooltip title="Copy" enterDelay={100}>
                     <IconButton

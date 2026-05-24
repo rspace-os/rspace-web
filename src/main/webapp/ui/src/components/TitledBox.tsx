@@ -1,36 +1,9 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
+import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-import { makeStyles } from "tss-react/mui";
 import Divider from "@mui/material/Divider";
-import clsx from "clsx";
 import { Heading } from "@/components/DynamicHeadingLevel";
-
-const useStyles = makeStyles<{ allowOverflow: boolean }>()(
-  (theme, { allowOverflow }) => ({
-    title: {
-      wordBreak: "break-word",
-    },
-    container: {
-      flexWrap: "nowrap",
-      maxHeight: "100%",
-      backgroundColor: "white !important",
-    },
-    body: {
-      padding: theme.spacing(2),
-      overflow: "auto",
-      overflowX: allowOverflow ? "auto" : "hidden",
-    },
-    titleContainer: {
-      padding: theme.spacing(1, 2),
-    },
-    border: {
-      border: theme.borders.section,
-      margin: theme.spacing(1, 0),
-      borderRadius: theme.spacing(0.5),
-    },
-  }),
-);
 
 type TitledBoxArgs = {
   title?: React.ReactNode;
@@ -45,21 +18,28 @@ function TitledBox({
   allowOverflow = true,
   border = false,
 }: TitledBoxArgs): React.ReactNode {
-  const { classes } = useStyles({
-    allowOverflow,
-  });
-
   return (
     <Grid
       container
-      direction="column"
-      className={clsx(classes.container, border && classes.border)}
+      sx={(theme) => ({
+        flexDirection: "column",
+        flexWrap: "nowrap",
+        maxHeight: "100%",
+        backgroundColor: "white !important",
+        ...(border
+          ? {
+              border: theme.borders.section,
+              my: 1,
+              borderRadius: theme.spacing(0.5),
+            }
+          : {}),
+      })}
     >
       {title !== null && typeof title !== "undefined" && (
         <>
-          <Grid item className={classes.titleContainer}>
-            <Grid container direction="row" alignItems="center">
-              <Grid item style={{ flexGrow: 1 }}>
+          <Grid sx={{ px: 2, py: 1 }}>
+            <Grid container direction="row" sx={{ alignItems: "center" }}>
+              <Grid style={{ flexGrow: 1 }}>
                 <Heading
                   variant="h5"
                   sx={{
@@ -71,14 +51,21 @@ function TitledBox({
               </Grid>
             </Grid>
           </Grid>
-          <Grid item>
+          <Grid>
             <Divider orientation="horizontal" />
           </Grid>
         </>
       )}
-      <Grid item className={classes.body}>
+      <Box
+        component={Grid}
+        sx={(theme) => ({
+          p: theme.spacing(2),
+          overflow: "auto",
+          overflowX: allowOverflow ? "auto" : "hidden",
+        })}
+      >
         {children}
-      </Grid>
+      </Box>
     </Grid>
   );
 }

@@ -29,7 +29,7 @@ export type ChoiceFieldArgs<OptionValue extends string> = {
   allowOptionDeletion?: boolean;
   onOptionChange?: (
     index: number,
-    option: { label: string; value: OptionValue; editing: true }
+    option: { label: string; value: OptionValue; editing: true },
   ) => void;
   onOptionRemove?: (index: number) => void;
   hideWhenDisabled?: boolean;
@@ -64,7 +64,7 @@ export default function ChoiceField<OptionValue extends string>({
 
   const handleUpdateValue = (
     optionValue: OptionValue,
-    targetValue: OptionValue
+    targetValue: OptionValue,
   ) => {
     const newValues = value
       .filter((v) => v !== optionValue)
@@ -91,8 +91,10 @@ export default function ChoiceField<OptionValue extends string>({
         <Grid
           container
           direction="row"
-          justifyContent={option.editing ? "flex-start" : "space-between"}
-          alignItems="center"
+          sx={{
+            justifyContent: option.editing ? "flex-start" : "space-between",
+            alignItems: "center",
+          }}
           key={i}
         >
           <FormControlLabel
@@ -133,14 +135,13 @@ export default function ChoiceField<OptionValue extends string>({
           {option.editing && (
             <TextField
               variant="standard"
-
               autoFocus={!option.value}
               value={option.value}
               onChange={(e) => {
                 if (value.includes(option.value)) {
                   handleUpdateValue(
                     option.value,
-                    e.target.value as OptionValue
+                    e.target.value as OptionValue,
                   );
                 }
                 onOptionChange(i, {
@@ -156,19 +157,21 @@ export default function ChoiceField<OptionValue extends string>({
                   ? "Option value cannot be empty"
                   : null
               }
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <RemoveButton
-                      title="Delete New Option"
-                      onClick={() => {
-                        if (value.includes(option.value))
-                          handleRemoveOption(option.value);
-                        onOptionRemove(i);
-                      }}
-                    />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <RemoveButton
+                        title="Delete New Option"
+                        onClick={() => {
+                          if (value.includes(option.value))
+                            handleRemoveOption(option.value);
+                          onOptionRemove(i);
+                        }}
+                      />
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
           )}

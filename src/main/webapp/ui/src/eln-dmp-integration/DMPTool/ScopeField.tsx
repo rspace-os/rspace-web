@@ -31,7 +31,7 @@ export default function ScopeField({
 
   return (
     <Grid container direction="row" spacing={2}>
-      <Grid item>
+      <Grid>
         <RadioField
           value={currentScope}
           name="DMP Scope Options"
@@ -44,7 +44,7 @@ export default function ScopeField({
         />
       </Grid>
 
-      <Grid item>
+      <Grid>
         <Typography variant="body2">
           Select a scope to get the latest plans.
           <br /> Select a plan and click &quot;Import&quot; to add it to the

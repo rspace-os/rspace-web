@@ -1,6 +1,5 @@
 import React, { Suspense, lazy } from "react";
 import { observer } from "mobx-react-lite";
-import { makeStyles } from "tss-react/mui";
 import useStores from "../../../../stores/use-stores";
 import docLinks from "../../../../assets/DocLinks";
 import HelpLinkIcon from "../../../../components/HelpLinkIcon";
@@ -27,15 +26,6 @@ const IdentifierDataGrid = lazy(() =>
   )
 );
 
-const useStyles = makeStyles()((theme) => ({
-  dialog: {
-    height: "100%",
-  },
-  bottomSpaced: { marginBottom: theme.spacing(1) },
-  dashed: { border: `1px dashed ${theme.palette.lightestGrey}` },
-  grow: { flexGrow: 1 },
-}));
-
 const missingDataAlert: string =
   "Some required details are missing. To enable publishing, please fill them in.";
 
@@ -61,6 +51,16 @@ type PreviewDialogArgs = {
   record: InventoryRecord;
 };
 
+type PreviewRecordWithOptionalFields = InventoryRecord & {
+  fields?: Array<{
+    name: string;
+    type: string;
+    id: number;
+    content: string | null;
+    selectedOptions: Array<string> | null;
+  }>;
+};
+
 /**
  * Dialog to preview public page for an identifier
  */
@@ -70,15 +70,17 @@ const PublicPreviewDialog = ({
   id,
   record,
 }: PreviewDialogArgs): React.ReactNode => {
-  const { classes } = useStyles();
   const { uiStore } = useStores();
   if (!id.rsPublicId) return null;
   const publicId: string = id.rsPublicId;
+  const fields = (record as PreviewRecordWithOptionalFields).fields;
 
   return (
     <Dialog
-      classes={{
-        paper: classes.dialog,
+      sx={{
+        "& .MuiDialog-paper": {
+          height: "100%",
+        },
       }}
       open={open}
       onClose={onClose}
@@ -88,12 +90,12 @@ const PublicPreviewDialog = ({
     >
       <DialogTitle>
         <Grid container direction="row">
-          <Grid item>
+          <Grid>
             <Typography component="h2" variant="h6">
               Review your page before publishing
             </Typography>
           </Grid>
-          <Grid item>
+          <Grid>
             <HelpLinkIcon
               link={docLinks.IGSNIdentifiers}
               title="Info on handling Identifiers."
@@ -102,7 +104,7 @@ const PublicPreviewDialog = ({
         </Grid>
       </DialogTitle>
       <DialogContent>
-        <Box className={classes.dashed}>
+        <Box sx={(theme) => ({ border: `1px dashed ${theme.palette.lightestGrey}` })}>
           {id.state === "findable" ? (
             <Suspense>
               {/*
@@ -127,8 +129,7 @@ const PublicPreviewDialog = ({
                   record={{
                     description: record.description,
                     tags: record.tags,
-                    // @ts-expect-error - fields exists at runtime but is not in the interface
-                    fields: record.fields,
+                    fields,
                     extraFields: record.extraFields.map((eF) => ({
                       name: eF.name,
                       id: eF.id,
@@ -142,7 +143,11 @@ const PublicPreviewDialog = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        {!id.isValid && <MissingDataAlert className={classes.grow} />}
+        {!id.isValid && (
+          <Box sx={{ flexGrow: 1 }}>
+            <MissingDataAlert />
+          </Box>
+        )}
         <Button onClick={onClose}>Close</Button>
         <PublishButton identifier={id} />
       </DialogActions>

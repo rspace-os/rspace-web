@@ -224,7 +224,8 @@ export class ColumnFieldMap {
     const type = getTypeOfField(field);
     if (type === null) return false;
     return (
-      this.allValidTypes.includes(type) || field === Fields.none // make none selectable (for containers)
+      // make none selectable (for containers)
+      (this.allValidTypes.includes(type) || field === Fields.none)
     );
   }
 
@@ -250,9 +251,7 @@ export class ColumnFieldMap {
   get validFieldName(): boolean {
     return (
       // apply no restrictions for non-samples fields name validity
-      this.recordType !== "SAMPLES" ||
-      (!invalidFieldNames.includes(this.fieldName.trim()) &&
-        this.isNameUnique(this))
+      (this.recordType !== "SAMPLES" || (!invalidFieldNames.includes(this.fieldName.trim()) && this.isNameUnique(this)))
     );
   }
 

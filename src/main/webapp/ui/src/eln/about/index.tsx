@@ -45,8 +45,13 @@ window.addEventListener("load", () => {
               <div style={{ fontSize: "1rem", lineHeight: "1.5" }}>
                 <DialogBoundary>
                   <Container maxWidth="sm">
-                    <Box py={4}>
-                      <Typography variant="h4" component="h1" align="center" gutterBottom>
+                    <Box sx={{ py: 4 }}>
+                      <Typography
+                        variant="h4"
+                        component="h1"
+                        align="center"
+                        gutterBottom
+                      >
                         About RSpace
                       </Typography>
                       <AboutRSpaceContent />
@@ -58,6 +63,6 @@ window.addEventListener("load", () => {
           </ErrorBoundary>
         </Analytics>
       </CacheProvider>
-    </React.StrictMode>
+    </React.StrictMode>,
   );
 });

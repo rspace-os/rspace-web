@@ -39,7 +39,7 @@ function InventoryRouter(): React.ReactNode {
         <LandmarksProvider>
           <SkipToContentMenu />
           <Alerts>
-            <Box height="100%">
+            <Box sx={{ height: "100%" }}>
               <Routes>
                 <Route
                   path="/"

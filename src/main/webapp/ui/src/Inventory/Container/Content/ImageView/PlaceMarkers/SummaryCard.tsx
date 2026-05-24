@@ -8,43 +8,11 @@ import Grid from "@mui/material/Grid";
 import NumberedLocation from "../NumberedLocation";
 import React from "react";
 import Typography from "@mui/material/Typography";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import { preventEventBubbling } from "../../../../../util/Util";
 import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
 import { type Location } from "../../../../../stores/definitions/Container";
 import useNavigateHelpers from "../../../../useNavigateHelpers";
-
-const useStyles = makeStyles()(() => ({
-  root: {
-    display: "flex",
-    width: 400,
-  },
-  rootFullWidth: {
-    width: "100%",
-  },
-  details: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  content: {
-    flex: "1 0 auto",
-    paddingBottom: "8px !important",
-  },
-  image: {
-    objectFit: "contain",
-    height: "initial",
-    borderRadius: 3,
-    maxHeight: 150,
-    maxWidth: 150,
-  },
-  imageWrapper: {
-    padding: 4,
-  },
-  fullHeight: {
-    height: "100%",
-  },
-}));
 
 type ActionButtonArgs = {
   children: React.ReactNode;
@@ -87,7 +55,6 @@ function SummaryCard({
   onClick,
   fullWidth = false,
 }: SummaryCardArgs): React.ReactNode {
-  const { classes } = useStyles();
   const { navigateToRecord } = useNavigateHelpers();
 
   const helperText = location.hasContent
@@ -100,15 +67,15 @@ function SummaryCard({
 
   return (
     <Card
-      className={`${classes.root} ${fullWidth ? classes.rootFullWidth : ""}`}
+      sx={{ display: "flex", width: fullWidth ? "100%" : 400 }}
       onClick={onClick}
       variant="outlined"
     >
       <Grid container>
-        <Grid item xs={hasImage ? 7 : 12}>
-          <Grid container direction="column" className={classes.fullHeight}>
-            <Box flexGrow={1}>
-              <CardContent className={classes.content}>
+        <Grid size={hasImage ? 7 : 12}>
+          <Grid container sx={{ flexDirection: "column", height: "100%" }}>
+            <Box sx={{ flexGrow: 1 }}>
+              <CardContent sx={{ flex: "1 0 auto", pb: "8px !important" }}>
                 <Typography gutterBottom variant="h5" component="h2">
                   <NumberedLocation
                     number={number}
@@ -127,7 +94,7 @@ function SummaryCard({
                 </Typography>
               </CardContent>
             </Box>
-            <Grid item>
+            <Grid>
               <CardActions>
                 {editable && !location.hasContent && (
                   <ActionButton onClick={preventEventBubbling(onRemove)}>
@@ -151,16 +118,22 @@ function SummaryCard({
           </Grid>
         </Grid>
         {hasImage && (
-          <Grid item xs={5}>
-            <div className={classes.imageWrapper}>
+          <Grid size={5}>
+            <Box sx={{ p: 0.5 }}>
               <CardMedia
-                className={classes.image}
                 component="img"
                 height="140"
+                sx={{
+                  objectFit: "contain",
+                  height: "initial",
+                  borderRadius: "3px",
+                  maxHeight: 150,
+                  maxWidth: 150,
+                }}
                 src={location.content?.image ?? ""}
                 alt={location.content?.name ?? "Empty Location"}
               />
-            </div>
+            </Box>
           </Grid>
         )}
       </Grid>

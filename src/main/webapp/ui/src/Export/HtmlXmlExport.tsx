@@ -16,7 +16,7 @@ export type HtmlXmlExportDetailsArgs = {
   exportDetails: HtmlXmlExportDetails;
   updateExportDetails: (
     key: keyof HtmlXmlExportDetails,
-    value: HtmlXmlExportDetails[keyof HtmlXmlExportDetails]
+    value: HtmlXmlExportDetails[keyof HtmlXmlExportDetails],
   ) => void;
 };
 
@@ -34,8 +34,8 @@ export default function HtmlXmlExport({
   updateExportDetails,
 }: HtmlXmlExportArgs): React.ReactNode {
   return (
-    <Grid container direction="column" spacing={1}>
-      <Grid item>
+    <Grid container sx={{ flexDirection: "column" }} spacing={1}>
+      <Grid>
         <InputLabel htmlFor="maxLinkLevel">
           Should linked RSpace documents be included in export?
         </InputLabel>
@@ -65,15 +65,14 @@ export default function HtmlXmlExport({
           </MenuItem>
         </Select>
       </Grid>
-      <Grid item>
+      <Grid>
         <em>Linked folders and notebooks are never included</em>
       </Grid>
-      <Grid item>
+      <Grid>
         <TextField
           variant="standard"
           fullWidth
           label="Export Description (optional)"
-          inputProps={{ "aria-label": "Export Description (optional)" }}
           multiline
           maxRows="4"
           value={description}
@@ -82,6 +81,9 @@ export default function HtmlXmlExport({
           }
           margin="normal"
           data-test-id="html-xml-description"
+          slotProps={{
+            htmlInput: { "aria-label": "Export Description (optional)" },
+          }}
         />
       </Grid>
     </Grid>

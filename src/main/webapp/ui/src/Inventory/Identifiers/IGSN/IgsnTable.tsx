@@ -69,11 +69,13 @@ const Panel = ({
       vertical: "top",
       horizontal: "center",
     }}
-    PaperProps={{
-      variant: "outlined",
-      elevation: 0,
-      style: {
-        minWidth: 300,
+    slotProps={{
+      paper: {
+        variant: "outlined",
+        elevation: 0,
+        style: {
+          minWidth: 300,
+        },
       },
     }}
   >
@@ -134,30 +136,32 @@ function Toolbar({
         value={localSearchTerm}
         onChange={handleSearchChange}
         size="small"
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
-          endAdornment: localSearchTerm ? (
-            <InputAdornment position="end">
-              <IconButton
-                aria-label="clear search"
-                onClick={() => {
-                  setLocalSearchTerm("");
-                  setSearchTerm("");
-                }}
-                edge="end"
-                size="small"
-              >
-                <ClearIcon fontSize="small" />
-              </IconButton>
-            </InputAdornment>
-          ) : null,
-        }}
         sx={{
           width: 230, // wide enough to show the whole placeholder text
+        }}
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+            endAdornment: localSearchTerm ? (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="clear search"
+                  onClick={() => {
+                    setLocalSearchTerm("");
+                    setSearchTerm("");
+                  }}
+                  edge="end"
+                  size="small"
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : null,
+          },
         }}
       />
       <Button
@@ -247,7 +251,7 @@ function Toolbar({
           current={isAssociated === true}
         />
       </MenuWithSelectedState>
-      <Box flexGrow={1}></Box>
+      <Box sx={{ flexGrow: 1 }}></Box>
       <GridToolbarColumnsButton
         ref={(node) => {
           if (node) columnMenuRef.current = node;

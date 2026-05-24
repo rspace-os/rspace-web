@@ -40,14 +40,14 @@ const icon = (
 
 const HelperText = () => (
   <DialogContentText component="span">
-    <Typography variant="body1" paragraph>
+    <Typography component="p" variant="body1" sx={{ mb: 2 }}>
       Select someone to transfer ownership to. By performing this action you
       will give the new owner full control over the item.{" "}
       <strong>
         This action can only be undone by the recipient or their PI.
       </strong>
     </Typography>
-    <Typography variant="body1" paragraph>
+    <Typography component="p" variant="body1" sx={{ mb: 2 }}>
       If the desired recipient cannot be found in this list, try searching for
       their name or username.
     </Typography>

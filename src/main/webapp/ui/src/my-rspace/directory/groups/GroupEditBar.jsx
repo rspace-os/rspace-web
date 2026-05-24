@@ -18,17 +18,8 @@ import Tooltip from "@mui/material/Tooltip";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
 import axios from "@/common/axios";
-import styled from "@emotion/styled";
-import { CardWrapper } from "../../../styles/CommonStyles.js";
+import { CardWrapper } from "../../../styles/CommonStyles";
 import { createRoot } from "react-dom/client";
-
-const Section = styled.div`
-  margin-top: 10px;
-
-  label {
-    width: 100%;
-  }
-`;
 
 class GroupEditBar extends React.Component {
   constructor() {
@@ -197,14 +188,17 @@ class GroupEditBar extends React.Component {
                   maxRows={4}
                   fullWidth
                   label="Profile description"
-                  inputProps={{ "aria-label": "Profile description" }}
                   margin="dense"
                   data-test-id="profile-description"
+                  slotProps={{
+                    htmlInput: { "aria-label": "Profile description" },
+                  }}
                 />
                 {(this.state.pi_can_edit_permission ||
                   this.state.pi_can_edit_value) && (
-                  <Section>
+                  <div style={{ marginTop: "10px" }}>
                     <FormControlLabel
+                      sx={{ width: "100%" }}
                       control={
                         <Checkbox
                           disabled={
@@ -220,13 +214,14 @@ class GroupEditBar extends React.Component {
                       }
                       label="PI can edit all work in this lab group."
                     />
-                  </Section>
+                  </div>
                 )}
                 {this.state.profile_hiding_enabled &&
                   (this.state.can_hide_profile ||
                     this.state.profile_is_hidden) && (
-                    <Section>
+                    <div style={{ marginTop: "10px" }}>
                       <FormControlLabel
+                        sx={{ width: "100%" }}
                         control={
                           <Checkbox
                             disabled={
@@ -242,7 +237,7 @@ class GroupEditBar extends React.Component {
                         }
                         label="Hide the group from public listings"
                       />
-                    </Section>
+                    </div>
                   )}
               </CardContent>
               {this.state.editing && (

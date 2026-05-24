@@ -1,5 +1,5 @@
 import React, { type ReactNode, forwardRef } from "react";
-import { styled, type Theme } from "@mui/material/styles";
+import { type Theme } from "@mui/material/styles";
 import TickIcon from "@mui/icons-material/Done";
 import CrossIcon from "@mui/icons-material/Clear";
 import Box from "@mui/material/Box";
@@ -18,56 +18,59 @@ const allowedColor = (
   }
 ) => theme.palette[allowed ? "success" : "error"].light;
 
-const WrapperDiv = styled(
-
-  forwardRef<
-    HTMLDivElement,
+const WrapperDiv = forwardRef<
+  HTMLDivElement,
+  {
+    children: ReactNode;
+    dragAndDropInProgress: boolean;
+    isChoosing: boolean;
+    allowed: boolean;
+  } & React.HTMLAttributes<HTMLDivElement>
+>(
+  (
     {
-      children: ReactNode;
-      dragAndDropInProgress: boolean;
-      isChoosing: boolean;
-      allowed: boolean;
-    } & React.HTMLAttributes<HTMLDivElement>
-  >(
-    (
-      {
-        children,
-        dragAndDropInProgress: _dragAndDropInProgress,
-        isChoosing: _isChoosing,
-        allowed: _allowed,
-        ...props
-      },
-      ref
-    ) => (
-      <div {...props} ref={ref}>
-        {children}
-      </div>
-    )
-  )
-)(({ theme, dragAndDropInProgress, isChoosing, allowed }) => ({
-  position: "relative",
-  ...(() => {
-    if (!dragAndDropInProgress) return {};
-    return {
-      border: `3px solid ${
-        isChoosing ? allowedColor(allowed, theme) : "white"
-      }`,
-    };
-  })(),
-}));
+      children,
+      dragAndDropInProgress,
+      isChoosing,
+      allowed,
+      ...props
+    },
+    ref,
+  ) => (
+    <Box
+      {...props}
+      ref={ref}
+      sx={(theme) => ({
+        position: "relative",
+        ...(dragAndDropInProgress
+          ? {
+              border: `3px solid ${isChoosing ? allowedColor(allowed, theme) : "white"}`,
+            }
+          : {}),
+      })}
+    >
+      {children}
+    </Box>
+  ),
+);
+WrapperDiv.displayName = "WrapperDiv";
 
-const AllowedIcon = styled(
-  ({ allowed, className }: { allowed: boolean; className?: string }) => (
-    <Box className={className}>{allowed ? <TickIcon /> : <CrossIcon />}</Box>
-  )
-)(({ theme, allowed }: { theme: Theme; allowed: boolean }) => ({
-  color: allowedColor(allowed, theme),
-  position: "absolute",
-  fontSize: "1.1rem",
-  top: "calc(50% - 15px)",
-  left: "calc(50% - 12px)",
-  transform: "scale(1.5)",
-}));
+function AllowedIcon({ allowed }: { allowed: boolean }): React.ReactNode {
+  return (
+    <Box
+      sx={(theme: Theme) => ({
+        color: allowedColor(allowed, theme),
+        position: "absolute",
+        fontSize: "1.1rem",
+        top: "calc(50% - 15px)",
+        left: "calc(50% - 12px)",
+        transform: "scale(1.5)",
+      })}
+    >
+      {allowed ? <TickIcon /> : <CrossIcon />}
+    </Box>
+  );
+}
 
 type DropzoneArgs = {
   children: ReactNode;

@@ -32,11 +32,10 @@ async function getPlaywrightConfig() {
       ctViteConfig: {
         resolve: {
           alias: {
-            Styles: "src/util/styles.ts",
             "@": path.resolve(__dirname, "src"),
             "@mui/utils/deepmerge/": path.resolve(
               __dirname,
-              "node_modules/@mui/utils/deepmerge/index.js"
+              "node_modules/@mui/utils/deepmerge/index.js",
             ),
           },
           extensions: [".ts", ".tsx", ".js"],

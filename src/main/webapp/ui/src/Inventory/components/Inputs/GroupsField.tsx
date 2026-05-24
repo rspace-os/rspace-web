@@ -2,50 +2,41 @@ import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
-import Autocomplete from "@mui/material/Autocomplete";
+import Autocomplete, {
+  type AutocompleteRenderInputParams,
+} from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
 import { type Group } from "../../../stores/definitions/Group";
-import { withStyles } from "Styles";
-
-const CustomAutocomplete = withStyles<
-  React.ComponentProps<typeof Autocomplete<Group>>,
-  { root: string; option: string }
->(() => ({
-  root: {
-    maxWidth: 500,
-  },
-  option: {
-    cursor: "default",
-  },
-}))(Autocomplete<Group>);
-
 const RecipientTextField = ({
-  InputProps,
+  slotProps,
   loading,
   label,
   ...rest
 }: {
-  InputProps: { endAdornment: React.ReactNode };
+  slotProps?: AutocompleteRenderInputParams["slotProps"];
   loading: boolean;
   label: string;
-}) => (
+} & Omit<React.ComponentProps<typeof TextField>, "slotProps">) => (
   <TextField
     {...rest}
     variant="outlined"
     autoFocus
-    InputProps={{
-      ...InputProps,
-      startAdornment: (
-        <InputAdornment position="start">&nbsp;{label}</InputAdornment>
-      ),
-      endAdornment: (
-        <>
-          {loading && <CircularProgress color="inherit" size={20} />}
-          {InputProps.endAdornment}
-        </>
-      ),
+    slotProps={{
+      ...slotProps,
+      input: {
+        ...slotProps?.input,
+        startAdornment: (
+          <InputAdornment position="start">&nbsp;{label}</InputAdornment>
+        ),
+        endAdornment: (
+          <>
+            {loading && <CircularProgress color="inherit" size={20} />}
+            {slotProps?.input.endAdornment ?? null}
+          </>
+        ),
+      },
     }}
   />
 );
@@ -84,7 +75,8 @@ function GroupsField({
   };
 
   return (
-    <CustomAutocomplete
+    <Autocomplete<Group>
+      sx={{ maxWidth: 500, "& .MuiAutocomplete-option": { cursor: "default" } }}
       loading={false}
       options={[...searchResults]}
       getOptionLabel={(g) => g.name}

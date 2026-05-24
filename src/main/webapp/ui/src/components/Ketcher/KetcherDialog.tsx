@@ -9,7 +9,7 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { Editor, InfoModal } from "ketcher-react";
 import { StandaloneStructServiceProvider } from "ketcher-standalone";
-import { styled, ThemeProvider, useTheme } from "@mui/material/styles";
+import { ThemeProvider, useTheme } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { Ketcher } from "ketcher-core";
@@ -70,12 +70,6 @@ type KetcherDialogArgs = {
   instructionText?: string;
 };
 
-const StyledDialog = styled(Dialog)(() => ({
-  "& > .MuiDialog-container > .MuiPaper-root": {
-    height: "calc(100% - 64px)",
-  },
-}));
-
 const KetcherDialog = ({
   isOpen = true,
   handleClose,
@@ -107,7 +101,17 @@ const KetcherDialog = ({
   };
 
   return (
-    <StyledDialog open={isOpen} onClose={handleClose} fullWidth maxWidth="xl">
+    <Dialog
+      open={isOpen}
+      onClose={handleClose}
+      fullWidth
+      maxWidth="xl"
+      sx={{
+        "& > .MuiDialog-container > .MuiPaper-root": {
+          height: "calc(100% - 64px)",
+        },
+      }}
+    >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent style={{ minHeight: "0" }}>
         <Stack sx={{ height: "100%" }}>
@@ -162,7 +166,7 @@ const KetcherDialog = ({
           </ValidatingSubmitButton>
         )}
       </DialogActions>
-    </StyledDialog>
+    </Dialog>
   );
 };
 

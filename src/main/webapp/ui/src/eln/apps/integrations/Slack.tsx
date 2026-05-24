@@ -56,7 +56,7 @@ const DialogContent = observer(
     const { oauthUrl } = useSlackEndpoint();
     const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
     const copyOfChannels = useLocalObservable(() =>
-      linkedChannels.map((x) => observable(x))
+      linkedChannels.map((x) => observable(x)),
     );
 
     const addHandler = async () => {
@@ -106,13 +106,13 @@ const DialogContent = observer(
               }
             };
             timer = setInterval(f, 1000);
-          }
+          },
         );
 
         const channelDetails: unknown = JSON.parse(channelDetailsJson);
         if (typeof channelDetails !== "object" || channelDetails === null)
           throw new Error(
-            "Could not decode channel details. Invalid root object"
+            "Could not decode channel details. Invalid root object",
           );
         const channelDetailsRecord = channelDetails as Record<string, unknown>;
         if (
@@ -120,23 +120,23 @@ const DialogContent = observer(
           channelDetailsRecord.incoming_webhook === null
         )
           throw new Error(
-            "Could not decode channel details. Invalid incoming_webhook"
+            "Could not decode channel details. Invalid incoming_webhook",
           );
         const incomingWebhookRecord =
           channelDetailsRecord.incoming_webhook as Record<string, unknown>;
         if (typeof channelDetailsRecord.team_name !== "string")
           throw new Error(
-            "Could not decode channel details. Invalid team name"
+            "Could not decode channel details. Invalid team name",
           );
         const SLACK_TEAM_NAME = channelDetailsRecord.team_name;
         if (typeof incomingWebhookRecord.channel_id !== "string")
           throw new Error(
-            "Could not decode channel details. Invalid channel id"
+            "Could not decode channel details. Invalid channel id",
           );
         const SLACK_CHANNEL_ID = incomingWebhookRecord.channel_id;
         if (typeof incomingWebhookRecord.channel !== "string")
           throw new Error(
-            "Could not decode channel details. Invalid channel name"
+            "Could not decode channel details. Invalid channel name",
           );
         const SLACK_CHANNEL_NAME = incomingWebhookRecord.channel;
         const SLACK_CHANNEL_LABEL = SLACK_CHANNEL_NAME;
@@ -145,7 +145,7 @@ const DialogContent = observer(
         const SLACK_USER_ID = channelDetailsRecord.user_id;
         if (typeof channelDetailsRecord.access_token !== "string")
           throw new Error(
-            "Could not decode channel details. Invalid access token"
+            "Could not decode channel details. Invalid access token",
           );
         const SLACK_USER_ACCESS_TOKEN = channelDetailsRecord.access_token;
         if (typeof channelDetailsRecord.team_id !== "string")
@@ -164,7 +164,7 @@ const DialogContent = observer(
             SLACK_USER_ACCESS_TOKEN,
             SLACK_TEAM_ID,
             SLACK_WEBHOOK_URL,
-          })
+          }),
         );
       } catch (e) {
         if (e instanceof Error)
@@ -173,16 +173,16 @@ const DialogContent = observer(
               variant: "error",
               title: "Could not get details of new Slack channel.",
               message: e.message,
-            })
+            }),
           );
       } finally {
         setLoadingNewChannel(false);
       }
     };
     return (
-      <Grid container direction="column" spacing={1} sx={{ mt: 1 }}>
+      <Grid container spacing={1} sx={{ flexDirection: "column", mt: 1 }}>
         {copyOfChannels.map((channel, index) => (
-          <Grid item key={channel.optionsId}>
+          <Grid key={channel.optionsId}>
             <Card variant="outlined">
               <form
                 onSubmit={doNotAwait(async (event) => {
@@ -195,35 +195,35 @@ const DialogContent = observer(
                     const newState = await saveAppOptions(
                       "SLACK",
                       Optional.present(channel.optionsId),
-                      params
+                      params,
                     );
                     runInAction(() => {
                       integrationState.credentials = newState.credentials;
                       const newCreds = ArrayUtils.all(newState.credentials)
                         .toResult(
                           () =>
-                            new Error("Save completed but cannot show results")
+                            new Error("Save completed but cannot show results"),
                         )
                         .elseThrow();
                       const indexOfNewConfig = newCreds.findIndex(
-                        (c) => c.optionsId === channel.optionsId
+                        (c) => c.optionsId === channel.optionsId,
                       );
                       if (indexOfNewConfig === -1)
                         throw new Error(
-                          "Save completed but cannot show results."
+                          "Save completed but cannot show results.",
                         );
 
                       copyOfChannels.splice(
                         index,
                         1,
-                        observable(newCreds[indexOfNewConfig])
+                        observable(newCreds[indexOfNewConfig]),
                       );
                     });
                     addAlert(
                       mkAlert({
                         variant: "success",
                         message: "Successfully changed label.",
-                      })
+                      }),
                     );
                   } catch (e) {
                     if (e instanceof Error)
@@ -232,14 +232,14 @@ const DialogContent = observer(
                           variant: "error",
                           title: "Failed to change label.",
                           message: e.message,
-                        })
+                        }),
                       );
                   }
                 })}
               >
                 <CardContent>
-                  <Grid container spacing={2} direction="column">
-                    <Grid item>
+                  <Grid container spacing={2} sx={{ flexDirection: "column" }}>
+                    <Grid>
                       <DescriptionList
                         content={[
                           {
@@ -253,7 +253,7 @@ const DialogContent = observer(
                         ]}
                       />
                     </Grid>
-                    <Grid item>
+                    <Grid>
                       <TextField
                         fullWidth
                         value={channel.SLACK_CHANNEL_LABEL}
@@ -275,7 +275,7 @@ const DialogContent = observer(
                         await deleteAppOptions("SLACK", channel.optionsId);
                         runInAction(() => {
                           const deletedIndex = copyOfChannels.findIndex(
-                            (c) => c === channel
+                            (c) => c === channel,
                           );
                           copyOfChannels.splice(deletedIndex, 1);
                           integrationState.credentials.splice(deletedIndex, 1);
@@ -284,7 +284,7 @@ const DialogContent = observer(
                           mkAlert({
                             variant: "success",
                             message: "Successfully deleted channel.",
-                          })
+                          }),
                         );
                       } catch (e) {
                         if (e instanceof Error)
@@ -293,7 +293,7 @@ const DialogContent = observer(
                               variant: "error",
                               title: "Could not delete channel.",
                               message: e.message,
-                            })
+                            }),
                           );
                       }
                     })}
@@ -305,7 +305,7 @@ const DialogContent = observer(
             </Card>
           </Grid>
         ))}
-        <Grid item>
+        <Grid>
           {newChannel ? (
             <Card variant="outlined">
               <form
@@ -315,10 +315,10 @@ const DialogContent = observer(
                     const newState = await saveAppOptions(
                       "SLACK",
                       Optional.empty(),
-                      newChannel
+                      newChannel,
                     );
                     const optionIdsOfExistingRepos = new RsSet(
-                      copyOfChannels.map(({ optionsId }) => optionsId)
+                      copyOfChannels.map(({ optionsId }) => optionsId),
                     );
                     runInAction(() => {
                       integrationState.credentials = newState.credentials;
@@ -326,7 +326,7 @@ const DialogContent = observer(
                         .mapOptional((x) => x)
                         .subtractMap(
                           ({ optionsId }) => optionsId,
-                          optionIdsOfExistingRepos
+                          optionIdsOfExistingRepos,
                         ).first;
                       copyOfChannels.push(newlySavedRepo);
                     });
@@ -335,7 +335,7 @@ const DialogContent = observer(
                       mkAlert({
                         variant: "success",
                         message: "Successfully added channel.",
-                      })
+                      }),
                     );
                   } catch (e) {
                     if (e instanceof Error)
@@ -344,7 +344,7 @@ const DialogContent = observer(
                           variant: "error",
                           title: "Failed to add channel.",
                           message: e.message,
-                        })
+                        }),
                       );
                   }
                 })}
@@ -396,7 +396,7 @@ const DialogContent = observer(
         </Grid>
       </Grid>
     );
-  }
+  },
 );
 
 type SlackArgs = {
@@ -413,7 +413,13 @@ type SlackArgs = {
  */
 function Slack({ integrationState, update }: SlackArgs): React.ReactNode {
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Slack"
         integrationState={integrationState}

@@ -1,7 +1,7 @@
 "use strict";
 import React from "react";
 import { produce } from "immer";
-import styled from "@emotion/styled";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -14,7 +14,7 @@ import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
-import { CardWrapper } from "../../../styles/CommonStyles.js";
+import { CardWrapper } from "../../../styles/CommonStyles";
 import DateField from "../../../components/Inputs/DateField";
 import Grid from "@mui/material/Grid";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -28,35 +28,36 @@ import TagSelect from "./TagSelect/TagSelect";
 import Searchbox from "./Searchbox";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 
-const QueryRow = styled.tr`
-  td {
-    padding: 0px 0px 10px 0px;
-  }
-  .search-type {
-    width: 150px;
-  }
-  .search-term {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-  .actions {
-    width: 100px;
-  }
-  .MuiInputBase-root {
-    width: 100%;
-  }
-  .MuiInputBase-root {
-    input:hover,
-    input:active {
-      background-color: transparent !important;
-    }
-  }
-  .MuiButtonBase-root:not(.MuiChip-root) {
-    width: 39px;
-    font-size: 15px;
-    margin-left: 10px;
-  }
-`;
+const queryRowSx = {
+  "& td": {
+    padding: "0px 0px 10px 0px",
+  },
+  "& .search-type": {
+    width: "150px",
+  },
+  "& .search-term": {
+    paddingLeft: "10px",
+    paddingRight: "10px",
+  },
+  "& .actions": {
+    width: "100px",
+  },
+  "& .MuiInputBase-root": {
+    width: "100%",
+    "& input:hover, & input:active": {
+      backgroundColor: "transparent !important",
+    },
+  },
+  "& .MuiButtonBase-root:not(.MuiChip-root)": {
+    width: 39,
+    fontSize: 15,
+    marginLeft: "10px",
+  },
+};
+
+function QueryRow(props) {
+  return <Box component="tr" {...props} sx={{ ...queryRowSx, ...props.sx }} />;
+}
 
 const SEARCH_TYPES = {
   fullText: "Text",
@@ -332,7 +333,7 @@ class AdvancedSearch extends React.Component {
           )}
           {["created", "lastModified"].includes(query.filter) && (
             <Grid container spacing={1}>
-              <Grid item>
+              <Grid>
                 <DateField
                   datatestid={`a-search-input-${idx}-from`}
                   label="From"
@@ -346,7 +347,7 @@ class AdvancedSearch extends React.Component {
                   outputFormat="date"
                 />
               </Grid>
-              <Grid item>
+              <Grid>
                 <DateField
                   datatestid={`a-search-input-${idx}-to`}
                   label="To"
@@ -416,7 +417,9 @@ class AdvancedSearch extends React.Component {
                   control={
                     <Radio
                       color="primary"
-                      inputProps={{ "aria-label": "Satisfy all conditions" }}
+                      slotProps={{
+                        input: { "aria-label": "Satisfy all conditions" },
+                      }}
                     />
                   }
                   label={
@@ -448,8 +451,10 @@ class AdvancedSearch extends React.Component {
                   control={
                     <Radio
                       color="primary"
-                      inputProps={{
-                        "aria-label": "Satisfy at least one condition",
+                      slotProps={{
+                        input: {
+                          "aria-label": "Satisfy at least one condition",
+                        },
                       }}
                     />
                   }

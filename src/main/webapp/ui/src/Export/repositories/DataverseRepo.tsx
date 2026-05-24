@@ -68,7 +68,7 @@ export default function DataverseRepo({
 }: DataverseArgs): React.ReactNode {
   return (
     <Grid container sx={{ width: "100%" }}>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.title}
           name="title"
@@ -81,7 +81,7 @@ export default function DataverseRepo({
           value={title}
         />
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.description}
           name="description"
@@ -96,7 +96,7 @@ export default function DataverseRepo({
           value={description}
         />
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.subject}
           name="subject"
@@ -117,8 +117,9 @@ export default function DataverseRepo({
           ))}
         </TextField>
       </Grid>
-      {repo.metadataLanguages && repo.metadataLanguages.length > 0 && (<Grid item xs={12}>
-        <TextField
+      {repo.metadataLanguages && repo.metadataLanguages.length > 0 && (
+        <Grid size={12}>
+          <TextField
             name="metadataLanguage"
             select
             label="Metadata language"
@@ -128,15 +129,17 @@ export default function DataverseRepo({
             margin="normal"
             fullWidth
             value={metadataLanguage}
-        >
-          {repo.metadataLanguages && repo.metadataLanguages.map((option) => (
-              <MenuItem key={option.title} value={option.locale}>
-                {option.title}
-              </MenuItem>
-          ))}
-        </TextField>
-      </Grid>)}
-      <Grid item xs={12}>
+          >
+            {repo.metadataLanguages &&
+              repo.metadataLanguages.map((option) => (
+                <MenuItem key={option.title} value={option.locale}>
+                  {option.title}
+                </MenuItem>
+              ))}
+          </TextField>
+        </Grid>
+      )}
+      <Grid size={12}>
         <TextField
           name="license"
           select
@@ -156,7 +159,7 @@ export default function DataverseRepo({
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <Users
           updatePeople={updatePeople}
           initialPeople={contacts.concat(authors)}
@@ -164,7 +167,7 @@ export default function DataverseRepo({
           inputValidations={inputValidations}
         />
       </Grid>
-      <Grid item xs={12} mt={1}>
+      <Grid sx={{ mt: 1 }} size={12}>
         <Tags
           fieldOwner={{
             fieldValues: { tags },

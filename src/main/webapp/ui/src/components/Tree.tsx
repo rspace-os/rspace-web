@@ -159,12 +159,12 @@ export function Tree<
   multiSelect?: MultiSelect;
   expandedItems?: Array<Item>;
   onExpandedItemsChange?: (
-    event: React.SyntheticEvent,
+    event: React.SyntheticEvent | null,
     items: Array<Item>,
   ) => void;
   selectedItems?: MultiSelect extends true ? Array<Item> : Item | null;
   onSelectedItemsChange?: (
-    event: React.SyntheticEvent,
+    event: React.SyntheticEvent | null,
     item: MultiSelect extends true ? Array<Item> : Item | null,
   ) => void;
 }): React.ReactNode {

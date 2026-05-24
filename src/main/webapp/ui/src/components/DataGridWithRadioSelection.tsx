@@ -60,11 +60,9 @@ export function DataGridWithRadioSelection<R extends GridValidRowModel>({
   const isControlled = externalSelectedRowId !== undefined;
   const [internalSelectedRowId, setInternalSelectedRowId] =
     React.useState<GridRowId | null>(null);
-
   const selectedRowId = isControlled
     ? externalSelectedRowId
     : internalSelectedRowId;
-
   const radioSelectionColumn: GridColDef<R> = React.useMemo(() => {
     const handleSelectionChange = (newSelectedId: GridRowId | null) => {
       if (!isControlled) {
@@ -74,13 +72,11 @@ export function DataGridWithRadioSelection<R extends GridValidRowModel>({
         onSelectionChange(newSelectedId);
       }
     };
-
     return {
       ...GRID_CHECKBOX_SELECTION_COL_DEF,
       renderHeader: () => "Select",
       renderCell: (params: GridRenderCellParams<R>) => {
         const isSelected = selectedRowId === params.id;
-
         return (
           <Radio
             color="primary"
@@ -92,9 +88,6 @@ export function DataGridWithRadioSelection<R extends GridValidRowModel>({
               }
               handleSelectionChange(params.id);
             }}
-            inputProps={{
-              "aria-label": selectRadioAriaLabelFunc(params.row),
-            }}
             onClick={(e) => e.stopPropagation()} // Prevent row selection on click
             onKeyDown={(e) => {
               if (e.key === " " || e.key === "Spacebar") {
@@ -102,6 +95,11 @@ export function DataGridWithRadioSelection<R extends GridValidRowModel>({
                 e.stopPropagation();
                 handleSelectionChange(params.id);
               }
+            }}
+            slotProps={{
+              input: {
+                "aria-label": selectRadioAriaLabelFunc(params.row),
+              },
             }}
           />
         );
@@ -117,11 +115,9 @@ export function DataGridWithRadioSelection<R extends GridValidRowModel>({
     selectRadioAriaLabelFunc,
     isControlled,
   ]);
-
   const allColumns = React.useMemo(() => {
     return [radioSelectionColumn, ...columns];
   }, [radioSelectionColumn, columns]);
-
   return (
     <DataGrid
       apiRef={apiRef}

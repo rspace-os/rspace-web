@@ -11,18 +11,28 @@ import FormField from "../../components/Inputs/FormField";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import Link from "@mui/material/Link";
 import { Optional } from "../../../util/optional";
-import { styled } from "@mui/material/styles";
+import Box from "@mui/material/Box";
 import { textFieldClasses } from "@mui/material/TextField";
 import { inputBaseClasses } from "@mui/material";
 
-const CustomFormField = styled(FormField<string | number>)(() => ({
-  [`& .${textFieldClasses.root}`]: {
-    maxWidth: "264px",
-    [`& .${inputBaseClasses.root}`]: {
-      paddingRight: 0,
-    },
-  },
-}));
+function CustomFormField(
+  props: React.ComponentProps<typeof FormField<string | number>>,
+): React.ReactNode {
+  return (
+    <Box
+      sx={{
+        [`& .${textFieldClasses.root}`]: {
+          maxWidth: "264px",
+          [`& .${inputBaseClasses.root}`]: {
+            paddingRight: 0,
+          },
+        },
+      }}
+    >
+      <FormField {...props} />
+    </Box>
+  );
+}
 
 type QuantityArgs = {
   onErrorStateChange: (value: boolean) => void;
@@ -69,7 +79,7 @@ function Quantity({
     const quantity = sample.quantityValue;
     sample.setAttributesDirty({
       quantity: {
-        unitId: e.target.value as number,
+        unitId: e.target.value,
         numericValue: quantity,
       },
     });
@@ -138,26 +148,28 @@ function Quantity({
               helperText={totalSummaryLabel().orElse("")}
               size="small"
               variant="outlined"
-              inputProps={{
-                min: 0,
-                step: 0.001,
-              }}
-              InputProps={{
-                endAdornment: (
-                  <>
-                    <UnitSelect
-                      categories={categories()}
-                      value={sample.quantityUnitId}
-                      handleChange={handleChangeQuantityUnit}
-                    />
-                    {(sample.newSampleSubSamplesCount ?? 2) > 1 && (
-                      <InputAdornment position="start">
-                        {"per "}
-                        {sample.template ? alias.alias : "subsample"}
-                      </InputAdornment>
-                    )}
-                  </>
-                ),
+              slotProps={{
+                htmlInput: {
+                  min: 0,
+                  step: 0.001,
+                },
+                input: {
+                  endAdornment: (
+                    <>
+                      <UnitSelect
+                        categories={categories()}
+                        value={sample.quantityUnitId}
+                        handleChange={handleChangeQuantityUnit}
+                      />
+                      {(sample.newSampleSubSamplesCount ?? 2) > 1 && (
+                        <InputAdornment position="start">
+                          {"per "}
+                          {sample.template ? alias.alias : "subsample"}
+                        </InputAdornment>
+                      )}
+                    </>
+                  ),
+                },
               }}
             />
           )}

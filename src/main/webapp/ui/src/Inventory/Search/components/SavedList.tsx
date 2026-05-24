@@ -9,26 +9,11 @@ import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { withStyles } from "Styles";
 import NameDialog from "../../../Inventory/Search/components/NameDialog";
 import { type SavedItem } from "../../../Inventory/Search/components/SearchParameterControls";
 import BasketModel from "../../../stores/models/Basket";
 import CustomTooltip from "../../../components/CustomTooltip";
 import Alert from "@mui/material/Alert";
-import { makeStyles } from "tss-react/mui";
-
-const useStyles = makeStyles()((theme) => ({
-  itemWrapper: {
-    minWidth: "300px",
-    paddingRight: "120px",
-  },
-  alert: {
-    width: "300px",
-  },
-  sideSpaced: {
-    margin: theme.spacing(0, 1),
-  },
-}));
 
 export type ItemType = "searches" | "baskets";
 
@@ -39,41 +24,6 @@ export type SavedListArgs<T extends SavedItem> = {
   onSelect: (item: T | null) => void;
   isDisabled?: (item: T) => boolean;
 };
-
-const DeleteSavedItemIcon = withStyles<
-  React.ComponentProps<typeof DeleteIcon>,
-  { root: string }
->((theme) => ({
-  root: {
-    color: theme.palette.warningRed,
-  },
-}))(DeleteIcon);
-
-const EditSavedItemIcon = withStyles<
-  React.ComponentProps<typeof EditIcon>,
-  { root: string }
->((theme) => ({
-  root: {
-    color: theme.palette.primary.main,
-  },
-}))(EditIcon);
-
-const Action = withStyles<
-  React.ComponentProps<typeof ListItemSecondaryAction>,
-  { root: string }
->((theme) => ({
-  root: {
-    "& .MuiIconButton-root": {
-      backgroundColor: "white",
-      padding: theme.spacing(0.5),
-      marginLeft: theme.spacing(1),
-      marginRight: "-4px !important",
-    },
-    "&:hover .MuiIconButton-root": {
-      backgroundColor: "rgba(0, 0, 0, 0.04)",
-    },
-  },
-}))(ListItemSecondaryAction);
 
 const helpText: Record<ItemType, string> = {
   baskets: `There are no Baskets yet. To create one: select some results and then 'Add to Basket'.`,
@@ -87,7 +37,6 @@ function SavedList<T extends SavedItem>({
   onSelect,
   isDisabled,
 }: SavedListArgs<T>): React.ReactNode {
-  const { classes } = useStyles();
   const { searchStore, peopleStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
@@ -128,15 +77,27 @@ function SavedList<T extends SavedItem>({
           items.map((item, i) => (
             <StyledMenuItem
               key={i}
-              className={classes.itemWrapper}
+              sx={{ minWidth: "300px", pr: "120px" }}
               onClick={() => onSelect(item)}
               disabled={Boolean(isDisabled?.(item))}
             >
               <ListItemText primary={item.name} />
-              <Action>
+              <ListItemSecondaryAction
+                sx={(theme) => ({
+                  "& .MuiIconButton-root": {
+                    backgroundColor: "white",
+                    padding: theme.spacing(0.5),
+                    marginLeft: theme.spacing(1),
+                    marginRight: "-4px !important",
+                  },
+                  "&:hover .MuiIconButton-root": {
+                    backgroundColor: "rgba(0, 0, 0, 0.04)",
+                  },
+                })}
+              >
                 {itemType === "baskets" && (
                   <Badge
-                    className={classes.sideSpaced}
+                    sx={{ mx: 1 }}
                     badgeContent={(item as BasketModel).itemCount || "0"}
                     color="primary"
                   />
@@ -151,7 +112,7 @@ function SavedList<T extends SavedItem>({
                       setOpen(true);
                     }}
                   >
-                    <EditSavedItemIcon />
+                    <EditIcon sx={{ color: "primary.main" }} />
                   </IconButton>
                 </CustomTooltip>
                 <CustomTooltip
@@ -164,18 +125,18 @@ function SavedList<T extends SavedItem>({
                     aria-label="delete saved item"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(item);
+                      void handleDelete(item);
                     }}
                   >
-                    <DeleteSavedItemIcon />
+                    <DeleteIcon sx={{ color: "warningRed" }} />
                   </IconButton>
                 </CustomTooltip>
-              </Action>
+              </ListItemSecondaryAction>
             </StyledMenuItem>
           ))
         ) : (
           <Alert
-            className={classes.alert}
+            sx={{ width: "300px" }}
             severity="info"
             onClose={() => onSelect(null)}
           >

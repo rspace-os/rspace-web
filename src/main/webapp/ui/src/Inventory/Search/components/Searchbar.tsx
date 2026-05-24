@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import styled from "@emotion/styled";
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import CustomTooltip from "../../../components/CustomTooltip";
 import TextField from "@mui/material/TextField";
@@ -13,28 +13,27 @@ import useIsTextWiderThanField from "../../../hooks/ui/useIsTextWiderThanField";
 import SearchDialog from "../../../components/SearchDialog";
 import { runInAction } from "mobx";
 
-const SearchBar = styled.div`
-  form {
-    display: flex;
-    align-items: center;
-    width: 100%;
-  }
-  .MuiTextField-root {
-    flex-grow: 1;
-    .MuiOutlinedInput-root {
-      input:focus,
-      input:hover {
-        background-color: transparent !important;
-      }
-    }
-    .MuiOutlinedInput-input {
-      padding: 8px 0 8px 0;
-    }
-  }
-  .grow {
-    flex-grow: 1;
-  }
-`;
+const searchBarSx = {
+  "& form": {
+    display: "flex",
+    alignItems: "center",
+    width: "100%",
+  },
+  "& .MuiTextField-root": {
+    flexGrow: 1,
+    "& .MuiOutlinedInput-root": {
+      "& input:focus, & input:hover": {
+        backgroundColor: "transparent !important",
+      },
+    },
+    "& .MuiOutlinedInput-input": {
+      padding: "8px 0 8px 0",
+    },
+  },
+  "& .grow": {
+    flexGrow: 1,
+  },
+};
 
 type FormArgs = {
   handleSearch: (query: string) => void;
@@ -80,37 +79,39 @@ const Form = observer(({ handleSearch }: FormArgs) => {
           placeholder="Search"
           value={search.fetcher.query ?? ""}
           onChange={handleChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <IconButton
-                  aria-label="Search"
-                  data-test-id="s-search-submit"
-                  onClick={onSearch}
-                  size="small"
-                  edge="start"
-                >
-                  <SearchOutlinedIcon />
-                </IconButton>
-              </InputAdornment>
-            ),
-            ...(search.fetcher.query
-              ? {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <ClearSearch handleReset={handleReset} />
-                    </InputAdornment>
-                  ),
-                }
-              : {}),
-          }}
-          inputProps={{
-            "aria-label": "Search",
-            type: "search",
-            ref: inputRef,
-          }}
           sx={{ flexGrow: 1 }}
-        />
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <IconButton
+                    aria-label="Search"
+                    data-test-id="s-search-submit"
+                    onClick={onSearch}
+                    size="small"
+                    edge="start"
+                  >
+                    <SearchOutlinedIcon />
+                  </IconButton>
+                </InputAdornment>
+              ),
+              ...(search.fetcher.query
+                ? {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <ClearSearch handleReset={handleReset} />
+                      </InputAdornment>
+                    ),
+                  }
+                : {}),
+            },
+
+            htmlInput: {
+              "aria-label": "Search",
+              type: "search",
+              ref: inputRef,
+            }
+          }} />
         <SearchDialog
           visible={textTooWide.orElse(false)}
           onSubmit={onSearch}
@@ -147,7 +148,7 @@ type SearchbarArgs = {
 function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
   return (
     <div style={{ flexGrow: 1 }}>
-      <SearchBar>
+      <Box sx={searchBarSx}>
         <Paper
           style={{
             display: "flex",
@@ -157,7 +158,7 @@ function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
         >
           <Form handleSearch={handleSearch} />
         </Paper>
-      </SearchBar>
+      </Box>
     </div>
   );
 }

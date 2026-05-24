@@ -2,10 +2,32 @@ import FileField from "../../../components/Inputs/FileField";
 import React from "react";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
-import { withStyles } from "../../../util/styles";
+import { useTheme } from "@mui/material/styles";
 import TitledBox from "@/components/TitledBox";
 import RemoveButton from "@/components/RemoveButton";
 import Grid from "@mui/material/Grid";
+
+function ErrorDetails({
+  errorMessage,
+}: {
+  errorMessage: string | null | undefined;
+}): React.ReactNode {
+  const theme = useTheme();
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        padding: theme.spacing(0.5, 2),
+      }}
+    >
+      <dt style={{ color: theme.palette.text.secondary }}>Error details:</dt>
+      <dd style={{ marginLeft: theme.spacing(1), color: theme.palette.error.main }}>
+        {errorMessage}
+      </dd>
+    </div>
+  );
+}
 
 type FileArgs = {
   loadedFile?: File | null;
@@ -13,29 +35,6 @@ type FileArgs = {
 
 function FileForImport({ loadedFile }: FileArgs): React.ReactNode {
   const { importStore } = useStores();
-
-  const ErrorDetails = withStyles<
-    { errorMessage: string | null | undefined },
-    { details: string; detailsLabel: string; message: string }
-  >((theme) => ({
-    details: {
-      display: "flex",
-      alignItems: "center",
-      padding: theme.spacing(0.5, 2),
-    },
-    detailsLabel: {
-      color: theme.palette.text.secondary,
-    },
-    message: {
-      marginLeft: theme.spacing(1),
-      color: theme.palette.error.main,
-    },
-  }))(({ classes, errorMessage }) => (
-    <div className={classes.details}>
-      <dt className={classes.detailsLabel}>Error details:</dt>
-      <dd className={classes.message}>{errorMessage}</dd>
-    </div>
-  ));
 
   const labelByRecordType =
     (importStore.importData?.byRecordType("label") as string) || "records";
@@ -47,8 +46,8 @@ function FileForImport({ loadedFile }: FileArgs): React.ReactNode {
   return (
     <>
       <TitledBox title="Upload CSV File" border={true}>
-        <Grid container spacing={2} flexDirection="row">
-          <Grid item flexGrow={1}>
+        <Grid container spacing={2} sx={{ flexDirection: "row" }}>
+          <Grid sx={{ flexGrow: 1 }}>
             <FileField
               accept=".csv"
               buttonLabel={`${
@@ -64,7 +63,7 @@ function FileForImport({ loadedFile }: FileArgs): React.ReactNode {
               loadedFile={loadedFile}
             />
           </Grid>
-          <Grid item>
+          <Grid>
             <RemoveButton
               onClick={() => importStore.importData?.clearFile()}
               title={`Clear File and Mappings`}

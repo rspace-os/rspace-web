@@ -11,7 +11,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import Link from "@mui/material/Link";
-import { styled, useTheme, darken, alpha } from "@mui/material/styles";
+import { useTheme, darken, alpha } from "@mui/material/styles";
 import LocationField from "../../components/Fields/Location";
 import Box from "@mui/material/Box";
 import GlobalId from "../../../components/GlobalId";
@@ -32,25 +32,6 @@ import Description from "../../components/Fields/Description";
 import BarcodesField from "../../components/Fields/Barcodes/FormField";
 import FormField from "../../components/Inputs/FormField";
 
-const CustomStepper = styled(MobileStepper)(({ theme }) => ({
-  backgroundColor: theme.palette.record.subSample.lighter,
-  borderBottomLeftRadius: "4px",
-  borderBottomRightRadius: "4px",
-  border: `2px solid ${theme.palette.record.subSample.bg}`,
-  borderTop: "none",
-  color: alpha(darken(theme.palette.record.subSample.bg, 0.5), 0.7),
-  fontWeight: "700",
-  letterSpacing: "0.03em",
-  [`& .${buttonClasses.root}`]: {
-    [`& .${svgIconClasses.root}`]: {
-      color: theme.palette.record.subSample.bg,
-    },
-    [`&.${buttonClasses.disabled}`]: {
-      opacity: 0.3,
-    },
-  },
-}));
-
 type WrapperArgs = {
   children: React.ReactNode;
 };
@@ -58,13 +39,13 @@ type WrapperArgs = {
 const Wrapper = ({ children }: WrapperArgs) => {
   const [sectionOpen, setSectionOpen] = React.useState(true);
   return (
-    <Grid container direction="row" flexWrap="nowrap" spacing={1}>
-      <Grid item sx={{ pl: 0, ml: -2 }}>
+    <Grid container direction="row" sx={{ flexWrap: "nowrap" }} spacing={1}>
+      <Grid sx={{ pl: 0, ml: -2 }}>
         <IconButton onClick={() => setSectionOpen(!sectionOpen)} sx={{ p: 1 }}>
           <ExpandCollapseIcon open={sectionOpen} />
         </IconButton>
       </Grid>
-      <Grid item flexGrow={1}>
+      <Grid sx={{ flexGrow: 1 }}>
         <Collapse in={sectionOpen} collapsedSize={50}>
           {children}
         </Collapse>
@@ -156,7 +137,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
               }}
             >
               {subsample.name}
-              <Box flexGrow={1}></Box>
+              <Box sx={{ flexGrow: 1 }}></Box>
               <GlobalId record={subsample} />
             </Toolbar>
           </AppBar>
@@ -201,13 +182,31 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
             </Typography>
           </CardActions>
         </Card>
-        <CustomStepper
+        <MobileStepper
           variant="text"
           steps={search.count}
           activeStep={
             index + search.fetcher.pageSize * search.fetcher.pageNumber
           }
           position="static"
+          sx={{
+            backgroundColor: theme.palette.record.subSample.lighter,
+            borderBottomLeftRadius: "4px",
+            borderBottomRightRadius: "4px",
+            border: `2px solid ${theme.palette.record.subSample.bg}`,
+            borderTop: "none",
+            color: alpha(darken(theme.palette.record.subSample.bg, 0.5), 0.7),
+            fontWeight: "700",
+            letterSpacing: "0.03em",
+            [`& .${buttonClasses.root}`]: {
+              [`& .${svgIconClasses.root}`]: {
+                color: theme.palette.record.subSample.bg,
+              },
+              [`&.${buttonClasses.disabled}`]: {
+                opacity: 0.3,
+              },
+            },
+          }}
           nextButton={
             <Button
               aria-controls={cardId}

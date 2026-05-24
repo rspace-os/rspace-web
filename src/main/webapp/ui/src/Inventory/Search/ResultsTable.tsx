@@ -12,20 +12,16 @@ import { type SplitButtonOption } from "../components/ContextMenu/ContextMenuSpl
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import Skeleton from "@mui/material/Skeleton";
-import { withStyles } from "Styles";
 import ScrollBox from "./ScrollBox";
 import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import { hasRequiredPermissions } from "../../stores/definitions/InventoryRecord";
-
 const ResultRowSkeleton = () => {
   const { isViewportSmall, isViewportLarge } = useViewportDimensions();
   const isSingleColumnLayout = useIsSingleColumnLayout();
-
   let cols = 3;
   if (!isViewportSmall && isSingleColumnLayout) cols++;
   if (isViewportLarge && isSingleColumnLayout) cols++;
-
   return (
     <TableRow>
       <TableCell colSpan={cols}>
@@ -34,27 +30,11 @@ const ResultRowSkeleton = () => {
     </TableRow>
   );
 };
-
-const CustomTablePagination = withStyles<
-  React.ComponentProps<typeof TablePagination>,
-  { root: string }
->(() => ({
-  root: {
-    overflow: "unset",
-  },
-}))((props) => (
-  <nav>
-    <TablePagination labelRowsPerPage="" component="div" {...props} />
-  </nav>
-));
-
 type ResultsTableArgs = {
   contextMenuId: (typeof menuIDs)[keyof typeof menuIDs];
 };
-
 function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
-
   const canSelectResult = React.useCallback(
     (record: (typeof search.filteredResults)[number]) =>
       !search.alwaysFilterOut(record) &&
@@ -64,26 +44,21 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
       ),
     [search],
   );
-
   const selectableResults = React.useCallback(
     () => search.filteredResults.filter(canSelectResult),
     [canSelectResult, search],
   );
-
   const handleChangePageSize = (value: number) => {
     search.setPageSize(value);
   };
-
   const handleChangePage = (newPage: number) => {
     void search.setPage(newPage);
   };
-
   const toggleAll = () => {
     const results = selectableResults();
     const selected = results.some((r) => r.selected === false);
     results.forEach((r) => r.toggleSelected(selected));
   };
-
   const onSelectOptions: Array<SplitButtonOption> = [
     {
       text: "All",
@@ -113,7 +88,9 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
       text: "Mine",
       selection: () => {
         search.filteredResults.forEach((r) => {
-          r.toggleSelected(canSelectResult(r) && (r.currentUserIsOwner ?? false));
+          r.toggleSelected(
+            canSelectResult(r) && (r.currentUserIsOwner ?? false),
+          );
         });
       },
     },
@@ -144,10 +121,8 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
       },
     },
   ];
-
   const count = search.count;
   const rowsPerPageOptions = paginationOptions(count);
-
   return (
     <>
       <ScrollBox overflowY="auto">
@@ -173,25 +148,30 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
           </TableBody>
         </Table>
       </ScrollBox>
-      <CustomTablePagination
-        count={count}
-        rowsPerPageOptions={rowsPerPageOptions}
-        labelRowsPerPage=""
-        rowsPerPage={Math.min(search.fetcher.pageSize, count)}
-        SelectProps={{
-          renderValue: (value: unknown) =>
-            typeof value === "number" && value < count
-              ? value
-              : `${String(value)} (All)`,
-        }}
-        page={Number(search.fetcher.pageNumber) || 0}
-        onPageChange={(_event: unknown, page: number) => handleChangePage(page)}
-        onRowsPerPageChange={(e) =>
-          handleChangePageSize(Number(e.target.value))
-        }
-      />
+      <nav>
+        <TablePagination
+          sx={{ overflow: "unset" }}
+          labelRowsPerPage=""
+          component="div"
+          count={count}
+          rowsPerPageOptions={rowsPerPageOptions}
+          rowsPerPage={Math.min(search.fetcher.pageSize, count)}
+          page={Number(search.fetcher.pageNumber) || 0}
+          onPageChange={(_event: unknown, page: number) => handleChangePage(page)}
+          onRowsPerPageChange={(e) =>
+            handleChangePageSize(Number(e.target.value))
+          }
+          slotProps={{
+            select: {
+              renderValue: (value: unknown) =>
+                typeof value === "number" && value < count
+                  ? value
+                  : `${String(value)} (All)`,
+            },
+          }}
+        />
+      </nav>
     </>
   );
 }
-
 export default observer(ResultsTable);

@@ -1,29 +1,47 @@
 import React from "react";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import { withStyles } from "Styles";
+import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
 
-export const StyledMenu = withStyles<
-  React.ComponentProps<typeof Menu>,
-  { paper: string }
->((theme) => ({
-  paper: {
-    border: theme.borders.menu,
-  },
-}))((props) => (
-  <Menu
-    elevation={0}
-    anchorOrigin={{
-      vertical: "bottom",
-      horizontal: "center",
-    }}
-    transformOrigin={{
-      vertical: "top",
-      horizontal: "center",
-    }}
-    {...props}
-    keepMounted={false}
-  />
-));
+const asSxArray = (s: SxProps<Theme> | undefined) =>
+  Array.isArray(s) ? s : s ? [s] : [];
+
+export function StyledMenu({
+  sx,
+  slotProps,
+  ...rest
+}: React.ComponentProps<typeof Menu>): React.ReactNode {
+  const theme = useTheme();
+  const paperSlot =
+    slotProps?.paper && typeof slotProps.paper !== "function"
+      ? (slotProps.paper as { sx?: SxProps<Theme> })
+      : undefined;
+  return (
+    <Menu
+      elevation={0}
+      anchorOrigin={{
+        vertical: "bottom",
+        horizontal: "center",
+      }}
+      transformOrigin={{
+        vertical: "top",
+        horizontal: "center",
+      }}
+      keepMounted={false}
+      {...rest}
+      slotProps={{
+        ...slotProps,
+        paper: {
+          ...paperSlot,
+          sx: [
+            { border: theme.borders.menu },
+            ...asSxArray(paperSlot?.sx),
+            ...asSxArray(sx),
+          ],
+        },
+      }}
+    />
+  );
+}
 
 export const StyledMenuItem = MenuItem;

@@ -43,7 +43,7 @@ export default function SymbolsMenu(props) {
       elevation={0}
     >
       <Grid container spacing={2}>
-        <Grid item xs={3}>
+        <Grid size={3}>
           <Tabs
             orientation="vertical"
             variant="scrollable"
@@ -55,7 +55,7 @@ export default function SymbolsMenu(props) {
             ))}
           </Tabs>
         </Grid>
-        <Grid item xs={9}>
+        <Grid size={9}>
           {symbols().map((symbol) => (
             <Tooltip title={symbol[1]} aria-label={symbol[1]} key={symbol[0]}>
               <Button

@@ -3,30 +3,10 @@ import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import Popover from "@mui/material/Popover";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
-import { styled } from "@mui/material/styles";
 import AlertTitle from "@mui/material/AlertTitle";
 import Link from "@mui/material/Link";
 import SvgIcon from "@mui/material/SvgIcon";
 import AccentMenuItem from "./AccentMenuItem";
-
-const StyledPopover = styled(
-  ({
-    highContrastMode: _highContrastMode,
-    ...rest
-  }: { highContrastMode: boolean } & React.ComponentProps<typeof Popover>) => (
-    <Popover {...rest} />
-  ),
-)(({ highContrastMode }) => ({
-  "& > .MuiPaper-root": {
-    padding: "2px",
-    maxWidth: "500px",
-    ...(highContrastMode
-      ? {
-          border: "2px solid black",
-        }
-      : {}),
-  },
-}));
 
 /**
  * @module AccessibilityTips
@@ -68,8 +48,14 @@ function AccessibilityTipsPopup({
   supportsReducedMotion: boolean;
   supports2xZoom: boolean;
   supportsSkipToContent: boolean;
-  anchorOrigin: { vertical: "bottom" | "top"; horizontal: "center" | "left" };
-  transformOrigin: { vertical: "top"; horizontal: "center" | "right" };
+  anchorOrigin: {
+    vertical: "bottom" | "top";
+    horizontal: "center" | "left";
+  };
+  transformOrigin: {
+    vertical: "top";
+    horizontal: "center" | "right";
+  };
   elementType: "dialog" | "page";
 }) {
   const highContrastModeIsEnabled = window.matchMedia(
@@ -78,18 +64,29 @@ function AccessibilityTipsPopup({
   const reducedMotionModeIsEnabled = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
-
   return (
-    <StyledPopover
+    <Popover
       open={Boolean(anchorEl)}
       anchorEl={anchorEl}
-      highContrastMode={highContrastModeIsEnabled}
       onClose={() => setAnchorEl(null)}
-      PaperProps={{
-        role: "dialog",
-      }}
       anchorOrigin={anchorOrigin}
       transformOrigin={transformOrigin}
+      sx={{
+        "& > .MuiPaper-root": {
+          padding: "2px",
+          maxWidth: "500px",
+          ...(highContrastModeIsEnabled
+            ? {
+                border: "2px solid black",
+              }
+            : {}),
+        },
+      }}
+      slotProps={{
+        paper: {
+          role: "dialog",
+        },
+      }}
     >
       <Stack spacing={0.25}>
         {supportsHighContrastMode && (
@@ -184,10 +181,9 @@ function AccessibilityTipsPopup({
           </Alert>
         )}
       </Stack>
-    </StyledPopover>
+    </Popover>
   );
 }
-
 function AccessibilityIcon() {
   return (
     <SvgIcon viewBox="0 0 24 24">
@@ -210,7 +206,6 @@ function AccessibilityIcon() {
     </SvgIcon>
   );
 }
-
 type AccessibilityTipsComponentArgs = {
   supportsHighContrastMode?: boolean;
   supportsReducedMotion?: boolean;
@@ -231,7 +226,6 @@ export function AccessibilityTipsIconButton({
   supportsSkipToContent,
 }: AccessibilityTipsComponentArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
-
   if (
     !supportsHighContrastMode &&
     !supportsReducedMotion &&
@@ -239,7 +233,6 @@ export function AccessibilityTipsIconButton({
     !supportsSkipToContent
   )
     return null;
-
   return (
     <>
       <IconButtonWithTooltip
@@ -288,7 +281,6 @@ export function AccessibilityTipsMenuItem({
   onClose: () => void;
 } & AccessibilityTipsComponentArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
-
   if (
     !supportsHighContrastMode &&
     !supportsReducedMotion &&
@@ -296,7 +288,6 @@ export function AccessibilityTipsMenuItem({
     !supportsSkipToContent
   )
     return null;
-
   return (
     <>
       <AccentMenuItem

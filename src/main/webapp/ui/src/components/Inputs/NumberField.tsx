@@ -1,5 +1,5 @@
 import React from "react";
-import TextField from "@mui/material/TextField";
+import TextField, { TextFieldProps } from "@mui/material/TextField";
 import NoValue from "../../components/NoValue";
 
 export type NumberFieldArgs = {
@@ -14,26 +14,6 @@ export type NumberFieldArgs = {
   error?: boolean;
   fullWidth?: boolean;
   helperText?: React.ReactNode;
-  inputProps?: {
-    inputMode?:
-      | "text"
-      | "search"
-      | "email"
-      | "tel"
-      | "url"
-      | "none"
-      | "numeric"
-      | "decimal";
-    step?: number | "any";
-    lang?: string;
-    min?: number;
-    max?: number;
-    style?: object;
-  };
-  InputProps?: {
-    startAdornment?: React.ReactNode;
-    endAdornment?: React.ReactNode;
-  };
   name?: string;
   onChange?: (
     /*
@@ -49,6 +29,8 @@ export type NumberFieldArgs = {
   onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
   onKeyDown?: (event: { key: string }) => void;
   size?: "small" | "medium";
+  slotProps?: TextFieldProps["slotProps"];
+  sx?: TextFieldProps["sx"];
   variant?: "filled" | "outlined" | "standard";
   ariaLabel?: string;
   className?: string;
@@ -62,10 +44,10 @@ export default function NumberField({
   placeholder,
   error = false,
   helperText = null,
-  inputProps = {},
   noValueLabel,
   datatestid,
   ariaLabel,
+  slotProps,
   ...props
 }: NumberFieldArgs): React.ReactNode {
   return disabled && value === "" ? (
@@ -79,16 +61,6 @@ export default function NumberField({
       placeholder={placeholder}
       helperText={helperText}
       value={value}
-      inputProps={{
-        /*
-         * This has to be text because "decimal" and "numeric" do not guarantee
-         * a minus key, and most of numerical field support negative values.
-         */
-        inputMode: "text",
-        lang: "en", // force dot in decimal numbers in compatible browsers
-        ["aria-label"]: ariaLabel,
-        ...inputProps,
-      }}
       {...props}
       variant={props.variant ?? "standard"}
       onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,6 +76,18 @@ export default function NumberField({
         props.onChange?.(e);
       }}
       onChange={() => {}}
-    />
+      slotProps={{
+        ...slotProps,
+        htmlInput: {
+          /*
+           * This has to be text because "decimal" and "numeric" do not guarantee
+           * a minus key, and most of numerical field support negative values.
+           */
+          inputMode: "text",
+          lang: "en", // force dot in decimal numbers in compatible browsers
+          ["aria-label"]: ariaLabel,
+          ...slotProps?.htmlInput,
+        },
+      }} />
   );
 }

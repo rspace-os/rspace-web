@@ -70,7 +70,7 @@ function SummaryInfo({
     return <NoValue label="No Template" />;
   }
   return (
-    <Box my={1.5}>
+    <Box sx={{ my: 1.5 }}>
       <NoValue label="No Template" />
     </Box>
   );

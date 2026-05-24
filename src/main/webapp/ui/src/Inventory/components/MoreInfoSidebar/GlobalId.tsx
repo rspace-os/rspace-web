@@ -12,7 +12,7 @@ type GlobalIdArgs = {
 
 function GlobalId({ record }: GlobalIdArgs): React.ReactNode {
   return (
-    <Grid item>
+    <Grid>
       <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
         <FormLabel component="legend">Global ID</FormLabel>
         <GlobalIdLink record={record} />

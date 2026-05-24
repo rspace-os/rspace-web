@@ -2,10 +2,10 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 import NoValue from "../../components/NoValue";
 import { isValidDate } from "../../util/Util";
-import TextField from "@mui/material/TextField";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { parseISO } from "date-fns";
 import { enGB } from "date-fns/locale";
 
 export type DateFieldArgs = {
@@ -51,6 +51,7 @@ function DateField({
   id,
 }: DateFieldArgs): React.ReactNode {
   const error = !(!value || isValidDate(value));
+  const parsedValue = value && isValidDate(value) ? parseISO(value) : null;
 
   return disabled && !value ? (
     <NoValue label={noValueLabel ?? "None"} />
@@ -59,28 +60,22 @@ function DateField({
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>
         <DatePicker
           label={label}
-          value={value}
+          value={parsedValue}
           onChange={(newValue) => {
             onChange?.({ target: { value: newValue } });
           }}
-          // @ts-expect-error It's not documents, but inputProps.placeholder does work
-          inputProps={{
-            placeholder: placeholder ?? "",
-          }}
-          inputFormat="yyyy-MM-dd"
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              variant={variant}
-              error={error}
-              helperText={error ? "Invalid date." : ""}
-              style={{
+          format="yyyy-MM-dd"
+          slotProps={{
+            textField: {
+              variant,
+              error,
+              helperText: error ? "Invalid date." : "",
+              style: {
                 maxWidth: disableWidthLimit ? "initial" : "10em",
-              }}
-              data-test-id={datatestid}
-              id={id}
-            />
-          )}
+              },
+              id,
+            },
+          }}
           disabled={disabled}
           minDate={minDate}
           maxDate={maxDate}

@@ -77,7 +77,7 @@ const AddButton = ({
             DATAVERSE_ALIAS: "",
             DATAVERSE_APIKEY: "",
             DATAVERSE_URL: "",
-          })
+          }),
         );
       }}
     >
@@ -123,14 +123,14 @@ const DialogContent = observer(
             DATAVERSE_ALIAS: config.DATAVERSE_ALIAS,
             DATAVERSE_URL: config.DATAVERSE_URL,
             DATAVERSE_APIKEY: config.DATAVERSE_APIKEY,
-          }
+          },
         );
         runInAction(() => {
           integrationState.credentials = newState.credentials;
           ArrayUtils.all(newState.credentials)
             .map((newCreds) => {
               const indexOfNewConfig = newCreds.findIndex(
-                (c) => c.optionsId === config.optionsId
+                (c) => c.optionsId === config.optionsId,
               );
               if (indexOfNewConfig === -1)
                 throw new Error("Save completed but cannot show results.");
@@ -141,7 +141,7 @@ const DialogContent = observer(
                 observable({
                   ...newCreds[indexOfNewConfig],
                   dirty: false,
-                })
+                }),
               );
             })
             .orElseGet(() => {
@@ -152,7 +152,7 @@ const DialogContent = observer(
           mkAlert({
             variant: "success",
             message: "Successfully saved Dataverse details.",
-          })
+          }),
         );
       } catch (e) {
         if (e instanceof Error)
@@ -161,7 +161,7 @@ const DialogContent = observer(
               variant: "error",
               title: "Error saving Dataverse configuration.",
               message: e.message,
-            })
+            }),
           );
       }
     }
@@ -176,17 +176,17 @@ const DialogContent = observer(
         runInAction(() => {
           integrationState.credentials = newState.credentials;
           const optionIdsOfExistingConfigs = new RsSet(
-            copyOfState.credentials.map(({ optionsId }) => optionsId)
+            copyOfState.credentials.map(({ optionsId }) => optionsId),
           );
           try {
             const newlySavedConfig = new RsSet(newState.credentials)
               .mapOptional((x) => x)
               .subtractMap(
                 ({ optionsId }) => optionsId,
-                optionIdsOfExistingConfigs
+                optionIdsOfExistingConfigs,
               ).first;
             copyOfState.credentials.push(
-              observable({ ...newlySavedConfig, dirty: false })
+              observable({ ...newlySavedConfig, dirty: false }),
             );
           } catch (e) {
             throw new Error("Save completed but cannot show results.");
@@ -197,7 +197,7 @@ const DialogContent = observer(
           mkAlert({
             variant: "success",
             message: "Successfully saved Dataverse details",
-          })
+          }),
         );
       } catch (e) {
         if (e instanceof Error)
@@ -206,17 +206,17 @@ const DialogContent = observer(
               variant: "error",
               title: "Could not save Dataverse details",
               message: e.message,
-            })
+            }),
           );
       }
     }
 
     return (
       <>
-        <Grid container direction="column" spacing={1} sx={{ mt: 1 }}>
-          <Grid item container direction="column" spacing={1}>
+        <Grid container spacing={1} sx={{ flexDirection: "column", mt: 1 }}>
+          <Grid container sx={{ flexDirection: "column" }} spacing={1}>
             {observableConfigs.map((config, i) => (
-              <Grid item key={i}>
+              <Grid key={i}>
                 <Card variant="outlined">
                   <form
                     onSubmit={(event) => {
@@ -226,8 +226,12 @@ const DialogContent = observer(
                     aria-label={`Configured Dataverse with name ${config.DATAVERSE_ALIAS}`}
                   >
                     <CardContent>
-                      <Grid container direction="column" spacing={2}>
-                        <Grid item>
+                      <Grid
+                        container
+                        sx={{ flexDirection: "column" }}
+                        spacing={2}
+                      >
+                        <Grid>
                           <TextField
                             fullWidth
                             value={config.DATAVERSE_ALIAS}
@@ -245,7 +249,7 @@ const DialogContent = observer(
                             }
                           />
                         </Grid>
-                        <Grid item>
+                        <Grid>
                           <TextField
                             fullWidth
                             value={config.DATAVERSE_URL}
@@ -262,7 +266,7 @@ const DialogContent = observer(
                             }
                           />
                         </Grid>
-                        <Grid item>
+                        <Grid>
                           <TextField
                             fullWidth
                             value={config.DATAVERSE_APIKEY}
@@ -289,23 +293,23 @@ const DialogContent = observer(
                           try {
                             await deleteAppOptions(
                               "DATAVERSE",
-                              config.optionsId
+                              config.optionsId,
                             );
                             runInAction(() => {
                               const deletedIndex = observableConfigs.findIndex(
-                                (c) => c === config
+                                (c) => c === config,
                               );
                               observableConfigs.splice(deletedIndex, 1);
                               integrationState.credentials.splice(
                                 deletedIndex,
-                                1
+                                1,
                               );
                             });
                             addAlert(
                               mkAlert({
                                 variant: "success",
                                 message: "Successfully deleted configuration.",
-                              })
+                              }),
                             );
                           } catch (e) {
                             if (e instanceof Error)
@@ -314,7 +318,7 @@ const DialogContent = observer(
                                   variant: "error",
                                   title: "Could not delete configuration.",
                                   message: e.message,
-                                })
+                                }),
                               );
                           }
                         })}
@@ -330,7 +334,7 @@ const DialogContent = observer(
                               mkAlert({
                                 variant: "success",
                                 message: "Connection details are valid.",
-                              })
+                              }),
                             );
                           } catch (e) {
                             if (e instanceof Error)
@@ -339,7 +343,7 @@ const DialogContent = observer(
                                   variant: "error",
                                   title: "Connection details are not valid.",
                                   message: e.message,
-                                })
+                                }),
                               );
                           }
                         })}
@@ -362,7 +366,7 @@ const DialogContent = observer(
               </Grid>
             ))}
             {newConfig && (
-              <Grid item key={null}>
+              <Grid key={null}>
                 <Card variant="outlined">
                   <form
                     onSubmit={(event) => {
@@ -371,8 +375,12 @@ const DialogContent = observer(
                     }}
                   >
                     <CardContent>
-                      <Grid container direction="column" spacing={2}>
-                        <Grid item>
+                      <Grid
+                        container
+                        sx={{ flexDirection: "column" }}
+                        spacing={2}
+                      >
+                        <Grid>
                           <TextField
                             fullWidth
                             value={newConfig.DATAVERSE_ALIAS}
@@ -389,7 +397,7 @@ const DialogContent = observer(
                             }
                           />
                         </Grid>
-                        <Grid item>
+                        <Grid>
                           <TextField
                             fullWidth
                             value={newConfig.DATAVERSE_URL}
@@ -406,7 +414,7 @@ const DialogContent = observer(
                             }
                           />
                         </Grid>
-                        <Grid item>
+                        <Grid>
                           <TextField
                             fullWidth
                             value={newConfig.DATAVERSE_APIKEY}
@@ -460,18 +468,18 @@ const DialogContent = observer(
               </Grid>
             )}
           </Grid>
-          <Grid item>
+          <Grid>
             <Grid container direction="row" spacing={1}>
-              <Grid item>
+              <Grid>
                 <AddButton newConfig={newConfig} setNewConfig={setNewConfig} />
               </Grid>
-              <Grid item></Grid>
+              <Grid></Grid>
             </Grid>
           </Grid>
         </Grid>
       </>
     );
-  }
+  },
 );
 
 type DataverseArgs = {
@@ -494,7 +502,13 @@ function Dataverse({
   update,
 }: DataverseArgs): React.ReactNode {
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Dataverse"
         explanatoryText="Explore, analyse, and share data through an open-source research data repository software."
@@ -533,7 +547,7 @@ function Dataverse({
                 />
               ))
               .orElse(
-                <>There was an error getting the configured Dataverses.</>
+                <>There was an error getting the configured Dataverses.</>,
               )}
           </>
         }

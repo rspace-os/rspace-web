@@ -26,7 +26,7 @@ const MoveSubmitButton = observer(
         label="Move"
       />
     );
-  }
+  },
 );
 
 const CancelButton = observer(({ onClick }: { onClick: () => void }) => {
@@ -84,9 +84,9 @@ function Actions({
       />
     </>
   ) : (
-    <Grid container direction="column" spacing={1}>
+    <Grid container sx={{ flexDirection: "column" }} spacing={1}>
       {activeStep === "left" && (
-        <Grid item>
+        <Grid>
           <TopLevelButton onClose={handleClose} />
         </Grid>
       )}

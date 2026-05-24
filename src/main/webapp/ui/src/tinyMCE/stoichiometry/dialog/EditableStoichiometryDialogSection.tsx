@@ -51,24 +51,18 @@ export default function EditableStoichiometryDialogSection({
   const { trackEvent } = React.useContext(AnalyticsContext);
   const confirm = useConfirm();
   const [mutationError, setMutationError] = React.useState<string | null>(null);
-  const {
-    hasChanges,
-    isBusy,
-    isSaving,
-    save,
-    deleteTable,
-    tableController,
-  } = useEditableStoichiometryTable({
-    stoichiometryId: currentStoichiometry.id,
-    stoichiometryRevision: currentStoichiometry.revision,
-    activeChemId: chemId,
-    onStoichiometryRefreshed: (
-      refreshedStoichiometry: RefreshedStoichiometry,
-    ) => {
-      setCurrentStoichiometry(refreshedStoichiometry);
-      onSave?.(refreshedStoichiometry.id, refreshedStoichiometry.revision);
-    },
-  });
+  const { hasChanges, isBusy, isSaving, save, deleteTable, tableController } =
+    useEditableStoichiometryTable({
+      stoichiometryId: currentStoichiometry.id,
+      stoichiometryRevision: currentStoichiometry.revision,
+      activeChemId: chemId,
+      onStoichiometryRefreshed: (
+        refreshedStoichiometry: RefreshedStoichiometry,
+      ) => {
+        setCurrentStoichiometry(refreshedStoichiometry);
+        onSave?.(refreshedStoichiometry.id, refreshedStoichiometry.revision);
+      },
+    });
 
   const handleClose = React.useCallback(async () => {
     if (isBusy) {
@@ -159,7 +153,7 @@ export default function EditableStoichiometryDialogSection({
   return (
     <StoichiometryTableControllerProvider value={tableController}>
       <DialogContent>
-        <Stack spacing={2} flexWrap="nowrap">
+        <Stack spacing={2} sx={{ flexWrap: "nowrap" }}>
           <Box>
             <Typography variant="body2">
               Double-click to edit Equivalent, Mass, Moles, Actual Mass, Actual

@@ -38,7 +38,7 @@ function TemplateDetails(): ReactNode {
         control={<Radio color="primary" />}
         label="Create new template."
       />
-      <Box ml={4} mb={4} mt={1}>
+      <Box sx={{ ml: 4, mb: 4, mt: 1 }}>
         <FormControl component="fieldset" fullWidth>
           <FormGroup style={{ maxWidth: 660 }}>
             <TemplateName
@@ -52,9 +52,9 @@ function TemplateDetails(): ReactNode {
         control={<Radio color="primary" />}
         label="Choose existing template."
       />
-      <Box ml={4}>
+      <Box sx={{ ml: 4 }}>
         <SummaryInfo template={importStore.importData?.template ?? null} />
-        <Box mb={1}>
+        <Box sx={{ mb: 1 }}>
           <Divider />
         </Box>
         <TemplatePicker

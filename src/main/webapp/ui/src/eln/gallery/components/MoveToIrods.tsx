@@ -1,5 +1,5 @@
 import React from "react";
-import { ThemeProvider, styled } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
 import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
@@ -20,7 +20,6 @@ import List from "@mui/material/List";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ChoiceField from "../../../components/Inputs/ChoiceField";
 import TextField from "@mui/material/TextField";
-import { withStyles } from "Styles";
 import Stack from "@mui/material/Stack";
 import useIrods, { type IrodsLocation } from "./useIrods";
 import Alert from "@mui/material/Alert";
@@ -32,56 +31,36 @@ import docLinks from "../../../assets/DocLinks";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
 
-const CustomDialog = styled(Dialog)(() => ({
-  "& .MuiDialog-container > .MuiPaper-root": {
-    width: "530px",
-    maxWidth: "530px",
-    height: "calc(90% - 32px)", // 16px margin above and below dialog
-  },
-  "& .MuiDialogContent-root": {
-    height: "calc(100% - 48px)", // 32px being the height of DialogActions + its own 16px of padding
-    overflowY: "auto",
-    paddingBottom: 0,
-  },
-  "& form": {
-    height: "100%",
-  },
-}));
-
-const CustomFieldset = withStyles<
-  { children: React.ReactNode },
-  { root: string }
->((theme) => ({
-  root: {
-    border: theme.borders.card,
-    margin: 0,
-    borderRadius: theme.spacing(0.5),
-    padding: theme.spacing(2),
-    paddingTop: theme.spacing(0.5),
-    "& > legend": {
-      padding: theme.spacing(0.25, 1),
-      fontWeight: 700,
-      fontSize: "1rem",
-      letterSpacing: "0.02em",
-      color: "#3b5958",
-    },
-    "& label": {
-      fontSize: "0.9rem",
-      letterSpacing: "0.03em",
-    },
-    "& input": {
-      padding: theme.spacing(1),
-    },
-  },
-}))(
-  ({
-    classes,
-    children,
-  }: {
-    children: React.ReactNode;
-    classes: { root: string };
-  }) => <fieldset className={classes.root}>{children}</fieldset>,
-);
+function CustomFieldset({ children }: { children: React.ReactNode }): React.ReactNode {
+  return (
+    <Box
+      component="fieldset"
+      sx={(theme) => ({
+        border: theme.borders.card,
+        margin: 0,
+        borderRadius: theme.spacing(0.5),
+        padding: theme.spacing(2),
+        paddingTop: theme.spacing(0.5),
+        "& > legend": {
+          padding: theme.spacing(0.25, 1),
+          fontWeight: 700,
+          fontSize: "1rem",
+          letterSpacing: "0.02em",
+          color: "#3b5958",
+        },
+        "& label": {
+          fontSize: "0.9rem",
+          letterSpacing: "0.03em",
+        },
+        "& input": {
+          padding: theme.spacing(1),
+        },
+      })}
+    >
+      {children}
+    </Box>
+  );
+}
 
 const ErrorAlert = ({ message }: { message: string }) => {
   if (message === "No iRODS filestore configured")
@@ -202,11 +181,26 @@ function MoveCopyDialog({
   };
 
   return (
-    <CustomDialog
+    <Dialog
       open={dialogOpen}
       onClose={() => setDialogOpen(false)}
       onKeyDown={(e) => {
         e.stopPropagation();
+      }}
+      sx={{
+        "& .MuiDialog-container > .MuiPaper-root": {
+          width: "530px",
+          maxWidth: "530px",
+          height: "calc(90% - 32px)",
+        },
+        "& .MuiDialogContent-root": {
+          height: "calc(100% - 48px)",
+          overflowY: "auto",
+          paddingBottom: 0,
+        },
+        "& form": {
+          height: "100%",
+        },
       }}
     >
       <AppBar
@@ -234,20 +228,23 @@ function MoveCopyDialog({
           <DialogContent>
             <Grid
               container
-              direction="column"
               spacing={2}
-              sx={{ height: "100%", flexWrap: "nowrap" }}
+              sx={{
+                flexDirection: "column",
+                height: "100%",
+                flexWrap: "nowrap",
+              }}
             >
               {FetchingData.match(irods, {
                 loading: () => <></>,
                 error: (errorMsg) => (
-                  <Grid item>
+                  <Grid>
                     <ErrorAlert message={errorMsg} />
                   </Grid>
                 ),
                 success: ({ serverUrl, configuredLocations }) => (
                   <>
-                    <Grid item>
+                    <Grid>
                       <Typography variant="body2">
                         You have selected {selectedIds.length} item
                         {selectedIds.length > 1 && "s"} to move to the iRODS
@@ -261,7 +258,7 @@ function MoveCopyDialog({
                         into any exports through our iRODS integration.
                       </Typography>
                     </Grid>
-                    <Grid item>
+                    <Grid>
                       <ChoiceField
                         name="keep"
                         value={keepCopyInRspace ? ["keep"] : []}
@@ -276,7 +273,7 @@ function MoveCopyDialog({
                         ]}
                       />
                     </Grid>
-                    <Grid item>
+                    <Grid>
                       <FormField
                         label="Destination in iRODS"
                         explanation="The available folders are configured in the Gallery's filestore section."
@@ -329,7 +326,7 @@ function MoveCopyDialog({
                       />
                     </Grid>
                     {showUsernamePasswordForm && (
-                      <Grid item>
+                      <Grid>
                         <CustomFieldset>
                           <legend>iRODS login</legend>
                           <Stack spacing={1}>
@@ -390,7 +387,7 @@ function MoveCopyDialog({
           </DialogActions>
         </Box>
       </Box>
-    </CustomDialog>
+    </Dialog>
   );
 }
 

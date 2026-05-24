@@ -7,7 +7,6 @@ export type StringFieldArgs = {
   autoFocus?: boolean;
   disabled?: boolean;
   error?: boolean;
-  InputProps?: TextFieldProps["InputProps"];
   name?: string;
   noValueLabel?: string | null | undefined;
   onBlur?: () => void;
@@ -15,6 +14,7 @@ export type StringFieldArgs = {
   onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   size?: "small" | "medium";
+  slotProps?: TextFieldProps["slotProps"];
   variant?: "filled" | "outlined" | "standard";
   minLength?: number;
   "data-testid"?: string;
@@ -26,13 +26,13 @@ export default function StringField({
   value,
   disabled = false,
   error,
-  InputProps,
   name,
   noValueLabel,
   onBlur,
   onChange,
   onFocus,
   onKeyDown,
+  slotProps,
   variant = disabled ? "standard" : "outlined",
   ...props
 }: StringFieldArgs): React.ReactNode {
@@ -50,8 +50,8 @@ export default function StringField({
       onFocus={onFocus}
       onKeyDown={onKeyDown}
       error={error}
-      InputProps={InputProps}
       {...props}
+      slotProps={slotProps}
     />
   );
 }

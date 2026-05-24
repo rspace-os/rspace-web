@@ -94,14 +94,14 @@ export function StoichiometryPreviewSection({
           >
             {FetchingData.match(chemistryStatus, {
               loading: () => (
-                <Box p={2}>
+                <Box sx={{ p: 2 }}>
                   <Alert severity="info">
                     Checking chemistry integration status...
                   </Alert>
                 </Box>
               ),
               error: (error) => (
-                <Box p={2}>
+                <Box sx={{ p: 2 }}>
                   <Alert severity="error">
                     Error checking chemistry integration: {String(error)}
                   </Alert>
@@ -114,7 +114,7 @@ export function StoichiometryPreviewSection({
                     stoichiometryRevision={stoichiometryRevision}
                   />
                 ) : (
-                  <Box p={2}>
+                  <Box sx={{ p: 2 }}>
                     <Alert severity="warning">
                       Chemistry integration is not enabled. Please contact your
                       administrator to enable it.
@@ -164,11 +164,7 @@ function PreviewInfoFrame({
   );
 }
 
-export default function PreviewInfo({
-  item,
-}: {
-  item: PreviewInfoItem;
-}) {
+export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
   const stoichiometryReference = getStoichiometryReference(
     item["data-stoichiometry-table"],
   );
@@ -268,17 +264,18 @@ function handleDocumentPlaced(event: Event & { detail?: string | number }) {
 function handleChemUpdated(event: Event & { detail?: string | number }) {
   const selector = event.detail ? `#div_${event.detail} img.chem` : "img.chem";
 
-  document.querySelectorAll<HTMLImageElement>(selector).forEach((domContainer) => {
-    const span = domContainer.closest("span");
-    if (!span) {
-      return;
-    }
+  document
+    .querySelectorAll<HTMLImageElement>(selector)
+    .forEach((domContainer) => {
+      const span = domContainer.closest("span");
+      if (!span) {
+        return;
+      }
 
-    render(getAttributes(domContainer), span);
-  });
+      render(getAttributes(domContainer), span);
+    });
 }
 
 document.addEventListener("document-placed", handleDocumentPlaced);
 
 document.addEventListener("chem-updated", handleChemUpdated);
-

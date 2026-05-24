@@ -3,6 +3,7 @@
 import GlobalId from "../../components/GlobalId";
 import NameWithBadge from "../../Inventory/components/NameWithBadge";
 import React, { useState, useEffect } from "react";
+import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -10,13 +11,10 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
-import clsx from "clsx";
 import {
   Material,
   type ListOfMaterials,
 } from "../../stores/models/MaterialsModel";
-import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import ClearIcon from "@mui/icons-material/Clear";
 import RecordLocation from "../../Inventory/components/RecordLocation";
@@ -28,160 +26,86 @@ import Checkbox from "@mui/material/Checkbox";
 import UsedQuantityField from "./UsedQuantityField";
 import SubSampleModel from "../../stores/models/SubSampleModel";
 import { hasQuantity } from "../../stores/models/HasQuantity";
-
-const NameCell = withStyles<
-  { material: Material },
-  { withBadge: string; withoutBadge: string }
->(() => ({
-  withBadge: {
-    "@media print": {
-      display: "none",
-    },
-  },
-  withoutBadge: {
-    "@media print": {
-      display: "block",
-    },
-    display: "none",
-  },
-}))(({ classes, material }) => (
-  <>
-    <div className={classes.withBadge}>
-      <NameWithBadge record={material.invRec} />
-    </div>
-    <div className={classes.withoutBadge}>{material.invRec.name}</div>
-  </>
-));
-
-const useStyles = makeStyles()((theme) => ({
-  bottomBorder: { borderBottom: `1px dotted ${theme.palette.primary.main}` },
-  columnWrapper: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  containerWrapper: { overflowX: "hidden", overflowY: "hidden" },
-  fullWidth: { width: "100%" },
-  relativeAnchor: { position: "relative" },
-  textField: {
-    marginLeft: theme.spacing(1),
-    marginRight: theme.spacing(1),
-    fontWeight: "normal",
-    display: "flex",
-  },
-  primary: { color: theme.palette.primary.main },
-  modifiedHighlight: { color: theme.palette.modifiedHighlight },
-  warningRed: { color: theme.palette.warningRed },
-
-  /* responsive styling */
-  tableRowCell: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderBottomWidth: "0px",
-    alignItems: "center",
-    "@media print": {
-      padding: theme.spacing(0.5),
-    },
-  },
-  tableRowCellDesktop: {
-    width: "47%",
-  },
-  tableRowCellMobile: {
-    width: "94%",
-  },
-  tableRow: {
-    width: "100%",
-    display: "flex",
-  },
-  tableRowDesktop: {
-    flexDirection: "row",
-  },
-  tableRowMobile: {
-    flexDirection: "column",
-  },
-  spacedSubCell: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  centeredText: {
-    textAlign: "center",
-  },
-
-  removeIcon: {
-    color: theme.palette.warningRed,
-    paddingLeft: theme.spacing(0.5),
-    paddingRight: theme.spacing(0.75),
-    "@media print": {
-      display: "none",
-    },
-  },
-}));
-
-const colorCodedQuantity = (material: Material, list: ListOfMaterials) => {
-  const { classes } = useStyles();
-  return clsx(
-    material.editing && (!material.enoughLeft || !list.validAdditionalAmount)
-      ? classes.warningRed
-      : material.editing && material.usedQuantityChanged
-        ? classes.modifiedHighlight
-        : material.editing
-          ? classes.primary
-          : "",
+import { useTheme } from "@mui/material/styles";
+function NameCell({ material }: { material: Material }): React.ReactNode {
+  return (
+    <>
+      <Box sx={{ "@media print": { display: "none" } }}>
+        <NameWithBadge record={material.invRec} />
+      </Box>
+      <Box sx={{ display: "none", "@media print": { display: "block" } }}>
+        {material.invRec.name}
+      </Box>
+    </>
   );
-};
-
+}
+const colorCodedQuantity = (
+  material: Material,
+  list: ListOfMaterials,
+  colors: { warningRed: string; modifiedHighlight: string; primary: string },
+): string =>
+  material.editing && (!material.enoughLeft || !list.validAdditionalAmount)
+    ? colors.warningRed
+    : material.editing && material.usedQuantityChanged
+      ? colors.modifiedHighlight
+      : material.editing
+        ? colors.primary
+        : "";
 type BodyRowArgs = {
   material: Material;
 };
-
 type TableArgs = {
   list: ListOfMaterials;
   isSingleColumn: boolean;
   onRemove?: (material: Material) => void;
   canEdit: boolean;
 };
-
-const TableSubCell = withStyles<
-  {
-    flex: number;
-    className?: string;
-    children: React.ReactNode;
-    datatestid?: string;
-  },
-  {
-    root: string;
-  }
->(() => ({
-  root: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-}))(({ flex, children, className, classes, datatestid }) => (
-  <span
-    className={clsx(className, classes.root)}
-    style={{ flex }}
-    data-test-id={datatestid}
-  >
-    {children}
-  </span>
-));
-
+function TableSubCell({
+  flex,
+  children,
+  className,
+  style,
+  datatestid,
+}: {
+  flex: number;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+  datatestid?: string;
+}): React.ReactNode {
+  return (
+    <span
+      className={className}
+      style={{
+        flex,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        ...style,
+      }}
+      data-test-id={datatestid}
+    >
+      {children}
+    </span>
+  );
+}
 function MaterialsTable({
   list,
   isSingleColumn,
   onRemove,
   canEdit,
 }: TableArgs): React.ReactNode {
-  const { classes } = useStyles();
+  const theme = useTheme();
+  const quantityColors = {
+    warningRed: theme.palette.warningRed,
+    modifiedHighlight: theme.palette.modifiedHighlight,
+    primary: theme.palette.primary.main,
+  };
   const editingMode = list.editingMode;
   const materials = list.materials;
   const editableMaterials = materials.filter(
     (m) => m.invRec instanceof SubSampleModel,
   );
-
   const afterToggleUpdates = (material: Material) => {
     if (material.selected) {
       material.setEditing(true, false);
@@ -198,12 +122,10 @@ function MaterialsTable({
       }
     }
   };
-
   const handleSelect = (material: Material) => {
     material.toggleSelected();
     afterToggleUpdates(material);
   };
-
   useEffect(() => {
     /* on mixed selected categories: prevent values from being updated (and units disappearing) */
     if (list.mixedSelectedCategories) {
@@ -215,7 +137,6 @@ function MaterialsTable({
       list.selectedMaterials.forEach((m) => m.setEditing(true, false));
     }
   }, [list.mixedSelectedCategories]);
-
   const multipleSelectOptions = [
     {
       name: "None",
@@ -236,49 +157,72 @@ function MaterialsTable({
       handler: () => editableMaterials.forEach((m) => handleSelect(m)),
     },
   ];
+  const tableRowCellSx = {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderBottomWidth: "0px",
+    alignItems: "center",
+    "@media print": {
+      padding: theme.spacing(0.5),
+    },
+    width: isSingleColumn ? "94%" : "47%",
+  } as const;
 
   const ResponsiveMaterialsHeaderRow = observer(() => {
     const [selectOption, setSelectOption] = useState("None");
     return (
       <TableRow
-        className={clsx(
-          classes.tableRow,
-          isSingleColumn ? classes.tableRowMobile : classes.tableRowDesktop,
-        )}
+        sx={{
+          width: "100%",
+          display: "flex",
+          flexDirection: isSingleColumn ? "column" : "row",
+        }}
       >
-        <TableCell
-          className={clsx(
-            classes.tableRowCell,
-            isSingleColumn
-              ? classes.tableRowCellMobile
-              : classes.tableRowCellDesktop,
-          )}
-        >
-          <span style={{ flex: 5 }}>Name</span>
+        <TableCell sx={tableRowCellSx}>
+          <span
+            style={{
+              flex: 5,
+            }}
+          >
+            Name
+          </span>
           <Tooltip title="For subsamples only" enterDelay={200}>
-            <span style={{ flex: 2 }} className={classes.centeredText}>
+            <span
+              style={{
+                flex: 2,
+                textAlign: "center",
+              }}
+            >
               Consumed Quantity
             </span>
           </Tooltip>
-          <span style={{ flex: 2 }} className={classes.centeredText}>
+          <span
+            style={{
+              flex: 2,
+              textAlign: "center",
+            }}
+          >
             Inventory Quantity
           </span>
         </TableCell>
         {editingMode ? (
-          <TableCell
-            className={clsx(
-              classes.tableRowCell,
-              isSingleColumn
-                ? classes.tableRowCellMobile
-                : classes.tableRowCellDesktop,
-            )}
-          >
-            <div style={{ flex: 3 }} className={classes.columnWrapper}>
-              <span className={clsx(!isSingleColumn && classes.centeredText)}>
+          <TableCell sx={tableRowCellSx}>
+            <div
+              style={{
+                flex: 3,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <span style={!isSingleColumn ? { textAlign: "center" } : undefined}>
                 Batch Edit
               </span>
               <Select
-                sx={{ width: "75px" }}
+                sx={{
+                  width: "75px",
+                }}
                 id="quantity-editor-selector"
                 value={selectOption}
                 onChange={({ target: { value } }) => setSelectOption(value)}
@@ -295,32 +239,47 @@ function MaterialsTable({
                 ))}
               </Select>
             </div>
-            <span style={{ flex: 4 }} className={classes.centeredText}>
+            <span
+              style={{
+                flex: 4,
+                textAlign: "center",
+              }}
+            >
               Additional Consumed Quantity
             </span>
-            <span style={{ flex: 3 }} className={classes.centeredText}>
+            <span
+              style={{
+                flex: 3,
+                textAlign: "center",
+              }}
+            >
               Update Inventory Quantity
             </span>
           </TableCell>
         ) : (
-          <TableCell
-            className={clsx(
-              classes.tableRowCell,
-              isSingleColumn
-                ? classes.tableRowCellMobile
-                : classes.tableRowCellDesktop,
-            )}
-          >
+          <TableCell sx={tableRowCellSx}>
             <span
-              style={{ flex: 5 }}
-              className={clsx(!isSingleColumn && classes.centeredText)}
+              style={{
+                flex: 5,
+                ...(!isSingleColumn ? { textAlign: "center" } : {}),
+              }}
             >
               Location
             </span>
-            <span style={{ flex: 2 }} className={classes.centeredText}>
+            <span
+              style={{
+                flex: 2,
+                textAlign: "center",
+              }}
+            >
               Global ID
             </span>
-            <span style={{ flex: 2 }} className={classes.centeredText}>
+            <span
+              style={{
+                flex: 2,
+                textAlign: "center",
+              }}
+            >
               Owner
             </span>
           </TableCell>
@@ -328,31 +287,26 @@ function MaterialsTable({
       </TableRow>
     );
   });
-
   const CustomTableCell = observer(
     ({
-      className,
       children,
+      relative,
     }: {
-      className?: string;
       children: React.ReactNode;
+      relative?: boolean;
     }) => {
       return (
         <TableCell
-          className={clsx(
-            className,
-            classes.tableRowCell,
-            isSingleColumn
-              ? classes.tableRowCellMobile
-              : classes.tableRowCellDesktop,
-          )}
+          sx={{
+            ...tableRowCellSx,
+            ...(relative ? { position: "relative" } : {}),
+          }}
         >
           {children}
         </TableCell>
       );
     },
   );
-
   const ResponsiveMaterialsRow = observer(({ material }: BodyRowArgs) => {
     const record = material.invRec;
     if (!record.globalId) throw new Error("Item Global ID must be known");
@@ -367,25 +321,37 @@ function MaterialsTable({
         return false;
       })
       .orElse(false);
-
     return (
       <TableRow
         data-test-id={`material-row-${globalId}`}
-        className={clsx(
-          classes.bottomBorder,
-          classes.tableRow,
-          isSingleColumn ? classes.tableRowMobile : classes.tableRowDesktop,
-        )}
+        sx={(theme) => ({
+          borderBottom: `1px dotted ${theme.palette.primary.main}`,
+          width: "100%",
+          display: "flex",
+          flexDirection: isSingleColumn ? "column" : "row",
+        })}
       >
         <CustomTableCell>
-          <span style={{ flex: 5 }} className={classes.spacedSubCell}>
+          <span
+            style={{
+              flex: 5,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <NameCell material={material} />
             {onRemove && (
               <IconButtonWithTooltip
                 title="Remove from list"
                 icon={<ClearIcon />}
                 size="small"
-                className={classes.removeIcon}
+                sx={{
+                  color: theme.palette.warningRed,
+                  paddingLeft: theme.spacing(0.5),
+                  paddingRight: theme.spacing(0.75),
+                  "@media print": { display: "none" },
+                }}
                 onClick={() => onRemove(material)}
                 disabled={!canEdit}
               />
@@ -393,15 +359,15 @@ function MaterialsTable({
           </span>
           <TableSubCell
             flex={2}
-            className={colorCodedQuantity(material, list)}
             datatestid={`material-used-quantity-${globalId}`}
+            style={{ color: colorCodedQuantity(material, list, quantityColors) }}
           >
             {material.usedQuantity ? material.usedQuantityLabel : <>&mdash;</>}
           </TableSubCell>
           <TableSubCell
             datatestid={`material-inventory-quantity-${globalId}`}
             flex={2}
-            className={colorCodedQuantity(material, list)}
+            style={{ color: colorCodedQuantity(material, list, quantityColors) }}
           >
             {hasQuantity(record).isEmpty() || noQuantitySample ? (
               <>&mdash;</>
@@ -411,7 +377,7 @@ function MaterialsTable({
           </TableSubCell>
         </CustomTableCell>
         {editingMode && material.canEditQuantity ? (
-          <CustomTableCell className={classes.relativeAnchor}>
+          <CustomTableCell relative>
             <TableSubCell flex={3}>
               <Checkbox
                 color="primary"
@@ -424,7 +390,7 @@ function MaterialsTable({
             <TableSubCell flex={4}>
               <UsedQuantityField material={material} list={list} />
             </TableSubCell>
-            <TableSubCell className={classes.primary} flex={3}>
+            <TableSubCell style={{ color: theme.palette.primary.main }} flex={3}>
               <Checkbox
                 color="primary"
                 onChange={() => {
@@ -434,31 +400,35 @@ function MaterialsTable({
                 value={material.updateInventoryQuantity}
                 checked={material.updateInventoryQuantity ?? undefined}
                 disabled={!material.selected || list.mixedSelectedCategories}
-                inputProps={{ "aria-label": "Linked quantities" }}
+                slotProps={{
+                  input: {
+                    "aria-label": "Linked quantities",
+                  },
+                }}
               />
             </TableSubCell>
           </CustomTableCell>
         ) : editingMode ? (
-          <CustomTableCell className={classes.relativeAnchor}>
+          <CustomTableCell relative>
             <TableSubCell flex={3}>
               <Checkbox disabled={true} />
             </TableSubCell>
             <TableSubCell flex={4}>
               <>&mdash;</>
             </TableSubCell>
-            <TableSubCell className={classes.primary} flex={3}>
+            <TableSubCell style={{ color: theme.palette.primary.main }} flex={3}>
               <>&mdash;</>
             </TableSubCell>
           </CustomTableCell>
         ) : (
-          <CustomTableCell className={classes.relativeAnchor}>
+          <CustomTableCell relative>
             <TableSubCell flex={5}>
               <RecordLocation record={record} />
             </TableSubCell>
             <TableSubCell flex={2}>
               <GlobalId record={record} />
             </TableSubCell>
-            <TableSubCell className={classes.primary} flex={2}>
+            <TableSubCell style={{ color: theme.palette.primary.main }} flex={2}>
               {record.owner ? (
                 <UserDetails
                   userId={record.owner.id}
@@ -474,14 +444,13 @@ function MaterialsTable({
       </TableRow>
     );
   });
-
   return (
-    <TableContainer className={classes.containerWrapper}>
+    <TableContainer sx={{ overflowX: "hidden", overflowY: "hidden" }}>
       <Table size="small">
-        <TableHead className={classes.fullWidth}>
+        <TableHead sx={{ width: "100%" }}>
           <ResponsiveMaterialsHeaderRow />
         </TableHead>
-        <TableBody className={classes.fullWidth}>
+        <TableBody sx={{ width: "100%" }}>
           {materials.map((m) => (
             <ResponsiveMaterialsRow key={m.invRec.globalId} material={m} />
           ))}
@@ -490,5 +459,4 @@ function MaterialsTable({
     </TableContainer>
   );
 }
-
 export default observer(MaterialsTable);

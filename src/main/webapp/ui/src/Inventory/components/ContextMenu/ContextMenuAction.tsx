@@ -8,29 +8,23 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import { StyledMenuItem } from "../../../components/StyledMenu";
 import EventBoundary from "../../../components/EventBoundary";
-
 export type ContextMenuRenderOptions = "button" | "menuitem";
-
 type CommonArgs = {
   as: ContextMenuRenderOptions;
   icon: React.ReactElement;
   disabledHelp: string;
   children?: React.ReactNode;
 };
-
 type SplitButtonArgs = {
   options: Array<SplitButtonOption>;
 };
-
 type RegularButtonArgs = {
   onClick: (event: Event) => void;
   active?: boolean;
   label: string;
 };
-
 type ContextMenuActionsArgs = CommonArgs &
   (SplitButtonArgs | RegularButtonArgs);
-
 const ContextMenuAction = forwardRef<
   React.ElementRef<typeof StyledMenuItem>,
   ContextMenuActionsArgs
@@ -50,7 +44,7 @@ const ContextMenuAction = forwardRef<
       active = false,
       children,
     }: ContextMenuActionsArgs,
-    ref
+    ref,
   ) => {
     return (
       <Observer>
@@ -83,15 +77,20 @@ const ContextMenuAction = forwardRef<
               onClick={onClick}
               disabled={disabledHelp !== ""}
               aria-disabled={disabledHelp !== ""}
-              sx={{ my: 0.5, py: 1 }}
+              sx={{
+                my: 0.5,
+                py: 1,
+              }}
             >
               <ListItemIcon>{icon}</ListItemIcon>
               <ListItemText
                 primary={label}
                 secondary={disabledHelp}
-                secondaryTypographyProps={{
-                  style: {
-                    whiteSpace: "break-spaces",
+                slotProps={{
+                  secondary: {
+                    style: {
+                      whiteSpace: "break-spaces",
+                    },
                   },
                 }}
               />
@@ -103,8 +102,7 @@ const ContextMenuAction = forwardRef<
         }
       </Observer>
     );
-  }
+  },
 );
-
 ContextMenuAction.displayName = "ContextMenuAction";
 export default ContextMenuAction;

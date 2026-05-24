@@ -1,6 +1,7 @@
 import React from "react";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import { observer } from "mobx-react-lite";
@@ -31,7 +32,7 @@ function InitialScreen(): React.ReactNode {
             ? {
                 parentGlobalId: `BE${peopleStore.currentUser.workbenchId}`,
               }
-            : {}
+            : {},
         );
       },
       icon: <MyBenchIcon />,
@@ -77,12 +78,14 @@ function InitialScreen(): React.ReactNode {
       label: string;
       icon: React.ReactNode;
       onClick: (e: React.MouseEvent<HTMLElement>) => void;
-    }>
+    }>,
   ) => {
-    return buttons.map((args) => (
-      <ListItem key={args.label} button {...args}>
-        <ListItemIcon>{args.icon}</ListItemIcon>
-        <ListItemText primary={args.label} />
+    return buttons.map(({ label, icon, onClick }) => (
+      <ListItem key={label} disablePadding>
+        <ListItemButton onClick={onClick}>
+          <ListItemIcon>{icon}</ListItemIcon>
+          <ListItemText primary={label} />
+        </ListItemButton>
       </ListItem>
     ));
   };

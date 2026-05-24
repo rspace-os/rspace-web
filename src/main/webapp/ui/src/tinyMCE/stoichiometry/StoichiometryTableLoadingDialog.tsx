@@ -8,7 +8,6 @@ import Typography from "@mui/material/Typography";
 const StoichiometryTableLoadingDialog = () => (
   <Dialog
     open={true}
-    disableEscapeKeyDown
     sx={{
       "& .MuiDialog-paper": {
         minWidth: 300,
@@ -17,15 +16,17 @@ const StoichiometryTableLoadingDialog = () => (
   >
     <DialogContent>
       <Box
-        display="flex"
-        flexDirection="column"
-        justifyContent="center"
-        alignItems="center"
-        py={3}
-        gap={2}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          py: 3,
+          gap: 2,
+        }}
       >
         <CircularProgress size={40} />
-        <Typography variant="body1" textAlign="center">
+        <Typography variant="body1" sx={{ textAlign: "center" }}>
           Loading molecule information...
         </Typography>
       </Box>

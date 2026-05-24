@@ -13,7 +13,7 @@ type FieldTypeMenuArgs = {
 function FieldTypeMenu({ columnFieldMap }: FieldTypeMenuArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   return (
-    <Box p={1}>
+    <Box sx={{ p: 1 }}>
       <UploadFormControl label="Custom Field Type">
         <FieldTypeMenuItem
           field={columnFieldMap.chosenFieldType}

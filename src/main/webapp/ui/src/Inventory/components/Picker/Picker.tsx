@@ -55,13 +55,16 @@ function InventoryPicker({
     search.activeResult = null;
   }, [resetActiveResultOnClose, search]);
 
-  const handleAddition = useCallback((records: Array<InventoryRecord>) => {
-    try {
-      onAddition(records);
-    } finally {
-      resetActiveResultIfNeeded();
-    }
-  }, [onAddition, resetActiveResultIfNeeded]);
+  const handleAddition = useCallback(
+    (records: Array<InventoryRecord>) => {
+      try {
+        onAddition(records);
+      } finally {
+        resetActiveResultIfNeeded();
+      }
+    },
+    [onAddition, resetActiveResultIfNeeded],
+  );
 
   const handleCancel = useCallback(() => {
     if (search.uiConfig.instantConfirm || !onCancel) {
@@ -74,7 +77,12 @@ function InventoryPicker({
     } finally {
       resetActiveResultIfNeeded();
     }
-  }, [handleAddition, onCancel, resetActiveResultIfNeeded, search.uiConfig.instantConfirm]);
+  }, [
+    handleAddition,
+    onCancel,
+    resetActiveResultIfNeeded,
+    search.uiConfig.instantConfirm,
+  ]);
 
   /*
    * When the user selects a result, the activeResult is set. This logic then
@@ -88,7 +96,12 @@ function InventoryPicker({
     if (singularSelection && instantConfirm && search.activeResult) {
       handleAddition([search.activeResult]);
     }
-  }, [handleAddition, search.activeResult, search.uiConfig.selectionMode, search.uiConfig.instantConfirm]);
+  }, [
+    handleAddition,
+    search.activeResult,
+    search.uiConfig.selectionMode,
+    search.uiConfig.instantConfirm,
+  ]);
 
   const getSelectedRecords = () => {
     if (search.uiConfig.selectionMode === "SINGLE") {
@@ -101,7 +114,7 @@ function InventoryPicker({
     }
 
     return selectedRecords;
-  }
+  };
 
   const selectedRecords = getSelectedRecords();
   const hasDisallowedSelection = selectedRecords.some((record) =>
@@ -149,7 +162,7 @@ function InventoryPicker({
               overflowX: "hidden",
             }}
           >
-            <Box mb={1}>
+            <Box sx={{ mb: 1 }}>
               <SearchComponent
                 TABS={TABS}
                 size="small"
@@ -159,7 +172,7 @@ function InventoryPicker({
               />
             </Box>
             {selectionHelpText && (
-              <Box mb={1}>
+              <Box sx={{ mb: 1 }}>
                 <Alert severity="info">{selectionHelpText}</Alert>
               </Box>
             )}
@@ -181,9 +194,7 @@ function InventoryPicker({
             >
               Choose
             </Button>
-            <Button onClick={handleCancel}>
-              Cancel
-            </Button>
+            <Button onClick={handleCancel}>Cancel</Button>
           </>
         </CardActions>
       )}

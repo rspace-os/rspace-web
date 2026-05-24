@@ -1,6 +1,6 @@
 import { Dialog } from "../../../components/DialogBoundary";
 import React from "react";
-import { ThemeProvider, styled } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import AppBar from "../../../components/AppBar";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
@@ -31,23 +31,6 @@ import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 import { CallableSnippetPreview } from "../components/CallableSnippetPreview";
 import { FilestoreLoginProvider } from "@/eln/gallery/components/FilestoreLoginDialog";
 
-const CustomDialog = styled(Dialog)(({ theme }) => ({
-  "& .MuiDialog-container > .MuiPaper-root": {
-    height: "calc(100% - 32px)", // 16px margin above and below dialog
-    [theme.breakpoints.down("md")]: {
-      // sm and xs are fullscreen, where the sidebar is a floating element
-      height: "100%",
-      borderRadius: 0,
-    },
-  },
-  "& .MuiDialogContent-root": {
-    width: "100%",
-    height: "calc(100% - 52px)", // 52px being the height of DialogActions
-    overflowY: "unset",
-    padding: theme.spacing(1.5, 2),
-  },
-}));
-
 const CustomGrow = React.forwardRef<
   typeof Grow,
   React.ComponentProps<typeof Grow>
@@ -65,7 +48,6 @@ const CustomGrow = React.forwardRef<
   />
 ));
 CustomGrow.displayName = "CustomGrow";
-
 const Picker = observer(
   ({
     open,
@@ -97,9 +79,10 @@ const Picker = observer(
     const [selectedSection, setSelectedSection] =
       useUiPreference<GallerySection>(
         PREFERENCES.GALLERY_PICKER_INITIAL_SECTION,
-        { defaultValue: "Chemistry" },
+        {
+          defaultValue: "Chemistry",
+        },
       );
-
     const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
       useUiPreference<boolean>(PREFERENCES.GALLERY_SIDEBAR_OPEN, {
         defaultValue: true,
@@ -122,10 +105,13 @@ const Picker = observer(
     const setDrawerOpen = viewport.isViewportLarge
       ? setLargerViewportSidebarOpenState
       : setSmallViewportSidebarOpenState;
-
     const [path, setPath] = React.useState<ReadonlyArray<GalleryFile>>([]);
     const listingOf = React.useMemo(
-      () => ({ tag: "section" as const, section: selectedSection, path }),
+      () => ({
+        tag: "section" as const,
+        section: selectedSection,
+        path,
+      }),
       [selectedSection, path],
     );
     const { galleryListing, folderId, refreshListing } = useGalleryListing({
@@ -134,21 +120,19 @@ const Picker = observer(
       orderBy,
       sortOrder,
     });
-
     return (
       <CallableImagePreview>
         <CallablePdfPreview>
           <CallableAsposePreview>
             <CallableSnippetPreview>
               <OpenFolderProvider setPath={setPath}>
-                <CustomDialog
+                <Dialog
                   maxWidth="xl"
                   fullWidth
                   open={open}
-                  TransitionComponent={CustomGrow}
                   onClose={onClose}
                   fullScreen={viewport.isViewportSmall}
-                  sx={{
+                  sx={(theme) => ({
                     height: {
                       xs:
                         selection.size > 0
@@ -156,9 +140,27 @@ const Picker = observer(
                           : "100%",
                       md: "unset",
                     },
+                    "& .MuiDialog-container > .MuiPaper-root": {
+                      height: "calc(100% - 32px)",
+                      [theme.breakpoints.down("md")]: {
+                        height: "100%",
+                        borderRadius: 0,
+                      },
+                    },
+                    "& .MuiDialogContent-root": {
+                      width: "100%",
+                      height: "calc(100% - 52px)",
+                      overflowY: "unset",
+                      padding: theme.spacing(1.5, 2),
+                    },
+                  })}
+                  slotProps={{
+                    paper: {
+                      "aria-label": "Gallery Picker",
+                    },
                   }}
-                  PaperProps={{
-                    "aria-label": "Gallery Picker",
+                  slots={{
+                    transition: CustomGrow,
                   }}
                 >
                   <AppBar
@@ -177,7 +179,12 @@ const Picker = observer(
                       supports2xZoom: true,
                     }}
                   />
-                  <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      height: "calc(100% - 48px)",
+                    }}
+                  >
                     <Sidebar
                       selectedSection={selectedSection}
                       setSelectedSection={(mediaType) => {
@@ -242,7 +249,7 @@ const Picker = observer(
                       </DialogActions>
                     </Box>
                   </Box>
-                </CustomDialog>
+                </Dialog>
               </OpenFolderProvider>
             </CallableSnippetPreview>
           </CallableAsposePreview>

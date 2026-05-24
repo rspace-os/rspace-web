@@ -8,29 +8,18 @@ import CustomField from "../../components/Inputs/CustomField";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
-import { makeStyles } from "tss-react/mui";
+import Box from "@mui/material/Box";
 import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 import { type Option } from "../../../stores/definitions/Field";
 import { type GalleryFile } from "../../../eln/gallery/useGalleryListing";
-
-const useStyles = makeStyles()((theme) => ({
-  buttonWrapper: {
-    display: "inline",
-    marginTop: theme.spacing(1),
-  },
-  bottomSpaced: {
-    marginBottom: theme.spacing(4),
-  },
-}));
 
 const AdditionalOptionButton = ({
   field,
 }: {
   field: FieldModel;
 }): React.ReactNode => {
-  const { classes } = useStyles();
   return (
-    <div className={classes.buttonWrapper}>
+    <Box sx={{ display: "inline", mt: 1 }}>
       <Button
         color="primary"
         variant="outlined"
@@ -50,7 +39,7 @@ const AdditionalOptionButton = ({
       >
         Add Value
       </Button>
-    </div>
+    </Box>
   );
 };
 
@@ -168,11 +157,12 @@ function DefaultValueField({
         [
           () => field.type === "date",
           {
-            content: value
-              ? truncateIsoTimestamp(String(value), "date").orElse(
+            content:
+              typeof value === "string" && value
+                ? truncateIsoTimestamp(value, "date").orElse(
                   "NaN-NaN-NaN"
                 )
-              : null,
+                : null,
           },
         ],
         [() => true, { content: value }],

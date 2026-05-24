@@ -4,24 +4,14 @@ import ContextMenuSplitButton, {
   type SplitButtonOption,
 } from "./ContextMenuSplitButton";
 import Divider from "@mui/material/Divider";
-import Grid from "@mui/material/Grid";
-import React from "react";
+import Box from "@mui/material/Box";
+import MenuItem from "@mui/material/MenuItem";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import GridItem from "./ContextMenuGridItem";
-import { makeStyles } from "tss-react/mui";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-
-const useStyles = makeStyles()(() => ({
-  mainContainer: {
-    flexWrap: "nowrap",
-  },
-  contextMenuWrapper: {
-    flexGrow: 1,
-  },
-  divider: {
-    margin: "0px 3px",
-  },
-}));
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import { StyledMenu } from "../../../components/StyledMenu";
 
 type ExtendedContextMenuArgs = {
   prefixActions: Array<
@@ -62,59 +52,129 @@ function ExtendedContextMenu({
   basketSearch,
   ...rest
 }: ExtendedContextMenuArgs): React.ReactNode {
-  const { classes } = useStyles();
+  const prefixRef = useRef<HTMLDivElement | null>(null);
+  const [overflow, setOverflow] = useState<Set<number>>(new Set());
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+
+  useLayoutEffect(() => {
+    const root = prefixRef.current;
+    if (!root) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        setOverflow((prev) => {
+          const next = new Set(prev);
+          for (const e of entries) {
+            const idx = Number((e.target as HTMLElement).dataset.idx);
+            if (e.intersectionRatio < 0.1) next.add(idx);
+            else next.delete(idx);
+          }
+          return next;
+        });
+      },
+      { root, threshold: 0.1 },
+    );
+    root
+      .querySelectorAll<HTMLElement>("[data-idx]")
+      .forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [prefixActions.length]);
+
+  useLayoutEffect(() => {
+    if (overflow.size === 0) setAnchorEl(null);
+  }, [overflow.size]);
+
   return (
-    <Grid container className={classes.mainContainer}>
-      <Grid item>
-        <Grid container>
-          {/* Note: in the "content" ContextMenu the Select action is included in prefixActions */}
-          {prefixActions.map(
-            (
-              action:
-                | {
-                    disabledHelp: string;
-                    icon: React.ReactElement;
-                    key: string;
-                    options: Array<SplitButtonOption>;
-                  }
-                | {
-                    disabledHelp: string;
-                    icon: React.ReactElement;
-                    key: string;
-                    label: string;
-                    variant?: "default" | "filled";
-                    onClick?: (
-                      event: React.MouseEvent<HTMLButtonElement>,
-                    ) => void;
-                    active?: boolean;
-                  },
-            ) => (
-              <GridItem key={action.key}>
-                {/* conditional rendering based on: options or onClick */}
-                {"options" in action ? (
-                  <ContextMenuSplitButton
-                    {...(action as {
-                      disabledHelp: string;
-                      icon: React.ReactElement;
-                      key: string;
-                      options: Array<SplitButtonOption>;
-                    })}
-                  />
-                ) : (
-                  <ContextMenuButton {...action} />
-                )}
-              </GridItem>
-            ),
-          )}
-        </Grid>
-      </Grid>
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      <Box
+        ref={prefixRef}
+        sx={{
+          display: "flex",
+          gap: "4px",
+          overflow: "hidden",
+          minWidth: 0,
+        }}
+      >
+        {/* Note: in the "content" ContextMenu the Select action is included in prefixActions */}
+        {prefixActions.map((action, i) => {
+          const { key, ...actionProps } = action;
+          return (
+            <Box
+              key={key}
+              data-idx={i}
+              sx={{
+                flex: "0 0 auto",
+                visibility: overflow.has(i) ? "hidden" : "visible",
+              }}
+              aria-hidden={overflow.has(i)}
+            >
+              {"options" in actionProps ? (
+                <ContextMenuSplitButton {...actionProps} />
+              ) : (
+                <ContextMenuButton {...actionProps} />
+              )}
+            </Box>
+          );
+        })}
+      </Box>
+      <IconButtonWithTooltip
+        title="More actions"
+        icon={<MoreHorizIcon />}
+        aria-haspopup="menu"
+        size="medium"
+        sx={{
+          p: 0.75,
+          display: overflow.size === 0 ? "none" : "block",
+        }}
+        onClick={(event) => setAnchorEl(event.currentTarget)}
+        disabled={overflow.size === 0}
+      />
+      <StyledMenu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+        disableAutoFocusItem
+        sx={{
+          pr: 4,
+        }}
+      >
+        {prefixActions.map((action, i) => {
+          if (!overflow.has(i)) return null;
+          if ("options" in action) {
+            const first = action.options[0];
+            return (
+              <MenuItem
+                key={action.key}
+                disabled={action.disabledHelp !== "" || !first}
+                onClick={() => {
+                  first?.selection?.();
+                  setAnchorEl(null);
+                }}
+              >
+                {first?.text ?? "Action"}
+              </MenuItem>
+            );
+          }
+          return (
+            <MenuItem
+              key={action.key}
+              disabled={action.disabledHelp !== ""}
+              onClick={(e) => {
+                action.onClick?.(
+                  e as unknown as React.MouseEvent<HTMLButtonElement>,
+                );
+                setAnchorEl(null);
+              }}
+            >
+              {action.label}
+            </MenuItem>
+          );
+        })}
+      </StyledMenu>
       {selectedResults.length > 0 && (
         <>
-          <Grid item>
-            <Divider orientation="vertical" className={classes.divider} />
-          </Grid>
+          <Divider orientation="vertical" flexItem sx={{ mx: "3px" }} />
           {/* NB: in other context menus ("results" and "stepper"), the Select action is part of the ContextMenu actions */}
-          <Grid item className={classes.contextMenuWrapper}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <ContextMenu
               selectedResults={selectedResults}
               menuID={menuID}
@@ -123,10 +183,10 @@ function ExtendedContextMenu({
               paddingTop={false}
               {...rest}
             />
-          </Grid>
+          </Box>
         </>
       )}
-    </Grid>
+    </Box>
   );
 }
 

@@ -28,14 +28,12 @@ import {
   type Identifier,
   type IdentifierField,
   type IGSNPublishingState,
-  type CreatorType,
 } from "../../../../stores/definitions/Identifier";
 import FormControl from "@mui/material/FormControl";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import RadioField from "../../../../components/Inputs/RadioField";
 import PublicPreviewDialog, { MissingDataAlert } from "./PublicPreviewDialog";
-import { makeStyles } from "tss-react/mui";
 import MultipleInputHandler from "./MultipleInputHandler";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
@@ -60,21 +58,9 @@ import {
   type Identifier as IdentifierInTable,
   useIdentifiers,
 } from "../../../useIdentifiers";
-import AlertTitle from "@mui/material/AlertTitle";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import AnalyticsContext from "../../../../stores/contexts/Analytics";
-
-const useStyles = makeStyles()((theme) => ({
-  primary: {
-    color: theme.palette.primary.main,
-  },
-  published: {
-    border: "2px solid green",
-  },
-  bottomSpaced: { marginBottom: theme.spacing(1) },
-  highlight: { color: theme.palette.modifiedHighlight },
-}));
 
 const IdentifierWrapper = observer(
   ({
@@ -96,12 +82,33 @@ const IdentifierWrapper = observer(
 
     const handleUpdate = (
       f: IdentifierField,
-      value: string | number | CreatorType
+      value: unknown,
     ) => {
       if (f.handler) f.handler(value);
       /* setAttributesDirty on item */
       activeResult.updateIdentifiers();
     };
+
+    const isFieldInvalid = (field: IdentifierField): boolean => {
+      if (field.value === "") return true;
+      return field.isValid ? !field.isValid(field.value) : false;
+    };
+
+    const isCustomField = (
+      field: unknown,
+    ): field is { id: string | number; name: string } =>
+      typeof field === "object" &&
+      field !== null &&
+      "id" in field &&
+      (typeof field.id === "string" || typeof field.id === "number") &&
+      "name" in field &&
+      typeof field.name === "string";
+
+    const rawCustomFields: Array<unknown> =
+      "fields" in activeResult && Array.isArray(activeResult.fields)
+        ? activeResult.fields
+        : [];
+    const customFields = rawCustomFields.filter(isCustomField);
 
     return (
       <>
@@ -111,7 +118,6 @@ const IdentifierWrapper = observer(
           </Typography>
           {id.requiredFields.map((f) => (
             <Grid
-              item
               key={f.key}
               sx={{
                 width: "100%",
@@ -133,7 +139,6 @@ const IdentifierWrapper = observer(
                   ) : (
                     <>
                       <TextField
-                        InputLabelProps={{ shrink: true }}
                         size="small"
                         variant="standard"
                         fullWidth
@@ -147,17 +152,16 @@ const IdentifierWrapper = observer(
                           handleUpdate(f, value)
                         }
                         error={
-                          editable &&
-                          (f.value === "" ||
-                            !(f.isValid ?? ((_: any) => true))(f.value))
+                          editable && isFieldInvalid(f)
                         }
                         helperText={
-                          editable &&
-                          (f.value === "" ||
-                            !(f.isValid ?? ((_: any) => true))(f.value))
+                          editable && isFieldInvalid(f)
                             ? "In order to publish the identifier, a valid value is required."
                             : null
                         }
+                        slotProps={{
+                          inputLabel: { shrink: true },
+                        }}
                       />
                     </>
                   )}
@@ -170,16 +174,20 @@ const IdentifierWrapper = observer(
           <Grid
             container
             direction="row"
-            justifyContent={"space-between"}
             spacing={1}
-            sx={{ width: "100%", mb: 1, fontWeight: "bold" }}
+            sx={{
+              justifyContent: "space-between",
+              width: "100%",
+              mb: 1,
+              fontWeight: "bold",
+            }}
           >
-            <Grid item>
+            <Grid>
               <Typography variant="h6" component="h4">
                 Recommended Identifier Properties
               </Typography>
             </Grid>
-            <Grid item>
+            <Grid>
               <CustomTooltip
                 title={match<void, string>([
                   [
@@ -204,7 +212,6 @@ const IdentifierWrapper = observer(
           <Collapse in={openRecommendedSection}>
             {id.recommendedFields.map((f) => (
               <Grid
-                item
                 key={f.key}
                 sx={{
                   width: "100%",
@@ -262,7 +269,7 @@ const IdentifierWrapper = observer(
                 <li>
                   Custom Fields
                   <ul>
-                    {(activeResult as any).fields?.map((f: any) => (
+                    {customFields.map((f) => (
                       <li key={f.id}>{f.name}</li>
                     ))}
                   </ul>
@@ -281,14 +288,14 @@ const IdentifierWrapper = observer(
         </section>
       </>
     );
-  }
+  },
 );
 
 type IdentifiersListArgs = { activeResult: InventoryRecord };
 
 export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
   ({ activeResult }: IdentifiersListArgs) => {
-    const { classes } = useStyles();
+    const theme = useTheme();
     const editable = activeResult.isFieldEditable("identifiers");
     const { addAlert } = useContext(AlertContext);
     const { uiStore } = useStores();
@@ -347,10 +354,10 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
       if (id.state !== "findable") {
         try {
           const idResponse: { data: string } = await axios.get(
-            "/global/ror/existingGlobalRoRID"
+            "/global/ror/existingGlobalRoRID",
           );
           const nameResponse: { data: string } = await axios.get(
-            "/global/ror/existingGlobalRoRName"
+            "/global/ror/existingGlobalRoRName",
           );
           id.creatorAffiliationIdentifier = idResponse.data;
           id.creatorAffiliation = nameResponse.data;
@@ -360,7 +367,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
             mkAlert({
               variant: "error",
               message: "Could not get RoR data.",
-            })
+            }),
           );
         }
       } else {
@@ -387,12 +394,12 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
 
     const [openIdForm, setOpenIdForm] = useState(true);
     return (
-      <Grid mt={1} sx={{ padding: "0px 12px" }}>
+      <Grid sx={{ mt: 1, padding: "0px 12px" }}>
         <Grid
           container
-          direction="column"
-          alignItems="center"
           sx={{
+            alignItems: "center",
+            flexDirection: "column",
             width: "100%",
             fontSize: "14px",
           }}
@@ -401,32 +408,23 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
             activeResult.identifiers.length > 0 && (
               <Alert
                 severity="info"
-                className={classes.bottomSpaced}
-                sx={{ width: "100%" }}
+                sx={{ width: "100%", mb: 1 }}
               >
                 To update any details, press Edit first.
               </Alert>
             )}
           {activeResult.identifiers.map((id) => (
-            <Grid item key={id.doi} sx={{ width: "100%" }}>
+            <Grid key={id.doi} sx={{ width: "100%" }}>
               <Grid
                 container
                 direction="row"
                 spacing={1}
                 sx={{ width: "100%", marginBottom: "8px", fontWeight: "bold" }}
               >
-                <Grid item xs={6}>
-                  Identifier
-                </Grid>
-                <Grid item xs={2}>
-                  Type
-                </Grid>
-                <Grid item xs={2}>
-                  State
-                </Grid>
-                <Grid item xs={2}>
-                  {openIdForm ? "Hide" : "Show"}
-                </Grid>
+                <Grid size={6}>Identifier</Grid>
+                <Grid size={2}>Type</Grid>
+                <Grid size={2}>State</Grid>
+                <Grid size={2}>{openIdForm ? "Hide" : "Show"}</Grid>
               </Grid>
               <Grid
                 container
@@ -434,7 +432,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                 spacing={1}
                 sx={{ width: "100%", marginBottom: "8px" }}
               >
-                <Grid item xs={6} sx={{ padding: "6px" }}>
+                <Grid sx={{ padding: "6px" }} size={6}>
                   {id.state === "draft" ? (
                     id.doi
                   ) : (
@@ -447,20 +445,19 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                     </a>
                   )}
                 </Grid>
-                <Grid item xs={2}>
-                  {id.doiTypeLabel}
-                </Grid>
+                <Grid size={2}>{id.doiTypeLabel}</Grid>
                 <Grid
-                  item
-                  xs={2}
-                  className={
-                    id.state === "findable" ? classes.highlight : undefined
+                  sx={
+                    id.state === "findable"
+                      ? { color: theme.palette.modifiedHighlight }
+                      : undefined
                   }
                   data-testid="identifier-state"
+                  size={2}
                 >
                   {capitaliseJustFirstChar(id.state)}
                 </Grid>
-                <Grid item xs={2}>
+                <Grid size={2}>
                   <CustomTooltip
                     title={match<void, string>([
                       [() => openIdForm, "Hide identifier's details"],
@@ -480,11 +477,14 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
               <Grid
                 container
                 direction="row"
-                justifyContent="flex-start"
                 spacing={2}
-                sx={{ width: "100%", marginBottom: "12px" }}
+                sx={{
+                  justifyContent: "flex-start",
+                  width: "100%",
+                  marginBottom: "12px",
+                }}
               >
-                <Grid item>
+                <Grid>
                   <CustomTooltip
                     title={
                       id.isValid ? "Preview Landing Page" : "Some missing data"
@@ -494,27 +494,29 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                       color="callToAction"
                       variant="outlined"
                       size="small"
-                      onClick={() => handlePreview(id)}
+                      onClick={() => {
+                        void handlePreview(id);
+                      }}
                       disabled={activeResult.state === "edit" || !id.isValid}
                     >
                       Preview
                     </Button>
                   </CustomTooltip>
                 </Grid>
-                <Grid item>
+                <Grid>
                   <PublishButton
                     identifier={id}
                     disabled={activeResult.state === "edit"}
                   />
                 </Grid>
-                <Grid item>
+                <Grid>
                   <CustomTooltip
                     title={
                       id.state === "draft"
                         ? "Delete Draft"
                         : id.state === "findable"
-                        ? "Retract"
-                        : "Not published yet"
+                          ? "Retract"
+                          : "Not published yet"
                     }
                   >
                     <Button
@@ -536,15 +538,14 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                   </CustomTooltip>
                 </Grid>
                 {!id.isValid && (
-                  <Grid item className={classes.bottomSpaced}>
+                  <Grid sx={{ mb: 1 }}>
                     <MissingDataAlert />
                   </Grid>
                 )}
               </Grid>
               <Alert
                 severity="info"
-                className={classes.bottomSpaced}
-                sx={{ width: "100%" }}
+                sx={{ width: "100%", mb: 1 }}
               >
                 <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
                 <a
@@ -575,7 +576,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
         )}
       </Grid>
     );
-  }
+  },
 );
 
 const AssignDialog = observer(
@@ -647,9 +648,9 @@ const AssignDialog = observer(
                 .map((igsn) =>
                   igsn.associatedGlobalId !== null
                     ? IsInvalid(
-                        "The selected IGSN ID is already assigned to another item."
+                        "The selected IGSN ID is already assigned to another item.",
                       )
-                    : IsValid()
+                    : IsValid(),
                 )
                 .orElse(IsInvalid("No IGSN ID selected."))}
               onClick={doNotAwait(async () => {
@@ -657,8 +658,8 @@ const AssignDialog = observer(
                   .toResult(
                     () =>
                       new Error(
-                        "Invalid state: zero or many identifiers are selected"
-                      )
+                        "Invalid state: zero or many identifiers are selected",
+                      ),
                   )
                   .doAsync((igsn) => assignIdentifier(igsn, recordToAssignTo));
                 await recordToAssignTo.fetchAdditionalInfo();
@@ -673,7 +674,7 @@ const AssignDialog = observer(
         </Dialog>
       </ThemeProvider>
     );
-  }
+  },
 );
 
 const IdentifiersCard = observer((): ReactNode => {
@@ -731,7 +732,7 @@ function Identifiers<
   Fields extends {
     identifiers: Array<Identifier>;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({ fieldOwner }: { fieldOwner: FieldOwner }): ReactNode {
   return (
     <InputWrapper

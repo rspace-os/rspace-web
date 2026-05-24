@@ -2,7 +2,6 @@ import React from "react";
 import Fade from "@mui/material/Fade";
 import { SELECTED_OR_FOCUS_BORDER, type GallerySection } from "../common";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import { styled } from "@mui/material/styles";
 import Avatar from "@mui/material/Avatar";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
 import * as FetchingData from "../../../util/fetchingData";
@@ -30,24 +29,6 @@ import { useSnippetPreview } from "./CallableSnippetPreview";
 import usePrimaryAction from "../primaryActionHooks";
 import { useFolderOpen } from "./OpenFolderProvider";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
-
-const StyledTreeItem = styled(TreeItem)(({ theme }) => ({
-  [`.${treeItemClasses.content}`]: {
-    [`&.${treeItemClasses.selected}`]: {
-      backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
-        ? "black"
-        : theme.palette.callToAction.main,
-      [`&.${treeItemClasses.focused}`]: {
-        backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
-          ? "black"
-          : theme.palette.callToAction.main,
-      },
-      [`& .${treeItemClasses.label}`]: {
-        color: "white",
-      },
-    },
-  },
-}));
 
 type TreeItemContentArgs = {
   file: GalleryFile;
@@ -83,7 +64,6 @@ type TreeItemContentArgs = {
    */
   refeshing: boolean;
 };
-
 const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
   ({
     path,
@@ -99,11 +79,13 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
     refeshing,
   }: TreeItemContentArgs): React.ReactNode => {
     const listingOf = React.useMemo(
-      () => ({ tag: "section" as const, section, path: [...path, file] }),
-
+      () => ({
+        tag: "section" as const,
+        section,
+        path: [...path, file],
+      }),
       [section],
     );
-
     const { galleryListing, refreshListing: refreshingThisListing } =
       useGalleryListing({
         listingOf,
@@ -112,7 +94,6 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
         sortOrder,
         foldersOnly,
       });
-
     React.useEffect(() => {
       /*
        * Note that if the user has just deleted this folder, then refreshing
@@ -121,9 +102,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
        * folder is done refreshing.
        */
       if (refeshing) void refreshingThisListing();
-
     }, [refeshing]);
-
     React.useEffect(() => {
       FetchingData.getSuccessValue(galleryListing).do((listing) => {
         if (listing.tag === "empty") return;
@@ -132,9 +111,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
             treeViewItemIdMap.set(f.treeViewItemId, f);
         });
       });
-
     }, [galleryListing]);
-
     return FetchingData.match(galleryListing, {
       /*
        * nothing is shown whilst loading otherwise the UI ends up being quite
@@ -147,7 +124,6 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
           <>
             {listing.list.map((f, i) =>
               filter(f) !== "hide" ? (
-
                 <CustomTreeItem
                   file={f}
                   index={i}
@@ -176,7 +152,6 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
     });
   },
 );
-
 const CustomTreeItem = observer(
   ({
     file,
@@ -216,7 +191,6 @@ const CustomTreeItem = observer(
     const { openSnippetPreview } = useSnippetPreview();
     const primaryAction = usePrimaryAction();
     const { openFolder } = useFolderOpen();
-
     const handleDoubleClick = React.useCallback(() => {
       primaryAction(file).do((action) => {
         switch (action.tag) {
@@ -303,9 +277,10 @@ const CustomTreeItem = observer(
       null,
     );
     const dndInProgress = Boolean(dndContext.active);
-
     const normalBorder = `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 99%)`;
-    const dropStyle: { [style: string]: string | number } = {};
+    const dropStyle: {
+      [style: string]: string | number;
+    } = {};
     if (dndInProgress && file.isFolder) {
       if (isOver) {
         dropStyle.border = SELECTED_OR_FOCUS_BORDER;
@@ -316,19 +291,20 @@ const CustomTreeItem = observer(
     } else {
       dropStyle.border = normalBorder;
     }
-    const fileUploadDropping: { [style: string]: string | number } = over
+    const fileUploadDropping: {
+      [style: string]: string | number;
+    } = over
       ? {
           border: SELECTED_OR_FOCUS_BORDER,
         }
       : {};
-
     return (
       <Box
         sx={{
           transitionDelay: `${(index + 1) * 0.04}s !important`,
         }}
       >
-        <StyledTreeItem
+        <TreeItem
           itemId={file.treeViewItemId}
           disabled={disabled}
           label={
@@ -341,9 +317,6 @@ const CustomTreeItem = observer(
             >
               <Avatar
                 src={file.thumbnailUrl}
-                imgProps={{
-                  role: "presentation",
-                }}
                 variant="rounded"
                 sx={{
                   width: "24px",
@@ -353,6 +326,11 @@ const CustomTreeItem = observer(
                   margin: "2px 12px 2px 8px",
                   background: "white",
                 }}
+                slotProps={{
+                  img: {
+                    role: "presentation",
+                  },
+                }}
               >
                 <FileIcon fontSize="inherit" />
               </Avatar>
@@ -361,15 +339,13 @@ const CustomTreeItem = observer(
           }
           /*
            * These are for dragging files from outside the browser
-           */
-          onDrop={onDrop}
+           */ onDrop={onDrop}
           onDragOver={onDragOver}
           onDragEnter={onDragEnter}
           onDragLeave={onDragLeave}
           /*
            * These are for dragging files between folders within the gallery
-           */
-          ref={(node) => {
+           */ ref={(node) => {
             setDropRef(node);
             setDragRef(node);
           }}
@@ -405,6 +381,23 @@ const CustomTreeItem = observer(
             ...fileUploadDropping,
             borderRadius: "4px",
           }}
+          sx={(theme) => ({
+            [`.${treeItemClasses.content}`]: {
+              "&.Mui-selected": {
+                backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
+                  ? "black"
+                  : theme.palette.callToAction.main,
+                "&.Mui-focused": {
+                  backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
+                    ? "black"
+                    : theme.palette.callToAction.main,
+                },
+                [`& .${treeItemClasses.label}`]: {
+                  color: "white",
+                },
+              },
+            },
+          })}
         >
           {file.isFolder && (
             <TreeItemContent
@@ -421,12 +414,11 @@ const CustomTreeItem = observer(
               refeshing={refeshing}
             />
           )}
-        </StyledTreeItem>
+        </TreeItem>
       </Box>
     );
   },
 );
-
 type TreeViewArgs = {
   /**
    * The listing of files to display in the tree view. This component takes the
@@ -434,7 +426,11 @@ type TreeViewArgs = {
    * states and doesn't lose the expanded state when the listing is refreshed.
    */
   listing:
-    | { tag: "empty"; reason: string; refreshing: boolean }
+    | {
+        tag: "empty";
+        reason: string;
+        refreshing: boolean;
+      }
     | {
         tag: "list";
         list: ReadonlyArray<GalleryFile>;
@@ -451,7 +447,6 @@ type TreeViewArgs = {
   orderBy: "name" | "modificationDate";
   foldersOnly?: boolean;
 };
-
 const TreeView = ({
   listing,
   path,
@@ -465,7 +460,6 @@ const TreeView = ({
 }: TreeViewArgs) => {
   const { addAlert } = React.useContext(AlertContext);
   const selection = useGallerySelection();
-
   const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
 
   /*
@@ -478,13 +472,11 @@ const TreeView = ({
     for (const file of listing.list) map.set(file.treeViewItemId, file);
     return map;
   });
-
   React.useEffect(() => {
     if (listing.tag === "empty") return;
     runInAction(() => {
       for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
     });
-
   }, [listing]);
 
   /*
@@ -494,7 +486,6 @@ const TreeView = ({
    * the listing is done refreshing. This is a bit of a hack, but it works.
    */
   if (listing.refreshing) return null;
-
   if (
     listing.tag === "empty" ||
     listing.list.every((file) => filter(file) === "hide")
@@ -522,7 +513,6 @@ const TreeView = ({
       </div>
     );
   }
-
   return (
     <SimpleTreeView
       aria-label="tree view of files"

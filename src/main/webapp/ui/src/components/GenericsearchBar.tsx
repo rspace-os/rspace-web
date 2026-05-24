@@ -1,5 +1,5 @@
-import styled from "@emotion/styled";
 import IconButton from "@mui/material/IconButton";
+import Box from "@mui/material/Box";
 import CustomTooltip from "./CustomTooltip";
 import InputBase from "@mui/material/InputBase";
 import Paper from "@mui/material/Paper";
@@ -32,32 +32,6 @@ type StyleArgs = {
   border: string;
   alignItems: string;
 };
-
-const GenericSearchbar = styled.div`
-  form {
-    display: flex;
-    align-items: center;
-    border-radius: 25px;
-    background: ${(props: { background: string }) =>
-      props.background ? props.background : "white"};
-    padding-left: 5px;
-  }
-  span[role="tooltip"] {
-    border-radius: 25px;
-    background: white;
-  }
-  .MuiInputBase-root {
-    flex-grow: 1;
-    input:focus,
-    input:hover {
-      background-color: transparent !important;
-    }
-  }
-  button.MuiIconButton-root {
-    width: 40px;
-    height: 40px;
-  }
-`;
 
 type FormArgs = {
   handleSearch: (newQuery: string) => void;
@@ -98,7 +72,9 @@ const Form = observer(
           <InputBase
             data-test-id="s-search-input-normal"
             placeholder={placeholder}
-            inputProps={{ "aria-label": searchToolTip }}
+            slotProps={{
+              input: { "aria-label": searchToolTip },
+            }}
             value={query ?? ""}
             onChange={handleChange}
           />
@@ -139,7 +115,31 @@ function Genericsearchbar({
 }: GenericsearchbarArgs): React.ReactNode {
   return (
     <div style={{ flexGrow: 1 }}>
-      <GenericSearchbar background={style.background}>
+      <Box
+        sx={{
+          "& form": {
+            display: "flex",
+            alignItems: "center",
+            borderRadius: "25px",
+            background: style.background || "white",
+            paddingLeft: 5,
+          },
+          '& span[role="tooltip"]': {
+            borderRadius: "25px",
+            background: "white",
+          },
+          "& .MuiInputBase-root": {
+            flexGrow: 1,
+            "& input:focus, & input:hover": {
+              backgroundColor: "transparent !important",
+            },
+          },
+          "& button.MuiIconButton-root": {
+            width: 40,
+            height: 40,
+          },
+        }}
+      >
         <Paper style={style} elevation={0}>
           <Form
             handleSearch={handleSearch}
@@ -147,7 +147,7 @@ function Genericsearchbar({
             searchToolTip={searchToolTip}
           />
         </Paper>
-      </GenericSearchbar>
+      </Box>
     </div>
   );
 }

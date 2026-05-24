@@ -4,8 +4,6 @@ import type { SxProps, Theme } from "@mui/material/styles";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { observer } from "mobx-react-lite";
-import { makeStyles } from "tss-react/mui";
-import clsx from "clsx";
 import {
   type Progress,
   asPercentageString,
@@ -13,34 +11,6 @@ import {
   ariaValueMin,
   ariaValueMax,
 } from "@/util/progress";
-
-const useStyles = makeStyles<{ progress: Progress }>()(
-  (theme, { progress }) => ({
-    hidden: {
-      opacity: 0,
-    },
-    spinner: {
-      position: "absolute",
-      marginLeft: 10,
-    },
-    label: {
-      display: "flex",
-    },
-    progress: {
-      height: 36, //height of buttons
-      width: asPercentageString(progress),
-      backgroundColor: "rgba(0,0,0,0.2)",
-      position: "absolute",
-      top: 0,
-      left: 0,
-      transition: "width 0.3s ease-in-out",
-    },
-    button: {
-      position: "relative",
-      overflow: "hidden",
-    },
-  }),
-);
 
 type SubmitSpinnerButtonArgs = {
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -56,6 +26,10 @@ type SubmitSpinnerButtonArgs = {
   sx?: SxProps<Theme>;
 };
 
+const isSxArray = (
+  value: SxProps<Theme>,
+): value is Extract<SxProps<Theme>, readonly unknown[]> => Array.isArray(value);
+
 function SubmitSpinnerButton({
   onClick,
   disabled,
@@ -69,7 +43,12 @@ function SubmitSpinnerButton({
   color = "callToAction",
   sx,
 }: SubmitSpinnerButtonArgs): React.ReactNode {
-  const { classes } = useStyles({ progress: progress ?? 0 });
+  const composedSx: SxProps<Theme> = sx
+    ? isSxArray(sx)
+      ? [{ position: "relative", overflow: "hidden" }, ...sx]
+      : [{ position: "relative", overflow: "hidden" }, sx]
+    : { position: "relative", overflow: "hidden" };
+
   return (
     <Button
       color={color}
@@ -77,15 +56,20 @@ function SubmitSpinnerButton({
       variant="contained"
       disabled={disabled}
       disableElevation
-      className={classes.button}
       fullWidth={fullWidth}
       data-test-id="SubmitButton"
       type={type}
       size={size}
       classes={{ root: className }}
-      sx={sx}
+      sx={composedSx}
     >
-      <div className={clsx(classes.spinner, !loading && classes.hidden)}>
+      <div
+        style={{
+          position: "absolute",
+          marginLeft: 10,
+          opacity: loading ? 1 : 0,
+        }}
+      >
         <FontAwesomeIcon
           icon={faSpinner}
           spin
@@ -95,14 +79,22 @@ function SubmitSpinnerButton({
       </div>
       {progress !== null && typeof progress !== "undefined" ? (
         <div
-          className={classes.progress}
+          style={{
+            height: 36,
+            width: asPercentageString(progress),
+            backgroundColor: "rgba(0,0,0,0.2)",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            transition: "width 0.3s ease-in-out",
+          }}
           role="progressbar"
           aria-valuenow={ariaValueNow(progress)}
           aria-valuemin={ariaValueMin()}
           aria-valuemax={ariaValueMax()}
         />
       ) : null}
-      <div className={clsx(classes.label, loading && classes.hidden)}>
+      <div style={{ display: "flex", opacity: loading ? 0 : 1 }}>
         {label}
       </div>
     </Button>

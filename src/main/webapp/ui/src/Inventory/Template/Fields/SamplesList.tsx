@@ -38,11 +38,11 @@ function SamplesList(): React.ReactNode {
       }}
     >
       <InnerSearchNavigationContext>
-        <Grid container direction="column" spacing={1}>
-          <Grid item>
+        <Grid container sx={{ flexDirection: "column" }} spacing={1}>
+          <Grid>
             <Search handleSearch={handleSearch} TABS={TABS} size="small" />
           </Grid>
-          <Grid item>
+          <Grid>
             <SearchView contextMenuId={menuIDs.RESULTS} />
           </Grid>
         </Grid>

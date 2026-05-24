@@ -6,9 +6,8 @@ import ChooseToEdit from "../../../components/Inputs/ChooseToEdit";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import NoValue from "../../../components/NoValue";
-import { makeStyles } from "tss-react/mui";
 import { Heading } from "../../../components/DynamicHeadingLevel";
-import clsx from "clsx";
+import { INVENTORY_FORM_FIELD_SX } from "./FormField";
 
 /**
  * This component renders form fields specifically used by the main Inventory
@@ -78,29 +77,6 @@ export type FormFieldArgs<T> = BaseFormFieldArgs<T> & {
  * contains a bunch of logic and props for batch editing makes this component
  * unsuitable for any applications besides the main Inventory forms.
  */
-const useStyles = makeStyles()(() => ({
-  formControl: {
-    "& .MuiInputBase-root.Mui-disabled, & .MuiFormControlLabel-label.Mui-disabled":
-      {
-        color: "black !important",
-        "& input": {
-          WebkitTextFillColor: "unset",
-        },
-        "& .MuiSvgIcon-root.MuiSelect-icon": {
-          display: "none",
-        },
-      },
-    "& .MuiSelect-root.MuiSelect-select.MuiSelect-outlined": {
-      padding: "11px 10px 10px 10px",
-    },
-    "& .Mui-disabled::before": {
-      borderBottom: "0px !important",
-    },
-    "& > .MuiFormLabel-root": {
-      textTransform: "uppercase",
-    }
-  },
-}));
 
 export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
   const {
@@ -131,8 +107,6 @@ export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
    */
   const labelId = React.useId();
 
-  const { classes } = useStyles();
-
   /*
    * If the field is not being edited and there is currently no value, we show
    * a placeholder label. As there is no interactive input component, we cannot
@@ -150,7 +124,7 @@ export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
         role="group"
         aria-disabled={true}
         aria-labelledby={labelId}
-        className={classes.formControl}
+        sx={INVENTORY_FORM_FIELD_SX}
       >
         <FormLabel component={Heading} sx={{ mt: 0 }} id={labelId}>
           {label}
@@ -177,7 +151,7 @@ export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
       label={label}
       {...(canChooseWhichToEdit ? { id: controlledId } : {})}
       asFieldset={asFieldset}
-      className={clsx(classes.formControl, rest.className)}
+      sx={INVENTORY_FORM_FIELD_SX}
       renderInput={(inputProps) => (
         <>
           {canChooseWhichToEdit ? (

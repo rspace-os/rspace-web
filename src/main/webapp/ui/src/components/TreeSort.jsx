@@ -1,50 +1,55 @@
+/* global $, clientUISettings, sortFileTreeBrowser, updateClientUISetting */
 import React, { useEffect } from "react";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import styled from "@emotion/styled";
+import PropTypes from "prop-types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSortAmountUpAlt } from "@fortawesome/free-solid-svg-icons/faSortAmountUpAlt";
 import { faSortAmountDown } from "@fortawesome/free-solid-svg-icons/faSortAmountDown";
 import AnalyticsContext from "../stores/contexts/Analytics";
 
-const SortWrapper = styled.div`
-  display: flex;
-  flex-grow: 1;
-  align-items: center;
-  justify-content: flex-end;
+const selectSx = {
+  background: "white",
+  height: "100%",
+  padding: 0,
+  borderRadius: 1,
+  boxShadow:
+    "0px 1px 3px 0px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12)",
+  "&::before, &::after": {
+    display: "none",
+  },
+  "& .MuiSelect-selectMenu": {
+    paddingLeft: 10,
+    height: 35,
+    display: "flex",
+    alignItems: "center",
+  },
+};
 
-  .orderBy {
-    margin-right: 10px;
-  }
-  .orderBy,
-  .sortOrder {
-    background: white;
-    height: 100%;
-    padding: 0px;
-    border-radius: 4px;
-    box-shadow:
-      0px 1px 3px 0px rgba(0, 0, 0, 0.2),
-      0px 1px 1px 0px rgba(0, 0, 0, 0.14),
-      0px 2px 1px -1px rgba(0, 0, 0, 0.12);
+const getSelectSx = (paddingLeft) => ({
+  ...selectSx,
+  "& .MuiSelect-selectMenu": {
+    ...selectSx["& .MuiSelect-selectMenu"],
+    paddingLeft,
+  },
+});
 
-    ::before,
-    ::after {
-      content: none;
-    }
-
-    .MuiSelect-selectMenu {
-      padding-left: 10px;
-      height: 35px;
-      display: flex;
-      align-items: center;
-    }
-  }
-`;
-
-export default function TreeSort(props) {
+/**
+ * Sorting controls for the workspace file tree.
+ */
+export default function TreeSort({
+  justifyContent = "flex-end",
+  selectPaddingLeft = 10,
+} = {}) {
   const [orderBy, setOrderBy] = React.useState("name");
   const [sortOrder, setSortOrder] = React.useState("DESC");
   const { trackEvent } = React.useContext(AnalyticsContext);
+
+  function applySettings(order, sort) {
+    updateClientUISetting("treeSort", order + "." + sort);
+    sortFileTreeBrowser(order, sort);
+    trackEvent("user:sorts:file_tree:document_editor", { order, sort });
+  }
 
   function handleChangeOrderBy(event) {
     setOrderBy(event.target.value);
@@ -54,12 +59,6 @@ export default function TreeSort(props) {
   function handleChangeSortOrder(event) {
     setSortOrder(event.target.value);
     applySettings(orderBy, event.target.value);
-  }
-
-  function applySettings(order, sort) {
-    updateClientUISetting("treeSort", order + "." + sort);
-    sortFileTreeBrowser(order, sort);
-    trackEvent("user:sorts:file_tree:document_editor", { order, sort });
   }
 
   useEffect(() => {
@@ -73,12 +72,21 @@ export default function TreeSort(props) {
   }, []);
 
   return (
-    <SortWrapper className="sortingSettings">
+    <div
+      className="sortingSettings"
+      style={{
+        display: "flex",
+        flexGrow: 1,
+        alignItems: "center",
+        justifyContent,
+      }}
+    >
       <Select
         className="orderBy"
         value={orderBy}
         onChange={handleChangeOrderBy}
         variant="standard"
+        sx={{ ...getSelectSx(selectPaddingLeft), mr: "10px" }}
       >
         <MenuItem value="name" data-test-id="order-name">
           Name
@@ -98,6 +106,7 @@ export default function TreeSort(props) {
         value={sortOrder}
         onChange={handleChangeSortOrder}
         variant="standard"
+        sx={getSelectSx(selectPaddingLeft)}
       >
         <MenuItem value="ASC" data-test-id="sort-asc">
           <FontAwesomeIcon
@@ -114,6 +123,11 @@ export default function TreeSort(props) {
           Descending
         </MenuItem>
       </Select>
-    </SortWrapper>
+    </div>
   );
 }
+
+TreeSort.propTypes = {
+  justifyContent: PropTypes.string,
+  selectPaddingLeft: PropTypes.number,
+};

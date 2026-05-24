@@ -19,7 +19,7 @@ function LatestTemplateActions({
     return null;
 
   return (
-    <Grid item>
+    <Grid>
       <FormControl component="fieldset">
         <FormLabel component="legend">Update Samples</FormLabel>
         <FormGroup>

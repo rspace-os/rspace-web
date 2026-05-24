@@ -2,7 +2,6 @@ import React, { useId, useContext } from "react";
 import { Observer } from "mobx-react-lite";
 import Grid from "@mui/material/Grid";
 import Collapse from "@mui/material/Collapse";
-import { makeStyles } from "tss-react/mui";
 import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
 import {
@@ -15,20 +14,6 @@ import FormSectionsContext, {
 import Stack from "@mui/material/Stack";
 import { HeadingContext } from "../../../components/DynamicHeadingLevel";
 import { useTheme } from "@mui/material/styles";
-
-const useStyles = makeStyles()((theme) => ({
-  container: {
-    flexWrap: "nowrap",
-    backgroundColor: theme.palette.background.alt,
-    overflowX: "hidden",
-  },
-  collapse: {
-    transitionDuration: window.matchMedia("(prefers-reduced-motion: reduce)")
-      .matches
-      ? "0s !important"
-      : "initial",
-  },
-}));
 
 type StepperPanelArgs = {
   title: React.ReactNode;
@@ -54,9 +39,8 @@ const StepperPanel = React.forwardRef<
       icon,
       thickBorder,
     },
-    ref
+    ref,
   ) => {
-    const { classes } = useStyles();
     const theme = useTheme();
     const headingId = useId();
     const formSectionContext = useContext(FormSectionsContext);
@@ -67,13 +51,17 @@ const StepperPanel = React.forwardRef<
         {() => (
           <Grid
             container
-            direction="column"
-            className={classes.container}
+            sx={{
+              flexDirection: "column",
+              flexWrap: "nowrap",
+              backgroundColor: theme.palette.background.alt,
+              overflowX: "hidden",
+            }}
             ref={ref}
             role="region"
             aria-labelledby={headingId}
           >
-            <Grid item>
+            <Grid>
               <StepperPanelHeader
                 onToggle={(value) =>
                   formSectionContext.setExpanded(recordType, sectionName, value)
@@ -88,10 +76,16 @@ const StepperPanel = React.forwardRef<
             </Grid>
             <Collapse
               in={formSectionContext.isExpanded(recordType, sectionName)}
-              className={classes.collapse}
+              sx={{
+                transitionDuration: window.matchMedia(
+                  "(prefers-reduced-motion: reduce)",
+                ).matches
+                  ? "0s !important"
+                  : "initial",
+              }}
             >
-              <Box p={2} pt={1}>
-                <Grid item>
+              <Box sx={{ p: 2, pt: 1 }}>
+                <Grid>
                   <HeadingContext>
                     <Stack spacing={3} sx={{ mt: 0.5 }}>
                       {children}
@@ -100,7 +94,7 @@ const StepperPanel = React.forwardRef<
                 </Grid>
               </Box>
             </Collapse>
-            <Grid item>
+            <Grid>
               <Divider
                 orientation="horizontal"
                 sx={
@@ -117,7 +111,7 @@ const StepperPanel = React.forwardRef<
         )}
       </Observer>
     );
-  }
+  },
 );
 
 StepperPanel.displayName = "StepperPanel";

@@ -4,7 +4,6 @@ import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Grid from "@mui/material/Grid";
-import { withStyles } from "Styles";
 import { observer } from "mobx-react-lite";
 import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
 import Typography from "@mui/material/Typography";
@@ -38,26 +37,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import AppBar from "../../components/AppBar";
 import { ACCENT_COLOR } from "../../assets/branding/argos";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
-
-const CustomTablePagination = withStyles<
-  React.ComponentProps<typeof TablePagination> & { component?: string },
-  { root: string }
->(() => ({
-  root: {
-    overflow: "unset",
-  },
-}))((props) => (
-  <nav>
-    <TablePagination
-      labelRowsPerPage=""
-      component="div"
-      {...props}
-      backIconButtonProps={{ size: "small" }}
-      nextIconButtonProps={{ size: "small" }}
-    />
-  </nav>
-));
-
 const Panel = ({
   anchorEl,
   children,
@@ -81,11 +60,13 @@ const Panel = ({
       vertical: "top",
       horizontal: "center",
     }}
-    PaperProps={{
-      variant: "outlined",
-      elevation: 0,
-      style: {
-        minWidth: 300,
+    slotProps={{
+      paper: {
+        variant: "outlined",
+        elevation: 0,
+        style: {
+          minWidth: 300,
+        },
       },
     }}
   >
@@ -100,7 +81,6 @@ const Panel = ({
     </form>
   </Popover>
 );
-
 const CustomStringField = ({
   onChange,
   value,
@@ -115,24 +95,20 @@ const CustomStringField = ({
   <StringField
     value={value}
     onChange={({ target: { value: newValue } }) => onChange(newValue)}
-
     autoFocus={autoFocus}
     fullWidth={fullWidth}
   />
 );
-
 type SearchControlArgs = {
   name: string;
   value: string | null;
   onChange: (newValue: string) => void;
   onSubmit: () => void;
 };
-
 const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-
   return (
-    <Grid item>
+    <Grid>
       <DropdownButton
         name={name}
         onClick={(e) => {
@@ -147,7 +123,6 @@ const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
           <CustomStringField
             value={value ?? ""}
             onChange={(newValue) => onChange(newValue)}
-
             autoFocus={true}
             fullWidth={true}
           />
@@ -156,37 +131,32 @@ const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
     </Grid>
   );
 };
-
 type ChipArgs = {
   name: string;
   value: string | null;
   onDelete: () => void;
 };
-
-const CustomChip = withStyles<ChipArgs, { label: string; root: string }>(
-  () => ({
-    label: {
-      letterSpacing: "0.02em",
-      padding: "4px 12px",
-    },
-    root: {
-      maxWidth: "100%",
-    },
-  }),
-)(({ name, value, onDelete, classes }) => {
+function CustomChip({ name, value, onDelete }: ChipArgs): React.ReactNode {
   if (!value) return null;
   return (
-    <Grid item>
+    <Grid>
       <Chip
         size="small"
         label={`${name}: ${value}`}
         onDelete={onDelete}
-        classes={classes}
+        sx={{ maxWidth: "100%" }}
+        slotProps={{
+          label: {
+            sx: {
+              letterSpacing: "0.02em",
+              padding: "4px 12px",
+            },
+          },
+        }}
       />
     </Grid>
   );
-});
-
+}
 type SearchControlsArgs = {
   setDMPs: (dmps: Array<PlanSummary>) => void;
   fetching: boolean;
@@ -196,7 +166,6 @@ type SearchControlsArgs = {
   pageSize: number;
   setPage: (page: number) => void;
 };
-
 const SearchControls = ({
   setDMPs,
   fetching,
@@ -229,7 +198,6 @@ const SearchControls = ({
     setSearchParameters(newSearchParameters);
     setPage(0);
   };
-
   const getDMPs = async (
     newSearchParameters: Omit<SearchParameters, "page" | "pageSize">,
   ) => {
@@ -258,15 +226,18 @@ const SearchControls = ({
       setFetching(false);
     }
   };
-
   useEffect(() => {
     void getDMPs(searchParameters);
   }, [page, pageSize]);
-
   return (
-    <Grid container direction="column" spacing={1}>
+    <Grid
+      container
+      sx={{
+        flexDirection: "column",
+      }}
+      spacing={1}
+    >
       <Grid
-        item
         container
         direction="row"
         spacing={1}
@@ -322,8 +293,15 @@ const SearchControls = ({
           }}
         />
       </Grid>
-      <Grid item>
-        <Grid container direction="row" spacing={1} alignItems="end">
+      <Grid>
+        <Grid
+          container
+          direction="row"
+          spacing={1}
+          sx={{
+            alignItems: "end",
+          }}
+        >
           <Search
             name="Label"
             value={searchParameters.like}
@@ -380,7 +358,7 @@ const SearchControls = ({
               void getDMPs(searchParameters);
             }}
           />
-          <Grid item>
+          <Grid>
             <SubmitSpinnerButton
               onClick={() => {
                 void getDMPs(searchParameters);
@@ -397,23 +375,27 @@ const SearchControls = ({
     </Grid>
   );
 };
-
-const CustomDialog = withStyles<
-  { fullScreen: boolean } & React.ComponentProps<typeof Dialog>,
-  { paper?: string }
->((theme, { fullScreen }) => ({
-  paper: {
-    overflow: "hidden",
-    margin: fullScreen ? 0 : theme.spacing(2.625),
-    maxHeight: "unset",
-    minHeight: "unset",
-
-    // this is so that the hights of the dialog's content of constrained and scrollbars appear
-    // 24px margin above and below, 3px border above and below
-    height: fullScreen ? "100%" : "calc(100% - 48px)",
-  },
-}))(Dialog);
-
+function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
+  return (
+    <Dialog
+      {...props}
+      fullScreen={fullScreen}
+      slotProps={{
+        paper: {
+          sx: {
+            overflow: "hidden",
+            margin: fullScreen ? 0 : 2.625,
+            maxHeight: "unset",
+            minHeight: "unset",
+            // this is so that the heights of the dialog's content are constrained and scrollbars appear
+            // 24px margin above and below, 3px border above and below
+            height: fullScreen ? "100%" : "calc(100% - 48px)",
+          },
+        },
+      }}
+    />
+  );
+}
 function DMPDialogContent({
   setOpen,
 }: {
@@ -421,16 +403,13 @@ function DMPDialogContent({
 }): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
-
   const [DMPs, setDMPs] = useState<Array<PlanSummary>>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [selectedPlan, setSelectedPlan] = useState<PlanSummary | null>(null);
   const [pageSize, setPageSize]: UseState<number> = useState(10);
   const [page, setPage]: UseState<number> = useState(0);
-
   const [fetching, setFetching] = useState(false);
   const [importing, setImporting] = useState(false);
-
   const handleImport = async () => {
     if (!selectedPlan) throw new Error("No plan is selected.");
     const selectedPlanId: string = `${selectedPlan.id}`;
@@ -465,7 +444,6 @@ function DMPDialogContent({
       setImporting(false);
     }
   };
-
   return (
     <>
       <AppBar
@@ -483,13 +461,16 @@ function DMPDialogContent({
       <DialogContent>
         <Grid
           container
-          direction="column"
+          sx={{
+            flexWrap: "nowrap",
+            height: "calc(100% + 16px)",
+            flexDirection: "column",
+          }}
           spacing={2}
-          flexWrap="nowrap"
+
           // this is so that just the table is scrollable
-          height="calc(100% + 16px)"
         >
-          <Grid item>
+          <Grid>
             <Typography variant="body2">
               Importing a DMP from <strong>argos.openaire.eu</strong> will make
               it available to view and reference within RSpace.
@@ -501,7 +482,7 @@ function DMPDialogContent({
               for more.
             </Typography>
           </Grid>
-          <Grid item>
+          <Grid>
             <SearchControls
               setDMPs={setDMPs}
               fetching={fetching}
@@ -512,7 +493,12 @@ function DMPDialogContent({
               setPage={setPage}
             />
           </Grid>
-          <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
+          <Grid
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+            }}
+          >
             <DataGridWithRadioSelection
               columns={[
                 DataGridColumn.newColumnWithFieldName<"label", PlanSummary>(
@@ -603,31 +589,48 @@ function DMPDialogContent({
       </DialogContent>
       <DialogActions>
         <Grid container direction="row" spacing={1}>
-          <Grid item>
-            <CustomTablePagination
-              count={totalCount}
-              rowsPerPageOptions={paginationOptions(totalCount)}
-              labelRowsPerPage=""
-              component="div"
-              rowsPerPage={Math.min(pageSize, totalCount)}
-              SelectProps={{
-                renderValue: (value: unknown): React.ReactNode => {
-                  if (typeof value !== "number")
-                    throw new Error("Invalid value");
-                  return value < totalCount ? value : `${value} (All)`;
-                },
-              }}
-              page={page}
-              onPageChange={(_: unknown, newPage: number) => {
-                setPage(newPage);
-              }}
-              onRowsPerPageChange={(e) => {
-                setPageSize(parseInt(e.target.value, 10));
-                setPage(0);
-              }}
-            />
+          <Grid>
+            <nav>
+              <TablePagination
+                sx={{ overflow: "unset" }}
+                count={totalCount}
+                rowsPerPageOptions={paginationOptions(totalCount)}
+                labelRowsPerPage=""
+                component="div"
+                rowsPerPage={Math.min(pageSize, totalCount)}
+                page={page}
+                onPageChange={(_: unknown, newPage: number) => {
+                  setPage(newPage);
+                }}
+                onRowsPerPageChange={(e) => {
+                  setPageSize(parseInt(e.target.value, 10));
+                  setPage(0);
+                }}
+                slotProps={{
+                  actions: {
+                    previousButton: {
+                      size: "small",
+                    },
+                    nextButton: {
+                      size: "small",
+                    },
+                  },
+                  select: {
+                    renderValue: (value: unknown): React.ReactNode => {
+                      if (typeof value !== "number")
+                        throw new Error("Invalid value");
+                      return value < totalCount ? value : `${value} (All)`;
+                    },
+                  },
+                }}
+              />
+            </nav>
           </Grid>
-          <Grid item sx={{ ml: "auto" }}>
+          <Grid
+            sx={{
+              ml: "auto",
+            }}
+          >
             <Stack direction="row" spacing={1}>
               <Button onClick={() => setOpen(false)} disabled={importing}>
                 {selectedPlan ? "Cancel" : "Close"}
@@ -650,7 +653,6 @@ function DMPDialogContent({
     </>
   );
 }
-
 type DMPDialogArgs = {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -694,5 +696,4 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
     </ThemeProvider>
   );
 }
-
 export default observer(DMPDialog);

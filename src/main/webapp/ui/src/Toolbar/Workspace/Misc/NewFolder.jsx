@@ -98,7 +98,9 @@ export default function NewNotebook() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               data-test-id="new-folder-name"
-              inputProps={{ "aria-label": "Folder name" }}
+              slotProps={{
+                htmlInput: { "aria-label": "Folder name" },
+              }}
             />
             <FormHelperText id="component-error-text">{error}</FormHelperText>
           </FormControl>
@@ -112,7 +114,9 @@ export default function NewNotebook() {
                 value={navigateAfterCreate}
                 color="primary"
                 data-test-id="new-folder-navigate"
-                inputProps={{ "aria-label": "Navgate to the created folder" }}
+                slotProps={{
+                  input: { "aria-label": "Navgate to the created folder" },
+                }}
               />
             }
             label="Navigate to the created folder"

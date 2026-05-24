@@ -1,4 +1,5 @@
 "use strict";
+/* global RS */
 import React, { useEffect } from "react";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
@@ -9,74 +10,29 @@ import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
-import { makeStyles } from "tss-react/mui";
+import Box from "@mui/material/Box";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import styled from "@emotion/styled";
 import LoadingCircular from "../../components/LoadingCircular";
+import PropTypes from "prop-types";
 
-const useStyles = makeStyles()((theme) => ({
-  radio: {
-    marginBottom: "30px",
-  },
-  label: {
-    marginBottom: "10px",
-  },
-  settings: {
-    textAlign: "right",
-  },
-  imageWrapper: {
-    width: "100%",
-  },
-  image: {
-    display: "block",
-    maxWidth: "100%",
-    maxHeight: "65vh",
-    width: "auto",
-    height: "auto",
-  },
-  tools: {
-    position: "absolute",
-    bottom: "60px",
-    zIndex: "100",
-  },
-}));
-
-const ImageWrapper = styled.div`
-  .react-transform-component,
-  .react-transform-element {
-    width: 100%;
-  }
-
-  img {
-    margin: 0 auto;
-  }
-`;
-
+/**
+ * Preview pane for SnapGene DNA images.
+ */
 export default function DnaPreview(props) {
-  const { classes } = useStyles();
-  const [image, setImage] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
+  const { clicked, id, setDisabled } = props;
   const [state, setState] = React.useState({
     linear: false,
     showEnzymes: true,
     showORFs: true,
   });
-  const [oldState, setOldState] = React.useState({
-    linear: false,
-    showEnzymes: true,
-    showORFs: true,
-  });
+  const [loadedImage, setLoadedImage] = React.useState(null);
 
-  // handle apply
-  useEffect(() => {
-    setImage(null);
-    fetchData();
-    setOldState({ ...state });
-  }, [props.clicked]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const appliedState = React.useMemo(() => ({ ...state }), [clicked]);
 
-  useEffect(() => {
-    updateDisabled();
-  }, [state, oldState]);
+  const image = `/molbiol/dna/png/${id}?linear=${appliedState.linear}&showEnzymes=${appliedState.showEnzymes}&showORFs=${appliedState.showORFs}`;
+
+  const loading = loadedImage !== image;
 
   const handleChange = (name, value) => {
     setState({
@@ -85,68 +41,75 @@ export default function DnaPreview(props) {
     });
   };
 
-  const fetchData = async () => {
-    setLoading(true);
-    setImage(
-      `/molbiol/dna/png/${props.id}?linear=${state.linear}&showEnzymes=${state.showEnzymes}&showORFs=${state.showORFs}`,
-    );
-  };
-
-  const updateDisabled = () => {
+  useEffect(() => {
     const changed =
-      state.linear === oldState.linear &&
-      state.showEnzymes === oldState.showEnzymes &&
-      state.showORFs === oldState.showORFs;
+      state.linear === appliedState.linear &&
+      state.showEnzymes === appliedState.showEnzymes &&
+      state.showORFs === appliedState.showORFs;
 
-    props.setDisabled(changed);
-  };
+    setDisabled(changed);
+  }, [appliedState, setDisabled, state]);
 
-  const onImageError = (e) => {
+  const onImageError = () => {
     RS.confirm(
       "An error has occurred. This could be because the Snapgene server is down or the DNA sequence is invalid.",
       "warning",
       "infinite",
     );
-    setLoading(false);
+    setLoadedImage(image);
   };
 
   return (
     <>
-      <Grid item xs={8}>
-        {image && (
-          <TransformWrapper
-            velocitySensitivity={5000}
-            step={20}
-            defaultScale={1}
-          >
-            {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
-              <ImageWrapper>
-                <ButtonGroup
-                  className={classes.tools}
-                  size="small"
-                  aria-label="small outlined button group"
-                >
-                  <Button onClick={zoomIn}>+</Button>
-                  <Button onClick={zoomOut}>-</Button>
-                  <Button onClick={resetTransform}>Reset</Button>
-                </ButtonGroup>
-                <TransformComponent className="hello" style={{ width: "100%" }}>
-                  <img
-                    src={image}
-                    className={classes.image}
-                    onLoad={(e) => setLoading(false)}
-                    onError={(e) => onImageError(e)}
-                  />
-                </TransformComponent>
-              </ImageWrapper>
-            )}
-          </TransformWrapper>
-        )}
+      <Grid size={8}>
+        <TransformWrapper velocitySensitivity={5000} step={20} defaultScale={1}>
+          {({ zoomIn, zoomOut, resetTransform }) => (
+            <Box
+              sx={{
+                "& .react-transform-component, & .react-transform-element": {
+                  width: "100%",
+                },
+                "& img": {
+                  margin: "0 auto",
+                },
+              }}
+            >
+              <ButtonGroup
+                sx={{
+                  position: "absolute",
+                  bottom: "60px",
+                  zIndex: 100,
+                }}
+                size="small"
+                aria-label="small outlined button group"
+              >
+                <Button onClick={zoomIn}>+</Button>
+                <Button onClick={zoomOut}>-</Button>
+                <Button onClick={resetTransform}>Reset</Button>
+              </ButtonGroup>
+              <TransformComponent className="hello" style={{ width: "100%" }}>
+                <img
+                  src={image}
+                  alt="DNA preview"
+                  style={{
+                    display: "block",
+                    maxWidth: "100%",
+                    maxHeight: "65vh",
+                    width: "auto",
+                    height: "auto",
+                  }}
+                  onLoad={() => setLoadedImage(image)}
+                  onError={onImageError}
+                />
+              </TransformComponent>
+            </Box>
+          )}
+        </TransformWrapper>
         {loading && <LoadingCircular />}
       </Grid>
-      <Grid item xs={2} className={classes.settings}>
-        <FormControl component="fieldset" className={classes.radio}>
-          <FormLabel component="legend" className={classes.label}>
+      <Grid sx={{ textAlign: "right" }} size={2}>
+        <FormControl component="fieldset" sx={{ mb: "30px" }}>
+          <FormLabel component="legend" sx={{ mb: "10px" }}>
             Image type
           </FormLabel>
           <RadioGroup
@@ -172,7 +135,7 @@ export default function DnaPreview(props) {
           </RadioGroup>
         </FormControl>
         <br />
-        <FormControl component="fieldset" className={classes.option}>
+        <FormControl component="fieldset">
           <FormControlLabel
             control={
               <Checkbox
@@ -192,7 +155,7 @@ export default function DnaPreview(props) {
           />
         </FormControl>
         <br />
-        <FormControl component="fieldset" className={classes.option}>
+        <FormControl component="fieldset">
           <FormControlLabel
             control={
               <Checkbox
@@ -212,3 +175,9 @@ export default function DnaPreview(props) {
     </>
   );
 }
+
+DnaPreview.propTypes = {
+  clicked: PropTypes.any,
+  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  setDisabled: PropTypes.func.isRequired,
+};

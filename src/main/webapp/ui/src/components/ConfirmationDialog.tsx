@@ -109,8 +109,10 @@ export function ConfirmationDialog({
                       setError(null);
                     }
                   }}
-                  inputProps={{ "aria-label": confirmTextLabel }}
                   variant="standard"
+                  slotProps={{
+                    htmlInput: { "aria-label": confirmTextLabel }
+                  }}
                 />
                 <FormHelperText id="component-error-text">
                   {error}

@@ -11,7 +11,6 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
-import { withStyles } from "Styles";
 import OverlayLoadingSpinner from "../../components/OverlayLoadingSpinner";
 import RelativeBox from "../../../components/RelativeBox";
 import ImportModel, {
@@ -84,7 +83,7 @@ const QuantityConversionAlert = ({
   const label =
     typeof labelByRecordType === "string" ? labelByRecordType : "records";
   const unitLabel = unitStore.getUnit(
-    importData.templateInfo?.defaultUnitId || 3
+    importData.templateInfo?.defaultUnitId || 3,
   )?.label;
 
   return (
@@ -223,32 +222,24 @@ type SimpleBottomHeadCellArgs = React.ComponentProps<typeof TableCell> & {
   colSpan?: number;
 };
 
-const SimpleBottomHeadCell = withStyles<
-  SimpleBottomHeadCellArgs,
-  { root: string }
->({
-  root: {
-    fontWeight: "600",
-  },
-})(
-  ({
-    children,
-    classes,
-    colSpan,
-    ...rest
-  }: SimpleBottomHeadCellArgs & { classes: { root: string } }) => (
+function SimpleBottomHeadCell({
+  children,
+  colSpan,
+  ...rest
+}: SimpleBottomHeadCellArgs): React.ReactNode {
+  return (
     <TableCell
       padding="none"
       align="left"
       variant="head"
-      classes={classes}
+      sx={{ fontWeight: 600 }}
       colSpan={colSpan}
       {...rest}
     >
       {children}
     </TableCell>
-  )
-);
+  );
+}
 
 type MappingArgs = {
   onTypeSelect: (type: ImportRecordType) => URL;
@@ -267,13 +258,13 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
     | undefined;
 
   const numSelected: number | undefined = mappingsByRecordType?.filter(
-    (m: ColumnFieldMap) => m.selected
+    (m: ColumnFieldMap) => m.selected,
   ).length;
 
   const rowCount: number = mappingsByRecordType?.length ?? 0;
 
   return (
-    <Grid container direction="column" spacing={1}>
+    <Grid container sx={{ flexDirection: "column" }} spacing={1}>
       <MatchTemplateAlert importData={importData} />
       <NameMappingAlert importData={importData} rowCount={rowCount} />
       <QuantityConversionAlert importData={importData} />
@@ -289,7 +280,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
         rowCount={rowCount}
         onTypeSelect={onTypeSelect}
       />
-      <Grid item>
+      <Grid>
         <RelativeBox>
           <TableContainer>
             <Table size="small">

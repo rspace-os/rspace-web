@@ -9,16 +9,26 @@ import RadioField, {
   OptionHeading,
   OptionExplanation,
 } from "../../../components/Inputs/RadioField";
-import { styled } from "@mui/material/styles";
+import Box from "@mui/material/Box";
 import { textFieldClasses } from "@mui/material/TextField";
 
-const NestedFormField = styled(FormField<string>)(({ theme }) => ({
-  marginTop: "0 !important",
-  marginLeft: `${theme.spacing(4)} !important`,
-  [`& .${textFieldClasses.root}`]: {
-    maxWidth: `min(100px, calc(100% - ${theme.spacing(4)}))`,
-  },
-}));
+function NestedFormField(
+  props: React.ComponentProps<typeof FormField<string>>,
+): React.ReactNode {
+  return (
+    <Box
+      sx={(theme) => ({
+        marginTop: "0 !important",
+        marginLeft: `${theme.spacing(4)} !important`,
+        [`& .${textFieldClasses.root}`]: {
+          maxWidth: `min(100px, calc(100% - ${theme.spacing(4)}))`,
+        },
+      })}
+    >
+      <FormField {...props} />
+    </Box>
+  );
+}
 
 const MIN = 2;
 const MAX = 100;
@@ -148,10 +158,12 @@ function NumberOfSubSamples({
             <NumberField
               {...props}
               onChange={handleChange}
-              inputProps={{
-                min: MIN,
-                max: MAX,
-                step: 1,
+              slotProps={{
+                htmlInput: {
+                  min: MIN,
+                  max: MAX,
+                  step: 1,
+                },
               }}
             />
           )}

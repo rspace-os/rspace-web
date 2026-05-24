@@ -2,11 +2,10 @@ import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
-import { type Alias } from "../../../stores/definitions/Sample";
-import { makeStyles } from "tss-react/mui";
-import { toTitleCase } from "../../../util/Util";
-import { type UseState } from "../../../util/types";
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
+import type { Alias } from "@/stores/definitions/Sample";
+import { toTitleCase } from "@/util/Util";
+import type { UseState } from "@/util/types";
+import type { HasEditableFields } from "@/stores/definitions/Editable";
 import RadioField, {
   type RadioOption,
 } from "../../../components/Inputs/RadioField";
@@ -55,16 +54,6 @@ function convert(a: Alias): AliasSelection {
   return { source: "custom", alias: a.alias, plural: a.plural };
 }
 
-const useStyles = makeStyles()((theme) => ({
-  customInput: {
-    margin: theme.spacing(0.5),
-    width: "45%",
-  },
-  customValue: {
-    color: "black",
-  },
-}));
-
 const aliasOptions = ALIAS_DEFAULTS.map((value) => ({
   value,
   label: toTitleCase(value),
@@ -92,8 +81,6 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
   const min = 2;
   const max = 30;
   const helperText = `Please enter at least ${min} characters, and no more than ${max}`;
-
-  const { classes } = useStyles();
   const aliasDisabled = !fieldOwner.isFieldEditable("subSampleAlias");
   const aliasValue = fieldOwner.fieldValues.subSampleAlias;
 
@@ -174,11 +161,11 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
             >
               <TextField
                 data-testid="aliasField_singleBox"
-                className={classes.customInput}
                 label="Singular"
                 variant={aliasDisabled ? "standard" : "outlined"}
                 size="small"
                 multiline
+                sx={{ m: 0.5, width: "45%", "& .MuiInputBase-input": { color: "black" } }}
                 placeholder="Minimum 2 char."
                 value={customSelected ? value.alias : ""}
                 onChange={(e) => {
@@ -202,19 +189,14 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
                 disabled={aliasDisabled || !customSelected}
 
                 autoFocus={customSelected}
-                InputProps={{
-                  classes: {
-                    input: classes.customValue,
-                  },
-                }}
               />
               <TextField
                 data-testid="aliasField_pluralBox"
-                className={classes.customInput}
                 label="Plural"
                 variant={aliasDisabled ? "standard" : "outlined"}
                 size="small"
                 multiline
+                sx={{ m: 0.5, width: "45%", "& .MuiInputBase-input": { color: "black" } }}
                 placeholder="Minimum 2 char."
                 value={customSelected ? value.plural : ""}
                 onChange={(e) => {
@@ -236,11 +218,6 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
                 error={error(aliasValue.plural)}
                 helperText={error(aliasValue.plural) ? helperText : ""}
                 disabled={aliasDisabled || !customSelected}
-                InputProps={{
-                  classes: {
-                    input: classes.customValue,
-                  },
-                }}
               />
             </Box>
           )}

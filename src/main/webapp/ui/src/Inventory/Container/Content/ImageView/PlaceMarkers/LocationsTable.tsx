@@ -10,7 +10,6 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { preventEventBubbling } from "../../../../../util/Util";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material/styles";
 import InfoBadge from "../../../../components/InfoBadge";
 import InfoCard from "../../../../components/InfoCard";
 import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
@@ -42,22 +41,6 @@ function LocationsTable({
   onClick,
 }: LocationsTableArgs): React.ReactNode {
   const tableBody = React.useRef(null);
-
-  const CompactTableCell = styled(TableCell)({
-    padding: 10,
-  });
-
-  const MinColumnWidthHeadCell = styled(TableCell)({
-    width: 1,
-  });
-
-  const NumberedLocationTableCell = styled(TableCell)({
-    padding: 0,
-  });
-
-  const ActionsTableCell = styled(TableCell)({
-    paddingRight: 0,
-  });
 
   type CustomEvent = {
     detail: { number: number };
@@ -97,22 +80,22 @@ function LocationsTable({
 
     return (
       <TableRow key={number} ref={rowRef} onClick={() => onClick(mark)}>
-        <NumberedLocationTableCell>
+        <TableCell sx={{ padding: 0 }}>
           <NumberedLocation
             number={number}
             inline
             selected={Boolean(selected) && selected === number}
           />
-        </NumberedLocationTableCell>
-        <CompactTableCell>
+        </TableCell>
+        <TableCell sx={{ padding: "10px" }}>
           {location.name && location.content instanceof InventoryBaseRecord && (
             <InfoBadge inline record={location.content}>
               <InfoCard record={location.content} />
             </InfoBadge>
           )}
           {location.name ?? <span style={{ paddingLeft: 20 }}>&mdash;</span>}
-        </CompactTableCell>
-        <ActionsTableCell>
+        </TableCell>
+        <TableCell sx={{ paddingRight: 0 }}>
           <ButtonGroup color="primary" size="small">
             {!location.hasContent && (
               <Button
@@ -124,7 +107,7 @@ function LocationsTable({
               </Button>
             )}
           </ButtonGroup>
-        </ActionsTableCell>
+        </TableCell>
       </TableRow>
     );
   };
@@ -134,11 +117,11 @@ function LocationsTable({
       <Table>
         <TableHead>
           <TableRow>
-            <CompactTableCell>Location</CompactTableCell>
-            <CompactTableCell>Content</CompactTableCell>
-            <MinColumnWidthHeadCell align="right" component="th">
+            <TableCell sx={{ padding: "10px" }}>Location</TableCell>
+            <TableCell sx={{ padding: "10px" }}>Content</TableCell>
+            <TableCell sx={{ width: 1 }} align="right" component="th">
               Actions
-            </MinColumnWidthHeadCell>
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody ref={tableBody}>

@@ -108,7 +108,11 @@ export default function UpdateField({
               : `Editing extra field with name ${extraField.name}`
           }
         >
-          <Grid item md={7} xs={12}>
+          <Grid
+            size={{
+              md: 7,
+              xs: 12
+            }}>
             <FormField
               value={fieldState.name}
               label="Field name"
@@ -124,7 +128,11 @@ export default function UpdateField({
               helperText={errorMessage}
             />
           </Grid>
-          <Grid item md={5} xs={12}>
+          <Grid
+            size={{
+              md: 5,
+              xs: 12
+            }}>
             <FormField
               value={fieldState.type}
               label="Field type"
@@ -142,7 +150,11 @@ export default function UpdateField({
               )}
             />
           </Grid>
-          <Grid item md={12} xs={12}>
+          <Grid
+            size={{
+              md: 12,
+              xs: 12
+            }}>
             <Button
               color="callToAction"
               disableElevation

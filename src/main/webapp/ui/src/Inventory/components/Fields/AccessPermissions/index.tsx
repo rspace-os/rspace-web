@@ -1,10 +1,7 @@
 import React from "react";
-import { withStyles } from "Styles";
 import FormControl from "../../../../components/Inputs/FormControl";
 import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel, {
-  FormControlLabelProps,
-} from "@mui/material/FormControlLabel";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -25,15 +22,6 @@ import {
   OptionHeading,
   OptionExplanation,
 } from "../../../../components/Inputs/RadioField";
-
-const CustomFormControlLabel = withStyles<
-  React.ComponentProps<typeof FormControlLabel>,
-  { root: string }
->(() => ({
-  root: {
-    alignItems: "flex-start",
-  },
-}))(FormControlLabel);
 
 type Fields = {
   sharingMode: SharingMode;
@@ -123,11 +111,11 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
             });
           }}
         >
-          <Grid container direction="column" spacing={1}>
+          <Grid container sx={{ flexDirection: "column" }} spacing={1}>
             {(fieldOwner.isFieldEditable("sharingMode") ||
               fieldOwner.fieldValues.sharingMode === "OWNER_GROUPS") && (
-              <Grid item>
-                <CustomFormControlLabel
+              <Grid>
+                <FormControlLabel sx={{ alignItems: "flex-start" }}
                   value="OWNER_GROUPS"
                   control={
                     <Radio
@@ -136,9 +124,13 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
                     />
                   }
                   label={
-                    <Box m={1} mt={0.5}>
-                      <Grid container direction="column" spacing={1}>
-                        <Grid item>
+                    <Box sx={{ m: 1, mt: 0.5 }}>
+                      <Grid
+                        container
+                        sx={{ flexDirection: "column" }}
+                        spacing={1}
+                      >
+                        <Grid>
                           <OptionHeading>Owner&apos;s groups</OptionHeading>
                           <OptionExplanation>
                             Accessible to only those who are in a lab or
@@ -152,7 +144,7 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
                           </OptionExplanation>
                         </Grid>
                         {!hideOwnersGroups && (
-                          <Grid item>
+                          <Grid>
                             <OwnersGroupsTable
                               groups={(fieldOwner.fieldValues.sharedWith ?? [])
                                 .filter(({ itemOwnerGroup }) => itemOwnerGroup)
@@ -168,8 +160,8 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
             )}
             {(fieldOwner.isFieldEditable("sharingMode") ||
               fieldOwner.fieldValues.sharingMode === "WHITELIST") && (
-              <Grid item>
-                <CustomFormControlLabel
+              <Grid>
+                <FormControlLabel sx={{ alignItems: "flex-start" }}
                   value="WHITELIST"
                   control={
                     <Radio
@@ -178,9 +170,13 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
                     />
                   }
                   label={
-                    <Box m={1} mt={0.5}>
-                      <Grid container direction="column" spacing={1}>
-                        <Grid item>
+                    <Box sx={{ m: 1, mt: 0.5 }}>
+                      <Grid
+                        container
+                        sx={{ flexDirection: "column" }}
+                        spacing={1}
+                      >
+                        <Grid>
                           <OptionHeading>Explicit access list</OptionHeading>
                           <OptionExplanation>
                             Accessible to only those who are in a lab or
@@ -188,7 +184,7 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
                             below, which can be any group in the system.
                           </OptionExplanation>
                         </Grid>
-                        <Grid item>
+                        <Grid>
                           <AccessListTable
                             sharedWith={fieldOwner.fieldValues.sharedWith ?? []}
                             disabled={!fieldOwner.isFieldEditable("sharedWith")}
@@ -206,8 +202,8 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
             )}
             {(fieldOwner.isFieldEditable("sharingMode") ||
               fieldOwner.fieldValues.sharingMode === "OWNER_ONLY") && (
-              <Grid item>
-                <CustomFormControlLabel
+              <Grid>
+                <FormControlLabel sx={{ alignItems: "flex-start" }}
                   value="OWNER_ONLY"
                   control={
                     <Radio
@@ -216,9 +212,13 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
                     />
                   }
                   label={
-                    <Box m={1} mt={0.5}>
-                      <Grid container direction="column" spacing={1}>
-                        <Grid item>
+                    <Box sx={{ m: 1, mt: 0.5 }}>
+                      <Grid
+                        container
+                        sx={{ flexDirection: "column" }}
+                        spacing={1}
+                      >
+                        <Grid>
                           <OptionHeading>Only the Owner</OptionHeading>
                           <OptionExplanation>
                             Accessible to the item&apos;s owner, and the PI.

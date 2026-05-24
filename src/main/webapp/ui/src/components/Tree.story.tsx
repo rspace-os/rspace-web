@@ -59,7 +59,7 @@ export const SimpleTreeExample = ({
   const [selectedItem, setSelectedItem] = useState<TreeItemData | null>(null);
 
   const handleSelectionChange = (
-    event: React.SyntheticEvent,
+    event: React.SyntheticEvent | null,
     item: TreeItemData | null,
   ) => {
     setSelectedItem(item);
@@ -68,7 +68,7 @@ export const SimpleTreeExample = ({
 
   return (
     <ThemeProvider theme={theme}>
-      <Box p={2}>
+      <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
           Simple Tree Selection
         </Typography>
@@ -79,7 +79,7 @@ export const SimpleTreeExample = ({
         >
           {renderTreeItems(sampleData)}
         </Tree>
-        <Box mt={2}>
+        <Box sx={{ mt: 2 }}>
           <Typography variant="body2">
             Selected: {selectedItem?.name || "None"}
           </Typography>
@@ -97,7 +97,7 @@ export const MultiSelectTreeExample = ({
   const [selectedItems, setSelectedItems] = useState<TreeItemData[]>([]);
 
   const handleSelectionChange = (
-    event: React.SyntheticEvent,
+    event: React.SyntheticEvent | null,
     items: TreeItemData[],
   ) => {
     setSelectedItems(items);
@@ -111,11 +111,11 @@ export const MultiSelectTreeExample = ({
 
   return (
     <ThemeProvider theme={theme}>
-      <Box p={2}>
+      <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
           Multi-Select Tree
         </Typography>
-        <Box mb={2}>
+        <Box sx={{ mb: 2 }}>
           <Button onClick={clearSelection}>Clear Selection</Button>
         </Box>
         <Tree
@@ -126,7 +126,7 @@ export const MultiSelectTreeExample = ({
         >
           {renderTreeItems(sampleData)}
         </Tree>
-        <Box mt={2}>
+        <Box sx={{ mt: 2 }}>
           <Typography variant="body2">
             Selected:{" "}
             {selectedItems.map((item) => item.name).join(", ") || "None"}
@@ -145,7 +145,7 @@ export const ExpandableTreeExample = ({
   const [expandedItems, setExpandedItems] = useState<TreeItemData[]>([]);
 
   const handleExpansionChange = (
-    event: React.SyntheticEvent,
+    event: React.SyntheticEvent | null,
     items: TreeItemData[],
   ) => {
     setExpandedItems(items);
@@ -174,11 +174,11 @@ export const ExpandableTreeExample = ({
 
   return (
     <ThemeProvider theme={theme}>
-      <Box p={2}>
+      <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
           Expandable Tree
         </Typography>
-        <Box mb={2} gap={1} display="flex">
+        <Box sx={{ mb: 2, gap: 1, display: "flex" }}>
           <Button onClick={expandAll}>Expand All</Button>
           <Button onClick={collapseAll}>Collapse All</Button>
         </Box>
@@ -189,7 +189,7 @@ export const ExpandableTreeExample = ({
         >
           {renderTreeItems(hierarchicalData)}
         </Tree>
-        <Box mt={2}>
+        <Box sx={{ mt: 2 }}>
           <Typography variant="body2">
             Expanded:{" "}
             {expandedItems.map((item) => item.name).join(", ") || "None"}
@@ -211,7 +211,7 @@ export const ControlledTreeExample = ({
   const [expandedItems, setExpandedItems] = useState<TreeItemData[]>([]);
 
   const handleSelectionChange = (
-    event: React.SyntheticEvent,
+    event: React.SyntheticEvent | null,
     item: TreeItemData | null,
   ) => {
     setSelectedItem(item);
@@ -219,7 +219,7 @@ export const ControlledTreeExample = ({
   };
 
   const handleExpansionChange = (
-    event: React.SyntheticEvent,
+    event: React.SyntheticEvent | null,
     items: TreeItemData[],
   ) => {
     setExpandedItems(items);
@@ -253,11 +253,11 @@ export const ControlledTreeExample = ({
 
   return (
     <ThemeProvider theme={theme}>
-      <Box p={2}>
+      <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
           Controlled Tree (Selection + Expansion)
         </Typography>
-        <Box mb={2} gap={1} display="flex">
+        <Box sx={{ mb: 2, gap: 1, display: "flex" }}>
           <Button onClick={expandAll}>Expand All</Button>
           <Button onClick={collapseAll}>Collapse All</Button>
           <Button onClick={clearSelection}>Clear Selection</Button>
@@ -271,7 +271,7 @@ export const ControlledTreeExample = ({
         >
           {renderTreeItems(hierarchicalData)}
         </Tree>
-        <Box mt={2}>
+        <Box sx={{ mt: 2 }}>
           <Typography variant="body2">
             Selected: {selectedItem?.name || "None"}
           </Typography>

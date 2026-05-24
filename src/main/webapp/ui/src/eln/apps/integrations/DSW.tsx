@@ -38,9 +38,7 @@ type UnwrapArray<T extends Array<unknown>> = {
  * such, we can discard the Optional wrapper around each DSW
  * configuration.
  */
-type Configurations = UnwrapArray<
-    IntegrationStates["DSW"]["credentials"]
->;
+type Configurations = UnwrapArray<IntegrationStates["DSW"]["credentials"]>;
 
 /*
  * Within this component we model the state of the configurations slightly
@@ -62,420 +60,420 @@ type NewConfig = {
 };
 
 const AddButton = ({
-                     newConfig,
-                     setNewConfig,
-                   }: {
+  newConfig,
+  setNewConfig,
+}: {
   newConfig: NewConfig | null;
   setNewConfig: (newConfig: NewConfig) => void;
 }) => {
   return (
-      <Button
-          disabled={Boolean(newConfig)}
-          onClick={() => {
-            setNewConfig(
-                observable({
-                  DSW_ALIAS: "",
-                  DSW_APIKEY: "",
-                  DSW_URL: "",
-                })
-            );
-          }}
-      >
-        Add
-      </Button>
+    <Button
+      disabled={Boolean(newConfig)}
+      onClick={() => {
+        setNewConfig(
+          observable({
+            DSW_ALIAS: "",
+            DSW_APIKEY: "",
+            DSW_URL: "",
+          }),
+        );
+      }}
+    >
+      Add
+    </Button>
   );
 };
 
 const DialogContent = observer(
-    ({
-       configs,
-       integrationState,
-     }: {
-      configs: Configurations;
-      integrationState: IntegrationStates["DSW"];
-    }) => {
-      const { addAlert } = useContext(AlertContext);
-      const { test } = useDSWTestEndpoint();
-      const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
-      const { trackEvent } = React.useContext(AnalyticsContext);
+  ({
+    configs,
+    integrationState,
+  }: {
+    configs: Configurations;
+    integrationState: IntegrationStates["DSW"];
+  }) => {
+    const { addAlert } = useContext(AlertContext);
+    const { test } = useDSWTestEndpoint();
+    const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
+    const { trackEvent } = React.useContext(AnalyticsContext);
 
-      /*
-       * We take a copy of the current state for the user to edit in the UI. When
-       * they save it, it gets replaced with the new state returned from the API
-       * call in a careful manner so that each configuration can be
-       * independently edited and saved.
-       */
-      const copyOfState = useLocalObservable<
-          IntegrationState<Array<ExistingConfig>>
-      >(() => ({
-        mode: integrationState.mode,
-        credentials: configs.map((c) => observable({ ...c, dirty: false })),
-      }));
-      const observableConfigs = copyOfState.credentials;
+    /*
+     * We take a copy of the current state for the user to edit in the UI. When
+     * they save it, it gets replaced with the new state returned from the API
+     * call in a careful manner so that each configuration can be
+     * independently edited and saved.
+     */
+    const copyOfState = useLocalObservable<
+      IntegrationState<Array<ExistingConfig>>
+    >(() => ({
+      mode: integrationState.mode,
+      credentials: configs.map((c) => observable({ ...c, dirty: false })),
+    }));
+    const observableConfigs = copyOfState.credentials;
 
-      const [newConfig, setNewConfig] = useState<NewConfig | null>(null);
+    const [newConfig, setNewConfig] = useState<NewConfig | null>(null);
 
-      async function saveExistingConfig(config: ExistingConfig, index: number) {
-
-        try {
-          const newState = await saveAppOptions(
-              "DSW",
-              Optional.present(config.optionsId),
-              {
-                DSW_ALIAS: config.DSW_ALIAS,
-                DSW_URL: config.DSW_URL,
-                DSW_APIKEY: config.DSW_APIKEY,
-              }
-          );
-          runInAction(() => {
-            integrationState.credentials = newState.credentials;
-            ArrayUtils.all(newState.credentials)
-                .map((newCreds) => {
-                  const indexOfNewConfig = newCreds.findIndex(
-                      (c) => c.optionsId === config.optionsId
-                  );
-                  if (indexOfNewConfig === -1)
-                    throw new Error("Save completed but cannot show results.");
-
-                  copyOfState.credentials.splice(
-                      index,
-                      1,
-                      observable({
-                        ...newCreds[indexOfNewConfig],
-                        dirty: false,
-                      })
-                  );
-                })
-                .orElseGet(() => {
-                  throw new Error("Save completed but cannot show results.");
-                });
-          });
-          addAlert(
-              mkAlert({
-                variant: "success",
-                message: "Successfully saved DSW details.",
-              })
-          );
-        } catch (e) {
-          if (e instanceof Error)
-            addAlert(
-                mkAlert({
-                  variant: "error",
-                  title: "Error saving DSW configuration.",
-                  message: e.message,
-                })
-            );
-        }
-      }
-
-      async function saveNewConfig(config: NewConfig) {
-        try {
-          const newState = await saveAppOptions("DSW", Optional.empty(), {
+    async function saveExistingConfig(config: ExistingConfig, index: number) {
+      try {
+        const newState = await saveAppOptions(
+          "DSW",
+          Optional.present(config.optionsId),
+          {
             DSW_ALIAS: config.DSW_ALIAS,
             DSW_URL: config.DSW_URL,
             DSW_APIKEY: config.DSW_APIKEY,
-          });
-          runInAction(() => {
-            integrationState.credentials = newState.credentials;
-            const optionIdsOfExistingConfigs = new RsSet(
-                copyOfState.credentials.map(({ optionsId }) => optionsId)
-            );
-            try {
-              const newlySavedConfig = new RsSet(newState.credentials)
-                  .mapOptional((x) => x)
-                  .subtractMap(
-                      ({ optionsId }) => optionsId,
-                      optionIdsOfExistingConfigs
-                  ).first;
-              copyOfState.credentials.push(
-                  observable({ ...newlySavedConfig, dirty: false })
+          },
+        );
+        runInAction(() => {
+          integrationState.credentials = newState.credentials;
+          ArrayUtils.all(newState.credentials)
+            .map((newCreds) => {
+              const indexOfNewConfig = newCreds.findIndex(
+                (c) => c.optionsId === config.optionsId,
               );
-            } catch (e) {
-              throw new Error("Save completed but cannot show results.");
-            }
-          });
-          setNewConfig(null);
-          addAlert(
-              mkAlert({
-                variant: "success",
-                message: "Successfully saved DSW details",
-              })
-          );
-        } catch (e) {
-          if (e instanceof Error)
-            addAlert(
-                mkAlert({
-                  variant: "error",
-                  title: "Could not save DSW details",
-                  message: e.message,
-                })
-            );
-        }
-      }
+              if (indexOfNewConfig === -1)
+                throw new Error("Save completed but cannot show results.");
 
-      return (
-          <>
-            <Grid container direction="column" spacing={1} sx={{ mt: 1 }}>
-              <Grid item container direction="column" spacing={1}>
-                {observableConfigs.map((config, i) => (
-                    <Grid item key={i}>
-                      <Card variant="outlined">
-                        <form
-                            onSubmit={(event) => {
-                              event.preventDefault();
-                              void saveExistingConfig(config, i);
-                            }}
-                            aria-label={`Configured DSW with label ${config.DSW_ALIAS}`}
-                        >
-                          <CardContent>
-                            <Grid container direction="column" spacing={2}>
-                              <Grid item>
-                                <TextField
-                                    fullWidth
-                                    value={config.DSW_ALIAS}
-                                    onChange={({ target: { value } }) => {
-                                      runInAction(() => {
-                                        config.DSW_ALIAS = value;
-                                        config.dirty = true;
-                                      });
-                                    }}
-                                    label="Label"
-                                    error={config.DSW_ALIAS === ""}
-                                    helperText={
-                                        config.DSW_ALIAS === "" &&
-                                        "Label is required."
-                                    }
-                                />
-                              </Grid>
-                              <Grid item>
-                                <TextField
-                                    fullWidth
-                                    value={config.DSW_URL}
-                                    onChange={({ target: { value } }) => {
-                                      runInAction(() => {
-                                        config.DSW_URL = value;
-                                        config.dirty = true;
-                                      });
-                                    }}
-                                    label="Server URL"
-                                    error={config.DSW_URL === ""}
-                                    helperText={
-                                        config.DSW_URL === "" && "URL is required."
-                                    }
-                                />
-                              </Grid>
-                              <Grid item>
-                                <TextField
-                                    fullWidth
-                                    value={config.DSW_APIKEY}
-                                    onChange={({ target: { value } }) => {
-                                      runInAction(() => {
-                                        config.DSW_APIKEY = value;
-                                        config.dirty = true;
-                                      });
-                                    }}
-                                    type="password"
-                                    label="API key"
-                                    error={config.DSW_APIKEY === ""}
-                                    helperText={
-                                        config.DSW_APIKEY === "" &&
-                                        "API key is required."
-                                    }
-                                />
-                              </Grid>
-                            </Grid>
-                          </CardContent>
-                          <CardActions>
-                            <Button
-                                onClick={doNotAwait(async () => {
-                                  trackEvent("user:delete:dsw_connection:apps");
-                                  try {
-                                    await deleteAppOptions(
-                                        "DSW",
-                                        config.optionsId
-                                    );
-                                    runInAction(() => {
-                                      const deletedIndex = observableConfigs.findIndex(
-                                          (c) => c === config
-                                      );
-                                      observableConfigs.splice(deletedIndex, 1);
-                                      integrationState.credentials.splice(
-                                          deletedIndex,
-                                          1
-                                      );
-                                    });
-                                    addAlert(
-                                        mkAlert({
-                                          variant: "success",
-                                          message: "Successfully deleted configuration.",
-                                        })
-                                    );
-                                  } catch (e) {
-                                    if (e instanceof Error)
-                                      addAlert(
-                                          mkAlert({
-                                            variant: "error",
-                                            title: "Could not delete configuration.",
-                                            message: e.message,
-                                          })
-                                      );
-                                  }
-                                })}
-                            >
-                              Delete
-                            </Button>
-                            <Button
-                                disabled={config.dirty}
-                                onClick={doNotAwait(async () => {
-                                  try {
-                                    await test(config.DSW_ALIAS);
-                                    addAlert(
-                                        mkAlert({
-                                          variant: "success",
-                                          message: "Connection details are valid.",
-                                        })
-                                    );
-                                  } catch (e) {
-                                    if (e instanceof Error)
-                                      addAlert(
-                                          mkAlert({
-                                            variant: "error",
-                                            title: "Connection details are not valid.",
-                                            message: e.message,
-                                          })
-                                      );
-                                  }
-                                })}
-                            >
-                              Test
-                            </Button>
-                            <Button
-                                type="submit"
-                                disabled={
-                                    config.DSW_ALIAS === "" ||
-                                    config.DSW_URL === "" ||
-                                    config.DSW_APIKEY === ""
-                                }
-                            >
-                              Save
-                            </Button>
-                          </CardActions>
-                        </form>
-                      </Card>
-                    </Grid>
-                ))}
-                {newConfig && (
-                    <Grid item key={null}>
-                      <Card variant="outlined">
-                        <form
-                            onSubmit={(event) => {
-                              trackEvent("user:create:dsw_connection:apps");
-                              event.preventDefault();
-                              void saveNewConfig(newConfig);
-                            }}
-                        >
-                          <CardContent>
-                            <Grid container direction="column" spacing={2}>
-                              <Grid item>
-                                <TextField
-                                    fullWidth
-                                    value={newConfig.DSW_ALIAS}
-                                    onChange={({ target: { value } }) => {
-                                      runInAction(() => {
-                                        newConfig.DSW_ALIAS = value;
-                                      });
-                                    }}
-                                    label="Label"
-                                    error={newConfig.DSW_ALIAS === ""}
-                                    helperText={
-                                        newConfig.DSW_ALIAS === "" &&
-                                        "Label is required."
-                                    }
-                                />
-                              </Grid>
-                              <Grid item>
-                                <TextField
-                                    fullWidth
-                                    value={newConfig.DSW_URL}
-                                    onChange={({ target: { value } }) => {
-                                      runInAction(() => {
-                                        newConfig.DSW_URL = value;
-                                      });
-                                    }}
-                                    label="Server URL"
-                                    error={newConfig.DSW_URL === ""}
-                                    helperText={
-                                        newConfig.DSW_URL === "" &&
-                                        "URL is required."
-                                    }
-                                />
-                              </Grid>
-                              <Grid item>
-                                <TextField
-                                    fullWidth
-                                    value={newConfig.DSW_APIKEY}
-                                    onChange={({ target: { value } }) => {
-                                      runInAction(() => {
-                                        newConfig.DSW_APIKEY = value;
-                                      });
-                                    }}
-                                    type="password"
-                                    label="API key"
-                                    error={newConfig.DSW_APIKEY === ""}
-                                    helperText={
-                                        newConfig.DSW_APIKEY === "" &&
-                                        "API key is required."
-                                    }
-                                />
-                              </Grid>
-                            </Grid>
-                          </CardContent>
-                          <CardActions>
-                            <Button
-                                variant="outlined"
-                                onClick={() => {
-                                  setNewConfig(null);
-                                }}
-                            >
-                              Delete
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                // always disabled because it cannot be tested until saved
-                                disabled
-                                onClick={() => {}}
-                            >
-                              Test
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                type="submit"
-                                disabled={
-                                    newConfig.DSW_ALIAS === "" ||
-                                    newConfig.DSW_URL === "" ||
-                                    newConfig.DSW_APIKEY === ""
-                                }
-                            >
-                              Save
-                            </Button>
-                          </CardActions>
-                        </form>
-                      </Card>
-                    </Grid>
-                )}
-              </Grid>
-              <Grid item>
-                <Grid container direction="row" spacing={1}>
-                  <Grid item>
-                    <AddButton newConfig={newConfig} setNewConfig={setNewConfig} />
-                  </Grid>
-                  <Grid item></Grid>
-                </Grid>
-              </Grid>
-            </Grid>
-          </>
-      );
+              copyOfState.credentials.splice(
+                index,
+                1,
+                observable({
+                  ...newCreds[indexOfNewConfig],
+                  dirty: false,
+                }),
+              );
+            })
+            .orElseGet(() => {
+              throw new Error("Save completed but cannot show results.");
+            });
+        });
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message: "Successfully saved DSW details.",
+          }),
+        );
+      } catch (e) {
+        if (e instanceof Error)
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Error saving DSW configuration.",
+              message: e.message,
+            }),
+          );
+      }
     }
+
+    async function saveNewConfig(config: NewConfig) {
+      try {
+        const newState = await saveAppOptions("DSW", Optional.empty(), {
+          DSW_ALIAS: config.DSW_ALIAS,
+          DSW_URL: config.DSW_URL,
+          DSW_APIKEY: config.DSW_APIKEY,
+        });
+        runInAction(() => {
+          integrationState.credentials = newState.credentials;
+          const optionIdsOfExistingConfigs = new RsSet(
+            copyOfState.credentials.map(({ optionsId }) => optionsId),
+          );
+          try {
+            const newlySavedConfig = new RsSet(newState.credentials)
+              .mapOptional((x) => x)
+              .subtractMap(
+                ({ optionsId }) => optionsId,
+                optionIdsOfExistingConfigs,
+              ).first;
+            copyOfState.credentials.push(
+              observable({ ...newlySavedConfig, dirty: false }),
+            );
+          } catch (e) {
+            throw new Error("Save completed but cannot show results.");
+          }
+        });
+        setNewConfig(null);
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message: "Successfully saved DSW details",
+          }),
+        );
+      } catch (e) {
+        if (e instanceof Error)
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not save DSW details",
+              message: e.message,
+            }),
+          );
+      }
+    }
+
+    return (
+      <>
+        <Grid container spacing={1} sx={{ flexDirection: "column", mt: 1 }}>
+          <Grid container sx={{ flexDirection: "column" }} spacing={1}>
+            {observableConfigs.map((config, i) => (
+              <Grid key={i}>
+                <Card variant="outlined">
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void saveExistingConfig(config, i);
+                    }}
+                    aria-label={`Configured DSW with label ${config.DSW_ALIAS}`}
+                  >
+                    <CardContent>
+                      <Grid
+                        container
+                        sx={{ flexDirection: "column" }}
+                        spacing={2}
+                      >
+                        <Grid>
+                          <TextField
+                            fullWidth
+                            value={config.DSW_ALIAS}
+                            onChange={({ target: { value } }) => {
+                              runInAction(() => {
+                                config.DSW_ALIAS = value;
+                                config.dirty = true;
+                              });
+                            }}
+                            label="Label"
+                            error={config.DSW_ALIAS === ""}
+                            helperText={
+                              config.DSW_ALIAS === "" && "Label is required."
+                            }
+                          />
+                        </Grid>
+                        <Grid>
+                          <TextField
+                            fullWidth
+                            value={config.DSW_URL}
+                            onChange={({ target: { value } }) => {
+                              runInAction(() => {
+                                config.DSW_URL = value;
+                                config.dirty = true;
+                              });
+                            }}
+                            label="Server URL"
+                            error={config.DSW_URL === ""}
+                            helperText={
+                              config.DSW_URL === "" && "URL is required."
+                            }
+                          />
+                        </Grid>
+                        <Grid>
+                          <TextField
+                            fullWidth
+                            value={config.DSW_APIKEY}
+                            onChange={({ target: { value } }) => {
+                              runInAction(() => {
+                                config.DSW_APIKEY = value;
+                                config.dirty = true;
+                              });
+                            }}
+                            type="password"
+                            label="API key"
+                            error={config.DSW_APIKEY === ""}
+                            helperText={
+                              config.DSW_APIKEY === "" && "API key is required."
+                            }
+                          />
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                    <CardActions>
+                      <Button
+                        onClick={doNotAwait(async () => {
+                          trackEvent("user:delete:dsw_connection:apps");
+                          try {
+                            await deleteAppOptions("DSW", config.optionsId);
+                            runInAction(() => {
+                              const deletedIndex = observableConfigs.findIndex(
+                                (c) => c === config,
+                              );
+                              observableConfigs.splice(deletedIndex, 1);
+                              integrationState.credentials.splice(
+                                deletedIndex,
+                                1,
+                              );
+                            });
+                            addAlert(
+                              mkAlert({
+                                variant: "success",
+                                message: "Successfully deleted configuration.",
+                              }),
+                            );
+                          } catch (e) {
+                            if (e instanceof Error)
+                              addAlert(
+                                mkAlert({
+                                  variant: "error",
+                                  title: "Could not delete configuration.",
+                                  message: e.message,
+                                }),
+                              );
+                          }
+                        })}
+                      >
+                        Delete
+                      </Button>
+                      <Button
+                        disabled={config.dirty}
+                        onClick={doNotAwait(async () => {
+                          try {
+                            await test(config.DSW_ALIAS);
+                            addAlert(
+                              mkAlert({
+                                variant: "success",
+                                message: "Connection details are valid.",
+                              }),
+                            );
+                          } catch (e) {
+                            if (e instanceof Error)
+                              addAlert(
+                                mkAlert({
+                                  variant: "error",
+                                  title: "Connection details are not valid.",
+                                  message: e.message,
+                                }),
+                              );
+                          }
+                        })}
+                      >
+                        Test
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={
+                          config.DSW_ALIAS === "" ||
+                          config.DSW_URL === "" ||
+                          config.DSW_APIKEY === ""
+                        }
+                      >
+                        Save
+                      </Button>
+                    </CardActions>
+                  </form>
+                </Card>
+              </Grid>
+            ))}
+            {newConfig && (
+              <Grid key={null}>
+                <Card variant="outlined">
+                  <form
+                    onSubmit={(event) => {
+                      trackEvent("user:create:dsw_connection:apps");
+                      event.preventDefault();
+                      void saveNewConfig(newConfig);
+                    }}
+                  >
+                    <CardContent>
+                      <Grid
+                        container
+                        sx={{ flexDirection: "column" }}
+                        spacing={2}
+                      >
+                        <Grid>
+                          <TextField
+                            fullWidth
+                            value={newConfig.DSW_ALIAS}
+                            onChange={({ target: { value } }) => {
+                              runInAction(() => {
+                                newConfig.DSW_ALIAS = value;
+                              });
+                            }}
+                            label="Label"
+                            error={newConfig.DSW_ALIAS === ""}
+                            helperText={
+                              newConfig.DSW_ALIAS === "" && "Label is required."
+                            }
+                          />
+                        </Grid>
+                        <Grid>
+                          <TextField
+                            fullWidth
+                            value={newConfig.DSW_URL}
+                            onChange={({ target: { value } }) => {
+                              runInAction(() => {
+                                newConfig.DSW_URL = value;
+                              });
+                            }}
+                            label="Server URL"
+                            error={newConfig.DSW_URL === ""}
+                            helperText={
+                              newConfig.DSW_URL === "" && "URL is required."
+                            }
+                          />
+                        </Grid>
+                        <Grid>
+                          <TextField
+                            fullWidth
+                            value={newConfig.DSW_APIKEY}
+                            onChange={({ target: { value } }) => {
+                              runInAction(() => {
+                                newConfig.DSW_APIKEY = value;
+                              });
+                            }}
+                            type="password"
+                            label="API key"
+                            error={newConfig.DSW_APIKEY === ""}
+                            helperText={
+                              newConfig.DSW_APIKEY === "" &&
+                              "API key is required."
+                            }
+                          />
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                    <CardActions>
+                      <Button
+                        variant="outlined"
+                        onClick={() => {
+                          setNewConfig(null);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        // always disabled because it cannot be tested until saved
+                        disabled
+                        onClick={() => {}}
+                      >
+                        Test
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        type="submit"
+                        disabled={
+                          newConfig.DSW_ALIAS === "" ||
+                          newConfig.DSW_URL === "" ||
+                          newConfig.DSW_APIKEY === ""
+                        }
+                      >
+                        Save
+                      </Button>
+                    </CardActions>
+                  </form>
+                </Card>
+              </Grid>
+            )}
+          </Grid>
+          <Grid>
+            <Grid container direction="row" spacing={1}>
+              <Grid>
+                <AddButton newConfig={newConfig} setNewConfig={setNewConfig} />
+              </Grid>
+              <Grid></Grid>
+            </Grid>
+          </Grid>
+        </Grid>
+      </>
+    );
+  },
 );
 
 type DSWArgs = {
@@ -493,55 +491,59 @@ type DSWArgs = {
   update: (newIntegrationState: IntegrationStates["DSW"]) => void;
 };
 
-function DSW({
-                     integrationState,
-                     update,
-                   }: DSWArgs): React.ReactNode {
-
+function DSW({ integrationState, update }: DSWArgs): React.ReactNode {
   return (
-      <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
-        <IntegrationCard
-            name="DSW / FAIR Wizard"
-            integrationState={integrationState}
-            explanatoryText="Import Data Management Plans from Data Stewardship Wizard or FAIR Wizard."
-            image={DSWIcon}
-            color={LOGO_COLOR}
-            update={(newMode) =>
-                update({ mode: newMode, credentials: integrationState.credentials })
-            }
-            helpLinkText="DSW integration docs"
-            website="researchers.dsw.elixir-europe.org"
-            docLink="dsw"
-            usageText="You can import projects from Data Stewardship Wizard or FAIR Wizard into RSpace, and associate them as Data Management Plans with repository exports."
-            setupSection={
-              <>
-                <Typography variant="body2">
-                  You can configure multiple DSW or FAIR Wizard instances to connect to.
-                </Typography>
-                <ol>
-                  <li>Enter the required credentials and Save.</li>
-                  <li>Click on Test to ensure your credentials are correct.</li>
-                  <li>Enable the integration.</li>
-                  <li>
-                    You can now import a DSW or FAIR Wizard project as a DMP when in the
-                    Gallery, and associate that DMP with data when in the export dialog.
-                  </li>
-                </ol>
-                {ArrayUtils.all(integrationState.credentials)
-                    .map((configs) => (
-                        <DialogContent
-                            key={null}
-                            configs={configs}
-                            integrationState={integrationState}
-                        />
-                    ))
-                    .orElse(
-                        <>There was an error getting the configured DSW instances.</>
-                    )}
-              </>
-            }
-        />
-      </Grid>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12,
+      }}
+    >
+      <IntegrationCard
+        name="DSW / FAIR Wizard"
+        integrationState={integrationState}
+        explanatoryText="Import Data Management Plans from Data Stewardship Wizard or FAIR Wizard."
+        image={DSWIcon}
+        color={LOGO_COLOR}
+        update={(newMode) =>
+          update({ mode: newMode, credentials: integrationState.credentials })
+        }
+        helpLinkText="DSW integration docs"
+        website="researchers.dsw.elixir-europe.org"
+        docLink="dsw"
+        usageText="You can import projects from Data Stewardship Wizard or FAIR Wizard into RSpace, and associate them as Data Management Plans with repository exports."
+        setupSection={
+          <>
+            <Typography variant="body2">
+              You can configure multiple DSW or FAIR Wizard instances to connect
+              to.
+            </Typography>
+            <ol>
+              <li>Enter the required credentials and Save.</li>
+              <li>Click on Test to ensure your credentials are correct.</li>
+              <li>Enable the integration.</li>
+              <li>
+                You can now import a DSW or FAIR Wizard project as a DMP when in
+                the Gallery, and associate that DMP with data when in the export
+                dialog.
+              </li>
+            </ol>
+            {ArrayUtils.all(integrationState.credentials)
+              .map((configs) => (
+                <DialogContent
+                  key={null}
+                  configs={configs}
+                  integrationState={integrationState}
+                />
+              ))
+              .orElse(
+                <>There was an error getting the configured DSW instances.</>,
+              )}
+          </>
+        }
+      />
+    </Grid>
   );
 }
 

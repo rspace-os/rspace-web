@@ -4,68 +4,20 @@ import GlobalId from "../../../components/GlobalId";
 import type Alert from "@mui/material/Alert";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import { makeStyles } from "tss-react/mui";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTheme } from "@mui/material/styles";
 import { UserCancelledAction } from "../../../util/error";
 import { type AllowedFormTypes } from "../../../stores/contexts/FormSections";
 import RelativeBox from "../../../components/RelativeBox";
 import StickyMenu from "../Stepper/StickyMenu";
 import StickyStatus from "../StickyStatus";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
-
-const useStyles = makeStyles<{
-  recordType?: AllowedFormTypes;
-}>()((theme, { recordType }) => ({
-  appBar: {
-    backgroundColor:
-      recordType && theme.palette.record[recordType]
-        ? theme.palette.record[recordType].bg
-        : "white !important",
-    color: recordType ? "white" : `${theme.palette.text.primary} !important`,
-    border: recordType ? "none" : theme.borders.section,
-  },
-  toolbar: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: `${theme.spacing(0.5)} !important`,
-    minHeight: "auto",
-    overflow: "hidden",
-    backgroundColor: "unset !important",
-    color: "inherit !important",
-  },
-  growTitle: {
-    flexGrow: 1,
-    minWidth: 0, // this is for the truncated 'title' ellipsis to work as expected
-  },
-  topRow: {
-    margin: theme.spacing(0.5),
-  },
-  backButton: {
-    padding: theme.spacing(1, 0.5, 1, 1.5),
-    marginRight: theme.spacing(1),
-  },
-  illustrationWrapper: {
-    position: "relative",
-    bottom: 0,
-    alignSelf: "flex-end",
-    marginRight: 10,
-  },
-  illustrationSpacer: {
-    width: 90,
-    right: 0,
-  },
-  typeLabel: {
-    color: "inherit",
-    whiteSpace: "nowrap",
-    paddingBottom: theme.spacing(0.25),
-  },
-}));
 
 type CustomToolbarArgs = {
   title: React.ReactNode;
@@ -86,7 +38,7 @@ function CustomToolbar({
   batch,
   stickyAlert,
 }: CustomToolbarArgs): React.ReactNode {
-  const { classes } = useStyles({ recordType });
+  const theme = useTheme();
   const {
     uiStore,
     searchStore: { search, activeResult },
@@ -95,7 +47,6 @@ function CustomToolbar({
 
   const handleBackClick = () => {
     try {
-      // Using void to handle the promise without awaiting it
       void (async () => {
         await search.setActiveResult();
         uiStore.setVisiblePanel("left");
@@ -107,56 +58,70 @@ function CustomToolbar({
   };
 
   return (
-    <AppBar position="sticky" className={classes.appBar} elevation={0}>
-      <Toolbar variant="dense" className={classes.toolbar}>
-        <Grid
-          container
-          wrap="nowrap"
-          alignItems="center"
-          className={classes.topRow}
-        >
-          {isSingleColumnLayout && (
-            <IconButton
-              onClick={handleBackClick}
-              className={classes.backButton}
+    <AppBar
+      position="sticky"
+      elevation={0}
+      sx={{
+        backgroundColor:
+          recordType && theme.palette.record[recordType]
+            ? theme.palette.record[recordType].bg
+            : "white !important",
+        color: recordType
+          ? "white"
+          : `${theme.palette.text.primary} !important`,
+        border: recordType ? "none" : theme.borders.section,
+      }}
+    >
+      <Toolbar
+        variant="dense"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "nowrap",
+          gap: 1,
+          p: `${theme.spacing(1)} !important`,
+          minHeight: "auto",
+          overflow: "hidden",
+          backgroundColor: "unset !important",
+          color: "inherit !important",
+        }}
+      >
+        {isSingleColumnLayout && (
+          <IconButton
+            onClick={handleBackClick}
+            sx={{ p: theme.spacing(1, 0.5, 1, 1.5) }}
+          >
+            <ArrowBackIosIcon
+              fontSize="small"
+              data-test-id="backIcon"
+              /*
+               * Lacking CSS layers support, we have to resort to inline styles
+               * here to ensure that we have a higher specificity than the
+               * theme
+               */
+              style={{ color: "white" }}
+            />
+          </IconButton>
+        )}
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>{title}</Box>
+        <Box sx={{ minWidth: 90 }}>
+          {record?.illustration}
+        </Box>
+        {record && record.id !== null && (
+          <Stack>
+            <Typography
+              variant="caption"
+              component="span"
+              sx={{ color: "inherit", whiteSpace: "nowrap", pb: 0.25 }}
             >
-              <ArrowBackIosIcon
-                fontSize="small"
-                data-test-id="backIcon"
-                /*
-                 * Lacking CSS layers support, we have to resort to inline styles
-                 * here to ensure that we have a higher specificity than the
-                 * theme
-                 */
-                style={{ color: "white" }}
-              />
-            </IconButton>
-          )}
-          <Grid item className={classes.growTitle}>
-            {title}
-          </Grid>
-          <Grid item className={classes.illustrationWrapper}>
-            <div className={classes.illustrationSpacer}></div>
-            {record && record.illustration}
-          </Grid>
-          {record && record.id !== null && (
-            <Grid item>
-              <Grid container direction="column" alignItems="center">
-                <Typography
-                  variant="caption"
-                  component="span"
-                  className={classes.typeLabel}
-                >
-                  {record.recordTypeLabel.toUpperCase()}
-                </Typography>
-                <GlobalId record={record} />
-              </Grid>
-            </Grid>
-          )}
-        </Grid>
+              {record.recordTypeLabel.toUpperCase()}
+            </Typography>
+            <GlobalId record={record} />
+          </Stack>
+        )}
       </Toolbar>
       {activeResult && <StickyMenu stickyAlert={stickyAlert} />}
-      <Box pb={0.25} />
+      <Box sx={{ pb: 0.25 }} />
       {(record !== undefined || batch === true) && (
         <RelativeBox>
           <StickyStatus

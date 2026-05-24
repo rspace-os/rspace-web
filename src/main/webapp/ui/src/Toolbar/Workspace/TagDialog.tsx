@@ -205,8 +205,8 @@ function TagDialog(): React.ReactNode {
         )}
       </DialogTitle>
       <DialogContent>
-        <Grid container direction="column" spacing={2}>
-          <Grid item>
+        <Grid container sx={{ flexDirection: "column" }} spacing={2}>
+          <Grid>
             <Typography variant="body2">
               You can tag Documents, Notebooks, and Folders to categorise work
               and make it more searchable. If you&apos;ve selected multiple
@@ -216,7 +216,7 @@ function TagDialog(): React.ReactNode {
               </a>{" "}
             </Typography>
           </Grid>
-          <Grid item>
+          <Grid>
             <TagListing
               tags={
                 savedTagsMap === null
@@ -237,7 +237,7 @@ function TagDialog(): React.ReactNode {
                 setAddedTags(addedTags.filter((aTag) => aTag !== tag));
               }}
               endAdornment={
-                <Grid item>
+                <Grid>
                   <AddTag
                     enforceOntologies={enforcedOntologies ?? undefined}
                     onSelection={(

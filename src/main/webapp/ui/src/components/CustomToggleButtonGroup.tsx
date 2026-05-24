@@ -5,19 +5,26 @@
  * So as to be usable throughout the application this component MUST NOT have a
  * dependency on any global state.
  */
-import { withStyles } from "Styles";
+import { useTheme } from "@mui/material/styles";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import { type emptyObject } from "../util/types";
+import React from "react";
 
-const CustomToggleButtonGroup = withStyles<emptyObject, { root: string }>(
-  (theme) => ({
-    root: {
-      border: theme.borders.section,
-      backgroundColor: theme.palette.background.default,
-      display: "flex !important",
-    },
-  })
-)(ToggleButtonGroup);
+function CustomToggleButtonGroup(
+  props: React.ComponentProps<typeof ToggleButtonGroup>
+): React.ReactNode {
+  const theme = useTheme();
+  return (
+    <ToggleButtonGroup
+      {...props}
+      sx={{
+        border: theme.borders.section,
+        backgroundColor: theme.palette.background.default,
+        display: "flex !important",
+        ...((props.sx as object) ?? {}),
+      }}
+    />
+  );
+}
 
 CustomToggleButtonGroup.displayName = "CustomToggleButtonGroup";
 export default CustomToggleButtonGroup;

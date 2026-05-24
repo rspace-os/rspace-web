@@ -231,7 +231,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
           {historyId && (
             <>
               <TitledBox title="View Workflow in Galaxy" border>
-                <Stack spacing={2} alignItems="flex-start">
+                <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
                   <p>Your new history can be viewed here: </p>
                   <p>
                     <a
@@ -270,7 +270,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
           {!historyId && (
             <>
               <TitledBox title="Choose Data" border>
-                <Stack spacing={2} alignItems="flex-start">
+                <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
                   {servers && (
                     <>
                       <label htmlFor="serverChoice">
@@ -335,12 +335,14 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                     <Grid
                       container
                       spacing={0}
-                      direction="column"
-                      alignItems="center"
-                      justifyContent="center"
-                      sx={{ minHeight: "100vh" }}
+                      sx={{
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexDirection: "column",
+                        minHeight: "100vh",
+                      }}
                     >
-                      <Grid item xs={3}>
+                      <Grid size={3}>
                         {uploading && (
                           <CircularProgress
                             variant="indeterminate"

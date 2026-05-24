@@ -48,7 +48,7 @@ function DialogContents({ state }: { state: State }): React.ReactNode {
       return (
         <>
           <NoValue label="None" />
-          <Box mt={1}>
+          <Box sx={{ mt: 1 }}>
             <Typography variant="body1">
               Adding this item to a document&apos;s{" "}
               <a
@@ -156,7 +156,7 @@ function LinkedDocuments({
   }, [open]);
 
   return (
-    <Grid item>
+    <Grid>
       <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
         <FormLabel component="legend">Linked Documents</FormLabel>
         <FormGroup>

@@ -54,7 +54,7 @@ function Name<
   const labelId = React.useId();
   if (!fieldOwner.isFieldEditable("name")) {
     const globalId = record ? (
-      <Box ml={1} component="span">
+      <Box sx={{ ml: 1 }} component="span">
         <GlobalId record={record} />
       </Box>
     ) : null;

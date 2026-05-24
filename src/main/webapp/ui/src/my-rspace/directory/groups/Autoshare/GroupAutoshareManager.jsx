@@ -5,7 +5,6 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import Button from "@mui/material/Button";
 import materialTheme from "../../../../theme";
 import AdditionalInfo from "./AdditionalInfo";
-import { makeStyles } from "tss-react/mui";
 import axios from "@/common/axios";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -14,17 +13,6 @@ import DialogActions from "@mui/material/DialogActions";
 import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
 
-const useStyles = makeStyles()(() => ({
-  autoshareManager: {
-    margin: "0 0 0.5em 15px",
-  },
-
-  loading: {
-    position: "absolute",
-    margin: "0 auto",
-  },
-}));
-
 function GroupAutoshareManager({
   groupId,
   groupDisplayName,
@@ -32,7 +20,6 @@ function GroupAutoshareManager({
   isLabGroup,
   isGroupAutoshareAllowed,
 }) {
-  const { classes } = useStyles();
   const [autoshareStatus, setAutoshareStatus] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -101,7 +88,7 @@ function GroupAutoshareManager({
           <Tooltip title={title} aria-label={title}>
             <div>
               <Button
-                className={classes.autoshareManager}
+                sx={{ margin: "0 0 0.5em 15px" }}
                 variant="outlined"
                 size="small"
                 disabled
@@ -121,7 +108,7 @@ function GroupAutoshareManager({
         {isLabGroup && !isCloud && isGroupAutoshareAllowed && (
           <>
             <Button
-              className={classes.autoshareManager}
+              sx={{ margin: "0 0 0.5em 15px" }}
               onClick={props.callback}
               variant="outlined"
               size="small"
@@ -137,14 +124,12 @@ function GroupAutoshareManager({
   function DialogButtons(props) {
     return (
       <>
-        <Button onClick={props.onCancel} style={{ color: "grey" }}>
+          <Button onClick={props.onCancel} sx={{ color: "grey" }}>
           Cancel
         </Button>
         <Button onClick={props.onConfirm} color="primary" disabled={waiting}>
           Confirm
-          {waiting && (
-            <CircularProgress size={20} className={classes.loading} />
-          )}
+            {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
         </Button>
       </>
     );
@@ -226,10 +211,6 @@ function GroupAutoshareManager({
   );
 }
 
-/*
- * This is necessary because as of MUI v5 useStyles cannot be used in the same
- * component as the root MuiThemeProvider
- */
 export default function WrappedGroupAutoshareManager(props) {
   return (
     <StyledEngineProvider injectFirst>

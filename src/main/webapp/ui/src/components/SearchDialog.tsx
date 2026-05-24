@@ -12,7 +12,7 @@ import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 import docLinks from "../assets/DocLinks";
-import { withStyles } from "Styles";
+import Box from "@mui/material/Box";
 
 type TextAreaDialogArgs = {
   query: string;
@@ -20,16 +20,6 @@ type TextAreaDialogArgs = {
   setQuery: (event: { target: { value: string } }) => void;
   visible: boolean;
 };
-
-const Samp = withStyles<{ children: React.ReactNode }, { root: string }>(
-  (theme) => ({
-    root: {
-      backgroundColor: "#eee",
-      borderRadius: 3,
-      padding: theme.spacing(0.125, 0.25),
-    },
-  }),
-)(({ classes, children }) => <samp className={classes.root}>{children}</samp>);
 
 export default function TextAreaDialog({
   onSubmit,
@@ -54,8 +44,8 @@ export default function TextAreaDialog({
       <Dialog open={dialogOpen} onClose={onClose}>
         <DialogTitle>Search query</DialogTitle>
         <DialogContent>
-          <Grid container direction="column" spacing={2}>
-            <Grid item>
+          <Grid container sx={{ flexDirection: "column" }} spacing={2}>
+            <Grid>
               <TextField
                 onChange={setQuery}
                 onKeyPress={(e) => {
@@ -72,10 +62,10 @@ export default function TextAreaDialog({
                 rows={6}
               />
             </Grid>
-            <Grid item>
+            <Grid>
               <DialogContentText>
                 Tip: Create powerful Lucene queries by prefixing your query with{" "}
-                <Samp>l:</Samp>
+                <Box component="samp" sx={{ bgcolor: "#eee", borderRadius: "3px", p: "1px 2px" }}>l:</Box>
               </DialogContentText>
               <DialogContentText>
                 For more information, see{" "}

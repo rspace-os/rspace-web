@@ -1,15 +1,6 @@
 import React from "react";
-import { makeStyles } from "tss-react/mui";
 import Dialog from "@mui/material/Dialog";
 import useStores from "../../../stores/use-stores";
-
-const useStyles = makeStyles()(() => ({
-  dialog: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-  },
-}));
 
 type ContextDialogArgs = {
   children: React.ReactNode;
@@ -27,12 +18,19 @@ export default function ContextDialog({
   fullWidth,
 }: ContextDialogArgs): React.ReactNode {
   const { uiStore } = useStores();
-  const { classes } = useStyles();
 
   return (
     <Dialog
-      classes={{
-        paper: uiStore.isTouchDevice ? classes.dialog : undefined,
+      slotProps={{
+        paper: {
+          sx: uiStore.isTouchDevice
+            ? {
+                position: "absolute",
+                top: 0,
+                left: 0,
+              }
+            : undefined,
+        },
       }}
       open={open}
       onClose={onClose}

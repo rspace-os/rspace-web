@@ -1,28 +1,15 @@
 import React, { useContext, useState } from "react";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../stores/contexts/Search";
-import { makeStyles } from "tss-react/mui";
 import TableCell from "@mui/material/TableCell";
 import RsSet from "../../../util/set";
-import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
+import { StyledMenu, StyledMenuItem } from "@/components/StyledMenu";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import Grid from "@mui/material/Grid";
 import SortableProperty, { type SortProperty } from "./SortableProperty";
-import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
+import type { AdjustableTableRowLabel } from "@/stores/definitions/Tables";
 import ListItemText from "@mui/material/ListItemText";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
-
-const useStyles = makeStyles()((theme) => ({
-  adjustableColumnMenuButton: {
-    padding: theme.spacing(0.5),
-  },
-  adjustableColumnMenuCell: {
-    paddingRight: `${theme.spacing(0.5)} !important`,
-  },
-  current: {
-    color: theme.palette.primary.main,
-  },
-}));
 
 type AdjustableHeadCellArgs<T extends AdjustableTableRowLabel> = {
   options: RsSet<T>;
@@ -52,21 +39,20 @@ function AdjustableHeadCell<T extends AdjustableTableRowLabel>({
     return <SortableProperty property={cAP} />;
   };
 
-  const { classes } = useStyles();
   return (
     <>
       <TableCell
         variant="head"
         padding="normal"
-        className={classes.adjustableColumnMenuCell}
+        sx={(theme) => ({ pr: `${theme.spacing(0.5)} !important` })}
         sortDirection={order}
       >
-        <Grid container alignItems="center" wrap="nowrap">
-          <Grid item>{content()}</Grid>
-          <Grid item>
+        <Grid container sx={{ alignItems: "center", flexWrap: "nowrap" }}>
+          <Grid>{content()}</Grid>
+          <Grid>
             <IconButtonWithTooltip
               title="Column options"
-              className={classes.adjustableColumnMenuButton}
+              sx={{ p: 0.5 }}
               onClick={({ currentTarget }) =>
                 setAdjustableColumnMenu(currentTarget)
               }

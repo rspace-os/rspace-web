@@ -46,13 +46,13 @@ function SubsampleListing({ sample }: SubsampleListingArgs): React.ReactNode {
   };
 
   return (
-    <Grid container direction="row" flexWrap="nowrap" spacing={1}>
-      <Grid item sx={{ pl: 0, ml: -2 }}>
+    <Grid container direction="row" sx={{ flexWrap: "nowrap" }} spacing={1}>
+      <Grid sx={{ pl: 0, ml: -2 }}>
         <IconButton onClick={() => setSearchOpen(!searchOpen)} sx={{ p: 1 }}>
           <ExpandCollapseIcon open={searchOpen} />
         </IconButton>
       </Grid>
-      <Grid item flexGrow={1}>
+      <Grid sx={{ flexGrow: 1 }}>
         <Collapse
           in={searchOpen}
           collapsedSize={44}
@@ -69,15 +69,15 @@ function SubsampleListing({ sample }: SubsampleListingArgs): React.ReactNode {
             }}
           >
             <InnerSearchNavigationContext>
-              <Grid container direction="column" spacing={1}>
-                <Grid item>
+              <Grid container sx={{ flexDirection: "column" }} spacing={1}>
+                <Grid>
                   <Search
                     handleSearch={handleSearch}
                     TABS={TABS}
                     size="small"
                   />
                 </Grid>
-                <Grid item>
+                <Grid>
                   <SearchViewComponent contextMenuId={menuIDs.RESULTS} />
                 </Grid>
               </Grid>

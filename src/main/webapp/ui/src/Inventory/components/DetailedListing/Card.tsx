@@ -2,8 +2,7 @@ import React, { useContext, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { useTheme } from "@mui/material/styles";
-import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
+import Box from "@mui/material/Box";
 import CardMedia from "@mui/material/CardMedia";
 import IconButton from "@mui/material/IconButton";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
@@ -19,8 +18,6 @@ import PhotoIcon from "@mui/icons-material/Photo";
 import ContentsChips from "../../Container/Content/ContentsChips";
 import SearchContext from "../../../stores/contexts/Search";
 import useStores from "../../../stores/use-stores";
-import { globalStyles } from "../../../theme";
-import clsx from "clsx";
 import ImagePreview from "../../../components/ImagePreview";
 import { StyledMenu } from "../../../components/StyledMenu";
 import Portal from "@mui/material/Portal";
@@ -30,177 +27,150 @@ import UserDetails from "../../../components/UserDetails";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import SampleModel from "../../../stores/models/SampleModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
-import { emptyObject, type BlobUrl } from "../../../util/types";
+import { type BlobUrl } from "../../../util/types";
 import CustomTooltip from "../../../components/CustomTooltip";
 import { hasRequiredPermissions } from "../../../stores/definitions/InventoryRecord";
 
 const REQUIRED_PERMISSIONS_TOOLTIP =
   "You do not have permission to select this item.";
 
-const CustomCardStructure = withStyles<
-  {
-    navigateOnClick: boolean;
-    greyOut: boolean;
-    title: string;
-    subheader: string;
-    image: React.ReactNode;
-    content: React.ReactNode;
-    onClick: () => void;
-    headerAvatar: React.ReactNode;
-    headerAction: React.ReactNode;
-    contentFooter: React.ReactNode;
-    deleted: boolean;
-  },
-  { card: string }
->((theme, { navigateOnClick }) => ({
-  card: {
-    transition: theme.transitions.filterToggle,
-    cursor: navigateOnClick ? "pointer" : "default",
-    height: "100%",
-  },
-}))(({ classes, greyOut, navigateOnClick: _navigateOnClick, ...rest }) => {
-  const { classes: globalClasses } = globalStyles();
+function CustomCardStructure({
+  navigateOnClick,
+  greyOut,
+  ...rest
+}: React.ComponentProps<typeof CardStructure> & {
+  navigateOnClick: boolean;
+  greyOut: boolean;
+}): React.ReactNode {
   return (
     <CardStructure
-      className={clsx(classes.card, greyOut && globalClasses.greyOut)}
+      sx={{
+        transition: "filter .2s ease-in-out, opacity .2s ease-in-out",
+        cursor: navigateOnClick ? "pointer" : "default",
+        height: "100%",
+        ...(greyOut ? { filter: "grayscale(1)", pointerEvents: "none", opacity: 0.6 } : {}),
+      }}
       {...rest}
     />
   );
-});
+}
 
-const Details = withStyles<{ record: InventoryRecord }, { location: string }>(
-  (theme) => ({
-    location: {
-      marginTop: theme.spacing(0.5),
-    },
-  }),
-)(({ record, classes }) => (
-  <DescriptionList
-    content={[
-      ...(record.readAccessLevel === "full" && record instanceof ContainerModel
-        ? [
-            {
-              label: "Contents",
-              value: <ContentsChips record={record} />,
-            },
-          ]
-        : []),
-      ...(record.readAccessLevel === "full" && record instanceof SampleModel
-        ? [
-            {
-              label: "Total Quantity",
-              value: record.quantityLabel,
-            },
-          ]
-        : []),
-      ...(record.readAccessLevel === "full" && record instanceof SubSampleModel
-        ? [
-            {
-              label: "Quantity",
-              value: record.quantityLabel,
-            },
-          ]
-        : []),
-      ...(record.readAccessLevel !== "public" &&
-      record instanceof SubSampleModel
-        ? [
-            {
-              label: "Sample",
-              value: <RecordLink record={record.sample} overflow />,
-              reducedPadding: true,
-            },
-          ]
-        : []),
-      ...(record.owner
-        ? [
-            {
-              label: "Owner",
-              value: (
-                <UserDetails
-                  userId={record.owner.id}
-                  fullName={record.owner.fullName}
-                  position={["bottom", "right"]}
-                />
-              ),
-              reducedPadding: true,
-            },
-          ]
-        : []),
-      ...(record.readAccessLevel !== "public" &&
-      (record instanceof SubSampleModel || record instanceof ContainerModel) &&
-      record.immediateParentContainer
-        ? [
-            {
-              label: "Location",
-              value: (
-                <div className={classes.location}>
-                  <RecordLink
-                    record={record.immediateParentContainer}
-                    overflow
+function Details({ record }: { record: InventoryRecord }): React.ReactNode {
+  return (
+    <DescriptionList
+      content={[
+        ...(record.readAccessLevel === "full" && record instanceof ContainerModel
+          ? [
+              {
+                label: "Contents",
+                value: <ContentsChips record={record} />,
+              },
+            ]
+          : []),
+        ...(record.readAccessLevel === "full" && record instanceof SampleModel
+          ? [
+              {
+                label: "Total Quantity",
+                value: record.quantityLabel,
+              },
+            ]
+          : []),
+        ...(record.readAccessLevel === "full" && record instanceof SubSampleModel
+          ? [
+              {
+                label: "Quantity",
+                value: record.quantityLabel,
+              },
+            ]
+          : []),
+        ...(record.readAccessLevel !== "public" &&
+        record instanceof SubSampleModel
+          ? [
+              {
+                label: "Sample",
+                value: <RecordLink record={record.sample} overflow />,
+                reducedPadding: true,
+              },
+            ]
+          : []),
+        ...(record.owner
+          ? [
+              {
+                label: "Owner",
+                value: (
+                  <UserDetails
+                    userId={record.owner.id}
+                    fullName={record.owner.fullName}
+                    position={["bottom", "right"]}
                   />
-                </div>
-              ),
-              below: true,
-            },
-          ]
-        : []),
-    ]}
-  />
-));
-
-const Modified = withStyles<{ record: InventoryRecord }, { container: string }>(
-  (theme) => ({
-    container: {
-      margin: theme.spacing(0, 1, 1, 1),
-      color: theme.palette.text.secondary,
-      fontSize: "0.8em",
-    },
-  }),
-)(({ record, classes }) => (
-  <div className={classes.container}>
-    <span>Modified </span>
-    <TimeAgoCustom
-      time={record.lastModified}
-      formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
+                ),
+                reducedPadding: true,
+              },
+            ]
+          : []),
+        ...(record.readAccessLevel !== "public" &&
+        (record instanceof SubSampleModel || record instanceof ContainerModel) &&
+        record.immediateParentContainer
+          ? [
+              {
+                label: "Location",
+                value: (
+                  <Box sx={{ mt: 0.5 }}>
+                    <RecordLink
+                      record={record.immediateParentContainer}
+                      overflow
+                    />
+                  </Box>
+                ),
+                below: true,
+              },
+            ]
+          : []),
+      ]}
     />
-    <span> by </span>
-    {record.modifiedByFullName}
-  </div>
-));
+  );
+}
 
-const ImagePlaceholder = withStyles<
-  emptyObject,
-  { media: string; icon: string }
->((theme) => ({
-  media: {
-    display: "flex",
-    backgroundColor: theme.palette.primary.saturated,
-    opacity: "0.3",
-    height: "100%",
-  },
-  icon: {
-    color: "white",
-    margin: "auto auto",
-    fontSize: "5em",
-  },
-}))(({ classes }) => (
-  <CardMedia className={classes.media}>
-    <PhotoIcon className={classes.icon} />
-  </CardMedia>
-));
+function Modified({ record }: { record: InventoryRecord }): React.ReactNode {
+  return (
+    <Box
+      sx={{
+        m: (theme) => theme.spacing(0, 1, 1, 1),
+        color: "text.secondary",
+        fontSize: "0.8em",
+      }}
+    >
+      <span>Modified </span>
+      <TimeAgoCustom
+        time={record.lastModified}
+        formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
+      />
+      <span> by </span>
+      {record.modifiedByFullName}
+    </Box>
+  );
+}
 
-const useStyles = makeStyles<{ fetching: boolean }>()(
-  (theme, { fetching }) => ({
-    menuButton: {
-      padding: theme.spacing(1),
-    },
-    preview: {
-      height: "100%",
-      cursor: fetching ? "progress" : "zoom-in",
-      backgroundSize: "contain",
-    },
-  }),
-);
+function ImagePlaceholder(): React.ReactNode {
+  return (
+    <CardMedia
+      sx={{
+        display: "flex",
+        backgroundColor: (theme) => theme.palette.primary.saturated,
+        opacity: "0.3",
+        height: "100%",
+      }}
+    >
+      <PhotoIcon
+        sx={{
+          color: "white",
+          margin: "auto auto",
+          fontSize: "5em",
+        }}
+      />
+    </CardMedia>
+  );
+}
 
 type CardArgs = {
   record: InventoryRecord;
@@ -266,7 +236,6 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
     setLink(null);
   };
 
-  const { classes } = useStyles({ fetching });
   const isFilteredOut = search.alwaysFilterOut(record);
   const hasPermission = hasRequiredPermissions(
     record.permittedActions,
@@ -295,7 +264,11 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
       image={
         record.thumbnail ? (
           <CardMedia
-            className={classes.preview}
+            sx={{
+              height: "100%",
+              cursor: fetching ? "progress" : "zoom-in",
+              backgroundSize: "contain",
+            }}
             title={record.name}
             image={record.thumbnail}
             onClick={openPreview}
@@ -315,7 +288,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
       headerAction={
         <>
           <IconButton
-            className={classes.menuButton}
+            sx={{ p: 1 }}
             onClick={preventEventBubbling(
               (e: React.MouseEvent<HTMLButtonElement>) => {
                 const { currentTarget } = e;

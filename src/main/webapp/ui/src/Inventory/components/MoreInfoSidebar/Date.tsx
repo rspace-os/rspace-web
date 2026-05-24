@@ -13,7 +13,7 @@ type DateArgs = {
 
 function Date({ date, label }: DateArgs): React.ReactNode {
   return (
-    <Grid item>
+    <Grid>
       <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
         <FormLabel component="legend">{label}</FormLabel>
         <FormGroup>{isoToLocale(date)}</FormGroup>

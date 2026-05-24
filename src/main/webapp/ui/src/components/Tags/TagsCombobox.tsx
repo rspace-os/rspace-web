@@ -8,7 +8,6 @@ import { VariableSizeList as List, VariableSizeList } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import Popover from "@mui/material/Popover";
 import InputAdornment from "@mui/material/InputAdornment";
-import { StyledMenuItem } from "../StyledMenu";
 import FilterIcon from "@mui/icons-material/FilterAlt";
 import ListItemText from "@mui/material/ListItemText";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -20,7 +19,7 @@ import {
 } from "./TagValidation";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import { makeStyles } from "tss-react/mui";
+import { useTheme } from "@mui/material/styles";
 import { Optional, lift3 } from "../../util/optional";
 import { stableSort } from "../../util/table";
 import { type Tag } from "../../stores/definitions/Tag";
@@ -87,27 +86,6 @@ type InternalTag = Tag & {
   selected: boolean;
 };
 
-/*
- * makeStyles is used because withStyles is not performant enough to render the
- * menu items as the user scrolls the virtualised list
- */
-const useStyles = makeStyles<{
-  index: number;
-  keyboardFocusIndex: number | null;
-}>()((theme, { index, keyboardFocusIndex }) => ({
-  menuItem: {
-    padding: "8px",
-    cursor: "default",
-
-    border:
-      index === keyboardFocusIndex
-        ? `2px solid ${theme.palette.primary.main}`
-        : "none",
-    backgroundColor:
-      index === keyboardFocusIndex ? theme.palette.hover.iconButton : "default",
-    borderRadius: "4px",
-  },
-}));
 
 function OptionsListing({
   hasNextPage,
@@ -153,7 +131,7 @@ function OptionsListing({
     index: number;
     style: React.CSSProperties;
   }) => {
-    const { classes } = useStyles({ index, keyboardFocusIndex });
+    const theme = useTheme();
     if (!isItemLoaded(index) && isNextPageLoading) {
       return <li style={style}>Loading...</li>;
     }
@@ -180,10 +158,20 @@ function OptionsListing({
       );
 
     return (
-      <StyledMenuItem
+      <li
         {...getOptionProps({ option, index })}
-        className={classes.menuItem}
         style={{
+          padding: "8px",
+          cursor: "default",
+          border:
+            index === keyboardFocusIndex
+              ? `2px solid ${theme.palette.primary.main}`
+              : "none",
+          backgroundColor:
+            index === keyboardFocusIndex
+              ? theme.palette.hover.iconButton
+              : "default",
+          borderRadius: "4px",
           /*
            * This style object is what positions the MenuItem correctly within
            * the virtualised list; it gives it `position: absolute` with a top,
@@ -193,18 +181,17 @@ function OptionsListing({
 
           /*
            * These styles, which use `option` to conditionally determine the
-           * style value, must be here and not in the `makeStyles` above
-           * because otherwise an indexing error occurs when the user presses
-           * backspace inside the filter text field.
+           * style value, must stay inline because otherwise an indexing error
+           * occurs when the user presses backspace inside the filter text
+           * field.
            */
           filter: tagIsAllowed ? "" : "opacity(0.2)",
           pointerEvents: tagIsAllowed ? "auto" : "none",
 
           /*
-           * Scroll horizontally rather than wrap. The styles are here rather
-           * than in `makeStyles` above because the width will be overriden by
-           * the `style` variable coming from `InfiniteLoader` if it is
-           * specified in a class.
+           * Scroll horizontally rather than wrap. The styles are inline here
+           * because the width will be overriden by the `style` variable coming
+           * from `InfiniteLoader` if it is specified in a class.
            */
           whiteSpace: "nowrap",
           width: "unset",
@@ -238,7 +225,7 @@ function OptionsListing({
           primary={label}
           secondary={helpText(checkInternalTag(option, { enforceOntologies }))}
         />
-      </StyledMenuItem>
+      </li>
     );
   };
 
@@ -589,7 +576,17 @@ export default function TagsCombobox<
       }
     },
   });
-  const { ref: inputRef, ...inputProps } = getInputProps();
+  const { ref: autocompleteInputRef, ...inputProps } = getInputProps();
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const setInputRef = (node: HTMLInputElement | null) => {
+    inputRef.current = node;
+    if (typeof autocompleteInputRef === "function") {
+      autocompleteInputRef(node);
+    } else if (autocompleteInputRef) {
+      (autocompleteInputRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
+    }
+  };
 
   /*
    * Whenever tags are added or removed from `value`, update the set of
@@ -647,7 +644,7 @@ export default function TagsCombobox<
        * already be set.
        */
       setTimeout(() => {
-        (inputRef as React.RefObject<HTMLInputElement>).current?.focus();
+        inputRef.current?.focus();
       }, 0);
     }
   }, [anchorEl]);
@@ -671,29 +668,31 @@ export default function TagsCombobox<
           horizontal: "left",
         }}
         elevation={0}
-        PaperProps={{
-          variant: "outlined",
-          style: {
-            padding: "4px",
-            paddingBottom: "12px",
-            width: POPOVER_WIDTH,
-          },
-        }}
-        BackdropProps={{
-          invisible: false,
-          transitionDuration: window.matchMedia(
-            "(prefers-reduced-motion: reduce)"
-          ).matches
-            ? 0
-            : 225,
-        }}
         keepMounted
         transitionDuration={
           window.matchMedia("(prefers-reduced-motion: reduce)").matches
             ? 0
             : "auto"
         }
-      >
+        slotProps={{
+          backdrop: {
+            invisible: false,
+            transitionDuration: window.matchMedia(
+              "(prefers-reduced-motion: reduce)"
+            ).matches
+              ? 0
+              : 225,
+          },
+
+          paper: {
+            variant: "outlined",
+            style: {
+              padding: "4px",
+              paddingBottom: "12px",
+              width: POPOVER_WIDTH,
+            },
+          }
+        }}>
         <div
           {...getRootProps()}
           style={{
@@ -702,41 +701,8 @@ export default function TagsCombobox<
           }}
         >
           <TextField
-            InputLabelProps={{
-              htmlFor: textFieldId,
-            }}
             variant="standard"
             label="Filter suggested tags"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <FilterIcon />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="start">
-                  {/* Because the icon is so small, the animations need to be
-                   * more exagerated, hence the timeout and animationDuration
-                   */}
-                  <Grow in={isNextPageLoading} timeout={300}>
-                    <div>
-                      <FontAwesomeIcon
-                        icon={faSpinner}
-                        spin
-                        size="sm"
-                        style={{ animationDuration: "1.5s" }}
-                      />
-                    </div>
-                  </Grow>
-                </InputAdornment>
-              ),
-            }}
-            inputProps={{
-              ...inputProps,
-              id: textFieldId,
-              value: filter,
-            }}
-            inputRef={inputRef}
             onFocus={() => {
               /*
                * When the user taps on the "Add Tag" button we open the Popover
@@ -873,7 +839,43 @@ export default function TagsCombobox<
             style={{
               fontSize: "1.1em",
             }}
-          />
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <FilterIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="start">
+                    {/* Because the icon is so small, the animations need to be
+                     * more exagerated, hence the timeout and animationDuration
+                     */}
+                    <Grow in={isNextPageLoading} timeout={300}>
+                      <div>
+                        <FontAwesomeIcon
+                          icon={faSpinner}
+                          spin
+                          size="sm"
+                          style={{ animationDuration: "1.5s" }}
+                        />
+                      </div>
+                    </Grow>
+                  </InputAdornment>
+                ),
+              },
+
+              htmlInput: {
+                ...inputProps,
+                ref: setInputRef,
+                id: textFieldId,
+                value: filter,
+              },
+
+              inputLabel: {
+                htmlFor: textFieldId,
+              }
+            }} />
         </div>
         {groupedOptions.length > 0 && (
           <OptionsListing

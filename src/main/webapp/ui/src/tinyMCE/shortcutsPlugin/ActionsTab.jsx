@@ -8,7 +8,7 @@ import { humanize } from "../../util/shortcuts";
 export default function ActionsTab(props) {
   return Object.keys(props.actionShortcuts).map((k) => (
     <React.Fragment key={k}>
-      <Grid item xs={6}>
+      <Grid size={6}>
         <Typography
           variant="overline"
           display="block"
@@ -17,7 +17,7 @@ export default function ActionsTab(props) {
           {props.config.actions[k].description}
         </Typography>
       </Grid>
-      <Grid item xs={6}>
+      <Grid size={6}>
         <TextField
           variant="standard"
           fullWidth
@@ -31,7 +31,9 @@ export default function ActionsTab(props) {
           onKeyDown={(e) => props.detectShortcut(k, e)}
           onKeyUp={props.onKeyUp}
           margin="dense"
-          inputProps={{ style: { lineHeight: "20px" } }}
+          slotProps={{
+            htmlInput: { style: { lineHeight: "20px" } }
+          }}
         />
       </Grid>
     </React.Fragment>

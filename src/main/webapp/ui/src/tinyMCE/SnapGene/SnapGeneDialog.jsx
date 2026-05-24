@@ -59,7 +59,7 @@ export default function SnapGeneDialog(props) {
       <DialogTitle id="form-dialog-title">SnapGene</DialogTitle>
       <DialogContent>
         <Grid container spacing={2}>
-          <Grid item xs={2}>
+          <Grid size={2}>
             <Tabs
               orientation="vertical"
               variant="scrollable"

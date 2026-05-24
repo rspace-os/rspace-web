@@ -2,9 +2,9 @@
 import React from "react";
 import axios from "@/common/axios";
 import { produce } from "immer";
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import styled from "@emotion/styled";
 import Paper from "@mui/material/Paper";
 import InputBase from "@mui/material/InputBase";
 import Divider from "@mui/material/Divider";
@@ -30,58 +30,49 @@ function formatDateForTooltip(date /*: ?Date*/) /*: string*/ {
   return truncateIsoTimestamp(date, "date").orElse("Invalid date");
 }
 
-const SearchBar = styled.div`
-  padding: 2px 2px;
-  display: flex;
-  alignitems: center;
-
-  .MuiInputBase-root {
-    flex-grow: 1;
-    padding-left: 5px;
-    input:focus,
-    input:hover {
-      background-color: transparent !important;
-    }
-  }
-
-  .MuiDivider-root {
-    width: 1px;
-    height: 35px;
-    margin: 4px;
-  }
-
-  .MuiTextField-root {
-    .MuiInputLabel-formControl {
-      transform: translate(0, 16px) scale(1);
-    }
-    .MuiInputLabel-formControl.Mui-focused,
-    .MuiInputLabel-formControl.MuiFormLabel-filled {
-      transform: translate(5px, 0) scale(0.75);
-      transform-origin: top left;
-    }
-    label + .MuiInput-formControl {
-      margin-top: 5px;
-    }
-    .MuiInput-underline:before,
-    .MuiInput-underline:after {
-      border-bottom: 0px;
-    }
-  }
-
-  button.MuiIconButton-root {
-    width: 44px;
-    height: 44px;
-    font-size: 16px !important;
-  }
-
-  .grow {
-    flex-grow: 1;
-  }
-
-  .MuiChip-root {
-    margin: 6px;
-  }
-`;
+const searchBarSx = {
+  padding: "2px 2px",
+  display: "flex",
+  alignItems: "center",
+  "& .MuiInputBase-root": {
+    flexGrow: 1,
+    paddingLeft: 5,
+    "& input:focus, & input:hover": {
+      backgroundColor: "transparent !important",
+    },
+  },
+  "& .MuiDivider-root": {
+    width: "1px",
+    height: "35px",
+    margin: "4px",
+  },
+  "& .MuiTextField-root": {
+    "& .MuiInputLabel-formControl": {
+      transform: "translate(0, 16px) scale(1)",
+    },
+    "& .MuiInputLabel-formControl.Mui-focused, & .MuiInputLabel-formControl.MuiFormLabel-filled": {
+      transform: "translate(5px, 0) scale(0.75)",
+      transformOrigin: "top left",
+    },
+    "& label + .MuiInput-formControl": {
+      marginTop: "5px",
+    },
+    "& .MuiInput-underline:before, & .MuiInput-underline:after": {
+      borderBottom: 0,
+    },
+  },
+  "& button.MuiIconButton-root": {
+    width: 44,
+    height: 44,
+    fontSize: "16px !important",
+  },
+  "& .grow": {
+    flexGrow: 1,
+  },
+  "& .MuiChip-root": {
+    margin: "6px",
+  },
+};
 
 const FILTERS = {
   global: "All",
@@ -338,7 +329,7 @@ class SimpleSearch extends React.Component {
         <>
           <Paper style={{ flexGrow: "1", display: "flex" }} elevation={0}>
             <form onSubmit={this.submitSearch} style={{ width: "100%" }}>
-              <SearchBar>
+              <Box sx={searchBarSx}>
                 {(this.state.filter === "global" ||
                   this.state.filter === "chemical") && (
                   <Tooltip title="Filters" enterDelay={300}>
@@ -407,7 +398,7 @@ class SimpleSearch extends React.Component {
                     placeholder="Search"
                     value={this.state.term}
                     onChange={this.handleChange}
-                    inputProps={{ "aria-label": "Search" }}
+                    slotProps={{ input: { "aria-label": "Search" } }}
                   />
                 )}
                 {this.state.filter == "owner" && (
@@ -484,7 +475,7 @@ class SimpleSearch extends React.Component {
                     <FontAwesomeIcon icon={faBars} />
                   </IconButton>
                 </Tooltip>
-              </SearchBar>
+              </Box>
             </form>
             <ScopeDialog
               open={this.state.recordsDialog}

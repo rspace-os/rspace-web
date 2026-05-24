@@ -15,7 +15,7 @@ function TemplateVersion({ record }: TemplateVersionArgs): React.ReactNode {
   if (!(record instanceof TemplateModel)) return null;
 
   return (
-    <Grid item>
+    <Grid>
       <FormControl component="fieldset">
         <FormLabel component="legend">Version</FormLabel>
         <FormGroup>{record.version}</FormGroup>

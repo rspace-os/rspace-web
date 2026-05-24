@@ -8,7 +8,6 @@ import React, {
   MouseEvent,
 } from "react";
 import { observer, useLocalObservable } from "mobx-react-lite";
-import { makeStyles } from "tss-react/mui";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -70,54 +69,33 @@ const WrappedGridCell = observer((props: Omit<GridCellArgs, "hoverEffect">) => {
   return <GridCell {...props} hoverEffect={hoverEffect} />;
 });
 
-const useStyles = makeStyles()((theme) => ({
-  table: {
-    WebkitTouchCallout: "none",
-    WebkitUserSelect: "none",
-    userSelect: "none",
-    cursor: "crosshair",
-    tableLayout: "fixed",
-
-    /*
-     * If there is more than enough space, grow the table to 100% of the
-     * available horizontal space and expand the size of the cells accordingly.
-     * If there is not enough space, do not constrain the size of the table to
-     * 100% of the width, but instead provide a horizontal scrollbar. The
-     * minimum size of the grid cells has been calibrated to ensure that a
-     * 96-well plate can be shown without needing a horizontal scrollbar but
-     * anything larger will, on a typically desktop viewport, require one. On
-     * smaller viewports, most grid containers including 96-well plates require
-     * a horizontal scrollbar. The extra 8px is so that any records in the
-     * right-most column with info buttons don't overflow the dimensions of the
-     * table and trigger the scrollbar.
-     */
-    minWidth: "calc(100% - 8px)",
-    width: "unset",
-    maxWidth: "calc(100% - 8px)",
-
-    "& th": {
-      maxWidth: 0,
-    },
-    "& .MuiTableCell-head": {
-      borderBottom: "none",
-    },
-    "& *": {
-      /*
-       * Ordinarily messing with the focus styles would be an accessibility
-       * violation but we apply our own styles to indicate that a cell is
-       * selected, which is synchronised with the content being focussed.
-       */
-      outline: "none",
-    },
-    "& .MuiTableCell-root:focus": {
-      backgroundColor: "unset",
-    },
+const tableSx = {
+  WebkitTouchCallout: "none",
+  WebkitUserSelect: "none",
+  userSelect: "none",
+  cursor: "crosshair",
+  tableLayout: "fixed",
+  minWidth: "calc(100% - 8px)",
+  width: "unset",
+  maxWidth: "calc(100% - 8px)",
+  "& th": {
+    maxWidth: 0,
   },
-  loadingCell: {
-    padding: theme.spacing(0.5),
+  "& .MuiTableCell-head": {
     borderBottom: "none",
   },
-}));
+  "& *": {
+    outline: "none",
+  },
+  "& .MuiTableCell-root:focus": {
+    backgroundColor: "unset",
+  },
+} as const;
+
+const loadingCellSx = {
+  p: 0.5,
+  borderBottom: "none",
+} as const;
 
 interface LoadedContentProps {
   container: ContainerModel;
@@ -175,7 +153,6 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
   }, [document.activeElement]);
 
   const topLeftCellRef = useRef<HTMLTableCellElement | null>(null);
-  const { classes } = useStyles();
   const { disabled } = useContext(SearchContext);
 
   const [keyboardTips, setKeyboardTips] = useState(false);
@@ -223,7 +200,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
           aria-label="Grid view of container contents"
           role="grid"
           aria-multiselectable="true"
-          className={classes.table}
+          sx={tableSx}
           padding="normal"
           size="small"
           onFocus={() => setKeyboardTips(true)}
@@ -425,7 +402,6 @@ const ContentGrid: React.FC = () => {
   if (!(scopedResult && scopedResult instanceof ContainerModel))
     throw new Error("Search context's scopedResult must be a ContainerModel");
   const container: ContainerModel = scopedResult;
-  const { classes } = useStyles();
 
   return (
     <>
@@ -434,7 +410,7 @@ const ContentGrid: React.FC = () => {
           <Table
             stickyHeader
             role="grid"
-            className={classes.table}
+            sx={tableSx}
             padding="normal"
             size="small"
           >
@@ -457,7 +433,7 @@ const ContentGrid: React.FC = () => {
                   {container.columns.map((col) => (
                     <TableCell
                       key={`row-${row.value}-col-${col.value}`}
-                      className={classes.loadingCell}
+                      sx={loadingCellSx}
                     >
                       <Skeleton
                         variant="rectangular"

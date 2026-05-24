@@ -6,38 +6,17 @@ import Grid from "@mui/material/Grid";
 import ImageIcon from "@mui/icons-material/Image";
 import React, { useState, useEffect } from "react";
 import { isMobile } from "react-device-detect";
-import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import DynamicallyLoadedImageEditor from "./DynamicallyLoadedImageEditor";
 import { doNotAwait } from "../../util/Util";
 import ImagePreview from "../ImagePreview";
 import NoValue from "../../components/NoValue";
 import FileField from "./FileField";
-
-const useStyles = makeStyles<{
-  width: number | string;
-  height: number | string;
-}>()((theme, { width, height }) => ({
-  rounded: {
-    margin: 10,
-    width,
-    height,
-  },
-  skeleton: {
-    width: "100%",
-    display: "flex",
-    justifyContent: "center",
-  },
-  preview: { cursor: "zoom-in" },
-}));
-
 export type ImageData = {
   dataURL: string;
   file: Blob;
   binaryString?: string;
 };
-
 type ImageFieldArgs = {
   // required
   storeImage: (newImageData: ImageData) => void;
@@ -54,7 +33,6 @@ type ImageFieldArgs = {
   endAdornment?: React.ReactNode;
   noValueLabel?: string | null;
 };
-
 function ImageField({
   storeImage,
   imageAsObjectURL,
@@ -68,30 +46,25 @@ function ImageField({
   noValueLabel,
   alt,
 }: ImageFieldArgs): React.ReactNode {
-  const { classes } = useStyles({ width, height });
   const [editorFile, setEditorFile] = useState<Blob | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
-
   const [link, setLink] = useState<string | null>(null);
-  const [size, setSize] = useState<{ width: number; height: number } | null>(
-    null
-  );
-
+  const [size, setSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   const openPreview = () => {
     if (imageAsObjectURL) {
       setLink(imageAsObjectURL);
     }
   };
-
   const closePreview = () => {
     setLink(null);
   };
-
   const storeNewImage = (imageData: ImageData) => {
     setEditorFile(imageData.file);
     storeImage(imageData);
   };
-
   const imageSelection = ({
     binaryString,
     file,
@@ -108,7 +81,6 @@ function ImageField({
       file,
     });
   };
-
   const readAsDataUrl = (file: Blob): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -116,18 +88,16 @@ function ImageField({
         resolve(reader.result as string);
       };
       reader.onerror = () => {
-        reject(reader.error);
+        reject(reader.error ?? new Error("Failed to read file as data URL"));
       };
       reader.readAsDataURL(file);
     });
-
   const submit = async (editedImage: Blob) => {
     storeNewImage({
       dataURL: await readAsDataUrl(editedImage),
       file: editedImage,
     });
   };
-
   useEffect(() => {
     let mountedCheck = true;
     void (async () => {
@@ -140,41 +110,26 @@ function ImageField({
       mountedCheck = false;
     };
   }, [imageAsObjectURL]);
-
-  const Preview = withStyles<
-    React.ComponentProps<typeof Avatar>,
-    { root: string; img: string }
-  >(() => ({
-    root: {
-      margin: 10,
-      width,
-      height,
-    },
-    img: {
-      objectFit: "contain",
-    },
-  }))((props) => (
-    <Avatar
-      imgProps={{
-        alt,
-      }}
-      {...props}
-    />
-  ));
-
   return (
     <>
       {disabled && !imageAsObjectURL && (
         <NoValue label={noValueLabel ?? "None"} />
       )}
       {showPreview && imageAsObjectURL && (
-        <Grid container justifyContent="center" alignItems="center">
-          <Preview
-            className={classes.preview}
+        <Grid
+          container
+          sx={{
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Avatar
             variant="rounded"
             src={imageAsObjectURL}
             data-test-id="PreviewImage"
             onClick={openPreview}
+            sx={{ m: "10px", width, height, cursor: "zoom-in" }}
+            slotProps={{ img: { alt, sx: { objectFit: "contain" } } }}
           />
           {link && (
             <ImagePreview
@@ -197,28 +152,34 @@ function ImageField({
             id={id}
             onChange={imageSelection}
             icon={isMobile ? <CameraAltIcon /> : <ImageIcon />}
-            InputProps={{
-              endAdornment: (
-                <>
-                  <Grid item flexGrow={1}>
-                    <Button
-                      fullWidth
-                      size="large"
-                      color="primary"
-                      variant="outlined"
-                      disabled={!imageAsObjectURL}
-                      onClick={() => {
-                        setEditorOpen(true);
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <>
+                    <Grid
+                      sx={{
+                        flexGrow: 1,
                       }}
-                      startIcon={<CropIcon />}
-                      data-test-id="EditImageButton"
                     >
-                      Edit Image
-                    </Button>
-                  </Grid>
-                  {endAdornment}
-                </>
-              ),
+                      <Button
+                        fullWidth
+                        size="large"
+                        color="primary"
+                        variant="outlined"
+                        disabled={!imageAsObjectURL}
+                        onClick={() => {
+                          setEditorOpen(true);
+                        }}
+                        startIcon={<CropIcon />}
+                        data-test-id="EditImageButton"
+                      >
+                        Edit Image
+                      </Button>
+                    </Grid>
+                    {endAdornment}
+                  </>
+                ),
+              },
             }}
             warningAlert={warningAlert}
           />
@@ -238,5 +199,4 @@ function ImageField({
     </>
   );
 }
-
 export default observer(ImageField);

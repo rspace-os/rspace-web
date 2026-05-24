@@ -12,70 +12,32 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import { styled } from "@mui/material/styles";
-import { makeStyles } from "tss-react/mui";
 import DialogTitle from "@mui/material/DialogTitle";
-
-const useStyles = makeStyles<{ height: number }>()((_theme, { height }) => ({
-  /*
-   * These height style attributes are to ensure that when a tall image is
-   * being edited, it is scaled down rather than overflowing the dialog and
-   * resulting in the need to scroll: ideally the whole image should be visible
-   * when cropping. Setting `maxHeight: 100%` and `objectFit: scale-down` is
-   * not sufficient; all of the DOM nodes between the HTMLImageElement and the
-   * DialogContent need to have `height: 100%`. We then have to shrink back the
-   * crop-mask to only cover the image itself and not the whitespace below.
-   */
-  crop: {
-    height: "100%",
-    "& .ReactCrop__child-wrapper": {
-      height: "100%",
-    },
-    "& .ReactCrop__crop-mask": {
-      height: `${height}px`,
-    },
-  },
-}));
-
-const StyledDialog = styled(Dialog)(() => ({
-  "& > .MuiDialog-container > .MuiPaper-root": {
-    /*
-     * Even though this makes the dialog taller than it needs to be for
-     * horizontal images, this is necessary to ensure that vertical images are
-     * scaled down rather than overflowing the dialog with a scrollbar.
-     */
-    height: "100%",
-  },
-}));
 
 const isTestEnv =
   typeof process !== "undefined" && process.env.NODE_ENV === "test";
-
 type NoopTransitionProps = {
   in?: boolean;
   children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 };
-
 const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
   ({ in: inProp, children, className, style }, ref) => {
-  if (!inProp) return null;
-  if (React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      ref,
-      className,
-      style,
-      tabIndex: -1,
-    });
-  }
-  return children ?? null;
-  }
+    if (!inProp) return null;
+    if (React.isValidElement(children)) {
+      return React.cloneElement(children, {
+        ref,
+        className,
+        style,
+        tabIndex: -1,
+      });
+    }
+    return children ?? null;
+  },
 );
 NoopTransition.displayName = "NoopTransition";
-
 const imageTypeFromFile = (file: Blob): string => file.type.split("/")[1];
-
 const readAsBinaryString = (file: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -87,7 +49,6 @@ const readAsBinaryString = (file: Blob): Promise<string> =>
     };
     reader.readAsBinaryString(file);
   });
-
 type ImageEditingDialogArgs = {
   imageFile: Blob | null;
   open: boolean;
@@ -96,7 +57,6 @@ type ImageEditingDialogArgs = {
   alt: string;
   submitButtonLabel?: string;
 };
-
 function ImageEditingDialog({
   imageFile,
   open,
@@ -106,7 +66,6 @@ function ImageEditingDialog({
   submitButtonLabel = "Done",
 }: ImageEditingDialogArgs): React.ReactNode {
   const [imageHeight, setImageHeight] = React.useState(0);
-  const { classes } = useStyles({ height: imageHeight });
   const [editorData, setEditorData] = React.useState<string | null>(null);
   const [crop, setCrop] = React.useState({
     unit: "px" as const,
@@ -123,7 +82,6 @@ function ImageEditingDialog({
   const [dirtyFlag, setDirtyFlag] = React.useState(false);
   const [imageType, setImageType] = React.useState("");
   const titleId = React.useId();
-
   React.useEffect(() => {
     let settable = true;
     if (imageFile) {
@@ -137,7 +95,6 @@ function ImageEditingDialog({
       settable = false;
     };
   }, [imageFile]);
-
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>): void => {
     if (e.target instanceof HTMLImageElement) {
       const target: HTMLImageElement = e.target;
@@ -158,7 +115,6 @@ function ImageEditingDialog({
       });
     }
   };
-
   const onRotate = (direction: "clockwise" | "counter clockwise"): void => {
     setDirtyFlag(true);
     const getRotatedImageURL = (): string => {
@@ -177,12 +133,10 @@ function ImageEditingDialog({
     };
     setEditorData(getRotatedImageURL());
   };
-
   const cropImage = (format: string): Promise<Blob> => {
     const image = imageElement.current;
     if (!image) throw new Error("Image file not present");
     const canvas = document.createElement("canvas");
-
     const maxWidth = 600;
     const imageRatio = maxWidth / crop.width;
     canvas.width = maxWidth;
@@ -198,9 +152,8 @@ function ImageEditingDialog({
         0,
         0,
         crop.width * imageRatio,
-        crop.height * imageRatio
+        crop.height * imageRatio,
       );
-
     return new Promise((resolve) => {
       canvas.toBlob(
         (blob) => {
@@ -209,11 +162,10 @@ function ImageEditingDialog({
           }
         },
         format,
-        1.0
+        1.0,
       );
     });
   };
-
   const mainDialogSubmit = () => {
     if (!dirtyFlag) {
       close();
@@ -232,23 +184,41 @@ function ImageEditingDialog({
       close();
     });
   };
-
   return (
-    <StyledDialog
+    <Dialog
       maxWidth="md"
       open={open}
       onClose={close}
       aria-labelledby={titleId}
-      TransitionComponent={isTestEnv ? NoopTransition : undefined}
       transitionDuration={isTestEnv ? 0 : undefined}
-      BackdropProps={
-        isTestEnv
-          ? { TransitionComponent: NoopTransition, transitionDuration: 0 }
-          : undefined
-      }
       disableAutoFocus={isTestEnv}
       disableEnforceFocus={isTestEnv}
       disableRestoreFocus={isTestEnv}
+      slotProps={
+        isTestEnv
+          ? {
+              backdrop: {
+                transitionDuration: 0,
+                slots: {
+                  transition: NoopTransition,
+                },
+              },
+            }
+          : undefined
+      }
+      slots={{
+        transition: isTestEnv ? NoopTransition : undefined,
+      }}
+      sx={{
+        "& > .MuiDialog-container > .MuiPaper-root": {
+          /*
+           * Even though this makes the dialog taller than it needs to be for
+           * horizontal images, this is necessary to ensure that vertical images are
+           * scaled down rather than overflowing the dialog with a scrollbar.
+           */
+          height: "100%",
+        },
+      }}
     >
       <DialogTitle id={titleId}>Edit Image</DialogTitle>
       <DialogContent
@@ -259,43 +229,54 @@ function ImageEditingDialog({
         }}
       >
         {editorData && (
-          <ReactCrop
-            crop={crop}
-            onChange={setCrop}
-            className={classes.crop}
-            maxHeight={imageHeight}
-            onComplete={(newCrop) => {
-              setDirtyFlag(true);
-              /*
-               * Prevent the user from extending the cropping region to areas
-               * outside of the image, below it. Normally, react-image-crop
-               * would prevent this -- as it does in the other three directions
-               * -- but because we're setting `height: 100%` on many of its
-               * constitutent DOM nodes this is no longer enforced. As such, we
-               * enforce it ourselves.
-               */
-              if (newCrop.height + newCrop.y > imageHeight)
-                setCrop({
-                  ...newCrop,
-                  height: Math.min(imageHeight - newCrop.y, newCrop.height),
-                });
+          <Box
+            sx={{
+              height: "100%",
+              "& .ReactCrop__child-wrapper": {
+                height: "100%",
+              },
+              "& .ReactCrop__crop-mask": {
+                height: `${imageHeight}px`,
+              },
             }}
           >
-            <img
-              alt={alt}
-              src={editorData}
-              onLoad={onImageLoad}
-              style={{
+            <ReactCrop
+              crop={crop}
+              onChange={setCrop}
+              maxHeight={imageHeight}
+              onComplete={(newCrop) => {
+                setDirtyFlag(true);
                 /*
-                 * Can't add a border or outline as it throws off the logic of
-                 * the crop region and draggable anchors.
+                 * Prevent the user from extending the cropping region to areas
+                 * outside of the image, below it. Normally, react-image-crop
+                 * would prevent this -- as it does in the other three directions
+                 * -- but because we're setting `height: 100%` on many of its
+                 * constitutent DOM nodes this is no longer enforced. As such, we
+                 * enforce it ourselves.
                  */
-                maxHeight: "100%",
-                maxWidth: "100%",
-                objectFit: "scale-down",
+                if (newCrop.height + newCrop.y > imageHeight)
+                  setCrop({
+                    ...newCrop,
+                    height: Math.min(imageHeight - newCrop.y, newCrop.height),
+                  });
               }}
-            />
-          </ReactCrop>
+            >
+              <img
+                alt={alt}
+                src={editorData}
+                onLoad={onImageLoad}
+                style={{
+                  /*
+                   * Can't add a border or outline as it throws off the logic of
+                   * the crop region and draggable anchors.
+                   */
+                  maxHeight: "100%",
+                  maxWidth: "100%",
+                  objectFit: "scale-down",
+                }}
+              />
+            </ReactCrop>
+          </Box>
         )}
       </DialogContent>
       <DialogActions>
@@ -327,14 +308,17 @@ function ImageEditingDialog({
             <RotateRightIcon />
           </IconButton>
         </ButtonGroup>
-        <Box flexGrow={1}></Box>
+        <Box
+          sx={{
+            flexGrow: 1,
+          }}
+        ></Box>
         <Button onClick={close}>Cancel</Button>
         <Button onClick={mainDialogSubmit} color="primary">
           {submitButtonLabel}
         </Button>
       </DialogActions>
-    </StyledDialog>
+    </Dialog>
   );
 }
-
 export default observer(ImageEditingDialog);

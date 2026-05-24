@@ -52,10 +52,12 @@ export default function IgsnManagementPage({
     React.useState<HTMLElement | null>(null);
   const theme = useTheme();
   const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
-
   return (
     <Main
-      sx={{ overflowY: "auto", p: 2 }}
+      sx={{
+        overflowY: "auto",
+        p: 2,
+      }}
       ref={mainContentRef}
       role="main"
       aria-label="IGSN management main content"
@@ -82,7 +84,12 @@ export default function IgsnManagementPage({
             </Typography>
           </TitledBox>
           <TitledBox title="Register IGSN IDs" border>
-            <Stack spacing={2} alignItems="flex-start">
+            <Stack
+              spacing={2}
+              sx={{
+                alignItems: "flex-start",
+              }}
+            >
               <Typography>
                 You can register and associate an IGSN ID with an existing item
                 in Inventory by selecting{" "}
@@ -116,17 +123,24 @@ export default function IgsnManagementPage({
                     <TextField
                       label="Number of new IGSN IDs"
                       type="number"
-                      inputProps={{ min: 1, max: 100 }}
                       value={numberOfNewIdentifiers}
                       onChange={(e) =>
                         setNumberOfNewIdentifiers(Number(e.target.value))
                       }
                       fullWidth
-                      sx={{ mt: 1 }}
+                      sx={{
+                        mt: 1,
+                      }}
                       error={
                         numberOfNewIdentifiers < 1 ||
                         numberOfNewIdentifiers > 100
                       }
+                      slotProps={{
+                        htmlInput: {
+                          min: 1,
+                          max: 100,
+                        },
+                      }}
                     />
                   </Stack>
                 </DialogContent>
@@ -138,7 +152,9 @@ export default function IgsnManagementPage({
                     onClick={doNotAwait(async () => {
                       setRegisteringInProgress(true);
                       try {
-                        await bulkRegister({ count: numberOfNewIdentifiers });
+                        await bulkRegister({
+                          count: numberOfNewIdentifiers,
+                        });
                         if (refreshListing) void refreshListing();
                         setBulkRegisterDialogOpen(false);
                       } finally {
@@ -154,13 +170,22 @@ export default function IgsnManagementPage({
             </Stack>
           </TitledBox>
           <TitledBox title="Manage IGSN IDs" border>
-            <Stack spacing={0.5} alignItems="flex-start">
+            <Stack
+              spacing={0.5}
+              sx={{
+                alignItems: "flex-start",
+              }}
+            >
               <Typography>
                 To access actions such as editing metadata and publishing,
                 please use the <cite>Identifiers</cite> section of the{" "}
                 <strong>Linked Item</strong>.
               </Typography>
-              <Box height={12}></Box>
+              <Box
+                sx={{
+                  height: 12,
+                }}
+              ></Box>
               <Stack direction="row">
                 <Button
                   variant="contained"
@@ -183,9 +208,11 @@ export default function IgsnManagementPage({
                   anchorEl={actionsAnchorEl}
                   open={Boolean(actionsAnchorEl)}
                   onClose={() => setActionsAnchorEl(null)}
-                  MenuListProps={{
-                    "aria-labelledby": "actions-menu",
-                    disablePadding: true,
+                  slotProps={{
+                    list: {
+                      "aria-labelledby": "actions-menu",
+                      disablePadding: true,
+                    },
                   }}
                 >
                   <AccentMenuItem
@@ -222,7 +249,11 @@ export default function IgsnManagementPage({
                   />
                 </Menu>
               </Stack>
-              <div style={{ width: "100%" }}>
+              <div
+                style={{
+                  width: "100%",
+                }}
+              >
                 <IgsnTable
                   selectedIgsns={selectedIgsns}
                   setSelectedIgsns={setSelectedIgsns}

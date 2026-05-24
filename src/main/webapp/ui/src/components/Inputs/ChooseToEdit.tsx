@@ -1,18 +1,6 @@
 import React from "react";
+import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
-import { makeStyles } from "tss-react/mui";
-
-const useStyles = makeStyles()((theme) => ({
-  label: {
-    padding: theme.spacing(0, 0.25, 0, 1.5),
-    border: theme.borders.section,
-    borderRadius: theme.spacing(0.5),
-    letterSpacing: theme.typography.letterSpacing.spaced,
-    marginLeft: "auto",
-    position: "absolute",
-    right: 0,
-  },
-}));
 
 type ChooseToEditArgs = {
   checked: boolean;
@@ -30,11 +18,22 @@ export default function ChooseToEdit({
   onChange,
   ariaControls,
 }: ChooseToEditArgs): React.ReactNode {
-  const { classes } = useStyles();
   const id = React.useId();
 
   return (
-    <label className={classes.label} htmlFor={id}>
+    <Box
+      component="label"
+      htmlFor={id}
+      sx={(theme) => ({
+        p: theme.spacing(0, 0.25, 0, 1.5),
+        border: theme.borders.section,
+        borderRadius: theme.spacing(0.5),
+        letterSpacing: theme.typography.letterSpacing.spaced,
+        ml: "auto",
+        position: "absolute",
+        right: 0,
+      })}
+    >
       Batch edit this field
       <Checkbox
         id={id}
@@ -45,6 +44,6 @@ export default function ChooseToEdit({
         size="small"
         color="primary"
       />
-    </label>
+    </Box>
   );
 }

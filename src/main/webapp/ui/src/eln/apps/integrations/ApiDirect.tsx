@@ -8,7 +8,12 @@ import Typography from "@mui/material/Typography";
 
 function ApiDirect(): React.ReactNode {
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12
+      }}>
       <IntegrationCard
         name="API Direct Access"
         explanatoryText="Directly interact with the RSpace API using scripts and custom applications."

@@ -6,7 +6,6 @@ import ColumnFieldMapping from "./Fields/ColumnFieldMapping";
 import TemplateDetails from "./Fields/TemplateDetails";
 import HelpTextAlert from "../../components/HelpTextAlert";
 import Box from "@mui/material/Box";
-import RemoveButton from "../../components/RemoveButton";
 import SubmitSpinner from "../../components/SubmitSpinnerButton";
 import Grid from "@mui/material/Grid";
 import useStores from "../../stores/use-stores";
@@ -17,68 +16,10 @@ import Tab from "@mui/material/Tab";
 import CustomTooltip from "../../components/CustomTooltip";
 import { type ImportRecordType } from "../../stores/stores/ImportStore";
 import NavigateContext from "../../stores/contexts/Navigate";
-import { makeStyles } from "tss-react/mui";
-import clsx from "clsx";
 import { capitaliseJustFirstChar } from "../../util/Util";
 import { type URL } from "../../util/types";
 import { Link } from "react-router-dom";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
-
-const useStyles = makeStyles()((theme) => ({
-  bold: {
-    fontWeight: "bold",
-  },
-  fileButtonWrapper: {
-    flexDirection: "row",
-    width: "100%",
-    flexGrow: 1,
-    flexWrap: "nowrap",
-  },
-  footWrapper: {
-    flexDirection: "row",
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "space-between",
-    flexWrap: "nowrap",
-  },
-  grow: { flexGrow: 1 },
-  headWrapper: {
-    overflowY: "auto",
-    height: "100%",
-    marginRight: theme.spacing(1),
-    marginLeft: theme.spacing(1),
-    marginTop: theme.spacing(0.5),
-    paddingBottom: theme.spacing(3),
-  },
-  helpIconWrapper: {
-    backgroundColor: "white",
-    borderRadius: theme.spacing(1),
-    marginLeft: theme.spacing(1),
-    paddingTop: theme.spacing(0.25),
-    paddingLeft: theme.spacing(0.25),
-    paddingRight: theme.spacing(0.25),
-  },
-  ml: {
-    marginLeft: theme.spacing(1),
-  },
-  mr: {
-    marginRight: theme.spacing(1),
-  },
-  mt: {
-    marginTop: theme.spacing(1),
-  },
-  tabsWrapper: {
-    backgroundColor: theme.palette.primary.main,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingRight: theme.spacing(2),
-    paddingLeft: theme.spacing(2),
-    borderRadius: theme.spacing(0.5),
-    color: "white",
-  },
-}));
 
 function RecordsImport(): React.ReactNode {
   const { importStore } = useStores();
@@ -121,16 +62,26 @@ function RecordsImport(): React.ReactNode {
     ...(importData?.subSamplesSubmittable ? ["Subsamples"] : []),
   ].join(" + ")}`;
 
-  const { classes } = useStyles();
-
   function ImportTabs(_: Record<string, never>) {
     const importRecordTypes = ["CONTAINERS", "SAMPLES", "SUBSAMPLES"];
     const { useNavigate } = useContext(NavigateContext);
     const navigate = useNavigate();
 
     return (
-      <Box className={classes.tabsWrapper}>
-        <Box className={clsx(classes.mr, classes.bold)}>IMPORT</Box>
+      <Box
+        sx={{
+          backgroundColor: "primary.main",
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          pr: 2,
+          pl: 2,
+          borderRadius: 0.5,
+          color: "white",
+        }}
+      >
+        <Box sx={{ mr: 1, fontWeight: "bold" }}>IMPORT</Box>
         <Tabs
           value={recordType}
           onChange={(_event, newRecordType: ImportRecordType) => {
@@ -143,7 +94,7 @@ function RecordsImport(): React.ReactNode {
         >
           {importRecordTypes.map((value) => (
             <Tab
-              className={classes.bold}
+              sx={{ fontWeight: "bold" }}
               key={value}
               label={value}
               value={value}
@@ -151,7 +102,15 @@ function RecordsImport(): React.ReactNode {
             />
           ))}
         </Tabs>
-        <Box className={classes.helpIconWrapper}>
+        <Box
+          sx={{
+            backgroundColor: "white",
+            borderRadius: 1,
+            ml: 1,
+            pt: 0.25,
+            px: 0.25,
+          }}
+        >
           <CustomTooltip title="Import Documentation" enterDelay={200}>
             <HelpLinkIcon link={docLinks.import} title="Info on importing." />
           </CustomTooltip>
@@ -162,9 +121,9 @@ function RecordsImport(): React.ReactNode {
 
   return (
     <HeadingContext level={3}>
-      <Box className={classes.headWrapper}>
+      <Box sx={{ overflowY: "auto", height: "100%", mx: 1, mt: 0.5, pb: 3 }}>
         <ImportTabs />
-        <Grid container className={classes.fileButtonWrapper}>
+        <Grid container sx={{ flexDirection: "row", width: "100%", flexGrow: 1, flexWrap: "nowrap" }}>
           <FileForImport loadedFile={loadedFileByRecordType} />
         </Grid>
 
@@ -180,9 +139,16 @@ function RecordsImport(): React.ReactNode {
         <Grid
           container
           spacing={2}
-          className={clsx(classes.mt, classes.footWrapper)}
+          sx={{
+            mt: 1,
+            flexDirection: "row",
+            width: "100%",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "nowrap",
+          }}
         >
-          <Grid item className={classes.grow}>
+          <Grid sx={{ flexGrow: 1 }}>
             <HelpTextAlert
               severity="warning"
               condition={showFooterAlert}
@@ -208,7 +174,7 @@ function RecordsImport(): React.ReactNode {
               }
             />
           </Grid>
-          <Grid item>
+          <Grid>
             <SubmitSpinner
               disabled={!importSubmittable || submitting}
               onClick={() => importStore.submitImport()}

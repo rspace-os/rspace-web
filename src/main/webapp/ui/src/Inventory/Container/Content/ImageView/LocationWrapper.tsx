@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { makeStyles } from "tss-react/mui";
+import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import { type Location } from "../../../../stores/definitions/Container";
 import * as DragAndDrop from "../DragAndDrop";
@@ -12,28 +12,6 @@ type LocationWrapperArgs = {
   };
   location: Location;
 };
-
-const useStyles = makeStyles()((theme) => ({
-  container: {
-    position: "absolute",
-    borderRadius: 5,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-
-    /*
-     * This is an arbitrary value to balance the need for the details in the
-     * thumbnails to be identifiable whilst minimising how much of the
-     * locations image is obscured and how often location markers overlap.
-     */
-    width: theme.spacing(5),
-    height: theme.spacing(5),
-
-    // the wrapper should not be interactable so that the content can determine
-    // whether it should be interactable of not
-    pointerEvents: "none",
-  },
-}));
 
 // the stored location point should be rendered as the bottom middle of the
 // icon therefore, we need to shift the icon to the left and up.
@@ -48,7 +26,6 @@ function LocationWrapper({
   parentRect,
   location,
 }: LocationWrapperArgs): React.ReactNode {
-  const { classes } = useStyles();
   const cellRef = React.useRef<HTMLDivElement | null>(null);
 
   const positionX = () =>
@@ -67,15 +44,25 @@ function LocationWrapper({
   }, [parentRect]);
 
   return (
-    <div
-      className={classes.container}
+    <Box
+      component="div"
+      sx={(theme) => ({
+        position: "absolute",
+        borderRadius: 5,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: theme.spacing(5),
+        height: theme.spacing(5),
+        pointerEvents: "none",
+      })}
       style={{ left: location.x, top: location.y }}
       ref={cellRef}
     >
       <DragAndDrop.Dropzone location={location}>
         {children}
       </DragAndDrop.Dropzone>
-    </div>
+    </Box>
   );
 }
 

@@ -5,8 +5,8 @@ import Box from "@mui/material/Box";
 export default function PageNotFoundScreen(): React.ReactNode {
   return (
     <Grid container>
-      <Grid item>
-        <Box p={1}>
+      <Grid>
+        <Box sx={{ p: 1 }}>
           <h1>Page not found.</h1>
           <p>
             The page was not found. You can try again, or use your ‘back’ button

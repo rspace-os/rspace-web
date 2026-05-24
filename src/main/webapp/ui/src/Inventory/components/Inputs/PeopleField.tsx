@@ -2,35 +2,24 @@ import React, { useEffect, useState, useContext, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import RsSet, { unionWith, nullishToSingleton } from "../../../util/set";
-import Autocomplete from "@mui/material/Autocomplete";
+import Autocomplete, {
+  type AutocompleteRenderInputParams,
+} from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
 import PersonModel, { sortPeople } from "../../../stores/models/PersonModel";
 import { type Username, type Person } from "../../../stores/definitions/Person";
-import { withStyles } from "Styles";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 
-const CustomAutocomplete = withStyles<
-  React.ComponentProps<typeof Autocomplete<PersonModel>>,
-  { root: string; option: string }
->(() => ({
-  root: {
-    maxWidth: 500,
-  },
-  option: {
-    cursor: "default",
-  },
-}))(Autocomplete<PersonModel>);
-
 type RecipientTextFieldArgs = {
-  InputProps: { endAdornment: React.ReactNode };
+  slotProps?: AutocompleteRenderInputParams["slotProps"];
   loading: boolean;
   label?: string;
-} & React.ComponentProps<typeof TextField>;
+} & Omit<React.ComponentProps<typeof TextField>, "slotProps">;
 
 const RecipientTextField = ({
-  InputProps,
+  slotProps,
   loading,
   label,
   ...rest
@@ -39,21 +28,24 @@ const RecipientTextField = ({
     {...rest}
     variant="outlined"
     autoFocus
-    InputProps={{
-      ...InputProps,
-      ...(label !== undefined
-        ? {
-            startAdornment: (
-              <InputAdornment position="start">&nbsp;{label}</InputAdornment>
-            ),
-          }
-        : {}),
-      endAdornment: (
-        <>
-          {loading && <CircularProgress color="inherit" size={20} />}
-          {InputProps.endAdornment}
-        </>
-      ),
+    slotProps={{
+      ...slotProps,
+      input: {
+        ...slotProps?.input,
+        ...(label !== undefined
+          ? {
+              startAdornment: (
+                <InputAdornment position="start">&nbsp;{label}</InputAdornment>
+              ),
+            }
+          : {}),
+        endAdornment: (
+          <>
+            {loading && <CircularProgress color="inherit" size={20} />}
+            {slotProps?.input.endAdornment ?? null}
+          </>
+        ),
+      },
     }}
   />
 );
@@ -159,7 +151,8 @@ function PeopleField({
   );
 
   return (
-    <CustomAutocomplete
+    <Autocomplete<PersonModel>
+      sx={{ maxWidth: 500, "& .MuiAutocomplete-option": { cursor: "default" } }}
       options={allUsers}
       groupBy={(u: PersonModel) => u.groupByLabel}
       getOptionLabel={(u: Person) => u.label}
@@ -182,5 +175,6 @@ function PeopleField({
     />
   );
 }
+
 
 export default observer(PeopleField);

@@ -2,46 +2,15 @@ import Alert from "@mui/material/Alert";
 import LinearProgress from "@mui/material/LinearProgress";
 import React, { useContext } from "react";
 import useStores from "../../../stores/use-stores";
-import { makeStyles } from "tss-react/mui";
-import { match } from "../../../util/Util";
+import { match } from "@/util/Util";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../stores/contexts/Search";
 import SaveSearch from "./SaveSearch";
 import NavigateContext from "../../../stores/contexts/Navigate";
-import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
-
-const useStyles = makeStyles<{ singleColumn: boolean }>()((theme) => ({
-  progress: {
-    position: "absolute",
-    borderBottomLeftRadius: theme.spacing(0.5),
-    borderBottomRightRadius: theme.spacing(0.5),
-    bottom: 0,
-    left: 0,
-    width: "100%",
-  },
-  alert: {
-    position: "relative",
-    backgroundColor: theme.palette.primary.background,
-    color: theme.palette.primary.contrastText,
-    padding: theme.spacing(0.625, 1, 0.625, 1),
-    minHeight: theme.spacing(4),
-  },
-  message: {
-    padding: 0,
-  },
-  text: {
-    hyphens: "auto",
-  },
-  action: {
-    padding: theme.spacing(0, 0, 0, 1),
-  },
-}));
 
 function SearchFeedback(): React.ReactNode {
   const { searchStore } = useStores();
-  const isSingleColumnLayout = useIsSingleColumnLayout();
   const { search } = useContext(SearchContext);
-  const { classes } = useStyles({ singleColumn: isSingleColumnLayout });
   const { useLocation } = useContext(NavigateContext);
 
   function useSearchParams() {
@@ -105,19 +74,40 @@ function SearchFeedback(): React.ReactNode {
 
   return (
     <Alert
-      className={classes.alert}
-      classes={{
-        message: classes.message,
-        action: classes.action,
-      }}
+      sx={(theme) => ({
+        p: `${theme.spacing(0.5)} ${theme.spacing(2)}`,
+        position: "relative",
+        backgroundColor: theme.palette.primary.background,
+        color: theme.palette.primary.contrastText,
+        minHeight: theme.spacing(4),
+        "& .MuiAlert-message": {
+          p: 0,
+          alignSelf: "center",
+        },
+        "& .MuiAlert-action": {
+          p: 0,
+          alignSelf: "center",
+        },
+      })}
       icon={false}
       severity={search.fetcher.error ? "warning" : "info"}
-      action={<SaveSearch />}
+      action={<SaveSearch sx={{ p: 0 }} />}
       aria-label="Search status"
       role="status"
     >
       {statusText()}
-      {search.loading && <LinearProgress className={classes.progress} />}
+      {search.loading && (
+        <LinearProgress
+          sx={(theme) => ({
+            position: "absolute",
+            borderBottomLeftRadius: theme.spacing(0.5),
+            borderBottomRightRadius: theme.spacing(0.5),
+            bottom: 0,
+            left: 0,
+            width: "100%",
+          })}
+        />
+      )}
     </Alert>
   );
 }

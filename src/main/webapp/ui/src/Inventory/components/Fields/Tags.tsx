@@ -53,7 +53,7 @@ function Tags<
       }}
       renderInput={({ disabled }) => (
         // id prop is ignored because there is no singular HTMLInputElement to attach it to
-        <TagListing
+        (<TagListing
           onClick={(tag) => {
             navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
           }}
@@ -73,7 +73,7 @@ function Tags<
             : {})}
           endAdornment={
             !disabled && (
-              <Grid item>
+              <Grid>
                 <AddTag
                   onSelection={(tag) => {
                     if (fieldOwner.fieldValues.tags.includes(tag as Tag)) {
@@ -91,7 +91,7 @@ function Tags<
               </Grid>
             )
           }
-        />
+        />)
       )}
     />
   );

@@ -61,7 +61,7 @@ function AddToBasketDialog({
   }, [newBasketName]);
 
   const itemIds: Array<GlobalId> = selectedResults.map((r) =>
-    getSavedGlobalId(r)
+    getSavedGlobalId(r),
   );
   const selectedCount = selectedResults.length;
   const itemString = selectedCount > 1 ? "Items" : "Item";
@@ -93,8 +93,8 @@ function AddToBasketDialog({
     >
       <DialogTitle>{`Adding ${itemString} to Basket`}</DialogTitle>
       <DialogContent>
-        <Grid container direction="column" spacing={2}>
-          <Grid item>
+        <Grid container sx={{ flexDirection: "column" }} spacing={2}>
+          <Grid>
             <FormControl component="fieldset" fullWidth sx={{ mt: 1 }}>
               <InputLabel id={basketSelectorLabel}>Choose a Basket</InputLabel>
               <Select
@@ -102,7 +102,7 @@ function AddToBasketDialog({
                 value={`${targetBasket.id ?? undefined}`}
                 onChange={(event: SelectChangeEvent<string>) => {
                   const selectedBasket = targetBaskets.find(
-                    (b) => `${b.id}` === event.target.value
+                    (b) => `${b.id}` === event.target.value,
                   );
                   if (selectedBasket) {
                     setTargetBasket(selectedBasket);
@@ -120,34 +120,37 @@ function AddToBasketDialog({
             </FormControl>
           </Grid>
           {!targetBasket.id && (
-            <Grid item>
+            <Grid>
               <FormControl component="fieldset" fullWidth>
                 <TextField
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
                   size="small"
                   label="Custom Name (optional)"
                   fullWidth
                   disabled={Boolean(targetBasket.id)}
                   error={error}
-                  id="basketNameField" // for a11y
+                  // for a11y
+                  id="basketNameField"
                   value={newBasketName}
                   placeholder="Enter custom name for new Basket"
                   helperText={
                     error && !noDuplicates()
                       ? "This name is already used for another Basket."
                       : error && !validLength()
-                      ? "The name should be no longer than 32 characters."
-                      : "You can assign a unique name to the new Basket."
+                        ? "The name should be no longer than 32 characters."
+                        : "You can assign a unique name to the new Basket."
                   }
                   onChange={({ target }) => setNewBasketName(target.value)}
                   variant="standard"
+                  slotProps={{
+                    inputLabel: {
+                      shrink: true,
+                    },
+                  }}
                 />
               </FormControl>
             </Grid>
           )}
-          <Grid item>
+          <Grid>
             <Alert severity="info">
               {`This action will not change the location of the ${itemString}.`}
             </Alert>

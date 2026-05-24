@@ -85,15 +85,16 @@ const PolygonEditor = observer(
           width: "100%",
         }}
       >
-        <Grid item md={5}>
+        <Grid size={{
+          md: 5
+        }}>
           <InputWrapper label={`Point ${i + 1} Latitude`}>
             {editable && i < geoLocationPolygon.length - 1 ? (
               <AmberNumberField
-                inputProps={{ ...COORD_RANGE_Y }}
+                slotProps={{ htmlInput: { ...COORD_RANGE_Y } }}
                 size="small"
                 variant="standard"
                 fullWidth
-                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                 datatestid={`Polygon-point-${i}-latitude`}
                 disabled={false}
                 value={point.pointLatitude ?? ""}
@@ -112,19 +113,20 @@ const PolygonEditor = observer(
               />
             ) : (
               /* last point is edited by editing first */
-              point.pointLatitude || <span style={{ color: "#949494" }}>-</span>
+              (point.pointLatitude || <span style={{ color: "#949494" }}>-</span>)
             )}
           </InputWrapper>
         </Grid>
-        <Grid item md={5}>
+        <Grid size={{
+          md: 5
+        }}>
           <InputWrapper label={`Point ${i + 1} Longitude`}>
             {editable && i < geoLocationPolygon.length - 1 ? (
               <AmberNumberField
-                inputProps={{ ...COORD_RANGE_X }}
+                slotProps={{ htmlInput: { ...COORD_RANGE_X } }}
                 size="small"
                 variant="standard"
                 fullWidth
-                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                 datatestid={`Polygon-point-${i + 1}-longitude`}
                 disabled={false}
                 value={point.pointLongitude ?? ""}
@@ -143,13 +145,13 @@ const PolygonEditor = observer(
               />
             ) : (
               /* last point is edited by editing first */
-              point.pointLongitude || (
-                <span style={{ color: "#949494" }}>-</span>
-              )
+              (point.pointLongitude || (<span style={{ color: "#949494" }}>-</span>))
             )}
           </InputWrapper>
         </Grid>
-        <Grid item md={1}>
+        <Grid size={{
+          md: 1
+        }}>
           {canBeAdded(i) ? (
             <AddButton
               onClick={() => handleAddPoint(i)}
@@ -159,7 +161,9 @@ const PolygonEditor = observer(
             <>&nbsp;</>
           )}
         </Grid>
-        <Grid item md={1}>
+        <Grid size={{
+          md: 1
+        }}>
           {canBeRemoved(i) ? (
             <RemoveButton
               onClick={() => handleRemovePoint(i)}
@@ -198,15 +202,16 @@ function PolygonCard({
           width: "100%",
         }}
       >
-        <Grid item md={5}>
+        <Grid size={{
+          md: 5
+        }}>
           <InputWrapper label={`In Polygon Point Latitude`}>
             {editable ? (
               <AmberNumberField
-                inputProps={{ ...COORD_RANGE_Y }}
+                slotProps={{ htmlInput: { ...COORD_RANGE_Y } }}
                 size="small"
                 variant="standard"
                 fullWidth
-                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                 datatestid={`In-polygon-point-latitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLatitude}
@@ -240,15 +245,16 @@ function PolygonCard({
             )}
           </InputWrapper>
         </Grid>
-        <Grid item md={5}>
+        <Grid size={{
+          md: 5
+        }}>
           <InputWrapper label={`In Polygon Point Longitude`}>
             {editable ? (
               <AmberNumberField
-                inputProps={{ ...COORD_RANGE_X }}
+                slotProps={{ htmlInput: { ...COORD_RANGE_X } }}
                 size="small"
                 variant="standard"
                 fullWidth
-                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
                 datatestid={`In-polygon-point-longitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLongitude ?? ""}

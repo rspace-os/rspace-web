@@ -6,7 +6,6 @@ import {
   RightPanelToggle,
   useIsSingleColumnLayout,
 } from "../components/Layout/Layout2x1";
-import { makeStyles } from "tss-react/mui";
 import Grid from "@mui/material/Grid";
 import Breadcrumbs from "../components/Breadcrumbs";
 import SearchView from "./SearchView";
@@ -23,32 +22,11 @@ import { hasLocation } from "../../stores/models/HasLocation";
 import * as Parsers from "../../util/parsers";
 import { useLandmark } from "../../components/LandmarksContext";
 
-const useStyles = makeStyles<{ alwaysVisibleSidebar: boolean }>()(
-  (theme, { alwaysVisibleSidebar }) => ({
-    grid: {
-      height: "100%",
-      padding: alwaysVisibleSidebar ? theme.spacing(1) : theme.spacing(0),
-    },
-    searchbarWrapper: {
-      width: "100%",
-    },
-    listWrapper: {
-      overflow: "hidden",
-      display: "flex",
-      flexDirection: "column",
-      flexGrow: 1,
-    },
-  }),
-);
-
 function LeftPanelView(): React.ReactNode {
   const { searchStore, uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
-  const { classes } = useStyles({
-    alwaysVisibleSidebar: uiStore.alwaysVisibleSidebar,
-  });
   const searchNavRef = useLandmark("Search");
 
   const results = searchStore.search.filteredResults.map(getSavedGlobalId);
@@ -147,15 +125,18 @@ function LeftPanelView(): React.ReactNode {
     <Grid
       ref={searchNavRef as React.RefObject<HTMLDivElement>}
       container
-      direction="column"
-      wrap="nowrap"
-      className={classes.grid}
+      sx={{
+        flexDirection: "column",
+        flexWrap: "nowrap",
+        height: "100%",
+        p: uiStore.alwaysVisibleSidebar ? 1 : 0,
+      }}
       spacing={1}
       data-testid="MainSearch"
       role="navigation"
       aria-label="Search and Navigation"
     >
-      <Grid item className={classes.searchbarWrapper}>
+      <Grid sx={{ width: "100%" }}>
         <Search
           handleSearch={handleSearch}
           searchbarAdornment={<RightPanelToggle />}
@@ -164,7 +145,7 @@ function LeftPanelView(): React.ReactNode {
           <Breadcrumbs record={recordForBreadcrumbs} showCurrent={false} />
         )}
       </Grid>
-      <Grid item className={classes.listWrapper}>
+      <Grid sx={{ overflow: "hidden", display: "flex", flexDirection: "column", flexGrow: 1 }}>
         <Routes>
           <Route
             path="/"

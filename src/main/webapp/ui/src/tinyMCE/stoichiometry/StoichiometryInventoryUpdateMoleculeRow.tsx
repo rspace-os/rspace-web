@@ -10,7 +10,10 @@ import Typography from "@mui/material/Typography";
 import { alpha, type Theme, useTheme } from "@mui/material/styles";
 import GlobalId from "@/components/GlobalId";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
-import StockMetricCell, { type MetricColors, type MetricState } from "@/tinyMCE/stoichiometry/inventory/StockMetricCell";
+import StockMetricCell, {
+  type MetricColors,
+  type MetricState,
+} from "@/tinyMCE/stoichiometry/inventory/StockMetricCell";
 import StoichiometryTableRoleChip from "@/tinyMCE/stoichiometry/StoichiometryTableRoleChip";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import type { InventoryUpdateStockDisplay } from "@/tinyMCE/stoichiometry/utils";
@@ -122,10 +125,10 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
         >
           <Box
             data-dimmed={disabled ? "true" : "false"}
-            display="flex"
-            alignItems="flex-start"
-            justifyContent="center"
             sx={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "center",
               opacity: disabled ? 0.5 : 1,
               transition: theme.transitions.create("opacity", {
                 duration: theme.transitions.duration.shorter,
@@ -135,9 +138,11 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
             <Checkbox
               checked={selected}
               disabled={disabled}
-              inputProps={{
-                "aria-labelledby": nameId,
-                "aria-describedby": describedBy || undefined,
+              slotProps={{
+                input: {
+                  "aria-labelledby": nameId,
+                  "aria-describedby": describedBy || undefined,
+                },
               }}
               onChange={() => {
                 if (!disabled) {
@@ -152,14 +157,13 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
             <Stack
               direction="row"
               spacing={1}
-              alignItems="center"
-              flexWrap="wrap"
+              sx={{ alignItems: "center", flexWrap: "wrap" }}
             >
               <Typography
                 id={nameId}
                 variant="subtitle1"
                 component="h3"
-                fontWeight={600}
+                sx={{ fontWeight: 600 }}
               >
                 {moleculeName}
               </Typography>
@@ -168,7 +172,12 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
               )}
             </Stack>
             {molecule.inventoryLink && (
-              <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+              <Stack
+                direction="row"
+                spacing={0.75}
+                sx={{ flexWrap: "wrap" }}
+                useFlexGap
+              >
                 <GlobalId
                   record={
                     new LinkableRecordFromGlobalId(

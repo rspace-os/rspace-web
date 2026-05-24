@@ -1,18 +1,18 @@
+/* global MSTEAMS, SLACK */
 import React, { useEffect } from "react";
 import axios from "@/common/axios";
-import styled from "@emotion/styled";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Badge from "@mui/material/Badge";
+import PropTypes from "prop-types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBell } from "@fortawesome/free-solid-svg-icons/faBell";
 import { faEnvelope } from "@fortawesome/free-solid-svg-icons/faEnvelope";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons/faPaperPlane";
 
-const SocialActionsWrapper = styled.div`
-  display: flex;
-`;
-
+/**
+ * Toolbar actions for messages and notifications.
+ */
 export default function ToolbarSocial(props) {
   const [notificationCount, setNotificationCount] = React.useState(0);
   const [messageCount, setMessageCount] = React.useState(0);
@@ -24,18 +24,20 @@ export default function ToolbarSocial(props) {
         setNotificationCount(response.data.data.notificationCount);
         setMessageCount(response.data.data.messageCount);
       } catch (e) {
-        console.log(e);
+        console.error(e);
       }
     };
     getNotifications();
     // update notifications and messages every 10s
-    setInterval(() => {
+    const intervalId = setInterval(() => {
       getNotifications();
     }, 10 * 1000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
-    <SocialActionsWrapper style={props.style}>
+    <div style={{ display: "flex", ...props.style }}>
       <Tooltip title="Notifications" enterDelay={300}>
         <IconButton
           id="openNotificationDlgLink"
@@ -81,7 +83,11 @@ export default function ToolbarSocial(props) {
             data-app="SLACK"
             aria-label="Send a message on Slack"
           >
-            <img src="/images/icons/slack.png" style={{ width: "24px" }} />
+            <img
+              src="/images/icons/slack.png"
+              alt="Slack"
+              style={{ width: "24px" }}
+            />
           </IconButton>
         </Tooltip>
       )}
@@ -96,11 +102,18 @@ export default function ToolbarSocial(props) {
           >
             <img
               src="/images/icons/microsoftteams.png"
+              alt="Microsoft Teams"
               style={{ width: "24px" }}
             />
           </IconButton>
         </Tooltip>
       )}
-    </SocialActionsWrapper>
+    </div>
   );
 }
+
+ToolbarSocial.propTypes = {
+  onCreateRequest: PropTypes.func,
+  showExternal: PropTypes.bool,
+  style: PropTypes.object,
+};

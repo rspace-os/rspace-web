@@ -5,52 +5,33 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import CardHeader from "@mui/material/CardHeader";
-import { withStyles } from "../../../util/styles";
 import Box from "@mui/material/Box";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { type ExportOptions } from "../../../stores/definitions/Search";
 import Alert from "@mui/material/Alert";
 import { ExportOptionsWrapper } from "./ExportDialog";
 
-const MaxSizeCard = withStyles<
-  { children: React.ReactNode; elevation: number; testId?: string },
-  { root: string }
->(() => ({
-  root: {
-    height: "100%",
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-  },
-}))(({ classes, children, elevation, testId }) => (
-  <Card elevation={elevation} classes={classes} data-test-id={testId}>
-    {children}
-  </Card>
-));
 
-const FullHeightCardContent = withStyles<
-  { paddingless: boolean } & React.ComponentProps<typeof CardContent>,
-  { root: string }
->((theme, { paddingless }) => ({
-  root: {
-    flexGrow: 1,
-    overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-    padding: `${theme.spacing(paddingless ? 0 : 2)} !important`,
-    paddingTop: "0 !important",
-    overflowX: "hidden",
-  },
-}))(({ paddingless: _, ...props }) => <CardContent {...props} />);
+function FullHeightCardContent({
+  paddingless = false,
+  ...props
+}: { paddingless?: boolean } & React.ComponentProps<typeof CardContent>): React.ReactNode {
+  return (
+    <CardContent
+      {...props}
+      sx={(theme) => ({
+        flexGrow: 1,
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+        padding: `${theme.spacing(paddingless ? 0 : 2)} !important`,
+        paddingTop: "0 !important",
+        overflowX: "hidden",
+      })}
+    />
+  );
+}
 
-const CustomCardHeader = withStyles<
-  { title?: React.ReactNode },
-  { root: string }
->(() => ({
-  root: {
-    flexWrap: "nowrap",
-  },
-}))(({ title, classes }) => <CardHeader title={title} classes={classes} />);
 
 type ExporterArgs = {
   elevation?: number;
@@ -80,10 +61,14 @@ function Exporter({
   setExportOptions,
 }: ExporterArgs): React.ReactNode {
   return (
-    <MaxSizeCard elevation={elevation} testId={testId}>
-      {Boolean(header) && <CustomCardHeader title={header} />}
+    <Card
+      elevation={elevation}
+      data-test-id={testId}
+      sx={{ height: "100%", width: "100%", display: "flex", flexDirection: "column" }}
+    >
+      {Boolean(header) && <CardHeader title={header} sx={{ flexWrap: "nowrap" }} />}
       <FullHeightCardContent paddingless={paddingless}>
-        <Box mb={1}>
+        <Box sx={{ mb: 1 }}>
           <ExportOptionsWrapper
             exportOptions={exportOptions}
             setExportOptions={setExportOptions}
@@ -92,7 +77,7 @@ function Exporter({
           />
         </Box>
         {selectionHelpText && (
-          <Box mb={1}>
+          <Box sx={{ mb: 1 }}>
             <Alert severity="info">{selectionHelpText}</Alert>
           </Box>
         )}
@@ -121,7 +106,7 @@ function Exporter({
           </>
         </CardActions>
       )}
-    </MaxSizeCard>
+    </Card>
   );
 }
 

@@ -47,10 +47,6 @@ import SearchContext from "../../../stores/contexts/Search";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
 import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
 import {
-  type AllowedSearchModules,
-  type AllowedTypeFilters,
-} from "../../../stores/definitions/Search";
-import {
   type Container,
   cTypeToDefaultSearchView,
 } from "../../../stores/definitions/Container";
@@ -103,7 +99,7 @@ const Name = observer(
         variant="outlined"
       />
     );
-  }
+  },
 );
 
 const Fields = observer(
@@ -136,7 +132,7 @@ const Fields = observer(
                     !state.copyFieldContent.every(({ selected }) => selected)
                   }
                   checked={state.copyFieldContent.every(
-                    ({ selected }) => selected
+                    ({ selected }) => selected,
                   )}
                   onChange={({ target: { checked } }) => {
                     runInAction(() => {
@@ -179,7 +175,7 @@ const Fields = observer(
         </Table>
       </TableContainer>
     );
-  }
+  },
 );
 
 const SplitCount = observer(
@@ -208,21 +204,23 @@ const SplitCount = observer(
             }}
             variant="outlined"
             size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">Copies</InputAdornment>
-              ),
-            }}
-            inputProps={{
-              min: MIN,
-              max: MAX,
-              step: 1,
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">Copies</InputAdornment>
+                ),
+              },
+              htmlInput: {
+                min: MIN,
+                max: MAX,
+                step: 1,
+              },
             }}
           />
         </FormControl>
       </Box>
     );
-  }
+  },
 );
 
 const LocationPicker = observer(
@@ -233,8 +231,8 @@ const LocationPicker = observer(
           parentGlobalId: state.container.globalId,
         },
         uiConfig: {
-          allowedSearchModules: new Set([]) as AllowedSearchModules,
-          allowedTypeFilters: new Set([]) as AllowedTypeFilters,
+          allowedSearchModules: new Set([]),
+          allowedTypeFilters: new Set([]),
           hideContentsOfChip: true,
           selectionLimit: 1,
           onlyAllowSelectingEmptyLocations: true,
@@ -290,7 +288,7 @@ const LocationPicker = observer(
         </AlwaysNewWindowNavigationContext>
       </SearchContext.Provider>
     );
-  }
+  },
 );
 
 const NewSubsampleCount = observer(
@@ -316,21 +314,23 @@ const NewSubsampleCount = observer(
             }}
             variant="outlined"
             size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">Count</InputAdornment>
-              ),
-            }}
-            inputProps={{
-              min: 1,
-              max: 100,
-              step: 1,
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">Count</InputAdornment>
+                ),
+              },
+              htmlInput: {
+                min: 1,
+                max: 100,
+                step: 1,
+              },
             }}
           />
         </FormControl>
       </Box>
     );
-  }
+  },
 );
 
 const NewSubsampleQuantity = observer(
@@ -365,22 +365,24 @@ const NewSubsampleQuantity = observer(
             }}
             variant="outlined"
             size="small"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  {state.quantityLabel}
-                </InputAdornment>
-              ),
-            }}
-            inputProps={{
-              min: 0,
-              step: 0.001,
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {state.quantityLabel}
+                  </InputAdornment>
+                ),
+              },
+              htmlInput: {
+                min: 0,
+                step: 0.001,
+              },
             }}
           />
         </FormControl>
       </Box>
     );
-  }
+  },
 );
 
 const ParameterField = observer(
@@ -430,11 +432,11 @@ const ParameterField = observer(
                  * "Back" button would be rendered over it. No idea, very strange,
                  * but this does fix it.
                  */
-                flexWrap="nowrap"
-                direction="column"
+
+                sx={{ flexWrap: "nowrap", flexDirection: "column" }}
                 spacing={1}
               >
-                <Grid item>
+                <Grid>
                   {state.key === "split" && (
                     <SplitCount id={fieldId} state={state} />
                   )}
@@ -452,7 +454,7 @@ const ParameterField = observer(
                     <NewSubsampleQuantity id={fieldId} state={state} />
                   )}
                 </Grid>
-                <Grid item>
+                <Grid>
                   <Stack spacing={1} direction="row">
                     {showNextButton && (
                       <Button
@@ -483,7 +485,7 @@ const ParameterField = observer(
         </Collapse>
       </>
     );
-  }
+  },
 );
 
 function CreateDialog({
@@ -518,7 +520,7 @@ function CreateDialog({
                 error instanceof Error ? error.message : String(error)
               }`,
               variant: "error",
-            })
+            }),
           );
           onClose();
         })
@@ -665,7 +667,7 @@ function CreateDialog({
                             }
                             sx={{ mt: 2 }}
                           />
-                        )
+                        ),
                       )}
                     </RadioGroup>
                   </FormControl>
@@ -699,7 +701,7 @@ function CreateDialog({
                       }
                       key={index}
                     />
-                  )
+                  ),
                 )}
             </Stepper>
           )}

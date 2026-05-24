@@ -3,7 +3,6 @@ import React, { useContext } from "react";
 import useStores from "../../stores/use-stores";
 import NavigateContext from "../../stores/contexts/Navigate";
 import { UserCancelledAction } from "../../util/error";
-import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
 import AccentMenuItem from "../../components/AccentMenuItem";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
@@ -17,16 +16,6 @@ import FieldmarkImportDialog from "./FieldmarkImportDialog";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
 import * as FetchingData from "../../util/fetchingData";
 import { ACCENT_COLOR as FIELDMARK_COLOR } from "../../assets/branding/fieldmark";
-
-const StyledMenu = styled(Menu)(({ open }) => ({
-  "& .MuiPaper-root": {
-    ...(open
-      ? {
-          transform: "translate(-4px, 4px) !important",
-        }
-      : {}),
-  },
-}));
 
 type CreateNewArgs = {
   /**
@@ -55,7 +44,6 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   const showFieldmark = FetchingData.getSuccessValue(
     useIntegrationIsAllowedAndEnabled("FIELDMARK"),
   ).orElse(false);
-
   const handleCreate = async (
     recordType: "sample" | "container" | "template",
   ) => {
@@ -77,7 +65,6 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
       throw e;
     }
   };
-
   const handleImport = async (
     recordType: "SAMPLES" | "CONTAINERS" | "SUBSAMPLES",
   ) => {
@@ -88,10 +75,13 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
       setAnchorEl(null);
     }
   };
-
   const controls = React.useId();
   return (
-    <Box sx={{ p: 1.5 }}>
+    <Box
+      sx={{
+        p: 1.5,
+      }}
+    >
       <Button
         variant="contained"
         color="callToAction"
@@ -106,11 +96,15 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
             }}
           />
         }
-        sx={{ minWidth: "unset", overflowX: "hidden", height: "32px" }}
+        sx={{
+          minWidth: "unset",
+          overflowX: "hidden",
+          height: "32px",
+        }}
       >
         {uiStore.sidebarOpen && <div>Create</div>}
       </Button>
-      <StyledMenu
+      <Menu
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}
         id={controls}
@@ -118,8 +112,19 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         onClose={() => {
           setAnchorEl(null);
         }}
-        MenuListProps={{
-          disablePadding: true,
+        slotProps={{
+          list: {
+            disablePadding: true,
+          },
+        }}
+        sx={{
+          "& .MuiPaper-root": {
+            ...(anchorEl
+              ? {
+                  transform: "translate(-4px, 4px) !important",
+                }
+              : {}),
+          },
         }}
       >
         <AccentMenuItem
@@ -284,7 +289,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
             />
           </>
         )}
-      </StyledMenu>
+      </Menu>
       <FieldmarkImportDialog
         open={fieldmarkOpen}
         onClose={() => {
@@ -294,5 +299,4 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
     </Box>
   );
 }
-
 export default observer(CreateNew);

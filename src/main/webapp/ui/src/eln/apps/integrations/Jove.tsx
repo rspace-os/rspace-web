@@ -8,7 +8,13 @@ import Stack from "@mui/material/Stack";
 
 function Jove(): React.ReactNode {
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="JoVE"
         integrationState={{
@@ -24,10 +30,11 @@ function Jove(): React.ReactNode {
         website="jove.com"
         docLink="jove"
         setupSection={
-          <Stack direction="column" gap={2}>
+          <Stack direction="column" sx={{ gap: 2 }}>
             <ol>
               <li>
-                Open a document in the Documents Editor and click the <strong>Video</strong>
+                Open a document in the Documents Editor and click the{" "}
+                <strong>Video</strong>
                 button in the editor toolbar, the insert menu, or the slash
                 menu.
               </li>

@@ -71,7 +71,7 @@ class createGroupStep3 extends React.Component {
 
     for (let i = 0; i < emailList.length; i++) {
       display.push(
-        <Grid item xs={12} style={this.styles.chipSpacing}>
+        <Grid style={this.styles.chipSpacing} size={12}>
           <Chip
             label={emailList[i].slice(0, 20)}
             onDelete={() => this.handleDelete(emailList[i], type)}
@@ -187,7 +187,7 @@ class createGroupStep3 extends React.Component {
         <StyledEngineProvider injectFirst>
           <ThemeProvider theme={materialTheme}>
             <Grid container spacing={8}>
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <Paper style={this.styles.paperContainer}>
                   <h2>Invite RSpace users</h2>
                   <div
@@ -215,7 +215,7 @@ class createGroupStep3 extends React.Component {
                 </Paper>
               </Grid>
               {newUsersDisplay && (
-                <Grid item xs={6}>
+                <Grid size={6}>
                   <Paper style={this.styles.paperContainer}>
                     <h2>Invite new users</h2>
                     <FormControl error aria-describedby="email-error-text">

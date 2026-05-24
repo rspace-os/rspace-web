@@ -16,23 +16,18 @@ import { STOICHIOMETRY_TABLE_CLASS } from "@/tinyMCE/stoichiometry/theme";
 import type { EditableMolecule } from "../types";
 import { calculateMoles, getInventoryUpdateEligibility } from "../utils";
 import type { StoichiometryTableGridProps } from "./types";
-
 const STOICHIOMETRY_TABLE_SLOTS = {
   toolbar: StoichiometryTableToolbar,
 };
-
 const getMoleculeRowId = (row: EditableMolecule) => row.id;
-
 const getInventoryLinkExportValue = (row: EditableMolecule): string =>
   row.inventoryLink?.inventoryItemGlobalId ??
   row.deletedInventoryLink?.inventoryItemGlobalId ??
   "";
-
 const getRoleExportValue = (role: string | null | undefined): string => {
   if (!role) {
     return "";
   }
-
   switch (role.toUpperCase()) {
     case "AGENT":
       return "Reagent";
@@ -40,7 +35,6 @@ const getRoleExportValue = (role: string | null | undefined): string => {
       return `${role.slice(0, 1)}${role.slice(1).toLowerCase()}`;
   }
 };
-
 export default function StoichiometryTableGrid({
   editable,
   allMolecules,
@@ -65,7 +59,6 @@ export default function StoichiometryTableGrid({
       molecule.limitingReagent && molecule.role.toLowerCase() === "reactant",
   );
   const limitingReagentId = limitingReagent?.id;
-
   const linkedIds = allMolecules
     .map(
       (molecule) =>
@@ -73,7 +66,6 @@ export default function StoichiometryTableGrid({
         molecule.deletedInventoryLink?.inventoryItemGlobalId,
     )
     .filter((id): id is string => Boolean(id));
-
   const linkedInventoryItemGlobalIdsByMoleculeId = new Map(
     allMolecules.map((molecule) => [
       molecule.id,
@@ -85,7 +77,6 @@ export default function StoichiometryTableGrid({
       ),
     ]),
   );
-
   const columns = React.useMemo<GridColDef<EditableMolecule>[]>(
     () => [
       {
@@ -157,12 +148,12 @@ export default function StoichiometryTableGrid({
         headerName: "Type",
         sortable: false,
         minWidth: 160,
-        valueFormatter: (value) => getRoleExportValue(value as string | null | undefined),
+        valueFormatter: (value) =>
+          getRoleExportValue(value as string | null | undefined),
         renderCell: ({ row }) => {
           if (!roleColumnEditable) {
             return <StoichiometryTableRoleChip role={row.role || ""} />;
           }
-
           return (
             <StoichiometryTableTypeDropdown
               rowName={row.name}
@@ -191,13 +182,15 @@ export default function StoichiometryTableGrid({
             <Radio
               checked={params.row.limitingReagent || false}
               disabled={!editable}
-              inputProps={{
-                "aria-label": `Select ${params.row.name} as limiting reagent`,
-              }}
               onChange={(event) => {
                 if (event.target.checked && editable) {
                   onSelectLimitingReagent?.(params.row);
                 }
+              }}
+              slotProps={{
+                input: {
+                  "aria-label": `Select ${params.row.name} as limiting reagent`,
+                },
               }}
             />
           ) : (
@@ -213,7 +206,10 @@ export default function StoichiometryTableGrid({
         editable,
         headerAlign: "left",
         cellClassName: (params) => {
-          if (limitingReagentId !== undefined && params.id === limitingReagentId) {
+          if (
+            limitingReagentId !== undefined &&
+            params.id === limitingReagentId
+          ) {
             return "stoichiometry-disabled-cell";
           }
           return "";
@@ -248,7 +244,10 @@ export default function StoichiometryTableGrid({
             <>&#8212;</>
           ),
         cellClassName: (params) => {
-          if (limitingReagentId !== undefined && params.id !== limitingReagentId) {
+          if (
+            limitingReagentId !== undefined &&
+            params.id !== limitingReagentId
+          ) {
             return "stoichiometry-disabled-cell";
           }
           return "";
@@ -256,7 +255,8 @@ export default function StoichiometryTableGrid({
       },
       {
         field: "moles",
-        valueGetter: (_value, row) => calculateMoles(row.mass, row.molecularWeight),
+        valueGetter: (_value, row) =>
+          calculateMoles(row.mass, row.molecularWeight),
         headerName: "Moles (mol)",
         sortable: false,
         headerAlign: "left",
@@ -270,7 +270,10 @@ export default function StoichiometryTableGrid({
             <>&#8212;</>
           ),
         cellClassName: (params) => {
-          if (limitingReagentId !== undefined && params.id !== limitingReagentId) {
+          if (
+            limitingReagentId !== undefined &&
+            params.id !== limitingReagentId
+          ) {
             return "stoichiometry-disabled-cell";
           }
           return "";
@@ -318,7 +321,10 @@ export default function StoichiometryTableGrid({
         type: "number",
         editable: false,
         renderCell: (params) => {
-          if (limitingReagentId !== undefined && params.id === limitingReagentId) {
+          if (
+            limitingReagentId !== undefined &&
+            params.id === limitingReagentId
+          ) {
             return <>&#8212;</>;
           }
           const value = params.value as number | null | undefined;
@@ -356,12 +362,10 @@ export default function StoichiometryTableGrid({
       onSelectLimitingReagent,
     ],
   );
-
   const isCellEditable = (params: GridCellParams<EditableMolecule>) => {
     if (!editable) {
       return false;
     }
-
     const { field, row } = params;
     if (
       limitingReagentId !== undefined &&
@@ -371,7 +375,6 @@ export default function StoichiometryTableGrid({
     }
     return true;
   };
-
   const toolbarSlotProps = React.useMemo(
     () => ({
       toolbar: {
@@ -392,9 +395,14 @@ export default function StoichiometryTableGrid({
       onUpdateInventoryStock,
     ],
   );
-
   return (
-    <Box sx={{ width: "100%", minHeight: "1px", height: 1 }}>
+    <Box
+      sx={{
+        width: "100%",
+        minHeight: "1px",
+        height: 1,
+      }}
+    >
       <DataGrid
         rows={allMolecules}
         columns={columns}

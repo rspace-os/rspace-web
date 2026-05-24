@@ -1,97 +1,52 @@
 import React, { useEffect } from "react";
 import axios from "@/common/axios";
 import Select from "react-select";
-import { emphasize, useTheme } from "@mui/material/styles";
-import { makeStyles } from "tss-react/mui";
+import Box from "@mui/material/Box";
+import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Paper from "@mui/material/Paper";
 import MenuItem from "@mui/material/MenuItem";
 import PropTypes from "prop-types";
-import styled from "@emotion/styled";
 
-const Wrapper = styled.div`
-  display: flex;
-  flex-grow: 1;
-  .css-1pcexqc-container {
-    flex-grow: 1;
-    align-items: center;
-    justify-content: center;
-  }
-  .myReactSelect .Select-arrow-zone {
-    display: none;
-  }
-  .advanced-search {
-    .search-input .MuiInputBase-input {
-      height: 32px;
-    }
-    .dropdown-item {
-      margin: 0px;
-      width: 100%;
-    }
-  }
-  .simple-search {
-    .search-input {
-      margin-top: 3px;
-      min-height: 36px;
-    }
-  }
-
-  .MuiButtonBase-root:not(.MuiChip-root) {
-    width: fit-content !important;
-    font-size: 15px;
-    margin-left: 10px;
-  }
-`;
-
-const useStyles = makeStyles()((theme) => ({
-  input: {
-    display: "flex",
-    padding: 0,
-    height: "100%",
-  },
-  valueContainer: {
-    display: "flex",
-    flexWrap: "wrap",
-    flex: 1,
+const wrapperSx = {
+  display: "flex",
+  flexGrow: 1,
+  "& .css-1pcexqc-container": {
+    flexGrow: 1,
     alignItems: "center",
-    overflow: "hidden",
+    justifyContent: "center",
   },
-  chip: {
-    margin: theme.spacing(0.5, 0.25),
+  "& .myReactSelect .Select-arrow-zone": {
+    display: "none",
   },
-  chipFocused: {
-    backgroundColor: emphasize(
-      theme.palette.type === "light"
-        ? theme.palette.grey[300]
-        : theme.palette.grey[700],
-      0.08,
-    ),
+  "& .advanced-search": {
+    "& .search-input .MuiInputBase-input": {
+      height: 32,
+    },
+    "& .dropdown-item": {
+      margin: 0,
+      width: "100%",
+    },
   },
-  noOptionsMessage: {
-    padding: theme.spacing(1, 2),
+  "& .simple-search": {
+    "& .search-input": {
+      marginTop: "3px",
+      minHeight: "36px",
+    },
   },
-  placeholder: {
-    position: "absolute",
-    left: 2,
-    bottom: 6,
-    fontSize: 16,
-  },
-  paper: {
-    position: "absolute",
-    zIndex: 1,
+  "& .MuiButtonBase-root:not(.MuiChip-root)": {
     width: "fit-content !important",
-    marginTop: theme.spacing(1),
-    left: 0,
-    right: 0,
+    fontSize: 15,
+    marginLeft: "10px",
   },
-}));
+};
 
 function NoOptionsMessage(props) {
   return (
     <Typography
       color="textSecondary"
-      className={props.selectProps.classes.noOptionsMessage}
+      sx={{ p: "8px 16px" }}
       {...props.innerProps}
     >
       {props.children}
@@ -118,7 +73,7 @@ function Control(props) {
     children,
     innerProps,
     innerRef,
-    selectProps: { classes, TextFieldProps },
+    selectProps: { TextFieldProps },
   } = props;
 
   return (
@@ -127,16 +82,18 @@ function Control(props) {
       data-test-id={props.selectProps.testId}
       className="search-input"
       fullWidth
-      InputProps={{
-        inputComponent,
-        inputProps: {
-          className: classes.input,
-          ref: innerRef,
-          children,
-          ...innerProps,
+      {...TextFieldProps}
+      slotProps={{
+        input: {
+          inputComponent,
+          inputProps: {
+            style: { display: "flex", padding: 0, height: "100%" },
+            ref: innerRef,
+            children,
+            ...innerProps,
+          },
         },
       }}
-      {...TextFieldProps}
     />
   );
 }
@@ -176,7 +133,7 @@ function Placeholder(props) {
   return (
     <Typography
       color="textSecondary"
-      className={props.selectProps.classes.placeholder}
+      sx={{ position: "absolute", left: 2, bottom: 6, fontSize: 16 }}
       {...props.innerProps}
     >
       {props.children}
@@ -192,7 +149,15 @@ Placeholder.propTypes = {
 
 function ValueContainer(props) {
   return (
-    <div className={props.selectProps.classes.valueContainer}>
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        flex: 1,
+        alignItems: "center",
+        overflow: "hidden",
+      }}
+    >
       {props.children}
     </div>
   );
@@ -218,7 +183,14 @@ function Menu(props) {
   return (
     <Paper
       square
-      className={props.selectProps.classes.paper}
+      sx={{
+        position: "absolute",
+        zIndex: 1,
+        width: "fit-content !important",
+        mt: 1,
+        left: 0,
+        right: 0,
+      }}
       {...props.innerProps}
     >
       {props.children}
@@ -243,7 +215,6 @@ const components = {
 };
 
 export default function TagSelect(props) {
-  const { classes } = useStyles();
   const theme = useTheme();
   const [multi, setMulti] = React.useState(null);
   const [suggestions, setSuggestions] = React.useState([]);
@@ -304,10 +275,9 @@ export default function TagSelect(props) {
   }, []);
 
   return (
-    <Wrapper>
+    <Box sx={wrapperSx}>
       <Select
         className={props.advanced ? "advanced-search" : "simple-search"}
-        classes={classes}
         styles={selectStyles}
         options={suggestions}
         components={components}
@@ -317,6 +287,6 @@ export default function TagSelect(props) {
         placeholder={props.error || "Select tag(s)"}
         testId={props.testId}
       />
-    </Wrapper>
+    </Box>
   );
 }

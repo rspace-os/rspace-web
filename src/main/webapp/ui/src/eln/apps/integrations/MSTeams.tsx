@@ -46,7 +46,13 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
   const [newWebhook, setNewWebhook] = useState<string | null>(null);
 
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Teams"
         integrationState={integrationState}
@@ -72,12 +78,11 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
               .map((channels) => (
                 <Grid
                   container
-                  direction="column"
                   spacing={1}
                   key={null}
-                  sx={{ mt: 1 }}
+                  sx={{ flexDirection: "column", mt: 1 }}
                 >
-                  <Grid item>
+                  <Grid>
                     <Table size="small">
                       <TableHead>
                         <TableRow>
@@ -98,15 +103,15 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                   try {
                                     await deleteAppOptions(
                                       "MSTEAMS",
-                                      channel.optionsId
+                                      channel.optionsId,
                                     );
                                     const indexOfDeleted = channels.findIndex(
-                                      (c) => c.optionsId === channel.optionsId
+                                      (c) => c.optionsId === channel.optionsId,
                                     );
                                     runInAction(() => {
                                       integrationState.credentials.splice(
                                         indexOfDeleted,
-                                        1
+                                        1,
                                       );
                                     });
                                     addAlert(
@@ -114,7 +119,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                         variant: "success",
                                         message:
                                           "Successfully removed channel.",
-                                      })
+                                      }),
                                     );
                                   } catch (e) {
                                     if (e instanceof Error) {
@@ -123,7 +128,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                           variant: "error",
                                           title: "Failed to remove channel.",
                                           message: e.message,
-                                        })
+                                        }),
                                       );
                                     }
                                   }
@@ -137,7 +142,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                       </TableBody>
                     </Table>
                   </Grid>
-                  <Grid item>
+                  <Grid>
                     {newChannelName === null ? (
                       <Button
                         onClick={() => {
@@ -159,7 +164,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                 {
                                   MSTEAMS_CHANNEL_LABEL: newChannelName,
                                   MSTEAMS_WEBHOOK_URL: newWebhook,
-                                }
+                                },
                               );
                               runInAction(() => {
                                 integrationState.credentials =
@@ -171,7 +176,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                 mkAlert({
                                   variant: "success",
                                   message: "Successfully added channel.",
-                                })
+                                }),
                               );
                             } catch (e) {
                               if (e instanceof Error) {
@@ -180,7 +185,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                     variant: "error",
                                     title: "Failed to add channel.",
                                     message: e.message,
-                                  })
+                                  }),
                                 );
                               }
                             }

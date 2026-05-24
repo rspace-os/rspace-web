@@ -46,7 +46,7 @@ function OverviewSection({
         alt={`What all ${collection.size} containers look like`}
       />
       {collection.isFieldEditable("image") && (
-        <Box mt={1}>
+        <Box sx={{ mt: 1 }}>
           <Alert severity="info">
             Please note, on slower network connections uploading large images
             may trigger an error.
@@ -96,7 +96,7 @@ function BatchForm({ records }: BatchFormArgs): ReactNode {
   const { searchStore } = useStores();
 
   const [collection, setCollection] = useState(
-    new ContainerCollection(records)
+    new ContainerCollection(records),
   );
   useEffect(() => {
     setCollection(new ContainerCollection(records));

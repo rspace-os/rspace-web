@@ -27,7 +27,7 @@ function VersionInfo({
       severity="info"
       action={
         onUpdate && (
-          <Box mr={2}>
+          <Box sx={{ mr: 2 }}>
             <Button
               color="inherit"
               size="small"

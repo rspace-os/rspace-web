@@ -2,7 +2,6 @@ import React, { useCallback, useEffect } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ChemCard from "./ChemCard";
-import styled from "@emotion/styled";
 import { createRoot, type Root } from "react-dom/client";
 import materialTheme from "../theme";
 import { ThemeProvider } from "@mui/material/styles";
@@ -22,17 +21,6 @@ type TinyMCEEditor = {
 };
 
 const sidebarRoots = new WeakMap<HTMLElement, Root>();
-
-const SidebarWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-
-  .MuiPaper-root {
-    overflow: visible;
-  }
-`;
 
 function isElementNode(node: EventTarget | Node | null): node is Element {
   return (
@@ -197,7 +185,17 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
   }
 
   return (
-    <SidebarWrapper>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        overflowY: "auto",
+        overflowX: "hidden",
+        "& .MuiPaper-root": {
+          overflow: "visible",
+        },
+      }}
+    >
       {items.length > 1 && (
         <Box sx={{ textAlign: "right" }}>
           <Button sx={{ p: "10px" }} onClick={closeAll}>
@@ -210,7 +208,7 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
           <ChemCard key={item.id} onClose={removeItem} item={item} idx={idx} />
         ) : null,
       )}
-    </SidebarWrapper>
+    </Box>
   );
 }
 

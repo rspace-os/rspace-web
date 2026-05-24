@@ -160,7 +160,7 @@ function ResultRow({
             onChange={() => result.toggleSelected()}
             onClick={(e) => e.stopPropagation()}
             name={`Select result ${result.globalId}`}
-            inputProps={{ "aria-label": "Select result item" }}
+            slotProps={{ input: { "aria-label": "Select result item" } }}
             sx={{ cursor: "default" }}
           />
         </TableCell>
@@ -182,7 +182,7 @@ function ResultRow({
             onChange={() => activateResult()}
             onClick={(e) => e.stopPropagation()}
             name={`Select result ${result.globalId}`}
-            inputProps={{ "aria-label": "Select result item" }}
+            slotProps={{ input: { "aria-label": "Select result item" } }}
             sx={{ cursor: "default" }}
           />
         </TableCell>

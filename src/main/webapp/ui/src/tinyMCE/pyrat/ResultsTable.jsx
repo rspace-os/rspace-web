@@ -7,41 +7,11 @@ import { getSorting, stableSort } from "../../util/table";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import Checkbox from "@mui/material/Checkbox";
-import { makeStyles } from "tss-react/mui";
 import TablePagination from "@mui/material/TablePagination";
 import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 import { Order } from "./Enums";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
-
-const useStyles = makeStyles()(() => ({
-  tableContainer: {
-    marginBottom: "40px",
-  },
-  tableHead: {
-    background: "#F6F6F6",
-  },
-  tableRow: {
-    "&.Mui-selected": {
-      backgroundColor: "#e3f2fd",
-    },
-    "&.Mui-selected:hover": {
-      backgroundColor: "#e3f2fd",
-    },
-  },
-  tableFooterContainer: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    left: "0",
-    bottom: "0",
-    width: "calc(100% - 16px)",
-    marginLeft: "8px",
-    backgroundColor: "#f6f6f6",
-  },
-  selectedRowCounter: {
-    paddingLeft: "16px",
-  },
-}));
 
 export default function ResultsTable({
   page,
@@ -59,8 +29,6 @@ export default function ResultsTable({
   rowsPerPage,
   count,
 }) {
-  const { classes } = useStyles();
-
   function onRowClick(event, eartag) {
     const selectedIndex = selectedAnimalIds.indexOf(eartag);
     let newSelected = [];
@@ -99,10 +67,10 @@ export default function ResultsTable({
 
   return (
     <>
-      <TableContainer className={classes.tableContainer}>
+      <TableContainer sx={{ mb: "40px" }}>
         <Table aria-label="animal search results">
           <EnhancedTableHead
-            headStyle={classes.tableHead}
+            headSx={{ background: "#F6F6F6" }}
             headCells={visibleHeaderCells}
             order={order}
             orderBy={orderBy}
@@ -130,7 +98,10 @@ export default function ResultsTable({
                 return (
                   <TableRow
                     id={labelId}
-                    className={classes.tableRow}
+                    sx={{
+                      "&.Mui-selected": { backgroundColor: "#e3f2fd" },
+                      "&.Mui-selected:hover": { backgroundColor: "#e3f2fd" },
+                    }}
                     hover
                     tabIndex={-1}
                     role="checkbox"
@@ -143,14 +114,16 @@ export default function ResultsTable({
                       <Checkbox
                         color="primary"
                         checked={isItemSelected}
-                        inputProps={{ "aria-labelledby": labelId }}
+                        slotProps={{
+                          input: { "aria-labelledby": labelId },
+                        }}
                       />
                     </TableCell>
                     {visibleHeaderCells.map((cell, i) => (
                       // owner and responsible person could have the same name
-                      <TableCell key={`${cell.id}${i}`}>
+                      (<TableCell key={`${cell.id}${i}`}>
                         {animal[cell.id]}
-                      </TableCell>
+                      </TableCell>)
                     ))}
                   </TableRow>
                 );
@@ -159,9 +132,9 @@ export default function ResultsTable({
           </TableBody>
         </Table>
       </TableContainer>
-      <div className={classes.tableFooterContainer}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", left: 0, bottom: 0, width: "calc(100% - 16px)", ml: "8px", backgroundColor: "#f6f6f6" }}>
         <Typography
-          className={classes.selectedRowCounter}
+          sx={{ pl: "16px" }}
           component="span"
           variant="body2"
           color="textPrimary"
@@ -177,7 +150,7 @@ export default function ResultsTable({
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
-      </div>
+      </Box>
     </>
   );
 }

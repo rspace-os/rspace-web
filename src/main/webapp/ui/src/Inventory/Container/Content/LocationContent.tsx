@@ -1,13 +1,12 @@
 import React from "react";
+import Box from "@mui/material/Box";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import Avatar from "@mui/material/Avatar";
 import InfoBadge from "../../components/InfoBadge";
 import InfoCard from "../../components/InfoCard";
-import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
+import { useTheme, type Theme } from "@mui/material/styles";
 import { observer, Observer } from "mobx-react-lite";
 import RelativeBox from "../../../components/RelativeBox";
-import { globalStyles } from "../../../theme";
 import {
   type Location,
   type Container,
@@ -20,103 +19,75 @@ import { type Search } from "../../../stores/definitions/Search";
 const border = (color: string, isImportant: boolean = false) =>
   `3px solid ${color}${isImportant ? " !important" : ""}`;
 
-const useStyles = makeStyles()((theme) => ({
-  wrapper: {
-    margin: "0 auto",
-    borderRadius: 3,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "white",
-    transition: theme.transitions.filterToggle,
-    aspectRatio: "1 / 1",
+const wrapperSx = (theme: Theme) => ({
+  margin: "0 auto",
+  borderRadius: 3,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "white",
+  transition: theme.transitions.filterToggle,
+  aspectRatio: "1 / 1",
 
-    // an arbitrary value the ensures cells don't become excessively large on enormous displays
-    maxHeight: theme.spacing(10),
+  // an arbitrary value the ensures cells don't become excessively large on enormous displays
+  maxHeight: theme.spacing(10),
 
-    // this ensures that empty location on visual containers are square
-    minWidth: theme.spacing(3),
+  // this ensures that empty location on visual containers are square
+  minWidth: theme.spacing(3),
 
-    // overrides the cascading `pointerEvents: none` of LocationWrapper
-    pointerEvents: "auto",
-  },
-  selected: {
-    border: border(theme.palette.primary.main, true),
-    backgroundColor: theme.palette.primary.main,
-  },
-  shallowSelected: {
-    border: border(theme.palette.primary.light, true),
-  },
-  shallowSelectedUnselectable: {
-    border: border(theme.palette.secondary.light, true),
-  },
-  shallowUnselected: {
-    border: border(theme.palette.action.disabled, true),
-  },
-  gridCell: {
-    border: border("white"),
-    color: "grey",
-  },
-  imageCell: {
-    border: border("grey"),
-  },
-  emptyGridCellContentWrapper: {
-    fontSize: "12px",
-    backgroundColor: "white",
-    width: "100%",
-    height: "100%",
-    textAlign: "center",
-    paddingTop: "calc(50% - 10px)",
-  },
-  emptyImageCellContentWrapper: {
-    fontSize: "12px",
-    backgroundColor: "white",
-    width: "100%",
-    height: "100%",
-    textAlign: "center",
-  },
-  locationContentBox: {
-    width: "100%",
-    height: "100%",
-  },
-}));
+  // overrides the cascading `pointerEvents: none` of LocationWrapper
+  pointerEvents: "auto",
+});
 
-type Class = string | undefined;
-
-const selectionStyle = (
+const selectionSx = (
   location: Location,
-  classes: Record<string, string>,
+  theme: Theme,
   search: Search
-): Class => {
+): React.ComponentProps<typeof Box>["sx"] => {
   if (location.isShallowUnselected(search)) {
-    return classes.shallowUnselected;
+    return {
+      border: border(theme.palette.action.disabled, true),
+    };
   }
   if (location.isShallowSelected(search)) {
     return location.isSelectable(search)
-      ? classes.shallowSelected
-      : classes.shallowSelectedUnselectable;
+      ? {
+          border: border(theme.palette.primary.light, true),
+        }
+      : {
+          border: border(theme.palette.secondary.light, true),
+        };
   }
   if (location.selected) {
-    return classes.selected;
+    return {
+      border: border(theme.palette.primary.main, true),
+      backgroundColor: theme.palette.primary.main,
+    };
   }
   return undefined;
 };
 
-const useWrapperClasses = (
+const containerTypeSx = (
   location: Location,
-  classes: Record<string, string>,
-  globalClasses: { greyOut: string } & Record<string, string>
-): string => {
-  const { search } = React.useContext(SearchContext);
-  const ret = new Set([
-    classes.wrapper,
-    selectionStyle(location, classes, search),
-  ]);
-  if (location.parentContainer.cType === "GRID") ret.add(classes.gridCell);
-  if (location.parentContainer.cType === "IMAGE") ret.add(classes.imageCell);
-  // TODO: requiredPermissions tooltips are not supported in grid/image views yet.
-  if (location.isGreyedOut(search)) ret.add(globalClasses.greyOut);
-  return [...ret].filter(Boolean).join(" ");
+): React.ComponentProps<typeof Box>["sx"] => {
+  if (location.parentContainer.cType === "GRID") {
+    return {
+      border: border("white"),
+      color: "grey",
+    };
+  }
+  if (location.parentContainer.cType === "IMAGE") {
+    return {
+      border: border("grey"),
+    };
+  }
+  return undefined;
+};
+
+const greyOutSx: React.ComponentProps<typeof Box>["sx"] = {
+  filter: "grayscale(1)",
+  pointerEvents: "none",
+  opacity: 0.6,
 };
 
 type LocationContentArgs = {
@@ -132,49 +103,41 @@ type ActualLocationContentProps = {
     thumbnail?: string | null;
   };
   location: Location;
-  classes: { avatar: string };
 };
 
-const ActualLocationContent = withStyles<
-  {
-    content: InventoryRecord & { image?: string | null };
-    location: Location;
-  },
-  {
-    avatar: string;
-  }
->((theme, { content }) => ({
-  avatar: {
-    borderRadius: "2px",
-
-    /*
-     * The dimensions of the location content are determined by the parent
-     * component. In the case of grid containers this is the TableCell which
-     * will grow according to the space available and for visual containers
-     * this is specified as an arbitrary value so as to balance the competing
-     * need to identify details in the thumbnail whilst minimising how much the
-     * locations image is obscured and other location markers are overlapped.
-     */
-    height: "unset",
-    width: "unset",
-    aspectRatio: "1 / 1",
-
-    backgroundColor: content.image ? "rgba(0,0,0,0)" : "white",
-    "& img": {
-      WebkitUserDrag: "none",
-      pointerEvents: "none",
-    },
-  },
-}))(({ content, classes, location }: ActualLocationContentProps) => {
+function ActualLocationContent({
+  content,
+  location,
+}: ActualLocationContentProps): React.ReactNode {
   return (
     <Observer>
       {() => (
         <>
           <Avatar
-            className={classes.avatar}
             variant="rounded"
             src={content.thumbnail || undefined}
             onMouseMove={(e: React.MouseEvent) => e.preventDefault()}
+            sx={{
+              borderRadius: "2px",
+
+              /*
+               * The dimensions of the location content are determined by the parent
+               * component. In the case of grid containers this is the TableCell which
+               * will grow according to the space available and for visual containers
+               * this is specified as an arbitrary value so as to balance the competing
+               * need to identify details in the thumbnail whilst minimising how much the
+               * locations image is obscured and other location markers are overlapped.
+               */
+              height: "unset",
+              width: "unset",
+              aspectRatio: "1 / 1",
+
+              backgroundColor: content.image ? "rgba(0,0,0,0)" : "white",
+              "& img": {
+                WebkitUserDrag: "none",
+                pointerEvents: "none",
+              },
+            }}
             style={{
               /*
                * This is here rather than in the styles above because it needs
@@ -196,12 +159,29 @@ const ActualLocationContent = withStyles<
       )}
     </Observer>
   );
-});
+}
 
 type EmptyLocationContentProps = {
   location: Location;
   tabIndex?: number;
   hasFocus: boolean;
+};
+
+const EMPTY_GRID_CELL_STYLE: React.CSSProperties = {
+  fontSize: "12px",
+  backgroundColor: "white",
+  width: "100%",
+  height: "100%",
+  textAlign: "center",
+  paddingTop: "calc(50% - 10px)",
+};
+
+const EMPTY_IMAGE_CELL_STYLE: React.CSSProperties = {
+  fontSize: "12px",
+  backgroundColor: "white",
+  width: "100%",
+  height: "100%",
+  textAlign: "center",
 };
 
 const EmptyLocationContent = ({
@@ -214,14 +194,13 @@ const EmptyLocationContent = ({
    */
   hasFocus: _hasFocus,
 }: EmptyLocationContentProps) => {
-  const { classes } = useStyles();
   if (location.parentContainer.cType === "GRID") {
     const gridIndex = () =>
       (location.coordY - 1) *
         (location.parentContainer.gridLayout?.columnsNumber || 0) +
       location.coordX;
     return (
-      <div tabIndex={tabIndex} className={classes.emptyGridCellContentWrapper}>
+      <div tabIndex={tabIndex} style={EMPTY_GRID_CELL_STYLE}>
         {gridIndex()}
       </div>
     );
@@ -236,7 +215,7 @@ const EmptyLocationContent = ({
           loc.coordX === location.coordX && loc.coordY === location.coordY
       ) + 1;
     return (
-      <div className={classes.emptyImageCellContentWrapper}>{imageIndex()}</div>
+      <div style={EMPTY_IMAGE_CELL_STYLE}>{imageIndex()}</div>
     );
   }
   return <></>;
@@ -251,13 +230,19 @@ function LocationContent({
   tabIndex,
   hasFocus,
 }: LocationContentArgs): React.ReactNode {
-  const { classes } = useStyles();
-  const { classes: globalClasses } = globalStyles();
-  const wrapperClassName = useWrapperClasses(location, classes, globalClasses);
+  const theme = useTheme();
+  const { search } = React.useContext(SearchContext);
+
+  const composedWrapperSx = [
+    wrapperSx(theme),
+    containerTypeSx(location),
+    selectionSx(location, theme, search),
+    location.isGreyedOut(search) ? greyOutSx : undefined,
+  ] as React.ComponentProps<typeof Box>["sx"];
 
   return (
-    <div className={wrapperClassName}>
-      <RelativeBox className={classes.locationContentBox}>
+    <Box sx={composedWrapperSx}>
+      <RelativeBox style={{ width: "100%", height: "100%" }}>
         {location.content ? (
           <DragAndDrop.Draggable
             container={container}
@@ -279,7 +264,7 @@ function LocationContent({
           />
         )}
       </RelativeBox>
-    </div>
+    </Box>
   );
 }
 

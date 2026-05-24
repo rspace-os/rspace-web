@@ -50,7 +50,7 @@ export default function FigshareRepo({
 }: FigshareArgs): React.ReactNode {
   return (
     <Grid container style={{ width: "100%" }}>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.title}
           name="title"
@@ -63,7 +63,7 @@ export default function FigshareRepo({
           value={title}
         />
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.description}
           name="description"
@@ -78,7 +78,7 @@ export default function FigshareRepo({
           value={description}
         />
       </Grid>
-      <Grid item xs={5}>
+      <Grid size={5}>
         <TextField
           error={submitAttempt && !inputValidations.subject}
           name="subject"
@@ -99,8 +99,8 @@ export default function FigshareRepo({
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={2}></Grid>
-      <Grid item xs={5}>
+      <Grid size={2}></Grid>
+      <Grid size={5}>
         <TextField
           name="license"
           select
@@ -120,7 +120,7 @@ export default function FigshareRepo({
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <FormControl component="fieldset" style={{ marginTop: "20px" }}>
           <FormLabel component="legend">Publishing status</FormLabel>
           <RadioGroup

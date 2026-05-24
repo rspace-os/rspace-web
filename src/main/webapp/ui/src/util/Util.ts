@@ -320,10 +320,7 @@ export const isUrl = (str: string): boolean => {
  * template, or subsample.
  */
 export const isInventoryPermalink = (str: string): boolean => {
-  return (
-    isUrl(str) &&
-    /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(str)
-  );
+  return (isUrl(str) && /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(str));
 };
 
 /**

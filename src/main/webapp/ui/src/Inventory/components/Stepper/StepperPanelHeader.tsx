@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from "react";
 import Box from "@mui/material/Box";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import Grid from "@mui/material/Grid";
-import { makeStyles } from "tss-react/mui";
 import Badge from "@mui/material/Badge";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import { type GlobalId } from "../../../stores/definitions/BaseRecord";
@@ -19,7 +18,7 @@ import RecordTypeIcon from "../../../components/RecordTypeIcon";
 
 export type FormSectionError = [
   Set<string>,
-  React.Dispatch<React.SetStateAction<Set<string>>>
+  React.Dispatch<React.SetStateAction<Set<string>>>,
 ];
 
 export function useFormSectionError({
@@ -41,7 +40,7 @@ export function useFormSectionError({
 export function setFormSectionError(
   [errors, setErrors]: FormSectionError,
   error: string,
-  value: boolean
+  value: boolean,
 ): void {
   if (value) {
     errors.add(error);
@@ -51,25 +50,6 @@ export function setFormSectionError(
     setErrors(errors);
   }
 }
-
-const useStyles = makeStyles<{
-  error: boolean;
-  recordType: AllowedFormTypes;
-}>()((theme, { error, recordType }) => ({
-  title: {
-    wordBreak: "break-word",
-    color: error ? theme.palette.error.main : "initial",
-  },
-  badge: {
-    transitionDuration: window.matchMedia("(prefers-reduced-motion: reduce)")
-      .matches
-      ? "0s"
-      : "225ms",
-  },
-  box: {
-    backgroundColor: theme.palette.record[recordType].lighter,
-  },
-}));
 
 type StepperPanelHeaderArgs = {
   onToggle: (newOpen: boolean) => void;
@@ -92,7 +72,6 @@ function StepperPanelHeader_({
 }: StepperPanelHeaderArgs): React.ReactNode {
   const numberInErrorState = formSectionError ? formSectionError[0].size : 0;
   const showErrorIndicator = numberInErrorState > 0 && !open;
-  const { classes } = useStyles({ error: showErrorIndicator, recordType });
   const [allBtn, setAllBtn] = useState(false);
   const formSectionContext = useContext(FormSectionsContext);
   if (!formSectionContext)
@@ -107,15 +86,17 @@ function StepperPanelHeader_({
 
   return (
     <Box
-      p={1}
       onClick={() => {
         onToggle(!open);
         setAllBtn(true);
       }}
-      className={classes.box}
+      sx={{
+        p: 1,
+        backgroundColor: theme.palette.record[recordType].lighter,
+      }}
     >
-      <Grid container direction="row" spacing={1} alignItems="center">
-        <Grid item>
+      <Grid container direction="row" spacing={1} sx={{ alignItems: "center" }}>
+        <Grid>
           <IconButtonWithTooltip
             title={open ? "Collapse section" : "Expand section"}
             onClick={(e) => {
@@ -129,15 +110,32 @@ function StepperPanelHeader_({
                 badgeContent={numberInErrorState}
                 color="error"
                 invisible={open}
-                classes={{ badge: classes.badge }}
+                  slotProps={{
+                    badge: {
+                      sx: {
+                        transitionDuration: window.matchMedia(
+                          "(prefers-reduced-motion: reduce)",
+                        ).matches
+                          ? "0s"
+                          : "225ms",
+                      },
+                    },
+                  }}
               >
                 <ExpandCollapseIcon open={open} />
               </Badge>
             }
           />
         </Grid>
-        <Grid item>
-          <Heading variant="h6" className={classes.title} id={id}>
+        <Grid>
+          <Heading
+            variant="h6"
+            id={id}
+            sx={{
+              wordBreak: "break-word",
+              color: showErrorIndicator ? theme.palette.error.main : "initial",
+            }}
+          >
             {icon && (
               <RecordTypeIcon
                 record={{
@@ -155,8 +153,8 @@ function StepperPanelHeader_({
             {title}
           </Heading>
         </Grid>
-        <Grid item style={{ flexGrow: 1 }}></Grid>
-        <Grid item>
+        <Grid style={{ flexGrow: 1 }}></Grid>
+        <Grid>
           <Slide direction="left" in={allBtn}>
             <Chip
               label={open ? "Expand All" : "Collapse All"}

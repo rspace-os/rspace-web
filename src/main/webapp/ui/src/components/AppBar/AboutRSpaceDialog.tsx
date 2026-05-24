@@ -28,14 +28,23 @@ export function AboutRSpaceContent(): React.ReactElement {
   const version = useApplicationVersion();
 
   return (
-    <Box display="flex" flexDirection="column" alignItems="center" py={2}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        py: 2,
+      }}
+    >
       <Box
-        width={80}
-        height={80}
-        mb={2}
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
+        sx={{
+          width: 80,
+          height: 80,
+          mb: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
         <img src={RSpaceLogo} alt="RSpace Logo" />{" "}
       </Box>
@@ -122,9 +131,9 @@ export function AboutRSpaceContent(): React.ReactElement {
         © 2026 ResearchSpace
       </Typography>
 
-      <Box mt={2} mb={3}>
+      <Box sx={{ mt: 2, mb: 3 }}>
         <Typography variant="body2">
-          <Stack spacing={2} direction="row" alignItems="center">
+          <Stack spacing={2} direction="row" sx={{ alignItems: "center" }}>
             <Link
               href="https://researchspace.com"
               target="_blank"

@@ -28,7 +28,7 @@ export type PdfExportDetailsArgs = {
   exportDetails: PdfExportDetails;
   updateExportDetails: <T extends keyof PdfExportDetails>(
     key: T,
-    value: PdfExportDetails[T]
+    value: PdfExportDetails[T],
   ) => void;
 };
 
@@ -63,8 +63,8 @@ export default function PdfExport({
   updateExportDetails,
 }: PdfExportArgs): React.ReactNode {
   return (
-    <Grid container direction="column" spacing={2}>
-      <Grid item>
+    <Grid container sx={{ flexDirection: "column" }} spacing={2}>
+      <Grid>
         <TextField
           variant="standard"
           error={
@@ -83,8 +83,8 @@ export default function PdfExport({
           data-test-id="pdf-name"
         />
       </Grid>
-      <Grid item container>
-        <Grid item xs={5} mt={2}>
+      <Grid container>
+        <Grid sx={{ mt: 2 }} size={5}>
           <InputLabel htmlFor="pageSize">Page format: </InputLabel>
           <Select
             variant="standard"
@@ -119,8 +119,8 @@ export default function PdfExport({
             />
           )}
         </Grid>
-        <Grid item xs={2} mt={2}></Grid>
-        <Grid item xs={5} mt={2}>
+        <Grid sx={{ mt: 2 }} size={2}></Grid>
+        <Grid sx={{ mt: 2 }} size={5}>
           <InputLabel htmlFor="dateType">Date on page footer</InputLabel>
           <Select
             variant="standard"
@@ -144,10 +144,10 @@ export default function PdfExport({
           </Select>
         </Grid>
       </Grid>
-      <Grid item container direction="column">
+      <Grid container sx={{ flexDirection: "column" }}>
         {(Object.keys(checkboxes) as Array<keyof typeof checkboxes>).map(
           (k) => (
-            <Grid item key={k}>
+            <Grid key={k}>
               <FormControlLabel
                 control={
                   <Switch
@@ -157,12 +157,13 @@ export default function PdfExport({
                     }
                     color="primary"
                     data-test-id={k}
+                    slotProps={{ input: { role: "checkbox" } }}
                   />
                 }
                 label={checkboxes[k]}
               />
             </Grid>
-          )
+          ),
         )}
       </Grid>
     </Grid>

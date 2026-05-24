@@ -1,4 +1,3 @@
-
 import { describe, expect, test, vi } from "vitest";
 import React from "react";
 import { render } from "@testing-library/react";
@@ -60,6 +59,31 @@ describe("StringField", () => {
         expectFn(container);
       }
     );
+  });
+
+  test("passes slotProps through to the underlying TextField", () => {
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <StringField
+          value="foo"
+          slotProps={{
+            input: {
+              endAdornment: <span>suffix</span>,
+            },
+          }}
+        />
+      </ThemeProvider>,
+    );
+
+    const textFieldProps = vi.mocked(TextField).mock.lastCall?.[0] as {
+      slotProps?: {
+        input?: {
+          endAdornment?: React.ReactNode;
+        };
+      };
+    };
+
+    expect(textFieldProps.slotProps?.input?.endAdornment).toBeTruthy();
   });
 });
 

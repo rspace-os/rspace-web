@@ -663,7 +663,7 @@ export function ShareDialog({
         )}
       </DialogTitle>
       <DialogContent>
-        <Box mb={3} mt={0.75}>
+        <Box sx={{ mb: 3, mt: 0.75 }}>
           <VisuallyHiddenHeading variant="h3">
             Add users or groups to share with
           </VisuallyHiddenHeading>
@@ -726,8 +726,7 @@ export function ShareDialog({
                         alreadyShared.shareId.toString(),
                         {
                           id: sharedFolderId,
-                          name:
-                            groupFolderNames.get(newValue.id) || "",
+                          name: groupFolderNames.get(newValue.id) || "",
                         },
                       );
                       setShareFolderChanges(currentFolderChanges);
@@ -796,7 +795,7 @@ export function ShareDialog({
                 }}
               >
                 <Box sx={{ width: "100%" }}>
-                  <Typography variant="body2" fontWeight="medium">
+                  <Typography variant="body2" sx={{ fontWeight: "medium" }}>
                     {option.optionType === "GROUP"
                       ? option.name
                       : `${option.firstName} ${option.lastName}`}
@@ -820,16 +819,18 @@ export function ShareDialog({
                 {...params}
                 label="Add RSpace users or groups"
                 placeholder="Type to filter groups and users..."
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {optionsLoading ? (
-                        <CircularProgress color="inherit" size={20} />
-                      ) : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
+                slotProps={{
+                  input: {
+                    ...params.slotProps.input,
+                    endAdornment: (
+                      <>
+                        {optionsLoading ? (
+                          <CircularProgress color="inherit" size={20} />
+                        ) : null}
+                        {params.slotProps.input.endAdornment}
+                      </>
+                    ),
+                  },
                 }}
               />
             )}
@@ -849,10 +850,12 @@ export function ShareDialog({
 
         {loading ? (
           <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            minHeight="200px"
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: "200px",
+            }}
           >
             <CircularProgress />
           </Box>
@@ -978,7 +981,8 @@ export function ShareDialog({
                                           <>
                                             {shareFolderChanges.get(
                                               share.shareId.toString(),
-                                            )?.name || getParentFolderName(share)}
+                                            )?.name ||
+                                              getParentFolderName(share)}
                                             <Button
                                               size="small"
                                               sx={{ ml: 1 }}
@@ -1131,7 +1135,8 @@ export function ShareDialog({
                                                   );
                                                 const group = groups.find(
                                                   (g) =>
-                                                    g.id === newShare.recipientId,
+                                                    g.id ===
+                                                    newShare.recipientId,
                                                 );
                                                 const sharedFolderId = group
                                                   ? getGroupFolderId(
@@ -1334,7 +1339,10 @@ export function ShareDialog({
                               }}
                             >
                               <Box sx={{ flexGrow: 1 }}>
-                                <Typography variant="body2" fontWeight="medium">
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontWeight: "medium" }}
+                                >
                                   {share.recipientName}
                                 </Typography>
                                 <Typography
@@ -1374,7 +1382,8 @@ export function ShareDialog({
                                   }}
                                   value={share.permission}
                                   onChange={(e) => {
-                                    const newPermission = e.target.value;
+                                    const newPermission = e.target
+                                      .value as string;
                                     if (newPermission === "UNSHARE") {
                                       // Remove this share from all documents
                                       const updatedNewShares = new Map(
@@ -1502,8 +1511,7 @@ export function ShareDialog({
             globalIds.forEach((globalId) => {
               const docShares = updatedNewShares.get(globalId) || [];
               const updatedDocShares = docShares.map((share) =>
-                share.recipientType === "GROUP" &&
-                share.recipientId === groupId
+                share.recipientType === "GROUP" && share.recipientId === groupId
                   ? {
                       ...share,
                       locationName: folder.name,
@@ -1519,7 +1527,9 @@ export function ShareDialog({
             const { globalId } = selectedShareForFolderChange;
             const updatedNewShares = new Map(newShares);
             const docNewShares = updatedNewShares.get(globalId) || [];
-            const isNewShare = docNewShares.some((share) => share.id === shareId);
+            const isNewShare = docNewShares.some(
+              (share) => share.id === shareId,
+            );
 
             if (isNewShare) {
               // Handle new shares

@@ -1,8 +1,7 @@
 import React from "react";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import { Dialog, DialogBoundary } from "@/components/DialogBoundary";
 import Portal from "@mui/material/Portal";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
-import { withStyles } from "Styles";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -10,11 +9,10 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import {
-  GridToolbarContainer,
-  GridToolbarColumnsButton,
+  Toolbar as DataGridToolbar,
+  ColumnsPanelTrigger,
   GridRowId,
 } from "@mui/x-data-grid";
-import { makeStyles } from "tss-react/mui";
 import { ThemeProvider } from "@mui/material/styles";
 import Link from "@mui/material/Link";
 import * as FetchingData from "../../util/fetchingData";
@@ -36,36 +34,27 @@ import { DataGridColumn } from "../../util/table";
 import { ACCENT_COLOR } from "../../assets/branding/dmponline";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 
-const useStyles = makeStyles<{ listing: FetchingData.Fetched<unknown> }>()(
-  (theme, props: { listing: FetchingData.Fetched<unknown> }) => ({
-    table: {
-      display:
-        typeof props === "undefined"
-          ? "none"
-          : FetchingData.match(props.listing, {
-              loading: () => "none",
-              error: () => "none",
-              success: () => "flex",
-            }),
-    },
-  }),
-);
-
-const CustomDialog = withStyles<
-  { fullScreen: boolean } & React.ComponentProps<typeof Dialog>,
-  { paper?: string }
->((theme, { fullScreen }) => ({
-  paper: {
-    overflow: "hidden",
-    margin: fullScreen ? 0 : theme.spacing(2.625),
-    maxHeight: "unset",
-    minHeight: "unset",
-
-    // this is so that the heights of the dialog's content are constrained and scrollbars appear
-    // 24px margin above and below, 3px border above and below
-    height: fullScreen ? "100%" : "calc(100% - 48px)",
-  },
-}))(Dialog);
+function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
+  return (
+    <Dialog
+      {...props}
+      fullScreen={fullScreen}
+      slotProps={{
+        paper: {
+          sx: {
+            overflow: "hidden",
+            margin: fullScreen ? 0 : 2.625,
+            maxHeight: "unset",
+            minHeight: "unset",
+            // this is so that the heights of the dialog's content are constrained and scrollbars appear
+            // 24px margin above and below, 3px border above and below
+            height: fullScreen ? "100%" : "calc(100% - 48px)",
+          },
+        },
+      }}
+    />
+  );
+}
 
 const DMPDialogContent = ({
   setOpen,
@@ -78,7 +67,6 @@ const DMPDialogContent = ({
   const { firstPage } = useDmpOnlineEndpoint();
   const [listing, setListing] =
     React.useState<FetchingData.Fetched<DmpListing>>(firstPage);
-  const { classes } = useStyles({ listing });
 
   React.useEffect(() => {
     setListing(firstPage);
@@ -143,16 +131,19 @@ const DMPDialogContent = ({
       <DialogContent>
         <Grid
           container
-          direction="column"
+          sx={{
+            flexWrap: "nowrap",
+            height: "calc(100% + 16px)",
+            flexDirection: "column",
+          }}
           spacing={2}
-          flexWrap="nowrap"
+
           /*
            * The height of 100% ensures that the table is scrollable
            * The extra 16px prevents excessive whitespace, more and we get double scrollbars
            */
-          height="calc(100% + 16px)"
         >
-          <Grid item>
+          <Grid>
             <Typography variant="body2">
               Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will
               make it available to view and reference within RSpace.
@@ -167,7 +158,7 @@ const DMPDialogContent = ({
               for more.
             </Typography>
           </Grid>
-          <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
+          <Grid sx={{ flexGrow: 1, overflowY: "auto" }}>
             {FetchingData.match(listing, {
               loading: () => (
                 <Typography variant="body2">
@@ -263,12 +254,18 @@ const DMPDialogContent = ({
               }}
               slots={{
                 toolbar: () => (
-                  <GridToolbarContainer>
-                    <GridToolbarColumnsButton />
-                  </GridToolbarContainer>
+                  <DataGridToolbar>
+                    <ColumnsPanelTrigger />
+                  </DataGridToolbar>
                 ),
               }}
-              className={classes.table}
+              sx={{
+                display: FetchingData.match(listing, {
+                  loading: () => "none",
+                  error: () => "none",
+                  success: () => "flex",
+                }),
+              }}
               getRowHeight={() => "auto"}
               {...FetchingData.match(listing, {
                 loading: () => ({ "aria-hidden": true }),

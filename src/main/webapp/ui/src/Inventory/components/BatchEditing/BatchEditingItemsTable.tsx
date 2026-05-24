@@ -7,36 +7,33 @@ import React from "react";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import CardHeader from "@mui/material/CardHeader";
-import { withStyles } from "../../../util/styles";
 import SimpleRecordsTable from "../SimpleRecordsTable";
-
-const CustomHeader = withStyles<
-  { open: boolean; setOpen: (open: boolean) => void; title: string },
-  { root: string; action: string }
->(() => ({
-  root: {
-    height: 48,
-    padding: "0 0 0 12px",
-  },
-  action: {
-    margin: 0,
-    height: "100%",
-    alignItems: "center",
-    display: "flex",
-  },
-}))(({ open, setOpen, classes, title }) => (
-  <CardHeader
-    classes={classes}
-    title={`${title} (Click to ${open ? "close" : "expand"} list)`}
-    onClick={() => setOpen(!open)}
-    titleTypographyProps={{ variant: "body1" }}
-    action={
-      <IconButton onClick={() => setOpen(!open)}>
-        <ExpandCollapseIcon open={open} />
-      </IconButton>
-    }
-  />
-));
+function CustomHeader({
+  open,
+  setOpen,
+  title,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  title: string;
+}): React.ReactNode {
+  return (
+    <CardHeader
+      sx={{ height: 48, p: "0 0 0 12px" }}
+      title={`${title} (Click to ${open ? "close" : "expand"} list)`}
+      onClick={() => setOpen(!open)}
+      action={
+        <IconButton onClick={() => setOpen(!open)}>
+          <ExpandCollapseIcon open={open} />
+        </IconButton>
+      }
+      slotProps={{
+        action: { sx: { m: 0, height: "100%", alignItems: "center", display: "flex" } },
+        title: { variant: "body1" },
+      }}
+    />
+  );
+}
 
 /*
  * The RecordLike type variable is used to reference the subtype of Record that
@@ -51,15 +48,17 @@ type BatchEditingItemsTableArgs<RecordLike extends Record> = {
   records: RsSet<RecordLike>;
   label: string;
 };
-
 function BatchEditingItemsTable<RecordLike extends Record>({
   records,
   label,
 }: BatchEditingItemsTableArgs<RecordLike>): React.ReactNode {
   const [open, setOpen] = React.useState(false);
-
   return (
-    <Box my={1}>
+    <Box
+      sx={{
+        my: 1,
+      }}
+    >
       <Card variant="outlined">
         <CustomHeader title={label} open={open} setOpen={setOpen} />
         <SimpleRecordsTable
@@ -70,5 +69,4 @@ function BatchEditingItemsTable<RecordLike extends Record>({
     </Box>
   );
 }
-
 export default observer(BatchEditingItemsTable);

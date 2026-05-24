@@ -1,5 +1,4 @@
 import React from "react";
-import { withStyles } from "Styles";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
@@ -7,24 +6,6 @@ import Link from "@mui/material/Link";
 import HeroImage from "/src/assets/graphics/NoActiveResult.svg";
 import docLinks from "../../../assets/DocLinks";
 import { darken } from "@mui/material/styles";
-
-const Center = withStyles<
-  { children: React.ReactNode },
-  { outer: string; inner: string }
->(() => ({
-  outer: {
-    minHeight: "100vh",
-  },
-  inner: {
-    alignSelf: "center",
-  },
-}))(({ classes, children }) => (
-  <Grid container justifyContent="space-around" className={classes.outer}>
-    <Grid item className={classes.inner}>
-      {children}
-    </Grid>
-  </Grid>
-));
 
 const Title = () => (
   <Typography variant="h1">Welcome to RSpace Inventory!</Typography>
@@ -59,28 +40,33 @@ const GetStartedButton = () => (
 export default function NoActiveResultPlaceholder(): React.ReactNode {
   return (
     <>
-      <Center>
-        <Grid container direction="column" alignItems="center">
-          <Grid item>
-            <Box mb={1} mt={2}>
-              <Title />
-            </Box>
-          </Grid>
-          <Grid item>
-            <Box mb={3}>
-              <Subtitle />
-            </Box>
-          </Grid>
-          <Grid item>
-            <Box mb={2}>
-              <GetStartedButton />
-            </Box>
-          </Grid>
-          <Grid item>
-            <img src={HeroImage} />
+      <Grid
+        container
+        sx={{ justifyContent: "space-around", minHeight: "100vh" }}
+      >
+        <Grid sx={{ alignSelf: "center" }}>
+          <Grid container sx={{ alignItems: "center", flexDirection: "column" }}>
+            <Grid>
+              <Box sx={{ mb: 1, mt: 2 }}>
+                <Title />
+              </Box>
+            </Grid>
+            <Grid>
+              <Box sx={{ mb: 3 }}>
+                <Subtitle />
+              </Box>
+            </Grid>
+            <Grid>
+              <Box sx={{ mb: 2 }}>
+                <GetStartedButton />
+              </Box>
+            </Grid>
+            <Grid>
+              <img src={HeroImage} />
+            </Grid>
           </Grid>
         </Grid>
-      </Center>
+      </Grid>
     </>
   );
 }

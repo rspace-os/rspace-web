@@ -11,24 +11,29 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons/faExternalLinkAlt";
 import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 import { type Record } from "../../stores/definitions/Record";
-import { withStyles } from "Styles";
 import ContainerModel from "../../stores/models/ContainerModel";
 import { doNotAwait } from "../../util/Util";
 import NavigateContext from "../../stores/contexts/Navigate";
 
-const OpenButton = withStyles<
-  React.ComponentProps<typeof Button> & { icon?: React.ReactNode },
-  { root: string }
->(() => ({
-  root: {
-    cursor: "default",
-  },
-}))(({ icon, ...rest }) => (
-  <Button color="primary" variant="text" disableElevation {...rest}>
-    {icon}
-    Open
-  </Button>
-));
+function OpenButton({
+  icon,
+  ...rest
+}: React.ComponentProps<typeof Button> & {
+  icon?: React.ReactNode;
+}): React.ReactNode {
+  return (
+    <Button
+      color="primary"
+      variant="text"
+      disableElevation
+      sx={{ cursor: "default" }}
+      {...rest}
+    >
+      {icon}
+      Open
+    </Button>
+  );
+}
 
 type InfoCardArgs = {
   record: Record;

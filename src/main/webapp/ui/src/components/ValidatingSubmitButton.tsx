@@ -4,10 +4,9 @@ import React from "react";
 import Popover from "@mui/material/Popover";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
-import { styled, type SxProps, type Theme } from "@mui/material/styles";
+import { type SxProps, type Theme } from "@mui/material/styles";
 import type { Progress } from "@/util/progress";
 import Fade from "@mui/material/Fade";
-
 export type ValidationResult = Result<null>;
 
 /*
@@ -21,11 +20,9 @@ export type ValidationResult = Result<null>;
 export const IsValid = (): ValidationResult => Result.Ok(null);
 export const IsInvalid = (reason: string): ValidationResult =>
   Result.Error([new Error(reason)]);
-
 export const allAreValid = (
   v: ReadonlyArray<ValidationResult>,
 ): ValidationResult => Result.all(...v).map(() => null);
-
 type ValidatingSubmitButtonArgs = {
   children: React.ReactNode;
   loading: boolean;
@@ -35,55 +32,6 @@ type ValidatingSubmitButtonArgs = {
   color?: "primary" | "callToAction";
   sx?: SxProps<Theme>;
 };
-
-const StyledPopover = styled(Popover)(() => ({
-  "& > .MuiPaper-root": {
-    padding: "2px",
-    transitionDelay: "150ms !important",
-  },
-}));
-
-const StyledButton = styled(
-  ({
-    animating: _animating,
-    ...rest
-  }: {
-    animating: boolean;
-  } & Omit<React.ComponentProps<typeof SubmitSpinnerButton>, "animating">) => (
-    <SubmitSpinnerButton {...rest} />
-  ),
-)(({ animating }) => ({
-  "@keyframes wiggle": {
-    "0%, 7%": {
-      transform: "translateX(0)",
-    },
-    "15%": {
-      transform: "translateX(-8px)",
-    },
-    "20%": {
-      transform: "translateX(5px)",
-    },
-    "25%": {
-      transform: "translateX(-5px)",
-    },
-    "30%": {
-      transform: "translateX(3px)",
-    },
-    "35%": {
-      transform: "translateX(-2px)",
-    },
-    "40%, 100%": {
-      transform: "translateX(0)",
-    },
-  },
-  ...(animating &&
-  !window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? {
-        animation: "wiggle 1s linear 1",
-      }
-    : {}),
-}));
-
 export default function ValidatingSubmitButton({
   children,
   loading,
@@ -95,10 +43,9 @@ export default function ValidatingSubmitButton({
 }: ValidatingSubmitButtonArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
   const [playAnimation, setPlayAnimation] = React.useState(false);
-
   return (
     <>
-      <StyledButton
+      <SubmitSpinnerButton
         label={children}
         disabled={loading}
         loading={loading}
@@ -110,8 +57,7 @@ export default function ValidatingSubmitButton({
          * <form>'s one can be left undefined. All of this results in the form
          * submission being more keyboard friendly and thus more accessible to
          * users who struggle with precise pointer interactions.
-         */
-        type="submit"
+         */ type="submit"
         progress={progress}
         onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           e.preventDefault();
@@ -123,11 +69,41 @@ export default function ValidatingSubmitButton({
             setPlayAnimation(false);
           }, 1000);
         }}
-        animating={playAnimation}
         color={color}
-        sx={sx}
+        sx={{
+          "@keyframes wiggle": {
+            "0%, 7%": {
+              transform: "translateX(0)",
+            },
+            "15%": {
+              transform: "translateX(-8px)",
+            },
+            "20%": {
+              transform: "translateX(5px)",
+            },
+            "25%": {
+              transform: "translateX(-5px)",
+            },
+            "30%": {
+              transform: "translateX(3px)",
+            },
+            "35%": {
+              transform: "translateX(-2px)",
+            },
+            "40%, 100%": {
+              transform: "translateX(0)",
+            },
+          },
+          ...(playAnimation &&
+          !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? {
+                animation: "wiggle 1s linear 1",
+              }
+            : {}),
+          ...sx,
+        }}
       />
-      <StyledPopover
+      <Popover
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}
         anchorOrigin={{
@@ -140,8 +116,16 @@ export default function ValidatingSubmitButton({
         }}
         transitionDuration={300}
         onClose={() => setAnchorEl(null)}
-        PaperProps={{
-          role: "dialog",
+        sx={{
+          "& > .MuiPaper-root": {
+            padding: "2px",
+            transitionDelay: "150ms !important",
+          },
+        }}
+        slotProps={{
+          paper: {
+            role: "dialog",
+          },
         }}
       >
         <Stack spacing={0.25}>
@@ -153,9 +137,7 @@ export default function ValidatingSubmitButton({
                   elevation={0}
                   aria-label="Warning"
                   sx={{
-                    transitionDelay: `${
-                      (errors.length - i) * 0.04 + 0.2
-                    }s !important`,
+                    transitionDelay: `${(errors.length - i) * 0.04 + 0.2}s !important`,
                   }}
                 >
                   {error.message}
@@ -164,7 +146,7 @@ export default function ValidatingSubmitButton({
             )),
           )}
         </Stack>
-      </StyledPopover>
+      </Popover>
     </>
   );
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 import CustomTooltip from "./CustomTooltip";
 import IconButton from "@mui/material/IconButton";
-import { SxProps, Theme } from "@mui/system";
+import type { SxProps, Theme } from "@mui/material/styles";
 
 type RemainingIconButtonProps = {
   className?: string;

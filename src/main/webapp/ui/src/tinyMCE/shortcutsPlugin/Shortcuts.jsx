@@ -4,9 +4,9 @@ import { produce } from "immer";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import styled from "@emotion/styled";
 import config from "./config.json";
 import {
   arraysEqual,
@@ -27,22 +27,6 @@ import { createRoot } from "react-dom/client";
 
 const used = config.used.split(" ");
 const forbidden = config.forbidden.split(" ");
-
-const AlertWrapper = styled.div`
-  width: 100%;
-  margin: 10px 0px;
-
-  .MuiAlert-root,
-  .MuiAlert-message {
-    width: 100%;
-  }
-
-  .MuiAlertTitle-root {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-`;
 
 class Shortcuts extends React.Component {
   constructor() {
@@ -333,7 +317,20 @@ class Shortcuts extends React.Component {
   render() {
     return (
       <Grid container className="shortcut-inputs">
-        <AlertWrapper>
+        <Box
+          sx={{
+            width: "100%",
+            margin: "10px 0px",
+            "& .MuiAlert-root, & .MuiAlert-message": {
+              width: "100%",
+            },
+            "& .MuiAlertTitle-root": {
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
+          }}
+        >
           <Alert
             icon={
               <FontAwesomeIcon
@@ -411,8 +408,8 @@ class Shortcuts extends React.Component {
               </p>
             )}
           </Alert>
-        </AlertWrapper>
-        <Grid item xs={12}>
+        </Box>
+        <Grid size={12}>
           <Tabs
             value={this.state.tab}
             onChange={this.handleChange}

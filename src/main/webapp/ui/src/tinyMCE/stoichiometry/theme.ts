@@ -7,7 +7,6 @@ import {
 } from "@mui/material/styles";
 import { type ThemeOptions } from "@mui/material";
 import "@mui/x-data-grid/themeAugmentation";
-import { mergeThemes } from "@/util/styles";
 
 export const STOICHIOMETRY_TABLE_CLASS = "stoichiometry-table";
 
@@ -29,7 +28,8 @@ export function createStoichiometryTheme(baseTheme: unknown) {
   );
 
   return createTheme(
-    mergeThemes(baseTheme as ThemeOptions, {
+    baseTheme as ThemeOptions,
+    {
       palette: {
         DataGrid: {
           bg: tableBackground,
@@ -39,22 +39,31 @@ export function createStoichiometryTheme(baseTheme: unknown) {
       } as unknown as ThemeOptions["palette"],
       components: {
         MuiButton: {
-          styleOverrides: {
-            containedPrimary: {
+          variants: [
+            {
+              props: { variant: "contained", color: "primary" },
+              style: {
               backgroundColor: lightenedPrimaryBackground,
               color: theme.palette.primary.dark,
               "&:hover": {
                 backgroundColor: lightenedPrimaryHoverBackground,
               },
+              },
             },
-            containedCallToAction: {
+            {
+              props: {
+              variant: "contained",
+              color: "callToAction" as "primary",
+              },
+              style: {
               backgroundColor: lightenedCallToActionBackground,
               color: theme.palette.callToAction.contrastText,
               "&:hover": {
                 backgroundColor: lightenedCallToActionHoverBackground,
               },
+              },
             },
-          },
+          ],
         },
         MuiDataGrid: {
           styleOverrides: {
@@ -93,6 +102,6 @@ export function createStoichiometryTheme(baseTheme: unknown) {
           },
         },
       },
-    }) as ThemeOptions,
+    },
   );
 }

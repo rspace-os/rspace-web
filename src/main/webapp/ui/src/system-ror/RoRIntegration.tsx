@@ -5,7 +5,6 @@ import materialTheme from "../theme";
 import { createRoot } from "react-dom/client";
 import GenericsearchBar from "../components/GenericsearchBar";
 import axios from "@/common/axios";
-import styled from "@emotion/styled";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
 import { faMinus } from "@fortawesome/free-solid-svg-icons/faMinus";
@@ -29,21 +28,39 @@ type RoRApiResponse = RORDataV2;
 
 type RSpaceApiResponse = { data: { exceptionMessage?: string } };
 
-const RorDetails = styled.div`
-  font-size: 18px;
-  margin: 0.5em 0.5em 0.5em 0;
-`;
+function RorDetails(props: React.HTMLAttributes<HTMLDivElement>): React.ReactNode {
+  return (
+    <div
+      {...props}
+      style={{ fontSize: "18px", margin: "0.5em 0.5em 0.5em 0", ...props.style }}
+    />
+  );
+}
 
-const RorHelpText = styled.div`
-  width: 80%;
-  font-size: 14px;
-  margin: 0.5em 0.5em 0.5em 0;
-`;
+function RorHelpText(props: React.HTMLAttributes<HTMLDivElement>): React.ReactNode {
+  return (
+    <div
+      {...props}
+      style={{
+        width: "80%",
+        fontSize: "14px",
+        margin: "0.5em 0.5em 0.5em 0",
+        ...props.style,
+      }}
+    />
+  );
+}
 
-const RorErrorHelpText = styled.span`
-  font-size: 14px;
-  background-color: #d9d9d9;
-`;
+function RorErrorHelpText(
+  props: React.HTMLAttributes<HTMLSpanElement>,
+): React.ReactNode {
+  return (
+    <span
+      {...props}
+      style={{ fontSize: "14px", backgroundColor: "#d9d9d9", ...props.style }}
+    />
+  );
+}
 
 function RoRIntegration(): React.ReactNode {
   const [ror, setRor] = useState<string>("");

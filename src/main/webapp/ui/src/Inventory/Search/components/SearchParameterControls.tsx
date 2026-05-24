@@ -41,12 +41,14 @@ const Panel = ({ anchorEl, children, onClose }: PanelProps) => (
       vertical: "top",
       horizontal: "center",
     }}
-    PaperProps={{
-      variant: "outlined",
-      elevation: 0,
-      style: {
-        minWidth: 300,
-      },
+    slotProps={{
+      paper: {
+        variant: "outlined",
+        elevation: 0,
+        style: {
+          minWidth: 300,
+        },
+      }
     }}
   >
     {Boolean(anchorEl) && children}

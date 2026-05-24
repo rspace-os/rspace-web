@@ -2,41 +2,9 @@ import Button from "@mui/material/Button";
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
-import clsx from "clsx";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Tooltip from "@mui/material/Tooltip";
-
-const useStyles = makeStyles()((theme) => ({
-  button: {
-    borderRadius: 4,
-    marginBottom: 4,
-    minWidth: "auto",
-    fontSize: "0.8125rem",
-    "& .MuiButton-startIcon": {
-      "& svg": {
-        fontSize: "1rem !important",
-      },
-    },
-  },
-  active: {
-    backgroundColor: theme.palette.callToAction.main,
-    borderColor: theme.palette.callToAction.main,
-    color: theme.palette.callToAction.contrastText,
-    "&:hover": {
-      backgroundColor: theme.palette.callToAction.dark,
-      borderColor: theme.palette.callToAction.dark,
-    },
-  },
-  filled: {
-    backgroundColor: theme.palette.callToAction.main,
-    color: theme.palette.callToAction.contrastText,
-    "&:hover": {
-      backgroundColor: theme.palette.callToAction.dark,
-    },
-  },
-}));
 
 type ContextMenuButtonArgs = {
   icon?: React.ReactElement;
@@ -60,7 +28,6 @@ function ContextMenuButton({
   className,
   ...props
 }: ContextMenuButtonArgs): React.ReactNode {
-  const { classes } = useStyles();
   const [open, setOpen] = useState(false);
 
   const handleTooltipClose = () => {
@@ -68,15 +35,6 @@ function ContextMenuButton({
   };
 
   const inContrast = active || (variant === "filled" && disabledHelp === "");
-
-  const buttonClassName = clsx(
-    classes.button,
-    {
-      [classes.active]: active,
-      [classes.filled]: variant === "filled" && disabledHelp === "",
-    },
-    className,
-  );
 
   return (
     <ClickAwayListener onClickAway={handleTooltipClose}>
@@ -87,25 +45,50 @@ function ContextMenuButton({
           open={open}
           title={disabledHelp}
         >
-          <div>
-            <Button
-              className={buttonClassName}
-              size="medium"
-              variant={inContrast ? "contained" : "outlined"}
-              startIcon={
-                loading ? (
-                  <FontAwesomeIcon icon={faSpinner} spin size="sm" />
-                ) : (
-                  icon
-                )
-              }
-              disabled={disabledHelp !== ""}
-              aria-disabled={disabledHelp !== ""}
-              {...props}
-            >
-              {label}
-            </Button>
-          </div>
+          <Button
+            className={className}
+            sx={(theme) => ({
+              borderRadius: 4,
+              minWidth: "auto",
+              fontSize: "0.8125rem",
+              "& .MuiButton-startIcon svg": {
+                fontSize: "1rem !important",
+              },
+              ...(active
+                ? {
+                    backgroundColor: theme.palette.callToAction.main,
+                    borderColor: theme.palette.callToAction.main,
+                    color: theme.palette.callToAction.contrastText,
+                    "&:hover": {
+                      backgroundColor: theme.palette.callToAction.dark,
+                      borderColor: theme.palette.callToAction.dark,
+                    },
+                  }
+                : variant === "filled" && disabledHelp === ""
+                  ? {
+                      backgroundColor: theme.palette.callToAction.main,
+                      color: theme.palette.callToAction.contrastText,
+                      "&:hover": {
+                        backgroundColor: theme.palette.callToAction.dark,
+                      },
+                    }
+                  : {}),
+            })}
+            size="medium"
+            variant={inContrast ? "contained" : "outlined"}
+            startIcon={
+              loading ? (
+                <FontAwesomeIcon icon={faSpinner} spin size="sm" />
+              ) : (
+                icon
+              )
+            }
+            disabled={disabledHelp !== ""}
+            aria-disabled={disabledHelp !== ""}
+            {...props}
+          >
+            {label}
+          </Button>
         </Tooltip>
       </div>
     </ClickAwayListener>

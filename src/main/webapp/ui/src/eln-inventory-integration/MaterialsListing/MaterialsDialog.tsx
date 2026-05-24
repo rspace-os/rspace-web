@@ -23,10 +23,7 @@ import IconButton from "@mui/material/IconButton";
 import Slide from "@mui/material/Slide";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
 import PrintIcon from "@mui/icons-material/Print";
-import clsx from "clsx";
 import { observer, Observer } from "mobx-react-lite";
 import React, { useState, forwardRef, useEffect } from "react";
 import docLinks from "../../assets/DocLinks";
@@ -58,146 +55,124 @@ const EmptyListText = ({
     </Typography>
   ) : null;
 
-type CardWrapperInternalsArgs = {
+type CardWrapperArgs = {
   children: React.ReactNode;
-  classes: { root: string };
 };
 
-const CardWrapperInternals = forwardRef<
+function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
+  return (
+    <Dialog
+      {...props}
+      fullScreen={fullScreen}
+      slotProps={{
+        paper: {
+          sx: {
+            overflow: "hidden",
+            // this is to avoid intercom help button
+            maxHeight: fullScreen ? "unset" : "86vh",
+            // this is to ensure the picker has enough height even when list is empty
+            minHeight: "86vh",
+          },
+        },
+      }}
+    />
+  );
+}
+
+const cardWrapperSx = {
+  position: "absolute",
+  right: 0,
+  top: 0,
+  bottom: 0,
+  zIndex: 100,
+  width: "100%",
+};
+
+const barWrapperSx = {
+  display: "flex",
+  alignSelf: "center",
+  width: "95%",
+  flexDirection: "column",
+  alignItems: "center",
+};
+
+const fullWidthSx = { width: "100%" };
+
+const spacedBetweenRowSx = {
+  display: "flex",
+  flexDirection: "row",
+  justifyContent: "space-between",
+};
+
+const disabledBlackInputSx = {
+  "& input": {
+    color: "black",
+  },
+};
+
+const textFieldSx = {
+  mx: 0.5,
+  fontWeight: "normal",
+};
+
+const hideWhenPrintingSx = {
+  "@media print": { display: "none" },
+};
+
+const contentWrapperSx = {
+  overscrollBehavior: "contain",
+  WebkitOverflowScrolling: "unset",
+};
+
+const disableBackgroundSx = (openSlide: boolean) => ({
+  transition: "all 225ms ease-in-out",
+  filter: openSlide ? "grayscale(1) opacity(0.3)" : "none",
+  pointerEvents: openSlide ? "none" : "unset",
+});
+
+const warningRedSx = {
+  color: "warningRed",
+};
+
+const CardWrapper = forwardRef<
   React.ElementRef<typeof Grid>,
-  CardWrapperInternalsArgs
->(
+  CardWrapperArgs & React.ComponentProps<typeof Grid>
+>(({ children, className, ...gridProps }, ref) => {
+  const isSingleColumnLayout = useIsSingleColumnLayout();
 
-  ({ children, classes }: CardWrapperInternalsArgs, ref) => {
-    const isSingleColumnLayout = useIsSingleColumnLayout();
-    return (
-      <Observer>
-        {() => (
-          <Grid
-            item
-            xs={isSingleColumnLayout ? 12 : 9}
-            classes={classes}
-            ref={ref}
-            onClick={preventEventBubbling()}
-          >
-            {children}
-          </Grid>
-        )}
-      </Observer>
-    );
-  },
-);
+  return (
+    <Observer>
+      {() => (
+        <Grid
+          {...gridProps}
+          sx={cardWrapperSx}
+          className={className}
+          ref={ref}
+          onClick={preventEventBubbling()}
+          size={isSingleColumnLayout ? 12 : 9}
+        >
+          {children}
+        </Grid>
+      )}
+    </Observer>
+  );
+});
 
-CardWrapperInternals.displayName = "CardWrapperInternals";
-const CardWrapper = withStyles<
-  Omit<React.ComponentProps<typeof CardWrapperInternals>, "classes">,
-  { root: string }
->(() => ({
-  root: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    bottom: 0,
-    zIndex: 100,
-    width: "100%",
-  },
-}))(CardWrapperInternals);
+CardWrapper.displayName = "CardWrapper";
 
-const CustomDialog = withStyles<
-  React.ComponentProps<typeof Dialog>,
-  { paper?: string }
->((theme, { fullScreen }) => ({
-  paper: {
-    overflow: "hidden",
-
-    // this is to avoid intercom help button
-    maxHeight: fullScreen ? "unset" : "86vh",
-
-    // this is to ensure the picker has enough height even when list is empty
-    minHeight: "86vh",
-  },
-}))(Dialog);
-
-const useStyles = makeStyles<{
-  openSlide?: boolean;
-  isSingleColumn?: boolean;
-}>()((theme, { openSlide, isSingleColumn }) => ({
-  contentWrapper: {
-    overscrollBehavior: "contain",
-    WebkitOverflowScrolling: "unset",
-  },
-  actionsBar: { marginBottom: theme.spacing(1) },
-  barWrapper: {
-    display: "flex",
-    alignSelf: "center",
-    width: "95%",
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  fullWidth: { width: "100%" },
-  bottomSpaced: {
-    marginBottom: isSingleColumn ? theme.spacing(2) : theme.spacing(0.5),
-  },
-  sideSpaced: { marginRight: theme.spacing(1), marginLeft: theme.spacing(1) },
-  spacedBetweenRow: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  flexEndRow: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-  warningRed: { color: theme.palette.warningRed },
-  disableBackground: {
-    transition: "all 225ms ease-in-out",
-    filter: openSlide ? "grayscale(1) opacity(0.3)" : "none",
-    pointerEvents: openSlide ? "none" : "unset",
-  },
-  primary: { color: theme.palette.primary.main },
-  black: {
-    "& input": {
-      color: "black",
-    },
-  },
-  textField: {
-    marginLeft: theme.spacing(0.5),
-    marginRight: theme.spacing(0.5),
-    fontWeight: "normal",
-  },
-  hideWhenPrinting: {
-    "@media print": { display: "none" },
-  },
-  dialogTitle: {
-    paddingBottom: theme.spacing(0.5),
-  },
-}));
-
-const BigButton = withStyles<
-  { onClick: () => void; icon: React.ReactNode },
-  { root: string }
->((theme) => ({
-  root: {
-    padding: 0,
-    cursor: "pointer",
-    margin: theme.spacing(0.25),
-    "& svg": {
-      width: "2rem",
-      height: "2rem",
-    },
-  },
-}))(({ icon, onClick, classes }) => (
-  <IconButton
-    classes={classes}
-    component="div"
-    size="small"
-    color="primary"
-    onClick={onClick}
-  >
-    {icon}
-  </IconButton>
-));
+function BigButton({ icon, onClick }: { onClick: () => void; icon: React.ReactNode }): React.ReactNode {
+  return (
+    <IconButton
+      component="div"
+      size="small"
+      color="primary"
+      onClick={onClick}
+      sx={{ p: 0, cursor: "pointer", m: 0.25, "& svg": { width: "2rem", height: "2rem" } }}
+    >
+      {icon}
+    </IconButton>
+  );
+}
 
 const MetadataBar = observer(
   ({
@@ -209,14 +184,12 @@ const MetadataBar = observer(
     canEdit: boolean;
     isSingleColumn: boolean;
   }) => {
-    const { classes } = useStyles({ isSingleColumn });
     return (
-      <div className={clsx(classes.barWrapper, classes.bottomSpaced)}>
-        <div className={clsx(classes.spacedBetweenRow, classes.fullWidth)}>
+      <Box sx={[barWrapperSx, { mb: isSingleColumn ? 2 : 0.5 }]}>
+        <Box sx={[spacedBetweenRowSx, fullWidthSx]}>
           <TextField
             variant="standard"
-            className={clsx(classes.textField, !canEdit && classes.black)}
-            style={{ flex: 5 }}
+            sx={[textFieldSx, !canEdit && disabledBlackInputSx, { flex: 5 }]}
             label="List Name"
             margin="dense"
             value={currentList?.name ?? ""}
@@ -227,17 +200,16 @@ const MetadataBar = observer(
           />
           <TextField
             variant="standard"
-            className={classes.textField}
-            style={{ flex: 1 }}
+            sx={[textFieldSx, { flex: 1 }]}
             label="ID"
             margin="dense"
             value={currentList?.id ?? "-"}
             disabled
           />
-        </div>
+        </Box>
         <TextField
           variant="standard"
-          className={clsx(classes.textField, !canEdit && classes.black)}
+          sx={[textFieldSx, !canEdit && disabledBlackInputSx]}
           fullWidth
           multiline
           label="Description"
@@ -248,7 +220,7 @@ const MetadataBar = observer(
           error={(currentList?.description ?? "").length > 255}
           helperText={`${(currentList?.description ?? "").length} / 255`}
         />
-      </div>
+      </Box>
     );
   },
 );
@@ -267,7 +239,6 @@ const ActionsBar = observer(
     onOpenStandalone: () => void;
     canEdit: boolean;
   }) => {
-    const { classes } = useStyles({});
     const { moveStore, materialsStore } = useStores();
     const anyDataInList = (currentList?.materials.length ?? -1) > 0;
     const originalList = materialsStore.originalList;
@@ -300,9 +271,9 @@ const ActionsBar = observer(
       <Grid
         container
         spacing={2}
-        className={clsx(classes.actionsBar, classes.hideWhenPrinting)}
+        sx={{ ...hideWhenPrintingSx, mb: 1 }}
       >
-        <Grid item>
+        <Grid>
           <Button
             color="primary"
             variant="contained"
@@ -317,7 +288,7 @@ const ActionsBar = observer(
             Add items
           </Button>
         </Grid>
-        <Grid item>
+        <Grid>
           <Button
             color="primary"
             variant="contained"
@@ -332,7 +303,7 @@ const ActionsBar = observer(
             {editingMode ? "Close Quantity Editor" : "Edit Quantities"}
           </Button>
         </Grid>
-        <Grid item>
+        <Grid>
           <ValidatingSubmitButton
             onClick={doNotAwait(async () => {
               if (currentList) {
@@ -347,7 +318,7 @@ const ActionsBar = observer(
           </ValidatingSubmitButton>
         </Grid>
         {!standalonePage && currentList?.id !== null && (
-          <Grid item>
+          <Grid>
             <CustomTooltip title="View in new tab">
               <BigButton
                 icon={<PopoutPrintIcon />}
@@ -357,7 +328,7 @@ const ActionsBar = observer(
           </Grid>
         )}
         {standalonePage && (
-          <Grid item>
+          <Grid>
             <BigButton
               icon={<PrintIcon />}
               onClick={() => {
@@ -367,7 +338,7 @@ const ActionsBar = observer(
           </Grid>
         )}
         {anyDataInList && (
-          <Grid item>
+          <Grid>
             <p style={{ margin: 0 }}>
               Tip: to edit an item click its Global ID, then the Edit button in
               the new browser tab.
@@ -391,14 +362,12 @@ function MaterialsDialog({
   standalonePage = false,
 }: DialogArgs): React.ReactNode {
   const { materialsStore } = useStores();
-  const isSingleColumnLayout = useIsSingleColumnLayout();
-  const isSingleColumn = isSingleColumnLayout;
+  const isSingleColumn = useIsSingleColumnLayout();
 
   const [openPicker, setOpenPicker] = useState<boolean>(false);
   const [openExporter, setOpenExporter] = useState<boolean>(false);
 
   const openSlide = openPicker || openExporter;
-  const { classes } = useStyles({ openSlide });
 
   const currentList = materialsStore.currentList;
   const isListNew = materialsStore.isListNew;
@@ -437,7 +406,8 @@ function MaterialsDialog({
         materialsStore.setCurrentList(undefined);
         refetch();
         // if inside pop-out window, tell parent that delete occurred
-        if (window.opener) window.opener.postMessage("deleted", window.origin);
+        const opener = window.opener as Window | null;
+        if (opener) opener.postMessage("deleted", window.origin);
         setOpen(false);
       }
     }
@@ -488,7 +458,7 @@ function MaterialsDialog({
                   setOpenExporter(false);
                 }}
               >
-                <DialogTitle className={classes.dialogTitle}>
+                <DialogTitle sx={{ pb: 0.5 }}>
                   {currentList?.id === undefined && "New "} List of Materials
                   (Inventory)&nbsp;
                   <HelpLinkIcon
@@ -503,9 +473,9 @@ function MaterialsDialog({
                     />
                   )}
                 </DialogTitle>
-                <DialogContent className={classes.contentWrapper}>
+                <DialogContent sx={contentWrapperSx}>
                   <Grid container>
-                    <Grid item xs={12} className={classes.disableBackground}>
+                    <Grid sx={disableBackgroundSx(openSlide)} size={12}>
                       {isSingleColumn && (
                         <MetadataBar
                           currentList={currentList}
@@ -533,7 +503,6 @@ function MaterialsDialog({
                     <Slide
                       in={openSlide}
                       direction="left"
-                      onClick={preventEventBubbling(() => {})}
                     >
                       <CardWrapper>
                         {openPicker && currentList?.pickerSearch && (
@@ -572,23 +541,14 @@ function MaterialsDialog({
                   </Grid>
                 </DialogContent>
                 {!materialsStore.isCurrentListUnchanged && (
-                  <Box mr={3}>
+                  <Box sx={{ mr: 3 }}>
                     <WarningBar />
                   </Box>
                 )}
                 <DialogActions
-                  className={clsx(
-                    classes.barWrapper,
-                    classes.disableBackground,
-                    classes.hideWhenPrinting,
-                  )}
+                  sx={[barWrapperSx, disableBackgroundSx(openSlide), hideWhenPrintingSx]}
                 >
-                  <div
-                    className={clsx(
-                      classes.spacedBetweenRow,
-                      classes.fullWidth,
-                    )}
-                  >
+                  <Box sx={[spacedBetweenRowSx, fullWidthSx]}>
                     <Button
                       color="primary"
                       variant="contained"
@@ -617,7 +577,7 @@ function MaterialsDialog({
                     </Button>
                     {isListExisting && (
                       <Button
-                        className={clsx(classes.warningRed, classes.sideSpaced)}
+                        sx={[warningRedSx, { mx: 1 }]}
                         disableElevation
                         onClick={doNotAwait(() => confirmListDeletion())}
                         disabled={!canEdit}
@@ -627,7 +587,7 @@ function MaterialsDialog({
                     )}
                     <div>
                       <Button
-                        className={classes.sideSpaced}
+                        sx={{ mx: 1 }}
                         onClick={
                           isUnchanged
                             ? () => setOpen(false)
@@ -668,7 +628,7 @@ function MaterialsDialog({
                         Save
                       </ValidatingSubmitButton>
                     </div>
-                  </div>
+                  </Box>
                 </DialogActions>
                 <Confirm />
               </CustomDialog>

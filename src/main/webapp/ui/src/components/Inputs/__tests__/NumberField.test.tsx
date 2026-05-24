@@ -1,4 +1,3 @@
-
 import { describe, expect, test, vi } from "vitest";
 import React from "react";
 import { render } from "@testing-library/react";
@@ -59,6 +58,46 @@ describe("NumberField", () => {
         );
         expectFn(container);
       }
+    );
+  });
+
+  test("passes slotProps through to the underlying TextField", () => {
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <NumberField
+          value={1}
+          slotProps={{
+            input: {
+              endAdornment: <span>kg</span>,
+            },
+            htmlInput: {
+              min: 0,
+            },
+          }}
+        />
+      </ThemeProvider>,
+    );
+
+    const textFieldProps = vi.mocked(TextField).mock.lastCall?.[0] as {
+      slotProps?: {
+        input?: {
+          endAdornment?: React.ReactNode;
+        };
+        htmlInput?: {
+          min?: number;
+          inputMode?: string;
+          lang?: string;
+        };
+      };
+    };
+
+    expect(textFieldProps.slotProps?.input?.endAdornment).toBeTruthy();
+    expect(textFieldProps.slotProps?.htmlInput).toEqual(
+      expect.objectContaining({
+        min: 0,
+        inputMode: "text",
+        lang: "en",
+      }),
     );
   });
 });

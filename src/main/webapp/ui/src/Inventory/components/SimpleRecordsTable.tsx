@@ -13,16 +13,6 @@ import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import GlobalId from "../../components/GlobalId";
 import CardContent from "@mui/material/CardContent";
-import { withStyles } from "Styles";
-
-const CustomContent = withStyles<
-  React.ComponentProps<typeof CardContent>,
-  { root: string }
->(() => ({
-  root: {
-    padding: `0 !important`,
-  },
-}))(CardContent);
 
 type SimpleRecordsTableArgs = {
   open: boolean;
@@ -42,7 +32,7 @@ export default function SimpleRecordsTable({
 }: SimpleRecordsTableArgs): React.ReactNode {
   return (
     <Collapse in={open}>
-      <CustomContent>
+      <CardContent sx={{ p: "0 !important" }}>
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
@@ -65,7 +55,7 @@ export default function SimpleRecordsTable({
             ))}
           </TableBody>
         </Table>
-      </CustomContent>
+      </CardContent>
     </Collapse>
   );
 }

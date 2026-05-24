@@ -11,10 +11,9 @@ import Grid from "@mui/material/Grid";
 import InfoIcon from "@mui/icons-material/Info";
 import SnackbarContent from "@mui/material/SnackbarContent";
 import WarningIcon from "@mui/icons-material/Warning";
-import clsx from "clsx";
 import { green } from "@mui/material/colors";
 import React, { forwardRef, useId } from "react";
-import { makeStyles } from "tss-react/mui";
+import { useTheme } from "@mui/material/styles";
 import DismissButton from "./Buttons/Dismiss";
 import ExpandButton from "./Buttons/Expand";
 import RetryButton from "./Buttons/Retry";
@@ -27,60 +26,6 @@ declare module "@mui/material/Alert" {
     notice: true;
   }
 }
-const useStyles = makeStyles<{ verySmallLayout: boolean }>()(
-  (theme, { verySmallLayout }: { verySmallLayout: boolean }) => ({
-    success: {
-      backgroundColor: green[600],
-    },
-    error: {
-      backgroundColor: theme.palette.error.main,
-    },
-    warning: {
-      backgroundColor: theme.palette.warning.main,
-    },
-    notice: {},
-    icon: {
-      fontSize: 20,
-    },
-    iconVariant: {
-      opacity: 0.9,
-      marginRight: theme.spacing(1),
-    },
-    spacer: {
-      flexGrow: 1,
-    },
-    buttons: {
-      margin: -12,
-      flexShrink: 0,
-      marginLeft: 0,
-    },
-    content: {
-      width: "100%",
-    },
-    badge: {
-      right: 8,
-      top: 2,
-      width: 20,
-      border: "2px solid white",
-    },
-    successBadge: {
-      backgroundColor: theme.palette.success.main,
-    },
-    alertTitle: {
-      whiteSpace: "normal",
-    },
-    alertContainer: {
-      maxHeight: verySmallLayout ? "calc(100vh - 210px)" : "max(175px, 50vh)",
-      overflowY: "auto",
-    },
-    detailedAlert: {
-      alignItems: "center",
-    },
-    detailedText: {
-      wordBreak: "break-word",
-    },
-  }),
-);
 
 const variantIcon = {
   success: CheckCircleIcon,
@@ -115,36 +60,46 @@ const SnackbarContentWrapper = forwardRef<
     ref,
   ) => {
     const { isViewportVerySmall } = useViewportDimensions();
-    const { classes } = useStyles({ verySmallLayout: isViewportVerySmall });
+    const theme = useTheme();
     const Icon = variantIcon[alert.variant];
     const nameId = useId();
+    const backgroundColor =
+      alert.variant === "success"
+        ? green[600]
+        : alert.variant === "error"
+          ? theme.palette.error.main
+          : alert.variant === "warning"
+            ? theme.palette.warning.main
+            : undefined;
 
     const standardSnackbarContent = (
-      <Grid item>
-        <Grid container wrap="nowrap">
-          <Grid item>
+      <Grid>
+        <Grid container sx={{ flexWrap: "nowrap" }}>
+          <Grid>
             <Badge
               badgeContent={alert.detailsCount}
-              classes={{
-                badge: clsx(
-                  classes.badge,
-                  alert.variant === "success" && classes.successBadge,
-                ),
-              }}
               color="error"
               aria-hidden="true"
+              sx={{
+                "& .MuiBadge-badge": {
+                  right: 8,
+                  top: 2,
+                  width: 20,
+                  border: "2px solid white",
+                  ...(alert.variant === "success"
+                    ? { backgroundColor: theme.palette.success.main }
+                    : {}),
+                },
+              }}
             >
               {alert.icon ?? (
-                <Icon className={clsx(classes.icon, classes.iconVariant)} />
+                <Icon sx={{ fontSize: 20, opacity: 0.9, mr: 1 }} />
               )}
             </Badge>
           </Grid>
-          <Grid item>
+          <Grid>
             <Box
-              pl={1}
-              pt={0.25}
-              pr={2}
-              whiteSpace="normal"
+              sx={{ pl: 1, pt: 0.25, pr: 2, whiteSpace: "normal" }}
               style={{
                 overflowWrap: "anywhere",
                 hyphens: "auto",
@@ -162,8 +117,8 @@ const SnackbarContentWrapper = forwardRef<
               )}
             </Box>
           </Grid>
-          <Grid item className={classes.spacer}></Grid>
-          <Grid item className={classes.buttons}>
+          <Grid sx={{ flexGrow: 1 }}></Grid>
+          <Grid sx={{ margin: -12, flexShrink: 0, ml: 0 }}>
             {alert.actionLabel !== null &&
               typeof alert.actionLabel !== "undefined" && (
                 <Button
@@ -204,13 +159,22 @@ const SnackbarContentWrapper = forwardRef<
     );
 
     const detailedSnackbarContent = (
-      <Grid item xs={12}>
-        <Box mt={2}>
-          <Grid container spacing={1} className={classes.alertContainer}>
+      <Grid size={12}>
+        <Box sx={{ mt: 2 }}>
+          <Grid
+            container
+            spacing={1}
+            sx={{
+              maxHeight: isViewportVerySmall
+                ? "calc(100vh - 210px)"
+                : "max(175px, 50vh)",
+              overflowY: "auto",
+            }}
+          >
             {alert.details.map(({ record, variant, title, help }, index) => (
-              <Grid item key={index} xs={12}>
+              <Grid key={index} size={12}>
                 <Alert
-                  className={classes.detailedAlert}
+                  sx={{ alignItems: "center" }}
                   severity={variant}
                   action={
                     record && (
@@ -221,10 +185,10 @@ const SnackbarContentWrapper = forwardRef<
                     )
                   }
                 >
-                  <Box className={classes.detailedText}>
+                  <Box sx={{ wordBreak: "break-word" }}>
                     {help !== null && typeof help !== "undefined" ? (
                       <>
-                        <AlertTitle className={classes.alertTitle}>
+                        <AlertTitle sx={{ whiteSpace: "normal" }}>
                           {title}
                         </AlertTitle>
                         {help}
@@ -237,12 +201,12 @@ const SnackbarContentWrapper = forwardRef<
               </Grid>
             ))}
             {alert.detailsCount > alert.details.length && (
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Alert
-                  className={classes.detailedAlert}
+                  sx={{ alignItems: "center" }}
                   severity={alert.variant}
                 >
-                  <Box className={classes.detailedText}>
+                  <Box sx={{ wordBreak: "break-word" }}>
                     {`And ${alert.detailsCount - alert.details.length} more...`}
                   </Box>
                 </Alert>
@@ -257,14 +221,17 @@ const SnackbarContentWrapper = forwardRef<
       <SnackbarContent
         {...other}
         data-test-id="toast-content"
-        className={clsx(classes[alert.variant], className)}
-        classes={{
-          message: classes.content,
-        }}
+        className={className}
         ref={ref}
         aria-labelledby={nameId}
+        sx={{
+          ...(backgroundColor ? { backgroundColor } : {}),
+          "& .MuiSnackbarContent-message": {
+            width: "100%",
+          },
+        }}
         message={
-          <Grid container direction="column">
+          <Grid container sx={{ flexDirection: "column" }}>
             {standardSnackbarContent}
             <Collapse
               in={expanded}

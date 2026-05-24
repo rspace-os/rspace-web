@@ -4,8 +4,8 @@
  */
 
 import Box from "@mui/material/Box";
-import { styled } from "@mui/material/styles";
+import type { BoxProps } from "@mui/material/Box";
 
-export default styled(Box)({
-  position: "relative",
-});
+export default function RelativeBox(props: BoxProps): React.ReactNode {
+  return <Box {...props} sx={{ position: "relative", ...props.sx }} />;
+}

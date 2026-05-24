@@ -100,16 +100,18 @@ function FormatChoice({
               if (keys.length) {
                 return keys.map(
                   (k) =>
-                    ({
+                    (({
                       ...repo,
                       repoCfg: k,
+
                       //@ts-expect-error Options is poorly typed
                       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
                       label: repo.options[k]._label,
+
                       //@ts-expect-error Options is poorly typed
                       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                      metadataLanguages: repo.options[k].metadataLanguages,
-                    }) as Repo,
+                      metadataLanguages: repo.options[k].metadataLanguages
+                    }) as Repo),
                 );
               }
               return [];
@@ -315,9 +317,8 @@ function FormatChoice({
           )}
         </Stack>
       </RadioGroup>
-
       <h3 style={{ marginTop: "20px" }}>Choose additional destinations</h3>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <FormControlLabel
           control={
             <Switch
@@ -329,6 +330,7 @@ function FormatChoice({
               color="primary"
               disabled={msgBlockingRepoChoice.isPresent()}
               data-test-id="repo"
+              slotProps={{ input: { role: "checkbox" } }}
             />
           }
           label={msgBlockingRepoChoice.orElse("Export to a repository")}
@@ -338,7 +340,7 @@ function FormatChoice({
         (archiveType === "html" ||
           archiveType === "xml" ||
           archiveType === "eln") && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <h3>Filestores</h3>
             <FormControlLabel
               control={
@@ -351,6 +353,7 @@ function FormatChoice({
                   value="fileStores"
                   color="primary"
                   data-test-id="filestores"
+                  slotProps={{ input: { role: "checkbox" } }}
                 />
               }
               label="Include filestore links"
@@ -358,7 +361,7 @@ function FormatChoice({
           </Grid>
         )}
       {(archiveType === "xml" || archiveType === "eln") && (
-        <Grid item xs={12}>
+        <Grid size={12}>
           <h3>Revisions</h3>
           <FormControlLabel
             control={
@@ -370,6 +373,7 @@ function FormatChoice({
                 value="allVersions"
                 color="primary"
                 data-test-id="allVersions"
+                slotProps={{ input: { role: "checkbox" } }}
               />
             }
             label="Check to include all previous versions of your documents, or leave unchecked for only current version"

@@ -10,7 +10,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
 import AddIcon from "@mui/icons-material/Add";
-import { styled } from "@mui/material/styles";
 import ValidatingSubmitButton, {
   IsValid,
   IsInvalid,
@@ -22,18 +21,6 @@ import useFolders, {
 import { doNotAwait } from "../util/Util";
 import { Tree, TreeItem } from "./Tree";
 
-const StyledTreeItemContent = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  "& .folder-actions": {
-    opacity: 0,
-    transition: "opacity 0.2s",
-  },
-  "&:hover .folder-actions": {
-    opacity: 1,
-  },
-});
 
 type CreateFolderDialogProps = {
   open: boolean;
@@ -76,7 +63,7 @@ const CreateFolderDialog = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create New Folder</DialogTitle>
       <DialogContent>
-        <Box mt={0.75}>
+        <Box sx={{ mt: 0.75 }}>
           <TextField
             autoFocus
             label="Folder Name"
@@ -199,16 +186,18 @@ const TreeItemContent = ({
   const labelContent = (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       <span>{folder.name}</span>
-      {folder.type !== 'NOTEBOOK' && (<IconButtonWithTooltip
-        title={`Add subfolder to ${folder.name}`}
-        icon={<AddIcon fontSize="small" />}
-        size="small"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsDialogOpen(true);
-        }}
-        sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}
-      />)}
+      {folder.type !== "NOTEBOOK" && (
+        <IconButtonWithTooltip
+          title={`Add subfolder to ${folder.name}`}
+          icon={<AddIcon fontSize="small" />}
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsDialogOpen(true);
+          }}
+          sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}
+        />
+      )}
     </Box>
   );
 

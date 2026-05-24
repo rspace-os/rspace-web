@@ -27,17 +27,41 @@ import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
 
 function LoadingSkeleton() {
   return (
-    <Grid container spacing={2} alignItems="stretch">
-      <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
+      <Grid
+        sx={{ display: "flex" }}
+        size={{
+          sm: 6,
+          xs: 12,
+        }}
+      >
         <Skeleton variant="rounded" width="100%" height={125} />
       </Grid>
-      <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+      <Grid
+        sx={{ display: "flex" }}
+        size={{
+          sm: 6,
+          xs: 12,
+        }}
+      >
         <Skeleton variant="rounded" width="100%" height={125} />
       </Grid>
-      <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+      <Grid
+        sx={{ display: "flex" }}
+        size={{
+          sm: 6,
+          xs: 12,
+        }}
+      >
         <Skeleton variant="rounded" width="100%" height={125} />
       </Grid>
-      <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+      <Grid
+        sx={{ display: "flex" }}
+        size={{
+          sm: 6,
+          xs: 12,
+        }}
+      >
         <Skeleton variant="rounded" width="100%" height={125} />
       </Grid>
     </Grid>
@@ -78,14 +102,14 @@ function App(): React.ReactNode {
           observable({
             tag: "success",
             value: mapObject((k, v) => observable(v), await allIntegrations()),
-          }) as FetchingData.Fetched<IntegrationStates>
+          }) as FetchingData.Fetched<IntegrationStates>,
         );
       } catch (e) {
         if (e instanceof Error)
           setAllStates(observable({ tag: "error", error: e.message }));
       }
     }),
-    []
+    [],
   );
 
   return (
@@ -104,7 +128,7 @@ function App(): React.ReactNode {
                         if (typeof integrationName === "string") {
                           setLastDialogOpened(integrationName);
                         }
-                      }
+                      },
                     );
                   }
                 } else {
@@ -123,13 +147,27 @@ function App(): React.ReactNode {
               }}
             />
             <Grid container direction="row" spacing={1}>
-              <Grid item xs={1} md={2}></Grid>
-              <Grid item xs={10} md={8}>
+              <Grid
+                size={{
+                  xs: 1,
+                  md: 2,
+                }}
+              ></Grid>
+              <Grid
+                size={{
+                  xs: 10,
+                  md: 8,
+                }}
+              >
                 <main>
                   <Box sx={{ mt: 4 }}>
                     <Typography variant="h1">Apps</Typography>
-                    <Grid container spacing={2} direction="column">
-                      <Grid item sx={{ mb: 1 }}>
+                    <Grid
+                      container
+                      spacing={2}
+                      sx={{ flexDirection: "column" }}
+                    >
+                      <Grid sx={{ mb: 1 }}>
                         <Typography variant="body1">
                           RSpace provides integrations with various third-party
                           apps that enable extra features. Apps need to be
@@ -143,10 +181,10 @@ function App(): React.ReactNode {
                           </Link>
                         </Typography>
                       </Grid>
-                      <Grid item sx={{ mb: 6 }}>
+                      <Grid sx={{ mb: 6 }}>
                         <section aria-labelledby="enabled">
                           <Grid container>
-                            <Grid item width={"100%"} sx={{ mb: 2 }}>
+                            <Grid sx={{ width: "100%", mb: 2 }}>
                               <Divider>
                                 <Typography
                                   variant="h5"
@@ -163,7 +201,7 @@ function App(): React.ReactNode {
                                 integration.
                               </Typography>
                             </Grid>
-                            <Grid item mt={0.5} xs={12}>
+                            <Grid sx={{ mt: 0.5 }} size={12}>
                               {FetchingData.match(allStates, {
                                 success: (integrationStates) => (
                                   <CardListing
@@ -178,10 +216,10 @@ function App(): React.ReactNode {
                           </Grid>
                         </section>
                       </Grid>
-                      <Grid item sx={{ mb: 6 }}>
+                      <Grid sx={{ mb: 6 }}>
                         <section aria-labelledby="disabled">
                           <Grid container>
-                            <Grid item width={"100%"} sx={{ mb: 2 }}>
+                            <Grid sx={{ width: "100%", mb: 2 }}>
                               <Divider>
                                 <Typography
                                   variant="h5"
@@ -198,7 +236,7 @@ function App(): React.ReactNode {
                                 instructions on how to enable the integration.
                               </Typography>
                             </Grid>
-                            <Grid item mt={0.5} xs={12}>
+                            <Grid sx={{ mt: 0.5 }} size={12}>
                               {FetchingData.match(allStates, {
                                 success: (integrationStates) => (
                                   <CardListing
@@ -213,10 +251,10 @@ function App(): React.ReactNode {
                           </Grid>
                         </section>
                       </Grid>
-                      <Grid item sx={{ mb: 6 }}>
+                      <Grid sx={{ mb: 6 }}>
                         <section aria-labelledby="unavailable">
                           <Grid container>
-                            <Grid item width={"100%"} sx={{ mb: 2 }}>
+                            <Grid sx={{ width: "100%", mb: 2 }}>
                               <Divider>
                                 <Typography
                                   variant="h5"
@@ -234,7 +272,7 @@ function App(): React.ReactNode {
                                 this up.
                               </Typography>
                             </Grid>
-                            <Grid item mt={0.5} xs={12}>
+                            <Grid sx={{ mt: 0.5 }} size={12}>
                               {FetchingData.match(allStates, {
                                 success: (integrationStates) => (
                                   <CardListing
@@ -249,10 +287,10 @@ function App(): React.ReactNode {
                           </Grid>
                         </section>
                       </Grid>
-                      <Grid item sx={{ mb: 6 }}>
+                      <Grid sx={{ mb: 6 }}>
                         <section aria-labelledby="third-party-rspace-integrations">
                           <Grid container>
-                            <Grid item width={"100%"} sx={{ mb: 2 }}>
+                            <Grid sx={{ width: "100%", mb: 2 }}>
                               <Divider>
                                 <Typography
                                   variant="h5"
@@ -277,7 +315,7 @@ function App(): React.ReactNode {
                                 support for these integrations.
                               </Typography>
                             </Grid>
-                            <Grid item mt={0.5} xs={12}>
+                            <Grid sx={{ mt: 0.5 }} size={12}>
                               {FetchingData.match(allStates, {
                                 success: (integrationStates) => (
                                   <CardListing
@@ -296,7 +334,12 @@ function App(): React.ReactNode {
                   </Box>
                 </main>
               </Grid>
-              <Grid item xs={1} md={2}></Grid>
+              <Grid
+                size={{
+                  xs: 1,
+                  md: 2,
+                }}
+              ></Grid>
             </Grid>
           </AnalyticsContext.Provider>
         </DialogBoundary>

@@ -5,42 +5,48 @@ import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
-import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
-import clsx from "clsx";
+import { useTheme } from "@mui/material/styles";
 
-const Header = withStyles<
-  { strikeThroughTitle: boolean } & React.ComponentProps<typeof CardHeader>,
-  {
-    root: string;
-    title: string;
-    subheader: string;
-    avatar: string;
-    action: string;
-  }
->((theme, { strikeThroughTitle }) => ({
-  root: {
-    padding: theme.spacing(0.5),
-  },
-  title: {
-    fontWeight: "600",
-    wordBreak: "break-word",
-    textDecorationLine: strikeThroughTitle ? "line-through" : "none",
-  },
-  subheader: {
-    fontSize: "0.8em",
-    lineHeight: theme.spacing(1.5),
-  },
-  avatar: {
-    margin: theme.spacing(0, 1.5, 0, 0.75),
-  },
-  action: {
-    alignSelf: "unset",
-    margin: 0,
-  },
-}))(({ strikeThroughTitle: _strikeThroughTitle, ...rest }) => (
-  <CardHeader {...rest} />
-));
+function Header({
+  strikeThroughTitle,
+  ...rest
+}: { strikeThroughTitle: boolean } & React.ComponentProps<
+  typeof CardHeader
+>): React.ReactNode {
+  const theme = useTheme();
+  return (
+    <CardHeader
+      {...rest}
+      sx={{ p: 0.5 }}
+      slotProps={{
+        title: {
+          sx: {
+            fontWeight: 600,
+            wordBreak: "break-word",
+            textDecorationLine: strikeThroughTitle ? "line-through" : "none",
+          },
+        },
+        subheader: {
+          sx: {
+            fontSize: "0.8em",
+            lineHeight: theme.spacing(1.5),
+          },
+        },
+        avatar: {
+          sx: {
+            margin: theme.spacing(0, 1.5, 0, 0.75),
+          },
+        },
+        action: {
+          sx: {
+            alignSelf: "unset",
+            margin: 0,
+          },
+        },
+      }}
+    />
+  );
+}
 
 type CardStructureArgs = {
   content: React.ReactNode;
@@ -53,33 +59,8 @@ type CardStructureArgs = {
   onClick?: () => void;
   className?: string;
   deleted?: boolean;
+  sx?: React.ComponentProps<typeof Card>["sx"];
 };
-
-const useStyles = makeStyles<{ deleted: boolean }>()((theme, { deleted }) => ({
-  root: {
-    "&:hover": {
-      backgroundColor: theme.palette.background.default,
-    },
-    height: "100%",
-  },
-  icon: {
-    color: theme.palette.text.secondary,
-    transform: "scale(0.8) translateY(8px)",
-  },
-  label: {
-    display: "inline-block",
-    color: theme.palette.text.secondary,
-    paddingLeft: 2,
-    paddingRight: 8,
-  },
-  cardContent: {
-    padding: theme.spacing(1, 1, 0, 1),
-  },
-  imageWrapper: {
-    filter: deleted ? "grayscale(1)" : "none",
-    opacity: deleted ? 0.6 : 1.0,
-  },
-}));
 
 function CardStructure({
   content,
@@ -92,18 +73,50 @@ function CardStructure({
   onClick,
   className,
   deleted = false,
+  sx,
 }: CardStructureArgs): React.ReactNode {
-  const { classes } = useStyles({ deleted });
+  const theme = useTheme();
+  const cardSx = (
+    sx
+      ? [
+          {
+            height: "100%",
+            "&:hover": {
+              backgroundColor: theme.palette.background.default,
+            },
+          },
+          sx,
+        ]
+      : [
+          {
+            height: "100%",
+            "&:hover": {
+              backgroundColor: theme.palette.background.default,
+            },
+          },
+        ]
+  ) as React.ComponentProps<typeof Card>["sx"];
 
   return (
-    <Card className={clsx(classes.root, className)} role="region">
+    <Card className={className} sx={cardSx} role="region">
       <Grid container style={{ height: "100%" }}>
-        <Grid item xs={4} className={classes.imageWrapper}>
+        <Grid
+          sx={{
+            filter: deleted ? "grayscale(1)" : "none",
+            opacity: deleted ? 0.6 : 1,
+          }}
+          size={4}
+        >
           {image}
         </Grid>
         {/* img has separate onClick */}
-        <Grid item xs={8} onClick={onClick} container direction="column">
-          <Grid item>
+        <Grid
+          onClick={onClick}
+          container
+          sx={{ flexDirection: "column" }}
+          size={8}
+        >
+          <Grid>
             <Header
               strikeThroughTitle={deleted}
               title={title}
@@ -112,20 +125,18 @@ function CardStructure({
               action={headerAction}
             />
           </Grid>
-          <Grid item>
+          <Grid>
             <Divider orientation="horizontal" />
           </Grid>
-          <Grid item>
-            <CardContent className={classes.cardContent}>
-              <Grid container direction="column">
-                <Grid item>{content}</Grid>
+          <Grid>
+            <CardContent sx={{ p: 1, pb: 0 }}>
+              <Grid container sx={{ flexDirection: "column" }}>
+                <Grid>{content}</Grid>
               </Grid>
             </CardContent>
           </Grid>
           {Boolean(contentFooter) && (
-            <Grid item sx={{ mt: "auto" }}>
-              {contentFooter}
-            </Grid>
+            <Grid sx={{ mt: "auto" }}>{contentFooter}</Grid>
           )}
         </Grid>
       </Grid>

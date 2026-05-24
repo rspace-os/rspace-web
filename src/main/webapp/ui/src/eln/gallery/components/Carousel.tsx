@@ -2,6 +2,7 @@ import React from "react";
 import { type GalleryFile, idToString } from "../useGalleryListing";
 import { Optional } from "../../../util/optional";
 import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import { useGallerySelection } from "../useGallerySelection";
 import { useImagePreview } from "./CallableImagePreview";
@@ -21,7 +22,7 @@ import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import Divider from "@mui/material/Divider";
 import { take, incrementForever } from "../../../util/iterators";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, Page } from "react-pdf";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import * as ArrayUtils from "../../../util/ArrayUtils";
@@ -29,25 +30,12 @@ import * as Parsers from "../../../util/parsers";
 import axios from "@/common/axios";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { styled } from "@mui/material/styles";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import ResetZoomIcon from "./ResetZoomIcon";
 import Typography from "@mui/material/Typography";
 import { useFolderOpen } from "./OpenFolderProvider";
 import { doNotAwait } from "../../../util/Util";
 import { type URL as Url } from "../../../util/types";
-
-/*
- * When a drag is in progress, this cursor style applied.
- * Note that is relies on an undocumented implementation detail of the Pdf
- * renderer so may not be entirely stable. If this class no longer applied then
- * a default pointer will be shown when the drag operation is in progress.
- */
-const StyledDocument = styled(Document)(() => ({
-  "& .textLayer .endOfContent": {
-    cursor: "grabbing",
-  },
-}));
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -78,11 +66,11 @@ const PreviewWrapper = ({
   children: React.ReactNode;
   visible: boolean;
 }) => {
+  const { openFolder } = useFolderOpen();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
   const { openSnapGenePreview } = useSnapGenePreview();
-  const { openFolder } = useFolderOpen();
   const { openSnippetPreview } = useSnippetPreview();
   const primaryAction = usePrimaryAction();
   const [scrollPos, setScrollPos] = React.useState<null | {
@@ -325,7 +313,6 @@ const Preview = ({
           }
         }),
       );
-
   }, []);
 
   function onDocumentLoadSuccess({
@@ -384,15 +371,23 @@ const Preview = ({
   if (pdfSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
-        <StyledDocument file={pdfSrc} onLoadSuccess={onDocumentLoadSuccess}>
-          {[...take(incrementForever(), numPages)].map((index) => (
-            <Page
-              key={`page_${index + 1}`}
-              pageNumber={index + 1}
-              scale={zoom}
-            />
-          ))}
-        </StyledDocument>
+        <Box
+          sx={{
+            "& .textLayer .endOfContent": {
+              cursor: "grabbing",
+            },
+          }}
+        >
+          <Document file={pdfSrc} onLoadSuccess={onDocumentLoadSuccess}>
+            {[...take(incrementForever(), numPages)].map((index) => (
+              <Page
+                key={`page_${index + 1}`}
+                pageNumber={index + 1}
+                scale={zoom}
+              />
+            ))}
+          </Document>
+        </Box>
       </PreviewWrapper>
     );
 
@@ -438,7 +433,6 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
       setVisibleIndex(0);
       selection.append(listing.list[0]);
     }
-
   }, [listing]);
 
   function incrementVisibleIndex() {
@@ -478,7 +472,6 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
     };
     window.addEventListener("keydown", f);
     return () => window.removeEventListener("keydown", f);
-
   }, [visibleIndex, listing]);
 
   if (listing.tag === "empty")
@@ -492,8 +485,9 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
   return (
     <Grid
       container
-      direction="column"
       sx={{
+        flexWrap: "nowrap",
+        flexDirection: "column",
         /*
          * it looks better if the preview panel's bottom border lines up with
          * the bottom of the InfoPanel divider
@@ -501,12 +495,11 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
         height: "calc(100% + 8px)",
       }}
       spacing={1}
-      flexWrap="nowrap"
       role="region"
       aria-label="Carousel view of files"
     >
-      <Grid item container direction="row" spacing={1}>
-        <Grid item>
+      <Grid container direction="row" spacing={1}>
+        <Grid>
           <Button
             onClick={() => {
               decrementVisibleIndex();
@@ -529,8 +522,8 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
         >
           {visibleIndex + 1} / {listing.totalHits}
         </Typography>
-        <Grid item flexGrow={1}></Grid>
-        <Grid item>
+        <Grid sx={{ flexGrow: 1 }}></Grid>
+        <Grid>
           <ButtonGroup
             variant="outlined"
             sx={{
@@ -585,8 +578,8 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
             </IconButton>
           </ButtonGroup>
         </Grid>
-        <Grid item flexGrow={1}></Grid>
-        <Grid item>
+        <Grid sx={{ flexGrow: 1 }}></Grid>
+        <Grid>
           <Button
             onClick={() => {
               incrementVisibleIndex();
@@ -599,9 +592,8 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
         </Grid>
       </Grid>
       <Grid
-        item
-        flexGrow={1}
         sx={{
+          flexGrow: 1,
           /*
            * This minHeight is necessary to ensure that the image and wrapping
            * div shrink so that they don't cause scrollbars. Once the user

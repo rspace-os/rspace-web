@@ -1,4 +1,5 @@
 import React from "react";
+import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -6,8 +7,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import clsx from "clsx";
-import { makeStyles } from "tss-react/mui";
+import type { SxProps, Theme } from "@mui/material/styles";
 
 type DMPId = number | string;
 type DMPUserInternalId = number;
@@ -18,68 +18,31 @@ type Plan = {
   dmpUserInternalId: DMPUserInternalId;
 };
 
-const useStyles = makeStyles()((theme) => ({
-  bottomBorder: { borderBottom: `1px dotted ${theme.palette.primary.main}` },
-  quantityButton: {
-    padding: theme.spacing(0.5),
-    textTransform: "none",
+const tableRowSx = { width: "100%", display: "flex", flexDirection: "row" };
+const tableRowCellSx: SxProps<Theme> = (_theme) => ({
+  display: "flex",
+  flexDirection: "row",
+  justifyContent: "space-between",
+  borderBottomWidth: "0px",
+  alignItems: "center",
+  width: "100%",
+  "@media print": {
+    p: 0.5,
   },
-  relativeAnchor: { position: "relative" },
-  textField: {
-    marginLeft: theme.spacing(1),
-    marginRight: theme.spacing(1),
-    fontWeight: "normal",
-    display: "flex",
-  },
-  primary: { color: theme.palette.primary.main },
-  modifiedHighlight: { color: theme.palette.modifiedHighlight },
-  warningRed: { color: theme.palette.warningRed },
-
-  /*  styling */
-  tableRowCell: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderBottomWidth: "0px",
-    alignItems: "center",
-    "@media print": {
-      padding: theme.spacing(0.5),
-    },
-    width: "100%",
-  },
-  tableRow: {
-    width: "100%",
-    display: "flex",
-  },
-  tableRowDesktop: {
-    flexDirection: "row",
-  },
-  tableRowMobile: {
-    flexDirection: "column",
-  },
-  tableSubCell: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  spacedSubCell: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  centeredText: {
-    textAlign: "center",
-  },
-}));
+});
+const tableSubCellSx = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
 
 function PlanHeaderRow() {
-  const { classes } = useStyles();
   return (
-    <TableRow className={clsx(classes.tableRow, classes.tableRowDesktop)}>
-      <TableCell className={clsx(classes.tableRowCell)}>
+    <TableRow sx={tableRowSx}>
+      <TableCell sx={tableRowCellSx}>
         <span style={{ flex: 1 }}>Select</span>
         <span style={{ flex: 5 }}>DMP Title</span>
-        <span style={{ flex: 3 }} className={classes.centeredText}>
+        <span style={{ flex: 3, textAlign: "center" }}>
           ID
         </span>
       </TableCell>
@@ -100,8 +63,6 @@ function PlanRow({
   addSelectedPlan,
   removeSelectedPlan,
 }: BodyRowArgs) {
-  const { classes } = useStyles();
-
   const isCurrentlySelected = (id: DMPUserInternalId) =>
     selectedPlans.includes(id);
 
@@ -113,28 +74,27 @@ function PlanRow({
 
   return (
     <TableRow
-      className={clsx(
-        classes.bottomBorder,
-        classes.tableRow,
-        classes.tableRowDesktop
-      )}
+      sx={(theme) => ({
+        ...tableRowSx,
+        borderBottom: `1px dotted ${theme.palette.primary.main}`,
+      })}
       data-testid={plan.dmpId}
     >
-      <TableCell className={clsx(classes.tableRowCell)}>
-        <span style={{ flex: 1 }} className={classes.spacedSubCell}>
+      <TableCell sx={tableRowCellSx}>
+        <span style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Checkbox
             color="primary"
             onChange={() => toggleSelected()}
             value={"dmpUserInternalId"}
             checked={isCurrentlySelected(plan.dmpUserInternalId)}
-            inputProps={{ "aria-label": "Plan selection" }}
+            slotProps={{ input: { "aria-label": "Plan selection" } }}
           />
         </span>
 
-        <span style={{ flex: 5 }} className={classes.primary}>
+        <Box component="span" sx={(theme) => ({ flex: 5, color: theme.palette.primary.main })}>
           {plan.dmpTitle}
-        </span>
-        <span className={classes.tableSubCell} style={{ flex: 3 }}>
+        </Box>
+        <span style={{ ...tableSubCellSx, flex: 3 }}>
           {plan.dmpId}
         </span>
       </TableCell>

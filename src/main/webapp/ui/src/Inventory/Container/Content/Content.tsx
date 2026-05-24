@@ -1,7 +1,5 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
-import { makeStyles } from "tss-react/mui";
-import { type Theme } from "@mui/material/styles";
 import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
 import ContentContextMenu from "./ContentContextMenu";
 import useStores from "../../../stores/use-stores";
@@ -16,20 +14,6 @@ import { isMac } from "../../../util/shortcuts";
 import docLinks from "../../../assets/DocLinks";
 import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
-
-const useStyles = makeStyles<void>()(
-  // @ts-expect-error !important isn't recognised
-  (theme: Theme) => ({
-    alert: {
-      marginBottom: theme.spacing(1),
-    },
-    searchViewWrapper: {
-      overflowX: "auto !important",
-      overflow: "hidden",
-      width: "100%",
-    },
-  })
-);
 
 function ImageContainerZoomHelpText() {
   const { uiStore } = useStores();
@@ -91,13 +75,12 @@ function _Content() {
   const locationsAlert =
     "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.";
 
-  const { classes } = useStyles();
   return (
     <>
       {activeResult.cType === "IMAGE" &&
         !activeResult.loading &&
         (!activeResult.locationsImage || !activeResult.locationsCount) && (
-          <Alert severity="warning" className={classes.alert}>
+          <Alert severity="warning" sx={{ mb: 1 }}>
             {locationsAlert}
           </Alert>
         )}
@@ -110,16 +93,16 @@ function _Content() {
         }}
       >
         <InnerSearchNavigationContext>
-          <Grid container direction="column" spacing={1}>
-            <Grid item>
+          <Grid container sx={{ flexDirection: "column" }} spacing={1}>
+            <Grid>
               <Search handleSearch={handleSearch} TABS={TABS} size="small" />
             </Grid>
             {["GRID", "IMAGE"].includes(search.searchView) && (
-              <Grid item>
+              <Grid>
                 <ContentContextMenu />
               </Grid>
             )}
-            <Grid item className={classes.searchViewWrapper}>
+            <Grid sx={{ overflowX: "auto !important", overflow: "hidden", width: "100%" }}>
               <SearchViewComponent contextMenuId={menuIDs.RESULTS} />
             </Grid>
           </Grid>

@@ -6,8 +6,6 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../../theme";
 import Button from "@mui/material/Button";
 import axios from "@/common/axios";
-import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -15,27 +13,6 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import CircularProgress from "@mui/material/CircularProgress";
 import { blue } from "@mui/material/colors";
-
-const useStyles = makeStyles()(() => ({
-  loading: {
-    position: "absolute",
-    margin: "0 auto",
-  },
-}));
-
-const BlueSwitch = withStyles({
-  switchBase: {
-    color: blue[200],
-    "&$checked": {
-      color: blue[400],
-    },
-    "&$checked + $track": {
-      backgroundColor: blue[400],
-    },
-  },
-  checked: {},
-  track: {},
-})(Switch);
 
 function DisableAutoshareDialog({
   group,
@@ -46,7 +23,6 @@ function DisableAutoshareDialog({
   isSwitchDisabled,
   switchDisabledReason,
 }) {
-  const { classes } = useStyles();
   const [open, setOpen] = React.useState(false);
   const [waiting, setWaiting] = React.useState(false);
   const [done, setDone] = React.useState(false);
@@ -105,12 +81,23 @@ function DisableAutoshareDialog({
       {isSwitch && (
         <Tooltip title={switchDisabledReason} aria-label={switchDisabledReason}>
           <div>
-            <BlueSwitch
+            <Switch
               color="primary"
               checked={true}
               disabled={isSwitchDisabled}
               onChange={handleClickOpen}
-              inputProps={{ "aria-label": "Disable autosharing" }}
+              slotProps={{ input: { "aria-label": "Disable autosharing" } }}
+              sx={{
+                "& .MuiSwitch-switchBase": {
+                  color: blue[200],
+                  "&.Mui-checked": {
+                    color: blue[400],
+                  },
+                  "&.Mui-checked + .MuiSwitch-track": {
+                    backgroundColor: blue[400],
+                  },
+                },
+              }}
             />
           </div>
         </Tooltip>
@@ -127,7 +114,7 @@ function DisableAutoshareDialog({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} style={{ color: "grey" }}>
+          <Button onClick={handleClose} sx={{ color: "grey" }}>
             Cancel
           </Button>
           <Button
@@ -136,9 +123,7 @@ function DisableAutoshareDialog({
             disabled={waiting || done}
           >
             Confirm
-            {waiting && (
-              <CircularProgress size={20} className={classes.loading} />
-            )}
+            {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
           </Button>
         </DialogActions>
       </Dialog>
@@ -146,10 +131,6 @@ function DisableAutoshareDialog({
   );
 }
 
-/*
- * This is necessary because as of MUI v5 useStyles cannot be used in the same
- * component as the root MuiThemeProvider
- */
 export default function WrappedDisableAutoshareDialog(props) {
   return (
     <StyledEngineProvider injectFirst>

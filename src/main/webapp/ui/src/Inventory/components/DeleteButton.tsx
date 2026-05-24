@@ -1,22 +1,8 @@
 import { match } from "../../util/Util";
-import { withStyles } from "../../util/styles";
 import DeleteIcon from "@mui/icons-material/Delete";
 import React, { useState } from "react";
 import IconButtonWithTooltip from "../../components/IconButtonWithTooltip";
-
-const StyledIconButton = withStyles<
-  {
-    title: string;
-    icon: React.ReactNode;
-    onClick: () => void;
-    disabled: boolean;
-  },
-  { root: string }
->((theme, { disabled }) => ({
-  root: {
-    color: disabled ? "initial" : theme.palette.warningRed,
-  },
-}))((props) => <IconButtonWithTooltip {...props} size="small" />);
+import { useTheme } from "@mui/material/styles";
 
 type DeleteButtonArgs = {
   onClick: () => void;
@@ -38,6 +24,8 @@ export default function DeleteButton({
   tooltipWhenDisabled,
 }: DeleteButtonArgs): React.ReactNode {
   const [removed, setRemoved] = useState(false);
+  const theme = useTheme();
+  const isDisabled = disabled || removed;
 
   const handleClick = () => {
     setRemoved(true);
@@ -45,15 +33,17 @@ export default function DeleteButton({
   };
 
   return (
-    <StyledIconButton
+    <IconButtonWithTooltip
       title={match<void, string>([
         [() => disabled, tooltipWhenDisabled],
         [() => removed, tooltipAfterClicked],
         [() => true, tooltipBeforeClicked],
       ])()}
       onClick={handleClick}
-      disabled={disabled || removed}
+      disabled={isDisabled}
       icon={<DeleteIcon />}
+      size="small"
+      sx={{ color: isDisabled ? "initial" : theme.palette.warningRed }}
     />
   );
 }

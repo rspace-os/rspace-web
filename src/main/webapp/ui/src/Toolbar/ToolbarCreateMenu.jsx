@@ -1,10 +1,11 @@
+/* global configurePermittedActions */
 import React from "react";
 import axios from "@/common/axios";
-import styled from "@emotion/styled";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
+import PropTypes from "prop-types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileWord } from "@fortawesome/free-solid-svg-icons/faFileWord";
 import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
@@ -14,16 +15,9 @@ import { faEvernote } from "@fortawesome/free-brands-svg-icons/faEvernote";
 import NewFolder from "./Workspace/Misc/NewFolder";
 import NewNotebook from "./Workspace/Misc/NewNotebook";
 
-const CreateMenuWrapper = styled.div`
-  .create-button {
-    color: white;
-    font-size: 20px;
-    font-weight: normal;
-    border-color: white;
-    margin-right: 20px;
-  }
-`;
-
+/**
+ * Primary create menu shown in the workspace toolbar.
+ */
 export default function CreateMenu(props) {
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -49,13 +43,19 @@ export default function CreateMenu(props) {
   }
 
   return (
-    <CreateMenuWrapper>
+    <>
       <Button
         id="create"
         data-test-id="create-btn"
         onClick={(e) => openMenu(e)}
         variant="outlined"
-        className="create-button"
+        sx={{
+          color: "white",
+          fontSize: 20,
+          fontWeight: "normal",
+          borderColor: "white",
+          marginRight: 5,
+        }}
         aria-label="Create a record"
       >
         Create
@@ -75,6 +75,7 @@ export default function CreateMenu(props) {
         <MenuItem id="createFolder" data-test-id="create-btn-folder">
           <img
             src="/images/icons/folder.png"
+            alt=""
             style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
           Folder
@@ -82,6 +83,7 @@ export default function CreateMenu(props) {
         <MenuItem data-test-id="create-btn-notebook" id="createNotebook">
           <img
             src="/images/icons/notebook.png"
+            alt=""
             style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
           Notebook
@@ -97,6 +99,7 @@ export default function CreateMenu(props) {
           >
             <img
               src={entry.iconURL}
+              alt=""
               style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
             />
             {entry.name}
@@ -155,6 +158,7 @@ export default function CreateMenu(props) {
           >
             <img
               src="/images/integrations/protocolsio.png"
+              alt=""
               style={{ paddingRight: "5px", width: "22px", marginLeft: "-5px" }}
             />
             From Protocols.io
@@ -168,6 +172,12 @@ export default function CreateMenu(props) {
       </Menu>
       <NewFolder />
       <NewNotebook />
-    </CreateMenuWrapper>
+    </>
   );
 }
+
+CreateMenu.propTypes = {
+  asposeEnabled: PropTypes.bool,
+  evernoteEnabled: PropTypes.bool,
+  pioEnabled: PropTypes.bool,
+};

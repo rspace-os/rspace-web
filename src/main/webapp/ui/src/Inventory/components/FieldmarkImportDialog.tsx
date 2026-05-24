@@ -1,5 +1,5 @@
 import React from "react";
-import { ThemeProvider, styled } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import { Dialog } from "../../components/DialogBoundary";
 import createAccentedTheme from "../../accentedTheme";
@@ -92,7 +92,7 @@ const GridToolbar = ({
 
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
-      <Box flexGrow={1}></Box>
+      <Box sx={{ flexGrow: 1 }}></Box>
       <GridToolbarColumnsButton
         ref={(node) => {
           if (node) columnMenuRef.current = node;
@@ -102,22 +102,22 @@ const GridToolbar = ({
   );
 };
 
-const StyledGridOverlay = styled("div")(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  height: "100%",
-  backgroundColor: "rgba(18, 18, 18, 0.9)",
-  ...theme.applyStyles("light", {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-  }),
-}));
-
 function CustomLoadingOverlay() {
   const id = React.useId();
   return (
-    <StyledGridOverlay>
+    <Box
+      sx={(theme) => ({
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        backgroundColor: "rgba(18, 18, 18, 0.9)",
+        ...theme.applyStyles("light", {
+          backgroundColor: "rgba(255, 255, 255, 0.9)",
+        }),
+      })}
+    >
       <CircularProgress
         variant="indeterminate"
         value={1}
@@ -126,7 +126,7 @@ function CustomLoadingOverlay() {
       <Box sx={{ mt: 2 }} id={id}>
         Fetching notebooks from Fieldmark…
       </Box>
-    </StyledGridOverlay>
+    </Box>
   );
 }
 
@@ -417,11 +417,10 @@ export default function FieldmarkImportDialog({
         <DialogContent>
           <Grid
             container
-            direction="column"
             spacing={2}
-            sx={{ height: "100%", flexWrap: "nowrap" }}
+            sx={{ flexDirection: "column", height: "100%", flexWrap: "nowrap" }}
           >
-            <Grid item>
+            <Grid>
               <Typography
                 variant="body2"
                 sx={{ maxWidth: "54em" /* entirely arbitrary */ }}
@@ -441,7 +440,7 @@ export default function FieldmarkImportDialog({
                 for more.
               </Typography>
             </Grid>
-            <Grid item>
+            <Grid>
               <DataGridWithRadioSelection
                 columns={[
                   DataGridColumn.newColumnWithFieldName<"name", Notebook>(
@@ -554,7 +553,7 @@ export default function FieldmarkImportDialog({
                 getRowId={(row) => row.metadata.project_id}
               />
             </Grid>
-            <Grid item>
+            <Grid>
               {selectedNotebook &&
                 !(
                   identifierFieldSelection.type === "unselected" && importing
@@ -642,7 +641,7 @@ export default function FieldmarkImportDialog({
         </DialogContent>
         <DialogActions>
           <Grid container direction="row" spacing={1}>
-            <Grid item sx={{ ml: "auto" }}>
+            <Grid sx={{ ml: "auto" }}>
               <Stack direction="row" spacing={1}>
                 <Button onClick={() => handleClose()}>Close</Button>
                 <ValidatingSubmitButton

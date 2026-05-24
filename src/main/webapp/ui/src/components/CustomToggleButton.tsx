@@ -7,40 +7,44 @@
  * dependency on any global state.
  */
 import React from "react";
-import { withStyles } from "Styles";
+import { useTheme } from "@mui/material/styles";
 import ToggleButton from "@mui/material/ToggleButton";
 import Tooltip from "@mui/material/Tooltip";
 
-const CustomToggleButton = withStyles<
-  { title: string; disabled: boolean } & React.ComponentProps<
-    typeof ToggleButton
-  >,
-  { root: string; selected: string }
->((theme) => ({
-  root: {
-    margin: `${theme.spacing(0.5)} !important`,
-    border: `${theme.borders.section} !important`,
-    flexGrow: 1,
-    borderRadius: "4px !important",
-    textTransform: "none",
-  },
-  selected: {
-    backgroundColor: `${theme.palette.primary.main} !important`,
-    color: `${theme.palette.primary.contrastText} !important`,
-    "&:hover": {
-      backgroundColor: `${theme.palette.primary.saturated} !important`,
-      color: `${theme.palette.primary.contrastText} !important`,
-    },
-  },
-}))(({ title = "", disabled = false, ...rest }) =>
-  disabled ? (
-    <ToggleButton disabled={true} {...rest} />
-  ) : (
-    <Tooltip title={title}>
-      <ToggleButton disabled={false} {...rest} />
-    </Tooltip>
-  )
-);
+type CustomToggleButtonProps = { title?: string; disabled?: boolean } & Omit<
+  React.ComponentProps<typeof ToggleButton>,
+  "title" | "disabled"
+>;
+
+function CustomToggleButton({
+  title = "",
+  disabled = false,
+  ...rest
+}: CustomToggleButtonProps): React.ReactNode {
+  const theme = useTheme();
+  const button = (
+    <ToggleButton
+      disabled={disabled}
+      sx={{
+        margin: `${theme.spacing(0.5)} !important`,
+        border: `${theme.borders.section} !important`,
+        flexGrow: 1,
+        borderRadius: "4px !important",
+        textTransform: "none",
+        "&.Mui-selected": {
+          backgroundColor: `${theme.palette.primary.main} !important`,
+          color: `${theme.palette.primary.contrastText} !important`,
+          "&:hover": {
+            backgroundColor: `${theme.palette.primary.saturated} !important`,
+            color: `${theme.palette.primary.contrastText} !important`,
+          },
+        },
+      }}
+      {...rest}
+    />
+  );
+  return disabled ? button : <Tooltip title={title}>{button}</Tooltip>;
+}
 
 CustomToggleButton.displayName = "CustomToggleButton";
 export default CustomToggleButton;

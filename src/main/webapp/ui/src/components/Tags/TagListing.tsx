@@ -37,7 +37,7 @@ type TagListingArgs = {
 
   /*
    * Additional content may be added inline to the end of the listing, such as
-   * a button to add more tags. The content MUST be wrapped in a <Grid item>
+   * a button to add more tags. The content MUST be wrapped in a <Grid>
    */
   endAdornment?: React.ReactNode;
 
@@ -68,7 +68,7 @@ export default function TagListing({
   return (
     <Grid container direction="row" spacing={1}>
       {tags.map((tag, index) => (
-        <Grid item key={tag.uri.orElse(tag.value)}>
+        <Grid key={tag.uri.orElse(tag.value)}>
           <Chip
             label={tag.value}
             size={size}

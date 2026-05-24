@@ -1,30 +1,37 @@
 import React from "react";
+import Box from "@mui/material/Box";
 import InfoBadge from "./InfoBadge";
 import InfoCard from "./InfoCard";
-import { makeStyles } from "tss-react/mui";
-import { type Record } from "../../stores/definitions/Record";
+import type { Record } from "../../stores/definitions/Record";
 import { observer } from "mobx-react-lite";
+import Stack from "@mui/material/Stack";
 
 type NameWithBadgeArgs = {
   record: Record;
 };
 
-const useStyles = makeStyles<{ deleted: boolean }>()((theme, { deleted }) => ({
-  name: {
-    textDecorationLine: deleted ? "line-through" : "none",
-    wordBreak: "break-all",
-  },
-}));
-
 function NameWithBadge({ record }: NameWithBadgeArgs): React.ReactNode {
-  const { classes } = useStyles({ deleted: record.deleted });
   return (
-    <>
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{
+        alignItems: "center",
+      }}
+    >
       <InfoBadge inline record={record}>
         <InfoCard record={record} />
       </InfoBadge>
-      <span className={classes.name}>{record.name}</span>
-    </>
+      <Box
+        component="span"
+        sx={{
+          textDecorationLine: record.deleted ? "line-through" : "none",
+          wordBreak: "break-all",
+        }}
+      >
+        {record.name}
+      </Box>
+    </Stack>
   );
 }
 

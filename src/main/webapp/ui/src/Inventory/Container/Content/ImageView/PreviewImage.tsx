@@ -1,5 +1,4 @@
 import React, { useContext, useRef, useState, useLayoutEffect } from "react";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../../stores/contexts/Search";
 import Dragger from "../Dragger";
@@ -12,19 +11,8 @@ import LocationContent from "../LocationContent";
 import { pick } from "../../../../util/unsafeUtils";
 import * as DragAndDrop from "../DragAndDrop";
 
-const useStyles = makeStyles()(() => ({
-  rounded: {
-    width: "auto",
-    height: "auto",
-    maxWidth: "100%",
-    userSelect: "none",
-    cursor: "crosshair",
-  },
-}));
-
 function PreviewImage(): React.ReactNode {
   const { scopedResult, search } = useContext(SearchContext);
-  const { classes } = useStyles();
 
   const noSelection = search.uiConfig.selectionMode === "NONE";
   if (!(scopedResult && scopedResult instanceof ContainerModel))
@@ -42,9 +30,9 @@ function PreviewImage(): React.ReactNode {
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {
       setImageDimensions(
-        pick("width", "height")(entries[0].target.getBoundingClientRect())
+        pick("width", "height")(entries[0].target.getBoundingClientRect()),
       );
-    })
+    }),
   );
   const imgRef = useRef<HTMLImageElement | null>(null);
 
@@ -75,7 +63,7 @@ function PreviewImage(): React.ReactNode {
   return (
     <DragAndDrop.Context container={container}>
       <RelativeBox
-        m={1}
+        sx={{ m: 1 }}
         onMouseDown={(e: React.MouseEvent) => {
           if (noSelection) return;
           setMouseDownPoint({
@@ -110,7 +98,13 @@ function PreviewImage(): React.ReactNode {
         <img
           src={container.locationsImage || undefined}
           alt="Container preview"
-          className={classes.rounded}
+          style={{
+            width: "auto",
+            height: "auto",
+            maxWidth: "100%",
+            userSelect: "none",
+            cursor: "crosshair",
+          }}
           onLoad={({ target }) => {
             setImg(target as HTMLImageElement);
           }}

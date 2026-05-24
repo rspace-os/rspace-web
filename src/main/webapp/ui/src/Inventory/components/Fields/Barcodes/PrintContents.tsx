@@ -1,12 +1,11 @@
 import React, { forwardRef } from "react";
-import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
+import type { BarcodeRecord } from "@/stores/definitions/Barcode";
 import { type PrintOptions } from "./PrintDialog";
-import { makeStyles } from "tss-react/mui";
+import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { toTitleCase } from "../../../../util/Util";
-import clsx from "clsx";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import { toTitleCase } from "@/util/Util";
+import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import ContainerModel from "../../../../stores/models/ContainerModel";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
 
@@ -20,75 +19,33 @@ const itemMmWidths = {
   large: "38mm",
 };
 
-const useStyles = makeStyles()((theme) => ({
-  // display mode of wrapper classes necessary for page breaks behaviour to work
-  contentsWrapper: {
-    // grid (not block) if generic printer
-    margin: theme.spacing(0),
+const contentsWrapperSx = { m: 0 };
+const blockSx = { display: "block" };
+const printItemWrapperSx = {
+  display: "inline-block",
+  border: "1px dotted #ccc",
+  m: 0.25,
+  "@media print": {
+    pageBreakInside: "avoid",
+    img: { breakInside: "avoid" },
   },
-  block: {
-    display: "block",
-  }, // for Zebra printing (no grid with page breaks)
-  printItemWrapper: {
-    display: "inline-block",
-    border: "1px dotted #ccc",
-    margin: theme.spacing(0.25),
-    "@media print": {
-      pageBreakInside: "avoid",
-      img: { breakInside: "avoid" },
-    },
+};
+const smallPxSx = { width: itemPxWidths.small, maxWidth: itemPxWidths.small, p: 0.25 };
+const largePxSx = { width: itemPxWidths.full, maxWidth: itemPxWidths.full, p: 0.25 };
+const smallMmSx = { width: itemMmWidths.small, maxWidth: itemMmWidths.small, p: 0.25 };
+const largeMmSx = { width: itemMmWidths.large, maxWidth: itemMmWidths.large, p: 0.5 };
+const singlePcSx = { width: "90%", maxWidth: "90%", p: 0.25 };
+const bottomSpacedSx = { mb: 0 };
+const centeredSelfSx = { alignSelf: "center", mt: 0.25 };
+const centeredTextSx = { textAlign: "center" };
+const wrappingTextSx = { wordBreak: "break-word" };
+const smallTextSx = { fontSize: "11px" };
+const pageBreakSx = {
+  "@media print": {
+    breakAfter: "always",
+    pageBreakAfter: "always",
   },
-  /* for screen mode */
-  smallPx: {
-    width: itemPxWidths.small,
-    maxWidth: itemPxWidths.small,
-    padding: theme.spacing(0.25),
-  },
-  largePx: {
-    width: itemPxWidths.full,
-    maxWidth: itemPxWidths.full,
-    padding: theme.spacing(0.25),
-  },
-  /* for grid/generic mode */
-  smallMm: {
-    width: itemMmWidths.small,
-    maxWidth: itemMmWidths.small,
-    padding: theme.spacing(0.25),
-  },
-  largeMm: {
-    width: itemMmWidths.large,
-    maxWidth: itemMmWidths.large,
-    padding: theme.spacing(0.5),
-  },
-  /* for single/zebra mode */
-  singlePc: {
-    width: "90%",
-    maxWidth: "90%",
-    padding: theme.spacing(0.25),
-  },
-  bottomSpaced: {
-    marginBottom: theme.spacing(0),
-  },
-  centeredSelf: {
-    alignSelf: "center",
-    marginTop: theme.spacing(0.25),
-  },
-  centeredText: {
-    textAlign: "center",
-  },
-  wrappingText: {
-    // "break-word" deprecated but seems to help safari 16 on mac
-    wordBreak: "break-word",
-  },
-  smallText: { fontSize: "11px" },
-  pageBreak: {
-    "@media print": {
-      breakAfter: "always",
-      // on basic layout, singlePrint doesn't page-break without the following
-      pageBreakAfter: "always",
-    },
-  },
-}));
+};
 
 type Target = "screen" | "multiplePrint" | "singlePrint";
 
@@ -122,40 +79,35 @@ export const PreviewPrintItem = ({
   const recordString = `${toTitleCase(itemOwner.type)} - ${itemOwner.name}`;
 
   const now = new Date();
-
-  const { classes } = useStyles();
   const sizePerTarget = () =>
     target === "screen" && printSize === "SMALL"
-      ? classes.smallPx
+      ? smallPxSx
       : target === "screen" && printSize === "LARGE"
-      ? classes.largePx
-      : target === "multiplePrint" && printSize === "SMALL"
-      ? classes.smallMm
-      : target === "multiplePrint" && printSize === "LARGE"
-      ? classes.largeMm
-      : classes.singlePc; // no small and large for singlePrint case
+        ? largePxSx
+        : target === "multiplePrint" && printSize === "SMALL"
+          ? smallMmSx
+          : target === "multiplePrint" && printSize === "LARGE"
+            ? largeMmSx
+            : singlePcSx; // no small and large for singlePrint case
   return (
     <>
-      <div className={clsx(classes.printItemWrapper, sizePerTarget())}>
+      <Box component="div" sx={[printItemWrapperSx, sizePerTarget()]}>
         <Grid
           container
-          direction="column"
+          sx={[wrappingTextSx, { flexDirection: "column" }]}
           spacing={1}
-          className={classes.wrappingText}
         >
           {imageLinks && (
             <>
-              <img
-                className={classes.centeredSelf}
+              <Box
+                component="img"
+                sx={centeredSelfSx}
                 src={imageLinks[index]}
                 title="Barcode Image"
                 alt="Barcode"
                 width="75%"
               />
-              <Grid
-                item
-                className={clsx(classes.centeredText, classes.bottomSpaced)}
-              >
+              <Grid sx={[centeredTextSx, bottomSpacedSx]}>
                 {target === "singlePrint" ? (
                   itemOwner.globalId
                 ) : (
@@ -165,27 +117,26 @@ export const PreviewPrintItem = ({
             </>
           )}
           {printLayout === "FULL" && (
-            <Grid item>
+            <Grid>
               <Grid
                 container
-                direction="column"
+                sx={[centeredTextSx, smallTextSx, { flexDirection: "column" }]}
                 spacing={1}
-                className={clsx(classes.centeredText, classes.smallText)}
               >
-                <Grid item>{item.description.split("//")[1]}</Grid>
-                <Grid item>
+                <Grid>{item.description.split("//")[1]}</Grid>
+                <Grid>
                   <strong>Item:</strong>
                   <br />
                   {recordString}
                 </Grid>
-                <Grid item>
+                <Grid>
                   <strong>Location:</strong>{" "}
                   {itemOwner instanceof ContainerModel ||
                   itemOwner instanceof SubSampleModel
-                    ? itemOwner.immediateParentContainer?.globalId ?? "-"
+                    ? (itemOwner.immediateParentContainer?.globalId ?? "-")
                     : "-"}
                 </Grid>
-                <Grid item>
+                <Grid>
                   <strong>Printed:</strong>
                   <br />
                   {now.toLocaleString()}
@@ -194,9 +145,9 @@ export const PreviewPrintItem = ({
             </Grid>
           )}
         </Grid>
-      </div>
+      </Box>
       {/* force page break after item (when wrapper in display block) */}
-      {printerType === "LABEL" && <div className={classes.pageBreak}></div>}
+      {printerType === "LABEL" && <Box component="div" sx={pageBreakSx}></Box>}
     </>
   );
 };
@@ -204,22 +155,21 @@ export const PreviewPrintItem = ({
 const PrintContents = forwardRef<HTMLDivElement, PrintContentsArgs>(
   (
     { printOptions, itemsToPrint, imageLinks, target }: PrintContentsArgs,
-    ref
+    ref,
   ) => {
-    const { classes } = useStyles();
     return (
       <Grid
         ref={ref}
         container
         spacing={1}
-        className={clsx(
-          classes.contentsWrapper,
-          // using display block to insert page breaks for label printers
-          printOptions.printerType === "LABEL" && classes.block
-        )}
+        sx={
+          printOptions.printerType === "LABEL"
+            ? [contentsWrapperSx, blockSx]
+            : contentsWrapperSx
+        }
       >
         {itemsToPrint.map(([item, itemOwner], i) => (
-          <Grid item key={i}>
+          <Grid key={i}>
             <PreviewPrintItem
               index={i}
               printOptions={printOptions}
@@ -232,7 +182,7 @@ const PrintContents = forwardRef<HTMLDivElement, PrintContentsArgs>(
         ))}
       </Grid>
     );
-  }
+  },
 );
 
 PrintContents.displayName = "PrintContents";

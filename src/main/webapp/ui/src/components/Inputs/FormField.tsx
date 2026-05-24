@@ -2,6 +2,7 @@ import React from "react";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import FormHelperText from "@mui/material/FormHelperText";
+import { type SxProps, type Theme } from "@mui/material/styles";
 import { Optional } from "../../util/optional";
 import Typography from "@mui/material/Typography";
 import { Heading } from "../DynamicHeadingLevel";
@@ -249,6 +250,8 @@ export type FormFieldArgs<T> = {
   doNotAttachIdToLabel?: boolean;
 
   className?: string;
+
+  sx?: SxProps<Theme>;
 };
 
 export default function FormField<T>({
@@ -265,6 +268,7 @@ export default function FormField<T>({
   asFieldset,
   doNotAttachIdToLabel,
   className,
+  sx,
 }: FormFieldArgs<T>): React.ReactNode {
   const inputId = React.useId();
   const labelId = React.useId();
@@ -293,6 +297,7 @@ export default function FormField<T>({
     <FormControl
       role="group"
       className={className}
+      sx={sx}
       fullWidth
       error={
         error ||
