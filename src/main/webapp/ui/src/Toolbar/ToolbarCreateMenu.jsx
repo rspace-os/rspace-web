@@ -70,13 +70,17 @@ export default function CreateMenu(props) {
         onClose={() => setOpen(false)}
       >
         <MenuItem id="createEntry" data-test-id="create-btn-new-entry">
-          <FontAwesomeIcon icon={faFileAlt} style={{ paddingRight: "10px" }} />
+          <FontAwesomeIcon
+            icon={faFileAlt}
+            style={{ paddingRight: "10px" }}
+            aria-hidden="true"
+          />
           New entry
         </MenuItem>
         <MenuItem id="createFolder" data-test-id="create-btn-folder">
           <img
             src="/images/icons/folder.png"
-            alt=""
+            alt="Folder icon"
             style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
           Folder
@@ -84,7 +88,7 @@ export default function CreateMenu(props) {
         <MenuItem data-test-id="create-btn-notebook" id="createNotebook">
           <img
             src="/images/icons/notebook.png"
-            alt=""
+            alt="Notebook Icon"
             style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
           Notebook
@@ -100,7 +104,7 @@ export default function CreateMenu(props) {
           >
             <img
               src={entry.iconURL}
-              alt=""
+              alt="Folder icon"
               style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
             />
             {entry.name}
@@ -112,6 +116,7 @@ export default function CreateMenu(props) {
             <FontAwesomeIcon
               icon={faFileAlt}
               style={{ paddingRight: "10px" }}
+              aria-hidden="true"
             />
             From Form
           </MenuItem>
@@ -139,6 +144,7 @@ export default function CreateMenu(props) {
             <FontAwesomeIcon
               icon={faFileWord}
               style={{ paddingRight: "10px" }}
+              aria-hidden="true"
             />
             From Word
           </MenuItem>
@@ -148,6 +154,7 @@ export default function CreateMenu(props) {
             <FontAwesomeIcon
               icon={faEvernote}
               style={{ paddingRight: "10px" }}
+              aria-hidden="true"
             />
             From Evernote
           </MenuItem>
@@ -159,7 +166,7 @@ export default function CreateMenu(props) {
           >
             <img
               src="/images/integrations/protocolsio.png"
-              alt=""
+              alt="Protocols.io Icon"
               style={{ paddingRight: "5px", width: "22px", marginLeft: "-5px" }}
             />
             From Protocols.io
@@ -167,7 +174,11 @@ export default function CreateMenu(props) {
         )}
         <Divider className="createMenuItemDivider" />
         <MenuItem id="createNewForm" data-test-id="create-btn-new-form">
-          <FontAwesomeIcon icon={faFileAlt} style={{ paddingRight: "10px" }} />
+          <FontAwesomeIcon
+            icon={faFileAlt}
+            style={{ paddingRight: "10px" }}
+            aria-hidden="true"
+          />
           New Form
         </MenuItem>
       </Menu>
