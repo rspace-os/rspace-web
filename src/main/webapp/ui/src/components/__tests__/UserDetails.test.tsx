@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
+import { render } from "@/__tests__/customQueries";
 import UserDetails from "../UserDetails";
 
 vi.mock("@/common/axios", async () => {
@@ -16,47 +17,31 @@ vi.mock("@/common/axios", async () => {
 
 describe("UserDetails", () => {
   let mockAxios: MockAdapter;
-  let createRequestDialogApi: {
-    data: ReturnType<typeof vi.fn>;
-    dialog: ReturnType<typeof vi.fn>;
-    length: number;
-  };
-  let bodyApi: {
-    find: ReturnType<typeof vi.fn>;
-    length: number;
-  };
+  let dialogRecipient = "";
 
   beforeEach(() => {
     mockAxios = new MockAdapter(axios);
-    createRequestDialogApi = {
-      data: vi.fn().mockReturnThis(),
-      dialog: vi.fn().mockReturnThis(),
-      length: 1,
-    };
-    bodyApi = {
-      find: vi.fn().mockReturnValue({ length: 1 }),
-      length: 1,
-    };
 
-    vi.stubGlobal("$", (selector: string) => {
-      if (selector === "#createRequestDlg") {
-        return createRequestDialogApi;
-      }
-      if (selector === "body") {
-        return bodyApi;
-      }
-      return {
-        data: vi.fn().mockReturnThis(),
-        dialog: vi.fn().mockReturnThis(),
-        find: vi.fn().mockReturnValue({ length: 0 }),
-        length: 0,
-      };
-    });
+    const createRequestDialog = document.createElement("div");
+    createRequestDialog.id = "createRequestDlg";
+    createRequestDialog.addEventListener(
+      "OPEN_CREATE_REQUEST_DIALOG",
+      (event) => {
+        dialogRecipient = (event as CustomEvent<{ recipient: string }>).detail
+          .recipient;
+      },
+    );
+    document.body.appendChild(createRequestDialog);
+
+    const messageDialogTrigger = document.createElement("div");
+    messageDialogTrigger.setAttribute("aria-describedby", "messageDlg");
+    document.body.appendChild(messageDialogTrigger);
   });
 
   afterEach(() => {
     mockAxios.restore();
-    vi.unstubAllGlobals();
+    dialogRecipient = "";
+    document.body.innerHTML = "";
   });
 
   test("uses the custom label, supports outlined chips, and sends a message when enabled", async () => {
@@ -101,11 +86,7 @@ describe("UserDetails", () => {
 
     await user.click(screen.getByRole("link", { name: "Send a message" }));
 
-    expect(createRequestDialogApi.data).toHaveBeenCalledWith(
-      "recipient",
-      "ada<Ada Lovelace>,",
-    );
-    expect(createRequestDialogApi.dialog).toHaveBeenCalledWith("open");
+    expect(dialogRecipient).toBe("ada<Ada Lovelace>,");
   });
 });
 

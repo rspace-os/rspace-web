@@ -41,6 +41,36 @@ type Person = {
   accountEnabled: boolean;
 };
 
+const OPEN_CREATE_REQUEST_DIALOG_EVENT = "OPEN_CREATE_REQUEST_DIALOG";
+
+function getCreateRequestDialog(): HTMLElement | null {
+  const dialog = document.getElementById("createRequestDlg");
+
+  return dialog instanceof HTMLElement ? dialog : null;
+}
+
+function canOpenMessageDialog(): boolean {
+  return Boolean(
+    getCreateRequestDialog() &&
+      document.body.querySelector("[aria-describedby='messageDlg']"),
+  );
+}
+
+function openCreateRequestDialog(recipient: string): void {
+  const dialog = getCreateRequestDialog();
+
+  if (!dialog) {
+    return;
+  }
+
+  dialog.dispatchEvent(
+    new CustomEvent<{ recipient: string }>(OPEN_CREATE_REQUEST_DIALOG_EVENT, {
+      bubbles: true,
+      detail: { recipient },
+    }),
+  );
+}
+
 export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
   const variant = props.variant ?? "filled";
   const [anchorEl, setAnchorEl] = React.useState<null | Element>(null);
@@ -55,11 +85,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
 
     setAnchorEl(null);
     const recipient = `${user.username}<${user.fullname}>,`;
-    const dialog = $("#createRequestDlg");
-    dialog.data("recipient", recipient);
-    (dialog as JQuery<HTMLElement> & { dialog: (action: string) => void }).dialog(
-      "open",
-    );
+    openCreateRequestDialog(recipient);
   };
 
   const fetchUser = () => {
@@ -98,11 +124,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
     props.onOpen?.();
     if (!fetched) {
       fetchUser();
-      if (
-        props.allowMessaging &&
-        $("#createRequestDlg").length > 0 &&
-        $("body").find("[aria-describedby='messageDlg']").length > 0
-      ) {
+      if (props.allowMessaging && canOpenMessageDialog()) {
         setMessagingAvailable(true);
       }
     }

@@ -20,7 +20,9 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
-import Autocomplete from "@mui/material/Autocomplete";
+import Autocomplete, {
+  type AutocompleteRenderInputParams,
+} from "@mui/material/Autocomplete";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -785,55 +787,67 @@ export function ShareDialog({
               }
             }}
             getOptionDisabled={(option) => option.isDisabled}
-            renderOption={(props, option) => (
-              <Box
-                component="li"
-                {...props}
-                sx={{
-                  opacity: option.isDisabled ? 0.5 : 1,
-                  cursor: option.isDisabled ? "not-allowed" : "pointer",
-                }}
-              >
-                <Box sx={{ width: "100%" }}>
-                  <Typography variant="body2" sx={{ fontWeight: "medium" }}>
-                    {option.optionType === "GROUP"
-                      ? option.name
-                      : `${option.firstName} ${option.lastName}`}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {option.isDisabled
-                      ? `All of the ${pluralName} have already been shared with ${
-                          option.optionType === "GROUP"
-                            ? option.name
-                            : `${option.firstName} ${option.lastName}`
-                        }`
-                      : option.optionType === "GROUP"
-                        ? `${option.type} • ${option.members?.length || 0} members`
-                        : `User • ${option.username} • ${option.email}`}
-                  </Typography>
+            renderOption={(props, option) => {
+              const { key, ...optionProps } = props;
+
+              return (
+                <Box
+                  component="li"
+                  key={key}
+                  {...optionProps}
+                  sx={{
+                    opacity: option.isDisabled ? 0.5 : 1,
+                    cursor: option.isDisabled ? "not-allowed" : "pointer",
+                  }}
+                >
+                  <Box sx={{ width: "100%" }}>
+                    <Typography variant="body2" sx={{ fontWeight: "medium" }}>
+                      {option.optionType === "GROUP"
+                        ? option.name
+                        : `${option.firstName} ${option.lastName}`}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {option.isDisabled
+                        ? `All of the ${pluralName} have already been shared with ${
+                            option.optionType === "GROUP"
+                              ? option.name
+                              : `${option.firstName} ${option.lastName}`
+                          }`
+                        : option.optionType === "GROUP"
+                          ? `${option.type} • ${option.members?.length || 0} members`
+                          : `User • ${option.username} • ${option.email}`}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-            )}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Add RSpace users or groups"
-                placeholder="Type to filter groups and users..."
-                slotProps={{
-                  input: {
-                    ...params.slotProps.input,
-                    endAdornment: (
-                      <>
-                        {optionsLoading ? (
-                          <CircularProgress color="inherit" size={20} />
-                        ) : null}
-                        {params.slotProps.input.endAdornment}
-                      </>
-                    ),
-                  },
-                }}
-              />
-            )}
+              );
+            }}
+            renderInput={(params: AutocompleteRenderInputParams) => {
+              const { slotProps, ...textFieldProps } = params;
+              const { input: inputSlotProps, ...otherSlotProps } = slotProps;
+
+              return (
+                <TextField
+                  {...textFieldProps}
+                  label="Add RSpace users or groups"
+                  placeholder="Type to filter groups and users..."
+                  size="small"
+                  slotProps={{
+                    ...otherSlotProps,
+                    input: {
+                      ...inputSlotProps,
+                      endAdornment: (
+                        <>
+                          {optionsLoading ? (
+                            <CircularProgress color="inherit" size={20} />
+                          ) : null}
+                          {inputSlotProps.endAdornment}
+                        </>
+                      ),
+                    },
+                  }}
+                />
+              );
+            }}
             noOptionsText="No matches found. You can only share with groups you are in, and users in groups you are in."
             fullWidth
             clearOnBlur
@@ -954,7 +968,7 @@ export function ShareDialog({
                                                 throw new Error("Impossible");
                                               handlePermissionChange(
                                                 share.shareId.toString(),
-                                                newValue as Permission,
+                                                newValue,
                                               );
                                             }}
                                             size="small"
@@ -1091,7 +1105,7 @@ export function ShareDialog({
                                               handleNewSharePermissionChange(
                                                 globalId,
                                                 newShare.id,
-                                                newValue as Permission,
+                                                newValue,
                                               );
                                             }}
                                             size="small"

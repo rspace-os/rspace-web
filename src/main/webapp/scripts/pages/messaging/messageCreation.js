@@ -154,6 +154,18 @@ function initialiseRequestDlg(options) {
         }
       ] // end  buttons
     });
+
+    var dialogElement = $(_dialogDivSelector$).get(0);
+    if (dialogElement && dialogElement.dataset.rsOpenCreateRequestDialogBound !== "true") {
+      dialogElement.dataset.rsOpenCreateRequestDialogBound = "true";
+      dialogElement.addEventListener("OPEN_CREATE_REQUEST_DIALOG", function(event) {
+        var recipient = event.detail && event.detail.recipient ? event.detail.recipient : "";
+        var dialog$ = $(dialogElement);
+        dialog$.data('recipient', recipient);
+        dialog$.dialog('open');
+      });
+    }
+
     RS.switchToJQueryUIButton();
   });
 

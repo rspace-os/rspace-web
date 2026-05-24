@@ -7,7 +7,7 @@ export default function BaseToolbar(props: { content: React.ReactNode }) {
     <AppBar position="relative" elevation={0}>
       <Toolbar
         sx={{
-          padding: "0px 0px",
+          padding: "0 12px !important",
           position: "relative",
           "& button.MuiIconButton-root": {
             width: 48,
@@ -19,11 +19,7 @@ export default function BaseToolbar(props: { content: React.ReactNode }) {
           },
         }}
       >
-        <div
-          style={{ display: "flex", padding: "0px 15px", width: "100%", position: "relative" }}
-        >
-          {props.content}
-        </div>
+        {props.content}
       </Toolbar>
     </AppBar>
   );

@@ -36,7 +36,6 @@ const searchBarSx = {
   alignItems: "center",
   "& .MuiInputBase-root": {
     flexGrow: 1,
-    paddingLeft: 5,
     "& input:focus, & input:hover": {
       backgroundColor: "transparent !important",
     },
@@ -50,10 +49,11 @@ const searchBarSx = {
     "& .MuiInputLabel-formControl": {
       transform: "translate(0, 16px) scale(1)",
     },
-    "& .MuiInputLabel-formControl.Mui-focused, & .MuiInputLabel-formControl.MuiFormLabel-filled": {
-      transform: "translate(5px, 0) scale(0.75)",
-      transformOrigin: "top left",
-    },
+    "& .MuiInputLabel-formControl.Mui-focused, & .MuiInputLabel-formControl.MuiFormLabel-filled":
+      {
+        transform: "translate(5px, 0) scale(0.75)",
+        transformOrigin: "top left",
+      },
     "& label + .MuiInput-formControl": {
       marginTop: "5px",
     },
@@ -462,7 +462,6 @@ class SimpleSearch extends React.Component {
                 >
                   <FontAwesomeIcon icon={faSearch} />
                 </IconButton>
-                <Divider />
                 <Tooltip
                   title="Advanced search"
                   enterDelay={300}

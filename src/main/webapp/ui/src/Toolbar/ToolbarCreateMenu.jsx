@@ -54,7 +54,8 @@ export default function CreateMenu(props) {
           fontSize: 20,
           fontWeight: "normal",
           borderColor: "white",
-          marginRight: 5,
+          flexBasis: "120px",
+          mr: 2,
         }}
         aria-label="Create a record"
       >
