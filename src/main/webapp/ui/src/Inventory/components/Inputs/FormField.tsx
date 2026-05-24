@@ -19,7 +19,7 @@ export const INVENTORY_FORM_FIELD_SX = {
     {
       color: "black !important",
       "& input": {
-        WebkitTextFillColor: "unset",
+        color: "unset",
       },
       "& .MuiSvgIcon-root.MuiSelect-icon": {
         display: "none",

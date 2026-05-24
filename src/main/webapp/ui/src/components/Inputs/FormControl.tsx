@@ -88,7 +88,7 @@ function CustomFormControl({
         "& .MuiInputBase-root.Mui-disabled, & .MuiFormControlLabel-label.Mui-disabled":
           {
             color: "black",
-            "& input": { WebkitTextFillColor: "unset" },
+            "& input": { color: "unset" },
             "& .MuiSvgIcon-root.MuiSelect-icon": { display: "none" },
           },
         "& .MuiSelect-root.MuiSelect-select.MuiSelect-outlined": {
