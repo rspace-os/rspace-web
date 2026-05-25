@@ -41,6 +41,7 @@ import com.researchspace.service.impl.FilestoreWriteManagerImpl;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.io.IOException;
 import java.util.Set;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -555,19 +556,21 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void copyToFilestore_unauthorizedMediaFile_throwsBindExceptionAndDoesNotUpload()
+  void copyToFilestore_unauthorizedMediaFile_propagatesAuthorizationExceptionAndDoesNotUpload()
       throws IOException {
+    // AuthorizationException must propagate (rather than be caught and translated to a
+    // BindException), so the surrounding transaction rolls back cleanly.
     Long unauthorizedId = 888L;
     when(baseRecordManager.get(eq(unauthorizedId), any()))
         .thenReturn(new EcatAudioFileStub(unauthorizedId, "secret.wav"));
     when(baseRecordManager.retrieveMediaFile(any(User.class), eq(unauthorizedId)))
-        .thenThrow(new org.apache.shiro.authz.AuthorizationException("no read permission"));
+        .thenThrow(new AuthorizationException("no read permission"));
     ApiGalleryFilestoreOperationRequest request =
         new ApiGalleryFilestoreOperationRequest(
             Set.of(unauthorizedId), new ApiNfsCredentials(null, USERNAME, PASSWORD));
 
     assertThrows(
-        BindException.class,
+        AuthorizationException.class,
         () ->
             controller.copyToFilestore(
                 validFilestorePathId,

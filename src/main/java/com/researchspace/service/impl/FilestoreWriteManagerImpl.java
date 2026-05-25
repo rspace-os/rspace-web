@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
@@ -228,7 +227,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
                   null,
                   "Only media files can be moved to filestores."));
         }
-      } catch (ObjectRetrievalFailureException | AuthorizationException ex) {
+      } catch (ObjectRetrievalFailureException ex) {
         errors.addError(new ObjectError("recordIds", ex.getMessage()));
       }
     }
