@@ -10,7 +10,6 @@ import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
-import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.BaseController;
 import java.security.Principal;
@@ -41,7 +40,6 @@ public class DMPAssistantController extends BaseController {
 
   static final String APP_NAME = "DMPASSISTANT";
 
-  @Autowired private UserManager userManager;
   @Autowired private MediaManager mediaManager;
   @Autowired private DMPManager dmpManager;
   @Autowired private DMPAssistantProvider dmpAssistantProvider;

@@ -1,11 +1,11 @@
 /**
- * The colour used in the background of the logo. Hand-tune to match the
- * service's real brand colour once available.
+ * The colour used in the background of the logo. Tuned to the mustard /
+ * goldenrod of the DMP Assistant brand mark.
  */
 export const LOGO_COLOR = {
-  hue: 185,
-  saturation: 70,
-  lightness: 42,
+  hue: 45,
+  saturation: 72,
+  lightness: 48,
 };
 
 /**
@@ -13,28 +13,28 @@ export const LOGO_COLOR = {
  */
 export const ACCENT_COLOR = {
   main: {
-    hue: 185,
-    saturation: 70,
-    lightness: 42,
+    hue: 45,
+    saturation: 72,
+    lightness: 48,
   },
   darker: {
-    hue: 185,
-    saturation: 70,
-    lightness: 30,
+    hue: 45,
+    saturation: 72,
+    lightness: 32,
   },
   contrastText: {
-    hue: 185,
+    hue: 45,
     saturation: 35,
     lightness: 22,
   },
   background: {
-    hue: 185,
+    hue: 45,
     saturation: 60,
-    lightness: 80,
+    lightness: 88,
   },
   backgroundContrastText: {
-    hue: 185,
+    hue: 45,
     saturation: 25,
-    lightness: 30,
+    lightness: 28,
   },
 };

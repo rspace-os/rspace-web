@@ -3,7 +3,7 @@ import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import DMPAssistantIcon from "../../../assets/branding/dmpassistant/logo.svg";
+import DMPAssistantIcon from "../../../assets/branding/dmpassistant/logo.png";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
