@@ -25,6 +25,7 @@ import materialTheme from "../../theme";
 import Box from "@mui/material/Box";
 import axios from "@/common/axios";
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import IGSNlogo from "../../assets/graphics/IGSNlogo.jpg";
 import { capitaliseJustFirstChar } from "../../util/Util";
@@ -224,22 +225,18 @@ export const IdentifierDataGrid = ({
         spacing={2}
       >
         <Grid>
-          <Grid container sx={{ flexDirection: "column" }} spacing={0.25}>
-            <Grid>
-              <h3>{identifier.title}</h3>
-            </Grid>
-            <Grid>
-              <Typography variant="body1">
-                {identifier.publicUrl ? (
-                  <a href={identifier.publicUrl} title="Item landing page">
-                    {identifier.doi}
-                  </a>
-                ) : (
-                  <>{identifier.doi}</>
-                )}
-              </Typography>
-            </Grid>
-          </Grid>
+          <Stack spacing={0.25}>
+            <h3>{identifier.title}</h3>
+            <Typography variant="body1">
+              {identifier.publicUrl ? (
+                <a href={identifier.publicUrl} title="Item landing page">
+                  {identifier.doi}
+                </a>
+              ) : (
+                <>{identifier.doi}</>
+              )}
+            </Typography>
+          </Stack>
         </Grid>
         <Grid>
           <Grid

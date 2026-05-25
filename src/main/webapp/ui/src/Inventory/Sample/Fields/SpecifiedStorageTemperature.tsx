@@ -13,6 +13,7 @@ import {
   validateTemperature,
 } from "../../../stores/definitions/Units";
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
@@ -191,8 +192,8 @@ function SpecifiedStorageTemperature({
           <Label min={min} max={max} unitId={unitId} />
           {!disabled && (
             <Box sx={{ mt: 2 }}>
-              <Grid container sx={{ flexDirection: "column" }} spacing={1}>
-                <Grid>
+              <Stack spacing={1}>
+                <Box>
                   <FormLabel sx={{ pr: 1 }} htmlFor={unitSelectId}>
                     Unit
                   </FormLabel>
@@ -209,11 +210,10 @@ function SpecifiedStorageTemperature({
                     <MenuItem value={KELVIN}>K</MenuItem>
                     <MenuItem value={FAHRENHEIT}>°F</MenuItem>
                   </Select>
-                </Grid>
+                </Box>
                 {!disabled && (
                   <>
-                    <Grid>
-                      <Grid container direction="row" spacing={1}>
+                    <Grid container direction="row" spacing={1}>
                         <Grid size={6}>
                           <NumberField
                             value={minField}
@@ -263,11 +263,9 @@ function SpecifiedStorageTemperature({
                           />
                         </Grid>
                       </Grid>
-                    </Grid>
-                    <Grid>
-                      <Grid container direction="row" spacing={1}>
-                        <TemperatureButton
-                          label="Ambient"
+                    <Grid container direction="row" spacing={1}>
+                      <TemperatureButton
+                        label="Ambient"
                           onClick={() => {
                             handleButtonPressed(
                               temperatureFromTo(CELSIUS, unitId, 15),
@@ -321,10 +319,9 @@ function SpecifiedStorageTemperature({
                           }}
                         />
                       </Grid>
-                    </Grid>
                   </>
                 )}
-              </Grid>
+              </Stack>
             </Box>
           )}
         </>

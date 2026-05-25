@@ -1,4 +1,6 @@
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import React, { useState, useContext } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { observable, runInAction } from "mobx";
@@ -180,9 +182,9 @@ const DialogContent = observer(
       }
     };
     return (
-      <Grid container spacing={1} sx={{ flexDirection: "column", mt: 1 }}>
+      <Stack spacing={1} sx={{ mt: 1 }}>
         {copyOfChannels.map((channel, index) => (
-          <Grid key={channel.optionsId}>
+          <Box key={channel.optionsId}>
             <Card variant="outlined">
               <form
                 onSubmit={doNotAwait(async (event) => {
@@ -238,34 +240,30 @@ const DialogContent = observer(
                 })}
               >
                 <CardContent>
-                  <Grid container spacing={2} sx={{ flexDirection: "column" }}>
-                    <Grid>
-                      <DescriptionList
-                        content={[
-                          {
-                            label: "Workspace",
-                            value: channel.SLACK_TEAM_NAME,
-                          },
-                          {
-                            label: "Channel name",
-                            value: channel.SLACK_CHANNEL_NAME,
-                          },
-                        ]}
-                      />
-                    </Grid>
-                    <Grid>
-                      <TextField
-                        fullWidth
-                        value={channel.SLACK_CHANNEL_LABEL}
-                        onChange={({ target: { value } }) => {
-                          runInAction(() => {
-                            channel.SLACK_CHANNEL_LABEL = value;
-                          });
-                        }}
-                        label="RSpace Label"
-                      />
-                    </Grid>
-                  </Grid>
+                  <Stack spacing={2}>
+                    <DescriptionList
+                      content={[
+                        {
+                          label: "Workspace",
+                          value: channel.SLACK_TEAM_NAME,
+                        },
+                        {
+                          label: "Channel name",
+                          value: channel.SLACK_CHANNEL_NAME,
+                        },
+                      ]}
+                    />
+                    <TextField
+                      fullWidth
+                      value={channel.SLACK_CHANNEL_LABEL}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          channel.SLACK_CHANNEL_LABEL = value;
+                        });
+                      }}
+                      label="RSpace Label"
+                    />
+                  </Stack>
                 </CardContent>
                 <CardActions>
                   <Button type="submit">Save</Button>
@@ -303,9 +301,9 @@ const DialogContent = observer(
                 </CardActions>
               </form>
             </Card>
-          </Grid>
+          </Box>
         ))}
-        <Grid>
+        <Box>
           {newChannel ? (
             <Card variant="outlined">
               <form
@@ -393,8 +391,8 @@ const DialogContent = observer(
               {loadingNewChannel ? "Loading a new channel" : "Add"}
             </Button>
           )}
-        </Grid>
-      </Grid>
+        </Box>
+      </Stack>
     );
   },
 );

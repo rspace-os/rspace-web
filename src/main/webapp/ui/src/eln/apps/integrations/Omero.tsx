@@ -1,4 +1,5 @@
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import React, { useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
@@ -48,44 +49,38 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
               </li>
             </ol>
             <form action="/apps/omero/connect" method="POST">
-              <Grid container sx={{ flexDirection: "column" }} spacing={1}>
-                <Grid>
-                  <TextField
-                    fullWidth
-                    value={username}
-                    onChange={({ target: { value } }) => setUsername(value)}
-                    label="Username"
-                    sx={{ mt: 1 }}
-                    slotProps={{
-                      htmlInput: {
-                        name: "omerousername",
-                        autoComplete: "username",
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid>
-                  <TextField
-                    fullWidth
-                    value={password}
-                    onChange={({ target: { value } }) => setPassword(value)}
-                    label="Password"
-                    sx={{ mt: 1 }}
-                    slotProps={{
-                      htmlInput: {
-                        name: "omeropassword",
-                        type: "password",
-                        autoComplete: "new-password",
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid>
-                  <Button type="submit" value={"Connect"} sx={{ mt: 1 }}>
-                    Connect
-                  </Button>
-                </Grid>
-              </Grid>
+              <Stack spacing={1}>
+                <TextField
+                  fullWidth
+                  value={username}
+                  onChange={({ target: { value } }) => setUsername(value)}
+                  label="Username"
+                  sx={{ mt: 1 }}
+                  slotProps={{
+                    htmlInput: {
+                      name: "omerousername",
+                      autoComplete: "username",
+                    },
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  value={password}
+                  onChange={({ target: { value } }) => setPassword(value)}
+                  label="Password"
+                  sx={{ mt: 1 }}
+                  slotProps={{
+                    htmlInput: {
+                      name: "omeropassword",
+                      type: "password",
+                      autoComplete: "new-password",
+                    },
+                  }}
+                />
+                <Button type="submit" value={"Connect"} sx={{ mt: 1 }}>
+                  Connect
+                </Button>
+              </Stack>
             </form>
           </>
         }

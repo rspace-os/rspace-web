@@ -1,5 +1,5 @@
 import React from "react";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import CardActions from "@mui/material/CardActions";
 import useStores from "../../../stores/use-stores";
@@ -72,9 +72,8 @@ export default function BarcodeScannerSkeleton({
   }
 
   return (
-    <Grid container sx={{ alignItems: "center", flexDirection: "column" }}>
-      <Grid
-        container
+    <Stack sx={{ alignItems: "center" }}>
+      <Stack
         direction="row"
         sx={{
           justifyContent: "space-around",
@@ -104,63 +103,59 @@ export default function BarcodeScannerSkeleton({
           link={docLinks.barcodes}
           title="Info on using barcodes."
         />
-      </Grid>
-      <Grid>
-        <CardActions>
+      </Stack>
+      <CardActions>
+        <Button
+          onClick={() => {
+            onClose();
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          disabled={!barcode?.rawValue}
+          color="callToAction"
+          variant="contained"
+          disableElevation
+          onClick={handleOnSubmit}
+        >
+          {buttonPrefix}
+        </Button>
+        {barcode && (
           <Button
             onClick={() => {
-              onClose();
+              setBarcode(null);
             }}
           >
-            Cancel
+            Clear
           </Button>
-          <Button
-            disabled={!barcode?.rawValue}
-            color="callToAction"
-            variant="contained"
-            disableElevation
-            onClick={handleOnSubmit}
-          >
-            {buttonPrefix}
-          </Button>
-          {barcode && (
-            <Button
-              onClick={() => {
-                setBarcode(null);
-              }}
-            >
-              Clear
-            </Button>
-          )}
-        </CardActions>
-      </Grid>
+        )}
+      </CardActions>
       {/* hide via CSS on detection (not on loading or scanner won't start in Safari)  */}
-      <Grid>
-        <Box
-          component="video"
-          ref={videoElem}
-          sx={(theme) => ({
-            display: barcode?.rawValue || error ? "none" : "block",
-            height: "37vh",
-            width: "37vw",
-            [theme.breakpoints.down("sm")]: {
-              width: "100%",
-              height: "100%",
-              maxHeight: "50vh",
-              maxWidth: "80vw",
-            },
-          })}
-        />
-      </Grid>
-      {warning !== null && <Grid>{warning}</Grid>}
+      <Box
+        component="video"
+        ref={videoElem}
+        sx={(theme) => ({
+          display: barcode?.rawValue || error ? "none" : "block",
+          height: "37vh",
+          width: "37vw",
+          [theme.breakpoints.down("sm")]: {
+            width: "100%",
+            height: "100%",
+            maxHeight: "50vh",
+            maxWidth: "80vw",
+          },
+        })}
+      />
+      {warning !== null && <Box>{warning}</Box>}
       {(!barcode || barcode.format === "Unknown") && (
         <>
-          <Grid style={{ width: "100%" }}>
+          <Box sx={{ width: "100%" }}>
             <Box sx={{ m: 1 }}>
               <Divider orientation="horizontal" />
             </Box>
-          </Grid>
-          <Grid style={{ alignSelf: "flex-start" }}>
+          </Box>
+          <Box sx={{ alignSelf: "flex-start" }}>
             <Box sx={{ m: 1 }}>
               <FormField
                 label="Alternatively, enter the data encoded in the barcode"
@@ -179,9 +174,9 @@ export default function BarcodeScannerSkeleton({
                 value={barcode?.rawValue ?? ""}
               />
             </Box>
-          </Grid>
+          </Box>
         </>
       )}
-    </Grid>
+    </Stack>
   );
 }

@@ -1,4 +1,6 @@
 import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import React, { useContext, useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import {
@@ -115,8 +117,8 @@ const DialogContent = observer(
     };
 
     return (
-      <Grid container spacing={3} sx={{ flexDirection: "column", mt: 1 }}>
-        <Grid>
+      <Stack spacing={3} sx={{ mt: 1 }}>
+        <Box>
           <Typography component="h5" variant="subtitle1">
             Linked Repositories
           </Typography>
@@ -189,10 +191,10 @@ const DialogContent = observer(
               ))}
             </TableBody>
           </Table>
-        </Grid>
+        </Box>
         {allRepositories
           .map((repos) => (
-            <Grid key={null}>
+            <Box key={null}>
               <Typography component="h5" variant="subtitle1">
                 Link Additional Repositories
               </Typography>
@@ -289,11 +291,11 @@ const DialogContent = observer(
                   ))}
                 </TableBody>
               </Table>
-            </Grid>
+            </Box>
           ))
           .orElse(null)}
         {allRepositories.isEmpty() && (
-          <Grid>
+          <Box>
             <Button
               disabled={loadingAllRepositories}
               onClick={() => {
@@ -304,9 +306,9 @@ const DialogContent = observer(
                 ? "Loading available repositories"
                 : "Add"}
             </Button>
-          </Grid>
+          </Box>
         )}
-      </Grid>
+      </Stack>
     );
   },
 );

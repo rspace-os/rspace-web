@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import LoadingFade from "../components/LoadingFade";
 import axios from "@/common/axios";
@@ -314,78 +314,66 @@ export default function ExportFileStore({
   }, []);
 
   return (
-    <Grid container spacing={1} sx={{ flexDirection: "column" }}>
+    <Stack spacing={1}>
       {/* whilst loading, showing loading animation */}
       {loadingQuickPlan && (
-        <Grid>
-          <Card sx={{ p: 1 }}>
-            <LoadingFade loading={true} />
-          </Card>
-        </Grid>
+        <Card sx={{ p: 1 }}>
+          <LoadingFade loading={true} />
+        </Card>
       )}
 
       {/* if the user intended for there to be some links to filestores in
        * their selection, but we didn't find any then a warning it shown.
        */}
       {!loadingQuickPlan && totalFilesFound === 0 && (
-        <Grid>
-          <Card sx={{ p: 1 }}>
-            <div>
-              <h4>No filestore links found in exported content.</h4>
-              <h4>
-                If that&apos;s unexpected, you should check your export
-                selection.
-              </h4>
-              <h4>Otherwise you can proceed with the export.</h4>
-            </div>
-          </Card>
-        </Grid>
+        <Card sx={{ p: 1 }}>
+          <div>
+            <h4>No filestore links found in exported content.</h4>
+            <h4>
+              If that&apos;s unexpected, you should check your export
+              selection.
+            </h4>
+            <h4>Otherwise you can proceed with the export.</h4>
+          </div>
+        </Card>
       )}
 
       {!loadingQuickPlan && totalFilesFound > 0 && (
         <>
-          <Grid>
-            <FoundLinksListing
-              filesCount={totalFilesFound}
-              fileSystems={fileSystems}
-            />
-          </Grid>
+          <FoundLinksListing
+            filesCount={totalFilesFound}
+            fileSystems={fileSystems}
+          />
 
-          <Grid>
-            <LoginStatus
-              fileSystems={fileSystems}
-              fileStoreCheck={doNotAwait(fileStoreCheck)}
-            />
-          </Grid>
+          <LoginStatus
+            fileSystems={fileSystems}
+            fileStoreCheck={doNotAwait(fileStoreCheck)}
+          />
 
-          <Grid>
-            <FileFilters
-              maxFileSizeInMB={maxFileSizeInMB}
-              setMaxFileSizeInMB={(max) => {
-                setMaxFileSizeInMB(max);
-                updateFilters("maxFileSizeInMB", max);
-              }}
-              excludedFileExtensions={excludedFileExtensions}
-              setExcludedFileExtensions={(ext) => {
-                setExcludedFileExtensions(ext);
-                updateFilters("excludedFileExtensions", ext);
-              }}
-            />
-          </Grid>
+          <FileFilters
+            maxFileSizeInMB={maxFileSizeInMB}
+            setMaxFileSizeInMB={(max) => {
+              setMaxFileSizeInMB(max);
+              updateFilters("maxFileSizeInMB", max);
+            }}
+            excludedFileExtensions={excludedFileExtensions}
+            setExcludedFileExtensions={(ext) => {
+              setExcludedFileExtensions(ext);
+              updateFilters("excludedFileExtensions", ext);
+            }}
+          />
 
-          <Grid>
-            <LinkAvailabilityScan
-              scanResultsPresent={scanResultsPresent}
-              scanResultsAvailableCount={scanResultsAvailableCount}
-              scanResultsTotalFileSize={scanResultsTotalFileSize}
-              scanResultsOmittedCount={scanResultsOmittedCount}
-              fileStoreScan={doNotAwait(fileStoreScan)}
-              loadingScanResults={loadingFullPlan}
-              checkedFileSystems={checkedFileSystems}
-            />
-          </Grid>
+          <LinkAvailabilityScan
+            scanResultsPresent={scanResultsPresent}
+            scanResultsAvailableCount={scanResultsAvailableCount}
+            scanResultsTotalFileSize={scanResultsTotalFileSize}
+            scanResultsOmittedCount={scanResultsOmittedCount}
+            fileStoreScan={doNotAwait(fileStoreScan)}
+            loadingScanResults={loadingFullPlan}
+            checkedFileSystems={checkedFileSystems}
+          />
         </>
       )}
-    </Grid>
+    </Stack>
   );
 }

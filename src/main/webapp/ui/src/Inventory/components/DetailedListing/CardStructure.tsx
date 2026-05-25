@@ -129,11 +129,7 @@ function CardStructure({
             <Divider orientation="horizontal" />
           </Grid>
           <Grid>
-            <CardContent sx={{ p: 1, pb: 0 }}>
-              <Grid container sx={{ flexDirection: "column" }}>
-                <Grid>{content}</Grid>
-              </Grid>
-            </CardContent>
+            <CardContent sx={{ p: 1, pb: 0 }}>{content}</CardContent>
           </Grid>
           {Boolean(contentFooter) && (
             <Grid sx={{ mt: "auto" }}>{contentFooter}</Grid>

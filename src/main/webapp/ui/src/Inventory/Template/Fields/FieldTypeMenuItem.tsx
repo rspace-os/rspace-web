@@ -1,6 +1,7 @@
 import React, { forwardRef } from "react";
 import Avatar from "@mui/material/Avatar";
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
@@ -28,23 +29,17 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
         })}
         disabled={false}
       >
-        <Grid container sx={{ flexDirection: "column" }}>
-          <Grid>
-            <Grid container direction="row" sx={{ alignItems: "center" }}>
-              <Grid>
-                <ListItemAvatar>
-                  <Avatar>{_fieldData.icon}</Avatar>
-                </ListItemAvatar>
-              </Grid>
-              <Grid sx={{ flexGrow: 1 }}>
-                <ListItemText
-                  primary={_fieldData.label}
-                  secondary={_fieldData.help}
-                />
-              </Grid>
-            </Grid>
-          </Grid>
-        </Grid>
+        <Stack direction="row" sx={{ alignItems: "center" }}>
+          <ListItemAvatar>
+            <Avatar>{_fieldData.icon}</Avatar>
+          </ListItemAvatar>
+          <Box sx={{ flexGrow: 1 }}>
+            <ListItemText
+              primary={_fieldData.label}
+              secondary={_fieldData.help}
+            />
+          </Box>
+        </Stack>
       </MenuItem>
     );
 

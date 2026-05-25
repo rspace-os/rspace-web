@@ -9,7 +9,7 @@ import React from "react";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 const Title = observer(() => {
   const { moveStore, peopleStore } = useStores();
   const activeResult = moveStore.activeResult;
@@ -40,21 +40,15 @@ const Content = observer(() => {
         differentSearchForSettingActiveResult: activeResult.contentSearch,
       }}
     >
-      <Grid
-        container
+      <Stack
         sx={{
-          flexDirection: "column",
           flexWrap: "nowrap",
         }}
         spacing={1}
       >
-        <Grid>
-          <MoveInstructions />
-        </Grid>
-        <Grid>
-          <SearchView contextMenuId={menuIDs.NONE} />
-        </Grid>
-      </Grid>
+        <MoveInstructions />
+        <SearchView contextMenuId={menuIDs.NONE} />
+      </Stack>
     </SearchContext.Provider>
   ) : null;
 });

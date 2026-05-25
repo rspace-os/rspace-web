@@ -1,6 +1,8 @@
 //@flow strict
 
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import React, { useContext, useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import {
@@ -76,13 +78,12 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
             </Typography>
             {ArrayUtils.all(integrationState.credentials)
               .map((channels) => (
-                <Grid
-                  container
+                <Stack
                   spacing={1}
                   key={null}
-                  sx={{ flexDirection: "column", mt: 1 }}
+                  sx={{ mt: 1 }}
                 >
-                  <Grid>
+                  <Box>
                     <Table size="small">
                       <TableHead>
                         <TableRow>
@@ -141,8 +142,8 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                         ))}
                       </TableBody>
                     </Table>
-                  </Grid>
-                  <Grid>
+                  </Box>
+                  <Box>
                     {newChannelName === null ? (
                       <Button
                         onClick={() => {
@@ -217,8 +218,8 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                         </form>
                       </Card>
                     )}
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Stack>
               ))
               .orElse("Error getting configured channels.")}
           </>

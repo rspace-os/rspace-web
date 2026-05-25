@@ -1,5 +1,5 @@
 import React from "react";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
@@ -39,34 +39,22 @@ const GetStartedButton = () => (
 
 export default function NoActiveResultPlaceholder(): React.ReactNode {
   return (
-    <>
-      <Grid
-        container
-        sx={{ justifyContent: "space-around", minHeight: "100vh" }}
-      >
-        <Grid sx={{ alignSelf: "center" }}>
-          <Grid container sx={{ alignItems: "center", flexDirection: "column" }}>
-            <Grid>
-              <Box sx={{ mb: 1, mt: 2 }}>
-                <Title />
-              </Box>
-            </Grid>
-            <Grid>
-              <Box sx={{ mb: 3 }}>
-                <Subtitle />
-              </Box>
-            </Grid>
-            <Grid>
-              <Box sx={{ mb: 2 }}>
-                <GetStartedButton />
-              </Box>
-            </Grid>
-            <Grid>
-              <img src={HeroImage} />
-            </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
-    </>
+    <Stack
+      direction="row"
+      sx={{ justifyContent: "space-around", minHeight: "100vh" }}
+    >
+      <Stack sx={{ alignSelf: "center", alignItems: "center" }}>
+        <Box sx={{ mb: 1, mt: 2 }}>
+          <Title />
+        </Box>
+        <Box sx={{ mb: 3 }}>
+          <Subtitle />
+        </Box>
+        <Box sx={{ mb: 2 }}>
+          <GetStartedButton />
+        </Box>
+        <img src={HeroImage} />
+      </Stack>
+    </Stack>
   );
 }

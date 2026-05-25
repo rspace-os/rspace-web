@@ -1,6 +1,6 @@
 import React from "react";
 import Checkbox from "@mui/material/Checkbox";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import HelpTextAlert from "../../../components/HelpTextAlert";
 import Row from "./ColumnFieldMapRow";
 import Table from "@mui/material/Table";
@@ -264,7 +264,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
   const rowCount: number = mappingsByRecordType?.length ?? 0;
 
   return (
-    <Grid container sx={{ flexDirection: "column" }} spacing={1}>
+    <Stack spacing={1}>
       <MatchTemplateAlert importData={importData} />
       <NameMappingAlert importData={importData} rowCount={rowCount} />
       <QuantityConversionAlert importData={importData} />
@@ -280,8 +280,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
         rowCount={rowCount}
         onTypeSelect={onTypeSelect}
       />
-      <Grid>
-        <RelativeBox>
+      <RelativeBox>
           <TableContainer>
             <Table size="small">
               <TableHead>
@@ -319,8 +318,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
             !importData.createNewTemplate &&
             importData.template?.loading && <OverlayLoadingSpinner />}
         </RelativeBox>
-      </Grid>
-      <HelpTextAlert
+        <HelpTextAlert
         severity="info"
         condition={
           typeof mappingsByRecordType?.length === "number" &&
@@ -339,7 +337,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
           typeof labelByRecordType === "string" ? labelByRecordType : "records"
         } must have a name.`}
       />
-    </Grid>
+    </Stack>
   );
 }
 

@@ -2,7 +2,7 @@ import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import useStores from "../../../stores/use-stores";
 import Stepper from "./Stepper";
 import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import TopLevelButton from "./TopLevelButton";
@@ -84,25 +84,19 @@ function Actions({
       />
     </>
   ) : (
-    <Grid container sx={{ flexDirection: "column" }} spacing={1}>
-      {activeStep === "left" && (
-        <Grid>
-          <TopLevelButton onClose={handleClose} />
-        </Grid>
-      )}
-      <Grid>
-        <Stepper
-          handleBack={handleBack}
-          handleNext={handleNext}
-          handleCancel={handleClose}
-          activeStep={activeStep === "left" ? 0 : 1}
-          onMove={handleMove}
-          disabled={!isSelectionValid()}
-          stepsCount={2}
-          loading={moveStore.loading}
-        />
-      </Grid>
-    </Grid>
+    <Stack spacing={1}>
+      {activeStep === "left" && <TopLevelButton onClose={handleClose} />}
+      <Stepper
+        handleBack={handleBack}
+        handleNext={handleNext}
+        handleCancel={handleClose}
+        activeStep={activeStep === "left" ? 0 : 1}
+        onMove={handleMove}
+        disabled={!isSelectionValid()}
+        stepsCount={2}
+        loading={moveStore.loading}
+      />
+    </Stack>
   );
 }
 export default observer(Actions);

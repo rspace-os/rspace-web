@@ -5,7 +5,7 @@ import SearchContext from "../../../stores/contexts/Search";
 import SearchView from "../../Search/SearchView";
 import Search from "../../Search/Search";
 import { menuIDs } from "../../../util/menuIDs";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import TemplateModel from "../../../stores/models/TemplateModel";
 import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
 import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
@@ -38,14 +38,10 @@ function SamplesList(): React.ReactNode {
       }}
     >
       <InnerSearchNavigationContext>
-        <Grid container sx={{ flexDirection: "column" }} spacing={1}>
-          <Grid>
-            <Search handleSearch={handleSearch} TABS={TABS} size="small" />
-          </Grid>
-          <Grid>
-            <SearchView contextMenuId={menuIDs.RESULTS} />
-          </Grid>
-        </Grid>
+        <Stack spacing={1}>
+          <Search handleSearch={handleSearch} TABS={TABS} size="small" />
+          <SearchView contextMenuId={menuIDs.RESULTS} />
+        </Stack>
       </InnerSearchNavigationContext>
     </SearchContext.Provider>
   );

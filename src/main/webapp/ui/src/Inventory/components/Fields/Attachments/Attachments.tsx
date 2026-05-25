@@ -32,7 +32,6 @@ import { type HasEditableFields } from "../../../../stores/definitions/Editable"
 import { type BlobUrl } from "../../../../util/types";
 import BigIconButton from "../../../../components/BigIconButton";
 import CardContent from "@mui/material/CardContent";
-import Grid from "@mui/material/Grid";
 import UploadIcon from "@mui/icons-material/Publish";
 import Result from "../../../../util/result";
 import { useDeploymentProperty } from "../../../../hooks/api/useDeploymentProperty";
@@ -161,16 +160,14 @@ const FileSelector = ({
         slotProps={{
           input: {
             startAdornment: (
-              <Grid>
-                <BigIconButton
-                  onClick={() => {
-                    setGalleryDialogOpen(true);
-                  }}
-                  icon={<AttachFileIcon />}
-                  label="Browse Gallery"
-                  explanatoryText="Link to existing items in the Gallery."
-                />
-              </Grid>
+              <BigIconButton
+                onClick={() => {
+                  setGalleryDialogOpen(true);
+                }}
+                icon={<AttachFileIcon />}
+                label="Browse Gallery"
+                explanatoryText="Link to existing items in the Gallery."
+              />
             ),
           },
         }}

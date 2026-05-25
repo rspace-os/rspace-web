@@ -5,6 +5,7 @@ import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import NumberedLocation from "../NumberedLocation";
 import React from "react";
 import Typography from "@mui/material/Typography";
@@ -73,7 +74,7 @@ function SummaryCard({
     >
       <Grid container>
         <Grid size={hasImage ? 7 : 12}>
-          <Grid container sx={{ flexDirection: "column", height: "100%" }}>
+          <Stack sx={{ height: "100%" }}>
             <Box sx={{ flexGrow: 1 }}>
               <CardContent sx={{ flex: "1 0 auto", pb: "8px !important" }}>
                 <Typography gutterBottom variant="h5" component="h2">
@@ -94,28 +95,26 @@ function SummaryCard({
                 </Typography>
               </CardContent>
             </Box>
-            <Grid>
-              <CardActions>
-                {editable && !location.hasContent && (
-                  <ActionButton onClick={preventEventBubbling(onRemove)}>
-                    Remove
-                  </ActionButton>
-                )}
-                {!editable && location.content && (
-                  <ActionButton
-                    disabled={!location.hasContent}
-                    onClick={(event: React.MouseEvent) => {
-                      event.stopPropagation();
-                      if (location.content)
-                        void navigateToRecord(location.content);
-                    }}
-                  >
-                    Open
-                  </ActionButton>
-                )}
-              </CardActions>
-            </Grid>
-          </Grid>
+            <CardActions>
+              {editable && !location.hasContent && (
+                <ActionButton onClick={preventEventBubbling(onRemove)}>
+                  Remove
+                </ActionButton>
+              )}
+              {!editable && location.content && (
+                <ActionButton
+                  disabled={!location.hasContent}
+                  onClick={(event: React.MouseEvent) => {
+                    event.stopPropagation();
+                    if (location.content)
+                      void navigateToRecord(location.content);
+                  }}
+                >
+                  Open
+                </ActionButton>
+              )}
+            </CardActions>
+          </Stack>
         </Grid>
         {hasImage && (
           <Grid size={5}>

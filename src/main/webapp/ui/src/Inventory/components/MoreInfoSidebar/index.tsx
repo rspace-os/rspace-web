@@ -9,7 +9,7 @@ import GlobalId from "./GlobalId";
 import Date from "./Date";
 import LatestTemplateActions from "./LatestTemplateActions";
 import TemplateVersion from "./TemplateVersion";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
@@ -53,7 +53,7 @@ function Sidebar({ factory }: SidebarArgs): React.ReactNode {
         </CardActions>
         <Divider />
         <CardContent sx={{ overflowX: "hidden" }}>
-          <Grid container sx={{ flexDirection: "column" }} spacing={5}>
+          <Stack spacing={5}>
             <GlobalId record={activeResult} />
             <Date label="Created" date={activeResult.created} />
             <Date label="Last Modified" date={activeResult.lastModified} />
@@ -65,7 +65,7 @@ function Sidebar({ factory }: SidebarArgs): React.ReactNode {
                 factory={factory}
               />
             )}
-          </Grid>
+          </Stack>
         </CardContent>
       </Card>
     </Drawer>

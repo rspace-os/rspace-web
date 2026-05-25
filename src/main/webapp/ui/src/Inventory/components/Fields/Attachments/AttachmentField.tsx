@@ -11,7 +11,7 @@ import FileField from "../../../../components/Inputs/FileField";
 import NoValue from "../../../../components/NoValue";
 import AttachmentTableRow from "./AttachmentTableRow";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import type { HasEditableFields } from "@/stores/definitions/Editable";
@@ -97,84 +97,75 @@ function AttachmentField<
   };
 
   return (
-    <Grid container sx={{ flexDirection: "column" }}>
-      <Grid>
-        {!value && disabled ? (
-          <NoValue label={noValueLabel ?? "No description"} />
-        ) : (
-          <TextField
-            variant={disabled ? "standard" : "outlined"}
-            size="small"
-            multiline
-            value={value}
-            onChange={onChange}
-            error={error}
-            helperText={!error ? null : helperText}
-            disabled={disabled}
-            fullWidth
-            sx={{ "& .MuiInputBase-input": { fontSize: "14px" } }}
-          />
-        )}
-      </Grid>
-      <Grid>
-        {/*
-         * This help text, which provides examples of what types of files can
-         * be attached to the sample, is not shown if the `value` has been set
-         * because the `value` is used by the attachment field solely as a
-         * descriptive piece of text that the author of a template can use to
-         * describe the kinds of file that ought to be attached. If no such
-         * description has been set, and thus `value` is the empty string,
-         * then we show our suggestive text. This text is further shown in an
-         * info alert to make it clear that this is a suggestion coming from
-         * the RSpace product and not their colleagues.
-         */}
-        {!value && (
-          <Box sx={{ mt: 1 }}>
-            <Alert severity="info" role="none">
-              <AlertTitle>Attachment</AlertTitle>A file of any type can be
-              attached (e.g. image, document, or chemistry file)
-            </Alert>
-          </Box>
-        )}
-      </Grid>
+    <Stack>
+      {!value && disabled ? (
+        <NoValue label={noValueLabel ?? "No description"} />
+      ) : (
+        <TextField
+          variant={disabled ? "standard" : "outlined"}
+          size="small"
+          multiline
+          value={value}
+          onChange={onChange}
+          error={error}
+          helperText={!error ? null : helperText}
+          disabled={disabled}
+          fullWidth
+          sx={{ "& .MuiInputBase-input": { fontSize: "14px" } }}
+        />
+      )}
+      {/*
+       * This help text, which provides examples of what types of files can
+       * be attached to the sample, is not shown if the `value` has been set
+       * because the `value` is used by the attachment field solely as a
+       * descriptive piece of text that the author of a template can use to
+       * describe the kinds of file that ought to be attached. If no such
+       * description has been set, and thus `value` is the empty string,
+       * then we show our suggestive text. This text is further shown in an
+       * info alert to make it clear that this is a suggestion coming from
+       * the RSpace product and not their colleagues.
+       */}
+      {!value && (
+        <Box sx={{ mt: 1 }}>
+          <Alert severity="info" role="none">
+            <AlertTitle>Attachment</AlertTitle>A file of any type can be
+            attached (e.g. image, document, or chemistry file)
+          </Alert>
+        </Box>
+      )}
       {!disableFileUpload && !disabled && (
-        /* this should be disabled, no? what is disableFileUpload? */ <Grid
-          sx={{ mt: 1 }}
-        >
-          <Grid container sx={{ flexDirection: "column" }} spacing={1}>
-            <Grid>
-              <FileField
-                accept="*"
-                buttonLabel="Upload"
-                onChange={({ file }) => onFileSelection(file)}
-                showSelectedFilename={false}
-                icon={<UploadIcon />}
-                loading={false}
-                error={false}
-                disabled={disabled}
-                explanatoryText="Upload a file from your device."
-                containerProps={{
-                  wrap: "nowrap",
-                  sx: { alignItems: "stretch", flexDirection: "column" },
-                }}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <Grid>
-                        <BigIconButton
-                          onClick={() => {
-                            setGalleryDialogOpen(true);
-                          }}
-                          icon={<AttachFileIcon />}
-                          label="Browse Gallery"
-                          explanatoryText="Link to existing items in the Gallery."
-                        />
-                      </Grid>
-                    ),
-                  },
-                }}
-              />
-            </Grid>
+        /* this should be disabled, no? what is disableFileUpload? */
+        <Box sx={{ mt: 1 }}>
+          <Stack spacing={1}>
+            <FileField
+              accept="*"
+              buttonLabel="Upload"
+              onChange={({ file }) => onFileSelection(file)}
+              showSelectedFilename={false}
+              icon={<UploadIcon />}
+              loading={false}
+              error={false}
+              disabled={disabled}
+              explanatoryText="Upload a file from your device."
+              containerProps={{
+                wrap: "nowrap",
+                sx: { alignItems: "stretch", flexDirection: "column" },
+              }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <BigIconButton
+                      onClick={() => {
+                        setGalleryDialogOpen(true);
+                      }}
+                      icon={<AttachFileIcon />}
+                      label="Browse Gallery"
+                      explanatoryText="Link to existing items in the Gallery."
+                    />
+                  ),
+                },
+              }}
+            />
             {galleryDialogOpen && (
               <React.Suspense fallback={<></>}>
                 <GalleryPicker
@@ -201,33 +192,29 @@ function AttachmentField<
                 />
               </React.Suspense>
             )}
-            <Grid>
-              {!attachment && (
-                <Box sx={{ pl: 2 }}>
-                  <NoValue label="No File Attached" />
-                </Box>
-              )}
-            </Grid>
-          </Grid>
-        </Grid>
+            {!attachment && (
+              <Box sx={{ pl: 2 }}>
+                <NoValue label="No File Attached" />
+              </Box>
+            )}
+          </Stack>
+        </Box>
       )}
-      <Grid>
-        {attachment && (
-          <TableContainer>
-            <Table size="small">
-              <TableBody>
-                <AttachmentTableRow
-                  attachment={attachment}
-                  editable={!disabled}
-                  fieldOwner={fieldOwner}
-                  chemistryProvider={chemistryProvider}
-                />
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Grid>
-    </Grid>
+      {attachment && (
+        <TableContainer>
+          <Table size="small">
+            <TableBody>
+              <AttachmentTableRow
+                attachment={attachment}
+                editable={!disabled}
+                fieldOwner={fieldOwner}
+                chemistryProvider={chemistryProvider}
+              />
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </Stack>
   );
 }
 

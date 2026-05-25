@@ -8,7 +8,7 @@ import useOauthToken from "../../hooks/auth/useOauthToken";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import {
   DataGrid,
@@ -424,17 +424,15 @@ function CompareDialog(): React.ReactNode {
     >
       <DialogTitle>Export Documents to CSV</DialogTitle>
       <DialogContent>
-        <Grid container sx={{ flexDirection: "column" }} spacing={2}>
-          <Grid>
-            <Typography variant="body2">
-              Select the documents you want to combine into a single CSV file.
-              Documents with identical structures will be automatically aligned,
-              including form data and content. If documents have different
-              structures, additional columns will be created to accommodate all
-              information.
-            </Typography>
-          </Grid>
-          <Grid sx={{ width: "100%" }}>
+        <Stack spacing={2}>
+          <Typography variant="body2">
+            Select the documents you want to combine into a single CSV file.
+            Documents with identical structures will be automatically aligned,
+            including form data and content. If documents have different
+            structures, additional columns will be created to accommodate all
+            information.
+          </Typography>
+          <Box sx={{ width: "100%" }}>
             <DataGrid
               aria-label="documents"
               autoHeight
@@ -478,8 +476,8 @@ function CompareDialog(): React.ReactNode {
               }}
               showToolbar
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button

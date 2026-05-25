@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import FieldModel from "../../../stores/models/FieldModel";
 import useStores from "../../../stores/use-stores";
 import NewField from "./NewField";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
 import NoValue from "../../../components/NoValue";
 import TemplateModel from "../../../stores/models/TemplateModel";
@@ -34,7 +34,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
       };
 
     return (
-      <Grid container sx={{ flexDirection: "column" }} spacing={2}>
+      <Stack spacing={2}>
         {ArrayUtils.filterClass(FieldModel, activeResult.fields).map(
           (field: FieldModel, i: number) => (
             <CustomField
@@ -51,7 +51,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
             />
           ),
         )}
-      </Grid>
+      </Stack>
     );
   });
 

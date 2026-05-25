@@ -6,7 +6,8 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import {
   Toolbar as DataGridToolbar,
@@ -129,12 +130,10 @@ const DMPDialogContent = ({
       />
       <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
-        <Grid
-          container
+        <Stack
           sx={{
             flexWrap: "nowrap",
             height: "calc(100% + 16px)",
-            flexDirection: "column",
           }}
           spacing={2}
 
@@ -143,7 +142,7 @@ const DMPDialogContent = ({
            * The extra 16px prevents excessive whitespace, more and we get double scrollbars
            */
         >
-          <Grid>
+          <Box>
             <Typography variant="body2">
               Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will
               make it available to view and reference within RSpace.
@@ -157,8 +156,8 @@ const DMPDialogContent = ({
               <Link href={docLinks.dmponline}>DMPonline integration docs</Link>{" "}
               for more.
             </Typography>
-          </Grid>
-          <Grid sx={{ flexGrow: 1, overflowY: "auto" }}>
+          </Box>
+          <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
             {FetchingData.match(listing, {
               loading: () => (
                 <Typography variant="body2">
@@ -273,8 +272,8 @@ const DMPDialogContent = ({
                 success: () => ({}),
               })}
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setOpen(false)}>Close</Button>

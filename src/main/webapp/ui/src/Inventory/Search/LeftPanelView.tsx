@@ -6,7 +6,8 @@ import {
   RightPanelToggle,
   useIsSingleColumnLayout,
 } from "../components/Layout/Layout2x1";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import Breadcrumbs from "../components/Breadcrumbs";
 import SearchView from "./SearchView";
 import { type CoreFetcherArgs } from "../../stores/definitions/Search";
@@ -122,11 +123,9 @@ function LeftPanelView(): React.ReactNode {
   };
 
   return (
-    <Grid
+    <Stack
       ref={searchNavRef as React.RefObject<HTMLDivElement>}
-      container
       sx={{
-        flexDirection: "column",
         flexWrap: "nowrap",
         height: "100%",
         p: uiStore.alwaysVisibleSidebar ? 1 : 0,
@@ -136,7 +135,7 @@ function LeftPanelView(): React.ReactNode {
       role="navigation"
       aria-label="Search and Navigation"
     >
-      <Grid sx={{ width: "100%" }}>
+      <Box sx={{ width: "100%" }}>
         <Search
           handleSearch={handleSearch}
           searchbarAdornment={<RightPanelToggle />}
@@ -144,16 +143,16 @@ function LeftPanelView(): React.ReactNode {
         {showLeftBreadcrumbs && recordForBreadcrumbs && (
           <Breadcrumbs record={recordForBreadcrumbs} showCurrent={false} />
         )}
-      </Grid>
-      <Grid sx={{ overflow: "hidden", display: "flex", flexDirection: "column", flexGrow: 1 }}>
+      </Box>
+      <Box sx={{ overflow: "hidden", display: "flex", flexDirection: "column", flexGrow: 1 }}>
         <Routes>
           <Route
             path="/"
             element={<SearchView contextMenuId={menuIDs.RESULTS} />}
           />
         </Routes>
-      </Grid>
-    </Grid>
+      </Box>
+    </Stack>
   );
 }
 

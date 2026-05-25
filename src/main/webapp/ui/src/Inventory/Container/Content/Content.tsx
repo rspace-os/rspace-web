@@ -8,7 +8,8 @@ import SearchViewComponent from "../../Search/SearchView";
 import Search from "../../Search/Search";
 import { menuIDs } from "../../../util/menuIDs";
 import Alert from "@mui/material/Alert";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { isMac } from "../../../util/shortcuts";
 import docLinks from "../../../assets/DocLinks";
@@ -93,19 +94,15 @@ function _Content() {
         }}
       >
         <InnerSearchNavigationContext>
-          <Grid container sx={{ flexDirection: "column" }} spacing={1}>
-            <Grid>
-              <Search handleSearch={handleSearch} TABS={TABS} size="small" />
-            </Grid>
+          <Stack spacing={1}>
+            <Search handleSearch={handleSearch} TABS={TABS} size="small" />
             {["GRID", "IMAGE"].includes(search.searchView) && (
-              <Grid>
-                <ContentContextMenu />
-              </Grid>
+              <ContentContextMenu />
             )}
-            <Grid sx={{ overflowX: "auto !important", overflow: "hidden", width: "100%" }}>
+            <Box sx={{ overflowX: "auto !important", overflow: "hidden", width: "100%" }}>
               <SearchViewComponent contextMenuId={menuIDs.RESULTS} />
-            </Grid>
-          </Grid>
+            </Box>
+          </Stack>
         </InnerSearchNavigationContext>
       </SearchContext.Provider>
       {search.searchView === "IMAGE" && <ImageContainerZoomHelpText />}

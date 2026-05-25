@@ -1,6 +1,5 @@
 import React, { useId, useContext } from "react";
 import { Observer } from "mobx-react-lite";
-import Grid from "@mui/material/Grid";
 import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
@@ -26,7 +25,7 @@ type StepperPanelArgs = {
 };
 
 const StepperPanel = React.forwardRef<
-  React.ElementRef<typeof Grid>,
+  React.ElementRef<typeof Box>,
   StepperPanelArgs
 >(
   (
@@ -49,9 +48,9 @@ const StepperPanel = React.forwardRef<
     return (
       <Observer>
         {() => (
-          <Grid
-            container
+          <Box
             sx={{
+              display: "flex",
               flexDirection: "column",
               flexWrap: "nowrap",
               backgroundColor: theme.palette.background.alt,
@@ -61,19 +60,17 @@ const StepperPanel = React.forwardRef<
             role="region"
             aria-labelledby={headingId}
           >
-            <Grid>
-              <StepperPanelHeader
-                onToggle={(value) =>
-                  formSectionContext.setExpanded(recordType, sectionName, value)
-                }
-                open={formSectionContext.isExpanded(recordType, sectionName)}
-                title={title}
-                formSectionError={formSectionError}
-                id={headingId}
-                recordType={recordType}
-                icon={icon}
-              />
-            </Grid>
+            <StepperPanelHeader
+              onToggle={(value) =>
+                formSectionContext.setExpanded(recordType, sectionName, value)
+              }
+              open={formSectionContext.isExpanded(recordType, sectionName)}
+              title={title}
+              formSectionError={formSectionError}
+              id={headingId}
+              recordType={recordType}
+              icon={icon}
+            />
             <Collapse
               in={formSectionContext.isExpanded(recordType, sectionName)}
               sx={{
@@ -85,29 +82,25 @@ const StepperPanel = React.forwardRef<
               }}
             >
               <Box sx={{ p: 2, pt: 1 }}>
-                <Grid>
-                  <HeadingContext>
-                    <Stack spacing={3} sx={{ mt: 0.5 }}>
-                      {children}
-                    </Stack>
-                  </HeadingContext>
-                </Grid>
+                <HeadingContext>
+                  <Stack spacing={3} sx={{ mt: 0.5 }}>
+                    {children}
+                  </Stack>
+                </HeadingContext>
               </Box>
             </Collapse>
-            <Grid>
-              <Divider
-                orientation="horizontal"
-                sx={
-                  thickBorder
-                    ? {
-                        borderWidth: "1px",
-                        borderColor: theme.palette.record[recordType].bg,
-                      }
-                    : {}
-                }
-              />
-            </Grid>
-          </Grid>
+            <Divider
+              orientation="horizontal"
+              sx={
+                thickBorder
+                  ? {
+                      borderWidth: "1px",
+                      borderColor: theme.palette.record[recordType].bg,
+                    }
+                  : {}
+              }
+            />
+          </Box>
         )}
       </Observer>
     );

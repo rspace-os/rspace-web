@@ -3,7 +3,7 @@ import { type GalleryFile, idToString } from "../useGalleryListing";
 import { Optional } from "../../../util/optional";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import { useGallerySelection } from "../useGallerySelection";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
@@ -483,11 +483,9 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
       </PlaceholderLabel>
     );
   return (
-    <Grid
-      container
+    <Stack
       sx={{
         flexWrap: "nowrap",
-        flexDirection: "column",
         /*
          * it looks better if the preview panel's bottom border lines up with
          * the bottom of the InfoPanel divider
@@ -498,18 +496,16 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
       role="region"
       aria-label="Carousel view of files"
     >
-      <Grid container direction="row" spacing={1}>
-        <Grid>
-          <Button
-            onClick={() => {
-              decrementVisibleIndex();
-            }}
-            disabled={visibleIndex === 0}
-            startIcon={<ArrowBackIcon />}
-          >
-            Previous
-          </Button>
-        </Grid>
+      <Stack direction="row" spacing={1}>
+        <Button
+          onClick={() => {
+            decrementVisibleIndex();
+          }}
+          disabled={visibleIndex === 0}
+          startIcon={<ArrowBackIcon />}
+        >
+          Previous
+        </Button>
         <Typography
           role="status"
           aria-label="Current file index"
@@ -522,76 +518,72 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
         >
           {visibleIndex + 1} / {listing.totalHits}
         </Typography>
-        <Grid sx={{ flexGrow: 1 }}></Grid>
-        <Grid>
-          <ButtonGroup
-            variant="outlined"
-            sx={{
-              border: `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
-              borderRadius: "8px",
-            }}
-          >
-            <IconButton
-              onClick={() => {
-                setZoom((z) => z * ZOOM_SCALE_FACTOR);
-              }}
-              aria-label="zoom in"
-              size="small"
-            >
-              <ZoomInIcon />
-            </IconButton>
-            <Divider
-              orientation="vertical"
-              sx={{
-                height: "26px",
-                marginTop: "4px",
-                borderRightWidth: "1px",
-              }}
-            />
-            <IconButton
-              onClick={() => {
-                setZoom(1);
-              }}
-              disabled={zoom === 1}
-              aria-label="reset zoom"
-              size="small"
-            >
-              <ResetZoomIcon />
-            </IconButton>
-            <Divider
-              orientation="vertical"
-              sx={{
-                height: "26px",
-                marginTop: "4px",
-                borderRightWidth: "1px",
-              }}
-            />
-            <IconButton
-              onClick={() => {
-                setZoom((z) => z / ZOOM_SCALE_FACTOR);
-              }}
-              disabled={zoom === 1}
-              aria-label="zoom out"
-              size="small"
-            >
-              <ZoomOutIcon />
-            </IconButton>
-          </ButtonGroup>
-        </Grid>
-        <Grid sx={{ flexGrow: 1 }}></Grid>
-        <Grid>
-          <Button
+        <Box sx={{ flexGrow: 1 }} />
+        <ButtonGroup
+          variant="outlined"
+          sx={{
+            border: `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
+            borderRadius: "8px",
+          }}
+        >
+          <IconButton
             onClick={() => {
-              incrementVisibleIndex();
+              setZoom((z) => z * ZOOM_SCALE_FACTOR);
             }}
-            disabled={visibleIndex === listing.list.length - 1}
-            endIcon={<ArrowForwardIcon />}
+            aria-label="zoom in"
+            size="small"
           >
-            Next
-          </Button>
-        </Grid>
-      </Grid>
-      <Grid
+            <ZoomInIcon />
+          </IconButton>
+          <Divider
+            orientation="vertical"
+            sx={{
+              height: "26px",
+              marginTop: "4px",
+              borderRightWidth: "1px",
+            }}
+          />
+          <IconButton
+            onClick={() => {
+              setZoom(1);
+            }}
+            disabled={zoom === 1}
+            aria-label="reset zoom"
+            size="small"
+          >
+            <ResetZoomIcon />
+          </IconButton>
+          <Divider
+            orientation="vertical"
+            sx={{
+              height: "26px",
+              marginTop: "4px",
+              borderRightWidth: "1px",
+            }}
+          />
+          <IconButton
+            onClick={() => {
+              setZoom((z) => z / ZOOM_SCALE_FACTOR);
+            }}
+            disabled={zoom === 1}
+            aria-label="zoom out"
+            size="small"
+          >
+            <ZoomOutIcon />
+          </IconButton>
+        </ButtonGroup>
+        <Box sx={{ flexGrow: 1 }} />
+        <Button
+          onClick={() => {
+            incrementVisibleIndex();
+          }}
+          disabled={visibleIndex === listing.list.length - 1}
+          endIcon={<ArrowForwardIcon />}
+        >
+          Next
+        </Button>
+      </Stack>
+      <Box
         sx={{
           flexGrow: 1,
           /*
@@ -615,7 +607,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
             key={f.key}
           />
         ))}
-      </Grid>
-    </Grid>
+      </Box>
+    </Stack>
   );
 }

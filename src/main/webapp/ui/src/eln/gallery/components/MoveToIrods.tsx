@@ -5,7 +5,6 @@ import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
 import AppBar from "../../../components/AppBar";
 import DialogContent from "@mui/material/DialogContent";
-import Grid from "@mui/material/Grid";
 import DialogActions from "@mui/material/DialogActions";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
@@ -226,147 +225,133 @@ function MoveCopyDialog({
         >
           <DialogTitle variant="h3">Move to iRODS</DialogTitle>
           <DialogContent>
-            <Grid
-              container
+            <Stack
               spacing={2}
               sx={{
-                flexDirection: "column",
                 height: "100%",
                 flexWrap: "nowrap",
               }}
             >
               {FetchingData.match(irods, {
                 loading: () => <></>,
-                error: (errorMsg) => (
-                  <Grid>
-                    <ErrorAlert message={errorMsg} />
-                  </Grid>
-                ),
+                error: (errorMsg) => <ErrorAlert message={errorMsg} />,
                 success: ({ serverUrl, configuredLocations }) => (
                   <>
-                    <Grid>
-                      <Typography variant="body2">
-                        You have selected {selectedIds.length} item
-                        {selectedIds.length > 1 && "s"} to move to the iRODS
-                        server{" "}
-                        <Link target="_blank" href={serverUrl}>
-                          {serverUrl}
-                        </Link>
-                        . By default, the items will be added to iRODS and
-                        removed from RSpace. You will be able to link to the
-                        iRODS items inside of RSpace documents and include them
-                        into any exports through our iRODS integration.
-                      </Typography>
-                    </Grid>
-                    <Grid>
-                      <ChoiceField
-                        name="keep"
-                        value={keepCopyInRspace ? ["keep"] : []}
-                        onChange={({ target: { value } }) => {
-                          setKeepCopyInRspace(value.includes("keep"));
-                        }}
-                        options={[
-                          {
-                            value: "keep",
-                            label: "Retain a copy in RSpace",
-                          },
-                        ]}
-                      />
-                    </Grid>
-                    <Grid>
-                      <FormField
-                        label="Destination in iRODS"
-                        explanation="The available folders are configured in the Gallery's filestore section."
-                        value={void 0}
-                        renderInput={() => (
-                          <Box>
-                            <List>
-                              <ListItemButton
-                                sx={{ maxWidth: "400px" }}
-                                onClick={(e) =>
-                                  setLocationsAnchorEl(e.currentTarget)
+                    <Typography variant="body2">
+                      You have selected {selectedIds.length} item
+                      {selectedIds.length > 1 && "s"} to move to the iRODS
+                      server{" "}
+                      <Link target="_blank" href={serverUrl}>
+                        {serverUrl}
+                      </Link>
+                      . By default, the items will be added to iRODS and
+                      removed from RSpace. You will be able to link to the
+                      iRODS items inside of RSpace documents and include them
+                      into any exports through our iRODS integration.
+                    </Typography>
+                    <ChoiceField
+                      name="keep"
+                      value={keepCopyInRspace ? ["keep"] : []}
+                      onChange={({ target: { value } }) => {
+                        setKeepCopyInRspace(value.includes("keep"));
+                      }}
+                      options={[
+                        {
+                          value: "keep",
+                          label: "Retain a copy in RSpace",
+                        },
+                      ]}
+                    />
+                    <FormField
+                      label="Destination in iRODS"
+                      explanation="The available folders are configured in the Gallery's filestore section."
+                      value={void 0}
+                      renderInput={() => (
+                        <Box>
+                          <List>
+                            <ListItemButton
+                              sx={{ maxWidth: "400px" }}
+                              onClick={(e) =>
+                                setLocationsAnchorEl(e.currentTarget)
+                              }
+                            >
+                              <ListItemText
+                                primary={
+                                  selectedDestination?.name ??
+                                  "Select a destination"
                                 }
+                                secondary={selectedDestination?.path ?? ""}
+                              />
+                              <KeyboardArrowDownIcon />
+                            </ListItemButton>
+                          </List>
+                          <Menu
+                            open={Boolean(locationsAnchorEl)}
+                            anchorEl={locationsAnchorEl}
+                            onClose={() => {
+                              setLocationsAnchorEl(null);
+                            }}
+                          >
+                            {configuredLocations.map((location) => (
+                              <MenuItem
+                                key={location.id}
+                                selected={location === selectedDestination}
+                                onClick={() => {
+                                  setSelectedDestination(location);
+                                  setLocationsAnchorEl(null);
+                                }}
+                                sx={{ width: "400px" }}
                               >
                                 <ListItemText
-                                  primary={
-                                    selectedDestination?.name ??
-                                    "Select a destination"
-                                  }
-                                  secondary={selectedDestination?.path ?? ""}
+                                  primary={location.name}
+                                  secondary={location.path}
                                 />
-                                <KeyboardArrowDownIcon />
-                              </ListItemButton>
-                            </List>
-                            <Menu
-                              open={Boolean(locationsAnchorEl)}
-                              anchorEl={locationsAnchorEl}
-                              onClose={() => {
-                                setLocationsAnchorEl(null);
-                              }}
-                            >
-                              {configuredLocations.map((location) => (
-                                <MenuItem
-                                  key={location.id}
-                                  selected={location === selectedDestination}
-                                  onClick={() => {
-                                    setSelectedDestination(location);
-                                    setLocationsAnchorEl(null);
-                                  }}
-                                  sx={{ width: "400px" }}
-                                >
-                                  <ListItemText
-                                    primary={location.name}
-                                    secondary={location.path}
-                                  />
-                                </MenuItem>
-                              ))}
-                            </Menu>
-                          </Box>
-                        )}
-                      />
-                    </Grid>
+                              </MenuItem>
+                            ))}
+                          </Menu>
+                        </Box>
+                      )}
+                    />
                     {showUsernamePasswordForm && (
-                      <Grid>
-                        <CustomFieldset>
-                          <legend>iRODS login</legend>
-                          <Stack spacing={1}>
-                            <Typography variant="body2">
-                              Please provide your login credentials for{" "}
-                              {serverUrl}
-                            </Typography>
-                            <FormField
-                              label="Username"
-                              value={username}
-                              renderInput={() => (
-                                <TextField
-                                  autoComplete="username"
-                                  onChange={({ target: { value } }) => {
-                                    setUsername(value);
-                                  }}
-                                />
-                              )}
-                            />
-                            <FormField
-                              label="Password"
-                              value={password}
-                              renderInput={() => (
-                                <TextField
-                                  type="password"
-                                  autoComplete="current-password"
-                                  onChange={({ target: { value } }) => {
-                                    setPassword(value);
-                                  }}
-                                />
-                              )}
-                            />
-                          </Stack>
-                        </CustomFieldset>
-                      </Grid>
+                      <CustomFieldset>
+                        <legend>iRODS login</legend>
+                        <Stack spacing={1}>
+                          <Typography variant="body2">
+                            Please provide your login credentials for{" "}
+                            {serverUrl}
+                          </Typography>
+                          <FormField
+                            label="Username"
+                            value={username}
+                            renderInput={() => (
+                              <TextField
+                                autoComplete="username"
+                                onChange={({ target: { value } }) => {
+                                  setUsername(value);
+                                }}
+                              />
+                            )}
+                          />
+                          <FormField
+                            label="Password"
+                            value={password}
+                            renderInput={() => (
+                              <TextField
+                                type="password"
+                                autoComplete="current-password"
+                                onChange={({ target: { value } }) => {
+                                  setPassword(value);
+                                }}
+                              />
+                            )}
+                          />
+                        </Stack>
+                      </CustomFieldset>
                     )}
                   </>
                 ),
               })}
-            </Grid>
+            </Stack>
           </DialogContent>
           <DialogActions>
             <Button

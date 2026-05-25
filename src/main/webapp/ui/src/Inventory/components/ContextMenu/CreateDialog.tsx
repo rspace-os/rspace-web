@@ -32,7 +32,6 @@ import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import NoValue from "../../../components/NoValue";
 import StringField from "../../../components/Inputs/StringField";
 import { type Id } from "../../../stores/definitions/BaseRecord";
-import Grid from "@mui/material/Grid";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -419,8 +418,7 @@ const ParameterField = observer(
               <Typography variant="body2">{explanation}</Typography>
             </StepLabel>
             <StepContent>
-              <Grid
-                container
+              <Stack
                 /*
                  * This nowrap is a result of a very odd bug. Without it, across
                  * various browsers and devices, the "Back" button below would be
@@ -433,10 +431,10 @@ const ParameterField = observer(
                  * but this does fix it.
                  */
 
-                sx={{ flexWrap: "nowrap", flexDirection: "column" }}
+                sx={{ flexWrap: "nowrap" }}
                 spacing={1}
               >
-                <Grid>
+                <Box>
                   {state.key === "split" && (
                     <SplitCount id={fieldId} state={state} />
                   )}
@@ -453,33 +451,31 @@ const ParameterField = observer(
                   {state.key === "newSubsamplesQuantity" && (
                     <NewSubsampleQuantity id={fieldId} state={state} />
                   )}
-                </Grid>
-                <Grid>
-                  <Stack spacing={1} direction="row">
-                    {showNextButton && (
-                      <Button
-                        color="callToAction"
-                        variant="contained"
-                        disableElevation
-                        onClick={() => {
-                          setActiveStep(activeStep + 1);
-                        }}
-                        disabled={!validState()}
-                      >
-                        Next
-                      </Button>
-                    )}
+                </Box>
+                <Stack spacing={1} direction="row">
+                  {showNextButton && (
                     <Button
-                      variant="outlined"
+                      color="callToAction"
+                      variant="contained"
+                      disableElevation
                       onClick={() => {
-                        setActiveStep(activeStep - 1);
+                        setActiveStep(activeStep + 1);
                       }}
+                      disabled={!validState()}
                     >
-                      Back
+                      Next
                     </Button>
-                  </Stack>
-                </Grid>
-              </Grid>
+                  )}
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setActiveStep(activeStep - 1);
+                    }}
+                  >
+                    Back
+                  </Button>
+                </Stack>
+              </Stack>
             </StepContent>
           </Step>
         </Collapse>

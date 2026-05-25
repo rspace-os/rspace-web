@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import FieldTypeMenuItemOpenIcon from "./FieldTypeMenuItemOpenIcon";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
@@ -46,37 +46,31 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
         }}
         disabled={open}
       >
-        <Grid container sx={{ flexDirection: "column" }}>
-          <Grid>
-            <Grid container direction="row" sx={{ alignItems: "center" }}>
-              <Grid>
-                <ListItemAvatar>
-                  <Avatar>{_fieldData.icon}</Avatar>
-                </ListItemAvatar>
-              </Grid>
-              <Grid sx={{ flexGrow: 1 }}>
-                <ListItemText
-                  primary={_fieldData.label}
-                  secondary={_fieldData.help}
-                />
-              </Grid>
-              {!inMenu && hasOptions(field) && (
-                <Grid>
-                  <IconButton
-                    onClick={preventEventBubbling<
-                      React.MouseEvent<HTMLButtonElement>
-                    >(() => setOpen(!open))}
-                    sx={{
-                      backgroundColor: "transparent",
-                      pointerEvents: "auto",
-                    }}
-                  >
-                    <FieldTypeMenuItemOpenIcon open={open} />
-                  </IconButton>
-                </Grid>
-              )}
-            </Grid>
-          </Grid>
+        <Box>
+          <Stack direction="row" sx={{ alignItems: "center" }}>
+            <ListItemAvatar>
+              <Avatar>{_fieldData.icon}</Avatar>
+            </ListItemAvatar>
+            <Box sx={{ flexGrow: 1 }}>
+              <ListItemText
+                primary={_fieldData.label}
+                secondary={_fieldData.help}
+              />
+            </Box>
+            {!inMenu && hasOptions(field) && (
+              <IconButton
+                onClick={preventEventBubbling<
+                  React.MouseEvent<HTMLButtonElement>
+                >(() => setOpen(!open))}
+                sx={{
+                  backgroundColor: "transparent",
+                  pointerEvents: "auto",
+                }}
+              >
+                <FieldTypeMenuItemOpenIcon open={open} />
+              </IconButton>
+            )}
+          </Stack>
           <div
             style={{
               height: open ? 110 : 0,
@@ -84,14 +78,12 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
               transitionDelay: open ? "0.05s" : "0s",
             }}
           >
-            <Grid>
-              <Box sx={{ mt: "8px", mb: "12px" }}>
-                <Divider orientation="horizontal" />
-              </Box>
-            </Grid>
+            <Box sx={{ mt: "8px", mb: "12px" }}>
+              <Divider orientation="horizontal" />
+            </Box>
             {options && (
               <>
-                <Grid
+                <Box
                   sx={{
                     position: "absolute",
                     top: theme.spacing(6),
@@ -107,8 +99,8 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
                   <Typography variant="subtitle1" sx={{ fontSize: "0.9rem" }}>
                     Options
                   </Typography>
-                </Grid>
-                <Grid
+                </Box>
+                <Box
                   sx={{
                     height: 89,
                     overflowY: "auto",
@@ -116,18 +108,16 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
                     pointerEvents: "auto",
                   }}
                 >
-                  <Grid container direction="row" spacing={1}>
+                  <Stack direction="row" spacing={1}>
                     {options.map((o, i) => (
-                      <Grid key={i}>
-                        <Chip label={o} variant="outlined" />
-                      </Grid>
+                      <Chip key={i} label={o} variant="outlined" />
                     ))}
-                  </Grid>
-                </Grid>
+                  </Stack>
+                </Box>
               </>
             )}
           </div>
-        </Grid>
+        </Box>
       </MenuItem>
     );
 

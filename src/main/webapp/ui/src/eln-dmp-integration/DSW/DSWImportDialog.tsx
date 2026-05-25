@@ -4,7 +4,7 @@ import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
@@ -220,12 +220,10 @@ function DSWImportDialogContent({
       />
       <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
-        <Grid
-          container
+        <Stack
           sx={{
             flexWrap: "nowrap",
             height: "calc(100% + 16px)",
-            flexDirection: "column",
           }}
           spacing={2}
 
@@ -234,7 +232,7 @@ function DSWImportDialogContent({
            * The extra 16px prevents excessive whitespace, more and we get double scrollbars
            */
         >
-          <Grid>
+          <Box>
             <Typography variant="body2">
               Importing a project from <strong>{connection.DSW_ALIAS}</strong>{" "}
               will make it available to view and reference as a DMP within
@@ -251,8 +249,8 @@ function DSWImportDialogContent({
               </Link>{" "}
               for more.
             </Typography>
-          </Grid>
-          <Grid sx={{ flexGrow: 1, overflowY: "auto" }}>
+          </Box>
+          <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
             <DataGridWithRadioSelection
               columns={[
                 DataGridColumn.newColumnWithFieldName<
@@ -357,30 +355,26 @@ function DSWImportDialogContent({
                 }
               }}
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </DialogContent>
       <DialogActions>
-        <Grid container direction="row" spacing={1}>
-          <Grid sx={{ ml: "auto" }}>
-            <Stack direction="row" spacing={1}>
-              <Button onClick={() => setOpen(false)} disabled={importing}>
-                {selectedPlan ? "Cancel" : "Close"}
-              </Button>
-              <ValidatingSubmitButton
-                onClick={() => {
-                  void handleImport();
-                }}
-                validationResult={
-                  !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
-                }
-                loading={importing}
-              >
-                Import
-              </ValidatingSubmitButton>
-            </Stack>
-          </Grid>
-        </Grid>
+        <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
+          <Button onClick={() => setOpen(false)} disabled={importing}>
+            {selectedPlan ? "Cancel" : "Close"}
+          </Button>
+          <ValidatingSubmitButton
+            onClick={() => {
+              void handleImport();
+            }}
+            validationResult={
+              !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
+            }
+            loading={importing}
+          >
+            Import
+          </ValidatingSubmitButton>
+        </Stack>
       </DialogActions>
     </>
   );
