@@ -34,6 +34,7 @@ import com.researchspace.model.events.UserAccountEvent;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -671,13 +672,11 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(userToDelete);
 
     ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(userToDelete);
+    openTransaction();
     Sample sample = sampleDao.get(apiSample.getId());
     SubSample subSample = sample.getSubSamples().get(0);
-
-    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
-    link.setStoichiometryMolecule(savedMolecule);
-    link.setInventoryRecord(subSample);
-    Long linkId = stoichiometryInventoryLinkDao.save(link).getId();
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, subSample);
+    commitTransaction();
 
     User sysadmin = logoutAndLoginAsSysAdmin();
     UserDeletionPolicy policy = unrestrictedDeletionPolicy();
@@ -697,16 +696,15 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     // can remove it before the StoichiometryMolecule delete runs.
     User inventoryOwner = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(inventoryOwner);
-    Sample sample = sampleDao.get(apiSample.getId());
 
     RSpaceTestUtils.logout();
     User userToDelete = createInitAndLoginAnyUser();
     StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(userToDelete);
 
-    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
-    link.setStoichiometryMolecule(savedMolecule);
-    link.setInventoryRecord(sample);
-    Long linkId = stoichiometryInventoryLinkDao.save(link).getId();
+    openTransaction();
+    Sample sample = sampleDao.get(apiSample.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, sample);
+    commitTransaction();
 
     User sysadmin = logoutAndLoginAsSysAdmin();
     UserDeletionPolicy policy = unrestrictedDeletionPolicy();
@@ -726,12 +724,11 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     RSpaceTestUtils.logout();
     User inventoryOwner = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(inventoryOwner);
-    Sample sample = sampleDao.get(apiSample.getId());
 
-    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
-    link.setStoichiometryMolecule(savedMolecule);
-    link.setInventoryRecord(sample);
-    Long linkId = stoichiometryInventoryLinkDao.save(link).getId();
+    openTransaction();
+    Sample sample = sampleDao.get(apiSample.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, sample);
+    commitTransaction();
 
     User sysadmin = logoutAndLoginAsSysAdmin();
     UserDeletionPolicy policy = unrestrictedDeletionPolicy();
@@ -752,12 +749,11 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     RSpaceTestUtils.logout();
     User inventoryOwner = createInitAndLoginAnyUser();
     ApiContainer apiContainer = createBasicContainerForUser(inventoryOwner);
-    Container container = containerDao.get(apiContainer.getId());
 
-    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
-    link.setStoichiometryMolecule(savedMolecule);
-    link.setInventoryRecord(container);
-    Long linkId = stoichiometryInventoryLinkDao.save(link).getId();
+    openTransaction();
+    Container container = containerDao.get(apiContainer.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, container);
+    commitTransaction();
 
     User sysadmin = logoutAndLoginAsSysAdmin();
     UserDeletionPolicy policy = unrestrictedDeletionPolicy();
@@ -778,12 +774,11 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     RSpaceTestUtils.logout();
     User inventoryOwner = createInitAndLoginAnyUser();
     ApiInstrument apiInstrument = createBasicInstrumentForUser(inventoryOwner);
-    Instrument instrument = instrumentDao.get(apiInstrument.getId());
 
-    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
-    link.setStoichiometryMolecule(savedMolecule);
-    link.setInventoryRecord(instrument);
-    Long linkId = stoichiometryInventoryLinkDao.save(link).getId();
+    openTransaction();
+    Instrument instrument = instrumentDao.get(apiInstrument.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, instrument);
+    commitTransaction();
 
     User sysadmin = logoutAndLoginAsSysAdmin();
     UserDeletionPolicy policy = unrestrictedDeletionPolicy();
@@ -822,6 +817,14 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     stoichiometry.addMolecule(molecule);
     stoichiometry = stoichiometryMgr.save(stoichiometry);
     return stoichiometry.getMolecules().get(0);
+  }
+
+  private Long saveStoichiometryInventoryLink(
+      StoichiometryMolecule molecule, InventoryRecord inventoryRecord) {
+    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
+    link.setStoichiometryMolecule(molecule);
+    link.setInventoryRecord(inventoryRecord);
+    return stoichiometryInventoryLinkDao.save(link).getId();
   }
 
   private void assertStoichiometryInventoryLinkAndAuditDeleted(Long linkId) {
