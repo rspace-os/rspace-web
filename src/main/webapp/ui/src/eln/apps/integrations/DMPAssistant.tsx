@@ -2,11 +2,13 @@ import Grid from "@mui/material/Grid";
 import React from "react";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import DMPAssistantIcon from "../../../assets/branding/dmpassistant/logo.svg";
-import { observer } from "mobx-react-lite";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
-import { useDmpAssistantEndpoint } from "../useDmpAssistantEndpoint";
+import DMPAssistantIcon from "../../../assets/branding/dmpassistant/logo.svg";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CardActions from "@mui/material/CardActions";
+import TextField from "@mui/material/TextField";
+import { Optional } from "../../../util/optional";
 import { LOGO_COLOR } from "../../../assets/branding/dmpassistant";
 
 type DMPAssistantArgs = {
@@ -14,91 +16,79 @@ type DMPAssistantArgs = {
   update: (newIntegrationState: IntegrationStates["DMPASSISTANT"]) => void;
 };
 
+/*
+ * DMP Assistant uses a personal-access-token authentication mechanism; the
+ * user pastes a token from their DMP Assistant account into the text field
+ * below.
+ */
 function DMPAssistant({
   integrationState,
   update,
 }: DMPAssistantArgs): React.ReactNode {
-  const { addAlert } = React.useContext(AlertContext);
-  const { disconnect } = useDmpAssistantEndpoint();
-  const [connected, setConnected] = React.useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
+  const [apiKey, setApiKey] = React.useState(
+    integrationState.credentials.DMPASSISTANT_USER_TOKEN.orElse("")
   );
-
-  React.useEffect(() => {
-    const f = () => {
-      setConnected(true);
-      addAlert(
-        mkAlert({
-          variant: "success",
-          message: "Successfully connected to DMP Assistant.",
-        })
-      );
-    };
-    window.addEventListener("DMPASSISTANT_CONNECTED", f);
-    return () => {
-      window.removeEventListener("DMPASSISTANT_CONNECTED", f);
-    };
-  }, []);
 
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
         name="DMP Assistant"
+        integrationState={integrationState}
         explanatoryText="Portage Network's DMP Assistant — create and manage Data Management Plans in DMPRoadmap."
         image={DMPAssistantIcon}
         color={LOGO_COLOR}
-        usageText="You can import Data Management Plans (DMPs) from DMP Assistant into RSpace, reference them in RSpace documents, and attach them to data deposits when exporting to repositories."
+        update={(newMode) =>
+          update({ mode: newMode, credentials: integrationState.credentials })
+        }
         helpLinkText="DMP Assistant integration docs"
         website="dmp-pgd.ca"
         docLink="dmpassistant"
+        usageText="You can import Data Management Plans (DMPs) from DMP Assistant into RSpace, reference them in RSpace documents, and attach them to data deposits when exporting to repositories."
         setupSection={
           <>
             <ol>
               <li>
-                Click on Connect to authorise RSpace to access your DMP
-                Assistant account.
+                Obtain a personal access token from DMP Assistant (account
+                settings → API).
               </li>
+              <li>Paste it into the field below, then Save.</li>
               <li>Enable the integration.</li>
-              <li>
-                You can now import a DMP when in the Gallery, and associate a
-                DMP with data when in the export dialog.
-              </li>
             </ol>
-            {connected ? (
+            <Card variant="outlined" sx={{ mt: 2 }}>
               <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void (async () => {
-                    await disconnect();
-                    setConnected(false);
-                  })();
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void update({
+                    mode: integrationState.mode,
+                    credentials: {
+                      DMPASSISTANT_USER_TOKEN: Optional.present(apiKey),
+                    },
+                  });
                 }}
               >
-                <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
-                </Button>
+                <CardContent>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    label="Personal Access Token"
+                    type="password"
+                    size="small"
+                    value={apiKey}
+                    onChange={({ target: { value } }) => {
+                      setApiKey(value);
+                    }}
+                  />
+                </CardContent>
+                <CardActions>
+                  <Button type="submit">Save</Button>
+                </CardActions>
               </form>
-            ) : (
-              <form
-                action="/apps/dmpassistant/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
-                <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
-                </Button>
-              </form>
-            )}
+            </Card>
           </>
         }
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
-        integrationState={integrationState}
       />
     </Grid>
   );
 }
 
-export default React.memo(observer(DMPAssistant));
+export default React.memo(DMPAssistant);

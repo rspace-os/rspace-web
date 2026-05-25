@@ -43,7 +43,10 @@ export class DmpSummary {
   }
 
   get id(): string {
-    return this.#dmp_id.identifier;
+    // dmp_id.identifier is a URL like "http://dmp-pgd.ca/api/v2/plans/19142";
+    // the numeric plan id is the trailing path segment.
+    const identifier = this.#dmp_id.identifier;
+    return identifier.substring(identifier.lastIndexOf("/") + 1);
   }
 
   get title(): string {
@@ -68,11 +71,17 @@ export class DmpSummary {
 
   async importIntoGallery(): Promise<void> {
     try {
-      await axios.post<void>(
+      const {
+        data: { error },
+      } = await axios.post<{
+        data: unknown;
+        error: null | { errorMessages: Array<string> };
+      }>(
         `apps/dmpassistant/importPlan?id=${encodeURIComponent(
-          this.#dmp_id.identifier
+          this.id
         )}&filename=${this.#title}`
       );
+      if (error !== null) throw new Error(error.errorMessages[0]);
       this.#addAlert(
         mkAlert({
           message: "Successfully imported DMP.",
