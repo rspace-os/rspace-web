@@ -279,13 +279,7 @@ describe("RemoteFile.canMoveToS3", () => {
   });
 });
 
-function makeLocalGalleryFile({
-  isSystemFolder,
-  type = "image",
-}: {
-  isSystemFolder: boolean;
-  type?: string;
-}): LocalGalleryFile {
+function makeLocalGalleryFile({ type = "image" }: { type?: string } = {}): LocalGalleryFile {
   return new LocalGalleryFile({
     id: dummyId(),
     globalId: "GF_LOCAL",
@@ -295,7 +289,7 @@ function makeLocalGalleryFile({
     modificationDate: new Date(),
     description: new Description({ key: "empty" }),
     type,
-    isSystemFolder,
+    isSystemFolder: false,
     isSharedFolder: false,
     ownerId: 1,
     ownerName: "Test User",
@@ -313,12 +307,12 @@ function makeLocalGalleryFile({
 
 describe("LocalGalleryFile.canMoveToIrods", () => {
   test("returns Ok for a non-folder file", () => {
-    const file = makeLocalGalleryFile({ isSystemFolder: false });
+    const file = makeLocalGalleryFile();
     expect(file.canMoveToIrods.isOk).toBe(true);
   });
 
   test("returns Error for a folder", () => {
-    const file = makeLocalGalleryFile({ isSystemFolder: false, type: "Folder" });
+    const file = makeLocalGalleryFile({ type: "Folder" });
     expect(file.canMoveToIrods.isOk).toBe(false);
     expect(file.canMoveToIrods.orElseGet(([e]) => e)).toMatchObject({
       message: expect.stringContaining("folder"),
@@ -328,12 +322,12 @@ describe("LocalGalleryFile.canMoveToIrods", () => {
 
 describe("LocalGalleryFile.canMoveToS3", () => {
   test("returns Ok for a non-folder file", () => {
-    const file = makeLocalGalleryFile({ isSystemFolder: false });
+    const file = makeLocalGalleryFile();
     expect(file.canMoveToS3.isOk).toBe(true);
   });
 
   test("returns Error for a folder", () => {
-    const file = makeLocalGalleryFile({ isSystemFolder: false, type: "Folder" });
+    const file = makeLocalGalleryFile({ type: "Folder" });
     expect(file.canMoveToS3.isOk).toBe(false);
     expect(file.canMoveToS3.orElseGet(([e]) => e)).toMatchObject({
       message: expect.stringContaining("folder"),
