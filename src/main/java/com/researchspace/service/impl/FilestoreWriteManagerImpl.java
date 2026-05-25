@@ -12,6 +12,7 @@ import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemOption;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
@@ -206,8 +208,25 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     Set<EcatMediaFile> filesRetrieved = new LinkedHashSet<>();
     for (Long recordId : recordIds) {
       try {
-        filesRetrieved.add(baseRecordManager.retrieveMediaFile(user, recordId));
-      } catch (ObjectRetrievalFailureException ex) {
+        BaseRecord record = baseRecordManager.get(recordId, user);
+        if (record.isFolder()) {
+          errors.addError(
+              new ObjectError(
+                  "recordIds",
+                  new String[] {"gallery.filestore.folder.upload.rejected"},
+                  null,
+                  "Cannot move folders to filestores."));
+        } else if (record.isMediaRecord()) {
+          filesRetrieved.add((EcatMediaFile) record);
+        } else {
+          errors.addError(
+              new ObjectError(
+                  "recordIds",
+                  new String[] {"gallery.filestore.not.media.file"},
+                  null,
+                  "Only media files can be moved to filestores."));
+        }
+      } catch (ObjectRetrievalFailureException | AuthorizationException ex) {
         errors.addError(new ObjectError("recordIds", ex.getMessage()));
       }
     }
