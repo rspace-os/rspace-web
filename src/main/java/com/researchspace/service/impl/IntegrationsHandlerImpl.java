@@ -182,7 +182,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         setSingleOAuthConnectionStatus(info, user, DMPTOOL_APP_NAME);
         return;
       case DMPASSISTANT_APP_NAME:
-        setSingleOAuthConnectionStatus(info, user, DMPASSISTANT_APP_NAME);
+        setSingleUserToken(info, user, DMPASSISTANT_APP_NAME, DMPASSISTANT_USER_TOKEN);
         return;
       case OWNCLOUD_APP_NAME:
         setSingleOAuthConnectionStatus(info, user, OWNCLOUD_APP_NAME);
@@ -464,6 +464,12 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case FIELDMARK_APP_NAME:
         saveNewUserConnectionForSingleOptionApp(
             newInfo.getOptions().get(FIELDMARK_USER_TOKEN).toString(), user, FIELDMARK_APP_NAME);
+        break;
+      case DMPASSISTANT_APP_NAME:
+        saveNewUserConnectionForSingleOptionApp(
+            newInfo.getOptions().get(DMPASSISTANT_USER_TOKEN).toString(),
+            user,
+            DMPASSISTANT_APP_NAME);
         break;
       default:
         break;
