@@ -217,7 +217,9 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
                   null,
                   "Cannot move folders to filestores."));
         } else if (record.isMediaRecord()) {
-          filesRetrieved.add((EcatMediaFile) record);
+          // baseRecordManager.get() bypasses READ permission for record IDs; re-fetch via
+          // retrieveMediaFile() which asserts the permission before returning the file.
+          filesRetrieved.add(baseRecordManager.retrieveMediaFile(user, recordId));
         } else {
           errors.addError(
               new ObjectError(

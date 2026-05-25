@@ -104,6 +104,10 @@ class GalleryFilestoresApiControllerWriteOpsTest {
 
     when(baseRecordManager.get(eq(123L), any())).thenReturn(new EcatAudioFileStub(1L, "file1.wav"));
     when(baseRecordManager.get(eq(456L), any())).thenReturn(new EcatAudioFileStub(2L, "file2.wav"));
+    when(baseRecordManager.retrieveMediaFile(any(User.class), eq(123L)))
+        .thenReturn(new EcatAudioFileStub(1L, "file1.wav"));
+    when(baseRecordManager.retrieveMediaFile(any(User.class), eq(456L)))
+        .thenReturn(new EcatAudioFileStub(2L, "file2.wav"));
 
     when(nfsManager.uploadFilesToNfs(
             anyCollection(), anyString(), any(WritableNfsClient.class), any()))
@@ -548,5 +552,30 @@ class GalleryFilestoresApiControllerWriteOpsTest {
                     user));
 
     assertEquals(1, ex.getAllErrors().size());
+  }
+
+  @Test
+  void copyToFilestore_unauthorizedMediaFile_throwsBindExceptionAndDoesNotUpload()
+      throws IOException {
+    Long unauthorizedId = 888L;
+    when(baseRecordManager.get(eq(unauthorizedId), any()))
+        .thenReturn(new EcatAudioFileStub(unauthorizedId, "secret.wav"));
+    when(baseRecordManager.retrieveMediaFile(any(User.class), eq(unauthorizedId)))
+        .thenThrow(new org.apache.shiro.authz.AuthorizationException("no read permission"));
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(
+            Set.of(unauthorizedId), new ApiNfsCredentials(null, USERNAME, PASSWORD));
+
+    assertThrows(
+        BindException.class,
+        () ->
+            controller.copyToFilestore(
+                validFilestorePathId,
+                request,
+                new BeanPropertyBindingResult(request, "request"),
+                user));
+
+    verify(nfsManager, never())
+        .uploadFilesToNfs(anyCollection(), anyString(), any(WritableNfsClient.class), any());
   }
 }
