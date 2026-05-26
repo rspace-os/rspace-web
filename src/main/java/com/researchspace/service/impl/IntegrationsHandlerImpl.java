@@ -502,6 +502,11 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       String token, User user, String appName, String discriminant) {
     Optional<UserConnection> existingConnection =
         userConnManager.findByUserNameProviderName(user.getUsername(), appName, discriminant);
+    if (MASKED_TOKEN.equals(token)) {
+      // UI re-posted the masked sentinel (read-time placeholder) — preserve the existing
+      // token. With no existing connection there is nothing to persist.
+      return;
+    }
     UserConnection conn = existingConnection.orElse(new UserConnection());
     if (existingConnection.isEmpty()) {
       conn.setDisplayName(appName + " User Token");
