@@ -96,7 +96,7 @@ public class IntegrationsHandlerTest {
 
   @Before
   public void setup() {
-    MockitoAnnotations.openMocks(this);th
+    MockitoAnnotations.openMocks(this);
     subject = TestFactory.createAnyUser("any");
     when(communityMgr.listCommunitiesForUser(eq(subject.getId()))).thenReturn(new ArrayList<>());
     handler.setUserConnectionManager(userConnectionManager);

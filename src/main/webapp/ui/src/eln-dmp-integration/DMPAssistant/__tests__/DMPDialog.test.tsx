@@ -1,0 +1,408 @@
+import { test, describe, expect, beforeEach, afterEach, vi } from "vitest";
+import React from "react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import DMPDialog from "../DMPDialog";
+import materialTheme from "../../../theme";
+import { ThemeProvider } from "@mui/material/styles";
+import MockAdapter from "axios-mock-adapter";
+import axios from "@/common/axios";
+
+vi.mock("@/hooks/auth/useOauthToken", () => ({
+  __esModule: true,
+  default: () => ({
+    getToken: () => Promise.resolve("token"),
+  }),
+}));
+
+vi.mock("@/hooks/api/useWhoAmI", () => ({
+  __esModule: true,
+  default: () => ({
+    tag: "success",
+    value: {
+      id: 1,
+      username: "test",
+      firstName: "Test",
+      lastName: "User",
+      hasPiRole: false,
+      hasSysAdminRole: false,
+      email: "test@example.com",
+      bench: null,
+      workbenchId: null,
+      getBench: () =>
+        Promise.reject(
+          new Error("Not implemented by this Person implementation"),
+        ),
+      isCurrentUser: true,
+      fullName: "Test User",
+      label: "Test User (test)",
+    },
+  }),
+}));
+
+vi.mock("@/hooks/websockets/useWebSocketNotifications", () => ({
+  __esModule: true,
+  default: () => ({
+    notificationCount: 0,
+    messageCount: 0,
+    specialMessageCount: 0,
+  }),
+}));
+
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+const uiNavigationData = {
+  userDetails: {
+    email: "test@example.com",
+    orcidId: null,
+    orcidAvailable: false,
+    fullName: "Test User",
+    username: "test",
+    profileImgSrc: null,
+  },
+  visibleTabs: {
+    published: true,
+    inventory: true,
+    system: true,
+    myLabGroups: true,
+  },
+  extraHelpLinks: [],
+  bannerImgSrc: "",
+  operatedAs: false,
+  nextMaintenance: null,
+};
+
+type MockPlan = {
+  dmp: {
+    title: string;
+    dmp_id: { identifier: string };
+    created: string;
+    modified: string;
+  };
+};
+
+const makePlan = (id: number, title: string): MockPlan => ({
+  dmp: {
+    title,
+    dmp_id: { identifier: `https://dmp-pgd.ca/api/v2/plans/${id}` },
+    created: "2025-01-01T00:00:00Z",
+    modified: "2025-01-02T00:00:00Z",
+  },
+});
+
+let mockAxios: MockAdapter;
+
+const stubListPlans = (plans: ReadonlyArray<MockPlan>): void => {
+  mockAxios.onGet(/\/apps\/dmpassistant\/plans.*/).reply(200, {
+    data: { items: plans, total_items: plans.length },
+    error: null,
+  });
+};
+
+const renderDialog = () =>
+  render(
+    <ThemeProvider theme={materialTheme}>
+      <DMPDialog open setOpen={() => {}} />
+    </ThemeProvider>,
+  );
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockAxios = new MockAdapter(axios);
+  mockAxios
+    .onGet("/api/v1/userDetails/uiNavigationData")
+    .reply(200, uiNavigationData);
+});
+
+afterEach(() => {
+  mockAxios.restore();
+});
+
+describe("DMPDialog", () => {
+  describe("Row selection (radio per DMP)", () => {
+    test("renders one radio per DMP returned by the listing.", async () => {
+      stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
+
+      renderDialog();
+
+      expect(
+        await screen.findByRole("radio", { name: "Select Plan One" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("radio", { name: "Select Plan Two" }),
+      ).toBeInTheDocument();
+    });
+
+    test("clicking a radio selects that DMP.", async () => {
+      stubListPlans([makePlan(1, "Plan One")]);
+
+      renderDialog();
+
+      const radio = await screen.findByRole("radio", {
+        name: "Select Plan One",
+      });
+      expect(radio).not.toBeChecked();
+
+      fireEvent.click(radio);
+
+      expect(radio).toBeChecked();
+    });
+
+    test("clicking an already-selected radio deselects it.", async () => {
+      stubListPlans([makePlan(1, "Plan One")]);
+
+      renderDialog();
+
+      const radio = await screen.findByRole("radio", {
+        name: "Select Plan One",
+      });
+      fireEvent.click(radio);
+      expect(radio).toBeChecked();
+
+      fireEvent.click(radio);
+
+      expect(radio).not.toBeChecked();
+    });
+
+    test("multiple radios can be selected at the same time.", async () => {
+      stubListPlans([
+        makePlan(1, "Plan One"),
+        makePlan(2, "Plan Two"),
+        makePlan(3, "Plan Three"),
+      ]);
+
+      renderDialog();
+
+      const radio1 = await screen.findByRole("radio", {
+        name: "Select Plan One",
+      });
+      const radio2 = screen.getByRole("radio", { name: "Select Plan Two" });
+      const radio3 = screen.getByRole("radio", { name: "Select Plan Three" });
+
+      fireEvent.click(radio1);
+      fireEvent.click(radio3);
+
+      expect(radio1).toBeChecked();
+      expect(radio2).not.toBeChecked();
+      expect(radio3).toBeChecked();
+    });
+  });
+
+  describe("Import button", () => {
+    test("label reads 'Import' when a single DMP is selected.", async () => {
+      stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
+
+      renderDialog();
+
+      fireEvent.click(
+        await screen.findByRole("radio", { name: "Select Plan One" }),
+      );
+
+      expect(screen.getByRole("button", { name: "Import" })).toBeInTheDocument();
+    });
+
+    test("label includes the count when more than one DMP is selected.", async () => {
+      stubListPlans([
+        makePlan(1, "Plan One"),
+        makePlan(2, "Plan Two"),
+        makePlan(3, "Plan Three"),
+      ]);
+
+      renderDialog();
+
+      fireEvent.click(
+        await screen.findByRole("radio", { name: "Select Plan One" }),
+      );
+      fireEvent.click(
+        screen.getByRole("radio", { name: "Select Plan Two" }),
+      );
+
+      expect(
+        screen.getByRole("button", { name: "Import (2)" }),
+      ).toBeInTheDocument();
+
+      fireEvent.click(
+        screen.getByRole("radio", { name: "Select Plan Three" }),
+      );
+
+      expect(
+        screen.getByRole("button", { name: "Import (3)" }),
+      ).toBeInTheDocument();
+    });
+
+    test(
+      "clicking Import with no selection surfaces a 'No DMP is selected.' " +
+        "warning and does not POST to importPlans.",
+      async () => {
+        stubListPlans([makePlan(1, "Plan One")]);
+        const importPostSpy = vi.fn();
+        mockAxios.onPost(/importPlans/).reply((config) => {
+          importPostSpy(config);
+          return [200, { data: [], error: null }];
+        });
+
+        renderDialog();
+
+        // wait until the dialog finishes loading and the Import button is present
+        await screen.findByRole("radio", { name: "Select Plan One" });
+
+        fireEvent.click(screen.getByRole("button", { name: "Import" }));
+
+        expect(await screen.findByText("No DMP is selected.")).toBeVisible();
+        expect(importPostSpy).not.toHaveBeenCalled();
+      },
+    );
+  });
+
+  describe("Select-all header checkbox", () => {
+    test("selects every DMP on the current page when clicked.", async () => {
+      stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
+
+      renderDialog();
+
+      const selectAll = await screen.findByRole("checkbox", {
+        name: "Select all DMPs on this page",
+      });
+      expect(selectAll).not.toBeChecked();
+
+      fireEvent.click(selectAll);
+
+      expect(
+        screen.getByRole("radio", { name: "Select Plan One" }),
+      ).toBeChecked();
+      expect(
+        screen.getByRole("radio", { name: "Select Plan Two" }),
+      ).toBeChecked();
+      expect(
+        screen.getByRole("button", { name: "Import (2)" }),
+      ).toBeInTheDocument();
+    });
+
+    test("toggles back off when clicked a second time.", async () => {
+      stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
+
+      renderDialog();
+
+      const selectAll = await screen.findByRole("checkbox", {
+        name: "Select all DMPs on this page",
+      });
+
+      fireEvent.click(selectAll);
+      fireEvent.click(selectAll);
+
+      expect(
+        screen.getByRole("radio", { name: "Select Plan One" }),
+      ).not.toBeChecked();
+      expect(
+        screen.getByRole("radio", { name: "Select Plan Two" }),
+      ).not.toBeChecked();
+    });
+
+    test(
+      "renders in the indeterminate state when some but not all DMPs are " +
+        "selected.",
+      async () => {
+        stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
+
+        renderDialog();
+
+        const radio1 = await screen.findByRole("radio", {
+          name: "Select Plan One",
+        });
+        fireEvent.click(radio1);
+
+        const selectAll = screen.getByRole("checkbox", {
+          name: "Select all DMPs on this page",
+        });
+        // MUI Checkbox surfaces indeterminate state via a data attribute on
+        // the input rather than the native DOM property (see the upstream
+        // comment in @mui/material/Checkbox/Checkbox.js).
+        expect(selectAll).toHaveAttribute("data-indeterminate", "true");
+        expect(selectAll).not.toBeChecked();
+      },
+    );
+
+    test(
+      "renders checked (not indeterminate) once every DMP on the page is " +
+        "selected.",
+      async () => {
+        stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
+
+        renderDialog();
+
+        fireEvent.click(
+          await screen.findByRole("radio", { name: "Select Plan One" }),
+        );
+        fireEvent.click(
+          screen.getByRole("radio", { name: "Select Plan Two" }),
+        );
+
+        const selectAll = screen.getByRole("checkbox", {
+          name: "Select all DMPs on this page",
+        });
+        expect(selectAll).toBeChecked();
+        expect(selectAll).toHaveAttribute("data-indeterminate", "false");
+      },
+    );
+  });
+
+  describe("Submit", () => {
+    test(
+      "POSTs the selected DMPs as a single batch to " +
+        "/apps/dmpassistant/importPlans.",
+      async () => {
+        stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
+        mockAxios.onPost(/importPlans/).reply(200, {
+          data: [{}, {}],
+          error: null,
+        });
+
+        renderDialog();
+
+        fireEvent.click(
+          await screen.findByRole("radio", { name: "Select Plan One" }),
+        );
+        fireEvent.click(
+          screen.getByRole("radio", { name: "Select Plan Two" }),
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: "Import (2)" }));
+
+        await waitFor(() => {
+          const importCalls = mockAxios.history.post.filter((c) =>
+            /importPlans/.test(c.url ?? ""),
+          );
+          expect(importCalls).toHaveLength(1);
+        });
+        const importCall = mockAxios.history.post.find((c) =>
+          /importPlans/.test(c.url ?? ""),
+        )!;
+        const rawBody: unknown = importCall.data;
+        if (typeof rawBody !== "string") {
+          throw new Error("expected the importPlans request body to be a string");
+        }
+        const body = JSON.parse(rawBody) as Array<{
+          id: string;
+          filename: string;
+        }>;
+        expect(body).toHaveLength(2);
+        expect(body.map((b) => b.id).sort()).toEqual(["1", "2"]);
+        expect(body.map((b) => b.filename).sort()).toEqual([
+          "Plan One",
+          "Plan Two",
+        ]);
+      },
+    );
+  });
+});

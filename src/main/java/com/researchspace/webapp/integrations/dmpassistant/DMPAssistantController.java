@@ -12,8 +12,15 @@ import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.BaseController;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -94,51 +101,65 @@ public class DMPAssistantController extends BaseController {
   }
 
   /**
-   * Fetches the named plan from DMP Assistant and saves it as a new EcatDocumentFile in the
-   * Gallery, then registers a DMPUser row so subsequent exports can attach the DMP.
+   * Fetches the named plans from DMP Assistant and saves each as a new EcatDocumentFile in the
+   * Gallery, then registers a DMPUser row per plan so subsequent exports can attach the DMP. If any
+   * single plan fails the whole batch fails — the controller's typed error envelope is returned and
+   * no further plans are imported. Plans imported before the failure are kept.
    */
-  @PostMapping("/importPlan")
+  @PostMapping("/importPlans")
   @ResponseBody
-  public AjaxReturnObject<JsonNode> importPlan(
-      @RequestParam("id") String id,
-      @RequestParam("filename") String filename,
-      Principal principal) {
+  public AjaxReturnObject<List<JsonNode>> importPlans(
+      @RequestBody List<ImportPlanRequest> requests, Principal principal) {
     return proxy(
         principal,
         user -> {
-          JsonNode plan = dmpAssistantProvider.getPlanById(id, true, user);
-          ObjectMapper mapper = new ObjectMapper();
-          byte[] bytes = mapper.writeValueAsBytes(plan);
-          EcatDocumentFile file =
-              mediaManager.saveNewDMP(
-                  filename, new java.io.ByteArrayInputStream(bytes), user, null);
-          JsonNode dmpNode = plan.has("dmp") ? plan.get("dmp") : plan;
-          String title = dmpNode.path("title").asText(filename);
-          Optional<DMPUser> existing = dmpManager.findByDmpId(id, user);
-          DMPUser dmpUser =
-              existing.orElseGet(
-                  () ->
-                      new DMPUser(
-                          user,
-                          new DmpDto(
-                              id,
-                              title,
-                              DMPSource.DMP_ASSISTANT,
-                              null,
-                              dmpNode.path("dmp_id").path("identifier").asText(null))));
-          if (file != null) {
-            dmpUser.setDmpDownloadFile(file);
+          List<JsonNode> imported = new ArrayList<>(requests.size());
+          for (ImportPlanRequest req : requests) {
+            imported.add(importSinglePlan(req.getId(), req.getFilename(), user));
           }
-          dmpManager.save(dmpUser);
-          return plan;
+          return imported;
         });
   }
 
-  private interface ProviderCall {
-    JsonNode call(User user) throws Exception;
+  private JsonNode importSinglePlan(String id, String filename, User user) throws IOException {
+    JsonNode plan = dmpAssistantProvider.getPlanById(id, true, user);
+    byte[] bytes = new ObjectMapper().writeValueAsBytes(plan);
+    EcatDocumentFile file =
+        mediaManager.saveNewDMP(filename, new ByteArrayInputStream(bytes), user, null);
+    JsonNode dmpNode = plan.has("dmp") ? plan.get("dmp") : plan;
+    String title = dmpNode.path("title").asText(filename);
+    Optional<DMPUser> existing = dmpManager.findByDmpId(id, user);
+    DMPUser dmpUser =
+        existing.orElseGet(
+            () ->
+                new DMPUser(
+                    user,
+                    new DmpDto(
+                        id,
+                        title,
+                        DMPSource.DMP_ASSISTANT,
+                        null,
+                        dmpNode.path("dmp_id").path("identifier").asText(null))));
+    if (file != null) {
+      dmpUser.setDmpDownloadFile(file);
+    }
+    dmpManager.save(dmpUser);
+    return plan;
   }
 
-  private AjaxReturnObject<JsonNode> proxy(Principal principal, ProviderCall call) {
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ImportPlanRequest {
+    private String id;
+    private String filename;
+  }
+
+  private interface ProviderCall<T> {
+    T call(User user) throws Exception;
+  }
+
+  private <T> AjaxReturnObject<T> proxy(Principal principal, ProviderCall<T> call) {
     try {
       User user = userManager.getUserByUsername(principal.getName());
       return new AjaxReturnObject<>(call.call(user), null);

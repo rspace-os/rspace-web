@@ -10,16 +10,21 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import {
+  DataGrid,
   GridToolbarContainer,
   GridToolbarColumnsButton,
-  GridRowId,
+  GridRenderCellParams,
 } from "@mui/x-data-grid";
 import { makeStyles } from "tss-react/mui";
 import { ThemeProvider } from "@mui/material/styles";
 import Link from "@mui/material/Link";
+import Radio from "@mui/material/Radio";
+import Checkbox from "@mui/material/Checkbox";
+import AlertContext from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
 import {
   useDmpAssistantEndpoint,
+  importDmpsIntoGallery,
   type DmpListing,
   type DmpSummary,
 } from "./useDmpAssistantEndpoint";
@@ -34,7 +39,6 @@ import ValidatingSubmitButton, {
 } from "../../components/ValidatingSubmitButton";
 import { DataGridColumn } from "../../util/table";
 import { ACCENT_COLOR } from "../../assets/branding/dmpassistant";
-import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 
 const useStyles = makeStyles<{ listing: FetchingData.Fetched<unknown> }>()(
   (theme, props) => ({
@@ -66,8 +70,11 @@ const DMPDialogContent = ({
 }: {
   setOpen: (open: boolean) => void;
 }) => {
-  const [selection, setSelection] = React.useState<DmpSummary | null>(null);
+  const [selectedDmpIds, setSelectedDmpIds] = React.useState<Set<string>>(
+    new Set(),
+  );
   const [importing, setImporting] = React.useState(false);
+  const { addAlert } = React.useContext(AlertContext);
 
   const { firstPage } = useDmpAssistantEndpoint();
   const [listing, setListing] =
@@ -78,18 +85,99 @@ const DMPDialogContent = ({
     setListing(firstPage);
   }, [firstPage]);
 
+  const toggleDmpSelection = (id: string) => {
+    setSelectedDmpIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectedDmps: ReadonlyArray<DmpSummary> = FetchingData.match(listing, {
+    loading: () => [],
+    error: () => [],
+    success: (l) => {
+      const dmps: Array<DmpSummary> = [];
+      selectedDmpIds.forEach((id) => {
+        const dmp = l.getById(id);
+        if (dmp) dmps.push(dmp);
+      });
+      return dmps;
+    },
+  });
+
   const onSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    if (!selection) return;
+    if (selectedDmps.length === 0) return;
     setImporting(true);
     try {
-      await selection.importIntoGallery();
+      await importDmpsIntoGallery(selectedDmps, addAlert);
     } finally {
       setImporting(false);
     }
   };
 
+  const currentPageDmps: ReadonlyArray<DmpSummary> = FetchingData.match(
+    listing,
+    {
+      loading: () => [],
+      error: () => [],
+      success: (l) => l.dmps,
+    },
+  );
+  const pageIds = currentPageDmps.map((d) => d.id);
+  const selectedOnPageCount = pageIds.filter((id) =>
+    selectedDmpIds.has(id),
+  ).length;
+  const allOnPageSelected =
+    pageIds.length > 0 && selectedOnPageCount === pageIds.length;
+  const someOnPageSelected =
+    selectedOnPageCount > 0 && selectedOnPageCount < pageIds.length;
+
+  const toggleSelectAllOnPage = () => {
+    setSelectedDmpIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
   const columns = [
+    {
+      field: "__select__",
+      headerName: "Select",
+      width: 70,
+      flex: 0,
+      sortable: false,
+      hideable: false,
+      renderHeader: () => (
+        <Checkbox
+          color="primary"
+          checked={allOnPageSelected}
+          indeterminate={someOnPageSelected}
+          onChange={toggleSelectAllOnPage}
+          disabled={pageIds.length === 0}
+          inputProps={{ "aria-label": "Select all DMPs on this page" }}
+        />
+      ),
+      renderCell: (params: GridRenderCellParams<DmpSummary>) => (
+        <Radio
+          color="primary"
+          checked={selectedDmpIds.has(String(params.id))}
+          onChange={() => {}}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleDmpSelection(String(params.id));
+          }}
+          inputProps={{ "aria-label": `Select ${params.row.title}` }}
+        />
+      ),
+    },
     DataGridColumn.newColumnWithFieldName<"title", DmpSummary>("title", {
       headerName: "Title",
       hideable: false,
@@ -133,7 +221,7 @@ const DMPDialogContent = ({
           title: "DMP Assistant help",
         }}
       />
-      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
+      <DialogTitle variant="h3">Import DMPs into the Gallery</DialogTitle>
       <DialogContent>
         <Grid
           container
@@ -144,8 +232,9 @@ const DMPDialogContent = ({
         >
           <Grid item>
             <Typography variant="body2">
-              Importing a DMP from <strong>dmp-pgd.ca</strong> will make it
-              available to view and reference within RSpace.
+              Importing DMPs from <strong>dmp-pgd.ca</strong> will make them
+              available to view and reference within RSpace. Select one or more
+              and click Import.
             </Typography>
             <Typography variant="body2">
               See <Link href="https://dmp-pgd.ca">dmp-pgd.ca</Link> and our{" "}
@@ -172,24 +261,13 @@ const DMPDialogContent = ({
               ),
               success: () => <></>,
             })}
-            <DataGridWithRadioSelection
+            <DataGrid
               rows={FetchingData.match(listing, {
                 loading: () => [] as Array<DmpSummary>,
                 error: () => [] as Array<DmpSummary>,
                 success: (l) => l.dmps,
               })}
               columns={columns}
-              selectedRowId={selection?.id}
-              onSelectionChange={(newSelectionId: GridRowId) => {
-                FetchingData.match(listing, {
-                  loading: () => {},
-                  error: () => {},
-                  success: (l) => {
-                    setSelection(l.getById(String(newSelectionId)));
-                  },
-                });
-              }}
-              selectRadioAriaLabelFunc={(row) => `Select ${row.title}`}
               initialState={{
                 columns: {
                   columnVisibilityModel: {
@@ -260,12 +338,16 @@ const DMPDialogContent = ({
         <Button onClick={() => setOpen(false)}>Close</Button>
         <ValidatingSubmitButton
           validationResult={
-            selection ? IsValid() : IsInvalid("No DMP is selected.")
+            selectedDmps.length > 0
+              ? IsValid()
+              : IsInvalid("No DMP is selected.")
           }
           loading={importing}
           onClick={(e) => void onSubmit(e)}
         >
-          Import
+          {selectedDmps.length > 1
+            ? `Import (${selectedDmps.length})`
+            : "Import"}
         </ValidatingSubmitButton>
       </DialogActions>
     </>

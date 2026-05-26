@@ -31,15 +31,12 @@ export class DmpSummary {
   #modified: string;
   #dmp_id: { identifier: string };
 
-  #addAlert: (alert: Alert) => void;
-
-  constructor(dmp: Plan, addAlert: (alert: Alert) => void) {
+  constructor(dmp: Plan) {
     this.#title = dmp.title;
     this.#contact = Optional.fromNullable(dmp.contact);
     this.#dmp_id = dmp.dmp_id;
     this.#created = dmp.created;
     this.#modified = dmp.modified;
-    this.#addAlert = addAlert;
   }
 
   get id(): string {
@@ -68,36 +65,49 @@ export class DmpSummary {
   get modified(): string {
     return isoToLocale(this.#modified);
   }
+}
 
-  async importIntoGallery(): Promise<void> {
-    try {
-      const {
-        data: { error },
-      } = await axios.post<{
-        data: unknown;
-        error: null | { errorMessages: Array<string> };
-      }>(
-        `apps/dmpassistant/importPlan?id=${encodeURIComponent(
-          this.id
-        )}&filename=${encodeURIComponent(this.#title)}`
-      );
-      if (error !== null) throw new Error(error.errorMessages[0]);
-      this.#addAlert(
+/**
+ * Imports one or more DMPs from DMP Assistant into the Gallery as a single
+ * batch request. The backend persists each DMP in turn and returns the list of
+ * imported plans; on success a single success alert is raised; on failure a
+ * single error alert is raised with the server's message.
+ */
+export async function importDmpsIntoGallery(
+  dmps: ReadonlyArray<DmpSummary>,
+  addAlert: (alert: Alert) => void
+): Promise<void> {
+  if (dmps.length === 0) return;
+  try {
+    const {
+      data: { error },
+    } = await axios.post<{
+      data: unknown;
+      error: null | { errorMessages: Array<string> };
+    }>(
+      "apps/dmpassistant/importPlans",
+      dmps.map((d) => ({ id: d.id, filename: d.title }))
+    );
+    if (error !== null) throw new Error(error.errorMessages[0]);
+    addAlert(
+      mkAlert({
+        message:
+          dmps.length === 1
+            ? "Successfully imported DMP."
+            : `Successfully imported ${dmps.length} DMPs.`,
+        variant: "success",
+      })
+    );
+  } catch (error) {
+    if (error instanceof Error) {
+      addAlert(
         mkAlert({
-          message: "Successfully imported DMP.",
-          variant: "success",
+          title:
+            dmps.length === 1 ? "Failed to import DMP." : "Failed to import DMPs.",
+          message: error.message,
+          variant: "error",
         })
       );
-    } catch (error) {
-      if (error instanceof Error) {
-        this.#addAlert(
-          mkAlert({
-            title: "Failed to import DMP.",
-            message: error.message,
-            variant: "error",
-          })
-        );
-      }
     }
   }
 }
@@ -127,7 +137,7 @@ export class DmpListing {
     pageSize: number,
     addAlert: (alert: Alert) => void
   ) {
-    this.dmps = data.items.map(({ dmp }) => new DmpSummary(dmp, addAlert));
+    this.dmps = data.items.map(({ dmp }) => new DmpSummary(dmp));
     this.totalCount = data.total_items;
     this.page = page;
     this.pageSize = pageSize;
