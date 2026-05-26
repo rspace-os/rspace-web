@@ -379,7 +379,7 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
 
     assertExceptionThrown(
         () -> controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, 999L, sysadmin),
-        javax.ws.rs.NotFoundException.class);
+        jakarta.ws.rs.NotFoundException.class);
     verify(auditService, never()).notify(Mockito.any(GenericEvent.class));
   }
 
