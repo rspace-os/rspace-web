@@ -48,7 +48,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   private final RSChemElementManager rsChemElementManager;
   private final RecordManager recordManager;
   private final FieldManager fieldManager;
-  private final StoichiometryReader stoichiometryReader = new StoichiometryReader();
+  private final StoichiometryReader stoichiometryReader;
 
   @Autowired
   public StoichiometryServiceImpl(
@@ -66,6 +66,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
     this.rsChemElementManager = rsChemElementManager;
     this.recordManager = recordManager;
     this.fieldManager = fieldManager;
+    this.stoichiometryReader = new StoichiometryReader();
   }
 
   private boolean hasPermissions(Record record, User user, PermissionType permission) {
@@ -148,6 +149,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   }
 
   @Override
+  @Transactional
   public void delete(long stoichiometryId, User user, boolean updateFieldHtml) {
     Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
     if (stoichiometry == null) {
@@ -207,6 +209,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   }
 
   @Override
+  @Transactional
   public void syncFieldHtml(long stoichiometryId, Long newRevision, User user) {
     Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
     if (stoichiometry == null) {
