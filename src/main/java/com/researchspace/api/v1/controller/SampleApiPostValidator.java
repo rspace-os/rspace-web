@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
@@ -40,11 +41,15 @@ public class SampleApiPostValidator extends SampleApiValidator implements Valida
   private void validateApiExtraFieldsInNewSample(
       ApiSampleWithFullSubSamples apiSample, Errors errors) {
     validateExtraFields(apiSample, errors);
+    InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
+        null, apiSample.getExtraFields(), errors);
     if (!CollectionUtils.isEmpty(apiSample.getSubSamples())) {
       int j = 0;
       for (ApiSubSample ss : apiSample.getSubSamples()) {
         errors.pushNestedPath(String.format("subSamples[%d]", j++));
         validateExtraFields(ss, errors);
+        InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
+            null, ss.getExtraFields(), errors);
         errors.popNestedPath();
       }
     }

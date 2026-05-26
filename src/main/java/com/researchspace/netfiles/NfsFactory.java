@@ -7,7 +7,7 @@ import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.netfiles.irods.IRODSClient;
 import com.researchspace.netfiles.irods.JargonFacade;
-import com.researchspace.netfiles.s3.AwsS3Client;
+import com.researchspace.netfiles.s3.S3NfsClient;
 import com.researchspace.netfiles.samba.JcifsClient;
 import com.researchspace.netfiles.samba.JcifsSmbjClient;
 import com.researchspace.netfiles.samba.SmbjClient;
@@ -158,7 +158,7 @@ public class NfsFactory {
     if (NfsClientType.S3.equals(clientType)) {
       try {
         S3Utilities s3Utilities = s3UtilitiesFactory.createS3UtilitiesForNfsConnector(fileSystem);
-        return new AwsS3Client(nfsusername, s3Utilities);
+        return new S3NfsClient(nfsusername, s3Utilities);
       } catch (Exception e) {
         throw new IllegalStateException("Couldn't initialize s3 client for selected filesystem", e);
       }

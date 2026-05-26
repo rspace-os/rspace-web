@@ -40,4 +40,21 @@ public class GalleryFilestoreTestUtils {
     filestore.setId(id);
     return filestore;
   }
+
+  public static NfsFileSystem createS3FileSystem(Long id) {
+    NfsFileSystem fileSystem = new NfsFileSystem();
+    fileSystem.setId(id);
+    fileSystem.setAuthType(NfsAuthenticationType.NONE);
+    fileSystem.setClientType(NfsClientType.S3);
+    fileSystem.setDisabled(false);
+    fileSystem.setName("s3_test_instance");
+    fileSystem.setUrl("https://s3.example.com");
+    return fileSystem;
+  }
+
+  public static NfsFileStore createS3FileSystemAndFileStore(Long id, String name, User user) {
+    NfsFileStore filestore = createFileStore(name, user, createS3FileSystem(id));
+    filestore.setId(id);
+    return filestore;
+  }
 }

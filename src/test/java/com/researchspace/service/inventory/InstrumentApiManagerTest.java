@@ -6,15 +6,25 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 
+import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.model.Group;
+import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
+import com.researchspace.model.events.InventoryDeleteEvent;
+import com.researchspace.model.events.InventoryEditingEvent;
+import com.researchspace.model.events.InventoryRestoreEvent;
+import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.inventory.impl.InstrumentApiManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -51,14 +61,14 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
     assertEquals("myInstrument", created.getName());
     assertFalse(created.isTemplate());
     assertFalse(created.isDeleted());
-    Mockito.verify(mockPublisher).publishEvent(Mockito.any(InventoryCreationEvent.class));
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryCreationEvent.class));
 
     // retrieval fires an access event
     ApiInstrument retrieved = instrumentApiMgr.getApiInstrumentById(created.getId(), testUser);
     assertNotNull(retrieved);
     assertEquals(created.getId(), retrieved.getId());
     assertEquals("myInstrument", retrieved.getName());
-    Mockito.verify(mockPublisher).publishEvent(Mockito.any(InventoryAccessEvent.class));
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryAccessEvent.class));
 
     Mockito.verifyNoMoreInteractions(mockPublisher);
   }
@@ -71,7 +81,7 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
 
     assertEquals(InstrumentApiManagerImpl.INSTRUMENT_DEFAULT_NAME, created.getName());
-    Mockito.verify(mockPublisher).publishEvent(Mockito.any(InventoryCreationEvent.class));
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryCreationEvent.class));
   }
 
   @Test
@@ -154,6 +164,26 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void instrumentCreateRejectsDuplicateExtraFieldNames() {
+    ApiInstrument request = new ApiInstrument();
+    request.setName("instrument-with-dup-extras");
+
+    ApiExtraField one = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    one.setName("dup");
+    one.setContent("a");
+    ApiExtraField two = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    two.setName("dup");
+    two.setContent("b");
+    request.setExtraFields(List.of(one, two));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> instrumentApiMgr.createNewApiInstrument(request, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
   public void instrumentWithDescription() {
     ApiInstrument request = new ApiInstrument();
     request.setName("described-instrument");
@@ -187,8 +217,7 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
     noTemplate.setName("no-template-instrument");
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(noTemplate, testUser);
     assertNull(created.getTemplateId());
-    Mockito.verify(mockPublisher, Mockito.times(2))
-        .publishEvent(Mockito.any(InventoryCreationEvent.class));
+    verify(mockPublisher, Mockito.times(2)).publishEvent(Mockito.any(InventoryCreationEvent.class));
   }
 
   @Test
@@ -228,5 +257,298 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
     ApiInstrument retrieved = instrumentApiMgr.getApiInstrumentById(created.getId(), testUser);
     assertNotNull(retrieved.getOwner());
     assertEquals(testUser.getUsername(), retrieved.getOwner().getUsername());
+  }
+
+  @Test
+  public void updateApiInstrument_updatesNameAndDescription() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "update-test");
+
+    created.setName("renamed instrument");
+    created.setDescription("updated description");
+    ApiInstrument updated = instrumentApiMgr.updateApiInstrument(created, testUser);
+
+    assertEquals("renamed instrument", updated.getName());
+    assertEquals("updated description", updated.getDescription());
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryEditingEvent.class));
+  }
+
+  @Test
+  public void instrumentUpdateRejectsDuplicateExtraFieldNames() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "update-dup-extras");
+
+    ApiInstrument update = new ApiInstrument();
+    update.setId(created.getId());
+    ApiExtraField one = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    one.setName("dup");
+    one.setContent("a");
+    one.setNewFieldRequest(true);
+    ApiExtraField two = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    two.setName("dup");
+    two.setContent("b");
+    two.setNewFieldRequest(true);
+    update.setExtraFields(List.of(one, two));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> instrumentApiMgr.updateApiInstrument(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void instrumentUpdateRejectsCaseOnlyDuplicateExtraFieldNames() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "update-case-dup-extras");
+
+    ApiInstrument update = new ApiInstrument();
+    update.setId(created.getId());
+    ApiExtraField one = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    one.setName("Foo");
+    one.setContent("a");
+    one.setNewFieldRequest(true);
+    ApiExtraField two = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    two.setName("foo");
+    two.setContent("b");
+    two.setNewFieldRequest(true);
+    update.setExtraFields(List.of(one, two));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> instrumentApiMgr.updateApiInstrument(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void instrumentUpdateTrimsBeforeCompare() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "update-trim-extras");
+
+    ApiInstrument update = new ApiInstrument();
+    update.setId(created.getId());
+    ApiExtraField one = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    one.setName("Foo");
+    one.setContent("a");
+    one.setNewFieldRequest(true);
+    ApiExtraField two = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    two.setName(" Foo ");
+    two.setContent("b");
+    two.setNewFieldRequest(true);
+    update.setExtraFields(List.of(one, two));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> instrumentApiMgr.updateApiInstrument(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void instrumentUpdateRejectsAddingDuplicateOfExistingExtraField() {
+    // seed an instrument with one extra "solo"
+    ApiInstrument seed = new ApiInstrument();
+    seed.setName("update-existing-dup-extras");
+    ApiExtraField first = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    first.setName("solo");
+    first.setContent("v1");
+    seed.setExtraFields(List.of(first));
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(seed, testUser);
+
+    // PUT another new extra with the same name → caught by post-mutation entity check
+    ApiInstrument update = new ApiInstrument();
+    update.setId(created.getId());
+    ApiExtraField duplicate = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    duplicate.setName("solo");
+    duplicate.setContent("v2");
+    duplicate.setNewFieldRequest(true);
+    update.setExtraFields(List.of(duplicate));
+
+    ApiRuntimeException are =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> instrumentApiMgr.updateApiInstrument(update, testUser));
+    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+  }
+
+  @Test
+  public void instrumentUpdateAllowsDeleteAndAddSameExtraFieldName() {
+    // seed with one extra "A"
+    ApiInstrument seed = new ApiInstrument();
+    seed.setName("update-delete-add-extras");
+    ApiExtraField first = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    first.setName("A");
+    first.setContent("v1");
+    seed.setExtraFields(List.of(first));
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(seed, testUser);
+    Long existingId = created.getExtraFields().get(0).getId();
+
+    // delete A and add a new A in the same PUT
+    ApiInstrument update = new ApiInstrument();
+    update.setId(created.getId());
+    ApiExtraField toDelete = new ApiExtraField();
+    toDelete.setId(existingId);
+    toDelete.setDeleteFieldRequest(true);
+    ApiExtraField replacement = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    replacement.setName("A");
+    replacement.setContent("v2");
+    replacement.setNewFieldRequest(true);
+    update.setExtraFields(List.of(toDelete, replacement));
+
+    ApiInstrument updated = instrumentApiMgr.updateApiInstrument(update, testUser);
+    long activeAs =
+        updated.getExtraFields().stream()
+            .filter(ef -> "A".equals(ef.getName()))
+            .filter(ef -> "v2".equals(ef.getContent()))
+            .count();
+    assertEquals(1L, activeAs);
+  }
+
+  @Test
+  public void markInstrumentAsDeleted_marksAsDeleted() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "delete-test");
+    assertFalse(created.isDeleted());
+
+    ApiInstrument deleted = instrumentApiMgr.markInstrumentAsDeleted(created.getId(), testUser);
+
+    assertTrue(deleted.isDeleted());
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryDeleteEvent.class));
+  }
+
+  @Test
+  public void restoreDeletedInstrument_restoresFromDeleted() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "restore-test");
+    instrumentApiMgr.markInstrumentAsDeleted(created.getId(), testUser);
+
+    ApiInstrument restored = instrumentApiMgr.restoreDeletedInstrument(created.getId(), testUser);
+
+    assertFalse(restored.isDeleted());
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryDeleteEvent.class));
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryRestoreEvent.class));
+  }
+
+  @Test
+  public void duplicateInstrument_createsCopy() {
+    ApiInstrument original = createBasicInstrumentForUser(testUser, "original");
+
+    ApiInstrument copy = instrumentApiMgr.duplicateInstrument(original.getId(), testUser);
+
+    assertNotNull(copy.getId());
+    assertFalse(copy.getId().equals(original.getId()));
+    assertEquals(original.getName() + "_COPY", copy.getName());
+    verify(mockPublisher, Mockito.times(2)).publishEvent(Mockito.any(InventoryCreationEvent.class));
+  }
+
+  @Test
+  public void nameExistsForUser_findsExistingName() {
+    String uniqueName = "unique-name-" + getRandomAlphabeticString("n");
+    assertFalse(instrumentApiMgr.nameExistsForUser(uniqueName, testUser));
+
+    createBasicInstrumentForUser(testUser, uniqueName);
+
+    assertTrue(instrumentApiMgr.nameExistsForUser(uniqueName, testUser));
+  }
+
+  @Test
+  public void getInstrumentsForUser_returnsOwnedInstruments() {
+    createBasicInstrumentForUser(testUser, "listed-instrument");
+
+    ApiInstrumentSearchResult result =
+        instrumentApiMgr.getInstrumentsForUser(
+            PaginationCriteria.createDefaultForClass(Instrument.class),
+            null,
+            InventorySearchDeletedOption.EXCLUDE,
+            testUser);
+
+    assertNotNull(result);
+    assertTrue(result.getTotalHits() >= 1);
+    assertTrue(
+        result.getInstruments().stream().anyMatch(i -> i.getName().equals("listed-instrument")));
+  }
+
+  @Test
+  public void assertUserCanDeleteInstrument_ownerCanDelete() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "perm-delete");
+
+    Instrument dbInstrument =
+        instrumentApiMgr.assertUserCanDeleteInstrument(created.getId(), testUser);
+
+    assertNotNull(dbInstrument);
+    assertEquals(created.getId(), dbInstrument.getId());
+  }
+
+  @Test
+  public void assertUserCanDeleteInstrument_otherUserCannotDelete() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "perm-delete-other");
+
+    User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    initialiseContentWithEmptyContent(otherUser);
+
+    assertThrows(
+        Exception.class,
+        () -> instrumentApiMgr.assertUserCanDeleteInstrument(created.getId(), otherUser));
+  }
+
+  @Test
+  public void assertUserCanTransferInstrument_ownerCanTransfer() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "perm-transfer");
+
+    Instrument dbInstrument =
+        instrumentApiMgr.assertUserCanTransferInstrument(created.getId(), testUser);
+
+    assertNotNull(dbInstrument);
+    assertEquals(created.getId(), dbInstrument.getId());
+  }
+
+  @Test
+  public void assertUserCanTransferInstrument_otherUserCannotTransfer() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "perm-transfer-other");
+
+    User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    initialiseContentWithEmptyContent(otherUser);
+
+    assertThrows(
+        Exception.class,
+        () -> instrumentApiMgr.assertUserCanTransferInstrument(created.getId(), otherUser));
+  }
+
+  @Test
+  public void assertUserCanEditInstrumentTemplate_throwsForNonExistent() {
+    assertThrows(
+        Exception.class,
+        () -> instrumentApiMgr.assertUserCanEditInstrumentTemplate(Long.MAX_VALUE, testUser));
+  }
+
+  @Test
+  public void assertUserCanReadInstrumentTemplate_throwsForNonExistent() {
+    assertThrows(
+        Exception.class,
+        () -> instrumentApiMgr.assertUserCanReadInstrumentTemplate(Long.MAX_VALUE, testUser));
+  }
+
+  @Test
+  public void changeApiInstrumentOwner_transfersOwnership() {
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("newOwner"));
+    initialiseContentWithEmptyContent(newOwner);
+
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "transfer-ownership-test");
+    assertEquals(testUser.getUsername(), created.getOwner().getUsername());
+
+    ApiInstrument transferred = instrumentApiMgr.getApiInstrumentById(created.getId(), testUser);
+    transferred.setOwner(new ApiUser(newOwner));
+    transferred = instrumentApiMgr.changeApiInstrumentOwner(transferred, testUser);
+
+    assertEquals(newOwner.getUsername(), transferred.getOwner().getUsername());
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryTransferEvent.class));
+  }
+
+  @Test
+  public void changeApiInstrumentOwner_throwsForUnknownTargetUser() {
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "transfer-invalid");
+
+    ApiUser unknownUser = new ApiUser();
+    unknownUser.setUsername("nobody-at-all");
+    created.setOwner(unknownUser);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> instrumentApiMgr.changeApiInstrumentOwner(created, testUser));
   }
 }

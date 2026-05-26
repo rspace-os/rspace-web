@@ -5,11 +5,15 @@ import io.github.resilience4j.retry.RetryConfig;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jsoup.helper.Validate;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.SdkHttpResponse;
@@ -30,13 +34,25 @@ public class S3MultipartChunkedUploader extends AbstractS3Uploader
     implements Function<File, SdkHttpResponse> {
   private int chunkSizeMb;
 
+  @Getter private final Map<String, String> objectMetadata;
+
   S3MultipartChunkedUploader(
       S3Client s3Client, String s3BucketName, String s3ArchivePath, int chunkSizeMb) {
+    this(s3Client, s3BucketName, s3ArchivePath, chunkSizeMb, Collections.emptyMap());
+  }
+
+  S3MultipartChunkedUploader(
+      S3Client s3Client,
+      String s3BucketName,
+      String s3ArchivePath,
+      int chunkSizeMb,
+      Map<String, String> objectMetadata) {
     super(s3Client, s3BucketName, s3ArchivePath);
     Validate.isTrue(
         chunkSizeMb * FileUtils.ONE_MB >= AWS_MIN_CHUNK_SIZE_BYTES,
         "Chunking threshold must be >= 5Mb");
     this.chunkSizeMb = chunkSizeMb;
+    this.objectMetadata = ObjectUtils.defaultIfNull(objectMetadata, Collections.emptyMap());
   }
 
   private static final int S3_UPLOAD_FAILED_CODE = 500;
@@ -65,8 +81,13 @@ public class S3MultipartChunkedUploader extends AbstractS3Uploader
     String key = buildKeyFromFilePath(fToUpload);
 
     // First create a multipart upload and get the upload id
+    CreateMultipartUploadRequest.Builder createMultipartUploadBuilder =
+        CreateMultipartUploadRequest.builder().bucket(s3BucketName).key(key);
+    if (!objectMetadata.isEmpty()) {
+      createMultipartUploadBuilder.metadata(objectMetadata);
+    }
     CreateMultipartUploadRequest createMultipartUploadRequest =
-        CreateMultipartUploadRequest.builder().bucket(s3BucketName).key(key).build();
+        createMultipartUploadBuilder.build();
 
     CreateMultipartUploadResponse response =
         s3Client.createMultipartUpload(createMultipartUploadRequest);

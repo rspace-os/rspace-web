@@ -8,7 +8,15 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as FetchingData from "../../../util/fetchingData";
-import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
+import {
+  useGalleryListing,
+  type GalleryFile,
+  RemoteFile,
+  Filestore,
+  LocalGalleryFile,
+  Description,
+  dummyId,
+} from "../useGalleryListing";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import page1 from "./getUploadedFiles_1.json";
@@ -195,5 +203,123 @@ describe("useGalleryListing", () => {
     expect(screen.getByTestId("owner-name")).toHaveTextContent("Unknown owner");
     expect(screen.getByTestId("owner-username")).toHaveTextContent("null");
     expect(screen.getByTestId("is-shared-folder")).toHaveTextContent("false");
+  });
+});
+
+function makeFilestore(filesystemType: string): Filestore {
+  return new Filestore({
+    id: 42,
+    name: "My Filestore",
+    filesystemId: 10,
+    filesystemName: "My S3 Filesystem",
+    filesystemType,
+  });
+}
+
+function makeRemoteFile({
+  folder,
+  path,
+}: {
+  folder: boolean;
+  path: ReadonlyArray<GalleryFile>;
+}): RemoteFile {
+  return new RemoteFile({
+    nfsId: null,
+    name: "test.jpg",
+    folder,
+    fileSize: 1024,
+    modificationDate: new Date(),
+    path,
+    logicPath: "42:/test.jpg",
+    token: "",
+  });
+}
+
+describe("RemoteFile.canMoveToS3", () => {
+  test("returns Ok for a non-folder file in an S3 filestore", () => {
+    const file = makeRemoteFile({
+      folder: false,
+      path: [makeFilestore("S3")],
+    });
+    expect(file.canMoveToS3.isOk).toBe(true);
+  });
+
+  test("returns Error for a folder in an S3 filestore", () => {
+    const file = makeRemoteFile({
+      folder: true,
+      path: [makeFilestore("S3")],
+    });
+    expect(file.canMoveToS3.isOk).toBe(false);
+    expect(file.canMoveToS3.orElseGet(([e]) => e)).toMatchObject({
+      message: expect.stringContaining("folder"),
+    });
+  });
+
+  test("returns Error for a non-folder file in a non-S3 filestore", () => {
+    const file = makeRemoteFile({
+      folder: false,
+      path: [makeFilestore("IRODS")],
+    });
+    expect(file.canMoveToS3.isOk).toBe(false);
+    expect(file.canMoveToS3.orElseGet(([e]) => e)).toMatchObject({
+      message: expect.stringContaining("S3 filestore"),
+    });
+  });
+
+  test("returns Error when the parent is not a Filestore instance", () => {
+    const nonFilestoreParent = makeRemoteFile({
+      folder: true,
+      path: [],
+    });
+    const file = makeRemoteFile({
+      folder: false,
+      path: [nonFilestoreParent],
+    });
+    expect(file.canMoveToS3.isOk).toBe(false);
+  });
+});
+
+function makeLocalGalleryFile({
+  isSystemFolder,
+}: {
+  isSystemFolder: boolean;
+}): LocalGalleryFile {
+  return new LocalGalleryFile({
+    id: dummyId(),
+    globalId: "GF_LOCAL",
+    name: "test.jpg",
+    extension: "jpg",
+    creationDate: new Date(),
+    modificationDate: new Date(),
+    description: new Description({ key: "empty" }),
+    type: "image",
+    isSystemFolder,
+    isSharedFolder: false,
+    ownerId: 1,
+    ownerName: "Test User",
+    ownerUsername: "testuser",
+    path: [],
+    gallerySection: "Images",
+    size: 1024,
+    version: 1,
+    thumbnailId: null,
+    originalImageId: null,
+    metadata: {},
+    token: "",
+  });
+}
+
+describe("LocalGalleryFile.canMoveToS3", () => {
+  test("returns Ok for a regular (non-system) file", () => {
+    const file = makeLocalGalleryFile({ isSystemFolder: false });
+    expect(file.canMoveToS3.isOk).toBe(true);
+  });
+
+  test("returns Error for a system folder", () => {
+    const file = makeLocalGalleryFile({ isSystemFolder: true });
+    expect(file.canMoveToS3.isOk).toBe(false);
+    expect(file.canMoveToS3.orElseGet(([e]) => e)).toMatchObject({
+      message: expect.stringContaining("system folder"),
+    });
   });
 });

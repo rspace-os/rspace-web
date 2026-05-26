@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -27,5 +28,7 @@ public class SampleTemplatePostValidator extends SampleTemplateValidator {
     validateDefaultUnit(errors, templatePost.getDefaultUnitId());
     validateSubSampleAlias(errors, templatePost.getSubSampleAlias());
     validateFields(errors, templatePost.getFields());
+    InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
+        templatePost.getFields(), null, errors);
   }
 }
