@@ -1,7 +1,7 @@
 import React from "react";
 import DMPDialog from "./DMPDialog";
 import AccentMenuItem from "../../components/AccentMenuItem";
-import DMPAssistantIcon from "../../assets/branding/dmpassistant/logo.png";
+import DMPAssistantIcon from "../../assets/branding/dmpassistant/logo.svg";
 import { LOGO_COLOR } from "../../assets/branding/dmpassistant";
 import CardMedia from "@mui/material/CardMedia";
 import EventBoundary from "../../components/EventBoundary";
