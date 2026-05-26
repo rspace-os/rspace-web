@@ -26,6 +26,7 @@ type AccentMenuItemArgs = {
         saturation: number;
         lightness: number;
       };
+  avatarBackgroundColor?: string;
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
   compact?: boolean;
@@ -75,6 +76,7 @@ const AccentMenuItem = React.forwardRef<
     {
       foregroundColor,
       backgroundColor,
+      avatarBackgroundColor,
       compact,
       className,
       onClick,
@@ -130,6 +132,7 @@ const AccentMenuItem = React.forwardRef<
             : backgroundColor
               ? `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`
               : theme.palette.primary.main;
+        const avatarBg = avatarBackgroundColor ?? bg;
         return {
           margin: theme.spacing(1),
           padding: 0,
@@ -150,9 +153,9 @@ const AccentMenuItem = React.forwardRef<
             padding: theme.spacing(compact ? 1 : 2),
           },
           "& .MuiCardHeader-avatar": {
-            border: `${compact ? 3 : 4}px solid ${bg}`,
+            border: `${compact ? 3 : 4}px solid ${avatarBg}`,
             borderRadius: `${compact ? 4 : 6}px`,
-            backgroundColor: bg,
+            backgroundColor: avatarBg,
             color: fg,
             "& svg": {
               margin: "2px",
