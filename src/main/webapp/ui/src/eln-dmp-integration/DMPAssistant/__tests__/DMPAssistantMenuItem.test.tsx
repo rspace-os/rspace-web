@@ -1,4 +1,4 @@
-import { test, describe, expect } from "vitest";
+import { test, describe, expect, beforeEach, afterEach } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -8,7 +8,15 @@ import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 
-const mockAxios = new MockAdapter(axios);
+let mockAxios: MockAdapter;
+
+beforeEach(() => {
+  mockAxios = new MockAdapter(axios);
+});
+
+afterEach(() => {
+  mockAxios.restore();
+});
 
 describe("DMPAssistantMenuItem", () => {
   test("Renders the menu item when the integration is enabled.", async () => {

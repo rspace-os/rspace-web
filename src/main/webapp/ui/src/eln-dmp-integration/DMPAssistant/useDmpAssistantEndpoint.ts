@@ -79,7 +79,7 @@ export class DmpSummary {
       }>(
         `apps/dmpassistant/importPlan?id=${encodeURIComponent(
           this.id
-        )}&filename=${this.#title}`
+        )}&filename=${encodeURIComponent(this.#title)}`
       );
       if (error !== null) throw new Error(error.errorMessages[0]);
       this.#addAlert(
