@@ -75,15 +75,15 @@ public class BundleTag extends TagSupport {
     }
 
     for (String styleUrl : assets.getStyles()) {
-      renderLinkTag("stylesheet", withCacheVersion(styleUrl));
+      renderLinkTag("stylesheet", styleUrl);
     }
 
     for (String preloadUrl : assets.getPreloads()) {
-      renderLinkTag("modulepreload", withCacheVersion(preloadUrl));
+      renderLinkTag("modulepreload", preloadUrl);
     }
 
     for (String scriptUrl : assets.getScripts()) {
-      renderModuleScriptTag(withCacheVersion(scriptUrl));
+      renderModuleScriptTag(scriptUrl);
     }
   }
 
@@ -182,27 +182,6 @@ public class BundleTag extends TagSupport {
     } catch (IOException e) {
       throw new JspException("Failed to render bundle tags", e);
     }
-  }
-
-  /**
-   * Appends the cache-busting version token as a {@code ?v=<token>} query parameter to local asset
-   * URLs (those under {@link #DIST_PUBLIC_PATH}). External and HMR URLs are returned unchanged.
-   * Returns the URL unchanged when no version token has been stored.
-   */
-  String withCacheVersion(String url) {
-    if (StringUtils.isBlank(url) || !url.startsWith(DIST_PUBLIC_PATH)) {
-      return url;
-    }
-    String version = getCacheVersion();
-    if (StringUtils.isBlank(version)) {
-      return url;
-    }
-    char separator = url.indexOf('?') >= 0 ? '&' : '?';
-    return url + separator + "v=" + version;
-  }
-
-  String getCacheVersion() {
-    return FrontendCacheVersion.resolve(pageContext.getServletContext(), getRequest(), isDevMode());
   }
 
   public static void preWarmManifestCache(ServletContext servletContext, boolean isDevMode) {

@@ -323,13 +323,13 @@ public class BundleTagTest {
     realTag.setBundle("appBar");
 
     assertEquals(TagSupport.SKIP_BODY, realTag.doStartTag());
-    assertTrue(output.toString().contains("src=\"/ui/dist/appBar-first.js?v="));
+    assertTrue(output.toString().contains("src=\"/ui/dist/appBar-first.js\""));
     assertEquals(1, realTag.refreshCount);
 
     output.setLength(0);
     requestAttributes.clear();
     assertEquals(TagSupport.SKIP_BODY, realTag.doStartTag());
-    assertTrue(output.toString().contains("src=\"/ui/dist/appBar-second.js?v="));
+    assertTrue(output.toString().contains("src=\"/ui/dist/appBar-second.js\""));
     assertEquals(2, realTag.refreshCount);
   }
 
@@ -398,14 +398,6 @@ public class BundleTagTest {
 
     assertEquals(firstLookup, secondLookup);
     assertEquals(1, realTag.refreshCount);
-  }
-
-  @Test
-  public void withCacheVersionAppendsUsingAmpersandWhenUrlAlreadyHasQueryString() {
-    servletContextAttributes.put(FrontendCacheVersion.CACHE_VERSION_ATTR, "2.23.0");
-
-    assertEquals(
-        "/ui/dist/appBar.js?lang=en&v=2.23.0", tag.withCacheVersion("/ui/dist/appBar.js?lang=en"));
   }
 
   private ByteArrayInputStream manifestStream(String bundleName, String scriptPath) {
