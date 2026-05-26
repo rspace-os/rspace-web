@@ -37,16 +37,13 @@ import { ACCENT_COLOR } from "../../assets/branding/dmpassistant";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 
 const useStyles = makeStyles<{ listing: FetchingData.Fetched<unknown> }>()(
-  (theme, props: { listing: FetchingData.Fetched<unknown> }) => ({
+  (theme, props) => ({
     table: {
-      display:
-        typeof props === "undefined"
-          ? "none"
-          : FetchingData.match(props.listing, {
-              loading: () => "none",
-              error: () => "none",
-              success: () => "flex",
-            }),
+      display: FetchingData.match(props.listing, {
+        loading: () => "none",
+        error: () => "none",
+        success: () => "flex",
+      }),
     },
   }),
 );
@@ -225,26 +222,15 @@ const DMPDialogContent = ({
                   loading: () => {},
                   error: () => {},
                   success: doNotAwait(async (l) => {
+                    const pageSizeChanged = newPageSize !== l.pageSize;
+                    const pageChanged = newPage !== l.page;
+                    if (!pageSizeChanged && !pageChanged) return;
                     try {
-                      if (newPage !== l.page) {
-                        setListing({ tag: "loading" });
-                        setListing({
-                          tag: "success",
-                          value: await l.setPage(newPage),
-                        });
-                      }
-                    } catch (error) {
-                      if (error instanceof Error)
-                        setListing({ tag: "error", error: error.message });
-                    }
-                    try {
-                      if (newPageSize !== l.pageSize) {
-                        setListing({ tag: "loading" });
-                        setListing({
-                          tag: "success",
-                          value: await l.setPageSize(newPageSize),
-                        });
-                      }
+                      setListing({ tag: "loading" });
+                      const next = pageSizeChanged
+                        ? await l.setPageSize(newPageSize)
+                        : await l.setPage(newPage);
+                      setListing({ tag: "success", value: next });
                     } catch (error) {
                       if (error instanceof Error)
                         setListing({ tag: "error", error: error.message });
