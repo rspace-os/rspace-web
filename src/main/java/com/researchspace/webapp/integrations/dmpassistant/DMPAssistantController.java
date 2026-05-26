@@ -102,40 +102,38 @@ public class DMPAssistantController extends BaseController {
   @PostMapping("/importPlan")
   @ResponseBody
   public AjaxReturnObject<JsonNode> importPlan(
-      @RequestParam("id") String id, @RequestParam("filename") String filename, Principal principal)
-      throws java.io.IOException {
-    try {
-      User user = userManager.getUserByUsername(principal.getName());
-      JsonNode plan = dmpAssistantProvider.getPlanById(id, true, user);
-      User authenticated = userManager.getAuthenticatedUserInSession();
-      ObjectMapper mapper = new ObjectMapper();
-      byte[] bytes = mapper.writeValueAsBytes(plan);
-      EcatDocumentFile file =
-          mediaManager.saveNewDMP(
-              filename, new java.io.ByteArrayInputStream(bytes), authenticated, null);
-      JsonNode dmpNode = plan.has("dmp") ? plan.get("dmp") : plan;
-      String title = dmpNode.path("title").asText(filename);
-      Optional<DMPUser> existing = dmpManager.findByDmpId(id, authenticated);
-      DMPUser dmpUser =
-          existing.orElseGet(
-              () ->
-                  new DMPUser(
-                      authenticated,
-                      new DmpDto(
-                          id,
-                          title,
-                          DMPSource.DMP_ASSISTANT,
-                          dmpNode.path("dmp_id").path("identifier").asText(null),
-                          dmpNode.path("dmp_id").path("identifier").asText(null))));
-      if (file != null) {
-        dmpUser.setDmpDownloadFile(file);
-      }
-      dmpManager.save(dmpUser);
-      return new AjaxReturnObject<>(plan, null);
-    } catch (HttpStatusCodeException e) {
-      log.warn("DMP Assistant import failed: {}", e.getMessage());
-      return new AjaxReturnObject<>(null, ErrorList.of(e.getMessage()));
-    }
+      @RequestParam("id") String id,
+      @RequestParam("filename") String filename,
+      Principal principal) {
+    return proxy(
+        principal,
+        user -> {
+          JsonNode plan = dmpAssistantProvider.getPlanById(id, true, user);
+          ObjectMapper mapper = new ObjectMapper();
+          byte[] bytes = mapper.writeValueAsBytes(plan);
+          EcatDocumentFile file =
+              mediaManager.saveNewDMP(
+                  filename, new java.io.ByteArrayInputStream(bytes), user, null);
+          JsonNode dmpNode = plan.has("dmp") ? plan.get("dmp") : plan;
+          String title = dmpNode.path("title").asText(filename);
+          Optional<DMPUser> existing = dmpManager.findByDmpId(id, user);
+          DMPUser dmpUser =
+              existing.orElseGet(
+                  () ->
+                      new DMPUser(
+                          user,
+                          new DmpDto(
+                              id,
+                              title,
+                              DMPSource.DMP_ASSISTANT,
+                              dmpNode.path("dmp_id").path("identifier").asText(null),
+                              dmpNode.path("dmp_id").path("identifier").asText(null))));
+          if (file != null) {
+            dmpUser.setDmpDownloadFile(file);
+          }
+          dmpManager.save(dmpUser);
+          return plan;
+        });
   }
 
   private interface ProviderCall {
@@ -151,7 +149,8 @@ public class DMPAssistantController extends BaseController {
       return new AjaxReturnObject<>(null, ErrorList.of(e.getMessage()));
     } catch (Exception e) {
       log.warn("Error connecting to DMP Assistant", e);
-      return new AjaxReturnObject<>(null, ErrorList.of("Error connecting to DMP Assistant."));
+      return new AjaxReturnObject<>(
+          null, getErrorListFromMessageCode("apps.dmpassistant.error.connect"));
     }
   }
 }

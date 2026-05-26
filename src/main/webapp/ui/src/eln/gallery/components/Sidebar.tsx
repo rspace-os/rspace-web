@@ -400,7 +400,7 @@ const DmpMenuSection = ({
   const showArgos = FetchingData.getSuccessValue(
     useIntegrationIsAllowedAndEnabled("ARGOS"),
   ).orElse(false);
-  const showDmpassistant = FetchingData.getSuccessValue(
+  const showDmpAssistant = FetchingData.getSuccessValue(
     useIntegrationIsAllowedAndEnabled("DMPASSISTANT"),
   ).orElse(false);
   const showDmponline = FetchingData.getSuccessValue(
@@ -463,7 +463,7 @@ const DmpMenuSection = ({
 
   if (
     !showArgos &&
-    !showDmpassistant &&
+    !showDmpAssistant &&
     !showDmponline &&
     !showDmptool &&
     !showDsw
@@ -475,7 +475,7 @@ const DmpMenuSection = ({
         DMP Import
       </Divider>
       {showArgos && <ArgosAccentMenuItem onDialogClose={onDialogClose} />}
-      {showDmpassistant && (
+      {showDmpAssistant && (
         <DMPAssistantAccentMenuItem onDialogClose={onDialogClose} />
       )}
       {showDmponline && (
