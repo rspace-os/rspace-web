@@ -28,6 +28,8 @@ function DMPAssistant({
   const [apiKey, setApiKey] = React.useState(
     integrationState.credentials.DMPASSISTANT_USER_TOKEN.orElse("")
   );
+  const trimmedApiKey = apiKey.trim();
+  const isApiKeyBlank = trimmedApiKey.length === 0;
 
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
@@ -58,10 +60,11 @@ function DMPAssistant({
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
+                  if (isApiKeyBlank) return;
                   void update({
                     mode: integrationState.mode,
                     credentials: {
-                      DMPASSISTANT_USER_TOKEN: Optional.present(apiKey),
+                      DMPASSISTANT_USER_TOKEN: Optional.present(trimmedApiKey),
                     },
                   });
                 }}
@@ -77,10 +80,18 @@ function DMPAssistant({
                     onChange={({ target: { value } }) => {
                       setApiKey(value);
                     }}
+                    error={isApiKeyBlank}
+                    helperText={
+                      isApiKeyBlank
+                        ? "A personal access token is required."
+                        : undefined
+                    }
                   />
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">Save</Button>
+                  <Button type="submit" disabled={isApiKeyBlank}>
+                    Save
+                  </Button>
                 </CardActions>
               </form>
             </Card>

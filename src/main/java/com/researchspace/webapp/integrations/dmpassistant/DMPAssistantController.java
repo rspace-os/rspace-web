@@ -38,8 +38,6 @@ import org.springframework.web.client.HttpStatusCodeException;
 @RequestMapping("/apps/dmpassistant")
 public class DMPAssistantController extends BaseController {
 
-  static final String APP_NAME = "DMPASSISTANT";
-
   @Autowired private MediaManager mediaManager;
   @Autowired private DMPManager dmpManager;
   @Autowired private DMPAssistantProvider dmpAssistantProvider;
@@ -126,7 +124,7 @@ public class DMPAssistantController extends BaseController {
                               id,
                               title,
                               DMPSource.DMP_ASSISTANT,
-                              dmpNode.path("dmp_id").path("identifier").asText(null),
+                              null,
                               dmpNode.path("dmp_id").path("identifier").asText(null))));
           if (file != null) {
             dmpUser.setDmpDownloadFile(file);
