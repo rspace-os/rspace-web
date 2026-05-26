@@ -82,7 +82,7 @@ all code dependencies and compile the code.
 The application .war file can be built with the following maven command:  
 
 ```
-mvn clean package -DskipTests=true -DrenameResourcesMD5=true \
+mvn clean package -DskipTests=true \
   -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
   -Djava-version=17 -Djava-vendor=openjdk
 ```
