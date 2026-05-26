@@ -220,6 +220,81 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals("ok2s", updatedTemplate.getSubSampleAlias().getPlural());
   }
 
+  /** RSDEV-1067: a template default unit must be a mass, volume, or dimensionless unit. */
+  @Test
+  public void createTemplate_rejectsNonAmountDefaultUnit() throws Exception {
+    ApiSampleTemplatePost templatePost = createValidSampleTemplatePostNoFields();
+    templatePost.setDefaultUnitId(RSUnitDef.NANOMOLAR.getId()); // ticket repro
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertEquals(1, error.getErrors().size());
+    String rendered = error.getErrors().get(0);
+    assertTrue(
+        rendered.startsWith("defaultUnitId:"),
+        "error should be on defaultUnitId, was: " + rendered);
+    assertTrue(
+        rendered.contains(String.valueOf(RSUnitDef.NANOMOLAR.getId())),
+        "error should mention the rejected unit id, was: " + rendered);
+  }
+
+  /** RSDEV-1067: PUT must also reject a non-mass/volume/dimensionless default unit. */
+  @Test
+  public void updateTemplate_rejectsNonAmountDefaultUnit() throws Exception {
+    // create a valid template first
+    ApiSampleTemplatePost templatePost = createValidSampleTemplatePostNoFields();
+    ApiSample savedTemplate = postValidSampleTemplate(templatePost);
+
+    // attempt to PUT a defaultUnitId that is not mass/volume/dimensionless
+    ApiSampleTemplate templateUpdate = new ApiSampleTemplate();
+    templateUpdate.setDefaultUnitId(RSUnitDef.NANOMOLAR.getId());
+    String updateUrl = "/sampleTemplates/" + savedTemplate.getId();
+
+    MvcResult result =
+        mockMvc
+            .perform(createBuilderForPutWithJSONBody(apiKey, updateUrl, anyUser, templateUpdate))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertEquals(1, error.getErrors().size());
+    String rendered = error.getErrors().get(0);
+    assertTrue(
+        rendered.startsWith("defaultUnitId:"),
+        "error should be on defaultUnitId, was: " + rendered);
+    assertTrue(
+        rendered.contains(String.valueOf(RSUnitDef.NANOMOLAR.getId())),
+        "error should mention the rejected unit id, was: " + rendered);
+  }
+
+  @Test
+  public void postSampleTemplateRejectsDuplicateFieldNames() throws Exception {
+    // RSDEV-1066: API must reject a template with two same-named fields up-front (400),
+    // mirroring the UI's "All field names must be distinct" rule.
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("dup-fields-template");
+    templatePost.getFields().add(createBasicApiSampleField("dup", ApiFieldType.STRING, "first"));
+    templatePost.getFields().add(createBasicApiSampleField("dup", ApiFieldType.STRING, "second"));
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertTrue(
+        error.getErrors().stream().anyMatch(e -> e.contains("fields[1].name")),
+        "Expected error path fields[1].name, got: " + error.getErrors());
+    assertTrue(
+        error.getErrors().stream().anyMatch(e -> e.contains("dup")),
+        "Expected the duplicate name 'dup' in the error, got: " + error.getErrors());
+  }
+
   @Test
   public void postSampleTemplateYaml() throws Exception {
     String yamlString =

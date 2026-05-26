@@ -1,6 +1,7 @@
 package com.researchspace.service.aws.impl;
 
 import java.io.File;
+import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.services.s3.S3Client;
 
 abstract class AbstractS3Uploader {
@@ -15,6 +16,8 @@ abstract class AbstractS3Uploader {
   }
 
   String buildKeyFromFilePath(File file) {
-    return s3ArchivePath + "/" + file.getName();
+    return StringUtils.isBlank(s3ArchivePath)
+        ? file.getName()
+        : s3ArchivePath + "/" + file.getName();
   }
 }

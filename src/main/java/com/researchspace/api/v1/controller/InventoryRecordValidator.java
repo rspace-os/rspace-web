@@ -99,6 +99,13 @@ abstract class InventoryRecordValidator {
     validateTooLong("description", value, EditInfo.DESCRIPTION_LENGTH, errors);
   }
 
+  void validateNotNullAndBlank(String fieldName, String fieldValue, Errors errors) {
+    if (fieldValue != null && StringUtils.isBlank(fieldValue)) {
+      errors.rejectValue(
+          fieldName, "errors.emptyString", new Object[] {fieldName}, fieldName + " is empty.");
+    }
+  }
+
   void validateTooLong(String fieldName, String fieldValue, int maxLength, Errors errors) {
     if (!StringUtils.isBlank(fieldValue)) {
       if (fieldValue.length() > maxLength) {

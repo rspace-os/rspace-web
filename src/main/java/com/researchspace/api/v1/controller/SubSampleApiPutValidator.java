@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -22,5 +23,7 @@ public class SubSampleApiPutValidator extends InventoryRecordValidator implement
     validateTags(apiSubSamplePut.getTags(), errors);
     validateInventoryRecordQuantity(apiSubSamplePut, errors);
     validateExtraFields(apiSubSamplePut, errors);
+    InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
+        null, apiSubSamplePut.getExtraFields(), errors);
   }
 }

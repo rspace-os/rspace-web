@@ -43,6 +43,7 @@ const mockSnippetFile: GalleryFile = {
   canDelete: Result.Ok(null),
   canRename: Result.Ok(null),
   canMoveToIrods: Result.Error([new Error("Not supported")]),
+  canMoveToS3: Result.Error([new Error("Not supported")]),
   canBeExported: Result.Ok(null),
   canBeMoved: Result.Ok(null),
   canUploadNewVersion: Result.Ok(null),

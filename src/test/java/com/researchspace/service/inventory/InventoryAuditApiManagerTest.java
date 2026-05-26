@@ -4,6 +4,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -35,5 +36,15 @@ public class InventoryAuditApiManagerTest extends SpringTransactionalTest {
 
     ApiSample singleRevision = inventoryAuditMgr.getApiSampleRevision(basicSample.getId(), 1L);
     assertNull(singleRevision); // won't find, but should complete fine
+  }
+
+  @Test
+  public void getApiInstrumentRevision_returnsNullWhenNotFound() {
+    User user = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(user);
+    ApiInstrument basicInstrument = createBasicInstrumentForUser(user);
+
+    ApiInstrument result = inventoryAuditMgr.getApiInstrumentRevision(basicInstrument.getId(), 1L);
+    assertNull(result);
   }
 }

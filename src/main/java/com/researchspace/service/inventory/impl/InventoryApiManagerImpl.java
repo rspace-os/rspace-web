@@ -41,6 +41,7 @@ import com.researchspace.service.inventory.ApiBarcodesHelper;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.ApiIdentifiersHelper;
 import com.researchspace.service.inventory.InventoryApiManager;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.awt.image.BufferedImage;
@@ -110,6 +111,8 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     }
     saveSharingACLForIncomingApiInvRec(invRec, apiInvRec);
 
+    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
+        null, apiInvRec.getExtraFields());
     for (ApiExtraField apiExtraField : apiInvRec.getExtraFields()) {
       ExtraField extraField =
           recordFactory.createExtraField(

@@ -3,10 +3,12 @@ package com.researchspace.api.v1.controller;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import java.math.BigDecimal;
 import org.junit.Before;
 import org.junit.Rule;
@@ -133,5 +135,25 @@ public class SampleApiPutValidatorTest extends InventoryRecordValidationTestBase
     e = new BeanPropertyBindingResult(apiSample, "samplePut");
     validator.validate(apiSample, e);
     return e;
+  }
+
+  @Test
+  public void rejectsDuplicateExtraFieldNames() {
+    ApiSampleWithFullSubSamples apiSample = new ApiSampleWithFullSubSamples();
+    apiSample.setName("s1");
+    ApiExtraField ef1 = new ApiExtraField();
+    ef1.setName("Notes");
+    ApiExtraField ef2 = new ApiExtraField();
+    ef2.setName("notes"); // case-insensitive duplicate
+    apiSample.getExtraFields().add(ef1);
+    apiSample.getExtraFields().add(ef2);
+
+    Errors e = new BeanPropertyBindingResult(apiSample, "samplePut");
+    validator.validate(apiSample, e);
+    assertEquals(1, e.getErrorCount());
+    assertEquals("extraFields[1].name", e.getFieldError().getField());
+    assertEquals(
+        InventoryFieldNameUniquenessValidator.DUPLICATE_NAME_ERROR_CODE,
+        e.getFieldError().getCode());
   }
 }
