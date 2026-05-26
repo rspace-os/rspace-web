@@ -14,6 +14,7 @@ type AccentMenuItemArgs = {
   backgroundColor?:
     | string
     | { hue: number; saturation: number; lightness: number };
+  avatarBackgroundColor?: string;
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
   compact?: boolean;
@@ -62,6 +63,7 @@ export default styled(
       {
         foregroundColor: _foregroundColor,
         backgroundColor: _backgroundColor,
+        avatarBackgroundColor: _avatarBackgroundColor,
         compact: _compact,
         className,
         onClick,
@@ -121,6 +123,7 @@ export default styled(
   theme,
   backgroundColor = theme.palette.primary.main,
   foregroundColor = theme.palette.primary.contrastText,
+  avatarBackgroundColor,
   compact,
 }) => {
   const prefersMoreContrast = window.matchMedia(
@@ -134,6 +137,7 @@ export default styled(
     typeof backgroundColor === "string"
       ? backgroundColor
       : `hsl(${backgroundColor.hue}deg, ${backgroundColor.saturation}%, ${backgroundColor.lightness}%, 100%)`;
+  const avatarBg = avatarBackgroundColor ?? bg;
   return {
     margin: theme.spacing(1),
     padding: 0,
@@ -154,9 +158,9 @@ export default styled(
       padding: theme.spacing(compact ? 1 : 2),
     },
     "& .MuiCardHeader-avatar": {
-      border: `${compact ? 3 : 4}px solid ${bg}`,
+      border: `${compact ? 3 : 4}px solid ${avatarBg}`,
       borderRadius: `${compact ? 4 : 6}px`,
-      backgroundColor: bg,
+      backgroundColor: avatarBg,
       color: fg,
       "& svg": {
         margin: "2px",

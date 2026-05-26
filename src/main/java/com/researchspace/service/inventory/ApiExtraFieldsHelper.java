@@ -2,10 +2,12 @@ package com.researchspace.service.inventory;
 
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiInstrumentEntity;
 import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
@@ -72,12 +74,20 @@ public class ApiExtraFieldsHelper implements Validator {
         apiContainer.getExtraFields(), container.getActiveExtraFields(), container, user);
   }
 
+  public boolean createDeleteRequestedExtraFieldsInDatabaseInstrument(
+      ApiInstrumentEntity apiInstrument, InstrumentEntity instrument, User user) {
+    return createDeleteRequestedExtraFields(
+        apiInstrument.getExtraFields(), instrument.getActiveExtraFields(), instrument, user);
+  }
+
   private boolean createDeleteRequestedExtraFields(
       List<ApiExtraField> incomingFields,
       List<ExtraField> dbFields,
       InventoryRecord parentInvRec,
       User user) {
 
+    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
+        null, incomingFields);
     boolean changed = false;
     if (!CollectionUtils.isEmpty(incomingFields)) {
       for (ApiExtraField apiField : incomingFields) {

@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo.ApiContainerGridLayoutConfig;
 import com.researchspace.api.v1.model.ApiContainerLocationWithContent;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import java.util.List;
 import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.stereotype.Component;
@@ -25,6 +26,8 @@ public abstract class ContainerApiValidator extends InventoryRecordValidator imp
     validateTags(incomingContainer.getTags(), errors);
     validateInventoryRecordQuantity(incomingContainer, errors);
     validateExtraFields(incomingContainer, errors);
+    InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
+        null, incomingContainer.getExtraFields(), errors);
     validateGridContainerConfig(incomingContainer, errors);
     validateCanStoreFlags(incomingContainer, errors);
   }

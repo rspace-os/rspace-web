@@ -264,6 +264,46 @@ public class UserDaoTest extends BaseDaoTestCase {
   }
 
   @Test
+  public void testApplyOrderTiebreaksByFirstNameThenUsername() {
+    // Unique surname per run isolates these three users from the rest of the DB.
+    String sharedSurname = getRandomAlphabeticString("RSDEV1096");
+
+    // aliceLow and aliceHigh collide on both lastName and firstName — only the
+    // tertiary (username) sort can order them deterministically.
+    User aliceLow = createAndSaveUserIfNotExists(getRandomAlphabeticString("zzaaa"));
+    aliceLow.setFirstName("Alice");
+    aliceLow.setLastName(sharedSurname);
+    userDao.save(aliceLow);
+
+    User aliceHigh = createAndSaveUserIfNotExists(getRandomAlphabeticString("zzzzz"));
+    aliceHigh.setFirstName("Alice");
+    aliceHigh.setLastName(sharedSurname);
+    userDao.save(aliceHigh);
+
+    // bob shares only the lastName — the secondary (firstName) sort places him
+    // relative to the Alices.
+    User bob = createAndSaveUserIfNotExists(getRandomAlphabeticString("zzbob"));
+    bob.setFirstName("Bob");
+    bob.setLastName(sharedSurname);
+    userDao.save(bob);
+    flush();
+
+    PaginationCriteria<User> pgCrit = PaginationCriteria.createDefaultForClass(User.class);
+    pgCrit.setOrderBy("lastName");
+    UserSearchCriteria criteria = new UserSearchCriteria();
+    criteria.setAllFields(sharedSurname);
+    pgCrit.setSearchCriteria(criteria);
+
+    pgCrit.setSortOrder(SortOrder.ASC);
+    List<User> asc = userDao.searchUsers(pgCrit).getResults();
+    assertEquals(Arrays.asList(aliceLow, aliceHigh, bob), asc);
+
+    pgCrit.setSortOrder(SortOrder.DESC);
+    List<User> desc = userDao.searchUsers(pgCrit).getResults();
+    assertEquals(Arrays.asList(bob, aliceHigh, aliceLow), desc);
+  }
+
+  @Test
   public void testSaveRetrieveUserPasswordToken() throws Exception {
     TokenBasedVerification upc =
         new TokenBasedVerification("a@b.com", null, TokenBasedVerificationType.PASSWORD_CHANGE);

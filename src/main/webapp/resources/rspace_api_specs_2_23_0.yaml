@@ -1962,6 +1962,139 @@ paths:
         '204':
           description: No content
 
+  '/gallery/filestores/{filestoreId}/move':
+    post:
+      summary: Move Gallery items to a writable filestore
+      description: >
+        Uploads Gallery items to the destination filestore identified by `filestoreId`, then
+        deletes the RSpace records and creates an `ExternalStorageLocation` link for each success.
+        Backends without write support return **501**.
+
+
+        **S3 filestore** (no credentials needed):
+
+        ```json
+
+        {"recordIds": [123, 456]}
+
+        ```
+
+        **iRODS filestore** (credentials required):
+
+        ```json
+
+        {"recordIds": [123, 456], "credentials": {"username": "irods-user", "password": "irods-password"}}
+
+        ```
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Gallery Filestores
+      parameters:
+        - name: filestoreId
+          description: Destination filestore id
+          in: path
+          required: true
+          type: integer
+          format: int64
+        - name: request
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/GalleryFilestoreOperationRequest'
+      responses:
+        '200':
+          description: Per-file outcomes
+          schema:
+            $ref: '#/definitions/ExternalStorageOperationResult'
+        '501':
+          description: Destination filestore does not support write operations.
+  '/gallery/filestores/{filestoreId}/copy':
+    post:
+      summary: Copy Gallery items to a writable filestore
+      description: >
+        Uploads Gallery items to the destination filestore identified by `filestoreId` and creates
+        an `ExternalStorageLocation` link for each success. RSpace records are kept. Backends
+        without write support return **501**.
+
+
+        **S3 filestore** (no credentials needed):
+
+        ```json
+
+        {"recordIds": [123, 456]}
+
+        ```
+
+        **iRODS filestore** (credentials required):
+
+        ```json
+
+        {"recordIds": [123, 456], "credentials": {"username": "irods-user", "password": "irods-password"}}
+
+        ```
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Gallery Filestores
+      parameters:
+        - name: filestoreId
+          description: Destination filestore id
+          in: path
+          required: true
+          type: integer
+          format: int64
+        - name: request
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/GalleryFilestoreOperationRequest'
+      responses:
+        '200':
+          description: Per-file outcomes
+          schema:
+            $ref: '#/definitions/ExternalStorageOperationResult'
+        '501':
+          description: Destination filestore does not support write operations.
+  '/gallery/filestores/{filestoreId}/transfer':
+    post:
+      summary: Server-side transfer a single object between two filestores
+      description: >
+        Server-side copies one object from the source filestore identified by `filestoreId` to the
+        destination filestore identified by `destFilestoreId` in the body (no data flows through
+        RSpace). When `deleteSource` is true the source is deleted after a successful copy.
+        Currently S3↔S3 only; other combinations and same source/destination filestore id return
+        **501**.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Gallery Filestores
+      parameters:
+        - name: filestoreId
+          description: Source filestore id (the one being read from)
+          in: path
+          required: true
+          type: integer
+          format: int64
+        - name: request
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/GalleryFilestoreTransferRequest'
+      responses:
+        '200':
+          description: Transfer outcome
+          schema:
+            $ref: '#/definitions/ExternalStorageOperationResult'
+        '501':
+          description: Unsupported source/destination combination, or filestore does not support writes.
+
   '/gallery/filesystems':
     get:
       summary: List active filesystems
@@ -2058,13 +2191,11 @@ paths:
                 $ref: '#/definitions/LinkItemList'
   '/gallery/irods/copy':
     post:
-      summary: Copy a list of files from RSpace to an external IRODS storage
+      deprecated: true
+      summary: '[DEPRECATED] Copy Gallery items to an iRODS filestore'
       description: >
-        Copy a list of files (identified by their Researchspace ID) from the RSpace filestore
-        to an external IRODS storage
-        The files that can be copied to IRODS need to live in the Gallery.
-
-        The response message is a JSON with the detail of the operation done for each file requested
+        Deprecated — use `POST /gallery/filestores/{filestoreId}/copy`. This endpoint now delegates
+        to the unified handler and will be removed in a future release.
       consumes:
         - application/json
       produces:
@@ -2117,13 +2248,11 @@ paths:
                 $ref: '#/definitions/LinkItemList'
   '/gallery/irods/move':
     post:
-      summary: Move a list of files from RSpace to an external IRODS storage
+      deprecated: true
+      summary: '[DEPRECATED] Move Gallery items to an iRODS filestore'
       description: >
-        Move a list of files (identified by their Researchspace ID) from the RSpace filestore
-        to an external IRODS storage
-        The files that can be moved to IRODS need to live in the Gallery
-
-        The response message is a JSON with the detail of the operation done for each file requested
+        Deprecated — use `POST /gallery/filestores/{filestoreId}/move`. This endpoint now delegates
+        to the unified handler and will be removed in a future release.
       consumes:
         - application/json
       produces:
@@ -4468,6 +4597,64 @@ definitions:
         type: string
         description: the password to login on IRODS
         example: passwordIrods
+  GalleryFilestoreOperationRequest:
+    description: Body for `POST /gallery/filestores/{filestoreId}/move` and `/copy`.
+    required:
+      - recordIds
+    properties:
+      recordIds:
+        type: array
+        description: RSpace IDs of Gallery items to move/copy
+        items:
+          type: integer
+          format: int64
+      credentials:
+        description: >
+          Optional. iRODS-specific — required only when the destination filestore is backed by
+          iRODS (authenticated backend). Ignored by S3 and other unauthenticated backends.
+        $ref: '#/definitions/IrodsCredentials'
+    example:
+      recordIds: [123, 456]
+  GalleryFilestoreTransferRequest:
+    description: Body for `POST /gallery/filestores/{filestoreId}/transfer`.
+    required:
+      - sourcePath
+      - destFilestoreId
+      - destPath
+    properties:
+      sourcePath:
+        type: string
+        description: Absolute path to the source object
+      destFilestoreId:
+        type: integer
+        format: int64
+      destPath:
+        type: string
+        description: Absolute path to the destination object
+      deleteSource:
+        type: boolean
+        default: false
+        description: If true, delete the source after a successful copy (true move).
+    example:
+      sourcePath: 'folder-a/report.pdf'
+      destFilestoreId: 42
+      destPath: 'archive/2026/report.pdf'
+      deleteSource: false
+  ExternalStorageOperationResult:
+    description: Per-file outcomes of a filestore write or transfer operation.
+    properties:
+      numFilesInput:
+        type: integer
+      numFilesSucceed:
+        type: integer
+      numFilesFailed:
+        type: integer
+      fileInfoDetails:
+        type: array
+        items:
+          $ref: '#/definitions/ExternalStorageOperationInfo'
+      _links:
+        $ref: '#/definitions/LinkItemList'
   ConfiguredLocationInfo:
     description: Represents configuration to use in order to move/copy a file to an external storage
     properties:

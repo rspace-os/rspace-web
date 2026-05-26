@@ -1,7 +1,9 @@
 package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
@@ -10,6 +12,7 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
@@ -96,5 +99,47 @@ public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
     assertEquals(sampleFirstRevisionId, apiSampleRev1.getRevisionId());
     assertEquals(1, apiSampleRev1.getExtraFields().size());
     assertEquals(10, apiSampleRev1.getFields().size());
+  }
+
+  @Test
+  public void getInstrumentRevisions() {
+    User anyUser = createInitAndLoginAnyUser();
+
+    // create instrument
+    ApiInstrument instrument = createBasicInstrumentForUser(anyUser, "original instrument");
+    // update instrument name to create a second revision
+    instrument.setName("updated instrument");
+    instrumentApiMgr.updateApiInstrument(instrument, anyUser);
+
+    Instrument dbInstrument =
+        instrumentApiMgr.assertUserCanEditInstrument(instrument.getId(), anyUser);
+
+    // get all instrument revisions
+    ApiInventoryRecordRevisionList revisions =
+        inventoryAuditMgr.getInventoryRecordRevisions(dbInstrument);
+    assertEquals(2, revisions.getRevisionsCount());
+    List<ApiInventoryRecordRevision> history = revisions.getRevisions();
+    ApiInventoryRecordInfo rev1 = history.get(0).getRecord();
+    assertEquals("original instrument", rev1.getName());
+    ApiInventoryRecordInfo rev2 = history.get(1).getRecord();
+    assertEquals("updated instrument", rev2.getName());
+
+    // get 1st specific revision of the instrument
+    long firstRevisionId = history.get(0).getRevisionId();
+    ApiInstrument apiInstrumentRev1 =
+        inventoryAuditMgr.getApiInstrumentRevision(instrument.getId(), firstRevisionId);
+    assertNotNull(apiInstrumentRev1);
+    assertEquals("original instrument", apiInstrumentRev1.getName());
+    assertEquals(firstRevisionId, apiInstrumentRev1.getRevisionId());
+    assertNotNull(apiInstrumentRev1.getGlobalId());
+
+    // get 2nd pecific revision of the instrument
+    long secondRevisionId = history.get(1).getRevisionId();
+    ApiInstrument apiInstrumentRev2 =
+        inventoryAuditMgr.getApiInstrumentRevision(instrument.getId(), secondRevisionId);
+    assertNotNull(apiInstrumentRev1);
+    assertEquals("updated instrument", apiInstrumentRev2.getName());
+    assertEquals(secondRevisionId, apiInstrumentRev2.getRevisionId());
+    assertNotNull(apiInstrumentRev2.getGlobalId());
   }
 }

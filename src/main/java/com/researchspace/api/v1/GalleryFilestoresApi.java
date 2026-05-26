@@ -4,6 +4,9 @@
  */
 package com.researchspace.api.v1;
 
+import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystemInfo;
@@ -13,6 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -66,4 +70,56 @@ public interface GalleryFilestoresApi {
   @PostMapping("/filesystems/{filesystemId}/logout")
   @ResponseBody
   void logoutFromFilesystem(Long filesystemId, User user);
+
+  /* ========= filestore write ops (unified across S3, iRODS, ...) =========== */
+
+  /**
+   * Moves Gallery items into the filestore identified by {@code filestoreId}. After successful
+   * upload, the RSpace media file records are deleted and {@code ExternalStorageLocation} link rows
+   * are created. Unwritable backends produce 501 Not Implemented.
+   */
+  @PostMapping(
+      value = "/filestores/{filestoreId}/move",
+      produces = MediaType.APPLICATION_JSON_VALUE,
+      consumes = MediaType.APPLICATION_JSON_VALUE)
+  @ResponseStatus(HttpStatus.OK)
+  ApiExternalStorageOperationResult moveToFilestore(
+      Long filestoreId,
+      ApiGalleryFilestoreOperationRequest request,
+      BindingResult errors,
+      User user)
+      throws BindException;
+
+  /**
+   * Copies Gallery items into the filestore identified by {@code filestoreId} (does not delete from
+   * RSpace). An {@code ExternalStorageLocation} link row is created per success. Unwritable
+   * backends produce 501.
+   */
+  @PostMapping(
+      value = "/filestores/{filestoreId}/copy",
+      produces = MediaType.APPLICATION_JSON_VALUE,
+      consumes = MediaType.APPLICATION_JSON_VALUE)
+  @ResponseStatus(HttpStatus.OK)
+  ApiExternalStorageOperationResult copyToFilestore(
+      Long filestoreId,
+      ApiGalleryFilestoreOperationRequest request,
+      BindingResult errors,
+      User user)
+      throws BindException;
+
+  /**
+   * Server-side transfers a single object from the filestore identified by {@code filestoreId} (the
+   * source) to the filestore identified by {@code destFilestoreId} in the body. Currently supports
+   * S3↔S3 only; other source/destination backends produce 501. Rejects same source+dest filestore
+   * id (within-filestore moves are out of scope of this subtask). When {@code deleteSource} is
+   * true, the source object is deleted after a successful copy.
+   */
+  @PostMapping(
+      value = "/filestores/{filestoreId}/transfer",
+      produces = MediaType.APPLICATION_JSON_VALUE,
+      consumes = MediaType.APPLICATION_JSON_VALUE)
+  @ResponseStatus(HttpStatus.OK)
+  ApiExternalStorageOperationResult transferBetweenFilestores(
+      Long filestoreId, ApiGalleryFilestoreTransferRequest request, BindingResult errors, User user)
+      throws BindException;
 }

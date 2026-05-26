@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
@@ -9,6 +10,7 @@ import com.researchspace.api.v1.model.ApiSampleTemplateInfo;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.model.audit.AuditedEntity;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
@@ -99,6 +101,20 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     ApiSampleTemplate result =
         (ApiSampleTemplate) getApiSampleRevision(currTemplate.getId(), lastRevisionForVersion);
     result.setHistoricalVersion(true);
+    return result;
+  }
+
+  @Override
+  public ApiInstrument getApiInstrumentRevision(Long instrumentId, Long revisionId) {
+    Instrument instrument = getInventoryRecordRevision(Instrument.class, instrumentId, revisionId);
+    if (instrument == null) {
+      return null;
+    }
+    initialiseInventoryRecordRelationships(instrument);
+    ApiInstrument result =
+        (ApiInstrument) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(instrument);
+    result.setRevisionId(revisionId);
+    result.setGlobalId(instrument.getOidWithVersion().toString());
     return result;
   }
 

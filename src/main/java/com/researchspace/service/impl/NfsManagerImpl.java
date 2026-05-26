@@ -14,6 +14,8 @@ import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsException;
 import com.researchspace.netfiles.NfsFactory;
+import com.researchspace.netfiles.WritableNfsClient;
+import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.service.NfsManager;
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +25,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.Setter;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,9 +40,10 @@ public class NfsManagerImpl implements NfsManager {
   protected final Logger log = LoggerFactory.getLogger(NfsManagerImpl.class);
 
   private @Autowired NfsDao nfsDao;
-  private @Autowired NfsFactory nfsFactory;
+  private @Autowired @Setter NfsFactory nfsFactory;
 
   @Autowired
+  @Setter
   private @Qualifier("compositeFileStore") FileStore fileStore;
 
   @Override
@@ -266,29 +270,24 @@ public class NfsManagerImpl implements NfsManager {
 
   @Override
   public ApiExternalStorageOperationResult uploadFilesToNfs(
-      Collection<EcatMediaFile> listRecordToMove, String path, NfsClient nfsClient)
+      Collection<EcatMediaFile> listRecordToMove, String path, WritableNfsClient nfsClient)
       throws IOException, UnsupportedOperationException {
-    // do it for all the files in the list
+    return uploadFilesToNfs(listRecordToMove, path, nfsClient, null);
+  }
+
+  @Override
+  public ApiExternalStorageOperationResult uploadFilesToNfs(
+      Collection<EcatMediaFile> listRecordToMove,
+      String path,
+      WritableNfsClient nfsClient,
+      WriteAttribution attribution)
+      throws IOException, UnsupportedOperationException {
     Map<Long, File> mapRecordIdToFile = new LinkedHashMap<>();
     for (EcatMediaFile currentRecordToUpload : listRecordToMove) {
       mapRecordIdToFile.put(
           currentRecordToUpload.getId(),
           fileStore.findFile(currentRecordToUpload.getFileProperty()));
     }
-    // once built the subset of files to transfer then upload them all
-    return nfsClient.uploadFilesToNfs(path, mapRecordIdToFile);
-  }
-
-  /*
-   * ==========================
-   * for tests
-   * ==========================
-   */
-  public void setNfsFactory(NfsFactory nfsFactory) {
-    this.nfsFactory = nfsFactory;
-  }
-
-  public void setFileStore(FileStore fileStore) {
-    this.fileStore = fileStore;
+    return nfsClient.uploadFilesToNfs(path, mapRecordIdToFile, attribution);
   }
 }

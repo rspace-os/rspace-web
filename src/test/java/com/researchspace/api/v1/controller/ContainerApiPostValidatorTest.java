@@ -6,8 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo.ApiContainerGridLayoutConfig;
 import com.researchspace.api.v1.model.ApiContainerLocationWithContent;
+import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
@@ -136,5 +138,24 @@ public class ContainerApiPostValidatorTest extends InventoryRecordValidationTest
     Errors e = new BeanPropertyBindingResult(full, "fullpost");
     validator.validate(full, e);
     return e;
+  }
+
+  @Test
+  public void rejectsDuplicateExtraFieldNames() {
+    ApiContainer container = new ApiContainer("c1", ContainerType.LIST);
+    ApiExtraField ef1 = new ApiExtraField();
+    ef1.setName("Notes");
+    ApiExtraField ef2 = new ApiExtraField();
+    ef2.setName("notes"); // case-insensitive duplicate
+    container.getExtraFields().add(ef1);
+    container.getExtraFields().add(ef2);
+
+    Errors e = new BeanPropertyBindingResult(container, "fullpost");
+    validator.validate(container, e);
+    assertEquals(1, e.getErrorCount());
+    assertEquals("extraFields[1].name", e.getFieldError().getField());
+    assertEquals(
+        InventoryFieldNameUniquenessValidator.DUPLICATE_NAME_ERROR_CODE,
+        e.getFieldError().getCode());
   }
 }

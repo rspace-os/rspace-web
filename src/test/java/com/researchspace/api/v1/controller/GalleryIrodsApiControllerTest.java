@@ -16,18 +16,18 @@ import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
 import com.researchspace.model.User;
-import com.researchspace.model.netfiles.NfsFileStore;
-import com.researchspace.model.netfiles.NfsFileSystem;
-import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
+import com.researchspace.netfiles.NfsFactory;
+import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
+import com.researchspace.service.impl.FilestoreWriteManagerImpl;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.io.IOException;
 import java.util.Set;
@@ -51,6 +51,7 @@ class GalleryIrodsApiControllerTest {
   @Mock private BaseRecordManager baseRecordManager;
   @Mock private NfsAuthentication nfsAuthentication;
   @Mock private ExternalStorageManager externalStorageManager;
+  @Mock private NfsFactory nfsFactory;
   @Mock private IPropertyHolder propertyHolder;
   @Mock private User user;
 
@@ -71,14 +72,17 @@ class GalleryIrodsApiControllerTest {
     credentialsStore = new GalleryFilestoresCredentialsStore(nfsAuthentication);
     galleryIrodsApiController =
         new GalleryIrodsApiController(
-            nfsManager,
-            deletionManager,
-            baseRecordManager,
-            credentialsStore,
-            externalStorageManager,
-            propertyHolder);
+            nfsManager, deletionManager, credentialsStore, propertyHolder);
     galleryIrodsApiController.irodsGalleryBaseLink =
         UriComponentsBuilder.fromHttpUrl("http://url").path(API_V1_GALLERY_IRODS);
+
+    FilestoreWriteManagerImpl filestoreWriteManager = new FilestoreWriteManagerImpl();
+    filestoreWriteManager.setNfsManager(nfsManager);
+    filestoreWriteManager.setNfsFactory(nfsFactory);
+    filestoreWriteManager.setBaseRecordManager(baseRecordManager);
+    filestoreWriteManager.setExternalStorageManager(externalStorageManager);
+    filestoreWriteManager.setCredentialsStore(credentialsStore);
+    galleryIrodsApiController.setFilestoreWriteManager(filestoreWriteManager);
 
     when(propertyHolder.isNetFileStoresEnabled()).thenReturn(true);
     when(nfsManager.getNfsFileStore(validFilestorePathId_1))
@@ -108,7 +112,7 @@ class GalleryIrodsApiControllerTest {
     when(baseRecordManager.retrieveMediaFile(any(), eq(789L)))
         .thenThrow(new ObjectRetrievalFailureException("EcatMediaFile", "789"));
 
-    when(nfsManager.uploadFilesToNfs(anyCollection(), anyString(), any()))
+    when(nfsManager.uploadFilesToNfs(anyCollection(), anyString(), any(), any()))
         .thenReturn(new ApiExternalStorageOperationResult());
     when(deletionManager.deleteMediaFileSet(anySet(), any()))
         .thenReturn(new CompositeRecordOperationResult<>());
@@ -243,7 +247,7 @@ class GalleryIrodsApiControllerTest {
   void testNfsManagerRaisesUnexpectedException() throws UnsupportedOperationException, IOException {
     doThrow(new RuntimeException("Operation Not Supported"))
         .when(nfsManager)
-        .uploadFilesToNfs(anyCollection(), anyString(), any(NfsClient.class));
+        .uploadFilesToNfs(anyCollection(), anyString(), any(WritableNfsClient.class), any());
 
     BindException exception =
         assertThrows(
@@ -334,7 +338,7 @@ class GalleryIrodsApiControllerTest {
         new ApiNfsCredentials(null, USERNAME, PASSWORD),
         new BeanPropertyBindingResult(validRecordIds, "bean"),
         user);
-    verify(nfsManager).uploadFilesToNfs(anyCollection(), anyString(), any());
+    verify(nfsManager).uploadFilesToNfs(anyCollection(), anyString(), any(), any());
   }
 
   @Test
@@ -355,7 +359,7 @@ class GalleryIrodsApiControllerTest {
                   user);
             });
 
-    verify(nfsManager).uploadFilesToNfs(any(), any(), any());
+    verify(nfsManager).uploadFilesToNfs(any(), any(), any(), any());
     assertEquals(1, exception.getAllErrors().size());
     assertEquals("mediaFile", exception.getAllErrors().get(0).getObjectName());
     assertEquals(
@@ -372,7 +376,7 @@ class GalleryIrodsApiControllerTest {
         new ApiNfsCredentials(null, USERNAME, PASSWORD),
         new BeanPropertyBindingResult(validRecordIds, "bean"),
         user);
-    verify(nfsManager).uploadFilesToNfs(anyCollection(), any(), any());
+    verify(nfsManager).uploadFilesToNfs(anyCollection(), any(), any(), any());
     verify(deletionManager).deleteMediaFileSet(anySet(), any());
   }
 
@@ -392,48 +396,5 @@ class GalleryIrodsApiControllerTest {
     assertEquals(1, exception.getAllErrors().size());
     assertEquals("nfsClient", exception.getAllErrors().get(0).getObjectName());
     assertEquals("User is not logged in", exception.getAllErrors().get(0).getDefaultMessage());
-  }
-
-  @Test
-  void testGettingAbsoluteTargetFilestorePath() {
-    NfsFileSystem testFilesystem = new NfsFileSystem();
-    testFilesystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice");
-
-    NfsFileStore testFilestore = new NfsFileStore();
-    testFilestore.setFileSystem(testFilesystem);
-
-    // absolute path saved in filestore path
-    testFilestore.setPath("/tempZone/home/alice/testFolder/testFolder");
-    assertEquals(
-        "/tempZone/home/alice/testFolder/testFolder",
-        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
-
-    // relative path saved in filestore path
-    testFilestore.setPath("/testFolder/testFolder2");
-    assertEquals(
-        "/tempZone/home/alice/testFolder/testFolder2",
-        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
-
-    // with trailing slash in filesystem path
-    testFilesystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice/");
-    assertEquals(
-        "/tempZone/home/alice/testFolder/testFolder2",
-        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
-
-    // filestore path blank
-    testFilestore.setPath(" ");
-    assertEquals(
-        "/tempZone/home/alice/",
-        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
-
-    // filesystem path null
-    testFilesystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, null);
-    assertEquals("", galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
-
-    // filesystem path null, but filestores path not null
-    testFilestore.setPath("/testFolder/testFolder3");
-    assertEquals(
-        "/testFolder/testFolder3",
-        galleryIrodsApiController.getAbsoluteFilestorePathForIrods(testFilestore));
   }
 }
