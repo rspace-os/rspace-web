@@ -5,11 +5,11 @@ import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
 import AppBar from "../../../components/AppBar";
 import DialogContent from "@mui/material/DialogContent";
-import Grid from "@mui/material/Grid";
 import DialogActions from "@mui/material/DialogActions";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import FormField from "../../../components/Inputs/FormField";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
@@ -136,7 +136,11 @@ function MoveCopyDialog({
       onKeyDown={(e) => {
         e.stopPropagation();
       }}
-      PaperProps={{ sx: { width: "530px", maxWidth: "530px" } }}
+      slotProps={{
+        paper: {
+          sx: { width: "530px", maxWidth: "530px" },
+        },
+      }}
     >
       <AppBar
         variant="dialog"
@@ -158,93 +162,84 @@ function MoveCopyDialog({
             {isTransferMode ? "Transfer to S3" : "Move to S3"}
           </DialogTitle>
           <DialogContent>
-            <Grid container direction="column" spacing={2}>
+            <Stack spacing={2}>
               {FetchingData.match(s3Filestores, {
                 loading: () => <></>,
                 error: (errorMsg) => (
-                  <Grid item>
-                    <Alert severity="error">
-                      <AlertTitle>{errorMsg}</AlertTitle>
-                      Please check with your System Admin to ensure the S3
-                      filestore is correctly configured.
-                    </Alert>
-                  </Grid>
+                  <Alert severity="error">
+                    <AlertTitle>{errorMsg}</AlertTitle>
+                    Please check with your System Admin to ensure the S3
+                    filestore is correctly configured.
+                  </Alert>
                 ),
                 success: (filestores) =>
                   filestores.length === 0 ? (
-                    <Grid item>
-                      <NoFilestoreAlert />
-                    </Grid>
+                    <NoFilestoreAlert />
                   ) : (
                     <>
-                      <Grid item>
-                        <Typography variant="body2">
-                          {isTransferMode ? (
-                            <>
-                              You have selected {itemCount} item
-                              {itemCount > 1 && "s"} to transfer to another S3
-                              bucket. By default, the items will be copied to
-                              the destination and deleted from the source.
-                            </>
-                          ) : (
-                            <>
-                              You have selected {itemCount} item
-                              {itemCount > 1 && "s"} to move to S3. By default,
-                              the items will be added to S3 and removed from
-                              RSpace. You will be able to link to the S3 items
-                              inside of RSpace documents.
-                            </>
-                          )}
-                        </Typography>
-                      </Grid>
-                      <Grid item>
-                        <ChoiceField
-                          name="keep"
-                          value={retainSourceCopy ? ["keep"] : []}
-                          onChange={({ target: { value } }) => {
-                            setRetainSourceCopy(value.includes("keep"));
-                          }}
-                          options={[
-                            {
-                              value: "keep",
-                              label: isTransferMode
-                                ? "Retain a copy on source bucket"
-                                : "Retain a copy in RSpace",
-                            },
-                          ]}
-                        />
-                      </Grid>
-                      <Grid item>
-                        <FormField
-                          label="Destination S3 filestore"
-                          explanation="The available filestores are configured in the Gallery's filestore section."
-                          value={void 0}
-                          renderInput={() => (
-                            <Box>
-                              <List>
-                                <ListItemButton
-                                  sx={{ maxWidth: "400px" }}
-                                  onClick={(e) =>
-                                    setDestinationAnchorEl(e.currentTarget)
-                                  }
-                                >
-                                  <ListItemText
-                                    primary={
-                                      selectedFilestore?.name ??
-                                      "Select a filestore"
-                                    }
-                                  />
-                                  <KeyboardArrowDownIcon />
-                                </ListItemButton>
-                              </List>
-                              <Menu
-                                open={Boolean(destinationAnchorEl)}
-                                anchorEl={destinationAnchorEl}
-                                onClose={() => {
-                                  setDestinationAnchorEl(null);
-                                }}
+                      <Typography variant="body2">
+                        {isTransferMode ? (
+                          <>
+                            You have selected {itemCount} item
+                            {itemCount > 1 && "s"} to transfer to another S3
+                            bucket. By default, the items will be copied to the
+                            destination and deleted from the source.
+                          </>
+                        ) : (
+                          <>
+                            You have selected {itemCount} item
+                            {itemCount > 1 && "s"} to move to S3. By default,
+                            the items will be added to S3 and removed from
+                            RSpace. You will be able to link to the S3 items
+                            inside of RSpace documents.
+                          </>
+                        )}
+                      </Typography>
+                      <ChoiceField
+                        name="keep"
+                        value={retainSourceCopy ? ["keep"] : []}
+                        onChange={({ target: { value } }) => {
+                          setRetainSourceCopy(value.includes("keep"));
+                        }}
+                        options={[
+                          {
+                            value: "keep",
+                            label: isTransferMode
+                              ? "Retain a copy on source bucket"
+                              : "Retain a copy in RSpace",
+                          },
+                        ]}
+                      />
+                      <FormField
+                        label="Destination S3 filestore"
+                        explanation="The available filestores are configured in the Gallery's filestore section."
+                        value={void 0}
+                        renderInput={() => (
+                          <Box>
+                            <List>
+                              <ListItemButton
+                                sx={{ maxWidth: "400px" }}
+                                onClick={(e) =>
+                                  setDestinationAnchorEl(e.currentTarget)
+                                }
                               >
-                                {filestores
+                                <ListItemText
+                                  primary={
+                                    selectedFilestore?.name ??
+                                    "Select a filestore"
+                                  }
+                                />
+                                <KeyboardArrowDownIcon />
+                              </ListItemButton>
+                            </List>
+                            <Menu
+                              open={Boolean(destinationAnchorEl)}
+                              anchorEl={destinationAnchorEl}
+                              onClose={() => {
+                                setDestinationAnchorEl(null);
+                              }}
+                            >
+                              {filestores
                                 .filter(
                                   (fs) =>
                                     !isTransferMode ||
@@ -263,15 +258,14 @@ function MoveCopyDialog({
                                     <ListItemText primary={fs.name} />
                                   </MenuItem>
                                 ))}
-                              </Menu>
-                            </Box>
-                          )}
-                        />
-                      </Grid>
+                            </Menu>
+                          </Box>
+                        )}
+                      />
                     </>
                   ),
               })}
-            </Grid>
+            </Stack>
           </DialogContent>
           <DialogActions>
             <Button
