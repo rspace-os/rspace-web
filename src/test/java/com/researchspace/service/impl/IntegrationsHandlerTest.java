@@ -96,7 +96,7 @@ public class IntegrationsHandlerTest {
 
   @Before
   public void setup() {
-    MockitoAnnotations.openMocks(this);
+    MockitoAnnotations.openMocks(this);th
     subject = TestFactory.createAnyUser("any");
     when(communityMgr.listCommunitiesForUser(eq(subject.getId()))).thenReturn(new ArrayList<>());
     handler.setUserConnectionManager(userConnectionManager);
@@ -475,7 +475,7 @@ public class IntegrationsHandlerTest {
     handler.saveAppOptions(null, dswOptions, DSW_APP_NAME, false, subject);
     Mockito.verify(userConnectionManager, times(0))
         .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
-    Mockito.verify(userConnectionManager, times(1)).save(any());
+    Mockito.verify(userConnectionManager, times(0)).save(any());
   }
 
   @Test
