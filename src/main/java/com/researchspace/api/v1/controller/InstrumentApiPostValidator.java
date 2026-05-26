@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentEntityInfo;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -37,5 +38,7 @@ public class InstrumentApiPostValidator extends InstrumentApiValidator implement
   private void validateApiExtraFieldsInNewInstrument(
       ApiInstrumentEntityInfo apiInstrument, Errors errors) {
     validateExtraFields(apiInstrument, errors);
+    InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
+        null, apiInstrument.getExtraFields(), errors);
   }
 }

@@ -39,6 +39,7 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
+import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -237,6 +238,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     setWorkbenchAsParentForNewSubSamples(sample, user);
     sample.recalculateTotalQuantity();
 
+    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(sample);
     Sample savedSample = sampleDao.persistNewSample(sample);
     saveIncomingSampleImage(savedSample, apiSample, user);
     publishAuditEventsForCreatedSample(user, savedSample);
@@ -558,8 +560,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     contentChanged |= apiSample.applyChangesToDatabaseSample(dbSample, user);
     contentChanged |= saveSharingACLForIncomingApiInvRec(dbSample, apiSample);
     contentChanged |= saveIncomingSampleImage(dbSample, apiSample, user);
+    dbSample.refreshActiveFieldsAndColumnIndex();
+    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(dbSample);
     if (contentChanged) {
-      dbSample.refreshActiveFieldsAndColumnIndex();
       saveDbSampleUpdate(dbSample, user);
     }
   }
@@ -729,6 +732,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     setSampleCoreProperties(apiSample, sampleTemplate);
     createFields(apiSample, sampleTemplate);
 
+    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(sampleTemplate);
     Sample savedSampleTemplate = sampleDao.persistSampleTemplate(sampleTemplate);
     saveIncomingSampleImage(savedSampleTemplate, apiSample, user);
     publisher.publishEvent(new InventoryCreationEvent(savedSampleTemplate, user));
@@ -739,6 +743,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   private void createFields(ApiSampleTemplatePost apiSample, Sample sample) {
+    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
+        apiSample.getFields(), null);
     for (ApiInventoryEntityField field : apiSample.getFields()) {
       InventoryEntityField toAdd = apiFieldToModelFieldFactory.apiInventoryFieldToModelField(field);
       sample.addSampleField(toAdd);
@@ -770,6 +776,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
 
   private boolean createDeleteRequestedFieldsInDbSampleTemplate(
       ApiSampleWithoutSubSamples apiSample, Sample dbTemplate) {
+    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
+        apiSample.getFields(), null);
     boolean changed = false;
     for (ApiInventoryEntityField apiField : apiSample.getFields()) {
       if (apiField.isNewFieldRequest()) {

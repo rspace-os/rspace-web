@@ -9,6 +9,8 @@ import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemInfo;
 import com.researchspace.netfiles.NfsClient;
+import com.researchspace.netfiles.WritableNfsClient;
+import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.webapp.controller.IgnoreInServiceLoggerAspct;
 import java.io.IOException;
 import java.util.Collection;
@@ -94,7 +96,19 @@ public interface NfsManager {
   void logoutFromNfs(Long fileSystemId, Map<Long, NfsClient> nfsClients);
 
   ApiExternalStorageOperationResult uploadFilesToNfs(
-      Collection<EcatMediaFile> fileDatabaseId, String path, NfsClient nfsClient)
+      Collection<EcatMediaFile> fileDatabaseId, String path, WritableNfsClient nfsClient)
+      throws IOException, UnsupportedOperationException;
+
+  /**
+   * Variant of {@link #uploadFilesToNfs(Collection, String, WritableNfsClient)} that carries audit
+   * attribution. Backends with native object metadata support (e.g. S3) use it to tag each written
+   * object with the originating RSpace user, operation, and record id.
+   */
+  ApiExternalStorageOperationResult uploadFilesToNfs(
+      Collection<EcatMediaFile> fileDatabaseId,
+      String path,
+      WritableNfsClient nfsClient,
+      WriteAttribution attribution)
       throws IOException, UnsupportedOperationException;
 
   /* for tests purposes */

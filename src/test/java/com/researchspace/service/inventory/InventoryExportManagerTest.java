@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo;
+import com.researchspace.api.v1.model.ApiContainerLocation;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
@@ -148,6 +150,7 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
     User testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("sampleExport"));
     initialiseContentWithExampleContent(testUser);
     createSampleTemplateWithMandatoryFields(testUser);
+    ApiInstrument userInstrument = createBasicInstrumentForUser(testUser, "myUserInstrument");
 
     // full export of all user's data
     String allUserItems =
@@ -199,11 +202,19 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
         allUserItems);
     assertTrue(allUserItems.contains(",test template with mandatory text field,,"), allUserItems);
 
+    // also includes user's instruments (even when not stored in any container)
+    assertTrue(
+        allUserItems.contains("\n# RSpace Inventory Export\n# Exported content: INSTRUMENTS\n"),
+        allUserItems);
+    assertTrue(allUserItems.contains(",myUserInstrument,"), allUserItems);
+    assertTrue(allUserItems.contains("\n" + userInstrument.getGlobalId() + ","), allUserItems);
+
     // verify the output contains expected number of containers, samples and subsamples
     assertEquals(8, StringUtils.countMatches(allUserItems, "\nIC"), allUserItems);
     assertEquals(2, StringUtils.countMatches(allUserItems, "\nSA"), allUserItems);
     assertEquals(2, StringUtils.countMatches(allUserItems, "\nSS"), allUserItems);
     assertTrue(StringUtils.countMatches(allUserItems, "\nIT") > 0, allUserItems);
+    assertEquals(1, StringUtils.countMatches(allUserItems, "\nIN"), allUserItems);
   }
 
   @Test
@@ -464,6 +475,70 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
             + otherUserBasicSample.getGlobalId()
             + ", IT0] - items not found, or no permission",
         iae.getMessage());
+  }
+
+  @Test
+  public void exportSelectedInstrumentToCsv() throws IOException {
+    User testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("instrumentExport"));
+    initialiseContentWithEmptyContent(testUser);
+    ApiInstrument instrument = createBasicInstrumentForUser(testUser, "selectedInstrument");
+
+    String instrumentExport =
+        exportMgr
+            .exportSelectedItemsAsCsvContent(
+                List.of(new GlobalIdentifier(instrument.getGlobalId())),
+                CsvExportMode.FULL,
+                false,
+                false,
+                testUser)
+            .getCombinedContent();
+
+    assertTrue(
+        instrumentExport.startsWith("# RSpace Inventory Export\n# Exported content: INSTRUMENTS\n"),
+        instrumentExport);
+    String expectedInstrumentHeader =
+        "Global ID,Name,Tags,Owner,Description,"
+            + "Parent Template (Global ID),Parent Template (name),Parent Container (Global ID)";
+    assertTrue(instrumentExport.contains(expectedInstrumentHeader), instrumentExport);
+    assertTrue(instrumentExport.contains(",selectedInstrument,"), instrumentExport);
+    assertEquals(1, StringUtils.countMatches(instrumentExport, "\nIN"), instrumentExport);
+  }
+
+  @Test
+  public void exportContainerWithStoredInstrumentIncludesInstrument() throws IOException {
+    User testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("instrumentExport"));
+    initialiseContentWithEmptyContent(testUser);
+    ApiContainer gridContainer = createBasicGridContainerForUser(testUser, 2, 2);
+
+    ApiInstrument instrumentInContainer = new ApiInstrument();
+    instrumentInContainer.setName("storedInstrument");
+    ApiContainerInfo parentContainer = new ApiContainerInfo();
+    parentContainer.setId(gridContainer.getId());
+    instrumentInContainer.setParentContainer(parentContainer);
+    instrumentInContainer.setParentLocation(new ApiContainerLocation(1, 1));
+    instrumentApiMgr.createNewApiInstrument(instrumentInContainer, testUser);
+
+    String containerWithContent =
+        exportMgr
+            .exportSelectedItemsAsCsvContent(
+                List.of(new GlobalIdentifier(gridContainer.getGlobalId())),
+                CsvExportMode.FULL,
+                false,
+                true,
+                testUser)
+            .getCombinedContent();
+
+    // container appears first, then the stored instrument
+    assertTrue(
+        containerWithContent.startsWith(
+            "# RSpace Inventory Export\n# Exported content: CONTAINERS\n"),
+        containerWithContent);
+    assertTrue(
+        containerWithContent.contains(
+            "\n# RSpace Inventory Export\n# Exported content: INSTRUMENTS\n"),
+        containerWithContent);
+    assertTrue(containerWithContent.contains(",storedInstrument,"), containerWithContent);
+    assertEquals(1, StringUtils.countMatches(containerWithContent, "\nIN"), containerWithContent);
   }
 
   @Test

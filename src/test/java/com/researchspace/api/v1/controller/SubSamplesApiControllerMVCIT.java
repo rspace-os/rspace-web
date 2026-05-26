@@ -392,6 +392,30 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     return String.format(" {\"numericValue\" : \"%d\", \"unitId\": \"%d\" } ", amount, unitId);
   }
 
+  /** RSDEV-1067: a subsample's quantity unit must be a mass, volume, or dimensionless unit. */
+  @Test
+  public void editSubSample_rejectsNonAmountQuantityUnit() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
+    Long subSampleId = basicSample.getSubSamples().get(0).getId();
+
+    // unitId 11 = NanoMolar — passes existence check, fails isAmount()
+    String updateJson =
+        String.format(
+            "{ \"quantity\" : %s }", getQuantityJsonString(7, RSUnitDef.NANOMOLAR.getId()));
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/subSamples/" + subSampleId, anyUser, updateJson))
+            .andExpect(status().is4xxClientError())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    assertApiErrorContainsMessage(error, "unit of amount");
+  }
+
   @Test
   public void moveSubSampleBetweenContainers() throws Exception {
     Mockito.reset(auditer);

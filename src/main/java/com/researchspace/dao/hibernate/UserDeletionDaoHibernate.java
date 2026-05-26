@@ -477,29 +477,24 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     executeDeleteByRecordOwner(
         userId, session, "ecatImageAnnotation_AUD", "id", "ecatImageAnnotation", "id", RECORD_ID);
 
-    // Delete StoichiometryMolecule first, then Stoichiometry before deleting RSChemElement
+    // Delete StoichiometryMolecule first, then Stoichiometry, joined via
+    // Stoichiometry.record_id → BaseRecord. record_id is NOT NULL
+    // (changeLog-rsdev-874.xml changeset 2026-01-19), so this catches both
+    // reaction-attached and reactionless stoichiometries owned by the user.
     execute(
         userId,
         session,
         "delete sm from StoichiometryMolecule_AUD sm left join Stoichiometry s on"
-            + " sm.stoichiometry_id = s.id left join RSChemElement rsce on s.parent_reaction_id ="
-            + " rsce.id left join BaseRecord br on rsce.record_id = br.id where br.owner_id=:id");
+            + " sm.stoichiometry_id = s.id left join BaseRecord br on s.record_id ="
+            + " br.id where br.owner_id=:id");
     execute(
         userId,
         session,
-        "delete sm from StoichiometryMolecule sm left join Stoichiometry s on sm.stoichiometry_id ="
-            + " s.id left join RSChemElement rsce on s.parent_reaction_id = rsce.id left join"
-            + " BaseRecord br on rsce.record_id = br.id where br.owner_id=:id");
-    executeDeleteByRecordOwner(
-        userId,
-        session,
-        "Stoichiometry_AUD",
-        "parent_reaction_id",
-        "RSChemElement",
-        "id",
-        RECORD_ID);
-    executeDeleteByRecordOwner(
-        userId, session, "Stoichiometry", "parent_reaction_id", "RSChemElement", "id", RECORD_ID);
+        "delete sm from StoichiometryMolecule sm left join Stoichiometry s on"
+            + " sm.stoichiometry_id = s.id left join BaseRecord br on s.record_id ="
+            + " br.id where br.owner_id=:id");
+    executeDeleteByRecordOwner(userId, session, "Stoichiometry_AUD", RECORD_ID);
+    executeDeleteByRecordOwner(userId, session, "Stoichiometry", RECORD_ID);
 
     executeDeleteByRecordOwner(userId, session, "RSChemElement", RECORD_ID);
     executeDeleteByRecordOwner(

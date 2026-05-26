@@ -2,16 +2,17 @@ package com.researchspace.api.v1.model;
 
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.netfiles.NfsAbstractClient;
-import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsException;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
 import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsTarget;
+import com.researchspace.netfiles.WritableNfsClient;
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-public class NfsClientStub extends NfsAbstractClient implements NfsClient {
+public class NfsClientStub extends NfsAbstractClient implements WritableNfsClient {
 
   private boolean isLoggedIn;
 
@@ -42,5 +43,19 @@ public class NfsClientStub extends NfsAbstractClient implements NfsClient {
   @Override
   public NfsFolderDetails queryForNfsFolder(NfsTarget nfsTarget) throws IOException {
     return null;
+  }
+
+  @Override
+  public String uploadFile(File source, String destDirectoryPath) {
+    return destDirectoryPath + "/" + source.getName();
+  }
+
+  @Override
+  public void deleteFile(String absolutePath) {}
+
+  @Override
+  public String copyObject(
+      String sourceAbsolutePath, WritableNfsClient destClient, String destAbsolutePath) {
+    return destAbsolutePath;
   }
 }

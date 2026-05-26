@@ -3,21 +3,15 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.api.v1.GalleryIrodsApi;
 import com.researchspace.api.v1.model.ApiConfiguredLocation;
 import com.researchspace.api.v1.model.ApiExternalStorageInfo;
-import com.researchspace.api.v1.model.ApiExternalStorageOperationInfo;
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
-import com.researchspace.model.EcatMediaFile;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
 import com.researchspace.model.User;
-import com.researchspace.model.netfiles.ExternalStorageLocation;
 import com.researchspace.model.netfiles.NfsClientType;
-import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
-import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.netfiles.ApiNfsCredentials;
-import com.researchspace.netfiles.NfsClient;
 import com.researchspace.properties.IPropertyHolder;
-import com.researchspace.service.BaseRecordManager;
-import com.researchspace.service.ExternalStorageManager;
+import com.researchspace.service.FilestoreWriteManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
 import jakarta.annotation.PostConstruct;
@@ -29,6 +23,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -53,9 +48,7 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
 
   @Autowired private RecordDeletionManager deletionManager;
 
-  @Autowired private BaseRecordManager baseRecordManager;
-
-  @Autowired private ExternalStorageManager externalStorageManager;
+  @Autowired @Setter private FilestoreWriteManager filestoreWriteManager;
 
   protected UriComponentsBuilder irodsGalleryBaseLink;
 
@@ -67,15 +60,11 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
   protected GalleryIrodsApiController(
       NfsManager nfsManager,
       RecordDeletionManager deletionManager,
-      BaseRecordManager baseRecordManager,
       GalleryFilestoresCredentialsStore credentialsStore,
-      ExternalStorageManager externalStorageManager,
       IPropertyHolder propertyHolder) {
     this.nfsManager = nfsManager;
     this.deletionManager = deletionManager;
-    this.baseRecordManager = baseRecordManager;
     this.credentialsStore = credentialsStore;
-    this.externalStorageManager = externalStorageManager;
     this.properties = propertyHolder;
   }
 
@@ -173,66 +162,11 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
       BindingResult errors,
       User user)
       throws BindException {
-    throwBindExceptionIfErrors(errors);
-    ApiExternalStorageOperationResult result = new ApiExternalStorageOperationResult();
-    NfsFileStore nfsFileStore = validateInputAndGetFilestore(recordIds, filestorePathId, errors);
-    String absoluteFilestorePath = getAbsoluteFilestorePathForIrods(nfsFileStore);
-
-    NfsClient nfsClient =
-        credentialsStore.validateCredentialsAndLoginNfs(
-            credentials, errors, user, nfsFileStore.getFileSystem());
-
-    Map<Long, EcatMediaFile> mediaFileMapById =
-        retrieveMediaFiles(recordIds, user, errors).stream()
-            .collect(Collectors.toMap(EcatMediaFile::getId, value -> value));
-
-    log.info(
-        "Preparing file list {} to be copied into IRODS path [{}]",
-        mediaFileMapById.values(),
-        nfsFileStore.getPath());
-    try {
-      // store the files to the IRODS server
-      result =
-          nfsManager.uploadFilesToNfs(mediaFileMapById.values(), absoluteFilestorePath, nfsClient);
-
-      ExternalStorageLocation externalLocation;
-      for (ApiExternalStorageOperationInfo resultInfo : result.getFileInfoDetails()) {
-        if (resultInfo.getSucceeded()) {
-          externalLocation = new ExternalStorageLocation();
-          externalLocation.setFileStore(nfsFileStore);
-          externalLocation.setOperationUser(user);
-          externalLocation.setExternalStorageId(resultInfo.getExternalStorageId());
-          externalLocation.setConnectedMediaFile(mediaFileMapById.get(resultInfo.getRecordId()));
-          externalStorageManager.saveExternalStorageLocation(externalLocation);
-        }
-      }
-
-    } catch (Exception e) {
-      log.error("An error occurred while uploading files to IRODS: ", e);
-      errors.addError(new ObjectError("nfsClient", e.getMessage()));
-    } finally {
-      throwBindExceptionIfErrors(errors);
-    }
-    return result;
-  }
-
-  protected String getAbsoluteFilestorePathForIrods(NfsFileStore nfsFileStore) {
-    String irodsHomePath =
-        nfsFileStore.getFileSystem().getClientOption(NfsFileSystemOption.IRODS_HOME_DIR);
-    String filestorePath = nfsFileStore.getPath();
-    if (StringUtils.isBlank(irodsHomePath)) {
-      irodsHomePath = "";
-    }
-    if (StringUtils.isBlank(filestorePath)) {
-      filestorePath = "";
-    }
-    if (filestorePath.startsWith(irodsHomePath)) {
-      return filestorePath;
-    }
-    if (StringUtils.endsWith(irodsHomePath, "/") && StringUtils.startsWith(filestorePath, "/")) {
-      return StringUtils.stripEnd(irodsHomePath, "/") + filestorePath;
-    }
-    return irodsHomePath + filestorePath;
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(recordIds, credentials);
+    return filestoreWriteManager
+        .uploadToFilestore(filestorePathId, request, errors, user)
+        .getOperationResult();
   }
 
   private ApiExternalStorageOperationResult performMoveToIRODS(
@@ -242,61 +176,24 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
       BindingResult errors,
       User user)
       throws BindException {
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(recordIds, credentials);
+    FilestoreWriteManager.UploadOutcome outcome =
+        filestoreWriteManager.uploadToFilestore(filestorePathId, request, errors, user);
 
-    ApiExternalStorageOperationResult copyResult =
-        performCopyToIRODS(recordIds, filestorePathId, credentials, errors, user);
-    ApiExternalStorageOperationResult movingResult = null;
-    Set<EcatMediaFile> mediaFileSet =
-        retrieveMediaFiles(copyResult.getSucceededRecordIds(), user, errors);
-    log.info("Preparing file list {} to be removed from RSpace", mediaFileSet);
+    ApiExternalStorageOperationResult moveResult;
     try {
-      movingResult =
+      moveResult =
           ApiExternalStorageOperationResult.of(
-              deletionManager.deleteMediaFileSet(mediaFileSet, user));
+              deletionManager.deleteMediaFileSet(outcome.getSucceededMediaFiles(), user));
     } catch (AuthorizationException | ObjectRetrievalFailureException e) {
-      log.error("An error occurred while deleting files from RSpace: ", e);
+      log.error("Error deleting media files from RSpace: ", e);
       errors.addError(new ObjectError("mediaFile", e.getMessage()));
-    } finally {
       throwBindExceptionIfErrors(errors);
+      return outcome.getOperationResult();
     }
-    movingResult.addAll(copyResult.getFailedRecords());
-    return movingResult;
-  }
-
-  @NotNull
-  private Set<EcatMediaFile> retrieveMediaFiles(
-      Set<Long> recordIds, User user, BindingResult errors) throws BindException {
-    Set<EcatMediaFile> filesRetrieved = new LinkedHashSet<>();
-    for (Long recordId : recordIds) {
-      try {
-        filesRetrieved.add(baseRecordManager.retrieveMediaFile(user, recordId));
-      } catch (ObjectRetrievalFailureException ex) {
-        errors.addError(new ObjectError("recordIds", ex.getMessage()));
-      } finally {
-        throwBindExceptionIfErrors(errors);
-      }
-    }
-    return filesRetrieved;
-  }
-
-  @NotNull
-  private NfsFileStore validateInputAndGetFilestore(
-      Set<Long> recordIds, Long filestorePathId, BindingResult errors) throws BindException {
-    if (CollectionUtils.isEmpty(recordIds)) {
-      errors.addError(new ObjectError("recordIds", PARAM_RECORD_IDS + " is mandatory"));
-    }
-    if (filestorePathId == null) {
-      errors.addError(
-          new ObjectError("filestorePathId", PARAM_FILESTORE_PATH_ID + " is mandatory"));
-    }
-    throwBindExceptionIfErrors(errors);
-    NfsFileStore nfsFileStore = nfsManager.getNfsFileStore(filestorePathId);
-    if (nfsFileStore == null) {
-      errors.addError(
-          new ObjectError("nfsFileStore", "Could not find file store with id: " + filestorePathId));
-    }
-    throwBindExceptionIfErrors(errors);
-    return nfsFileStore;
+    moveResult.addAll(outcome.getOperationResult().getFailedRecords());
+    return moveResult;
   }
 
   @NotNull

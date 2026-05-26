@@ -46,6 +46,9 @@ public class ListOfMaterialsDaoHibernateImpl extends GenericDaoHibernate<ListOfM
       invRecTypeColumnName = "subSample_id";
     } else if (GlobalIdPrefix.IC.equals(invRecGlobalId.getPrefix())) {
       invRecTypeColumnName = "container_id";
+    } else if (GlobalIdPrefix.IN.equals(invRecGlobalId.getPrefix())
+        || GlobalIdPrefix.NT.equals(invRecGlobalId.getPrefix())) {
+      invRecTypeColumnName = "instrumentEntity_id";
     } else {
       throw new IllegalArgumentException("unsupported lom search global id type");
     }

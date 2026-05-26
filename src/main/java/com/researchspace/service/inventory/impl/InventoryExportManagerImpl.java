@@ -4,6 +4,7 @@ import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.archive.ExportScope;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.ContainerDao;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -12,10 +13,12 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.elninventory.ListOfMaterials;
 import com.researchspace.model.elninventory.MaterialUsage;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InstrumentApiManager;
 import com.researchspace.service.inventory.InventoryExportManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.ListOfMaterialsApiManager;
@@ -24,6 +27,7 @@ import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.service.inventory.csvexport.CsvContainerExporter;
 import com.researchspace.service.inventory.csvexport.CsvContentToExport;
 import com.researchspace.service.inventory.csvexport.CsvExportMode;
+import com.researchspace.service.inventory.csvexport.CsvInstrumentExporter;
 import com.researchspace.service.inventory.csvexport.CsvListOfMaterialsExporter;
 import com.researchspace.service.inventory.csvexport.CsvSampleExporter;
 import com.researchspace.service.inventory.csvexport.CsvSampleTemplateExporter;
@@ -61,6 +65,10 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
 
   @Autowired private SampleDao sampleDao;
 
+  @Autowired private InstrumentApiManager instrumentManager;
+
+  @Autowired private InstrumentDao instrumentDao;
+
   @Autowired private CsvContainerExporter csvContainerExporter;
 
   @Autowired private CsvSampleExporter csvSampleExporter;
@@ -68,6 +76,8 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
   @Autowired private CsvSampleTemplateExporter csvSampleTemplateExporter;
 
   @Autowired private CsvSubSampleExporter csvSubSampleExporter;
+
+  @Autowired private CsvInstrumentExporter csvInstrumentExporter;
 
   @Autowired private CsvListOfMaterialsExporter csvLomExporter;
 
@@ -82,6 +92,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
     private final Set<Sample> templatesToExport;
     private final Set<SubSample> subSamplesToExport;
     private final Set<ListOfMaterials> lomsToExport;
+    private final Set<Instrument> instrumentsToExport;
   }
 
   @Override
@@ -98,13 +109,15 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
     Set<Sample> templatesToExport = new LinkedHashSet<>();
     Set<SubSample> subSamplesToExport = new LinkedHashSet<>();
     Set<ListOfMaterials> lomsToExport = new LinkedHashSet<>();
+    Set<Instrument> instrumentsToExport = new LinkedHashSet<>();
     ItemsToExport itemsToExport =
         new ItemsToExport(
             containersToExport,
             samplesToExport,
             templatesToExport,
             subSamplesToExport,
-            lomsToExport);
+            lomsToExport,
+            instrumentsToExport);
 
     if (globalIdsToExport != null) {
       List<GlobalIdentifier> uniqueGlobalIds =
@@ -118,6 +131,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
             samplesToExport,
             templatesToExport,
             subSamplesToExport,
+            instrumentsToExport,
             includeSampleContent,
             user);
 
@@ -133,6 +147,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
                 samplesToExport,
                 templatesToExport,
                 subSamplesToExport,
+                instrumentsToExport,
                 includeSampleContent,
                 user);
           }
@@ -141,7 +156,8 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
     }
 
     if (includeContainerContent) {
-      addAllContainerContentToExportSets(containersToExport, subSamplesToExport, user);
+      addAllContainerContentToExportSets(
+          containersToExport, subSamplesToExport, instrumentsToExport, user);
     }
 
     return getCsvContentForExportedItems(itemsToExport, ExportScope.SELECTION, exportMode, user);
@@ -153,6 +169,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
       Set<Sample> samplesToExport,
       Set<Sample> templatesToExport,
       Set<SubSample> subSamplesToExport,
+      Set<Instrument> instrumentsToExport,
       boolean includeSampleContent,
       User user) {
 
@@ -170,11 +187,18 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
     } else if (globalId.getPrefix().equals(GlobalIdPrefix.IC)) {
       Container container = containerManager.assertUserCanReadContainer(globalId.getDbId(), user);
       containersToExport.add(container);
+    } else if (globalId.getPrefix().equals(GlobalIdPrefix.IN)) {
+      Instrument instrument =
+          instrumentManager.assertUserCanReadInstrument(globalId.getDbId(), user);
+      instrumentsToExport.add(instrument);
     }
   }
 
   private void addAllContainerContentToExportSets(
-      Set<Container> containersToExport, Set<SubSample> subSamplesToExport, User user) {
+      Set<Container> containersToExport,
+      Set<SubSample> subSamplesToExport,
+      Set<Instrument> instrumentsToExport,
+      User user) {
 
     Deque<Container> containersToProcess = new ArrayDeque<>(containersToExport);
     while (!containersToProcess.isEmpty()) {
@@ -190,6 +214,11 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
       for (SubSample subSample : container.getStoredSubSamples()) {
         if (invPermissions.canUserReadInventoryRecord(subSample, user)) {
           subSamplesToExport.add(subSample);
+        }
+      }
+      for (Instrument instrument : container.getStoredInstruments()) {
+        if (invPermissions.canUserReadInventoryRecord(instrument, user)) {
+          instrumentsToExport.add(instrument);
         }
       }
     }
@@ -238,6 +267,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
     Set<Sample> samplesToExport = new LinkedHashSet<>();
     Set<SubSample> subSamplesToExport = new LinkedHashSet<>();
     Set<Sample> templatesToExport = new LinkedHashSet<>();
+    Set<Instrument> instrumentsToExport = new LinkedHashSet<>();
 
     if (usersToExport != null) {
       List<String> uniqueUsernames = new ArrayList<>(new LinkedHashSet<>(usersToExport));
@@ -249,6 +279,9 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
       PaginationCriteria<Sample> samplePgCrit =
           PaginationCriteria.createDefaultForClass(Sample.class);
       samplePgCrit.setResultsPerPage(Integer.MAX_VALUE);
+      PaginationCriteria<Instrument> instrumentPgCrit =
+          PaginationCriteria.createDefaultForClass(Instrument.class);
+      instrumentPgCrit.setResultsPerPage(Integer.MAX_VALUE);
       for (String username : uniqueUsernames) {
         ISearchResults<Container> dbContainers =
             containerDao.getAllContainersForUser(containerPgCrit, username, null, user);
@@ -259,9 +292,13 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
         for (Sample sample : samplesToExport) {
           subSamplesToExport.addAll(sample.getActiveSubSamples());
         }
+        ISearchResults<Instrument> dbInstruments =
+            instrumentDao.getInstrumentsForUser(instrumentPgCrit, username, null, user);
+        instrumentsToExport.addAll(dbInstruments.getResults());
 
         if (includeContainerContent) {
-          addAllContainerContentToExportSets(containersToExport, subSamplesToExport, user);
+          addAllContainerContentToExportSets(
+              containersToExport, subSamplesToExport, instrumentsToExport, user);
         }
         ISearchResults<Sample> dbTemplates =
             sampleDao.getTemplatesForUser(samplePgCrit, username, null, user);
@@ -275,7 +312,8 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
             samplesToExport,
             templatesToExport,
             subSamplesToExport,
-            new HashSet<>()),
+            new HashSet<>(),
+            instrumentsToExport),
         ExportScope.USER,
         exportMode,
         user);
@@ -342,6 +380,18 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
           csvSampleTemplateExporter.getCsvCommentFragmentForSamples(exportScope, exportMode, user)
               + templateData;
       contentToExport.setSampleTemplates(templateFragment);
+    }
+
+    String instrumentData =
+        csvInstrumentExporter
+            .getCsvFragmentForInstruments(
+                List.copyOf(itemsToExport.getInstrumentsToExport()), exportMode)
+            .toString();
+    if (StringUtils.isNotBlank(instrumentData)) {
+      String instrumentFragment =
+          csvInstrumentExporter.getCsvCommentFragmentForInstruments(exportScope, exportMode, user)
+              + instrumentData;
+      contentToExport.setInstruments(instrumentFragment);
     }
 
     return contentToExport;
