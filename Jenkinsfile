@@ -473,7 +473,7 @@ def branchNameHash (String name) {
         .digest(name.getBytes(java.nio.charset.StandardCharsets.UTF_8))
     StringBuilder hash = new StringBuilder()
     for (byte b : digest) {
-        hash.append(Integer.toHexString((b & 0xff) | 0x100).substring(1))
+        hash.append(String.format('%02x', b & 0xff))
     }
     return hash.substring(0, 8)
 }
