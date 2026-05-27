@@ -336,7 +336,6 @@ netfilestores.smbj.download: false
 netfilestores.smbj.name.match.path: true
 netfilestores.smbj.shareName:
 netfilestores.smbj.withDfsEnabled: false
-offline.button.visible: false
 onedrive.client.id: 33c...
 onedrive.redirect: https://test.researchspace.com:8085/oneDrive/redirect
 orcid.client.id: APP...
@@ -403,7 +402,7 @@ INFO 24 Mar 2022 02:10:58,940 - SanityChecker.assertDefaultAdminUsersPresent | D
 
 INFO 24 Mar 2022 02:10:58,936 - SanityChecker.assertDefaultAdminUsersPresent | Default admin user present
 INFO 24 Mar 2022 02:10:58,940 - SanityChecker.assertDefaultAdminUsersPresent | Default sysadmin user present
-INFO 24 Mar 2022 02:10:58,970 - SanityChecker.assertIsValidDeployment | Property configuration is valid: PropertyHolder [urlPrefix=https://pangolin8085.researchspace.com, userSignup=true, netFileStoresEnabled=true, offlineButtonVisible=false, exportFolderLocation=archive, standalone=true, cloud=false, deleteUser=true, absPathToErrorLog=/home/builder/rspace/tomcats/rs_acceptance/rspacelogs/error.log, rspaceSupportEmail=support@researchspace.com, bannerImagePath=file:/home/builder/rspace/tomcats/rs_acceptance/invlogo.png, ldapEnabled=true, maxUploadSize=100485760, rsversion=1.76.0-SNAPSHOT-2022-03-24T02:06:34Z, oneDriveClientId=33c944b7-adcf-42c1-90f2-a33152b75172, oneDriveRedirect=https://pangolin.researchspace.com:8085/oneDrive/redirect, slackClientId=2793175987.60717545827, orcidClientId=APP-K6QNQTHK2YW9SCXT, githubClientId=34acf746f96b15931d0b, analyticsEnabled=true, loginDirectoryOption=true]
+INFO 24 Mar 2022 02:10:58,970 - SanityChecker.assertIsValidDeployment | Property configuration is valid: PropertyHolder [urlPrefix=https://pangolin8085.researchspace.com, userSignup=true, netFileStoresEnabled=true, exportFolderLocation=archive, standalone=true, cloud=false, deleteUser=true, absPathToErrorLog=/home/builder/rspace/tomcats/rs_acceptance/rspacelogs/error.log, rspaceSupportEmail=support@researchspace.com, bannerImagePath=file:/home/builder/rspace/tomcats/rs_acceptance/invlogo.png, ldapEnabled=true, maxUploadSize=100485760, rsversion=1.76.0-SNAPSHOT-2022-03-24T02:06:34Z, oneDriveClientId=33c944b7-adcf-42c1-90f2-a33152b75172, oneDriveRedirect=https://pangolin.researchspace.com:8085/oneDrive/redirect, slackClientId=2793175987.60717545827, orcidClientId=APP-K6QNQTHK2YW9SCXT, githubClientId=34acf746f96b15931d0b, analyticsEnabled=true, loginDirectoryOption=true]
 INFO 24 Mar 2022 02:10:58,970 - SanityChecker.assertLuceneFullTextSearchIndexFolderIsUsable | Checking Lucene attachment search folder can be set....
 INFO 24 Mar 2022 02:10:58,970 - AttachmentSearchBase.setIndexFolder | Setting index folder to /home/builder/rspace/tomcats/rs_acceptance/LuceneFTsearchIndices
 INFO 24 Mar 2022 02:10:59,003 - AttachmentSearchBase.setIndexFolder | Setting index folder to /home/builder/rspace/tomcats/rs_acceptance/LuceneFTsearchIndices
