@@ -4,11 +4,13 @@ import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import { render, screen, waitFor } from "@/__tests__/customQueries";
+import Button from "@mui/material/Button";
 import {
-  CallableSnippetPreviewStory,
-  CallableSnippetPreviewWithError,
-  CallableSnippetPreviewWithTableContent,
-} from "../CallableSnippetPreview.story";
+  CallableSnippetPreview,
+  useSnippetPreview,
+} from "../CallableSnippetPreview";
+import { Description, GalleryFile } from "../../useGalleryListing";
+import Result from "../../../../util/result";
 
 vi.mock("@/hooks/auth/useOauthToken", () => ({
   __esModule: true,
@@ -18,6 +20,116 @@ vi.mock("@/hooks/auth/useOauthToken", () => ({
 }));
 
 const mockAxios = new MockAdapter(axios);
+
+const mockSnippetFile: GalleryFile = {
+  id: 123,
+  globalId: "GL123",
+  name: "test-snippet.html",
+  key: "snippet-123",
+  extension: "html",
+  creationDate: new Date("2024-01-01"),
+  modificationDate: new Date("2024-01-15"),
+  type: "snippet",
+  thumbnailUrl: "",
+  ownerId: 1,
+  ownerName: "Test User",
+  ownerUsername: "testuser",
+  description: Description.Present("A test HTML snippet"),
+  size: 1024,
+  version: 1,
+  originalImageId: null,
+  path: [],
+  pathAsString: () => "/snippets",
+  downloadHref: () => Promise.resolve("/download/123"),
+  isFolder: false,
+  isSystemFolder: false,
+  isSharedFolder: false,
+  isImage: false,
+  isSnippet: true,
+  isSnippetFolder: false,
+  transformFilename: (f) => f("test-snippet"),
+  setName: () => {},
+  setDescription: () => {},
+  linkedDocuments: null,
+  metadata: {},
+  canOpen: Result.Ok(null),
+  canDuplicate: Result.Ok(null),
+  canDelete: Result.Ok(null),
+  canRename: Result.Ok(null),
+  canMoveToIrods: Result.Error([new Error("Not supported")]),
+  canBeExported: Result.Ok(null),
+  canBeMoved: Result.Ok(null),
+  canUploadNewVersion: Result.Ok(null),
+  canBeLoggedOutOf: Result.Error([new Error("Not applicable")]),
+  deconstructor: () => {},
+  treeViewItemId: "tree-item-123",
+};
+
+function TestComponent() {
+  const { openSnippetPreview } = useSnippetPreview();
+
+  return (
+    <Button onClick={() => openSnippetPreview(mockSnippetFile)}>
+      Open Snippet Preview
+    </Button>
+  );
+}
+
+function CallableSnippetPreviewStory() {
+  return (
+    <CallableSnippetPreview>
+      <TestComponent />
+    </CallableSnippetPreview>
+  );
+}
+
+function CallableSnippetPreviewWithTableContent() {
+  const mockFileWithTable: GalleryFile = {
+    ...mockSnippetFile,
+    name: "table-snippet.html",
+    id: 124,
+  };
+
+  function TestComponentWithTable() {
+    const { openSnippetPreview } = useSnippetPreview();
+
+    return (
+      <Button onClick={() => openSnippetPreview(mockFileWithTable)}>
+        Open Table Snippet Preview
+      </Button>
+    );
+  }
+
+  return (
+    <CallableSnippetPreview>
+      <TestComponentWithTable />
+    </CallableSnippetPreview>
+  );
+}
+
+function CallableSnippetPreviewWithError() {
+  const mockFileWithError: GalleryFile = {
+    ...mockSnippetFile,
+    name: "error-snippet.html",
+    id: 999,
+  };
+
+  function TestComponentWithError() {
+    const { openSnippetPreview } = useSnippetPreview();
+
+    return (
+      <Button onClick={() => openSnippetPreview(mockFileWithError)}>
+        Open Error Snippet Preview
+      </Button>
+    );
+  }
+
+  return (
+    <CallableSnippetPreview>
+      <TestComponentWithError />
+    </CallableSnippetPreview>
+  );
+}
 
 describe("CallableSnippetPreview", () => {
   beforeEach(() => {

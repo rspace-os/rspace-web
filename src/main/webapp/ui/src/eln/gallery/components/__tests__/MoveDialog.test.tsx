@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import React from "react";
 import { render, screen } from "@/__tests__/customQueries";
-import { MoveDialogStory } from "../MoveDialog.story";
+import createAccentedTheme from "@/accentedTheme";
+import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
+import { ThemeProvider } from "@mui/material/styles";
+import MoveDialog from "../MoveDialog";
+import { LandmarksProvider } from "@/components/LandmarksContext";
 
 const mockUseGalleryListing = vi.fn();
 const mockUseGalleryActions = vi.fn();
@@ -54,6 +58,21 @@ vi.mock("@/stores/contexts/Analytics", async () => {
     }),
   };
 });
+
+function MoveDialogStory() {
+  return (
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <LandmarksProvider>
+        <MoveDialog
+          open={true}
+          onClose={() => {}}
+          section="Images"
+          refreshListing={() => Promise.resolve()}
+        />
+      </LandmarksProvider>
+    </ThemeProvider>
+  );
+}
 
 beforeEach(() => {
   mockUseGalleryListing.mockReturnValue({

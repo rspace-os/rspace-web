@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import React from "react";
 import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@/__tests__/customQueries";
-import { SimplePageWithAppBar } from "../index.story";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { ThemeProvider } from "@mui/material/styles";
+import createAccentedTheme from "@/accentedTheme";
+import testAccentColor from "@/__tests__/accentColor.json";
+import AppBar from "..";
 import { type UiNavigationData } from "../useUiNavigationData";
 
 const mockUseUiNavigationData = vi.fn<
@@ -56,6 +60,26 @@ vi.mock("../../../hooks/websockets/useWebSocketNotifications", () => ({
     specialMessageCount: 0,
   }),
 }));
+
+function SimplePageWithAppBar(props: Partial<React.ComponentProps<typeof AppBar>>) {
+  return (
+    <div style={{ margin: 0, padding: 0 }}>
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={createAccentedTheme(testAccentColor)}>
+          <AppBar
+            variant="page"
+            currentPage="Some page"
+            accessibilityTips={{}}
+            {...props}
+          />
+          <main>
+            <article>Some content here to test the app bar.</article>
+          </main>
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </div>
+  );
+}
 
 function successUiNavigationData(
   overrides: Partial<UiNavigationData> = {},

@@ -2,10 +2,61 @@ import { describe, expect, test } from "vitest";
 import React from "react";
 import userEvent from "@testing-library/user-event";
 import { render, screen, waitFor } from "@/__tests__/customQueries";
-import {
-  DynamicLandmarksExample,
-  SimpleTestExample,
-} from "../SkipToContentMenu.story";
+import { Box, Typography } from "@mui/material";
+import { LandmarksProvider, useLandmark } from "../LandmarksContext";
+import SkipToContentButton from "../SkipToContentMenu";
+
+const TestLandmark = ({ name }: { name: string }) => {
+  const ref = useLandmark(name);
+  return (
+    <Box
+      ref={ref}
+      tabIndex={-1}
+      sx={{
+        height: 150,
+        border: 1,
+        p: 2,
+        m: 1,
+      }}
+    >
+      <Typography variant="h6">{name} Content</Typography>
+    </Box>
+  );
+};
+
+function DynamicLandmarksExample() {
+  const [showExtraLandmarks, setShowExtraLandmarks] = React.useState(false);
+
+  return (
+    <LandmarksProvider>
+      <SkipToContentButton />
+      <Box sx={{ mt: 5 }}>
+        <button onClick={() => setShowExtraLandmarks(!showExtraLandmarks)}>
+          {showExtraLandmarks ? "Hide" : "Show"} Extra Landmarks
+        </button>
+        <TestLandmark name="Header" />
+        <TestLandmark name="Main Content" />
+        {showExtraLandmarks && (
+          <>
+            <TestLandmark name="Sidebar" />
+            <TestLandmark name="Comments" />
+          </>
+        )}
+        <TestLandmark name="Footer" />
+      </Box>
+    </LandmarksProvider>
+  );
+}
+
+function SimpleTestExample() {
+  return (
+    <LandmarksProvider>
+      <SkipToContentButton />
+      <TestLandmark name="Header" />
+      <TestLandmark name="Footer" />
+    </LandmarksProvider>
+  );
+}
 
 describe("SkipToContentMenu", () => {
   test("shows the skip links when focused", async () => {

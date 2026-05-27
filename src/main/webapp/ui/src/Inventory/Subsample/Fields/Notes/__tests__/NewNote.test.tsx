@@ -2,7 +2,10 @@ import { describe, expect, test, vi } from "vitest";
 import React from "react";
 import userEvent from "@testing-library/user-event";
 import { render, screen, waitFor } from "@/__tests__/customQueries";
-import { NewNoteStory } from "../NewNote.story";
+import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
+import materialTheme from "../../../../../theme";
+import Alerts from "@/Inventory/components/Alerts";
+import NewNote from "../NewNote";
 
 vi.mock("@/components/Inputs/StyledTinyMceEditor", () => ({
   __esModule: true,
@@ -49,6 +52,49 @@ function createDirtyFlagSpy() {
     isSet: () => value,
     unsetCalls: () => unsetCalls,
   };
+}
+
+function NewNoteStory({
+  onErrorStateChange,
+  createNote,
+  isEditable = true,
+  setDirtyFlag,
+  unsetDirtyFlag,
+  state,
+}: {
+  onErrorStateChange?: (hasError: boolean) => void;
+  createNote?: () => Promise<void>;
+  isEditable?: boolean;
+  setDirtyFlag?: () => void;
+  unsetDirtyFlag?: () => void;
+  state?: "preview" | "editing";
+}): React.ReactNode {
+  const onErrorStateChangeHandler = onErrorStateChange ?? (() => {});
+  const mockSubSample = {
+    state: state ?? ("preview" as const),
+    createNote: createNote ?? (async () => Promise.resolve()),
+    isFieldEditable: (field: string) => {
+      if (field === "notes") return isEditable;
+      return true;
+    },
+    setDirtyFlag: setDirtyFlag ?? (() => {}),
+    unsetDirtyFlag: unsetDirtyFlag ?? (() => {}),
+  };
+
+  return (
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={materialTheme}>
+        <Alerts>
+          <NewNote
+            record={mockSubSample as unknown as React.ComponentProps<
+              typeof NewNote
+            >["record"]}
+            onErrorStateChange={onErrorStateChangeHandler}
+          />
+        </Alerts>
+      </ThemeProvider>
+    </StyledEngineProvider>
+  );
 }
 
 describe("NewNote", () => {
