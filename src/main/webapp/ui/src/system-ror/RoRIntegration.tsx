@@ -366,12 +366,9 @@ function mountRoRIntegration(event?: Event) {
 
   mainArea.rorRoot?.unmount();
 
-  const existingContainer = document.getElementById("rorIntegration");
-  const domContainer = existingContainer ?? document.createElement("div");
-
-  if (!existingContainer) {
-    domContainer.id = "rorIntegration";
-  }
+  const domContainer =
+    document.getElementById("rorIntegration") ??
+    Object.assign(document.createElement("div"), { id: "rorIntegration" });
 
   domContainer.style.width = "70%";
 
