@@ -175,30 +175,18 @@ $(document).ready(function(e) {
   }
 
   window.addEventListener("ReactToolbarMounted", () => {
-    if (typeof initWordChooserDlg === 'function') {
-      initWordChooserDlg();
-      $('#createFromWord').click( function (e){
-        e.preventDefault();
-        openWordChooserDlg(getDocIdNameAndType, {
-          title:"Import from Word/Open Office",
-          fileType:"Word or Open Office",
-          showImportOptions:true, listNotebooks:true
-        });
-      });
-
-      $('#createNewForm').click(function(e) {
-        e.preventDefault();
-        var form = $("<form target='_blank' method='POST' action='/workspace/editor/form/'></form>");
-        $(document.body).append(form);
-        form.submit();
-      });
-    }
+    $('#createNewForm').click(function(e) {
+      e.preventDefault();
+      var form = $("<form target='_blank' method='POST' action='/workspace/editor/form/'></form>");
+      $(document.body).append(form);
+      form.submit();
+    });
    
-      $('#createFromProtocolsIo').click(function(e) {
-        e.preventDefault();
-        RS.trackEvent('CreateFromProtocolsIo');
-        openProtocolsIoChooserDlg();
-      });
+    $('#createFromProtocolsIo').click(function(e) {
+      e.preventDefault();
+      RS.trackEvent('CreateFromProtocolsIo');
+      openProtocolsIoChooserDlg();
+    });
       
     // Clicking on the document (directly) in the menu to create the document.
     $(document).on('click', '.directList', function (e){

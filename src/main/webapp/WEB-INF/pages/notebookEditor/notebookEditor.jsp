@@ -46,7 +46,6 @@
         data-settings-key="${settingsKey}"
         data-pio-enabled="${pioEnabled}"
         data-evernote-enabled="${evernoteEnabled}"
-        data-aspose-enabled="${asposeEnabled}"
         data-can-delete="${permDTO.deleteRecord}"
         data-can-share="${canShare}">
       </div>
