@@ -466,13 +466,17 @@ def branchToDbName (String name) {
 }
 
 // Replaces characters that are unsafe in filesystem paths or AWS/host resource names (notably '/') with '-',
-// keeping dots, underscores and hyphens. Used so branches like 'feature/foo' don't break path/name construction.
+// keeping dots, underscores and hyphens, and appends a short hash of the original name so that distinct
+// branches that would otherwise collide (e.g. 'feature/foo' and 'feature-foo') stay unique.
 def branchToSafeName (String name) {
+    String hash = name.md5().take(8)
     String newname = name.replaceAll('[^A-Za-z0-9._-]', '-')
-    if (newname.length() > 63) {
-        newname = newname.substring(0, 63)
+    String candidate = "${newname}-${hash}"
+    if (candidate.length() > 63) {
+        newname = newname.substring(0, 63 - 1 - hash.length())
+        candidate = "${newname}-${hash}"
     }
-    return newname
+    return candidate
 }
 
 def notifySlack(String buildStatus = 'STARTED', String info = '') {
