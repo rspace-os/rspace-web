@@ -10,7 +10,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.comms.Communication;
-import com.researchspace.model.comms.ICSEventGenerator;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
@@ -22,7 +21,6 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.ExternalMessageHandler;
 import com.researchspace.service.MessageOrRequestCreatorManager;
-import java.io.IOException;
 import java.security.Principal;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -35,9 +33,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletResponse;
-import net.fortuna.ical4j.data.CalendarOutputter;
-import net.fortuna.ical4j.validate.ValidationException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -189,37 +184,6 @@ public class MessageAndRequestController extends BaseController implements Appli
       return context.getBean("strictTargetFinderPolicy", CommunicationTargetFinderPolicy.class);
     }
     return null; // we'll use default
-  }
-
-  /**
-   * @param requestID
-   * @param response
-   */
-  @GetMapping("/ical")
-  public void getICSForTimedRequest(
-      @RequestParam("id") Long requestID, HttpServletResponse response) {
-    User subject = userManager.getAuthenticatedUserInSession();
-    Communication comm = commMgr.getIfOwnerOrTarget(requestID, subject);
-    if (!comm.isMessageOrRequest()) {
-      return;
-    }
-    MessageOrRequest mor = (MessageOrRequest) comm;
-    if (mor.getRequestedCompletionDate() == null) {
-      return;
-    }
-
-    response.setContentType("text/calendar");
-    response.setHeader("Content-Disposition", "attachment; filename=rspace.ics");
-    ICSEventGenerator icalGenerator = new ICSEventGenerator();
-
-    net.fortuna.ical4j.model.Calendar ical = icalGenerator.createICalEventFor(mor);
-    CalendarOutputter outputter = new CalendarOutputter();
-    try {
-      ical.validate();
-      outputter.output(ical, response.getWriter());
-    } catch (IOException | ValidationException e) {
-      log.error("Error creating ical output.", e);
-    }
   }
 
   @PostMapping("/ajax/sendExternalMessage")
