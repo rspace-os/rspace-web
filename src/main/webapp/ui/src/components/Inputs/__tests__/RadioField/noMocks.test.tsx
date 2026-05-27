@@ -1,12 +1,12 @@
+import userEvent from "@testing-library/user-event";
 import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import RadioField from "../../RadioField";
 import { ThemeProvider } from "@mui/material/styles";
-
 import materialTheme from "../../../../theme";
 describe("RadioField", () => {
-  test("When a selection is made, the onChange handler is called", () => {
+  test("When a selection is made, the onChange handler is called", async () => {
     const onChange = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -29,7 +29,11 @@ describe("RadioField", () => {
         />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: "FirstOption" }));
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: "FirstOption",
+      }),
+    );
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({

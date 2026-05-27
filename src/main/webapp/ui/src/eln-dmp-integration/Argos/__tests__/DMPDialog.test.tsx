@@ -1,22 +1,19 @@
 import { test, describe, expect, beforeEach, vi } from "vitest";
 import React from "react";
-import { screen, waitFor, fireEvent, render } from "@testing-library/react";
+import { screen, waitFor, render } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import DMPDialog from "../DMPDialog";
 import axios from "@/common/axios";
 import { within } from "@/__tests__/customQueries";
-
 import userEvent from "@testing-library/user-event";
-
+import { replaceValue } from "@/__tests__/helpers/userInteractions";
 const mockAxios = new MockAdapter(axios);
-
 describe("DMPDialog", () => {
   beforeEach(() => {
     mockAxios.resetHistory();
     mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
       data: "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MzQzNDI5NTYsImV4cCI6MTczNDM0NjU1NiwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.HCKre3g_P1wmGrrrnQncvFeT9pAePFSc4UPuyP5oehI",
     });
-
     mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(
       200,
       {
@@ -77,7 +74,9 @@ describe("DMPDialog", () => {
         expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
         // i.e. the table body has been rendered
       },
-      { timeout: 2000 },
+      {
+        timeout: 2000,
+      },
     );
     expect(
       await (
@@ -119,7 +118,9 @@ describe("DMPDialog", () => {
             expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
             // i.e. the table body has been rendered
           },
-          { timeout: 2000 },
+          {
+            timeout: 2000,
+          },
         );
         await user.click(
           screen.getByRole("button", {
@@ -196,10 +197,11 @@ describe("DMPDialog", () => {
             expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
             // i.e. the table body has been rendered
           },
-          { timeout: 2000 },
+          {
+            timeout: 2000,
+          },
         );
-
-        fireEvent.mouseDown(screen.getByRole("combobox"));
+        await userEvent.click(screen.getByRole("combobox"));
         await user.click(
           within(screen.getByRole("listbox")).getByRole("option", {
             name: "5",
@@ -257,7 +259,9 @@ describe("DMPDialog", () => {
             expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
             // i.e. the table body has been rendered
           },
-          { timeout: 2000 },
+          {
+            timeout: 2000,
+          },
         );
         await user.click(
           screen.getByRole("button", {
@@ -265,12 +269,10 @@ describe("DMPDialog", () => {
           }),
         );
         // first type in the label filter, and then press enter
-        fireEvent.input(screen.getByRole("textbox"), {
-          target: { value: "Foo" },
-        });
-        fireEvent.submit(screen.getByRole("textbox"), {
-          target: { value: "" },
-        });
+        const textbox = screen.getByRole("textbox");
+        await replaceValue(textbox, "Foo");
+        textbox.focus();
+        await user.keyboard("{Enter}");
         await waitFor(() => {
           expect(screen.getByText("Foo")).toBeVisible();
         });

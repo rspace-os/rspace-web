@@ -1,6 +1,7 @@
+import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -9,23 +10,23 @@ import TableRow from "@mui/material/TableRow";
 import StoichiometryInventoryUpdateMoleculeRow from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateMoleculeRow";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import type { InventoryUpdateStockDisplay } from "@/tinyMCE/stoichiometry/utils";
-
 vi.mock("@/components/GlobalId", () => ({
-  default: ({ record }: { record: { globalId: string } }) => (
-    <span>{record.globalId}</span>
-  ),
+  default: ({
+    record,
+  }: {
+    record: {
+      globalId: string;
+    };
+  }) => <span>{record.globalId}</span>,
 }));
-
 vi.mock("@/stores/models/LinkableRecordFromGlobalId", () => ({
   default: class MockLinkableRecordFromGlobalId {
     globalId: string;
-
     constructor(globalId: string) {
       this.globalId = globalId;
     }
   },
 }));
-
 const molecule: EditableMolecule = {
   id: 12,
   rsChemElement: null,
@@ -54,7 +55,6 @@ const molecule: EditableMolecule = {
   limitingReagent: false,
   notes: null,
 };
-
 describe("StoichiometryInventoryUpdateMoleculeRow", () => {
   const renderInTable = (
     ui: React.ReactElement<typeof StoichiometryInventoryUpdateMoleculeRow>,
@@ -73,7 +73,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         <TableBody>{ui}</TableBody>
       </Table>,
     );
-
   const columnIndexes = {
     Actions: 0,
     Molecule: 1,
@@ -81,22 +80,18 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     "Will Use": 3,
     Remaining: 4,
   } as const;
-
   const getMoleculeRow = (name: string) => {
-    const row = screen
-      .getAllByRole("row")
-      .find(
-        (candidate) =>
-          within(candidate).queryByRole("checkbox", { name }) !== null,
-      );
-
+    const row = screen.getAllByRole("row").find(
+      (candidate) =>
+        within(candidate).queryByRole("checkbox", {
+          name,
+        }) !== null,
+    );
     if (!row) {
       throw new Error(`Molecule row not found: ${name}`);
     }
-
     return row;
   };
-
   const getMetric = (
     moleculeName: string,
     name: keyof typeof columnIndexes,
@@ -104,14 +99,11 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     const metric = within(getMoleculeRow(moleculeName)).getAllByRole("cell")[
       columnIndexes[name]
     ];
-
     if (!metric) {
       throw new Error(`Metric column not found: ${moleculeName} / ${name}`);
     }
-
     return metric;
   };
-
   it("renders in-stock, will-use and remaining metrics with equal card sections", () => {
     const stockDisplay: InventoryUpdateStockDisplay = {
       inStock: {
@@ -132,7 +124,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       remainingStatus: "positive",
       warningText: null,
     };
-
     renderInTable(
       <StoichiometryInventoryUpdateMoleculeRow
         molecule={molecule}
@@ -143,16 +134,19 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         onToggle={() => {}}
       />,
     );
-
     expect(
-      screen.getByRole("table", { name: "Inventory update test table" }),
+      screen.getByRole("table", {
+        name: "Inventory update test table",
+      }),
     ).toBeVisible();
     expect(screen.getByText("In Stock")).toBeVisible();
     expect(screen.getByText("Will Use")).toBeVisible();
     expect(screen.getByText("Remaining")).toBeVisible();
     expect(screen.getByText("Molecule")).toBeVisible();
     expect(
-      screen.getByRole("checkbox", { name: "Ethanol" }),
+      screen.getByRole("checkbox", {
+        name: "Ethanol",
+      }),
     ).toHaveAccessibleName("Ethanol");
     expect(
       within(getMetric("Ethanol", "Molecule")).getByText("Ethanol"),
@@ -170,8 +164,7 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       within(getMetric("Ethanol", "Remaining")).getByText("5.0 g"),
     ).toBeVisible();
   });
-
-  it("only toggles when the checkbox is clicked", () => {
+  it("only toggles when the checkbox is clicked", async () => {
     const onToggle = vi.fn();
     const stockDisplay: InventoryUpdateStockDisplay = {
       inStock: {
@@ -192,7 +185,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       remainingStatus: "positive",
       warningText: null,
     };
-
     renderInTable(
       <StoichiometryInventoryUpdateMoleculeRow
         molecule={molecule}
@@ -203,14 +195,15 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         onToggle={onToggle}
       />,
     );
-
-    fireEvent.click(screen.getByText("Ethanol"));
+    await userEvent.click(screen.getByText("Ethanol"));
     expect(onToggle).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole("checkbox", { name: "Ethanol" }));
+    await userEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Ethanol",
+      }),
+    );
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
-
   it("still shows will-use and remaining metrics when stock was already deducted", () => {
     const stockDisplay: InventoryUpdateStockDisplay = {
       inStock: {
@@ -231,7 +224,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       remainingStatus: "positive",
       warningText: null,
     };
-
     renderInTable(
       <StoichiometryInventoryUpdateMoleculeRow
         molecule={{
@@ -251,7 +243,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         onToggle={() => {}}
       />,
     );
-
     expect(
       within(getMetric("Ethanol", "Will Use")).getByText("5.0 g"),
     ).toBeVisible();
@@ -262,7 +253,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       within(getMetric("Ethanol", "Molecule")).getByText("Stock Deducted"),
     ).toBeVisible();
   });
-
   it("shows a remaining warning and negative status when stock is insufficient", () => {
     const stockDisplay: InventoryUpdateStockDisplay = {
       inStock: {
@@ -283,7 +273,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       remainingStatus: "negative",
       warningText: "Insufficient Stock",
     };
-
     renderInTable(
       <StoichiometryInventoryUpdateMoleculeRow
         molecule={molecule}
@@ -294,8 +283,11 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         onToggle={() => {}}
       />,
     );
-
-    expect(screen.getByRole("checkbox", { name: "Ethanol" })).toBeDisabled();
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Ethanol",
+      }),
+    ).toBeDisabled();
     expect(getMetric("Ethanol", "Remaining")).toHaveAttribute(
       "data-status",
       "negative",
@@ -314,7 +306,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     ).toBeVisible();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
-
   it("renders generic helper text separately from stock metrics", () => {
     const stockDisplay: InventoryUpdateStockDisplay = {
       inStock: {
@@ -335,10 +326,12 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       remainingStatus: "default",
       warningText: null,
     };
-
     renderInTable(
       <StoichiometryInventoryUpdateMoleculeRow
-        molecule={{ ...molecule, inventoryLink: null }}
+        molecule={{
+          ...molecule,
+          inventoryLink: null,
+        }}
         selected={false}
         disabled={true}
         helperText="Link an inventory item before updating stock."
@@ -346,7 +339,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         onToggle={() => {}}
       />,
     );
-
     expect(
       screen.getByText("Link an inventory item before updating stock."),
     ).toBeVisible();
@@ -358,7 +350,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     ).toBeVisible();
     expect(screen.queryByText("Insufficient Stock")).not.toBeInTheDocument();
   });
-
   it("disables the card when a linked inventory item has no quantity defined", () => {
     const stockDisplay: InventoryUpdateStockDisplay = {
       inStock: {
@@ -379,7 +370,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       remainingStatus: "default",
       warningText: null,
     };
-
     renderInTable(
       <StoichiometryInventoryUpdateMoleculeRow
         molecule={molecule}
@@ -390,8 +380,11 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         onToggle={() => {}}
       />,
     );
-
-    expect(screen.getByRole("checkbox", { name: "Ethanol" })).toBeDisabled();
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Ethanol",
+      }),
+    ).toBeDisabled();
     expect(
       within(getMetric("Ethanol", "In Stock")).getByText("—"),
     ).toBeVisible();
@@ -399,7 +392,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       within(getMetric("Ethanol", "Will Use")).getByText("—"),
     ).toBeVisible();
   });
-
   it("disables the card when actual mass is not defined", () => {
     const stockDisplay: InventoryUpdateStockDisplay = {
       inStock: {
@@ -420,10 +412,12 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       remainingStatus: "default",
       warningText: null,
     };
-
     renderInTable(
       <StoichiometryInventoryUpdateMoleculeRow
-        molecule={{ ...molecule, actualAmount: null }}
+        molecule={{
+          ...molecule,
+          actualAmount: null,
+        }}
         selected={false}
         disabled={true}
         helperText="Define actual mass before updating linked inventory stock."
@@ -431,8 +425,11 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         onToggle={() => {}}
       />,
     );
-
-    expect(screen.getByRole("checkbox", { name: "Ethanol" })).toBeDisabled();
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Ethanol",
+      }),
+    ).toBeDisabled();
     expect(
       screen.getByText(
         "Define actual mass before updating linked inventory stock.",
@@ -448,7 +445,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       within(getMetric("Ethanol", "Remaining")).getByText("— g"),
     ).toBeVisible();
   });
-
   it("hides projected Will Use and Remaining metrics when stock was already deducted", () => {
     const stockDisplay: InventoryUpdateStockDisplay = {
       inStock: {
@@ -469,7 +465,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       remainingStatus: "default",
       warningText: null,
     };
-
     renderInTable(
       <StoichiometryInventoryUpdateMoleculeRow
         molecule={{
@@ -486,7 +481,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         onToggle={() => {}}
       />,
     );
-
     expect(
       within(getMetric("Ethanol", "In Stock")).getByText("10.0 g"),
     ).toBeVisible();

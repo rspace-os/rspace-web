@@ -1,6 +1,7 @@
+import userEvent from "@testing-library/user-event";
 import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
@@ -9,7 +10,6 @@ import Search from "../../../stores/models/Search";
 import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
 import ApiServiceBase from "../../../common/ApiServiceBase";
 import { AxiosResponse } from "axios";
-
 import "@/__tests__/assertUrlSearchParams";
 type TriggersSearchNavigateArgs = {
   skipToParentContext?: boolean;
@@ -18,12 +18,13 @@ const TriggersSearchNavigate = ({
   skipToParentContext,
 }: TriggersSearchNavigateArgs) => {
   const { useNavigate } = React.useContext(NavigateContext);
-
   const navigate = useNavigate();
   return (
     <button
       onClick={() =>
-        navigate("/inventory/search?query=foo", { skipToParentContext })
+        navigate("/inventory/search?query=foo", {
+          skipToParentContext,
+        })
       }
     >
       Click me!
@@ -32,7 +33,6 @@ const TriggersSearchNavigate = ({
 };
 const TriggersPermalinkNavigate = () => {
   const { useNavigate } = React.useContext(NavigateContext);
-
   const navigate = useNavigate();
   return (
     <button onClick={() => navigate("/inventory/container/1")}>
@@ -41,12 +41,14 @@ const TriggersPermalinkNavigate = () => {
   );
 };
 describe("InnerSearchNavigationContext", () => {
-  test("navigate calls should update the search parameters.", () => {
+  test("navigate calls should update the search parameters.", async () => {
     const querySpy = vi
       .spyOn(ApiServiceBase.prototype, "query")
       .mockImplementation(() =>
         Promise.resolve({
-          data: { records: [] },
+          data: {
+            records: [],
+          },
           status: 200,
           statusText: "OK",
           headers: {},
@@ -68,15 +70,22 @@ describe("InnerSearchNavigationContext", () => {
         </SearchContext.Provider>
       </InnerSearchNavigationContext>,
     );
-
-    fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
-    expect(querySpy).toHaveBeenLastCalledWith(
-      "search",
-      expect.urlSearchParamContaining({ query: "foo" }),
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: /Click me!/,
+      }),
     );
+    await waitFor(() => {
+      expect(querySpy).toHaveBeenCalledWith(
+        "search",
+        expect.urlSearchParamContaining({
+          query: "foo",
+        }),
+      );
+    });
   });
   describe("when the parent context is AlwaysNewWindowNavigationContext", () => {
-    test("navigate calls with skipToParentContext set to true should open /inventory/search calls in a new window.", () => {
+    test("navigate calls with skipToParentContext set to true should open /inventory/search calls in a new window.", async () => {
       const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
       const search = new Search({
         factory: new AlwaysNewFactory(),
@@ -95,11 +104,14 @@ describe("InnerSearchNavigationContext", () => {
           </InnerSearchNavigationContext>
         </AlwaysNewWindowNavigationContext>,
       );
-
-      fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /Click me!/,
+        }),
+      );
       expect(openSpy).toHaveBeenCalled();
     });
-    test("navigate calls to permalink pages should always open in a new window.", () => {
+    test("navigate calls to permalink pages should always open in a new window.", async () => {
       const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
       const search = new Search({
         factory: new AlwaysNewFactory(),
@@ -118,17 +130,22 @@ describe("InnerSearchNavigationContext", () => {
           </InnerSearchNavigationContext>
         </AlwaysNewWindowNavigationContext>,
       );
-
-      fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /Click me!/,
+        }),
+      );
       expect(openSpy).toHaveBeenCalled();
     });
   });
-  test("Pre-existing search parameters are kept, enforcing the parentGlobalId restriction", () => {
+  test("Pre-existing search parameters are kept, enforcing the parentGlobalId restriction", async () => {
     const querySpy = vi
       .spyOn(ApiServiceBase.prototype, "query")
       .mockImplementation(() =>
         Promise.resolve({
-          data: { records: [] },
+          data: {
+            records: [],
+          },
           status: 200,
           statusText: "OK",
           headers: {},
@@ -153,11 +170,19 @@ describe("InnerSearchNavigationContext", () => {
         </InnerSearchNavigationContext>
       </SearchContext.Provider>,
     );
-
-    fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
-    expect(querySpy).toHaveBeenLastCalledWith(
-      "search",
-      expect.urlSearchParamContaining({ query: "foo", parentGlobalId: "SA1" }),
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: /Click me!/,
+      }),
     );
+    await waitFor(() => {
+      expect(querySpy).toHaveBeenCalledWith(
+        "search",
+        expect.urlSearchParamContaining({
+          query: "foo",
+          parentGlobalId: "SA1",
+        }),
+      );
+    });
   });
 });

@@ -1,17 +1,17 @@
+import userEvent from "@testing-library/user-event";
 import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import { render, fireEvent, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import Fields from "../Fields";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
-
 vi.mock("../../../../../components/Ketcher/KetcherDialog", () => ({
   default: vi.fn(() => <div></div>),
 }));
 describe("Fields", () => {
   describe("Sample with number field behaves correctly.", () => {
-    test("Checks validity of input", () => {
+    test("Checks validity of input", async () => {
       const INITIAL_VALUE = "2";
       const activeResult = makeMockSample({
         fields: [
@@ -29,20 +29,22 @@ describe("Fields", () => {
           },
         ],
       });
-      vi.spyOn(activeResult, "setAttributesDirty")
-
-        .mockImplementation(() => {});
+      vi.spyOn(activeResult, "setAttributesDirty").mockImplementation(() => {});
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
           <Fields onErrorStateChange={() => {}} sample={activeResult} />
         </ThemeProvider>,
       );
-      const input = screen.getByDisplayValue(INITIAL_VALUE);
-      fireEvent.input(input, {
-        target: {
-          checkValidity: () => false,
-        },
-      });
+      const input = screen.getByDisplayValue(INITIAL_VALUE) as HTMLInputElement;
+      const setValue = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )?.set;
+      expect(setValue).toBeDefined();
+      input.checkValidity = () => false;
+      await userEvent.click(input);
+      setValue?.call(input, "0");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
       expect(container).toHaveTextContent(
         "Invalid value. Please enter a valid value.",
       );
@@ -65,9 +67,7 @@ describe("Fields", () => {
           },
         ],
       });
-      vi.spyOn(activeResult, "setAttributesDirty")
-
-        .mockImplementation(() => {});
+      vi.spyOn(activeResult, "setAttributesDirty").mockImplementation(() => {});
       render(
         <ThemeProvider theme={materialTheme}>
           <Fields onErrorStateChange={() => {}} sample={activeResult} />

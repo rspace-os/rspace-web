@@ -1,13 +1,13 @@
+import userEvent from "@testing-library/user-event";
 import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import ValidatingSubmitButton from "../ValidatingSubmitButton";
 import Result from "../../util/result";
 import { ThemeProvider } from "@mui/material/styles";
-
 import materialTheme from "../../theme";
 describe("ValidatingSubmitButton", () => {
-  test("When validationResult is OK and the button is tapped, onClick should be called.", () => {
+  test("When validationResult is OK and the button is tapped, onClick should be called.", async () => {
     const onClick = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -20,10 +20,10 @@ describe("ValidatingSubmitButton", () => {
         </ValidatingSubmitButton>
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button"));
+    await userEvent.click(screen.getByRole("button"));
     expect(onClick).toHaveBeenCalled();
   });
-  test("When validationResult is Error and the button is tapped, onClick should not be called.", () => {
+  test("When validationResult is Error and the button is tapped, onClick should not be called.", async () => {
     const onClick = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -36,10 +36,10 @@ describe("ValidatingSubmitButton", () => {
         </ValidatingSubmitButton>
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button"));
+    await userEvent.click(screen.getByRole("button"));
     expect(onClick).not.toHaveBeenCalled();
   });
-  test("When validationResult is Error and the button is shown, the errors should be displayed.", () => {
+  test("When validationResult is Error and the button is shown, the errors should be displayed.", async () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <ValidatingSubmitButton
@@ -51,8 +51,10 @@ describe("ValidatingSubmitButton", () => {
         </ValidatingSubmitButton>
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button"));
-    const alert = screen.getByRole("alert", { name: "Warning" });
+    await userEvent.click(screen.getByRole("button"));
+    const alert = screen.getByRole("alert", {
+      name: "Warning",
+    });
     expect(alert).toBeVisible();
     expect(alert).toHaveTextContent("test");
   });

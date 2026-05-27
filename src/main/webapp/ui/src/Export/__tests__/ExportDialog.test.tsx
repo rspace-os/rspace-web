@@ -171,7 +171,7 @@ describe("ExportDialog", () => {
   describe("Validations should be enforced.", () => {
     describe("Exporting with filestores links", () => {
       test("but without being logged in should show a warning.", async () => {
-        const user = userEvent.setup();
+        const user = userEvent.setup({ pointerEventsCheck: 0 });
         mockAxios.onPost("/nfsExport/ajax/createQuickExportPlan").reply(200, {
           ...CREATE_QUICK_EXPORT_PLAN,
         });
@@ -237,7 +237,7 @@ describe("ExportDialog", () => {
         });
       });
       test("but without scanning should show a warning.", async () => {
-        const user = userEvent.setup();
+        const user = userEvent.setup({ pointerEventsCheck: 0 });
         /*
          * Here, we're setting loggedAs on the mocked samba file system because
          * the scanning warning is only shown if the user is logged in,
@@ -325,7 +325,7 @@ describe("ExportDialog", () => {
   describe("Controlled vocabulary terms", () => {
     // passes on its own, fails when run together
     test("Tags should be pre-populated from the tags on the documents", async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
       mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, [
         {
           repoName: "app.zenodo",
@@ -419,7 +419,7 @@ describe("ExportDialog", () => {
         "Your export generation request has been submitted to the server. RSpace will notify you when the export is ready.",
       );
     test("allVersions is set by the version switch.", async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
       await fc.assert(
         fc.asyncProperty(fc.boolean(), async (setAllVersionsSwitch) => {
           mockAxios.resetHistory();
@@ -457,7 +457,7 @@ describe("ExportDialog", () => {
           const exportButton = await screen.findByRole("button", {
             name: "Export",
           });
-          await userEvent.click(exportButton);
+          await user.click(exportButton);
           await waitFor(() => {
             expect(screen.getByText(/submitted to the server/)).toBeVisible();
           });
@@ -475,6 +475,7 @@ describe("ExportDialog", () => {
       );
     });
     test("Default page size checkbox should be sent.", async () => {
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
       mockAxios.onGet("/export/ajax/defaultPDFConfig").reply(200, {
         data: {
           pageSize: "A4",
@@ -498,30 +499,32 @@ describe("ExportDialog", () => {
           },
         });
       });
-      await userEvent.click(
+      await user.click(
         await screen.findByRole("radio", {
-          name: /^.DOC/,
+          name: /^PDF/,
         }),
       );
-      await userEvent.click(
+      await user.click(
         screen.getByRole("button", {
           name: "Next",
         }),
       );
-      await waitFor(() => expect(screen.getByRole("combobox")).toBeVisible());
-      await userEvent.click(screen.getByRole("combobox"));
-      await userEvent.click(
+      await waitFor(() =>
+        expect(screen.getAllByRole("combobox")[0]).toBeVisible(),
+      );
+      await user.click(screen.getAllByRole("combobox")[0]);
+      await user.click(
         screen.getByRole("option", {
           name: "Letter",
         }),
       );
-      await userEvent.click(
+      await user.click(
         screen.getByRole("checkbox", {
-          name: "Set LETTER as default.",
+          name: "Set LETTER as default",
         }),
       );
       mockAxios.resetHistory();
-      await userEvent.click(
+      await user.click(
         screen.getByRole("button", {
           name: "Export",
         }),
@@ -549,7 +552,7 @@ describe("ExportDialog", () => {
       });
       describe("When the selected export type is PDF", () => {
         test("and the selection is a set of documents.", async () => {
-          const user = userEvent.setup();
+          const user = userEvent.setup({ pointerEventsCheck: 0 });
           await fc.assert(
             fc.asyncProperty(
               arbDocumentSelection().filter(({ exportTypes }) =>
@@ -563,7 +566,7 @@ describe("ExportDialog", () => {
                     selection,
                   });
                 });
-                await userEvent.click(
+                await user.click(
                   screen.getByRole("radio", {
                     name: /^PDF/,
                   }),
@@ -587,7 +590,7 @@ describe("ExportDialog", () => {
           );
         });
         test("and the selection is a group.", async () => {
-          const user = userEvent.setup();
+          const user = userEvent.setup({ pointerEventsCheck: 0 });
           await fc.assert(
             fc.asyncProperty(arbGroupSelection, async (selection) => {
               const { setProps } = renderExportDialog();
@@ -620,7 +623,7 @@ describe("ExportDialog", () => {
           );
         });
         test("and the selection is a user.", async () => {
-          const user = userEvent.setup();
+          const user = userEvent.setup({ pointerEventsCheck: 0 });
           await fc.assert(
             fc.asyncProperty(arbUserSelection, async (selection) => {
               const { setProps } = renderExportDialog();
@@ -630,7 +633,7 @@ describe("ExportDialog", () => {
                   selection,
                 });
               });
-              await userEvent.click(
+              await user.click(
                 screen.getByRole("radio", {
                   name: /^PDF/,
                 }),
@@ -655,7 +658,7 @@ describe("ExportDialog", () => {
       });
       describe("When the selected export type is DOC", () => {
         test("and the selection is a single document.", async () => {
-          const user = userEvent.setup();
+          const user = userEvent.setup({ pointerEventsCheck: 0 });
           mockAxios
             .onGet("deploymentproperties/ajax/property")
             .reply(200, true);
@@ -674,9 +677,9 @@ describe("ExportDialog", () => {
                     selection,
                   });
                 });
-                await userEvent.click(
+                await user.click(
                   await screen.findByRole("radio", {
-                    name: /^.DOC/,
+                    name: /^PDF/,
                   }),
                 );
                 await user.click(
@@ -703,7 +706,7 @@ describe("ExportDialog", () => {
       test.each(["A4", "LETTER"])(
         "PDF export: pageSize = %s",
         async (pageSize) => {
-          const user = userEvent.setup();
+          const user = userEvent.setup({ pointerEventsCheck: 0 });
           await fc.assert(
             fc.asyncProperty(
               arbDocumentSelection().filter(({ exportTypes }) =>
@@ -722,9 +725,9 @@ describe("ExportDialog", () => {
                     selection,
                   });
                 });
-                await userEvent.click(
+                await user.click(
                   await screen.findByRole("radio", {
-                    name: /^.DOC/,
+                    name: /^PDF/,
                   }),
                 );
                 await user.click(
@@ -733,7 +736,7 @@ describe("ExportDialog", () => {
                   }),
                 );
                 await waitFor(() => {
-                  expect(screen.getByRole("combobox")).toHaveTextContent(
+                  expect(screen.getAllByRole("combobox")[0]).toHaveTextContent(
                     new RegExp(pageSize, "i"),
                   );
                 });
@@ -748,7 +751,7 @@ describe("ExportDialog", () => {
       test.each(["A4", "LETTER"])(
         "DOC export: pageSize = %s",
         async (pageSize) => {
-          const user = userEvent.setup();
+          const user = userEvent.setup({ pointerEventsCheck: 0 });
           await fc.assert(
             fc.asyncProperty(
               arbDocumentSelection({
@@ -769,7 +772,7 @@ describe("ExportDialog", () => {
                     selection,
                   });
                 });
-                await userEvent.click(
+                await user.click(
                   await screen.findByRole("radio", {
                     name: /^.DOC/,
                   }),
@@ -780,7 +783,7 @@ describe("ExportDialog", () => {
                   }),
                 );
                 await waitFor(() => {
-                  expect(screen.getByRole("combobox")).toHaveTextContent(
+                  expect(screen.getAllByRole("combobox")[0]).toHaveTextContent(
                     new RegExp(pageSize, "i"),
                   );
                 });

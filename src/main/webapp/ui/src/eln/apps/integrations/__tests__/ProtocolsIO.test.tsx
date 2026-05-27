@@ -1,9 +1,9 @@
+import userEvent from "@testing-library/user-event";
 import { test, describe, expect } from "vitest";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import ProtocolsIO from "../ProtocolsIO";
 import { Optional } from "../../../../util/optional";
-
 describe("ProtocolsIO", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
@@ -18,15 +18,14 @@ describe("ProtocolsIO", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getByRole("button"));
       expect(await screen.findByRole("dialog")).toBeVisible();
 
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       await expect(baseElement).toBeAccessible();
     });
   });
-  test("Should have a connect button when the user is not authenticated.", () => {
+  test("Should have a connect button when the user is not authenticated.", async () => {
     render(
       <ProtocolsIO
         integrationState={{
@@ -38,11 +37,14 @@ describe("ProtocolsIO", () => {
         update={() => {}}
       />,
     );
-
-    fireEvent.click(screen.getByRole("button"));
-    expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
+    await userEvent.click(screen.getByRole("button"));
+    expect(
+      screen.getByRole("button", {
+        name: /connect/i,
+      }),
+    ).toBeVisible();
   });
-  test("Should have a disconnect button when the user is authenticated.", () => {
+  test("Should have a disconnect button when the user is authenticated.", async () => {
     render(
       <ProtocolsIO
         integrationState={{
@@ -54,8 +56,11 @@ describe("ProtocolsIO", () => {
         update={() => {}}
       />,
     );
-
-    fireEvent.click(screen.getByRole("button"));
-    expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
+    await userEvent.click(screen.getByRole("button"));
+    expect(
+      screen.getByRole("button", {
+        name: /disconnect/i,
+      }),
+    ).toBeVisible();
   });
 });

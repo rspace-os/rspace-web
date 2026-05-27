@@ -1,9 +1,9 @@
+import userEvent from "@testing-library/user-event";
 import { test, describe, expect, beforeEach } from "vitest";
 import React from "react";
 import axios from "@/common/axios";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-
 import ExternalWorkflowInvocations, {
   InvocationsAndDataCount,
 } from "../ExternalWorkflowInvocations";
@@ -38,7 +38,6 @@ describe("Renders with table of  data", () => {
       .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")
       .reply(200, GalaxyInvocationsAndDataCount);
   });
-
   test("displays WorkFlow Data table headers", async () => {
     render(
       <ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />,
@@ -47,7 +46,7 @@ describe("Renders with table of  data", () => {
       name: /Show computational workflows associated with this field/i,
     });
     expect(toggleButton).toBeEnabled();
-    fireEvent.click(toggleButton);
+    await userEvent.click(toggleButton);
     expect(
       await screen.findByText(/Galaxy WorkFlow Data/i),
     ).toBeInTheDocument();
@@ -68,7 +67,7 @@ describe("Renders with table of  data", () => {
     });
     expect(toggleButton).toBeEnabled();
     expect(toggleButton).toBeInTheDocument();
-    fireEvent.click(toggleButton);
+    await userEvent.click(toggleButton);
     expect(
       await screen.findByText(/Galaxy WorkFlow Data/i),
     ).toBeInTheDocument();
@@ -116,7 +115,6 @@ describe("Handles errors", () => {
       ),
     ).toBeInTheDocument();
   });
-
   test("displays error message if 500 returned", async () => {
     mockAxios
       .onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1")

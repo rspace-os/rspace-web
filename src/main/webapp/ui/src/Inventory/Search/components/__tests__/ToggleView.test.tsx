@@ -1,13 +1,13 @@
+import userEvent from "@testing-library/user-event";
 import { test, describe, expect } from "vitest";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import ToggleView from "../ToggleView";
 import { TYPE_LABEL } from "../../../../stores/definitions/Search";
 import materialTheme from "../../../../theme";
-
 import { ThemeProvider } from "@mui/material/styles";
 describe("ToggleView", () => {
-  test("Current view should have aria-current property", () => {
+  test("Current view should have aria-current property", async () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <ToggleView
@@ -19,8 +19,11 @@ describe("ToggleView", () => {
         />
       </ThemeProvider>,
     );
-
-    fireEvent.click(screen.getByRole("button", { name: "Change view" }));
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "Change view",
+      }),
+    );
     expect(
       screen.getByRole("menuitem", {
         name: TYPE_LABEL[

@@ -26,6 +26,7 @@ it takes to run the tests before committing.
 
 The argument `--color` will always output with colours, even if the output is
 not a tty. For example, when piping into less use `--color` and `-R`
+
 ```
 npm run test -- --color | less -R
 ```
@@ -69,47 +70,23 @@ describe("<filename>", () => {
 
 Be sure to also run eslint and flow over any new or modified tests.
 
-### Using fireEvent
+### Using userEvent
 
-Instead of doing `screen.getByRole("button").click();` it can be better to do
-`fireEvent.click(screen.getByRole("button"));` for the simple reason that the
-latter does not need to be wrapped in a call to `act`. However, there are times
-where only the former, wrapper in `act`, will work.
+Prefer `userEvent` for simulated user interactions.
 
 ```
-fireEvent.click(screen.getByRole("button"));
-// instead of
-act(() => {
-  screen.getByRole("button").click();
-});
-```
+const user = userEvent.setup();
 
-Further things to watch out for is that the method of `fireEvent` that should
-be used is at times unintuitive. For most uses `fireEvent.click` is correct,
-but not for `select` menus, where `fireEvent.mouseDown` is required to trigger
-the opening of the menu. Similarly, whilst `fireEvent.change` is the correct
-call to make for edits to text fields and the like (see code below), for
-numerical fields (spinbuttons) `fireEvent.input` is instead required.
-
-```
-// for buttons, and most other interactive elements
-fireEvent.click(screen.getByRole("button"));
-
-// for choice fields
-fireEvent.mouseDown(screen.getByRole("Choose"));
-
-// for text fields
-fireEvent.change(screen.getByRole("textbox"), { target: { value: "new value" }});
-
-// for numberical fields
-fireEvent.input(screen.getByRole("spinbutton", { target: { value: 4 }});
+await user.click(screen.getByRole("button"));
+await user.click(screen.getByRole("combobox"));
+await user.type(screen.getByRole("textbox"), "new value");
 ```
 
 ### Debugging issues with `act`
 
 `act` is used to ensure that react re-renders after some user interaction has
-been simulated. Most APIs provided by testing-library/react, such as fireEvent
-as mentioned above, call act automatically and so don't need to be wrapped.
+been simulated. Most APIs provided by testing-library, such as `userEvent`,
+call act automatically and so don't need to be wrapped.
 There are times when it is necessary, and there will be a console error
 reported by the test when it appears that one is necessary but not provided;
 usually because of some asynchronous action. To resolve this, the simplest
@@ -132,10 +109,11 @@ the tests can take longer to run (especially those that render react code).
 For examples of such tests, search the code base for `import fc from "fast-check"`
 
 Here are some useful links for working with fast-check tests:
-* [Arbitraries]: documentation on all the built-in functions that generate
+
+- [Arbitraries]: documentation on all the built-in functions that generate
   random values from a specified set e.g. an arbitrary string, or an arbitrary
   number less than 100.
-* [API-reference]: comprehensive documentation of the entire API that the
+- [API-reference]: comprehensive documentation of the entire API that the
   library exposes. There are lots of useful arguments to the various functions
   that are documented here.
 
@@ -172,6 +150,7 @@ doesn't need to be too specific as the each additional commit in the chain only
 adds time logarithmically. Let's call that <good-commit>.
 
 Finally, run the following commands from the root of the repo.
+
 ```
 git bisect start
 git bisect bad
@@ -184,16 +163,19 @@ keeps references to the HEAD of all branches that were used in a PR, which can
 be browsed with the command `git ls-remote`. To further identify the commit
 within a PR that began to cause the tests to fail (or any git bisect
 investigation), run the following command to fetch the HEAD of squashed branch:
+
 ```
 git fetch origin refs/pull/<PR-number>/head:<local-name>
 ```
+
 e.g.
+
 ```
 git fetch origin refs/pull/500/head:origin/refs/pull/500/head
 git checkout origin/refs/pull/500/head
 ```
+
 will leave HEAD pointing to the HEAD of the branch as it was before squashing
 and merging. You can now perform the same bisect steps as above, with the known
 good commit being the merge base of HEAD and the branch into which the PR was
 merged (this can either be found manually or using `git merge-base`).
-

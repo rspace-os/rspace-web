@@ -1,13 +1,8 @@
-import { test, describe, expect, vi } from 'vitest';
+import userEvent from "@testing-library/user-event";
+import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  cleanup,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import ContextMenuAction from "../ContextMenuAction";
-
 import fc from "fast-check";
 function OuterComponent({
   onKeyDown,
@@ -17,11 +12,9 @@ function OuterComponent({
   children: React.ReactNode;
 }) {
   return <div onKeyDown={onKeyDown}>{children}</div>;
-
 }
 function InnerComponent() {
   return <input />;
-
 }
 describe("ContextMenuAction", () => {
   test("When as a menuitem, keyDown events should not propagated through ContextMenuAction", async () => {
@@ -37,14 +30,12 @@ describe("ContextMenuAction", () => {
         >
           <InnerComponent />
         </ContextMenuAction>
-      </OuterComponent>
-
+      </OuterComponent>,
     );
     const input = await screen.findByRole("textbox");
-
-    fireEvent.keyDown(input, {});
+    input.focus();
+    await userEvent.keyboard("a");
     expect(onKeyDown).not.toHaveBeenCalled();
-
   });
   describe("Disabled state", () => {
     test("When disabled, should render aria-disabled.", () => {
@@ -58,14 +49,15 @@ describe("ContextMenuAction", () => {
               disabledHelp={disabledHelp}
               label="Foo"
               onClick={() => {}}
-            />
+            />,
           );
           expect(
-            screen.getByRole("menuitem", { name: /^Foo/ })
+            screen.getByRole("menuitem", {
+              name: /^Foo/,
+            }),
           ).toHaveAttribute("aria-disabled", (disabledHelp !== "").toString());
-        })
+        }),
       );
     });
   });
 });
-

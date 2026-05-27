@@ -1,6 +1,6 @@
 import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import { screen, waitFor, fireEvent } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { action, observable } from "mobx";
 import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
@@ -20,7 +20,6 @@ import { type StoreContainer } from "../../../../stores/stores/RootStore";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import userEvent from "@testing-library/user-event";
 import { render, within } from "@/__tests__/customQueries";
-
 vi.mock("../../../Search/SearchView", () => ({
   default: vi.fn(() => <></>),
 }));
@@ -75,26 +74,33 @@ describe("MoveDialog", () => {
       </ThemeProvider>,
     );
     expect(Dialog).toHaveBeenCalledWith(
-      expect.objectContaining({ open: true }),
+      expect.objectContaining({
+        open: true,
+      }),
       expect.anything(),
     );
-
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Cancel",
+      }),
+    );
     await waitFor(() => {
       expect(rootStore.moveStore.isMoving).toBe(false);
     });
     expect(Dialog).toHaveBeenCalledWith(
-      expect.objectContaining({ open: false }),
+      expect.objectContaining({
+        open: false,
+      }),
       expect.anything(),
     );
   });
-  test("Table hidden in header should list all selectedResults", () => {
-    fc.assert(
-      fc.property(
+  test("Table hidden in header should list all selectedResults", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.array<SubSampleModel>(
           subSampleAttrsArbitrary.map((attrs) => makeMockSubSample(attrs)),
         ),
-        (selectedResults) => {
+        async (selectedResults) => {
           // this check prevents the non-unique react key warning
           fc.pre(
             ArrayUtils.allAreUnique(selectedResults.map((r) => r.globalId)),
@@ -130,14 +136,15 @@ describe("MoveDialog", () => {
               </storesContext.Provider>
             </ThemeProvider>,
           );
-          fireEvent.click(
-            screen.getByRole("button", { name: "Show items being moved" }),
+          await userEvent.click(
+            screen.getByRole("button", {
+              name: "Show items being moved",
+            }),
           );
           expect(
             within(screen.getByRole("table")).getAllByRole("row").length,
           ).toBe(selectedResults.length + 1);
           const table = screen.getByRole("table");
-
           const [headerRow, ...bodyRows] = within(table).getAllByRole("row");
           const indexOfNameColumn =
             // @ts-expect-error TS does not recognise the vi.extend
@@ -153,7 +160,9 @@ describe("MoveDialog", () => {
           ).toBe(true);
         },
       ),
-      { numRuns: 1 },
+      {
+        numRuns: 1,
+      },
     );
   });
 });

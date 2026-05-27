@@ -1,12 +1,7 @@
+import userEvent from "@testing-library/user-event";
 import { test, describe, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
-import {
-  cleanup,
-  screen,
-  fireEvent,
-  waitFor,
-  act,
-} from "@testing-library/react";
+import { cleanup, screen, waitFor, act } from "@testing-library/react";
 import GitHub, { type GitHubConnectedMessage } from "../GitHub";
 import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";
@@ -14,7 +9,6 @@ import axios from "@/common/axios";
 import { observable } from "mobx";
 import { render, within } from "@/__tests__/customQueries";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
-
 const broadcastHandlers: Array<
   (e: MessageEvent<GitHubConnectedMessage>) => void
 > = [];
@@ -26,14 +20,11 @@ vi.mock("@/modules/common/hooks/broadcast", () => ({
     broadcastHandlers.push(handler);
   },
 }));
-
 beforeEach(() => {
   vi.clearAllMocks();
   broadcastHandlers.length = 0;
 });
-
 afterEach(cleanup);
-
 describe("GitHub", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
@@ -46,8 +37,7 @@ describe("GitHub", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getByRole("button"));
       expect(await screen.findByRole("dialog")).toBeVisible();
 
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
@@ -55,7 +45,7 @@ describe("GitHub", () => {
     });
   });
   describe("Correct rendering", () => {
-    test("When there are no repositories, there is a label.", () => {
+    test("When there are no repositories, there is a label.", async () => {
       render(
         <GitHub
           integrationState={{
@@ -65,13 +55,12 @@ describe("GitHub", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getByRole("button"));
       expect(
         screen.getByText("There are no linked repositories."),
       ).toBeVisible();
     });
-    test("The names of repositories should be shown in a table.", () => {
+    test("The names of repositories should be shown in a table.", async () => {
       render(
         <GitHub
           integrationState={{
@@ -87,13 +76,12 @@ describe("GitHub", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getByRole("button"));
       expect(
         within(screen.getByRole("table")).getByText("username/someRepo"),
       ).toBeVisible();
     });
-    test("If the server responds with a missing ACCESS_TOKEN then the repo should be shown in an invalid state", () => {
+    test("If the server responds with a missing ACCESS_TOKEN then the repo should be shown in an invalid state", async () => {
       render(
         <GitHub
           integrationState={{
@@ -109,8 +97,7 @@ describe("GitHub", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getByRole("button"));
       expect(
         within(screen.getByRole("table")).getByText("username/someRepo"),
       ).toBeVisible();
@@ -131,10 +118,14 @@ describe("GitHub", () => {
       });
       mockAxios.onGet("github/allRepositories").reply(200, {
         success: true,
-        data: [{ full_name: "a repo", description: "" }],
+        data: [
+          {
+            full_name: "a repo",
+            description: "",
+          },
+        ],
         error: null,
       });
-
       vi.spyOn(window, "open").mockImplementation(
         () =>
           ({
@@ -150,19 +141,22 @@ describe("GitHub", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      );
       act(() => {
         broadcastHandlers.forEach((handler) =>
           handler({
-            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+            data: {
+              type: "GITHUB_CONNECTED",
+              authToken: "oauth token",
+            },
           } as MessageEvent<GitHubConnectedMessage>),
         );
       });
-
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
       });
@@ -184,11 +178,15 @@ describe("GitHub", () => {
       });
       mockAxios.onGet("github/allRepositories").reply(200, {
         success: true,
-        data: [{ full_name: "a repo", description: "" }],
+        data: [
+          {
+            full_name: "a repo",
+            description: "",
+          },
+        ],
         error: null,
       });
       mockAxios.onPost("integration/saveAppOptions");
-
       vi.spyOn(window, "open").mockImplementation(
         () =>
           ({
@@ -204,29 +202,34 @@ describe("GitHub", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      );
       act(() => {
         broadcastHandlers.forEach((handler) =>
           handler({
-            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+            data: {
+              type: "GITHUB_CONNECTED",
+              authToken: "oauth token",
+            },
           } as MessageEvent<GitHubConnectedMessage>),
         );
       });
-
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
       });
       const allReposTable = screen.getAllByRole("table")[1];
-      fireEvent.click(
+      await userEvent.click(
         within(
           within(within(allReposTable).getAllByRole("row")[1]).getAllByRole(
             "cell",
           )[1],
-        ).getByRole("button", { name: /add/i }),
+        ).getByRole("button", {
+          name: /add/i,
+        }),
       );
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("GITHUB");
@@ -244,7 +247,12 @@ describe("GitHub", () => {
       });
       mockAxios.onGet("github/allRepositories").reply(200, {
         success: true,
-        data: [{ full_name: "a repo", description: "" }],
+        data: [
+          {
+            full_name: "a repo",
+            description: "",
+          },
+        ],
         error: null,
       });
       mockAxios.onPost("integration/saveAppOptions").reply(200, {
@@ -261,7 +269,6 @@ describe("GitHub", () => {
           },
         },
       });
-
       vi.spyOn(window, "open").mockImplementation(
         () =>
           ({
@@ -277,29 +284,34 @@ describe("GitHub", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      );
       act(() => {
         broadcastHandlers.forEach((handler) =>
           handler({
-            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+            data: {
+              type: "GITHUB_CONNECTED",
+              authToken: "oauth token",
+            },
           } as MessageEvent<GitHubConnectedMessage>),
         );
       });
-
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
       });
       const allReposTable = screen.getAllByRole("table")[1];
-      fireEvent.click(
+      await userEvent.click(
         within(
           within(within(allReposTable).getAllByRole("row")[1]).getAllByRole(
             "cell",
           )[1],
-        ).getByRole("button", { name: /add/i }),
+        ).getByRole("button", {
+          name: /add/i,
+        }),
       );
       await waitFor(() => {
         expect(
@@ -335,7 +347,12 @@ describe("GitHub", () => {
       });
       mockAxios.onGet("github/allRepositories").reply(200, {
         success: true,
-        data: [{ full_name: "a repo", description: "" }],
+        data: [
+          {
+            full_name: "a repo",
+            description: "",
+          },
+        ],
         error: null,
       });
       mockAxios.onPost("integration/saveAppOptions").reply(200, {
@@ -352,38 +369,41 @@ describe("GitHub", () => {
           },
         },
       });
-
       vi.spyOn(window, "open").mockImplementation(
         () =>
           ({
             close: () => {},
           }) as unknown as Window,
       );
-
       render(<GitHub integrationState={integrationState} update={() => {}} />);
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      );
       act(() => {
         broadcastHandlers.forEach((handler) =>
           handler({
-            data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
+            data: {
+              type: "GITHUB_CONNECTED",
+              authToken: "oauth token",
+            },
           } as MessageEvent<GitHubConnectedMessage>),
         );
       });
-
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
       });
       const allReposTable = screen.getAllByRole("table")[1];
-      fireEvent.click(
+      await userEvent.click(
         within(
           within(within(allReposTable).getAllByRole("row")[1]).getAllByRole(
             "cell",
           )[1],
-        ).getByRole("button", { name: /add/i }),
+        ).getByRole("button", {
+          name: /add/i,
+        }),
       );
       await waitFor(() => {
         expect(
@@ -420,15 +440,15 @@ describe("GitHub", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /remove/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /remove/i,
+        }),
+      );
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("GITHUB");
-
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
-
       const table = screen.getByRole("table");
       await waitFor(() => {
         expect(
@@ -457,12 +477,13 @@ describe("GitHub", () => {
           options: {},
         },
       });
-
       render(<GitHub integrationState={integrationState} update={() => {}} />);
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /remove/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /remove/i,
+        }),
+      );
       await waitFor(() => {
         expect(screen.queryByText("username/someRepo")).not.toBeInTheDocument();
       });

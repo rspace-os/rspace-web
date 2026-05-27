@@ -1,6 +1,8 @@
+import userEvent from "@testing-library/user-event";
+import { replaceValue } from "@/__tests__/helpers/userInteractions";
 import { test, describe, expect } from "vitest";
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import Dataverse from "../Dataverse";
 import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";
@@ -8,7 +10,6 @@ import axios from "@/common/axios";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { observable } from "mobx";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
-
 describe("Dataverse", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
@@ -21,8 +22,7 @@ describe("Dataverse", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getByRole("button"));
       expect(await screen.findByRole("dialog")).toBeVisible();
 
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
@@ -30,7 +30,7 @@ describe("Dataverse", () => {
     });
   });
   describe("Adding", () => {
-    test("Add should be disabled whilst a new config is being added.", () => {
+    test("Add should be disabled whilst a new config is being added.", async () => {
       render(
         <Dataverse
           integrationState={{
@@ -40,13 +40,22 @@ describe("Dataverse", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      expect(screen.getByRole("button", { name: /add/i })).toBeEnabled();
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      expect(screen.getByRole("button", { name: /add/i })).toBeDisabled();
+      await userEvent.click(screen.getByRole("button"));
+      expect(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      ).toBeEnabled();
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      );
+      expect(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      ).toBeDisabled();
     });
     test("Adding a configuration should mutate the integration state being passed as a prop.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -75,25 +84,31 @@ describe("Dataverse", () => {
           <Dataverse integrationState={integrationState} update={() => {}} />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(
-        screen.getByRole("textbox", { name: /dataverse name/i }),
-        {
-          target: { value: "new name" },
-        },
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
       );
-      fireEvent.input(screen.getByRole("textbox", { name: /server url/i }), {
-        target: { value: "new url" },
-      });
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /dataverse name/i,
+        }),
+        "new name",
+      );
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /server url/i,
+        }),
+        "new url",
+      );
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("API key"), {
-        target: { value: "new api key" },
-      });
-
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      await replaceValue(screen.getByLabelText("API key"), "new api key");
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /save/i,
+        }),
+      );
       await screen.findByRole("alert", {
         name: /Successfully saved Dataverse details/,
       });
@@ -101,9 +116,8 @@ describe("Dataverse", () => {
     });
   });
   describe("Saving", () => {
-    test("Tapping save on existing config should correctly call saveAppOptions endpoint.", () => {
+    test("Tapping save on existing config should correctly call saveAppOptions endpoint.", async () => {
       const mockAxios = new MockAdapter(axios);
-
       mockAxios.onPost("integration/saveAppOptions");
       render(
         <Dataverse
@@ -122,16 +136,18 @@ describe("Dataverse", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(
-        screen.getByRole("textbox", { name: /dataverse name/i }),
-        {
-          target: { value: "new name" },
-        },
+      await userEvent.click(screen.getByRole("button"));
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /dataverse name/i,
+        }),
+        "new name",
       );
-
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /save/i,
+        }),
+      );
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual(
         "DATAVERSE",
@@ -143,9 +159,8 @@ describe("Dataverse", () => {
         DATAVERSE_ALIAS: "new name",
       });
     });
-    test("Tapping save on a new config should correctly call saveAppOptions endpoint.", () => {
+    test("Tapping save on a new config should correctly call saveAppOptions endpoint.", async () => {
       const mockAxios = new MockAdapter(axios);
-
       mockAxios.onPost("integration/saveAppOptions");
       render(
         <Dataverse
@@ -156,25 +171,31 @@ describe("Dataverse", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(
-        screen.getByRole("textbox", { name: /dataverse name/i }),
-        {
-          target: { value: "new name" },
-        },
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
       );
-      fireEvent.input(screen.getByRole("textbox", { name: /Server URL/i }), {
-        target: { value: "new url" },
-      });
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /dataverse name/i,
+        }),
+        "new name",
+      );
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /Server URL/i,
+        }),
+        "new url",
+      );
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("API key"), {
-        target: { value: "new api key" },
-      });
-
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      await replaceValue(screen.getByLabelText("API key"), "new api key");
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /save/i,
+        }),
+      );
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual(
         "DATAVERSE",
@@ -235,26 +256,31 @@ describe("Dataverse", () => {
           />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dataverse name/i })[0],
-        {
-          target: { value: "new name" },
-        },
+      await userEvent.click(screen.getByRole("button"));
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /dataverse name/i,
+        })[0],
+        "new name",
       );
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dataverse name/i })[1],
-        {
-          target: { value: "unsaved new name" },
-        },
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /dataverse name/i,
+        })[1],
+        "unsaved new name",
       );
-
-      fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
-
-      await screen.findByRole("alert", { name: /Successfully/ });
+      await userEvent.click(
+        screen.getAllByRole("button", {
+          name: /save/i,
+        })[0],
+      );
+      await screen.findByRole("alert", {
+        name: /Successfully/,
+      });
       expect(
-        screen.getAllByRole("textbox", { name: /dataverse name/i })[1],
+        screen.getAllByRole("textbox", {
+          name: /dataverse name/i,
+        })[1],
       ).toHaveValue("unsaved new name");
     });
     test("Saving one config should not discard changes to a new config.", async () => {
@@ -294,28 +320,36 @@ describe("Dataverse", () => {
           />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dataverse name/i })[0],
-        {
-          target: { value: "new name" },
-        },
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
       );
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dataverse name/i })[1],
-        {
-          target: { value: "unsaved new name" },
-        },
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /dataverse name/i,
+        })[0],
+        "new name",
       );
-
-      fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
-
-      await screen.findByRole("alert", { name: /Successfully/ });
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /dataverse name/i,
+        })[1],
+        "unsaved new name",
+      );
+      await userEvent.click(
+        screen.getAllByRole("button", {
+          name: /save/i,
+        })[0],
+      );
+      await screen.findByRole("alert", {
+        name: /Successfully/,
+      });
       expect(
-        screen.getAllByRole("textbox", { name: /dataverse name/i })[1],
+        screen.getAllByRole("textbox", {
+          name: /dataverse name/i,
+        })[1],
       ).toHaveValue("unsaved new name");
     });
     test("Saving a new config should not discard changes to an existing one.", async () => {
@@ -355,38 +389,44 @@ describe("Dataverse", () => {
           />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dataverse name/i })[0],
-        {
-          target: { value: "unsaved new name" },
-        },
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
       );
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /dataverse name/i })[1],
-        {
-          target: { value: "new name" },
-        },
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /dataverse name/i,
+        })[0],
+        "unsaved new name",
       );
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /Server URL/i })[1],
-        {
-          target: { value: "new url" },
-        },
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /dataverse name/i,
+        })[1],
+        "new name",
+      );
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /Server URL/i,
+        })[1],
+        "new url",
       );
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getAllByLabelText("API key")[1], {
-        target: { value: "new api key" },
+      await replaceValue(screen.getAllByLabelText("API key")[1], "new api key");
+      await userEvent.click(
+        screen.getAllByRole("button", {
+          name: /save/i,
+        })[1],
+      );
+      await screen.findByRole("alert", {
+        name: /Successfully/,
       });
-
-      fireEvent.click(screen.getAllByRole("button", { name: /save/i })[1]);
-
-      await screen.findByRole("alert", { name: /Successfully/ });
       expect(
-        screen.getAllByRole("textbox", { name: /dataverse name/i })[0],
+        screen.getAllByRole("textbox", {
+          name: /dataverse name/i,
+        })[0],
       ).toHaveValue("unsaved new name");
     });
   });
@@ -426,27 +466,35 @@ describe("Dataverse", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(
-        screen.getByRole("textbox", { name: /dataverse name/i }),
-        {
-          target: { value: "new name" },
-        },
+      await userEvent.click(screen.getByRole("button"));
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /dataverse name/i,
+        }),
+        "new name",
       );
-
-      expect(screen.getByRole("button", { name: /test/i })).toBeDisabled();
-
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      expect(
+        screen.getByRole("button", {
+          name: /test/i,
+        }),
+      ).toBeDisabled();
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /save/i,
+        }),
+      );
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /test/i })).toBeEnabled();
+        expect(
+          screen.getByRole("button", {
+            name: /test/i,
+          }),
+        ).toBeEnabled();
       });
     });
     test("The test button should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios
         .onGet(new RegExp("repository/ajax/testRepository/.*"))
-
         .reply(200, "Success! Test connection OK!");
       render(
         <Alerts>
@@ -467,10 +515,12 @@ describe("Dataverse", () => {
           />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /test/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /test/i,
+        }),
+      );
       expect(
         await screen.findByRole("alert", {
           name: /Connection details are valid/,
@@ -511,19 +561,22 @@ describe("Dataverse", () => {
           />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /delete/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /delete/i,
+        }),
+      );
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual(
         "DATAVERSE",
       );
-
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
       await waitFor(() => {
         expect(
-          screen.queryByRole("textbox", { name: /dataverse name/i }),
+          screen.queryByRole("textbox", {
+            name: /dataverse name/i,
+          }),
         ).not.toBeInTheDocument();
       });
     });
@@ -555,13 +608,17 @@ describe("Dataverse", () => {
           <Dataverse integrationState={integrationState} update={() => {}} />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /delete/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /delete/i,
+        }),
+      );
       await waitFor(() => {
         expect(
-          screen.queryByRole("textbox", { name: /dataverse name/i }),
+          screen.queryByRole("textbox", {
+            name: /dataverse name/i,
+          }),
         ).not.toBeInTheDocument();
       });
       expect(integrationState.credentials.length).toBe(0);

@@ -1,7 +1,6 @@
 import { test, describe, expect, vi } from "vitest";
 import React from "react";
 import { render, screen, act } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { replaceValue } from "@/__tests__/helpers/userInteractions";
 import DryadRepo from "../DryadRepo";
 import MockAdapter from "axios-mock-adapter";

@@ -1,13 +1,14 @@
+import userEvent from "@testing-library/user-event";
+import { replaceValue } from "@/__tests__/helpers/userInteractions";
 import { test, describe, expect } from "vitest";
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { observable } from "mobx";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
-
 import DSW from "@/eln/apps/integrations/DSW";
 describe("DSW", () => {
   describe("Accessibility", () => {
@@ -21,8 +22,7 @@ describe("DSW", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getByRole("button"));
       expect(await screen.findByRole("dialog")).toBeVisible();
 
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
@@ -30,7 +30,7 @@ describe("DSW", () => {
     });
   });
   describe("Adding", () => {
-    test("Add should be disabled whilst a new config is being added.", () => {
+    test("Add should be disabled whilst a new config is being added.", async () => {
       render(
         <DSW
           integrationState={{
@@ -40,13 +40,22 @@ describe("DSW", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      expect(screen.getByRole("button", { name: /add/i })).toBeEnabled();
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      expect(screen.getByRole("button", { name: /add/i })).toBeDisabled();
+      await userEvent.click(screen.getByRole("button"));
+      expect(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      ).toBeEnabled();
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      );
+      expect(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      ).toBeDisabled();
     });
     test("Adding a configuration should mutate the integration state being passed as a prop.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -74,22 +83,31 @@ describe("DSW", () => {
           <DSW integrationState={integrationState} update={() => {}} />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
-        target: { value: "new name" },
-      });
-      fireEvent.input(screen.getByRole("textbox", { name: /server url/i }), {
-        target: { value: "new url" },
-      });
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      );
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /label/i,
+        }),
+        "new name",
+      );
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /server url/i,
+        }),
+        "new url",
+      );
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("API key"), {
-        target: { value: "new api key" },
-      });
-
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      await replaceValue(screen.getByLabelText("API key"), "new api key");
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /save/i,
+        }),
+      );
       await screen.findByRole("alert", {
         name: /Successfully saved DSW details/,
       });
@@ -97,9 +115,8 @@ describe("DSW", () => {
     });
   });
   describe("Saving", () => {
-    test("Tapping save on existing config should correctly call saveAppOptions endpoint.", () => {
+    test("Tapping save on existing config should correctly call saveAppOptions endpoint.", async () => {
       const mockAxios = new MockAdapter(axios);
-
       mockAxios.onPost("integration/saveAppOptions");
       render(
         <DSW
@@ -117,13 +134,18 @@ describe("DSW", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
-        target: { value: "new name" },
-      });
-
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /label/i,
+        }),
+        "new name",
+      );
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /save/i,
+        }),
+      );
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("DSW");
       expect(mockAxios.history.post[0].params.get("optionsId")).toEqual("4");
@@ -133,9 +155,8 @@ describe("DSW", () => {
         DSW_ALIAS: "new name",
       });
     });
-    test("Tapping save on a new config should correctly call saveAppOptions endpoint.", () => {
+    test("Tapping save on a new config should correctly call saveAppOptions endpoint.", async () => {
       const mockAxios = new MockAdapter(axios);
-
       mockAxios.onPost("integration/saveAppOptions");
       render(
         <DSW
@@ -146,22 +167,31 @@ describe("DSW", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
-        target: { value: "new name" },
-      });
-      fireEvent.input(screen.getByRole("textbox", { name: /Server URL/i }), {
-        target: { value: "new url" },
-      });
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      );
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /label/i,
+        }),
+        "new name",
+      );
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /Server URL/i,
+        }),
+        "new url",
+      );
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("API key"), {
-        target: { value: "new api key" },
-      });
-
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      await replaceValue(screen.getByLabelText("API key"), "new api key");
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /save/i,
+        }),
+      );
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("DSW");
       expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({
@@ -216,21 +246,32 @@ describe("DSW", () => {
           />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[0], {
-        target: { value: "new name" },
-      });
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[1], {
-        target: { value: "unsaved new name" },
-      });
-
-      fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
-
-      await screen.findByRole("alert", { name: /Successfully/ });
-      expect(screen.getAllByRole("textbox", { name: /label/i })[1]).toHaveValue(
+      await userEvent.click(screen.getByRole("button"));
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /label/i,
+        })[0],
+        "new name",
+      );
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /label/i,
+        })[1],
         "unsaved new name",
       );
+      await userEvent.click(
+        screen.getAllByRole("button", {
+          name: /save/i,
+        })[0],
+      );
+      await screen.findByRole("alert", {
+        name: /Successfully/,
+      });
+      expect(
+        screen.getAllByRole("textbox", {
+          name: /label/i,
+        })[1],
+      ).toHaveValue("unsaved new name");
     });
     test("Saving one config should not discard changes to a new config.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -267,23 +308,37 @@ describe("DSW", () => {
           />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[0], {
-        target: { value: "new name" },
-      });
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[1], {
-        target: { value: "unsaved new name" },
-      });
-
-      fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
-
-      await screen.findByRole("alert", { name: /Successfully/ });
-      expect(screen.getAllByRole("textbox", { name: /label/i })[1]).toHaveValue(
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      );
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /label/i,
+        })[0],
+        "new name",
+      );
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /label/i,
+        })[1],
         "unsaved new name",
       );
+      await userEvent.click(
+        screen.getAllByRole("button", {
+          name: /save/i,
+        })[0],
+      );
+      await screen.findByRole("alert", {
+        name: /Successfully/,
+      });
+      expect(
+        screen.getAllByRole("textbox", {
+          name: /label/i,
+        })[1],
+      ).toHaveValue("unsaved new name");
     });
     test("Saving a new config should not discard changes to an existing one.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -320,33 +375,45 @@ describe("DSW", () => {
           />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[0], {
-        target: { value: "unsaved new name" },
-      });
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[1], {
-        target: { value: "new name" },
-      });
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /Server URL/i })[1],
-        {
-          target: { value: "new url" },
-        },
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
       );
-      // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getAllByLabelText("API key")[1], {
-        target: { value: "new api key" },
-      });
-
-      fireEvent.click(screen.getAllByRole("button", { name: /save/i })[1]);
-
-      await screen.findByRole("alert", { name: /Successfully/ });
-      expect(screen.getAllByRole("textbox", { name: /label/i })[0]).toHaveValue(
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /label/i,
+        })[0],
         "unsaved new name",
       );
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /label/i,
+        })[1],
+        "new name",
+      );
+      await replaceValue(
+        screen.getAllByRole("textbox", {
+          name: /Server URL/i,
+        })[1],
+        "new url",
+      );
+      // see https://github.com/testing-library/dom-testing-library/issues/567
+      await replaceValue(screen.getAllByLabelText("API key")[1], "new api key");
+      await userEvent.click(
+        screen.getAllByRole("button", {
+          name: /save/i,
+        })[1],
+      );
+      await screen.findByRole("alert", {
+        name: /Successfully/,
+      });
+      expect(
+        screen.getAllByRole("textbox", {
+          name: /label/i,
+        })[0],
+      ).toHaveValue("unsaved new name");
     });
   });
   describe("Testing", () => {
@@ -383,24 +450,35 @@ describe("DSW", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
-        target: { value: "new name" },
-      });
-
-      expect(screen.getByRole("button", { name: /test/i })).toBeDisabled();
-
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /label/i,
+        }),
+        "new name",
+      );
+      expect(
+        screen.getByRole("button", {
+          name: /test/i,
+        }),
+      ).toBeDisabled();
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /save/i,
+        }),
+      );
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /test/i })).toBeEnabled();
+        expect(
+          screen.getByRole("button", {
+            name: /test/i,
+          }),
+        ).toBeEnabled();
       });
     });
     test("The test button should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios
         .onGet(new RegExp("apps/dsw/.*"))
-
         .reply(200, "Success! Test connection OK!");
       render(
         <Alerts>
@@ -420,10 +498,12 @@ describe("DSW", () => {
           />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /test/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /test/i,
+        }),
+      );
       expect(
         await screen.findByRole("alert", {
           name: /Connection details are valid/,
@@ -465,17 +545,20 @@ describe("DSW", () => {
           />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /delete/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /delete/i,
+        }),
+      );
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("DSW");
-
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
       await waitFor(() => {
         expect(
-          screen.queryByRole("textbox", { name: /label/i }),
+          screen.queryByRole("textbox", {
+            name: /label/i,
+          }),
         ).not.toBeInTheDocument();
       });
     });
@@ -506,13 +589,17 @@ describe("DSW", () => {
           <DSW integrationState={integrationState} update={() => {}} />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /delete/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /delete/i,
+        }),
+      );
       await waitFor(() => {
         expect(
-          screen.queryByRole("textbox", { name: /label/i }),
+          screen.queryByRole("textbox", {
+            name: /label/i,
+          }),
         ).not.toBeInTheDocument();
       });
       expect(integrationState.credentials.length).toBe(0);

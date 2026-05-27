@@ -1,19 +1,58 @@
 import userEvent from "@testing-library/user-event";
 
+type ValidityOption = {
+  checkValidity?: HTMLInputElement["checkValidity"];
+};
+
 export async function replaceValue(
   element: HTMLElement,
   value: string | number,
+  options: ValidityOption = {},
 ): Promise<void> {
-  await userEvent.click(element);
-  await userEvent.clear(element);
+  const restoreCheckValidity =
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLTextAreaElement
+      ? element.checkValidity.bind(element)
+      : null;
 
-  const text = String(value);
-  if (text === "") return;
-
-  if (element instanceof HTMLInputElement && element.type === "number") {
-    await userEvent.type(element, text);
-    return;
+  if (
+    options.checkValidity &&
+    (element instanceof HTMLInputElement ||
+      element instanceof HTMLTextAreaElement)
+  ) {
+    element.checkValidity = options.checkValidity;
   }
 
-  await userEvent.paste(text);
+  try {
+    await userEvent.click(element);
+
+    const text = String(value);
+    if (text === "") {
+      await userEvent.clear(element);
+      return;
+    }
+
+    if (
+      element instanceof HTMLInputElement ||
+      element instanceof HTMLTextAreaElement
+    ) {
+      element.setSelectionRange?.(0, element.value.length);
+    }
+
+    if (element instanceof HTMLInputElement && element.type === "number") {
+      await userEvent.clear(element);
+      await userEvent.type(element, text);
+      return;
+    }
+
+    await userEvent.paste(text);
+  } finally {
+    if (
+      restoreCheckValidity &&
+      (element instanceof HTMLInputElement ||
+        element instanceof HTMLTextAreaElement)
+    ) {
+      element.checkValidity = restoreCheckValidity;
+    }
+  }
 }

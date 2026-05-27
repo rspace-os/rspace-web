@@ -1,24 +1,17 @@
+import userEvent from "@testing-library/user-event";
 import { test, describe, expect, beforeEach, afterEach, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/useWhoAmI";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  act,
-} from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import DMPDialog from "../DMPDialog";
 import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
-
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 const mockAxios = new MockAdapter(axios);
-
 const uiNavigationData = {
   userDetails: {
     email: "test@example.com",
@@ -59,10 +52,12 @@ afterEach(() => {
 });
 describe("DMPDialog", () => {
   test("Label is shown when no DMPs are returned.", async () => {
-    mockAxios
-      .onGet("/apps/dmptool/plans?scope=MINE")
-
-      .reply(200, { data: { items: [] }, success: true });
+    mockAxios.onGet("/apps/dmptool/plans?scope=MINE").reply(200, {
+      data: {
+        items: [],
+      },
+      success: true,
+    });
     render(
       <ThemeProvider theme={materialTheme}>
         <DMPDialog open setOpen={() => {}} />
@@ -75,11 +70,18 @@ describe("DMPDialog", () => {
   test("The latest request is always the one that's shown.", async () => {
     mockAxios.onGet("/apps/dmptool/plans?scope=MINE").reply(200, {
       data: {
-        items: [{ dmp: { id: 1, title: "mine", description: "very mine" } }],
+        items: [
+          {
+            dmp: {
+              id: 1,
+              title: "mine",
+              description: "very mine",
+            },
+          },
+        ],
       },
       success: true,
     });
-
     let resolvePublic: (() => void) | null = null;
     const publicResponse = new Promise<void>((resolve) => {
       resolvePublic = resolve;
@@ -90,7 +92,13 @@ describe("DMPDialog", () => {
         {
           data: {
             items: [
-              { dmp: { id: 1, title: "public", description: "very public" } },
+              {
+                dmp: {
+                  id: 1,
+                  title: "public",
+                  description: "very public",
+                },
+              },
             ],
           },
           success: true,
@@ -104,14 +112,22 @@ describe("DMPDialog", () => {
     );
     // public will take a second to return a listing
 
-    fireEvent.click(screen.getByRole("radio", { name: "Public" }));
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: "Public",
+      }),
+    );
     // but mine will return immediately
 
-    fireEvent.click(screen.getByRole("radio", { name: "Mine" }));
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: "Mine",
+      }),
+    );
     await waitFor(() => {
       expect(screen.getByText("mine")).toBeVisible();
     });
-    await act(async () => {
+    await act(() => {
       resolvePublic?.();
     });
     await waitFor(() => {

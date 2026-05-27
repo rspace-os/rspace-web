@@ -1,6 +1,8 @@
+import userEvent from "@testing-library/user-event";
+import { replaceValue } from "@/__tests__/helpers/userInteractions";
 import { test, describe, expect } from "vitest";
 import React from "react";
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import MSTeams from "../MSTeams";
 import { Optional } from "../../../../util/optional";
 import { render, within } from "@/__tests__/customQueries";
@@ -9,7 +11,6 @@ import axios from "@/common/axios";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { observable } from "mobx";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
-
 describe("MSTeams", () => {
   describe("Should render correctly.", () => {
     test("Channel names should be shown in a table.", async () => {
@@ -28,8 +29,7 @@ describe("MSTeams", () => {
           update={() => {}}
         />,
       );
-
-      fireEvent.click(screen.getByRole("button"));
+      await userEvent.click(screen.getByRole("button"));
       const table = screen.getByRole("table");
       expect(
         // @ts-expect-error findTableCell comes from customQueries
@@ -65,20 +65,22 @@ describe("MSTeams", () => {
           <MSTeams integrationState={integrationState} update={() => {}} />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /remove/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /remove/i,
+        }),
+      );
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual(
         "MSTEAMS",
       );
-
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
       expect(
-        await screen.findByRole("alert", { name: /Successfully/ }),
+        await screen.findByRole("alert", {
+          name: /Successfully/,
+        }),
       ).toBeVisible();
-
       const table = screen.getByRole("table");
       await waitFor(() => {
         expect(
@@ -112,26 +114,40 @@ describe("MSTeams", () => {
           <MSTeams integrationState={integrationState} update={() => {}} />
         </Alerts>,
       );
-
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
+      await userEvent.click(screen.getByRole("button"));
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      );
       await waitFor(() => {
         expect(
-          screen.queryByRole("button", { name: /add/i }),
+          screen.queryByRole("button", {
+            name: /add/i,
+          }),
         ).not.toBeInTheDocument();
       });
-      fireEvent.change(
-        screen.getByRole("textbox", { name: /channel connector name/i }),
-        { target: { value: "new name" } },
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /channel connector name/i,
+        }),
+        "new name",
       );
-      fireEvent.change(screen.getByRole("textbox", { name: /webhook url/i }), {
-        target: { value: "example.com" },
-      });
-
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      await replaceValue(
+        screen.getByRole("textbox", {
+          name: /webhook url/i,
+        }),
+        "example.com",
+      );
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: /save/i,
+        }),
+      );
       expect(
-        await screen.findByRole("alert", { name: /Successfully/ }),
+        await screen.findByRole("alert", {
+          name: /Successfully/,
+        }),
       ).toBeVisible();
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual(
@@ -141,9 +157,12 @@ describe("MSTeams", () => {
         MSTEAMS_CHANNEL_LABEL: "new name",
         MSTEAMS_WEBHOOK_URL: "example.com",
       });
-
       expect(integrationState.credentials.length).toBe(1);
-      expect(screen.getByRole("button", { name: /add/i })).toBeVisible();
+      expect(
+        screen.getByRole("button", {
+          name: /add/i,
+        }),
+      ).toBeVisible();
     });
   });
 });

@@ -148,13 +148,13 @@ describe("ExportRepo", () => {
                 }),
               );
               const dmpTable = await screen.findByRole("table");
-              (
+              for (const [i, checkbox] of (
                 await within(dmpTable).findAllByRole("checkbox", {
                   name: "Plan selection",
                 })
-              ).forEach(async (c, i) => {
-                if (indexes.has(i)) await userEvent.click(c);
-              });
+              ).entries()) {
+                if (indexes.has(i)) await userEvent.click(checkbox);
+              }
               expect(await screen.findByRole("alert")).toHaveTextContent(
                 "Only one DMP can be associated with an export to Zenodo.",
               );

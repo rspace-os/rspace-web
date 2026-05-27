@@ -1,14 +1,19 @@
+import userEvent from "@testing-library/user-event";
+import { replaceValue } from "@/__tests__/helpers/userInteractions";
 import { test, describe, expect } from "vitest";
 import React, { useState, useEffect } from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { type Validator, mkValidator } from "../Validator";
 import { runInAction, observable } from "mobx";
-
 import { doNotAwait } from "../Util";
 function Child1({ validator }: { validator: Validator }) {
-  const [state] = useState(observable({ text: "" }));
+  const [state] = useState(
+    observable({
+      text: "",
+    }),
+  );
   useEffect(() => {
     validator.setValidFunc(() => {
       return Promise.resolve(state.text.length > 2);
@@ -33,7 +38,6 @@ function Child2() {
 }
 function ParentComponent() {
   const [activePane, setActivePane] = useState(0);
-
   const [panel1Validator] = useState(mkValidator());
   return (
     <>
@@ -53,14 +57,11 @@ describe("Validator", () => {
   test("Example", async () => {
     render(<ParentComponent />);
     // initially, this button will do nothing because the validator fails
-    fireEvent.click(screen.getByRole("button"));
-
+    await userEvent.click(screen.getByRole("button"));
     expect(screen.getByText("Child 1")).toBeVisible();
-    fireEvent.change(screen.getByRole("textbox"), {
-      target: { value: "moreThanTwoChars" },
-    });
+    await replaceValue(screen.getByRole("textbox"), "moreThanTwoChars");
     // now that the validation passes the button will work
-    fireEvent.click(screen.getByRole("button"));
+    await userEvent.click(screen.getByRole("button"));
     expect(await screen.findByText("Child 2")).toBeVisible();
   });
 });
