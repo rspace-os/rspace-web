@@ -212,6 +212,20 @@ const feature = test.extend<{
         );
       },
       "there shouldn't be any axe violations": async () => {
+        const firstCard = page.locator(".MuiCard-root").first();
+        if ((await firstCard.count()) > 0) {
+          await expect(firstCard).toHaveCSS("opacity", "1");
+          await expect
+            .poll(() =>
+              firstCard.evaluate((element) => {
+                const animations = element.getAnimations({ subtree: true });
+                return animations.every(
+                  (animation) => animation.playState === "finished",
+                );
+              }),
+            )
+            .toBe(true);
+        }
         const accessibilityScanResults = await new AxeBuilder({
           page,
         }).analyze();
