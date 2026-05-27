@@ -8,10 +8,15 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
+import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTableWhere;
 
+import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.core.util.TransformerUtils;
+import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
@@ -27,6 +32,11 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.oauth.UserConnection;
@@ -37,6 +47,7 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
+import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
@@ -81,6 +92,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired JdbcTemplate jdbcTemplate;
   private @Autowired StoichiometryManager stoichiometryMgr;
   private @Autowired RSChemElementManager rsChemElementMgr;
+  private @Autowired StoichiometryInventoryLinkDao stoichiometryInventoryLinkDao;
+  private @Autowired InstrumentDao instrumentDao;
 
   @Before
   public void setUp() throws Exception {
@@ -651,6 +664,179 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     assertTrue(result.isSucceeded());
     assertUserNotExist(userToDelete);
+  }
+
+  @Test
+  public void testDeleteUserWithStoichiometryAndInventoryLink() throws Exception {
+    User userToDelete = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(userToDelete);
+
+    ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(userToDelete);
+    openTransaction();
+    Sample sample = sampleDao.get(apiSample.getId());
+    SubSample subSample = sample.getSubSamples().get(0);
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, subSample);
+    commitTransaction();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(userToDelete.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(userToDelete);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  @Test
+  public void testDeleteUserOwningStoichiometryLinkedToOtherUsersInventory() throws Exception {
+    // Inventory belongs to a different user from the one being deleted, so
+    // deleteInventoryItems cannot clean up the link row — the SQL in
+    // deleteRecords (joined via BaseRecord.owner_id) is the only thing that
+    // can remove it before the StoichiometryMolecule delete runs.
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(inventoryOwner);
+
+    RSpaceTestUtils.logout();
+    User userToDelete = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(userToDelete);
+
+    openTransaction();
+    Sample sample = sampleDao.get(apiSample.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, sample);
+    commitTransaction();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(userToDelete.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(userToDelete);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  @Test
+  public void testDeleteUserOwningInventoryLinkedFromOtherUsersStoichiometry() throws Exception {
+    User stoichOwner = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(stoichOwner);
+
+    RSpaceTestUtils.logout();
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(inventoryOwner);
+
+    openTransaction();
+    Sample sample = sampleDao.get(apiSample.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, sample);
+    commitTransaction();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(inventoryOwner.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(inventoryOwner);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  @Test
+  public void testDeleteUserOwningContainerLinkedFromOtherUsersStoichiometry() throws Exception {
+    // Exercises the container_id join in deleteInventoryItems.
+    User stoichOwner = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(stoichOwner);
+
+    RSpaceTestUtils.logout();
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiContainer apiContainer = createBasicContainerForUser(inventoryOwner);
+
+    openTransaction();
+    Container container = containerDao.get(apiContainer.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, container);
+    commitTransaction();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(inventoryOwner.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(inventoryOwner);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  @Test
+  public void testDeleteUserOwningInstrumentLinkedFromOtherUsersStoichiometry() throws Exception {
+    // Exercises the instrumentEntity_id join in deleteInventoryItems.
+    User stoichOwner = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(stoichOwner);
+
+    RSpaceTestUtils.logout();
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiInstrument apiInstrument = createBasicInstrumentForUser(inventoryOwner);
+
+    openTransaction();
+    Instrument instrument = instrumentDao.get(apiInstrument.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, instrument);
+    commitTransaction();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(inventoryOwner.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(inventoryOwner);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  private StoichiometryMolecule createStoichiometryWithMoleculeForUser(User user) throws Exception {
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "Chemistry doc");
+
+    RSChemElement chemElement = RSChemElement.builder().chemElements("CCO").record(doc).build();
+    chemElement = rsChemElementMgr.save(chemElement, user);
+
+    Stoichiometry stoichiometry =
+        Stoichiometry.builder().parentReaction(chemElement).record(doc).build();
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+
+    RSChemElement moleculeChemElement =
+        RSChemElement.builder().chemElements("C2H6O").record(doc).build();
+    moleculeChemElement = rsChemElementMgr.save(moleculeChemElement, user);
+
+    StoichiometryMolecule molecule =
+        StoichiometryMolecule.builder()
+            .stoichiometry(stoichiometry)
+            .rsChemElement(moleculeChemElement)
+            .role(MoleculeRole.REACTANT)
+            .formula("C2H6O")
+            .name("Ethanol")
+            .smiles("CCO")
+            .molecularWeight(46.07)
+            .build();
+    stoichiometry.addMolecule(molecule);
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+    return stoichiometry.getMolecules().get(0);
+  }
+
+  private Long saveStoichiometryInventoryLink(
+      StoichiometryMolecule molecule, InventoryRecord inventoryRecord) {
+    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
+    link.setStoichiometryMolecule(molecule);
+    link.setInventoryRecord(inventoryRecord);
+    return stoichiometryInventoryLinkDao.save(link).getId();
+  }
+
+  private void assertStoichiometryInventoryLinkAndAuditDeleted(Long linkId) {
+    String where = "id = " + linkId;
+    assertEquals(
+        "StoichiometryInventoryLink row should have been deleted",
+        0,
+        countRowsInTableWhere(jdbcTemplate, "StoichiometryInventoryLink", where));
+    assertEquals(
+        "StoichiometryInventoryLink_AUD rows should have been deleted",
+        0,
+        countRowsInTableWhere(jdbcTemplate, "StoichiometryInventoryLink_AUD", where));
   }
 
   @Test

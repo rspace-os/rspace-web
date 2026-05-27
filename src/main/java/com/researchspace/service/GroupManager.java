@@ -102,8 +102,9 @@ public interface GroupManager {
    * Disbands and removes the group only if no member of the group has logged in within the last
    * year. Members with a null {@code lastLogin} are treated as never-logged-in (allowed).
    *
-   * <p>This method is intended for use by sysadmins to remove groups that are no longer active, without risking deleting groups
-   * that are still in use. It is not intended for regular use by non-sysadmin users
+   * <p>This method is intended for use by sysadmins to remove groups that are no longer active,
+   * without risking deleting groups that are still in use. It is not intended for regular use by
+   * non-sysadmin users
    *
    * @param groupId id of the group to delete
    * @param subject the subject performing the deletion (must already be authorised by the caller)

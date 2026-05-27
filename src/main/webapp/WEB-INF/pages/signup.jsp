@@ -240,7 +240,7 @@
             <form:hidden path="token"/>
             <label>
               <input type="checkbox" value="remember-me" required/>
-              <span class="rs-field__text rs-field__text--normal">I agree to these <a href='<c:url value="http://researchspace.com/terms-conditions/" />' target='_blank'>Terms and Conditions</a></span>
+              <span class="rs-field__text rs-field__text--normal">I agree to these <a href='<c:url value="https://researchspace.com/terms-conditions/" />' target='_blank'>Terms and Conditions</a></span>
             </label>
           </div>
         </rst:hasDeploymentProperty>
