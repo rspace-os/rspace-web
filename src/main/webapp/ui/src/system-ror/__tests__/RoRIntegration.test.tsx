@@ -7,6 +7,7 @@ import {
   screen,
   fireEvent,
   act,
+  waitFor,
 } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import v2ROR from "./json/v2Ror.json";
@@ -20,6 +21,7 @@ const getWrapper = () => {
   return render(<RoRIntegration />);
 };
 const setupRoRMocks = (existingGlobalRoRID = "") => {
+  mockAxios.onGet("/system/ror/ajax/view").reply(200, '<div id="rorIntegration"></div>');
   mockAxios
     .onGet(
       "/system/ror/rorForID/https:__rspacror_forsl____rspacror_forsl__ror.org__rspacror_forsl__02mhbdp94"
@@ -81,6 +83,21 @@ async function assertRoRDetailsText() {
 }
 
 describe("Renders page with ROR data", () => {
+  test("loads the RoR view into mainArea from the config link", async () => {
+    document.body.innerHTML =
+      '<a href="#" id="rorRegistryLink">RoR</a><div id="mainArea">stale content</div>';
+
+    window.dispatchEvent(new Event("load"));
+    fireEvent.click(document.getElementById("rorRegistryLink") as HTMLElement);
+
+    await waitFor(() =>
+      expect(document.getElementById("mainArea")?.textContent).not.toContain(
+        "stale content"
+      )
+    );
+    await screen.findByText("Research Organization Registry (ROR) Integration");
+  });
+
   test("displays page with searchbar when RoR not linked", async () => {
     setUpComponent();
 
