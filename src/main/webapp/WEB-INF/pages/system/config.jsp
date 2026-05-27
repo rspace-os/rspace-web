@@ -11,7 +11,9 @@
     <script src="<rst:assetUrl value='/scripts/pages/system/netfilesystem_mod.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/system/settings_mod.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/system/ldap_mod.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/system/ror_mod.js'/>"></script>
+    <rst:hasDeploymentProperty name="rorEnabled" value="true">
+    <rst:bundle bundle="rorIntegration" />
+    </rst:hasDeploymentProperty>
 </head>
     <div id="topSection" class="bootstrap-custom-flat">
         <jsp:include page="topBar.jsp"></jsp:include>
