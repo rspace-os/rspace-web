@@ -33,8 +33,11 @@ export async function replaceValue(
     }
 
     if (
-      element instanceof HTMLInputElement ||
-      element instanceof HTMLTextAreaElement
+      element instanceof HTMLTextAreaElement ||
+      (element instanceof HTMLInputElement &&
+        !["number", "email", "date", "time", "week", "month"].includes(
+          element.type,
+        ))
     ) {
       element.setSelectionRange?.(0, element.value.length);
     }
