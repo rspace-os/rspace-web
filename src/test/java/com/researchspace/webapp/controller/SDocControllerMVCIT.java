@@ -5,14 +5,12 @@ import static com.researchspace.webapp.controller.StructuredDocumentController.S
 import static org.apache.commons.io.FileUtils.readFileToByteArray;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,7 +34,6 @@ import com.researchspace.model.SignatureHashInfo;
 import com.researchspace.model.SignatureHashType;
 import com.researchspace.model.SignatureInfo;
 import com.researchspace.model.User;
-import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.dtos.RevisionSearchCriteria;
 import com.researchspace.model.field.ErrorList;
@@ -51,7 +48,6 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.RecordCopyResult;
-import com.researchspace.service.AuditManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -81,7 +77,6 @@ import org.springframework.test.web.servlet.MvcResult;
 public class SDocControllerMVCIT extends MVCTestBase {
 
   private @Autowired DummyWord2HTMLConverter dummyConverter;
-  private @Autowired AuditManager auditMgr;
   @Autowired DocumentCopyManager docCopyMgr;
 
   @Before
@@ -144,53 +139,6 @@ public class SDocControllerMVCIT extends MVCTestBase {
             .andExpect(jsonPath("$.data").isEmpty())
             .andExpect(jsonPath("$.error.errorMessages").isNotEmpty())
             .andReturn();
-  }
-
-  @Test
-  public void replaceFromWordFileRSPAC931() throws Exception {
-
-    User anyUser = createInitAndLoginAnyUser();
-
-    StructuredDocument docToUpdate = createBasicDocumentInRootFolderWithText(anyUser, "replaceMe");
-
-    Folder target = folderMgr.getRootFolderForUser(anyUser);
-
-    MvcResult result =
-        mockMvc
-            .perform(
-                fileUpload(
-                        STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/createFromWord/{parentId}",
-                        target.getId())
-                    .file(dummyConverter.getMultiFile())
-                    .param("recordToReplaceId", docToUpdate.getId() + ""))
-            .andReturn();
-    final int maxTries = 3;
-    // this assert is fragile on Jenkins, try several times in case it's a timing issue.
-    int tryCount = 0;
-    String fieldText = "";
-    final String expected = "The quick brown fox";
-    while (tryCount <= maxTries) {
-      tryCount++;
-      fieldText = fieldMgr.getFieldsByRecordId(docToUpdate.getId(), anyUser).get(0).getFieldData();
-      if (!StringUtils.isBlank(fieldText)) {
-        assertThat(fieldText, containsString(expected));
-      } else {
-        log.warn("Field text is empty: trying again: attempt {} failed", tryCount);
-      }
-    }
-    if (tryCount == maxTries && StringUtils.isEmpty(fieldText)) {
-      fail(String.format("Field text was empty but should contain string '%s'", expected));
-    }
-
-    assertThat(fieldText, not(containsString("replaceMe")));
-    // check revision history is updated following the replace
-    openTransaction();
-    AuditedEntity<StructuredDocument> latest =
-        auditMgr.getNewestRevisionForEntity(StructuredDocument.class, docToUpdate.getId());
-    assertThat(
-        latest.getEntity().getFields().get(0).getFieldData(),
-        containsString("The quick brown fox"));
-    commitTransaction();
   }
 
   private String getNameOfDoc(List<Map> data) {
