@@ -471,7 +471,11 @@ def branchToDbName (String name) {
 def branchNameHash (String name) {
     byte[] digest = java.security.MessageDigest.getInstance('MD5')
         .digest(name.getBytes(java.nio.charset.StandardCharsets.UTF_8))
-    return digest.collect { String.format('%02x', it & 0xff) }.join().take(8)
+    StringBuilder hash = new StringBuilder()
+    for (byte b : digest) {
+        hash.append(Integer.toHexString((b & 0xff) | 0x100).substring(1))
+    }
+    return hash.substring(0, 8)
 }
 
 def branchToSafeName (String name) {
