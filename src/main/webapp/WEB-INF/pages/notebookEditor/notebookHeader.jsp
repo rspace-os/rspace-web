@@ -3,27 +3,27 @@
     <title><spring:message code="notebook.title"/></title>
     <link rel="canonical" href="${applicationScope['RS_DEPLOY_PROPS']['serverUrl']}${requestScope['javax.servlet.forward.servlet_path']}" />
 
-    <link href="<c:url value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
+    <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
 
-    <link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-widgets.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-toolbar.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-extra-icons.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-dialogs.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-widgets.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-toolbar.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-extra-icons.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-dialogs.css'/>" />
 
-    <link rel="stylesheet" href="<c:url value='/scripts/bower_components/photoswipe/dist/photoswipe.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/scripts/bower_components/font-awesome/css/font-awesome.min.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/font-awesome/css/font-awesome.min.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css'/>" />
 
-    <link rel="stylesheet" href="<c:url value='/styles/journal.css'/>" />
-    <link rel="stylesheet" href="<c:url value='/styles/messages.css'/>" />
-    <script src="<c:url value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
-    <script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-    <script src="<c:url value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>
-    <script src="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
-    <script	src="<c:url value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/journal.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/messages.css'/>" />
+    <script src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
+    <script	src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
     <script type="text/javascript">
         var notebookId = ${selectedNotebookId};
         var notebookPath = "<c:url value='/'/>";
@@ -59,8 +59,8 @@
         </c:choose>
         var entryCount = ${entryCount};
     </script>
-    <script src="<c:url value='/scripts/tags/shareDlg.js'/>"></script>
-    <script src="<c:url value='/ui/dist/tinymceGalleryUtils.js'/>"></script>
-    <script	src="<c:url value='/scripts/pages/coreEditor.js'/>"></script>
-    <script src="<c:url value='/scripts/pages/notebookEditor.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/tags/shareDlg.js'/>"></script>
+    <rst:bundle bundle="tinymceGalleryUtils" />
+    <script	src="<rst:assetUrl value='/scripts/pages/coreEditor.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/notebookEditor.js'/>"></script>
 </head>

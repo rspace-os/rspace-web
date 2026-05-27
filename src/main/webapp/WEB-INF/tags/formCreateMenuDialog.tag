@@ -2,9 +2,10 @@
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 
-<script src="/scripts/tags/formCreateMenuDialog.js"></script>
+<script src="<rst:assetUrl value='/scripts/tags/formCreateMenuDialog.js'/>"></script>
 <div id="formListDlg" style="display: none">
 	<p>Click on a form name to create a new Document of that type.</p>
 	<!-- Paginates form listing when there are many forms. Clicking the link will  -->

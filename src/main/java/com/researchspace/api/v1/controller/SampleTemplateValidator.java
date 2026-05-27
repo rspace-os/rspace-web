@@ -30,12 +30,25 @@ public abstract class SampleTemplateValidator extends SampleApiPostValidator {
   }
 
   protected void validateDefaultUnit(Errors errors, Integer incomingDefaultUnitId) {
-    if (incomingDefaultUnitId != null && !RSUnitDef.exists(incomingDefaultUnitId)) {
+    if (incomingDefaultUnitId == null) {
+      return;
+    }
+    if (!RSUnitDef.exists(incomingDefaultUnitId)) {
       errors.rejectValue(
           "defaultUnitId",
           "errors.inventory.template.invalid.unitId",
           new Object[] {incomingDefaultUnitId},
           "Invalid unit id");
+      return;
+    }
+    // RSDEV-1067: only mass / volume / dimensionless units are valid for a sample template,
+    // because the frontend (and downstream sample quantity validation) cannot render anything else.
+    if (!RSUnitDef.getUnitById(incomingDefaultUnitId).isAmount()) {
+      errors.rejectValue(
+          "defaultUnitId",
+          "errors.inventory.template.invalid.unitId.notAmount",
+          new Object[] {incomingDefaultUnitId},
+          "Default unit must be mass, volume, or dimensionless");
     }
   }
 

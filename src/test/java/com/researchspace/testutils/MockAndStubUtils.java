@@ -46,4 +46,12 @@ public class MockAndStubUtils {
   public static <T> T modifyCreationDate(T objectWithCreationDate, Date newDate, Class<T> clazz) {
     return modifyDateField(objectWithCreationDate, newDate, clazz, "setCreationDate");
   }
+
+  /**
+   * Modifies the lastLogin date of a {@link User} (reflective, since there is no public setter).
+   * Pass {@code null} to clear the field. Returns the modified user for chaining.
+   */
+  public static User modifyUserLastLoginDate(User user, Date newDate) {
+    return modifyDateField(user, newDate, User.class, "setLastLogin");
+  }
 }

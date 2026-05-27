@@ -8,7 +8,7 @@
 
 <c:if test="${not empty extMessaging}">
   <script
-    src="<c:url value='/scripts/pages/messaging/extMessagingCreation.js'/>"
+    src="<rst:assetUrl value='/scripts/pages/messaging/extMessagingCreation.js'/>"
   ></script>
   <c:forEach items="${extMessaging}" var="extMessageTarget">
     <c:if
@@ -25,4 +25,4 @@
   </c:forEach>
 </c:if>
 
-<script src="<c:url value='/scripts/pages/messaging/messageCreation.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>

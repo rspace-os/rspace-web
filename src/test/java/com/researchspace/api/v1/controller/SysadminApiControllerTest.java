@@ -40,6 +40,7 @@ import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.UserDeletionManager;
@@ -70,6 +71,7 @@ import org.mockito.junit.MockitoRule;
 import org.slf4j.Logger;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 
@@ -85,6 +87,7 @@ public class SysadminApiControllerTest extends JavaxValidatorTest {
   @Mock AuditTrailService auditService;
   @Mock UserEnablementUtils userEnablementUtils;
   @Mock IContentInitializer init;
+  @Mock GroupManager groupManager;
 
   @Captor ArgumentCaptor<User> userCaptor;
 
@@ -302,6 +305,92 @@ public class SysadminApiControllerTest extends JavaxValidatorTest {
         .deleteRemovedUserFilestoreResources(
             Mockito.anyLong(), Mockito.anyBoolean(), Mockito.any(User.class));
     verify(auditService).notify(Mockito.any(GenericEvent.class));
+  }
+
+  @Test
+  public void deleteGroupIfNoMemberLoggedInWithinOneYearRejectedIfSubjectNotSysadmin()
+      throws Exception {
+    Group toDelete = createAnyGroupWithId();
+    assertExceptionThrown(
+        () ->
+            controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, toDelete.getId(), user),
+        AuthorizationException.class);
+    verify(groupManager, never())
+        .removeGroupIfNoMemberLoggedInWithinOneYear(Mockito.anyLong(), Mockito.any(User.class));
+  }
+
+  @Test
+  public void deleteGroupIfNoMemberLoggedInWithinOneYearRejectedIfIpNotWhitelisted()
+      throws Exception {
+    Group toDelete = createAnyGroupWithId();
+    mockWhiteListedIP(false, sysadmin);
+    assertExceptionThrown(
+        () ->
+            controller.deleteGroupIfNoMemberLoggedInWithinOneYear(
+                request, toDelete.getId(), sysadmin),
+        AuthorizationException.class);
+    verify(groupManager, never())
+        .removeGroupIfNoMemberLoggedInWithinOneYear(Mockito.anyLong(), Mockito.any(User.class));
+  }
+
+  @Test
+  public void deleteGroupDelegatesToGroupIfNoMemberLoggedInWithinOneYearManagerAndAudits()
+      throws Exception {
+    mockWhiteListedIP(true, sysadmin);
+    Group toDelete = createAnyGroupWithId();
+    when(groupManager.removeGroupIfNoMemberLoggedInWithinOneYear(toDelete.getId(), sysadmin))
+        .thenReturn(toDelete);
+
+    controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, toDelete.getId(), sysadmin);
+
+    verify(groupManager).removeGroupIfNoMemberLoggedInWithinOneYear(toDelete.getId(), sysadmin);
+    verify(auditService).notify(Mockito.any(GenericEvent.class));
+  }
+
+  @Test
+  public void
+      deleteGroupIfNoMemberLoggedInWithinOneYearMapsServiceIllegalStateToIllegalArgumentWithGenericMessage()
+          throws Exception {
+    mockWhiteListedIP(true, sysadmin);
+    Group toDelete = createAnyGroupWithId();
+    when(groupManager.removeGroupIfNoMemberLoggedInWithinOneYear(toDelete.getId(), sysadmin))
+        .thenThrow(new IllegalStateException("internal: user 'alice' logged in 5 days ago"));
+
+    IllegalArgumentException ex =
+        org.junit.Assert.assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                controller.deleteGroupIfNoMemberLoggedInWithinOneYear(
+                    request, toDelete.getId(), sysadmin));
+
+    // Generic message; no username leaked.
+    org.junit.Assert.assertFalse(
+        "response message must not leak internal usernames", ex.getMessage().contains("alice"));
+    org.junit.Assert.assertTrue(ex.getMessage().contains("within the last year"));
+    verify(auditService, never()).notify(Mockito.any(GenericEvent.class));
+  }
+
+  @Test
+  public void deleteGroupIfNoMemberLoggedInWithinOneYearMapsObjectRetrievalFailureToNotFound()
+      throws Exception {
+    mockWhiteListedIP(true, sysadmin);
+    when(groupManager.removeGroupIfNoMemberLoggedInWithinOneYear(999L, sysadmin))
+        .thenThrow(new ObjectRetrievalFailureException(Group.class, 999L));
+
+    assertExceptionThrown(
+        () -> controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, 999L, sysadmin),
+        javax.ws.rs.NotFoundException.class);
+    verify(auditService, never()).notify(Mockito.any(GenericEvent.class));
+  }
+
+  private long nextGroupId = 100L;
+
+  private Group createAnyGroupWithId() {
+    User pi = TestFactory.createAnyUser("piForGroup");
+    pi.addRole(Role.PI_ROLE);
+    Group group = createAnyGroup(pi);
+    group.setId(nextGroupId++);
+    return group;
   }
 
   @Test

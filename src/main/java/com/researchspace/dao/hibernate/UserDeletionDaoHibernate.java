@@ -171,6 +171,69 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
             + " :id");
     execute(userId, session, "delete from Basket where owner_id = :id");
 
+    // Delete StoichiometryInventoryLink rows targeting this user's inventory items.
+    // The link's FKs to Sample/SubSample/Container/InstrumentEntity have no
+    // ON DELETE CASCADE, so we must remove them before the inventory rows.
+    // Order in this block: _AUD first, then main.
+
+    // sample_id targets
+    execute(
+        userId,
+        session,
+        "delete sil from StoichiometryInventoryLink_AUD sil"
+            + " left join Sample s on sil.sample_id = s.id"
+            + " where s.owner_id = :id");
+    execute(
+        userId,
+        session,
+        "delete sil from StoichiometryInventoryLink sil"
+            + " left join Sample s on sil.sample_id = s.id"
+            + " where s.owner_id = :id");
+
+    // subSample_id targets (SubSample has no owner_id; resolve via parent Sample)
+    execute(
+        userId,
+        session,
+        "delete sil from StoichiometryInventoryLink_AUD sil"
+            + " left join SubSample ss on sil.subSample_id = ss.id"
+            + " left join Sample s on ss.sample_id = s.id"
+            + " where s.owner_id = :id");
+    execute(
+        userId,
+        session,
+        "delete sil from StoichiometryInventoryLink sil"
+            + " left join SubSample ss on sil.subSample_id = ss.id"
+            + " left join Sample s on ss.sample_id = s.id"
+            + " where s.owner_id = :id");
+
+    // container_id targets
+    execute(
+        userId,
+        session,
+        "delete sil from StoichiometryInventoryLink_AUD sil"
+            + " left join Container c on sil.container_id = c.id"
+            + " where c.owner_id = :id");
+    execute(
+        userId,
+        session,
+        "delete sil from StoichiometryInventoryLink sil"
+            + " left join Container c on sil.container_id = c.id"
+            + " where c.owner_id = :id");
+
+    // instrumentEntity_id targets
+    execute(
+        userId,
+        session,
+        "delete sil from StoichiometryInventoryLink_AUD sil"
+            + " left join InstrumentEntity ins on sil.instrumentEntity_id = ins.id"
+            + " where ins.owner_id = :id");
+    execute(
+        userId,
+        session,
+        "delete sil from StoichiometryInventoryLink sil"
+            + " left join InstrumentEntity ins on sil.instrumentEntity_id = ins.id"
+            + " where ins.owner_id = :id");
+
     /* start sample/subsample deletion */
 
     // first delete subsample-connected entities
@@ -477,29 +540,45 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     executeDeleteByRecordOwner(
         userId, session, "ecatImageAnnotation_AUD", "id", "ecatImageAnnotation", "id", RECORD_ID);
 
-    // Delete StoichiometryMolecule first, then Stoichiometry before deleting RSChemElement
+    // Delete StoichiometryInventoryLink rows joined via the user's stoichiometry
+    // chain BEFORE deleting StoichiometryMolecule. The FK fk_stoichiometry_molecule
+    // has no ON DELETE CASCADE; the ORM cascade on StoichiometryMolecule.inventoryLink
+    // is bypassed because we use native SQL bulk deletes here.
+    execute(
+        userId,
+        session,
+        "delete sil from StoichiometryInventoryLink_AUD sil"
+            + " left join StoichiometryMolecule sm on sil.stoichiometry_molecule_id = sm.id"
+            + " left join Stoichiometry s on sm.stoichiometry_id = s.id"
+            + " left join BaseRecord br on s.record_id = br.id"
+            + " where br.owner_id=:id");
+    execute(
+        userId,
+        session,
+        "delete sil from StoichiometryInventoryLink sil"
+            + " left join StoichiometryMolecule sm on sil.stoichiometry_molecule_id = sm.id"
+            + " left join Stoichiometry s on sm.stoichiometry_id = s.id"
+            + " left join BaseRecord br on s.record_id = br.id"
+            + " where br.owner_id=:id");
+
+    // Delete StoichiometryMolecule first, then Stoichiometry, joined via
+    // Stoichiometry.record_id → BaseRecord. record_id is NOT NULL
+    // (changeLog-rsdev-874.xml changeset 2026-01-19), so this catches both
+    // reaction-attached and reactionless stoichiometries owned by the user.
     execute(
         userId,
         session,
         "delete sm from StoichiometryMolecule_AUD sm left join Stoichiometry s on"
-            + " sm.stoichiometry_id = s.id left join RSChemElement rsce on s.parent_reaction_id ="
-            + " rsce.id left join BaseRecord br on rsce.record_id = br.id where br.owner_id=:id");
+            + " sm.stoichiometry_id = s.id left join BaseRecord br on s.record_id ="
+            + " br.id where br.owner_id=:id");
     execute(
         userId,
         session,
-        "delete sm from StoichiometryMolecule sm left join Stoichiometry s on sm.stoichiometry_id ="
-            + " s.id left join RSChemElement rsce on s.parent_reaction_id = rsce.id left join"
-            + " BaseRecord br on rsce.record_id = br.id where br.owner_id=:id");
-    executeDeleteByRecordOwner(
-        userId,
-        session,
-        "Stoichiometry_AUD",
-        "parent_reaction_id",
-        "RSChemElement",
-        "id",
-        RECORD_ID);
-    executeDeleteByRecordOwner(
-        userId, session, "Stoichiometry", "parent_reaction_id", "RSChemElement", "id", RECORD_ID);
+        "delete sm from StoichiometryMolecule sm left join Stoichiometry s on"
+            + " sm.stoichiometry_id = s.id left join BaseRecord br on s.record_id ="
+            + " br.id where br.owner_id=:id");
+    executeDeleteByRecordOwner(userId, session, "Stoichiometry_AUD", RECORD_ID);
+    executeDeleteByRecordOwner(userId, session, "Stoichiometry", RECORD_ID);
 
     executeDeleteByRecordOwner(userId, session, "RSChemElement", RECORD_ID);
     executeDeleteByRecordOwner(

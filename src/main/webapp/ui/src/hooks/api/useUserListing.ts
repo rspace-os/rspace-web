@@ -13,6 +13,7 @@ type FetchedUser = {
   userInfo: {
     id: UserId;
     fullName: string;
+    fullNameSurnameFirst: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -68,6 +69,7 @@ export type User = {
   id: UserId;
   url: string;
   fullName: string;
+  fullNameSurnameFirst: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -344,6 +346,7 @@ export function useUserListing(): {
         id,
         url: `/userform?userId=${id}`,
         fullName: fetchedUser.userInfo.fullName,
+        fullNameSurnameFirst: fetchedUser.userInfo.fullNameSurnameFirst,
         firstName: fetchedUser.userInfo.firstName,
         lastName: fetchedUser.userInfo.lastName,
         email: fetchedUser.userInfo.email,

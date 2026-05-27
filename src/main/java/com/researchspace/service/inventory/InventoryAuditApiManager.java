@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
@@ -17,4 +18,6 @@ public interface InventoryAuditApiManager {
   ApiSubSample getApiSubSampleRevision(Long subSampleId, Long revisionId);
 
   ApiSampleTemplate getApiTemplateVersion(Sample latestTemplate, Long version);
+
+  ApiInstrument getApiInstrumentRevision(Long instrumentId, Long revisionId);
 }

@@ -16,6 +16,7 @@ These instructions apply to the entire repository unless a deeper `AGENTS.md` ov
 - Check for nested `AGENTS.md` files before editing files in subdirectories.
 - When searching the repo, prefer `rg` and `rg --files`.
 - Do not edit minified files unless the user explicitly asks for it.
+- Plan documents (design notes, multi-step implementation plans, scratch analyses) must be written to the `.claude/` folder, which is gitignored. Never place plan files at the repository root or anywhere else inside `src/`. The `.claude/` folder is the only sanctioned location for ephemeral working notes that should not be committed.
 
 ## Project Overview
 
@@ -38,7 +39,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 
 **Frontend** (`src/main/webapp/ui/`):
 - TypeScript + React, Node 24, npm
-- Webpack bundler, Material-UI v5
+- Vite bundler, Material-UI v5
 - Vitest (unit tests), Playwright (component/E2E tests)
 - MobX (legacy state) + React Query (newer state)
 
@@ -66,11 +67,11 @@ The `rspacedbuser` credentials must match `src/main/resources/rs.properties`.
 
 ```bash
 # First run (creates/resets DB)
-./mvnw clean jetty:run -Denvironment=drop-recreate-db -DgenerateReactDist \
+./mvnw clean jetty:run -Denvironment=drop-recreate-db -DreactDevMode=true \
   -Dspring.profiles.active=run -DRS.devlogLevel=INFO
 
 # Subsequent runs (keep existing DB)
-./mvnw jetty:run -Denvironment=keepdbintact -Dspring.profiles.active=run
+./mvnw jetty:run -Denvironment=keepdbintact -Dspring.profiles.active=run -DreactDevMode=true
 ```
 
 Access at `http://localhost:8080`. Test users: `user1a`–`user8h`, admin: `sysadmin1`.
@@ -79,14 +80,14 @@ Access at `http://localhost:8080`. Test users: `user1a`–`user8h`, admin: `sysa
 
 ```bash
 cd src/main/webapp/ui
-npm ci --force
-npm run serve  # Webpack watch mode
+npm ci
+npm run serve  # Vite dev server
 ```
 
 ### Full Build (no tests)
 
 ```bash
-mvn clean package -DskipTests=true -DgenerateReactDist=clean
+mvn clean package -DskipTests=true
 ```
 
 ## Testing
@@ -158,6 +159,12 @@ npx vitest run src/components/MyComponent/__tests__/MyComponent.test.tsx
 
 Message bundles live in `src/main/resources/bundles/` with subdirectories per module (`dashboard/`, `workspace/`, `gallery/`, `groups/`, `inventory/`, `admin/`, `apps/`, `system/`, `public/`). Spring's `ReloadableResourceBundleMessageSource` loads them. The main bundle is `ApplicationResources.properties`.
 
+**Rule — externalize all user-displayed text in backend code.** Any string that can reach a user must be resolved from a message bundle key, not hard-coded as a Java string literal. This covers, at minimum: validation and error messages, exception messages surfaced to the UI or API, email subjects and bodies, notification text, audit/event descriptions shown to users, and API error responses.
+
+- **New backend code:** every user-facing string MUST be a bundle key from day one. Add the key to the module-specific bundle under `src/main/resources/bundles/` (e.g., `inventory/`, `workspace/`) or to `ApplicationResources.properties` if cross-cutting. Resolve via the injected `MessageSource` / `MessageSourceUtils` — do not instantiate a new message source per call.
+- **Refactored code:** when you touch a method, class, or block that contains hard-coded user-displayed strings, externalize those strings into the appropriate bundle as part of the refactor. Treat this as in-scope cleanup, not a separate task — the rule travels with the code you are already changing.
+- **Out of scope:** log messages, internal exception messages that are never shown to users, debug output, and developer-facing tooling text. Comments and Javadoc remain in English.
+
 ## Configuration
 
 ### Property File Layering
@@ -198,6 +205,8 @@ Controller  →  Service (Manager)  →  DAO  →  Hibernate/DB
 - **Services** (`com.researchspace.service`): transactional; names must end in `Manager` for AOP transaction wrapping (`applicationContext-service.xml`)
 - **DAOs** (`com.researchspace.dao`): assume an active transaction; use `sessionFactory.getCurrentSession()`
 - **Legacy core** (`com.axiope`): older DAOs, model, search components
+
+**No upward dependencies.** Imports flow downward only. A class in `com.researchspace.service.*` must never import from `com.researchspace.*.controller.*`, and a class in `com.researchspace.dao.*` must never import from `com.researchspace.service.*` or `com.researchspace.*.controller.*`. If a helper, validator, or utility is used by service-layer code, it belongs in the service layer — even if it is also called from a controller. A fully-qualified reference to a higher-layer package is a smell: stop, classify the target type's layer, and relocate it before merging.
 
 ### Frontend structure
 
@@ -315,8 +324,8 @@ DevDocs/                           # Developer documentation
 
 ## Agent-Specific Config Files
 
-- **AGENTS.md** (this file): Primary instructions for all AI agents
-- **CLAUDE.md**: Points to AGENTS.md — for Claude Code / Anthropic agents
+- **AGENTS.md**: Primary instructions for all AI agents. We make a copy of Agents.md in this file.
+- **CLAUDE.md**: A copy of AGENTS.md — for Claude Code / Anthropic agents
 - **.github/copilot-instructions.md**: Quick-reference for GitHub Copilot — points to AGENTS.md
 
 ## Repo-Local Agent Skills
@@ -342,4 +351,3 @@ to use them in this repo.
 **To add a new skill:** create `.agents/skills/<skill-name>/SKILL.md` with
 frontmatter, keep it under ~150 lines, and put bulky templates/recipes in a
 sibling `REFERENCE.md`. List it above so the team can discover it.
-

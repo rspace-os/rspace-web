@@ -86,7 +86,8 @@ public abstract class InventoryItemCsvExporter {
     SAMPLE_TEMPLATES,
     SUBSAMPLES,
     CONTAINERS,
-    LIST_OF_MATERIALS
+    LIST_OF_MATERIALS,
+    INSTRUMENTS
   }
 
   protected @Autowired CsvExportCommentGenerator exportCommentGenerator;

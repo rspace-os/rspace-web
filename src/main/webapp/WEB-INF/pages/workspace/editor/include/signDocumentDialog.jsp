@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
-<link rel="stylesheet" href="<c:url value='/styles/signingProcess.css'/>" />
-<script src="<c:url value='/scripts/pages/signingProcess.js'/>"></script>
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/signingProcess.css'/>" />
+<script src="<rst:assetUrl value='/scripts/pages/signingProcess.js'/>"></script>
 <div id="signDocumentDialog" style="display: none;">
 <fieldset>
 	<div id="statementSection">

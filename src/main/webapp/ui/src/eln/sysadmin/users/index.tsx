@@ -1515,8 +1515,8 @@ export const UsersPage = (): React.ReactNode => {
 
   const columns = [
     DataGridColumn.newColumnWithValueMapper(
-      "fullName",
-      (fullName) => fullName,
+      "fullNameSurnameFirst",
+      (v) => v,
       {
         headerName: "Full Name",
         flex: 1,
@@ -1955,7 +1955,7 @@ export const UsersPage = (): React.ReactNode => {
                                 recordCount: "recordCount()",
                                 lastLogin: "lastLogin",
                                 created: "creationDate",
-                                fullName: "lastName",
+                                fullNameSurnameFirst: "lastName",
                                 firstName: "firstName",
                                 lastName: "lastName",
                                 email: "email",

@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp" %>
 
-<script src="<c:url value ='/scripts/pages/recordInfoPanel.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/recordInfoPanel.js'/>"></script>
 <script id="linkedRecordsTemplate" type="text/x-mustache-template">
 
   <div class="linkedRecordsForAttachmentsDiv">

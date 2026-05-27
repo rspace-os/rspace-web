@@ -234,5 +234,5 @@
 
 <!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
-<script src="<c:url value='/ui/dist/exportModal.js'/>"></script>
+<rst:bundle bundle="exportModal" />
 <!--End React Scripts -->

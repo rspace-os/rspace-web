@@ -18,6 +18,15 @@ var previousHeightOfBlockedElement = -1;
 var temporaryHeightOfBlockedElement = 0;
 RS.minSearchTermLength = 3;
 
+// Appends the shared cache-busting token to a URL. RS.cacheVersion is set inline
+// from the layout decorator after global.js loads; returns the URL unchanged
+// when the token isn't available (e.g. on pages that don't set it).
+RS.withCacheVersion = function (url) {
+  if (!url || !RS.cacheVersion) return url;
+  var separator = url.indexOf('?') >= 0 ? '&' : '?';
+  return url + separator + 'v=' + encodeURIComponent(RS.cacheVersion);
+};
+
 /**
  * BEGINNING OF EXPERIMENTAL BOOTSTRAP DIALOGS (RSPAC-1287)
  */

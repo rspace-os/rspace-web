@@ -407,6 +407,13 @@ var initTinyMCE_cachedIntegrationsResponse;
 var initTinyMCE_cachedBoxSelectRequest;
 var initTinyMCE_cachedOwnCloudClientRequest;
 var initTinyMCE_cachedNextCloudClientRequest;
+var defaultTinymceVitePluginBundles = {
+	gallery: "tinymceGallery",
+	pyrat: "tinymcePyrat",
+	stoichiometry: "tinymceStoichiometry",
+	identifiers: "tinymceIdentifiers",
+	pubchem: "tinymcePubchem",
+};
 
 function loadBoxSelectScript() {
 	if (typeof BoxSelect === 'function') {
@@ -459,6 +466,73 @@ function loadNextCloudClientScript() {
 	return initTinyMCE_cachedNextCloudClientRequest;
 }
 
+function waitForLegacyTinyMCEDependencies(dependencyRequests) {
+	if (!dependencyRequests.length) {
+		return Promise.resolve();
+	}
+
+	return new Promise(function (resolve, reject) {
+		$.when.apply($, dependencyRequests)
+			.done(function () {
+				resolve();
+			})
+			.fail(function () {
+				reject(new Error('One or more legacy TinyMCE dependency scripts failed to load'));
+			});
+	});
+}
+
+function getTinymceVitePluginBundle(pluginName) {
+	var configuredPluginBundles = window.RSTinyMCEPluginBundles || {};
+	return configuredPluginBundles[pluginName] || defaultTinymceVitePluginBundles[pluginName];
+}
+
+var tinymceVitePluginLoaderPromise;
+
+function getTinymceVitePluginLoader() {
+	if (!tinymceVitePluginLoaderPromise) {
+		var loaderUrl = window.RSTinyMCEPluginBundleLoaderUrl || "/scripts/viteBundleLoader.mjs";
+		tinymceVitePluginLoaderPromise = import(loaderUrl).then(function (loaderModule) {
+			if (typeof loaderModule.loadTinyMCEPluginBundles !== "function") {
+				throw new Error("loadTinyMCEPluginBundles export is unavailable");
+			}
+
+			return loaderModule.loadTinyMCEPluginBundles;
+		});
+	}
+
+	return tinymceVitePluginLoaderPromise;
+}
+
+function ensureTinymceVitePluginsLoaded(pluginNames) {
+	var uniquePluginNames = Array.from(new Set(pluginNames.filter(Boolean)));
+	if (!uniquePluginNames.length) {
+		return Promise.resolve();
+	}
+
+	var bundleNames = uniquePluginNames
+		.map(getTinymceVitePluginBundle)
+		.filter(Boolean);
+	if (!bundleNames.length) {
+		return Promise.resolve();
+	}
+
+	return getTinymceVitePluginLoader().then(function (loadTinyMCEPluginBundles) {
+		return loadTinyMCEPluginBundles(bundleNames);
+	});
+}
+
+function addPluginIfNotPresent(localTinymcesetup, pluginName) {
+	var plugins = localTinymcesetup.plugins || [];
+	var alreadyPresent = plugins.some(function (pluginGroup) {
+		return pluginGroup.split(/\s+/).indexOf(pluginName) !== -1;
+	});
+	if (!alreadyPresent) {
+		plugins.push(pluginName);
+	}
+	localTinymcesetup.plugins = plugins;
+}
+
 function initTinyMCE(selector) {
 	var localTinymcesetup = tinymcesetup;
 	// THIS IS USED BY THE GALAXY INTEGRATION
@@ -497,13 +571,15 @@ function initTinyMCE(selector) {
 	}
 
 	let requestsPromise = $.when(propertiesRequest, integrationsRequest, toolbarRequest);
-	let tinymceSetupReady = $.Deferred();
+	var legacyDependencyLoadPromise = Promise.resolve();
+	var vitePluginLoadPromise = Promise.resolve();
 	requestsPromise.done(function (propertiesResponse, integrationsResponse, toolbarResponse) {
+		var requiredVitePlugins = ["gallery", "stoichiometry"];
 
 		initTinyMCE_cachedPropertiesResponse = propertiesResponse;
 		initTinyMCE_cachedIntegrationsResponse = integrationsResponse;
 
-		localTinymcesetup.external_plugins["gallery"] = "/ui/dist/tinymceGallery.js";
+		addPluginIfNotPresent(localTinymcesetup, "gallery");
 
 		var properties = propertiesResponse[0];
 		var integrations = integrationsResponse[0].data;
@@ -611,12 +687,13 @@ function initTinyMCE(selector) {
 			addToMenuIfNotPresent(localTinymcesetup, " | optProtocols_io");
 		}
 		if (pyratEnabled) {
-			localTinymcesetup.external_plugins["pyrat"] = "/ui/dist/tinymcePyrat.js";
+			requiredVitePlugins.push("pyrat");
+			addPluginIfNotPresent(localTinymcesetup, "pyrat");
 			addToToolbarIfNotPresent(localTinymcesetup, " | pyrat");
 			addToMenuIfNotPresent(localTinymcesetup, " | optPyrat");
 		}
 		// always load tinymceStoichiometry as it handles the case of chemistry not being enabled
-		localTinymcesetup.external_plugins["stoichiometry"] = "/ui/dist/tinymceStoichiometry.js";
+		addPluginIfNotPresent(localTinymcesetup, "stoichiometry");
 		addToMenuIfNotPresent(localTinymcesetup, " | stoichiometryMenuItem");
 		if (chemistryEnabled) {
 			localTinymcesetup.external_plugins["cheminfo"] = "/scripts/externalTinymcePlugins/chemInfo/plugin.min.js";
@@ -625,18 +702,20 @@ function initTinyMCE(selector) {
 			addToToolbarIfNotPresent(localTinymcesetup, "| ketcher23 stoichiometryInsertButton");
 		}
 		if (identifiersEnabled) {
-			localTinymcesetup.external_plugins["identifiers"] = "/ui/dist/tinymceIdentifiers.js";
+			requiredVitePlugins.push("identifiers");
+			addPluginIfNotPresent(localTinymcesetup, "identifiers");
 			addToToolbarIfNotPresent(localTinymcesetup, " | identifiers");
 			addToMenuIfNotPresent(localTinymcesetup, " | optIdentifiers");
 		}
 		if (pubchemEnabled) {
-			localTinymcesetup.external_plugins["pubchem"] = "/ui/dist/tinymcePubchem.js";
+			requiredVitePlugins.push("pubchem");
+			addPluginIfNotPresent(localTinymcesetup, "pubchem");
 			addToToolbarIfNotPresent(localTinymcesetup, " | pubchem");
 			addToMenuIfNotPresent(localTinymcesetup, " | optPubchem");
 		}
 
-		let dependencyRequests = [];
-		if (boxEnabled) {
+		var dependencyRequests = [];
+		if (boxEnabled && hasValidBoxClientId) {
 			dependencyRequests.push(loadBoxSelectScript());
 		}
 		if (ownCloudEnabled) {
@@ -646,30 +725,34 @@ function initTinyMCE(selector) {
 			dependencyRequests.push(loadNextCloudClientScript());
 		}
 
-		$.when.apply($, dependencyRequests)
-			.done(function () {
-				tinymceSetupReady.resolve();
-			})
-			.fail(function () {
-				console.log('box, owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
-				tinymceSetupReady.resolve();
-			});
+		legacyDependencyLoadPromise = waitForLegacyTinyMCEDependencies(dependencyRequests);
+		vitePluginLoadPromise = ensureTinymceVitePluginsLoaded(requiredVitePlugins);
 	});
 
 	requestsPromise.fail(function () {
 		console.log('properties, integrations or toolbar call failed - starting with default tinymce settings');
-		tinymceSetupReady.resolve();
 	});
 
 	let tinymceInitialisedDeferred = $.Deferred();
-	tinymceSetupReady.always(function () {
-		if (localTinymcesetup.toolbar) {
-			complete2ndToolbar(localTinymcesetup);
-		}
-		$('#' + selector).tinymce(localTinymcesetup);
-		tinyMCE.activeEditor.on("init", function () {
-			tinymceInitialisedDeferred.resolve();
-		});
+	requestsPromise.always(function () {
+		Promise.all([
+			legacyDependencyLoadPromise.catch(function (error) {
+				console.log('box, owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
+				console.error(error);
+			}),
+			vitePluginLoadPromise.catch(function (error) {
+				console.error("Failed to preload TinyMCE Vite plugins", error);
+			}),
+		])
+			.finally(function () {
+				if (localTinymcesetup.toolbar) {
+					complete2ndToolbar(localTinymcesetup);
+				}
+				$('#' + selector).tinymce(localTinymcesetup);
+				tinyMCE.activeEditor.on("init", function () {
+					tinymceInitialisedDeferred.resolve();
+				});
+			});
 	});
 
 	return tinymceInitialisedDeferred.promise();

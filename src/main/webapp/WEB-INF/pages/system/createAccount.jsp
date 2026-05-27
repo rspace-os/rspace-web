@@ -7,10 +7,10 @@
     <spring:message code="system.createAccount.button.label" />
   </title>
 
-  <link rel="stylesheet" href="<c:url value='/styles/system.css'/>" />
-  <script src="<c:url value='/scripts/pages/system/system.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/system/createAccount.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/system/batchUserRegistration.js'/>"></script>
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+  <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/system/createAccount.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/system/batchUserRegistration.js'/>"></script>
 
   <rst:hasDeploymentProperty name="ldapEnabled" value="true">
     <script type="text/javascript">

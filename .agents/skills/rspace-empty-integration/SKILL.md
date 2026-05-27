@@ -73,7 +73,7 @@ Each edit must preserve existing alphabetical ordering. See
 - [ ] `src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js`
 - [ ] `src/main/webapp/scripts/tinymce/tinymce5109/icons/custom_icons/icons.js`
 - [ ] `build-resources/resources_to_MD5_rename.txt`
-- [ ] `src/main/webapp/ui/webpack.config.mjs`
+- [ ] `src/main/webapp/ui/bundleEntries.json`
 
 > **Verify every edit takes effect.** Some edit tools may report success
 > without actually applying the change. After each modification, run a quick
@@ -84,7 +84,7 @@ Each edit must preserve existing alphabetical ordering. See
 
 ### 5. Build the frontend bundles
 
-The TinyMCE dialog body (`dialog.html`) loads a Webpack bundle that does not
+The TinyMCE dialog body (`dialog.html`) loads a Vite bundle that does not
 exist until the UI is built. Run the build now so the integration is fully
 functional immediately after the scaffold is applied:
 

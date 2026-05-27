@@ -76,9 +76,6 @@ public class ApiInstrumentEntityInfo extends ApiInventoryRecordInfo {
   @JsonProperty("historicalVersion")
   private boolean historicalVersion;
 
-  @JsonProperty(value = "forceDelete", access = Access.WRITE_ONLY)
-  private boolean forceDelete;
-
   public ApiInstrumentEntityInfo(InstrumentEntity instrumentEntity) {
     super(instrumentEntity);
     if (instrumentEntity.isInstrument()) {

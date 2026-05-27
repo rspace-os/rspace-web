@@ -6,15 +6,15 @@
     const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
   </script>
 
-  <script src="<c:url value='/scripts/pages/journal.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/journal.js'/>"></script>
   <script>journal(jQuery)</script>
-  <script src="<c:url value='/scripts/bower_components/blueimp-file-upload/js/jquery.fileupload.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/gallery/galleryFileUpload.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/blueimp-file-upload/js/jquery.fileupload.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/gallery/galleryFileUpload.js'/>"></script>
 
-  <script src="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
 
-  <script src="<c:url value='/scripts/pages/messaging/notifications.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/messaging/messages.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/messaging/notifications.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
 
 <body>
   <div class="mainDocumentView">
@@ -62,10 +62,9 @@
   <!-- Dialog upon Create-Other Documents -->
   <axt:formCreateMenuDialog parentFolderId="${selectedNotebookId}"></axt:formCreateMenuDialog>
   <!-- React Scripts -->
-  <script src="<c:url value='/ui/dist/notebookToolbar.js'/>"></script>
-  <script src="<c:url value='/ui/dist/fileTreeToolbar.js'/>"></script>
-  <script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
-  <script src="<c:url value='/ui/dist/materialsListing.js'/>"></script>
-  <script src="<c:url value='/ui/dist/externalWorkFlows.js'/>"></script>
-  <script src="<c:url value='/ui/dist/jupyterNotebooks.js'/>"></script>
+  <rst:bundle bundle="notebookToolbar" />
+  <rst:bundle bundle="fileTreeToolbar" />
+  <rst:bundle bundle="materialsListing" />
+  <rst:bundle bundle="externalWorkFlows" />
+  <rst:bundle bundle="jupyterNotebooks" />
   <!--End React Scripts -->

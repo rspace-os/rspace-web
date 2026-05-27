@@ -5,24 +5,49 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
-import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @Slf4j
 public class S3UtilitiesTest {
+
+  /** Builds an S3UtilitiesImpl wired with a mock S3Client and the given bucket name. */
+  private static S3UtilitiesImpl s3UtilitiesWithMockClient(S3Client mockClient, String bucketName) {
+    S3UtilitiesImpl impl = new S3UtilitiesImpl();
+    impl.setS3Client(mockClient);
+    impl.setBucketName(bucketName);
+    return impl;
+  }
+
+  @Test
+  public void buildKeyFromFilePath_blankArchivePath_returnsFilenameOnly() {
+    File file = new File("my_audio.wav");
+    S3PutUploader uploader = new S3PutUploader(null, "bucket", "");
+    assertEquals("my_audio.wav", uploader.buildKeyFromFilePath(file));
+  }
+
+  @Test
+  public void buildKeyFromFilePath_nonBlankArchivePath_prependsPathWithSlash() {
+    File file = new File("my_audio.wav");
+    S3PutUploader uploader = new S3PutUploader(null, "bucket", "uploads/2024");
+    assertEquals("uploads/2024/my_audio.wav", uploader.buildKeyFromFilePath(file));
+  }
 
   @Test
   public void getUploadStrategyForFileSize() {
@@ -37,17 +62,26 @@ public class S3UtilitiesTest {
   }
 
   @Test
-  public void listFolderContents_paginatesWhenTruncated() throws Exception {
+  public void getS3Uploader_withMetadata_propagatesMetadataToUploader() {
     S3UtilitiesImpl impl = new S3UtilitiesImpl();
+    impl.setChunkedUploadMbThreshold(1);
+    impl.setChunkedUploadMbSize(5);
+    File subThreshold = RSpaceTestUtils.getResource("adrenaline.smiles");
+    File requiresChunking = RSpaceTestUtils.getResource("weather_data2.csv");
+    Map<String, String> metadata = Map.of("rspace-user", "alice", "rspace-record-id", "42");
+
+    S3PutUploader putUploader = (S3PutUploader) impl.getS3Uploader(null, subThreshold, metadata);
+    S3MultipartChunkedUploader chunkedUploader =
+        (S3MultipartChunkedUploader) impl.getS3Uploader(null, requiresChunking, metadata);
+
+    assertEquals(metadata, putUploader.getObjectMetadata());
+    assertEquals(metadata, chunkedUploader.getObjectMetadata());
+  }
+
+  @Test
+  public void listFolderContents_paginatesWhenTruncated() {
     S3Client mockS3Client = mock(S3Client.class);
-
-    Field s3ClientField = S3UtilitiesImpl.class.getDeclaredField("s3Client");
-    s3ClientField.setAccessible(true);
-    s3ClientField.set(impl, mockS3Client);
-
-    Field s3BucketNameField = S3UtilitiesImpl.class.getDeclaredField("s3BucketName");
-    s3BucketNameField.setAccessible(true);
-    s3BucketNameField.set(impl, "test-bucket");
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "test-bucket");
 
     S3Object file1 =
         S3Object.builder().key("folder/file1.txt").size(100L).lastModified(Instant.now()).build();
@@ -92,5 +126,62 @@ public class S3UtilitiesTest {
     assertTrue(items.get(1).isFolder());
     assertEquals("file2.txt", items.get(2).getName());
     assertFalse(items.get(2).isFolder());
+  }
+
+  @Test
+  public void copyObjectFromBucket_issuesS3CopyObjectRequest() {
+    S3Client mockS3Client = mock(S3Client.class);
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "dest-bucket");
+
+    impl.copyObjectFromBucket("source-bucket", "src/file.txt", "dst/file.txt");
+
+    verify(mockS3Client)
+        .copyObject(
+            argThat(
+                (CopyObjectRequest r) ->
+                    r != null
+                        && "source-bucket".equals(r.sourceBucket())
+                        && "src/file.txt".equals(r.sourceKey())
+                        && "dest-bucket".equals(r.destinationBucket())
+                        && "dst/file.txt".equals(r.destinationKey())));
+  }
+
+  @Test
+  public void getBucketName_returnsConfiguredBucket() {
+    S3UtilitiesImpl impl = new S3UtilitiesImpl();
+    impl.setBucketName("my-bucket");
+    assertEquals("my-bucket", impl.getBucketName());
+  }
+
+  @Test
+  public void copyObjectFromBucket_withMetadata_attachesMetadataAndReplaceDirective() {
+    S3Client mockS3Client = mock(S3Client.class);
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "dest-bucket");
+    Map<String, String> metadata = Map.of("rspace-user", "alice");
+
+    impl.copyObjectFromBucket("source-bucket", "src/file.txt", "dst/file.txt", metadata);
+
+    verify(mockS3Client)
+        .copyObject(
+            argThat(
+                (CopyObjectRequest r) ->
+                    r != null
+                        && metadata.equals(r.metadata())
+                        && r.metadataDirective() == MetadataDirective.REPLACE));
+  }
+
+  @Test
+  public void copyObjectFromBucket_withEmptyMetadata_doesNotSetReplaceDirective() {
+    // Empty metadata should preserve the source object's metadata (S3 default COPY directive).
+    S3Client mockS3Client = mock(S3Client.class);
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "dest-bucket");
+
+    impl.copyObjectFromBucket("source-bucket", "src/file.txt", "dst/file.txt", Map.of());
+
+    verify(mockS3Client)
+        .copyObject(
+            argThat(
+                (CopyObjectRequest r) ->
+                    r != null && r.metadataDirective() != MetadataDirective.REPLACE));
   }
 }

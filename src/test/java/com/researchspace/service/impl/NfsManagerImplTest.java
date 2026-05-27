@@ -16,7 +16,7 @@ import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.NfsRSpaceProvidedAuthentication;
-import com.researchspace.netfiles.s3.AwsS3Client;
+import com.researchspace.netfiles.s3.S3NfsClient;
 import com.researchspace.service.aws.S3Utilities;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,7 +62,7 @@ public class NfsManagerImplTest {
   public void s3FileSystem_autoAuthenticatesOnFirstCall() {
     S3Utilities s3Utilities = mock(S3Utilities.class);
     // S3 uses global credentials, so username is null → displayed as "(unknown)"
-    AwsS3Client s3Client = new AwsS3Client(null, s3Utilities);
+    S3NfsClient s3Client = new S3NfsClient(null, s3Utilities);
 
     NfsRSpaceProvidedAuthentication auth = mock(NfsRSpaceProvidedAuthentication.class);
     when(auth.validateCredentials(any(), any(), any())).thenReturn(null);
@@ -98,7 +98,7 @@ public class NfsManagerImplTest {
   @Test
   public void s3FileSystem_returnsUsernameOnSubsequentCalls() {
     S3Utilities s3Utilities = mock(S3Utilities.class);
-    AwsS3Client s3Client = new AwsS3Client(null, s3Utilities);
+    S3NfsClient s3Client = new S3NfsClient(null, s3Utilities);
 
     // Pre-populate the session map (simulating a previous successful login)
     Map<Long, NfsClient> nfsClients = new HashMap<>();

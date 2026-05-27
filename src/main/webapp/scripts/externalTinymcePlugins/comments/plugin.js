@@ -7,7 +7,7 @@ tinymce.PluginManager.add('comments', function (editor, url) {
 	editor.addCommand('cmdComments', function () {
 		editor.windowManager.openUrl({
 			title: 'Comments',
-			url: url + '/iframe.html',
+			url: RS.withCacheVersion(url + '/iframe.html'),
 			width: 550,
 			height: 460,
 			buttons: [
