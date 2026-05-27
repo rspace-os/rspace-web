@@ -11,6 +11,7 @@ import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.chemistry.StoichiometryException;
@@ -66,7 +67,8 @@ public class StoichiometryApiController extends BaseApiController implements Sto
       long stoichiometryId,
       StoichiometryUpdateDTO stoichiometryUpdateDTO,
       boolean updateFieldHtml,
-      User user) {
+      User user)
+      throws DocumentAlreadyEditedException {
     Stoichiometry stoichiometry =
         stoichiometryService.update(stoichiometryId, stoichiometryUpdateDTO, user);
     // Get latest revision number after updated
@@ -78,13 +80,15 @@ public class StoichiometryApiController extends BaseApiController implements Sto
   }
 
   @Override
-  public Boolean deleteStoichiometry(long stoichiometryId, boolean updateFieldHtml, User user) {
+  public Boolean deleteStoichiometry(long stoichiometryId, boolean updateFieldHtml, User user)
+      throws DocumentAlreadyEditedException {
     stoichiometryService.delete(stoichiometryId, user, updateFieldHtml);
     return Boolean.TRUE;
   }
 
   @Override
-  public StockDeductionResult deductStock(StockDeductionRequest request, User user) {
+  public StockDeductionResult deductStock(StockDeductionRequest request, User user)
+      throws DocumentAlreadyEditedException {
     long stoichiometryId = request.getStoichiometryId();
     List<Long> linkIds = request.getLinkIds();
     StockDeductionResult result =

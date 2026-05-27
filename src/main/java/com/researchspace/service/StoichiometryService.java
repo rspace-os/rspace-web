@@ -19,7 +19,8 @@ public interface StoichiometryService {
   Stoichiometry update(
       long stoichiometryId, StoichiometryUpdateDTO stoichiometryUpdateDTO, User user);
 
-  void delete(long stoichiometryId, User user, boolean updateFieldHtml);
+  void delete(long stoichiometryId, User user, boolean updateFieldHtml)
+      throws DocumentAlreadyEditedException;
 
   StoichiometryMolecule getMoleculeInfo(String smiles);
 
@@ -44,6 +45,11 @@ public interface StoichiometryService {
    * Updates the embedded HTML reference (data-stoichiometry-table attribute) in the owning document
    * field to reflect a change. Pass {@code newRevision = null} to remove the reference (e.g. after
    * deletion).
+   *
+   * @throws DocumentAlreadyEditedException if the owning document is currently open in the editor
+   *     (in any session). The editor's autosave could otherwise overwrite the HTML rewrite with its
+   *     locally-buffered copy.
    */
-  void syncFieldHtml(long stoichiometryId, Long newRevision, User user);
+  void syncFieldHtml(long stoichiometryId, Long newRevision, User user)
+      throws DocumentAlreadyEditedException;
 }

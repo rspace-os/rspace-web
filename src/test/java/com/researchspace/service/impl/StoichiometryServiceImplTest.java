@@ -17,6 +17,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
+import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
@@ -444,6 +445,59 @@ public class StoichiometryServiceImplTest {
 
     assertThrows(AuthorizationException.class, () -> service.syncFieldHtml(10L, 7L, user));
     verify(fieldManager, never()).getFieldsByRecordId(anyLong(), any());
+  }
+
+  @Test
+  void syncFieldHtml_whenDocumentIsBeingEdited_throwsConflictAndDoesNotSave() throws Exception {
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+    when(recordManager.getEditingUserForRecord(100L)).thenReturn(Optional.of("someoneElse"));
+
+    DocumentAlreadyEditedException ex =
+        assertThrows(
+            DocumentAlreadyEditedException.class, () -> service.syncFieldHtml(10L, 7L, user));
+    assertTrue(ex.getMessage().contains("someoneElse"));
+    verify(fieldManager, never()).getFieldsByRecordId(anyLong(), any());
+    verify(fieldManager, never()).save(any(), any());
+  }
+
+  @Test
+  void syncFieldHtml_whenSameUserHoldsEditLock_stillThrows() throws Exception {
+    // Same user editing in another tab is just as dangerous: that tab's autosave will overwrite.
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+    when(recordManager.getEditingUserForRecord(100L)).thenReturn(Optional.of(user.getUsername()));
+
+    assertThrows(DocumentAlreadyEditedException.class, () -> service.syncFieldHtml(10L, 7L, user));
+    verify(fieldManager, never()).save(any(), any());
+  }
+
+  @Test
+  void delete_whenUpdateFieldHtmlTrueAndDocumentIsBeingEdited_throwsBeforeRemoving()
+      throws Exception {
+    Stoichiometry existing = makeStoichiometryWithReaction(5L);
+    when(stoichiometryManager.get(5L)).thenReturn(existing);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+    when(recordManager.getEditingUserForRecord(100L)).thenReturn(Optional.of("someoneElse"));
+
+    assertThrows(DocumentAlreadyEditedException.class, () -> service.delete(5L, user, true));
+    verify(stoichiometryManager, never()).remove(anyLong());
+  }
+
+  @Test
+  void delete_whenUpdateFieldHtmlFalse_ignoresEditLock() throws Exception {
+    // The HTML-sync gate only applies when the caller asked us to rewrite the field HTML.
+    Stoichiometry existing = makeStoichiometryWithReaction(5L);
+    when(stoichiometryManager.get(5L)).thenReturn(existing);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+
+    assertDoesNotThrow(() -> service.delete(5L, user, false));
+    verify(stoichiometryManager).remove(5L);
+    verify(recordManager, never()).getEditingUserForRecord(anyLong());
   }
 
   private Stoichiometry makeStoichiometryWithReaction(Long reactionId) throws Exception {

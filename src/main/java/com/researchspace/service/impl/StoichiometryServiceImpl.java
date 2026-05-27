@@ -16,6 +16,7 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
+import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
@@ -150,7 +151,8 @@ public class StoichiometryServiceImpl implements StoichiometryService {
 
   @Override
   @Transactional
-  public void delete(long stoichiometryId, User user, boolean updateFieldHtml) {
+  public void delete(long stoichiometryId, User user, boolean updateFieldHtml)
+      throws DocumentAlreadyEditedException {
     Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
     if (stoichiometry == null) {
       throw new NotFoundException("Stoichiometry with id " + stoichiometryId + " not found");
@@ -210,7 +212,8 @@ public class StoichiometryServiceImpl implements StoichiometryService {
 
   @Override
   @Transactional
-  public void syncFieldHtml(long stoichiometryId, Long newRevision, User user) {
+  public void syncFieldHtml(long stoichiometryId, Long newRevision, User user)
+      throws DocumentAlreadyEditedException {
     Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
     if (stoichiometry == null) {
       log.warn("Cannot sync field HTML: stoichiometry {} not found", stoichiometryId);
@@ -224,6 +227,14 @@ public class StoichiometryServiceImpl implements StoichiometryService {
     if (!hasPermissions(record, user, PermissionType.WRITE)) {
       throw new AuthorizationException(
           "User does not have write permissions on document containing stoichiometry");
+    }
+    // Refuse if any session holds the edit lock: a concurrent autosave from the editor would
+    // POST the user's locally-buffered field HTML and silently overwrite the rewrite below.
+    Optional<String> currentEditor = recordManager.getEditingUserForRecord(record.getId());
+    if (currentEditor.isPresent()) {
+      throw new DocumentAlreadyEditedException(
+          "Cannot update document field HTML: document is currently being edited by "
+              + currentEditor.get());
     }
     List<Field> fields = fieldManager.getFieldsByRecordId(record.getId(), user);
     for (Field field : fields) {

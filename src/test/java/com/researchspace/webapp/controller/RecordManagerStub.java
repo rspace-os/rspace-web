@@ -77,6 +77,11 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
+  public Optional<String> getEditingUserForRecord(Long recordId) {
+    return Optional.empty();
+  }
+
+  @Override
   public ISearchResults<BaseRecord> listFolderRecords(
       Long parentId,
       PaginationCriteria<? extends BaseRecord> filter,
