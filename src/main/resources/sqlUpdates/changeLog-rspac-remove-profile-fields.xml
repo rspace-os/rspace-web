@@ -4,16 +4,10 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-    <changeSet id="2026-05-27-clear-removed-user-profile-fields" context="run" author="copilot">
-        <comment>Clear user profile fields that are no longer displayed or editable.</comment>
-        <sql>
-            UPDATE UserProfile
-            SET externalLinkDisplay = NULL,
-                externalLinkURL = NULL,
-                profileText = NULL
-            WHERE externalLinkDisplay IS NOT NULL
-               OR externalLinkURL IS NOT NULL
-               OR profileText IS NOT NULL;
-        </sql>
+    <changeSet id="2026-05-27-drop-removed-user-profile-fields" context="run" author="copilot">
+        <comment>Drop user profile fields that are no longer displayed or editable.</comment>
+        <dropColumn tableName="UserProfile" columnName="externalLinkDisplay"/>
+        <dropColumn tableName="UserProfile" columnName="externalLinkURL"/>
+        <dropColumn tableName="UserProfile" columnName="profileText"/>
     </changeSet>
 </databaseChangeLog>
