@@ -29,12 +29,6 @@ type RoRApiResponse = RORDataV2;
 
 type RSpaceApiResponse = { data: { exceptionMessage?: string } };
 
-type RSWindow = Window & {
-  RS?: {
-    ajaxFailed?: (message: string, showDialog: boolean, error: unknown) => void;
-  };
-};
-
 const RorDetails = styled.div`
   font-size: 18px;
   margin: 0.5em 0.5em 0.5em 0;
@@ -358,50 +352,35 @@ function RoRIntegration(): React.ReactNode {
   );
 }
 
-let root: Root | null = null;
+type HTMLElementWithRorRoot = HTMLElement & { rorRoot?: Root };
 
-function renderRoRIntegration() {
-  const domContainer = document.getElementById("rorIntegration");
-
-  if (domContainer) {
-    root = createRoot(domContainer);
-    root.render(<RoRIntegration />);
-  }
-}
-
-async function loadRoR(event?: Event) {
+function mountRoRIntegration(event?: Event) {
   event?.preventDefault();
 
-  const mainArea = document.getElementById("mainArea");
+  const mainArea: HTMLElementWithRorRoot | null =
+    document.getElementById("mainArea");
 
   if (!mainArea) {
     return;
   }
 
-  root?.unmount();
-  root = null;
-  mainArea.replaceChildren();
+  mainArea.rorRoot?.unmount();
 
-  try {
-    const response = await axios.get<string>("/system/ror/ajax/view", {
-      responseType: "text",
-    });
+  const domContainer = document.createElement("div");
+  domContainer.id = "rorIntegration";
+  domContainer.style.width = "70%";
 
-    mainArea.innerHTML = response.data;
-    renderRoRIntegration();
-  } catch (error) {
-    (window as RSWindow).RS?.ajaxFailed?.(
-      "Getting RoR Registry Systems page",
-      false,
-      error
-    );
-  }
+  mainArea.replaceChildren(domContainer);
+
+  const root = createRoot(domContainer);
+  mainArea.rorRoot = root;
+  root.render(<RoRIntegration />);
 }
 
 window.addEventListener("load", () => {
   document
     .getElementById("rorRegistryLink")
-    ?.addEventListener("click", (event) => void loadRoR(event));
+    ?.addEventListener("click", (event) => void mountRoRIntegration(event));
 });
 
 export default RoRIntegration;

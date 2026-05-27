@@ -1,4 +1,4 @@
-import { test, describe, expect, beforeEach,  } from 'vitest';
+import { test, describe, expect, beforeEach, afterEach } from "vitest";
 import RoRIntegration from "../../system-ror/RoRIntegration";
 import React from "react";
 import axios from "@/common/axios";
@@ -7,7 +7,6 @@ import {
   screen,
   fireEvent,
   act,
-  cleanup,
   waitFor,
 } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
@@ -17,12 +16,16 @@ import rorNotFound from "./json/rorNotFound.json";
 import rorUpdateSucess from "./json/rorUpdateSuccess.json";
 
 import "@/__tests__/__mocks__/resizeObserver";
+
+type HTMLElementWithRorRoot = HTMLElement & {
+  rorRoot?: { unmount: () => void };
+};
+
 const mockAxios = new MockAdapter(axios);
 const getWrapper = () => {
   return render(<RoRIntegration />);
 };
 const setupRoRMocks = (existingGlobalRoRID = "") => {
-  mockAxios.onGet("/system/ror/ajax/view").reply(200, '<div id="rorIntegration"></div>');
   mockAxios
     .onGet(
       "/system/ror/rorForID/https:__rspacror_forsl____rspacror_forsl__ror.org__rspacror_forsl__02mhbdp94"
@@ -49,11 +52,15 @@ const setupRoRMocks = (existingGlobalRoRID = "") => {
     .reply(200, existingGlobalRoRID);
 };
 beforeEach(() => {
-  cleanup();
-  document.body.innerHTML = "";
   mockAxios.resetHandlers();
   setupRoRMocks();
+});
 
+afterEach(() => {
+  const existingMainArea: HTMLElementWithRorRoot | null =
+    document.getElementById("mainArea");
+  existingMainArea?.rorRoot?.unmount();
+  document.body.innerHTML = "";
 });
 const setUpComponent = () => {
   act(() => {
@@ -90,8 +97,10 @@ describe("Renders page with ROR data", () => {
     document.body.innerHTML =
       '<a href="#" id="rorRegistryLink">RoR</a><div id="mainArea">stale content</div>';
 
-    window.dispatchEvent(new Event("load"));
-    fireEvent.click(screen.getByRole("link", { name: "RoR" }));
+    act(() => {
+      window.dispatchEvent(new Event("load"));
+      fireEvent.click(screen.getByRole("link", { name: "RoR" }));
+    });
 
     await waitFor(() =>
       expect(screen.queryByText("stale content")).not.toBeInTheDocument()
