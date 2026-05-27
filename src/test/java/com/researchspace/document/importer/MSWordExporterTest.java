@@ -13,6 +13,7 @@ import com.researchspace.documentconversion.spi.DocumentConversionService;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.io.File;
@@ -85,4 +86,17 @@ public class MSWordExporterTest {
     fis.close();
   }
 
+  @Test
+  public void happyCaseReplace() throws IOException, DocumentAlreadyEditedException {
+    FileInputStream fis = new FileInputStream(inputFile);
+    ConversionResult result = new ConversionResult(outputFromConverter, "text/html");
+    String docName = getBaseName(inputFile.getName());
+    StructuredDocument toUpdate = TestFactory.createAnySD();
+    when(docConverter.convert(any(Convertible.class), eq("html"), any(File.class)))
+        .thenReturn(result);
+    when(creator.replace(eq(toUpdate.getId()), any(ContentProvider.class), eq(docName), eq(any)))
+        .thenReturn(toUpdate);
+    assertEquals(toUpdate, wordImporter.replace(fis, any, toUpdate.getId(), inputFile.getName()));
+    fis.close();
+  }
 }

@@ -180,6 +180,7 @@ $(document).ready(function(e) {
       var form = $("<form target='_blank' method='POST' action='/workspace/editor/form/'></form>");
       $(document.body).append(form);
       form.submit();
+      form.remove();
     });
    
     $('#createFromProtocolsIo').click(function(e) {
