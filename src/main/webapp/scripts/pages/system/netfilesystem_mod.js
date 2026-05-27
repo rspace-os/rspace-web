@@ -240,13 +240,13 @@ function saveFileSystem() {
         clientType = $('input[name=fileSystemClientTypeSamba]:checked').val();
     }
 
+    var authOptions = "";
     var authType = $('input[name=fileSystemAuthType]:checked').val();
     if (authType === 'PUBKEY') {
         authOptions = "PUBLIC_KEY_REGISTRATION_DIALOG_URL=" + $('#fileSystemPubKeyRegistrationUrl').val();
     }
 
     var clientOptions = "";
-    var authOptions = "";
 
     if (clientType === 'SAMBA') {
         clientOptions = "SAMBA_DOMAIN=" + $('#fileSystemSambaDomain').val();

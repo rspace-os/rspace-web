@@ -1,12 +1,12 @@
 function loadRoR() {
-    const loadRoR = new Event("loadROR");
+    const loadRoREvent = new Event("loadROR");
     $('#mainArea').empty();
 
     var jqxhr = $.get('/system/ror/ajax/view');
 
     jqxhr.done(function (resp) {
         $('#mainArea').html(resp);
-        window.dispatchEvent(loadRoR);
+        window.dispatchEvent(loadRoREvent);
     });
 
     jqxhr.fail(function () {
