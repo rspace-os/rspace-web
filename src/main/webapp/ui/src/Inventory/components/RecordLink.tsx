@@ -41,6 +41,17 @@ const interactiveChipSx =
     marginBottom: theme.spacing(0.5),
     backgroundColor: theme.palette.grey[200],
     color: theme.palette.grey[800],
+    "&&": {
+      backgroundColor: `${theme.palette.grey[200]} !important`,
+      color: `${theme.palette.grey[800]} !important`,
+      "&:hover, &:focus": {
+        backgroundColor: `${theme.palette.grey[300]} !important`,
+      },
+      "&:active": {
+        boxShadow: theme.shadows[1],
+        backgroundColor: `${emphasize(theme.palette.grey[300], 0.12)} !important`,
+      },
+    },
     ...(clickable
       ? {
           cursor: "pointer",
@@ -69,6 +80,7 @@ const interactiveChipSx =
             paddingRight: theme.spacing(2),
           }
         : {}),
+      color: `${theme.palette.grey[800]} !important`,
     },
   });
 
@@ -88,6 +100,10 @@ const staticChipSx =
     marginBottom: theme.spacing(0.5),
     backgroundColor: theme.palette.grey[300],
     color: theme.palette.grey[800],
+    "&&": {
+      backgroundColor: `${theme.palette.grey[300]} !important`,
+      color: `${theme.palette.grey[800]} !important`,
+    },
     fontWeight: theme.typography.fontWeightRegular ?? 400,
     "& .MuiChip-label": {
       ...(overflow
@@ -100,6 +116,7 @@ const staticChipSx =
             paddingRight: theme.spacing(2),
           }
         : {}),
+      color: `${theme.palette.grey[800]} !important`,
     },
   });
 

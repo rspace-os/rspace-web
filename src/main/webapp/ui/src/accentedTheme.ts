@@ -579,6 +579,20 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                     : (baseTheme.palette.callToAction as SimplePaletteColorOptions)
                         .main,
                 },
+                "&&": {
+                  color: prefersMoreContrast
+                    ? "white"
+                    : (baseTheme.palette.callToAction as SimplePaletteColorOptions)
+                        .contrastText,
+                  "@media (prefers-contrast: more), (forced-colors: active)": {
+                    backgroundColor: "black",
+                    color: "white",
+                    forcedColorAdjust: "none",
+                    "&:hover": {
+                      backgroundColor: "black",
+                    },
+                  },
+                },
               },
             },
             {

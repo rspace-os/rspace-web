@@ -390,6 +390,16 @@ export default createTheme({
       styleOverrides: {
         containedCallToAction: {
           fontWeight: 700,
+          "&&": {
+            color: baseTheme.palette.callToAction.contrastText,
+            "@media (prefers-contrast: more), (forced-colors: active)": {
+              backgroundColor: "black",
+              color: "white",
+              "&:hover": {
+                backgroundColor: "black",
+              },
+            },
+          },
         },
       },
     },
