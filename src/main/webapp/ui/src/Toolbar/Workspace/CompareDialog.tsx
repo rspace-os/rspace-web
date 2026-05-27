@@ -172,7 +172,7 @@ const CompareToolbar = ({
    * than having to hook into the logic that triggers the opening of the
    * columns menu in both places, we just set the `anchorEl` pre-emptively.
    */
-  const columnMenuRef = React.useRef<HTMLElement>();
+  const columnMenuRef = React.useRef<HTMLElement | undefined>(undefined);
   React.useEffect(() => {
     if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
   }, [setColumnsMenuAnchorEl]);
