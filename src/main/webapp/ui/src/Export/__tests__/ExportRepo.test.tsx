@@ -1,4 +1,4 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import ExportRepo from "../ExportRepo";
 import React from "react";
 import {
@@ -6,9 +6,9 @@ import {
   cleanup,
   screen,
   within,
-  fireEvent,
   waitFor,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import repoList from "./repoList.json";
 import repoConfig from "./repoConfig.json";
 import funders from "./funders.json";
@@ -17,20 +17,17 @@ import fc, { type Arbitrary } from "fast-check";
 import { mkValidator } from "../../util/Validator";
 import { type Tag } from "../repositories/Tags";
 import { DEFAULT_STATE } from "@/Export/constants";
-
 type DMP = {
   dmpUserInternalId: number;
   dmpTitle: string;
   dmpId: string;
 };
-
 window.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
     ok: true,
     json: () => Promise.resolve(funders),
   } as Response),
-
 );
 const props = {
   repoList: repoList.map((repo) => ({
@@ -63,7 +60,6 @@ describe("ExportRepo", () => {
     expect(screen.getByText("Repository 1")).toBeInTheDocument();
     expect(screen.getByText("Repository 2")).toBeInTheDocument();
   });
-
   test("Should have first repository in list selected", async () => {
     render(<ExportRepo {...props} />);
     await waitFor(() => {
@@ -73,7 +69,6 @@ describe("ExportRepo", () => {
       "radio-button-app.repo1",
     );
     expect(repo1RadioButton).toBeChecked();
-
   });
   const arbListOfDMPs = (n: number): Arbitrary<Array<DMP>> =>
     fc.array(
@@ -82,13 +77,17 @@ describe("ExportRepo", () => {
         dmpTitle: fc.string(),
         dmpId: fc.string(),
       }),
-      { maxLength: n, minLength: n },
-
+      {
+        maxLength: n,
+        minLength: n,
+      },
     );
   const arbSetOfIndexes = (min: number, max: number): Arbitrary<Set<number>> =>
     fc
-      .uniqueArray(fc.nat(max - 1), { minLength: min, maxLength: max })
-
+      .uniqueArray(fc.nat(max - 1), {
+        minLength: min,
+        maxLength: max,
+      })
       .map((arr) => new Set(arr));
   test(
     "If chosen repository is Zenodo and more than 1 DMP is selected then a warning should be shown.",
@@ -98,7 +97,10 @@ describe("ExportRepo", () => {
           .asyncProperty(
             // limit of 10 DMPs is set to cap memory usage
             fc
-              .integer({ min: 2, max: 10 })
+              .integer({
+                min: 2,
+                max: 10,
+              })
               .chain((n) =>
                 fc.tuple<[Set<number>, Array<DMP>]>(
                   arbSetOfIndexes(2, n),
@@ -113,7 +115,11 @@ describe("ExportRepo", () => {
               }),
             async ([indexes, linkedDMPs]) => {
               const generatedRepoList = [
-                { ...zenodoRepoList[0], linkedDMPs, repoCfg: -1 },
+                {
+                  ...zenodoRepoList[0],
+                  linkedDMPs,
+                  repoCfg: -1,
+                },
               ];
               render(
                 <ExportRepo
@@ -130,29 +136,24 @@ describe("ExportRepo", () => {
               });
               const repoChoice = await screen.findByRole("radiogroup", {
                 name: "Repository choice",
-
               });
               expect(
                 await within(repoChoice).findByRole("radio", {
                   name: "Zenodo",
                 }),
-
               ).toBeChecked();
-              fireEvent.click(
+              await userEvent.click(
                 await screen.findByRole("checkbox", {
                   name: "Associate export with a Data Management Plans (DMPs)",
                 }),
-
               );
-
               const dmpTable = await screen.findByRole("table");
               (
                 await within(dmpTable).findAllByRole("checkbox", {
                   name: "Plan selection",
                 })
-              ).forEach((c, i) => {
-                if (indexes.has(i)) fireEvent.click(c);
-
+              ).forEach(async (c, i) => {
+                if (indexes.has(i)) await userEvent.click(c);
               });
               expect(await screen.findByRole("alert")).toHaveTextContent(
                 "Only one DMP can be associated with an export to Zenodo.",
@@ -162,12 +163,12 @@ describe("ExportRepo", () => {
           .beforeEach(() => {
             cleanup();
             props.fetchTags.mockClear();
-
           }),
-        { numRuns: 1 }
+        {
+          numRuns: 1,
+        },
       );
     },
     30 * 1000,
   );
 });
-

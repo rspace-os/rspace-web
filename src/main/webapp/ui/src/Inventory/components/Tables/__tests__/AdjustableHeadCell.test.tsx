@@ -1,10 +1,6 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import AdjustableHeadCell from "../AdjustableHeadCell";
 import RsSet from "../../../../util/set";
 import materialTheme from "../../../../theme";
@@ -21,15 +17,13 @@ describe("AdjustableHeadCell", () => {
             onChange={() => {}}
             sortableProperties={[]}
           />
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       fireEvent.click(screen.getByRole("button", { name: "Column options" }));
       expect(screen.getByRole("menuitem", { name: "foo" })).toHaveAttribute(
         "aria-current",
-        "true"
+        "true",
       );
     });
   });
 });
-

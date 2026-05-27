@@ -1,11 +1,6 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-} from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Optional } from "../../../../util/optional";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
@@ -24,8 +19,7 @@ describe("DSW", () => {
             credentials: [],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -44,8 +38,7 @@ describe("DSW", () => {
             credentials: [],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -54,7 +47,6 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
       expect(screen.getByRole("button", { name: /add/i })).toBeDisabled();
-
     });
     test("Adding a configuration should mutate the integration state being passed as a prop.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -68,11 +60,10 @@ describe("DSW", () => {
             "1": {
               DSW_APIKEY: "new api key",
               DSW_URL: "new url",
-              DSW_ALIAS: "new name"
+              DSW_ALIAS: "new name",
             },
           },
         },
-
       });
       const integrationState = observable<IntegrationStates["DSW"]>({
         mode: "DISABLED",
@@ -81,38 +72,29 @@ describe("DSW", () => {
       render(
         <Alerts>
           <DSW integrationState={integrationState} update={() => {}} />
-        </Alerts>
-
+        </Alerts>,
       );
 
       fireEvent.click(screen.getByRole("button"));
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(
-        screen.getByRole("textbox", { name: /label/i }),
-        {
-          target: { value: "new name" },
-        }
-
-      );
+      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
+        target: { value: "new name" },
+      });
       fireEvent.input(screen.getByRole("textbox", { name: /server url/i }), {
         target: { value: "new url" },
-
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
       fireEvent.input(screen.getByLabelText("API key"), {
         target: { value: "new api key" },
-
       });
 
       fireEvent.click(screen.getByRole("button", { name: /save/i }));
       await screen.findByRole("alert", {
         name: /Successfully saved DSW details/,
-
       });
       expect(integrationState.credentials.length).toBe(1);
     });
-
   });
   describe("Saving", () => {
     test("Tapping save on existing config should correctly call saveAppOptions endpoint.", () => {
@@ -133,31 +115,23 @@ describe("DSW", () => {
             ],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(
-        screen.getByRole("textbox", { name: /label/i }),
-        {
-          target: { value: "new name" },
-        }
-
-      );
+      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
+        target: { value: "new name" },
+      });
 
       fireEvent.click(screen.getByRole("button", { name: /save/i }));
       expect(mockAxios.history.post.length).toBe(1);
-      expect(mockAxios.history.post[0].params.get("appName")).toEqual(
-        "DSW"
-      );
+      expect(mockAxios.history.post[0].params.get("appName")).toEqual("DSW");
       expect(mockAxios.history.post[0].params.get("optionsId")).toEqual("4");
       expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({
         DSW_APIKEY: "apikey",
         DSW_URL: "url",
         DSW_ALIAS: "new name",
       });
-
     });
     test("Tapping save on a new config should correctly call saveAppOptions endpoint.", () => {
       const mockAxios = new MockAdapter(axios);
@@ -170,41 +144,31 @@ describe("DSW", () => {
             credentials: [],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(
-        screen.getByRole("textbox", { name: /label/i }),
-        {
-          target: { value: "new name" },
-        }
-
-      );
+      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
+        target: { value: "new name" },
+      });
       fireEvent.input(screen.getByRole("textbox", { name: /Server URL/i }), {
         target: { value: "new url" },
-
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
       fireEvent.input(screen.getByLabelText("API key"), {
         target: { value: "new api key" },
-
       });
 
       fireEvent.click(screen.getByRole("button", { name: /save/i }));
       expect(mockAxios.history.post.length).toBe(1);
-      expect(mockAxios.history.post[0].params.get("appName")).toEqual(
-        "DSW"
-      );
+      expect(mockAxios.history.post[0].params.get("appName")).toEqual("DSW");
       expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({
         DSW_APIKEY: "new api key",
         DSW_URL: "new url",
         DSW_ALIAS: "new name",
       });
-
     });
     test("Saving one config should not discard changes to another.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -227,7 +191,6 @@ describe("DSW", () => {
             },
           },
         },
-
       });
       render(
         <Alerts>
@@ -251,33 +214,23 @@ describe("DSW", () => {
             }}
             update={() => {}}
           />
-        </Alerts>
-
+        </Alerts>,
       );
 
       fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /label/i })[0],
-        {
-          target: { value: "new name" },
-        }
-
-      );
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /label/i })[1],
-        {
-          target: { value: "unsaved new name" },
-        }
-
-      );
+      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[0], {
+        target: { value: "new name" },
+      });
+      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[1], {
+        target: { value: "unsaved new name" },
+      });
 
       fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
 
       await screen.findByRole("alert", { name: /Successfully/ });
-      expect(
-        screen.getAllByRole("textbox", { name: /label/i })[1]
-      ).toHaveValue("unsaved new name");
-
+      expect(screen.getAllByRole("textbox", { name: /label/i })[1]).toHaveValue(
+        "unsaved new name",
+      );
     });
     test("Saving one config should not discard changes to a new config.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -291,11 +244,10 @@ describe("DSW", () => {
             "1": {
               DSW_APIKEY: "apikey",
               DSW_URL: "url",
-              DSW_ALIAS: "new name"
+              DSW_ALIAS: "new name",
             },
           },
         },
-
       });
       render(
         <Alerts>
@@ -307,41 +259,31 @@ describe("DSW", () => {
                   DSW_APIKEY: "apikey",
                   DSW_URL: "url",
                   DSW_ALIAS: "new name",
-                  optionsId: "1"
+                  optionsId: "1",
                 }),
               ],
             }}
             update={() => {}}
           />
-        </Alerts>
-
+        </Alerts>,
       );
 
       fireEvent.click(screen.getByRole("button"));
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /label/i })[0],
-        {
-          target: { value: "new name" },
-        }
-
-      );
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /label/i })[1],
-        {
-          target: { value: "unsaved new name" },
-        }
-
-      );
+      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[0], {
+        target: { value: "new name" },
+      });
+      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[1], {
+        target: { value: "unsaved new name" },
+      });
 
       fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
 
       await screen.findByRole("alert", { name: /Successfully/ });
-      expect(
-        screen.getAllByRole("textbox", { name: /label/i })[1]
-      ).toHaveValue("unsaved new name");
-
+      expect(screen.getAllByRole("textbox", { name: /label/i })[1]).toHaveValue(
+        "unsaved new name",
+      );
     });
     test("Saving a new config should not discard changes to an existing one.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -355,11 +297,10 @@ describe("DSW", () => {
             "1": {
               DSW_APIKEY: "apikey",
               DSW_URL: "url",
-              DSW_ALIAS: "new name"
+              DSW_ALIAS: "new name",
             },
           },
         },
-
       });
       render(
         <Alerts>
@@ -371,52 +312,41 @@ describe("DSW", () => {
                   DSW_APIKEY: "apikey",
                   DSW_URL: "url",
                   DSW_ALIAS: "name",
-                  optionsId: "1"
+                  optionsId: "1",
                 }),
               ],
             }}
             update={() => {}}
           />
-        </Alerts>
-
+        </Alerts>,
       );
 
       fireEvent.click(screen.getByRole("button"));
 
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /label/i })[0],
-        {
-          target: { value: "unsaved new name" },
-        }
-
-      );
-      fireEvent.input(
-        screen.getAllByRole("textbox", { name: /label/i })[1],
-        {
-          target: { value: "new name" },
-        }
-
-      );
+      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[0], {
+        target: { value: "unsaved new name" },
+      });
+      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[1], {
+        target: { value: "new name" },
+      });
       fireEvent.input(
         screen.getAllByRole("textbox", { name: /Server URL/i })[1],
         {
           target: { value: "new url" },
-        }
-
+        },
       );
       // see https://github.com/testing-library/dom-testing-library/issues/567
       fireEvent.input(screen.getAllByLabelText("API key")[1], {
         target: { value: "new api key" },
-
       });
 
       fireEvent.click(screen.getAllByRole("button", { name: /save/i })[1]);
 
       await screen.findByRole("alert", { name: /Successfully/ });
-      expect(
-        screen.getAllByRole("textbox", { name: /label/i })[0]
-      ).toHaveValue("unsaved new name");
+      expect(screen.getAllByRole("textbox", { name: /label/i })[0]).toHaveValue(
+        "unsaved new name",
+      );
     });
   });
   describe("Testing", () => {
@@ -432,7 +362,7 @@ describe("DSW", () => {
             "1": {
               DSW_APIKEY: "apikey",
               DSW_URL: "url",
-              DSW_ALIAS: "new name"
+              DSW_ALIAS: "new name",
             },
           },
         },
@@ -446,23 +376,18 @@ describe("DSW", () => {
                 DSW_APIKEY: "apikey",
                 DSW_URL: "url",
                 DSW_ALIAS: "alias",
-                optionsId: "1"
+                optionsId: "1",
               }),
             ],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(
-        screen.getByRole("textbox", { name: /label/i }),
-        {
-          target: { value: "new name" },
-        }
-
-      );
+      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
+        target: { value: "new name" },
+      });
 
       expect(screen.getByRole("button", { name: /test/i })).toBeDisabled();
 
@@ -470,7 +395,6 @@ describe("DSW", () => {
       await waitFor(() => {
         expect(screen.getByRole("button", { name: /test/i })).toBeEnabled();
       });
-
     });
     test("The test button should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -488,14 +412,13 @@ describe("DSW", () => {
                   DSW_APIKEY: "apikey",
                   DSW_URL: "url",
                   DSW_ALIAS: "name",
-                  optionsId: "1"
+                  optionsId: "1",
                 }),
               ],
             }}
             update={() => {}}
           />
-        </Alerts>
-
+        </Alerts>,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -504,11 +427,12 @@ describe("DSW", () => {
       expect(
         await screen.findByRole("alert", {
           name: /Connection details are valid/,
-        })
-
+        }),
       ).toBeVisible();
       expect(mockAxios.history.get.length).toBe(1);
-      expect(mockAxios.history.get[0].url).toBe("/currentUser?serverAlias=name");
+      expect(mockAxios.history.get[0].url).toBe(
+        "/currentUser?serverAlias=name",
+      );
     });
   });
   describe("Deleting", () => {
@@ -522,7 +446,6 @@ describe("DSW", () => {
           name: "DSW",
           options: {},
         },
-
       });
       render(
         <Alerts>
@@ -534,31 +457,27 @@ describe("DSW", () => {
                   DSW_APIKEY: "apikey",
                   DSW_URL: "url",
                   DSW_ALIAS: "name",
-                  optionsId: "1"
+                  optionsId: "1",
                 }),
               ],
             }}
             update={() => {}}
           />
-        </Alerts>
-
+        </Alerts>,
       );
 
       fireEvent.click(screen.getByRole("button"));
 
       fireEvent.click(screen.getByRole("button", { name: /delete/i }));
       expect(mockAxios.history.post.length).toBe(1);
-      expect(mockAxios.history.post[0].params.get("appName")).toEqual(
-        "DSW"
-      );
+      expect(mockAxios.history.post[0].params.get("appName")).toEqual("DSW");
 
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
       await waitFor(() => {
         expect(
-          screen.queryByRole("textbox", { name: /label/i })
+          screen.queryByRole("textbox", { name: /label/i }),
         ).not.toBeInTheDocument();
       });
-
     });
     test("Deleting a config should mutate the integration state being passed as a prop.", async () => {
       const integrationState = observable({
@@ -568,10 +487,9 @@ describe("DSW", () => {
             DSW_APIKEY: "apikey",
             DSW_URL: "url",
             DSW_ALIAS: "name",
-            optionsId: "1"
+            optionsId: "1",
           }),
         ],
-
       });
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
@@ -582,13 +500,11 @@ describe("DSW", () => {
           name: "DSW",
           options: {},
         },
-
       });
       render(
         <Alerts>
           <DSW integrationState={integrationState} update={() => {}} />
-        </Alerts>
-
+        </Alerts>,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -596,12 +512,10 @@ describe("DSW", () => {
       fireEvent.click(screen.getByRole("button", { name: /delete/i }));
       await waitFor(() => {
         expect(
-          screen.queryByRole("textbox", { name: /label/i })
+          screen.queryByRole("textbox", { name: /label/i }),
         ).not.toBeInTheDocument();
-
       });
       expect(integrationState.credentials.length).toBe(0);
     });
   });
 });
-

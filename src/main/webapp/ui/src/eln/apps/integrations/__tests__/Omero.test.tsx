@@ -1,10 +1,6 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import Omero from "../Omero";
 
 describe("Omero", () => {
@@ -16,8 +12,7 @@ describe("Omero", () => {
           credentials: {},
         }}
         update={() => {}}
-      />
-
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));
@@ -34,8 +29,7 @@ describe("Omero", () => {
           credentials: {},
         }}
         update={() => {}}
-      />
-
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));

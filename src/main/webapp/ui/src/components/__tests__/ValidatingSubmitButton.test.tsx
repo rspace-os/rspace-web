@@ -1,10 +1,6 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ValidatingSubmitButton from "../ValidatingSubmitButton";
 import Result from "../../util/result";
 import { ThemeProvider } from "@mui/material/styles";
@@ -22,7 +18,7 @@ describe("ValidatingSubmitButton", () => {
         >
           Click me
         </ValidatingSubmitButton>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     fireEvent.click(screen.getByRole("button"));
     expect(onClick).toHaveBeenCalled();
@@ -38,7 +34,7 @@ describe("ValidatingSubmitButton", () => {
         >
           Click me
         </ValidatingSubmitButton>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     fireEvent.click(screen.getByRole("button"));
     expect(onClick).not.toHaveBeenCalled();
@@ -53,7 +49,7 @@ describe("ValidatingSubmitButton", () => {
         >
           Click me
         </ValidatingSubmitButton>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     fireEvent.click(screen.getByRole("button"));
     const alert = screen.getByRole("alert", { name: "Warning" });
@@ -72,9 +68,8 @@ describe("ValidatingSubmitButton", () => {
           >
             Click me
           </ValidatingSubmitButton>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
-    }
+    },
   );
 });
-

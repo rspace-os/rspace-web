@@ -1,4 +1,4 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect } from "vitest";
 import React from "react";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import MSTeams from "../MSTeams";
@@ -26,8 +26,7 @@ describe("MSTeams", () => {
             ],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -37,7 +36,7 @@ describe("MSTeams", () => {
         await within(table).findTableCell({
           columnHeading: "Channel Connector Name",
           rowIndex: 0,
-        })
+        }),
       ).toHaveTextContent("foo");
     });
     test("Remove button should make the right API call.", async () => {
@@ -50,7 +49,6 @@ describe("MSTeams", () => {
           name: "MSTEAMS",
           options: {},
         },
-
       });
       const integrationState = observable({
         mode: "DISABLED" as const,
@@ -65,8 +63,7 @@ describe("MSTeams", () => {
       render(
         <Alerts>
           <MSTeams integrationState={integrationState} update={() => {}} />
-        </Alerts>
-
+        </Alerts>,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -74,21 +71,19 @@ describe("MSTeams", () => {
       fireEvent.click(screen.getByRole("button", { name: /remove/i }));
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual(
-        "MSTEAMS"
+        "MSTEAMS",
       );
 
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
       expect(
-        await screen.findByRole("alert", { name: /Successfully/ })
-
+        await screen.findByRole("alert", { name: /Successfully/ }),
       ).toBeVisible();
 
       const table = screen.getByRole("table");
       await waitFor(() => {
         expect(
-          within(table).queryByText("username/someRepo")
+          within(table).queryByText("username/someRepo"),
         ).not.toBeInTheDocument();
-
       });
       expect(integrationState.credentials.length).toBe(0);
     });
@@ -107,7 +102,6 @@ describe("MSTeams", () => {
             },
           },
         },
-
       });
       const integrationState = observable<IntegrationStates["MSTEAMS"]>({
         mode: "DISABLED",
@@ -116,8 +110,7 @@ describe("MSTeams", () => {
       render(
         <Alerts>
           <MSTeams integrationState={integrationState} update={() => {}} />
-        </Alerts>
-
+        </Alerts>,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -125,33 +118,28 @@ describe("MSTeams", () => {
       fireEvent.click(screen.getByRole("button", { name: /add/i }));
       await waitFor(() => {
         expect(
-          screen.queryByRole("button", { name: /add/i })
+          screen.queryByRole("button", { name: /add/i }),
         ).not.toBeInTheDocument();
-
       });
       fireEvent.change(
         screen.getByRole("textbox", { name: /channel connector name/i }),
-        { target: { value: "new name" } }
-
+        { target: { value: "new name" } },
       );
       fireEvent.change(screen.getByRole("textbox", { name: /webhook url/i }), {
         target: { value: "example.com" },
-
       });
 
       fireEvent.click(screen.getByRole("button", { name: /save/i }));
       expect(
-        await screen.findByRole("alert", { name: /Successfully/ })
-
+        await screen.findByRole("alert", { name: /Successfully/ }),
       ).toBeVisible();
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual(
-        "MSTEAMS"
+        "MSTEAMS",
       );
       expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({
         MSTEAMS_CHANNEL_LABEL: "new name",
         MSTEAMS_WEBHOOK_URL: "example.com",
-
       });
 
       expect(integrationState.credentials.length).toBe(1);
@@ -159,4 +147,3 @@ describe("MSTeams", () => {
     });
   });
 });
-

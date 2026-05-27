@@ -1,4 +1,4 @@
-import { test, describe, expect, beforeEach, vi } from 'vitest';
+import { test, describe, expect, beforeEach, vi } from "vitest";
 import React from "react";
 import { screen, waitFor, fireEvent, render } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
@@ -41,9 +41,9 @@ describe("DMPDialog", () => {
       },
       {
         contentType: "application/json",
-      }
+      },
     );
-  })
+  });
   test("Should render mock data correctly.", async () => {
     vi.clearAllMocks();
     mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
@@ -71,20 +71,16 @@ describe("DMPDialog", () => {
       success: true,
     });
     mockAxios.resetHistory();
-    render(
-      <DMPDialog open={true} setOpen={() => {}} />
-
-    );
+    render(<DMPDialog open={true} setOpen={() => {}} />);
     await waitFor(
       () => {
         expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
         // i.e. the table body has been rendered
       },
-      { timeout: 2000 }
-
+      { timeout: 2000 },
     );
     expect(
-      await(
+      await (
         within as (element: HTMLElement) => {
           findTableCell: (options: {
             columnHeading: string;
@@ -94,9 +90,8 @@ describe("DMPDialog", () => {
       )(screen.getByRole("grid")).findTableCell({
         columnHeading: "Label",
         rowIndex: 0,
-      })
+      }),
     ).toHaveTextContent("Foo");
-
   });
   describe.skip("Pagination should work.", () => {
     test(
@@ -118,44 +113,37 @@ describe("DMPDialog", () => {
           errorMsg: null,
           success: true,
         });
-        render(
-            <DMPDialog open={true} setOpen={() => {}} />
-
-        );
+        render(<DMPDialog open={true} setOpen={() => {}} />);
         await waitFor(
           () => {
             expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
             // i.e. the table body has been rendered
           },
-          { timeout: 2000 }
-
+          { timeout: 2000 },
         );
         await user.click(
           screen.getByRole("button", {
             name: "Go to next page",
-          })
-
+          }),
         );
         await user.click(
           screen.getByRole("button", {
             name: "Go to previous page",
-          })
-
+          }),
         );
         const plansRequests = mockAxios.history.get.filter(({ url }) =>
-          /\/apps\/argos\/plans/.test(url ?? "")
+          /\/apps\/argos\/plans/.test(url ?? ""),
         );
         expect(plansRequests.length).toBe(3);
         expect(
           plansRequests.map(({ url }) =>
             new URLSearchParams(
-              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]
-            ).get("page")
-          )
+              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1],
+            ).get("page"),
+          ),
         ).toEqual(["0", "1", "0"]);
       },
-      20 * 1000
-
+      20 * 1000,
     );
     test(
       "Changing the page size should make the right API call.",
@@ -202,39 +190,35 @@ describe("DMPDialog", () => {
           errorMsg: null,
           success: true,
         });
-        render(
-          <DMPDialog open={true} setOpen={() => {}} />
-
-        );
+        render(<DMPDialog open={true} setOpen={() => {}} />);
         await waitFor(
           () => {
             expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
             // i.e. the table body has been rendered
           },
-          { timeout: 2000 }
-
+          { timeout: 2000 },
         );
 
         fireEvent.mouseDown(screen.getByRole("combobox"));
         await user.click(
-          within(screen.getByRole("listbox")).getByRole("option", { name: "5" })
-
+          within(screen.getByRole("listbox")).getByRole("option", {
+            name: "5",
+          }),
         );
         const plansRequests = mockAxios.history.get.filter(({ url }) =>
-          /\/apps\/argos\/plans/.test(url ?? "")
+          /\/apps\/argos\/plans/.test(url ?? ""),
         );
         expect(plansRequests.length).toBe(2);
         expect(
           plansRequests.map(({ url }) =>
             new URLSearchParams(
-              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]
-            ).get("pageSize")
-          )
+              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1],
+            ).get("pageSize"),
+          ),
         ).toEqual(["10", "5"]);
       },
-      10 * 1000
+      10 * 1000,
     );
-
   });
   describe.skip("Search filters should work.", () => {
     test(
@@ -267,23 +251,18 @@ describe("DMPDialog", () => {
           success: true,
         });
         mockAxios.resetHistory();
-        render(
-          <DMPDialog open={true} setOpen={() => {}} />
-
-        );
+        render(<DMPDialog open={true} setOpen={() => {}} />);
         await waitFor(
           () => {
             expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
             // i.e. the table body has been rendered
           },
-          { timeout: 2000 }
-
+          { timeout: 2000 },
         );
         await user.click(
           screen.getByRole("button", {
             name: "Label",
-          })
-
+          }),
         );
         // first type in the label filter, and then press enter
         fireEvent.input(screen.getByRole("textbox"), {
@@ -291,26 +270,23 @@ describe("DMPDialog", () => {
         });
         fireEvent.submit(screen.getByRole("textbox"), {
           target: { value: "" },
-
         });
         await waitFor(() => {
           expect(screen.getByText("Foo")).toBeVisible();
-
         });
         const plansRequests = mockAxios.history.get.filter(({ url }) =>
-          /\/apps\/argos\/plans/.test(url ?? "")
+          /\/apps\/argos\/plans/.test(url ?? ""),
         );
         expect(plansRequests.length).toBe(2);
         expect(
           plansRequests.map(({ url }) =>
             new URLSearchParams(
-              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]
-            ).get("like")
-          )
+              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1],
+            ).get("like"),
+          ),
         ).toEqual([null, "Foo"]);
       },
-      10 * 1000
+      10 * 1000,
     );
   });
 });
-

@@ -1,4 +1,4 @@
-import { test, describe, expect, vi, beforeEach, afterEach } from 'vitest';
+import { test, describe, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import {
   cleanup,
@@ -15,14 +15,13 @@ import { observable } from "mobx";
 import { render, within } from "@/__tests__/customQueries";
 import { type IntegrationStates } from "../../useIntegrationsEndpoint";
 
-
 const broadcastHandlers: Array<
   (e: MessageEvent<GitHubConnectedMessage>) => void
 > = [];
 vi.mock("@/modules/common/hooks/broadcast", () => ({
   useBroadcastChannel: (
     _channel: string,
-    handler: (e: MessageEvent<GitHubConnectedMessage>) => void
+    handler: (e: MessageEvent<GitHubConnectedMessage>) => void,
   ) => {
     broadcastHandlers.push(handler);
   },
@@ -45,8 +44,7 @@ describe("GitHub", () => {
             credentials: [],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -65,13 +63,12 @@ describe("GitHub", () => {
             credentials: [],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
       expect(
-        screen.getByText("There are no linked repositories.")
+        screen.getByText("There are no linked repositories."),
       ).toBeVisible();
     });
     test("The names of repositories should be shown in a table.", () => {
@@ -88,15 +85,13 @@ describe("GitHub", () => {
             ],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
       expect(
-        within(screen.getByRole("table")).getByText("username/someRepo")
+        within(screen.getByRole("table")).getByText("username/someRepo"),
       ).toBeVisible();
-
     });
     test("If the server responds with a missing ACCESS_TOKEN then the repo should be shown in an invalid state", () => {
       render(
@@ -112,22 +107,19 @@ describe("GitHub", () => {
             ],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
       expect(
-        within(screen.getByRole("table")).getByText("username/someRepo")
-
+        within(screen.getByRole("table")).getByText("username/someRepo"),
       ).toBeVisible();
       expect(
         screen.getByText(
-          "Repository is in an invalid state. Please remove and re-add."
-        )
+          "Repository is in an invalid state. Please remove and re-add.",
+        ),
       ).toBeVisible();
     });
-
   });
   describe("Adding repositories", () => {
     test("When requested, all repositories should be listed in a table.", async () => {
@@ -147,8 +139,7 @@ describe("GitHub", () => {
         () =>
           ({
             close: () => {},
-          } as unknown as Window)
-
+          }) as unknown as Window,
       );
       render(
         <GitHub
@@ -157,8 +148,7 @@ describe("GitHub", () => {
             credentials: [],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -169,13 +159,12 @@ describe("GitHub", () => {
         broadcastHandlers.forEach((handler) =>
           handler({
             data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
-          } as MessageEvent<GitHubConnectedMessage>)
+          } as MessageEvent<GitHubConnectedMessage>),
         );
       });
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
-
       });
       const newReposTable = screen.getAllByRole("table")[1];
       expect(
@@ -183,7 +172,7 @@ describe("GitHub", () => {
         await within(newReposTable).findTableCell({
           columnHeading: "Repository Name",
           rowIndex: 0,
-        })
+        }),
       ).toHaveTextContent("a repo");
     });
     test("When tapped, the add button in the repositories table should make the right API call.", async () => {
@@ -204,8 +193,7 @@ describe("GitHub", () => {
         () =>
           ({
             close: () => {},
-          } as unknown as Window)
-
+          }) as unknown as Window,
       );
       render(
         <GitHub
@@ -214,8 +202,7 @@ describe("GitHub", () => {
             credentials: [],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -226,22 +213,20 @@ describe("GitHub", () => {
         broadcastHandlers.forEach((handler) =>
           handler({
             data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
-          } as MessageEvent<GitHubConnectedMessage>)
+          } as MessageEvent<GitHubConnectedMessage>),
         );
       });
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
-
       });
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(
           within(within(allReposTable).getAllByRole("row")[1]).getAllByRole(
-            "cell"
-          )[1]
-        ).getByRole("button", { name: /add/i })
-
+            "cell",
+          )[1],
+        ).getByRole("button", { name: /add/i }),
       );
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("GITHUB");
@@ -249,7 +234,6 @@ describe("GitHub", () => {
         GITHUB_REPOSITORY_FULL_NAME: "a repo",
         GITHUB_ACCESS_TOKEN: "oauth token",
       });
-
     });
     test("When the add button next to a repo is tapped, it should be added to the conncted repos table and removed from the all repos table.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -282,8 +266,7 @@ describe("GitHub", () => {
         () =>
           ({
             close: () => {},
-          } as unknown as Window)
-
+          }) as unknown as Window,
       );
       render(
         <GitHub
@@ -292,8 +275,7 @@ describe("GitHub", () => {
             credentials: [],
           })}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -304,28 +286,25 @@ describe("GitHub", () => {
         broadcastHandlers.forEach((handler) =>
           handler({
             data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
-          } as MessageEvent<GitHubConnectedMessage>)
+          } as MessageEvent<GitHubConnectedMessage>),
         );
       });
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
-
       });
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(
           within(within(allReposTable).getAllByRole("row")[1]).getAllByRole(
-            "cell"
-          )[1]
-        ).getByRole("button", { name: /add/i })
-
+            "cell",
+          )[1],
+        ).getByRole("button", { name: /add/i }),
       );
       await waitFor(() => {
         expect(
-          screen.queryByText("There are no linked repositories.")
+          screen.queryByText("There are no linked repositories."),
         ).not.toBeInTheDocument();
-
       });
       const connectedReposTable = screen.getAllByRole("table")[0];
       expect(
@@ -333,22 +312,20 @@ describe("GitHub", () => {
         await within(connectedReposTable).findTableCell({
           columnHeading: "Repository Name",
           rowIndex: 0,
-        })
-
+        }),
       ).toHaveTextContent("a repo");
       expect(
         // @ts-expect-error findTableCell comes from customQueries
         await within(allReposTable).findTableCell({
           columnHeading: "Repository Name",
           rowIndex: 0,
-        })
+        }),
       ).toHaveTextContent("There are no available repositories.");
     });
     test("Adding a repository should mutate the integration state being passed as a prop.", async () => {
       const integrationState = observable<IntegrationStates["GITHUB"]>({
         mode: "DISABLED",
         credentials: [],
-
       });
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
@@ -380,8 +357,7 @@ describe("GitHub", () => {
         () =>
           ({
             close: () => {},
-          } as unknown as Window)
-
+          }) as unknown as Window,
       );
 
       render(<GitHub integrationState={integrationState} update={() => {}} />);
@@ -394,32 +370,28 @@ describe("GitHub", () => {
         broadcastHandlers.forEach((handler) =>
           handler({
             data: { type: "GITHUB_CONNECTED", authToken: "oauth token" },
-          } as MessageEvent<GitHubConnectedMessage>)
+          } as MessageEvent<GitHubConnectedMessage>),
         );
       });
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
-
       });
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(
           within(within(allReposTable).getAllByRole("row")[1]).getAllByRole(
-            "cell"
-          )[1]
-        ).getByRole("button", { name: /add/i })
-
+            "cell",
+          )[1],
+        ).getByRole("button", { name: /add/i }),
       );
       await waitFor(() => {
         expect(
-          screen.queryByText("There are no linked repositories.")
+          screen.queryByText("There are no linked repositories."),
         ).not.toBeInTheDocument();
-
       });
       expect(integrationState.credentials.length).toBe(1);
     });
-
   });
   describe("Removing repositories", () => {
     test("Removing a repository should make the correct API call.", async () => {
@@ -432,7 +404,6 @@ describe("GitHub", () => {
           name: "GITHUB",
           options: {},
         },
-
       });
       render(
         <GitHub
@@ -447,8 +418,7 @@ describe("GitHub", () => {
             ],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -462,7 +432,7 @@ describe("GitHub", () => {
       const table = screen.getByRole("table");
       await waitFor(() => {
         expect(
-          within(table).queryByText("username/someRepo")
+          within(table).queryByText("username/someRepo"),
         ).not.toBeInTheDocument();
       });
     });
@@ -476,7 +446,6 @@ describe("GitHub", () => {
             optionsId: "1",
           }),
         ],
-
       });
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
@@ -487,7 +456,6 @@ describe("GitHub", () => {
           name: "DATAVERSE",
           options: {},
         },
-
       });
 
       render(<GitHub integrationState={integrationState} update={() => {}} />);
@@ -497,7 +465,6 @@ describe("GitHub", () => {
       fireEvent.click(screen.getByRole("button", { name: /remove/i }));
       await waitFor(() => {
         expect(screen.queryByText("username/someRepo")).not.toBeInTheDocument();
-
       });
       expect(integrationState.credentials.length).toBe(0);
     });

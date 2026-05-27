@@ -602,9 +602,7 @@ describe("Renders page with results data", () => {
         timeout: 5500,
       },
     );
-    expect(
-      screen.getByRole("radio", { name: "Projects" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Projects" })).toBeInTheDocument();
   }, 9999);
 
   test("displays Screens Only", async () => {
@@ -612,9 +610,7 @@ describe("Renders page with results data", () => {
     await findFirstByText("idr0094-ellinger-sarscov2/screenB", undefined, {
       timeout: 5500,
     });
-    expect(
-      screen.getByRole("radio", { name: "Screens" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Screens" })).toBeInTheDocument();
   }, 9999);
 
   test("screens can be sorted by name", async () => {

@@ -1,11 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  cleanup,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, cleanup, screen, fireEvent } from "@testing-library/react";
 import ScopeField, { type Scope } from "../ScopeField";
 import { ThemeProvider } from "@mui/material/styles";
 
@@ -20,13 +15,11 @@ describe("ScopeField", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <ScopeField getDMPs={getDMPs} />
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       fireEvent.click(screen.getByRole("radio", { name: scope }));
       expect(getDMPs).toHaveBeenCalledTimes(1);
       expect(getDMPs).toHaveBeenCalledWith(scope.toUpperCase());
-    }
+    },
   );
 });
-

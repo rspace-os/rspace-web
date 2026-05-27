@@ -1,11 +1,6 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  waitFor,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import EditAction from "../EditAction";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
@@ -49,14 +44,9 @@ describe("EditAction", () => {
         </ThemeProvider>,
       );
 
-      const setVisiblePanelSpy = vi.spyOn(
-        rootStore.uiStore,
-        "setVisiblePanel",
-
-      );
+      const setVisiblePanelSpy = vi.spyOn(rootStore.uiStore, "setVisiblePanel");
       await waitFor(() => {
         expect(screen.getByRole("button", { name: "Edit" })).toBeEnabled();
-
       });
 
       fireEvent.click(screen.getByRole("button", { name: "Edit" }));
@@ -66,4 +56,3 @@ describe("EditAction", () => {
     });
   });
 });
-

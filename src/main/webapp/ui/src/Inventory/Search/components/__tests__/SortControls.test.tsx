@@ -1,10 +1,6 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import SortControls from "../SortControls";
 import { sortProperties } from "../../../../stores/models/InventoryBaseRecord";
 import SearchContext from "../../../../stores/contexts/Search";
@@ -28,13 +24,12 @@ describe("SortControls", () => {
         >
           <SortControls />
         </SearchContext.Provider>
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Sort by" }));
     const selectedOptions = sortProperties.filter(({ key }) =>
-      search.fetcher.isCurrentSort(key)
+      search.fetcher.isCurrentSort(key),
     );
     if (selectedOptions.length !== 1) throw new Error("Invalid menu selection");
 
@@ -42,8 +37,7 @@ describe("SortControls", () => {
     expect(
       screen.getByRole("menuitem", {
         name: new RegExp(`${selectedOption.label} (\\(A-Z\\)|\\(Z-A\\))`),
-      })
+      }),
     ).toHaveAttribute("aria-current", "true");
   });
 });
-

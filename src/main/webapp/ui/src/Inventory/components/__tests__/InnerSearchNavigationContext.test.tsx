@@ -1,10 +1,6 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
@@ -17,7 +13,6 @@ import { AxiosResponse } from "axios";
 import "@/__tests__/assertUrlSearchParams";
 type TriggersSearchNavigateArgs = {
   skipToParentContext?: boolean;
-
 };
 const TriggersSearchNavigate = ({
   skipToParentContext,
@@ -34,7 +29,6 @@ const TriggersSearchNavigate = ({
       Click me!
     </button>
   );
-
 };
 const TriggersPermalinkNavigate = () => {
   const { useNavigate } = React.useContext(NavigateContext);
@@ -45,7 +39,6 @@ const TriggersPermalinkNavigate = () => {
       Click me!
     </button>
   );
-
 };
 describe("InnerSearchNavigationContext", () => {
   test("navigate calls should update the search parameters.", () => {
@@ -58,12 +51,10 @@ describe("InnerSearchNavigationContext", () => {
           statusText: "OK",
           headers: {},
           config: {},
-        } as AxiosResponse)
-
+        } as AxiosResponse),
       );
     const search = new Search({
       factory: new AlwaysNewFactory(),
-
     });
     render(
       <InnerSearchNavigationContext>
@@ -75,24 +66,20 @@ describe("InnerSearchNavigationContext", () => {
         >
           <TriggersSearchNavigate />
         </SearchContext.Provider>
-      </InnerSearchNavigationContext>
-
+      </InnerSearchNavigationContext>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
     expect(querySpy).toHaveBeenLastCalledWith(
       "search",
-      expect.urlSearchParamContaining({ query: "foo" })
+      expect.urlSearchParamContaining({ query: "foo" }),
     );
-
   });
   describe("when the parent context is AlwaysNewWindowNavigationContext", () => {
     test("navigate calls with skipToParentContext set to true should open /inventory/search calls in a new window.", () => {
-
       const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
       const search = new Search({
         factory: new AlwaysNewFactory(),
-
       });
       render(
         <AlwaysNewWindowNavigationContext>
@@ -106,19 +93,16 @@ describe("InnerSearchNavigationContext", () => {
               <TriggersSearchNavigate skipToParentContext={true} />
             </SearchContext.Provider>
           </InnerSearchNavigationContext>
-        </AlwaysNewWindowNavigationContext>
-
+        </AlwaysNewWindowNavigationContext>,
       );
 
       fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
       expect(openSpy).toHaveBeenCalled();
     });
     test("navigate calls to permalink pages should always open in a new window.", () => {
-
       const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
       const search = new Search({
         factory: new AlwaysNewFactory(),
-
       });
       render(
         <AlwaysNewWindowNavigationContext>
@@ -132,14 +116,12 @@ describe("InnerSearchNavigationContext", () => {
               <TriggersPermalinkNavigate />
             </SearchContext.Provider>
           </InnerSearchNavigationContext>
-        </AlwaysNewWindowNavigationContext>
-
+        </AlwaysNewWindowNavigationContext>,
       );
 
       fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
       expect(openSpy).toHaveBeenCalled();
     });
-
   });
   test("Pre-existing search parameters are kept, enforcing the parentGlobalId restriction", () => {
     const querySpy = vi
@@ -151,15 +133,13 @@ describe("InnerSearchNavigationContext", () => {
           statusText: "OK",
           headers: {},
           config: {},
-        } as AxiosResponse)
-
+        } as AxiosResponse),
       );
     const search = new Search({
       factory: new AlwaysNewFactory(),
       fetcherParams: {
         parentGlobalId: "SA1",
       },
-
     });
     render(
       <SearchContext.Provider
@@ -171,15 +151,13 @@ describe("InnerSearchNavigationContext", () => {
         <InnerSearchNavigationContext>
           <TriggersSearchNavigate />
         </InnerSearchNavigationContext>
-      </SearchContext.Provider>
-
+      </SearchContext.Provider>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
     expect(querySpy).toHaveBeenLastCalledWith(
       "search",
-      expect.urlSearchParamContaining({ query: "foo", parentGlobalId: "SA1" })
+      expect.urlSearchParamContaining({ query: "foo", parentGlobalId: "SA1" }),
     );
   });
 });
-

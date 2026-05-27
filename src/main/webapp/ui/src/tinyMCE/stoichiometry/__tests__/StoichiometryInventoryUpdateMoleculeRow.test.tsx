@@ -11,7 +11,9 @@ import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import type { InventoryUpdateStockDisplay } from "@/tinyMCE/stoichiometry/utils";
 
 vi.mock("@/components/GlobalId", () => ({
-  default: ({ record }: { record: { globalId: string } }) => <span>{record.globalId}</span>,
+  default: ({ record }: { record: { globalId: string } }) => (
+    <span>{record.globalId}</span>
+  ),
 }));
 
 vi.mock("@/stores/models/LinkableRecordFromGlobalId", () => ({
@@ -81,9 +83,12 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
   } as const;
 
   const getMoleculeRow = (name: string) => {
-    const row = screen.getAllByRole("row").find((candidate) =>
-      within(candidate).queryByRole("checkbox", { name }) !== null,
-    );
+    const row = screen
+      .getAllByRole("row")
+      .find(
+        (candidate) =>
+          within(candidate).queryByRole("checkbox", { name }) !== null,
+      );
 
     if (!row) {
       throw new Error(`Molecule row not found: ${name}`);
@@ -205,7 +210,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Ethanol" }));
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
-
 
   it("still shows will-use and remaining metrics when stock was already deducted", () => {
     const stockDisplay: InventoryUpdateStockDisplay = {
@@ -486,7 +490,9 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     expect(
       within(getMetric("Ethanol", "In Stock")).getByText("10.0 g"),
     ).toBeVisible();
-    expect(within(getMetric("Ethanol", "Will Use")).getByText("—")).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "Will Use")).getByText("—"),
+    ).toBeVisible();
     expect(
       within(getMetric("Ethanol", "Remaining")).getByText("—"),
     ).toBeVisible();

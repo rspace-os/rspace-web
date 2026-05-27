@@ -1,16 +1,11 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  act,
-} from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { replaceValue } from "@/__tests__/helpers/userInteractions";
 import DryadRepo from "../DryadRepo";
 import MockAdapter from "axios-mock-adapter";
-
 import axios from "@/common/axios";
-
 const mockAxios = new MockAdapter(axios);
 describe("DryadRepo", () => {
   /*
@@ -23,7 +18,9 @@ describe("DryadRepo", () => {
    */
   const renderDryadRepo = ({
     handleChange,
-  }: { handleChange?: () => void } = {}) => {
+  }: {
+    handleChange?: () => void;
+  } = {}) => {
     return render(
       <DryadRepo
         repo={{
@@ -54,9 +51,8 @@ describe("DryadRepo", () => {
         updatePeople={() => {}}
         contacts={[]}
         authors={[]}
-      />
+      />,
     );
-
   };
   /*
    * We then want to mock that network call so that it is not attempted for
@@ -67,42 +63,51 @@ describe("DryadRepo", () => {
       email: "joe.bloggs@example.com",
       fullName: "Joe Bloggs",
     },
-
   });
   test("Upon editing, title should be set to the entered value.", async () => {
     const handleChange = vi.fn();
-
-    await act(() => void renderDryadRepo({ handleChange }));
-    fireEvent.change(screen.getByRole("textbox", { name: /Title/ }), {
-      target: { value: "foo" },
-
-    });
+    await act(
+      () =>
+        void renderDryadRepo({
+          handleChange,
+        }),
+    );
+    await replaceValue(
+      screen.getByRole("textbox", {
+        name: /Title/,
+      }),
+      "foo",
+    );
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({
           value: "foo",
           name: "title",
         }),
-      })
+      }),
     );
-
   });
   test("Upon editing, description should be set to the entered value.", async () => {
     const handleChange = vi.fn();
-
-    await act(() => void renderDryadRepo({ handleChange }));
-    fireEvent.change(screen.getByRole("textbox", { name: /Add an abstract/ }), {
-      target: { value: "foo" },
-
-    });
+    await act(
+      () =>
+        void renderDryadRepo({
+          handleChange,
+        }),
+    );
+    await replaceValue(
+      screen.getByRole("textbox", {
+        name: /Add an abstract/,
+      }),
+      "foo",
+    );
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({
           value: "foo",
           name: "description",
         }),
-      })
+      }),
     );
   });
 });
-

@@ -1,10 +1,6 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ContextMenuSplitButton from "../ContextMenuSplitButton";
 import materialTheme from "../../../../theme";
 
@@ -14,25 +10,23 @@ describe("ContextMenuSplitButton", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <ContextMenuSplitButton options={[{ text: "foo" }]} icon={null} />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     // none of the options are selected until one has been used
     // so first we tap one of the options
     fireEvent.click(
-      screen.getByRole("button", { name: "More selection options" })
+      screen.getByRole("button", { name: "More selection options" }),
     );
 
     fireEvent.click(screen.getByRole("menuitem", { name: "foo" }));
     // then we reopen the menu to assert the now selected option
     fireEvent.click(
-      screen.getByRole("button", { name: "More selection options" })
+      screen.getByRole("button", { name: "More selection options" }),
     );
     expect(
       screen.getByRole("menuitem", {
         name: "foo",
-      })
+      }),
     ).toHaveAttribute("aria-current", "true");
   });
 });
-

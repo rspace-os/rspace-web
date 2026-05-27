@@ -1,10 +1,6 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ProtocolsIO from "../ProtocolsIO";
 import { Optional } from "../../../../util/optional";
 
@@ -20,8 +16,7 @@ describe("ProtocolsIO", () => {
             },
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -41,8 +36,7 @@ describe("ProtocolsIO", () => {
           },
         }}
         update={() => {}}
-      />
-
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));
@@ -58,8 +52,7 @@ describe("ProtocolsIO", () => {
           },
         }}
         update={() => {}}
-      />
-
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));

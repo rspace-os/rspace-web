@@ -1,16 +1,11 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
-
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import PdfExport from "../PdfExport";
 describe("PdfExport", () => {
-  test("Toggling a switch should set a boolean value.", () => {
+  test("Toggling a switch should set a boolean value.", async () => {
     const updateExportDetails: (key: string, exportDetail: unknown) => void =
-
       vi.fn();
     render(
       <PdfExport
@@ -35,14 +30,13 @@ describe("PdfExport", () => {
             exportName: false,
           },
         }}
-      />
-
+      />,
     );
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: "Include provenance information" })
-
+    await userEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Include provenance information",
+      }),
     );
     expect(updateExportDetails).toHaveBeenCalledWith("provenance", true);
   });
 });
-

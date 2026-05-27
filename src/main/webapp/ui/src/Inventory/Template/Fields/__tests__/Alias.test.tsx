@@ -1,4 +1,4 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect } from "vitest";
 import React from "react";
 import {
   render,
@@ -28,18 +28,17 @@ describe("Alias", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <Alias fieldOwner={template} onErrorStateChange={() => {}} />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
 
     fireEvent.click(screen.getByText("Custom"));
     const pluralInput = within(
-      screen.getByTestId("aliasField_pluralBox")
+      screen.getByTestId("aliasField_pluralBox"),
     ).getByRole("textbox");
 
     fireEvent.input(pluralInput, { target: { value: "x" } });
     const singleInput = within(
-      screen.getByTestId("aliasField_singleBox")
+      screen.getByTestId("aliasField_singleBox"),
     ).getByRole("textbox");
     // entering "unit" as a custom alias...
 
@@ -53,8 +52,7 @@ describe("Alias", () => {
     expect(
       screen
         .getAllByRole("radio")
-        .filter((radio) => (radio as HTMLInputElement).value === "unit")[0]
+        .filter((radio) => (radio as HTMLInputElement).value === "unit")[0],
     ).not.toBeChecked();
   });
 });
-

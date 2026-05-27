@@ -1,12 +1,6 @@
-
-import { test, describe, expect, beforeAll, vi } from 'vitest';
+import { test, describe, expect, beforeAll, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-} from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
@@ -45,7 +39,6 @@ const mockContainer = {
   barcodes: [persistedBarcode1],
 } as unknown as InventoryRecord;
 describe("Print Tests", () => {
-
   const openDialog = true; // if false, then dialog is null
   const modalRoot = document.createElement("div");
 
@@ -71,7 +64,6 @@ describe("Print Tests", () => {
     });
   };
   describe("PrintDialog with items to print (barcodes)", () => {
-
     test("renders, has radio options for printerType, printMode, printSize (plus help text)", async () => {
       await renderDialog();
 
@@ -87,10 +79,8 @@ describe("Print Tests", () => {
       const previewHeader = "Preview Barcode Label Layout";
       expect(screen.getByText(previewHeader)).toBeInTheDocument();
     });
-
   });
   describe("PrintDialog with items to print (barcodes)", () => {
-
     test("renders, content responds to clicked options", async () => {
       await renderDialog();
       const globalId = mockContainer.globalId;

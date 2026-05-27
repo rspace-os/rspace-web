@@ -1,10 +1,6 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import RadioField from "../../RadioField";
 import { ThemeProvider } from "@mui/material/styles";
 
@@ -31,7 +27,7 @@ describe("RadioField", () => {
           ]}
           value={null}
         />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     fireEvent.click(screen.getByRole("radio", { name: "FirstOption" }));
     expect(onChange).toHaveBeenLastCalledWith(
@@ -40,9 +36,8 @@ describe("RadioField", () => {
           name: "fieldName",
           value: "firstOption",
         }) as HTMLInputElement,
-      })
+      }),
     );
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 });
-

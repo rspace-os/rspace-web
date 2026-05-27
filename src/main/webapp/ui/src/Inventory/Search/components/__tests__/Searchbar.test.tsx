@@ -1,12 +1,6 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  within,
-  act,
-} from "@testing-library/react";
+import { render, screen, fireEvent, within, act } from "@testing-library/react";
 import SearchContext from "../../../../stores/contexts/Search";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
@@ -31,21 +25,20 @@ describe("Searchbar", () => {
         >
           <Searchbar handleSearch={handleSearch} />
         </SearchContext.Provider>
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     fireEvent.change(screen.getByRole("searchbox", { name: "Search" }), {
       target: { value: "this is a really long piece of text" },
-
     });
     expect(screen.getByRole("button", { name: "Expand field" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "Expand field" }));
     fireEvent.click(
-      within(screen.getByRole("dialog")).getByRole("button", { name: "Search" })
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Search",
+      }),
     );
     expect(handleSearch).toHaveBeenCalled();
-
   });
   test("When the query search parameter changes, the new value should be shown.", () => {
     const search = new Search({
@@ -61,16 +54,13 @@ describe("Searchbar", () => {
         >
           <Searchbar handleSearch={() => {}} />
         </SearchContext.Provider>
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     act(() => {
       search.fetcher.setAttributes({
         query: "foo",
       });
-
     });
     expect(screen.getByRole("searchbox")).toHaveValue("foo");
   });
 });
-

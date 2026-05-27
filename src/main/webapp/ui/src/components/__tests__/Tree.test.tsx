@@ -132,7 +132,8 @@ const MultiSelectTreeExample = ({
         </Tree>
         <Box mt={2}>
           <Typography variant="body2">
-            Selected: {selectedItems.map((item) => item.name).join(", ") || "None"}
+            Selected:{" "}
+            {selectedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>
       </Box>
@@ -194,7 +195,8 @@ const ExpandableTreeExample = ({
         </Tree>
         <Box mt={2}>
           <Typography variant="body2">
-            Expanded: {expandedItems.map((item) => item.name).join(", ") || "None"}
+            Expanded:{" "}
+            {expandedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>
       </Box>
@@ -278,7 +280,8 @@ const ControlledTreeExample = ({
             Selected: {selectedItem?.name || "None"}
           </Typography>
           <Typography variant="body2">
-            Expanded: {expandedItems.map((item) => item.name).join(", ") || "None"}
+            Expanded:{" "}
+            {expandedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>
       </Box>

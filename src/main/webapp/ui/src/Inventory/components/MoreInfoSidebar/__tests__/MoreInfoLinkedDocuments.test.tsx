@@ -1,9 +1,6 @@
-import { test, describe, expect, afterEach, vi } from 'vitest';
+import { test, describe, expect, afterEach, vi } from "vitest";
 import React from "react";
-import {
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
 import LinkedDocuments from "../LinkedDocuments";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import InvApiService from "../../../../common/InvApiService";
@@ -16,8 +13,7 @@ import { render, within } from "@/__tests__/customQueries";
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
     get: () => ({}),
-  }
-
+  },
 }));
 describe("LinkedDocuments", () => {
   afterEach(() => {
@@ -29,22 +25,20 @@ describe("LinkedDocuments", () => {
       .mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
     fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
+      screen.getByRole("button", { name: "Show Linked Documents" }),
     );
     expect(await screen.findByText("An error")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IC1");
-
   });
   test("When there is an error loading the data, an alert should be shown.", async () => {
-    vi
-      .spyOn(InvApiService, "get")
-      .mockImplementation(() => Promise.reject(new Error("An error")));
+    vi.spyOn(InvApiService, "get").mockImplementation(() =>
+      Promise.reject(new Error("An error")),
+    );
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
     fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
+      screen.getByRole("button", { name: "Show Linked Documents" }),
     );
     expect(await screen.findByRole("alert")).toHaveTextContent("An error");
-
   });
   test("Two different documents should render as two table rows", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
@@ -67,30 +61,28 @@ describe("LinkedDocuments", () => {
           })}
           globalId="IC1"
         />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
+      screen.getByRole("button", { name: "Show Linked Documents" }),
     );
     expect(
-      within(await screen.findByRole("table")).getAllByRole("row")
-
+      within(await screen.findByRole("table")).getAllByRole("row"),
     ).toHaveLength(3);
     expect(
       // @ts-ignore findTableCell exists in the customized within function
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 0,
-      })
+      }),
     ).toHaveTextContent("Foo");
     expect(
       // @ts-ignore findTableCell exists in the customized within function
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 1,
-      })
+      }),
     ).toHaveTextContent("Bar");
-
   });
   test("Two of the same document should render as one table row", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
@@ -113,10 +105,10 @@ describe("LinkedDocuments", () => {
           })}
           globalId="IC1"
         />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
+      screen.getByRole("button", { name: "Show Linked Documents" }),
     );
     const rows = within(await screen.findByRole("table")).getAllByRole("row");
 
@@ -126,9 +118,8 @@ describe("LinkedDocuments", () => {
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 0,
-      })
+      }),
     ).toHaveTextContent("Foo");
-
   });
   test("Opening the dialog twice should trigger two network calls", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {
@@ -136,13 +127,13 @@ describe("LinkedDocuments", () => {
     });
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
     fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
+      screen.getByRole("button", { name: "Show Linked Documents" }),
     );
     expect(await screen.findByRole("button", { name: "Close" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     await screen.findByRole("button", { name: "Show Linked Documents" });
     fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
+      screen.getByRole("button", { name: "Show Linked Documents" }),
     );
     expect(await screen.findByText("An error")).toBeVisible();
     expect(spy).toHaveBeenCalledTimes(2);

@@ -1,10 +1,6 @@
-import { test, describe, expect, vi } from 'vitest';
+import { test, describe, expect, vi } from "vitest";
 import React from "react";
-import {
-  screen,
-  waitFor,
-  fireEvent,
-} from "@testing-library/react";
+import { screen, waitFor, fireEvent } from "@testing-library/react";
 import { action, observable } from "mobx";
 import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
@@ -69,21 +65,18 @@ describe("MoveDialog", () => {
           savedBaskets: [],
           getBaskets: () => {},
         },
-      })
-
+      }),
     );
     render(
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={rootStore}>
           <MoveDialog />
         </storesContext.Provider>
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     expect(Dialog).toHaveBeenCalledWith(
       expect.objectContaining({ open: true }),
-      expect.anything()
-
+      expect.anything(),
     );
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
@@ -92,84 +85,75 @@ describe("MoveDialog", () => {
     });
     expect(Dialog).toHaveBeenCalledWith(
       expect.objectContaining({ open: false }),
-      expect.anything()
+      expect.anything(),
     );
-
   });
   test("Table hidden in header should list all selectedResults", () => {
     fc.assert(
-      fc
-        .property(
-          fc.array<SubSampleModel>(
-            subSampleAttrsArbitrary.map((attrs) => makeMockSubSample(attrs))
-          ),
-          (selectedResults) => {
-            // this check prevents the non-unique react key warning
-            fc.pre(
-              ArrayUtils.allAreUnique(selectedResults.map((r) => r.globalId))
+      fc.property(
+        fc.array<SubSampleModel>(
+          subSampleAttrsArbitrary.map((attrs) => makeMockSubSample(attrs)),
+        ),
+        (selectedResults) => {
+          // this check prevents the non-unique react key warning
+          fc.pre(
+            ArrayUtils.allAreUnique(selectedResults.map((r) => r.globalId)),
+          );
+          const rootStore: StoreContainer = makeMockRootStore(
+            observable({
+              moveStore: {
+                isMoving: true,
+                selectedResults,
+                setIsMoving: action((x: boolean) => {
+                  rootStore.moveStore.isMoving = x;
+                }),
+                search: new Search({
+                  factory: mockFactory(),
+                }),
+                submitting: "NO",
+              },
+              uiStore: {
+                setDialogVisiblePanel: () => {},
+                isSingleColumnLayout: false,
+              },
+              searchStore: {
+                savedSearches: [],
+                savedBaskets: [],
+                getBaskets: () => {},
+              },
+            }),
+          );
+          render(
+            <ThemeProvider theme={materialTheme}>
+              <storesContext.Provider value={rootStore}>
+                <MoveDialog />
+              </storesContext.Provider>
+            </ThemeProvider>,
+          );
+          fireEvent.click(
+            screen.getByRole("button", { name: "Show items being moved" }),
+          );
+          expect(
+            within(screen.getByRole("table")).getAllByRole("row").length,
+          ).toBe(selectedResults.length + 1);
+          const table = screen.getByRole("table");
 
-            );
-            const rootStore: StoreContainer = makeMockRootStore(
-              observable({
-                moveStore: {
-                  isMoving: true,
-                  selectedResults,
-                  setIsMoving: action((x: boolean) => {
-                    rootStore.moveStore.isMoving = x;
-                  }),
-                  search: new Search({
-                    factory: mockFactory(),
-                  }),
-                  submitting: "NO",
-                },
-                uiStore: {
-                  setDialogVisiblePanel: () => {},
-                  isSingleColumnLayout: false,
-                },
-                searchStore: {
-                  savedSearches: [],
-                  savedBaskets: [],
-                  getBaskets: () => {},
-                },
-              })
+          const [headerRow, ...bodyRows] = within(table).getAllByRole("row");
+          const indexOfNameColumn =
+            // @ts-expect-error TS does not recognise the vi.extend
 
-            );
-            render(
-              <ThemeProvider theme={materialTheme}>
-                <storesContext.Provider value={rootStore}>
-                  <MoveDialog />
-                </storesContext.Provider>
-              </ThemeProvider>
-
-            );
-            fireEvent.click(
-              screen.getByRole("button", { name: "Show items being moved" })
-
-            );
-            expect(
-              within(screen.getByRole("table")).getAllByRole("row").length
-
-            ).toBe(selectedResults.length + 1);
-            const table = screen.getByRole("table");
-
-            const [headerRow, ...bodyRows] = within(table).getAllByRole("row");
-            const indexOfNameColumn =
-              // @ts-expect-error TS does not recognise the vi.extend
-
-              within(headerRow).getIndexOfTableCell("Name");
-            const allNameCells = bodyRows.map(
-              (row) => within(row).getAllByRole("cell")[indexOfNameColumn]
-
-            );
-            expect(
-              selectedResults.every((r) =>
-                allNameCells.some((cell) => cell.textContent === r.name)
-              )
-            ).toBe(true);
-          }
-        )
-,
-      { numRuns: 1 }
+            within(headerRow).getIndexOfTableCell("Name");
+          const allNameCells = bodyRows.map(
+            (row) => within(row).getAllByRole("cell")[indexOfNameColumn],
+          );
+          expect(
+            selectedResults.every((r) =>
+              allNameCells.some((cell) => cell.textContent === r.name),
+            ),
+          ).toBe(true);
+        },
+      ),
+      { numRuns: 1 },
     );
   });
 });

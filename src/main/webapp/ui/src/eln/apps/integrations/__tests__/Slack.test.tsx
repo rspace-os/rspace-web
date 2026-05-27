@@ -1,11 +1,6 @@
-import { test, describe, expect, beforeEach, vi } from 'vitest';
+import { test, describe, expect, beforeEach, vi } from "vitest";
 import React from "react";
-import {
-  screen,
-  fireEvent,
-  waitFor,
-  render,
-} from "@testing-library/react";
+import { screen, fireEvent, waitFor, render } from "@testing-library/react";
 import Slack from "../Slack";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
@@ -24,8 +19,7 @@ describe("Slack", () => {
             credentials: [],
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -63,7 +57,6 @@ describe("Slack", () => {
           },
         },
       },
-
     });
     const channelDetails = {
       ok: true,
@@ -100,11 +93,11 @@ describe("Slack", () => {
           },
           removeEventListener: () => {},
           close: () => {},
-        } as unknown as Window)
+        }) as unknown as Window,
     );
-    vi
-      .spyOn(window, "setInterval")
-      .mockImplementation((f) => f() as unknown as NodeJS.Timeout);
+    vi.spyOn(window, "setInterval").mockImplementation(
+      (f) => f() as unknown as NodeJS.Timeout,
+    );
   });
   test("When the add flow is triggered, the channel details should be shown.", async () => {
     const integrationState = observable<IntegrationStates["SLACK"]>({
@@ -114,8 +107,7 @@ describe("Slack", () => {
     render(
       <Alerts>
         <Slack integrationState={integrationState} update={() => {}} />
-      </Alerts>
-
+      </Alerts>,
     );
 
     fireEvent.click(screen.getByRole("button"));
@@ -123,17 +115,14 @@ describe("Slack", () => {
     fireEvent.click(screen.getByRole("button", { name: /add/i }));
     await waitFor(() => {
       expect(screen.getByText(/RSpace Dev/)).toBeVisible();
-
     });
     fireEvent.change(screen.getByRole("textbox", { name: /rspace label/i }), {
       target: { value: "custom label" },
-
     });
 
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(
-      await screen.findByRole("alert", { name: /Successfully/ })
-
+      await screen.findByRole("alert", { name: /Successfully/ }),
     ).toBeVisible();
     expect(integrationState.credentials.length).toBe(1);
   });
@@ -147,8 +136,7 @@ describe("Slack", () => {
           }}
           update={() => {}}
         />
-      </Alerts>
-
+      </Alerts>,
     );
 
     fireEvent.click(screen.getByRole("button"));
@@ -156,13 +144,11 @@ describe("Slack", () => {
     fireEvent.click(screen.getByRole("button", { name: /add/i }));
     await waitFor(() => {
       expect(screen.getByText(/RSpace Dev/)).toBeVisible();
-
     });
 
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
     await waitFor(() => {
       expect(screen.queryByText(/RSpace Dev/)).not.toBeInTheDocument();
-
     });
     expect(screen.getByRole("button", { name: /add/i })).toBeVisible();
   });
@@ -190,16 +176,15 @@ describe("Slack", () => {
           }}
           update={() => {}}
         />
-      </Alerts>
-
+      </Alerts>,
     );
 
     fireEvent.click(screen.getByRole("button"));
     expect(screen.getAllByRole("definition")[0]).toHaveTextContent(
-      "RSpace Dev"
+      "RSpace Dev",
     );
     expect(screen.getAllByRole("definition")[1]).toHaveTextContent(
-      "#rspace-slackpost-test"
+      "#rspace-slackpost-test",
     );
     expect(screen.getByRole("textbox")).toHaveValue("custom label");
   });
@@ -226,7 +211,6 @@ describe("Slack", () => {
           },
         },
       },
-
     });
     render(
       <Alerts>
@@ -251,20 +235,17 @@ describe("Slack", () => {
           }}
           update={() => {}}
         />
-      </Alerts>
-
+      </Alerts>,
     );
 
     fireEvent.click(screen.getByRole("button"));
     fireEvent.change(screen.getByRole("textbox"), {
       target: { value: "custom label" },
-
     });
 
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(
-      await screen.findByRole("alert", { name: /Successfully/ })
-
+      await screen.findByRole("alert", { name: /Successfully/ }),
     ).toBeVisible();
     expect(mockAxios.history.post.length).toBe(1);
     expect(mockAxios.history.post[0].params.get("appName")).toEqual("SLACK");
@@ -272,7 +253,7 @@ describe("Slack", () => {
     expect(JSON.parse(mockAxios.history.post[0].data)).toEqual(
       expect.objectContaining({
         SLACK_CHANNEL_LABEL: "custom label",
-      })
+      }),
     );
   });
   test("Saving changes to one channel should not overrwrite changes to other.", async () => {
@@ -310,7 +291,6 @@ describe("Slack", () => {
           },
         },
       },
-
     });
     render(
       <Alerts>
@@ -348,24 +328,20 @@ describe("Slack", () => {
           }}
           update={() => {}}
         />
-      </Alerts>
-
+      </Alerts>,
     );
 
     fireEvent.click(screen.getByRole("button"));
     fireEvent.change(screen.getAllByRole("textbox")[0], {
       target: { value: "custom label" },
-
     });
     fireEvent.change(screen.getAllByRole("textbox")[1], {
       target: { value: "also custom label" },
-
     });
 
     fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
     expect(
-      await screen.findByRole("alert", { name: /Successfully/ })
-
+      await screen.findByRole("alert", { name: /Successfully/ }),
     ).toBeVisible();
     expect(screen.getAllByRole("textbox")[1]).toHaveValue("also custom label");
   });
@@ -379,7 +355,6 @@ describe("Slack", () => {
         name: "SLACK",
         options: {},
       },
-
     });
     const integrationState = observable({
       mode: "DISABLED" as const,
@@ -402,16 +377,14 @@ describe("Slack", () => {
     render(
       <Alerts>
         <Slack integrationState={integrationState} update={() => {}} />
-      </Alerts>
-
+      </Alerts>,
     );
 
     fireEvent.click(screen.getByRole("button"));
 
     fireEvent.click(screen.getByRole("button", { name: /remove/i }));
     expect(
-      await screen.findByRole("alert", { name: /Successfully/ })
-
+      await screen.findByRole("alert", { name: /Successfully/ }),
     ).toBeVisible();
     expect(mockAxios.history.post.length).toBe(1);
     expect(mockAxios.history.post[0].params.get("appName")).toEqual("SLACK");
@@ -420,4 +393,3 @@ describe("Slack", () => {
     expect(integrationState.credentials.length).toBe(0);
   });
 });
-

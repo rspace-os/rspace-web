@@ -1,10 +1,6 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect } from "vitest";
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ToggleView from "../ToggleView";
 import { TYPE_LABEL } from "../../../../stores/definitions/Search";
 import materialTheme from "../../../../theme";
@@ -21,8 +17,7 @@ describe("ToggleView", () => {
           views={Object.keys(TYPE_LABEL) as Array<keyof typeof TYPE_LABEL>}
           onChange={() => Promise.resolve()}
         />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Change view" }));
@@ -31,8 +26,7 @@ describe("ToggleView", () => {
         name: TYPE_LABEL[
           (Object.keys(TYPE_LABEL) as Array<keyof typeof TYPE_LABEL>)[0]
         ],
-      })
+      }),
     ).toHaveAttribute("aria-current", "true");
   });
 });
-
