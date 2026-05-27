@@ -1,7 +1,6 @@
 import React, { type ReactNode } from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
-import * as ReactRouter from "react-router";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate as useReactRouterNavigate } from "react-router-dom";
 import useStores from "../../stores/use-stores";
 import { type URL } from "../../util/types";
 
@@ -18,7 +17,7 @@ type RouterNavigationContextArgs = {
 export default function RouterNavigationContext({
   children,
 }: RouterNavigationContextArgs): ReactNode {
-  const navigate = ReactRouter.useNavigate();
+  const navigate = useReactRouterNavigate();
   const { uiStore } = useStores();
 
   const useNavigate =
@@ -32,7 +31,7 @@ export default function RouterNavigationContext({
         modifyVisiblePanel: true,
       };
       if (/\/inventory/.test(url)) {
-        navigate(url);
+        void navigate(url);
         if (modifyVisiblePanel) uiStore.setVisiblePanel("left");
       } else {
         window.open(location.origin + url);

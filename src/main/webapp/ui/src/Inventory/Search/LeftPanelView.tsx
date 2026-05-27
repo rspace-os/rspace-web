@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route } from "react-router";
+import { Routes, Route } from "react-router-dom";
 import useStores from "../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import {

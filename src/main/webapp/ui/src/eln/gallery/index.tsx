@@ -28,8 +28,7 @@ import Alerts from "../../components/Alerts/Alerts";
 import { DisableDragAndDropByDefault } from "../../hooks/ui/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
 import { GallerySelection, useGallerySelection } from "./useGallerySelection";
-import { BrowserRouter, Navigate } from "react-router-dom";
-import { Routes, Route, useParams } from "react-router";
+import { BrowserRouter, Navigate, Routes, Route, useParams } from "react-router-dom";
 import useUiPreference, {
   PREFERENCES,
   UiPreferences,
