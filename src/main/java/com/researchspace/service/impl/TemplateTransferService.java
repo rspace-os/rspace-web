@@ -117,7 +117,7 @@ public class TemplateTransferService implements TransferService {
             getOrCreateSubfolder(deletedUsersFolder, originalOwner.getUsername(), newOwner);
       } else {
         String category = relPath.get(0);
-        Folder categoryFolder = getOrCreateSubfolder(newOwnerGalleryRoot, category, newOwner);
+        Folder categoryFolder = recordManager.getGalleryMediaFolderForUser(category, newOwner);
         Folder deletedUsersFolder =
             getOrCreateSubfolder(categoryFolder, DELETED_USER_TEMPLATES_FOLDER, newOwner);
         Folder userFolder =
