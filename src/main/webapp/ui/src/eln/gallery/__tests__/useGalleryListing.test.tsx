@@ -279,11 +279,7 @@ describe("RemoteFile.canMoveToS3", () => {
   });
 });
 
-function makeLocalGalleryFile({
-  isSystemFolder,
-}: {
-  isSystemFolder: boolean;
-}): LocalGalleryFile {
+function makeLocalGalleryFile({ type = "image" }: { type?: string } = {}): LocalGalleryFile {
   return new LocalGalleryFile({
     id: dummyId(),
     globalId: "GF_LOCAL",
@@ -292,8 +288,8 @@ function makeLocalGalleryFile({
     creationDate: new Date(),
     modificationDate: new Date(),
     description: new Description({ key: "empty" }),
-    type: "image",
-    isSystemFolder,
+    type,
+    isSystemFolder: false,
     isSharedFolder: false,
     ownerId: 1,
     ownerName: "Test User",
@@ -309,17 +305,32 @@ function makeLocalGalleryFile({
   });
 }
 
+describe("LocalGalleryFile.canMoveToIrods", () => {
+  test("returns Ok for a non-folder file", () => {
+    const file = makeLocalGalleryFile();
+    expect(file.canMoveToIrods.isOk).toBe(true);
+  });
+
+  test("returns Error for a folder", () => {
+    const file = makeLocalGalleryFile({ type: "Folder" });
+    expect(file.canMoveToIrods.isOk).toBe(false);
+    expect(file.canMoveToIrods.orElseGet(([e]) => e)).toMatchObject({
+      message: expect.stringContaining("folder"),
+    });
+  });
+});
+
 describe("LocalGalleryFile.canMoveToS3", () => {
-  test("returns Ok for a regular (non-system) file", () => {
-    const file = makeLocalGalleryFile({ isSystemFolder: false });
+  test("returns Ok for a non-folder file", () => {
+    const file = makeLocalGalleryFile();
     expect(file.canMoveToS3.isOk).toBe(true);
   });
 
-  test("returns Error for a system folder", () => {
-    const file = makeLocalGalleryFile({ isSystemFolder: true });
+  test("returns Error for a folder", () => {
+    const file = makeLocalGalleryFile({ type: "Folder" });
     expect(file.canMoveToS3.isOk).toBe(false);
     expect(file.canMoveToS3.orElseGet(([e]) => e)).toMatchObject({
-      message: expect.stringContaining("system folder"),
+      message: expect.stringContaining("folder"),
     });
   });
 });

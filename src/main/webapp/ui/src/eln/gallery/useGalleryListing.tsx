@@ -504,14 +504,14 @@ export class LocalGalleryFile implements GalleryFile {
   }
 
   get canMoveToIrods(): Result<null> {
-    if (this.isSystemFolder)
-      return Result.Error([new Error("Cannot move system folders to iRODS.")]);
+    if (this.isFolder)
+      return Result.Error([new Error("Cannot move folders to iRODS.")]);
     return Result.Ok(null);
   }
 
   get canMoveToS3(): Result<null> {
-    if (this.isSystemFolder)
-      return Result.Error([new Error("Cannot move system folders to S3.")]);
+    if (this.isFolder)
+      return Result.Error([new Error("Cannot move folders to S3.")]);
     return Result.Ok(null);
   }
 

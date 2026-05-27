@@ -80,7 +80,7 @@ function Clustermarket({
           update({ mode: newMode, credentials: integrationState.credentials })
         }
         helpLinkText="Calira integration docs"
-        website="clustermarket.com"
+        website="calira.co"
         docLink="clustermarket"
         usageText="You can view and insert your equipment bookings from Calira into RSpace documents, as data tables. These tables will contain direct links back to the bookings in Calira."
         setupSection={

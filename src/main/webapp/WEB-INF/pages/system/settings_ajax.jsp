@@ -24,9 +24,9 @@
         </div>
     </div>
     <div id="systemSettingRowTemplate" style="display:none">
-        <div class="settingRow" data-name="{{setting.name}}">
+        <div class="settingRow" data-name="{{setting.name}}" data-label="{{setting.label}}">
             <div class="settingName bootstrap-custom-flat">
-                <a data-content="{{setting.description}}">{{setting.name}}</a>
+                <a data-content="{{setting.description}}">{{setting.label}}</a>
             </div>
             <div class="settingViewDiv">
                 <div class="settingValue">{{{setting.value}}}</div>
@@ -94,6 +94,10 @@
         <div id="pi_can_edit_all_work_in_labgroup.description"><spring:message code="system.property.description.pi_can_edit_all_work_in_labgroup" /></div>
         <div id="msteams.available.description"><spring:message code="system.property.description.msteams.available" /></div>
         <div id="protocols_io.available.description"><spring:message code="system.property.description.protocols_io.available" /></div>
+    </div>
+
+    <div id="systemSettingsLabels" style="display:none">
+        <div id="clustermarket.available.label"><spring:message code="system.property.label.clustermarket.available" /></div>
     </div>
 
 </div>
