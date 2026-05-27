@@ -33,6 +33,6 @@
 
 <div id="mainArea">
     <rst:hasDeploymentProperty name="rorEnabled" value="true">
-    <div style="width:70%" id="rorIntegration"></div>
+    <div id="rorIntegration"></div>
     </rst:hasDeploymentProperty>
 </div>

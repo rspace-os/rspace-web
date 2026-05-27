@@ -371,8 +371,9 @@ function mountRoRIntegration(event?: Event) {
 
   if (!existingContainer) {
     domContainer.id = "rorIntegration";
-    domContainer.style.width = "70%";
   }
+
+  domContainer.style.width = "70%";
 
   mainArea.replaceChildren(domContainer);
 
