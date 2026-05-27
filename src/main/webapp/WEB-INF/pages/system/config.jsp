@@ -31,4 +31,8 @@
     <a href="#" class="topSectionTextIconBtn" id="systemSettingsLink" style="padding-left:35px; background-image:url('/images/icons/settings.png');"><spring:message code="system.config.button.systemSettings" /></a>
 </div><br/><br/><br/><br/>
 
-<div id="mainArea"></div>
+<div id="mainArea">
+    <rst:hasDeploymentProperty name="rorEnabled" value="true">
+    <div style="width:70%" id="rorIntegration"></div>
+    </rst:hasDeploymentProperty>
+</div>

@@ -95,7 +95,7 @@ async function assertRoRDetailsText() {
 describe("Renders page with ROR data", () => {
   test("loads the RoR view into mainArea from the config link", async () => {
     document.body.innerHTML =
-      '<a href="#" id="rorRegistryLink">RoR</a><div id="mainArea">stale content</div>';
+      '<a href="#" id="rorRegistryLink">RoR</a><div id="mainArea"><div id="rorIntegration"></div>stale content</div>';
 
     act(() => {
       window.dispatchEvent(new Event("load"));
