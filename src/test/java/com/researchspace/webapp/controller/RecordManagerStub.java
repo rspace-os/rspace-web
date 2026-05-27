@@ -450,7 +450,7 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
-  public List<BaseRecord> getTemplatesSharedByUserAndUsedByOtherUsers(User u) {
+  public List<BaseRecord> getTemplatesOwnedByUserAndUsedByOtherUsers(User u) {
     return null;
   }
 

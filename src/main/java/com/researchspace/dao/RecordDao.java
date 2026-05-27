@@ -177,12 +177,14 @@ public interface RecordDao extends GenericDao<Record, Long> {
   boolean hasUserSharedTemplatesUsedByOtherUsers(User u);
 
   /**
-   * Gets all templates shared from a specific user.
+   * Gets all templates from a specific user that have been used by another
+   * user.  This includes templates that might have once been shared, but
+   * which are currently no longer shared.
    *
    * @param u user
    * @return
    */
-  List<BaseRecord> getTemplatesSharedByUserAndUsedByOtherUsers(User u);
+  List<BaseRecord> getTemplatesOwnedByUserAndUsedByOtherUsers(User u);
 
   void transferTemplates(
       User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName);

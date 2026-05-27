@@ -1460,8 +1460,8 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
-  public List<BaseRecord> getTemplatesSharedByUserAndUsedByOtherUsers(User u) {
-    return recordDao.getTemplatesSharedByUserAndUsedByOtherUsers(u);
+  public List<BaseRecord> getTemplatesOwnedByUserAndUsedByOtherUsers(User u) {
+    return recordDao.getTemplatesOwnedByUserAndUsedByOtherUsers(u);
   }
 
   @Override

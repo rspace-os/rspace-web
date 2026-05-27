@@ -690,7 +690,7 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
 
   @SuppressWarnings("unchecked")
   @Override
-  public List<BaseRecord> getTemplatesSharedByUserAndUsedByOtherUsers(User user) {
+  public List<BaseRecord> getTemplatesOwnedByUserAndUsedByOtherUsers(User user) {
     Session session = getSession();
     Query<BaseRecord> query =
         session

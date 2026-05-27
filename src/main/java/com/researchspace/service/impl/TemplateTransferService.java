@@ -53,7 +53,7 @@ public class TemplateTransferService implements TransferService {
 
   public void transferOwnership(User originalOwner, User newOwner) {
     List<BaseRecord> sharedRecords =
-        recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner);
+        recordManager.getTemplatesOwnedByUserAndUsedByOtherUsers(originalOwner);
 
     if (!sharedRecords.isEmpty()) {
 
@@ -75,20 +75,23 @@ public class TemplateTransferService implements TransferService {
       String deletedUserName = originalOwner.getUsername() + DELETED_USER_NAME_SUFFIX;
       recordManager.transferTemplates(originalOwner, newOwner, templateIds, deletedUserName);
 
+      transferGalleryItemsForTemplates(originalOwner, newOwner, templateIds);
+
       String description =
           String.format(
               "Ownership of template transferred from %s to %s",
               originalOwner.getUsername(), newOwner.getUsername());
-
       for (BaseRecord template : sharedRecords) {
         auditTrailService.notify(
             new GenericEvent(newOwner, template, AuditAction.TRANSFER, description));
       }
-
-      transferGalleryItemsForTemplates(originalOwner, newOwner, templateIds);
     }
   }
 
+  // Transfers all gallery items that are linked from the given templates, to the
+  // new owner.  The gallery items are moved to a "Deleted Users" folder in the
+  // appropriate subfolder of the new owner's gallery (e.g. "Images", "Videos", etc.),
+  // in a folder named for the original owner's username.
   private void transferGalleryItemsForTemplates(
       User originalOwner, User newOwner, List<Long> templateIds) {
     List<EcatMediaFile> galleryItems =

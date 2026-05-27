@@ -53,7 +53,7 @@ class TemplateTransferServiceTest {
     User newOwner = new User();
     newOwner.setUsername("new");
 
-    Mockito.when(recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
+    Mockito.when(recordManager.getTemplatesOwnedByUserAndUsedByOtherUsers(originalOwner))
         .thenReturn(Collections.emptyList());
 
     templateTransferService.transferOwnership(originalOwner, newOwner);
@@ -83,7 +83,7 @@ class TemplateTransferServiceTest {
     BaseRecord template2 = Mockito.mock(BaseRecord.class);
     Mockito.when(template2.getId()).thenReturn(2L);
     List<BaseRecord> templates = List.of(template1, template2);
-    Mockito.when(recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
+    Mockito.when(recordManager.getTemplatesOwnedByUserAndUsedByOtherUsers(originalOwner))
         .thenReturn(templates);
 
     RecordGroupSharing sharing1 = Mockito.mock(RecordGroupSharing.class);
@@ -113,7 +113,7 @@ class TemplateTransferServiceTest {
 
     templateTransferService.transferOwnership(originalOwner, newOwner);
 
-    Mockito.verify(recordManager).getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner);
+    Mockito.verify(recordManager).getTemplatesOwnedByUserAndUsedByOtherUsers(originalOwner);
     Mockito.verify(recordGroupSharingDao).getRecordGroupSharingsForRecord(1L);
     Mockito.verify(recordGroupSharingDao).getRecordGroupSharingsForRecord(2L);
     Mockito.verify(recordSharingHandler).unshare(11L, originalOwner);
@@ -161,7 +161,7 @@ class TemplateTransferServiceTest {
 
     BaseRecord template1 = Mockito.mock(BaseRecord.class);
     Mockito.when(template1.getId()).thenReturn(1L);
-    Mockito.when(recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
+    Mockito.when(recordManager.getTemplatesOwnedByUserAndUsedByOtherUsers(originalOwner))
         .thenReturn(List.of(template1));
     Mockito.when(recordGroupSharingDao.getRecordGroupSharingsForRecord(1L))
         .thenReturn(Collections.emptyList());
@@ -234,7 +234,7 @@ class TemplateTransferServiceTest {
     // one template with one gallery item in "Images" subfolder
     BaseRecord template1 = Mockito.mock(BaseRecord.class);
     Mockito.when(template1.getId()).thenReturn(1L);
-    Mockito.when(recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
+    Mockito.when(recordManager.getTemplatesOwnedByUserAndUsedByOtherUsers(originalOwner))
         .thenReturn(List.of(template1));
     Mockito.when(recordGroupSharingDao.getRecordGroupSharingsForRecord(1L))
         .thenReturn(Collections.emptyList());
@@ -286,7 +286,8 @@ class TemplateTransferServiceTest {
         .thenReturn(newOwnerGalleryRoot);
     Folder newOwnerImagesFolder = new Folder();
     newOwnerImagesFolder.setId(61L);
-    Mockito.when(recordManager.getGalleryMediaFolderForUser("Images", newOwner)).thenReturn(newOwnerImagesFolder);
+    Mockito.when(recordManager.getGalleryMediaFolderForUser("Images", newOwner))
+        .thenReturn(newOwnerImagesFolder);
     Mockito.when(folderManager.getSubFolders(newOwnerImagesFolder))
         .thenReturn(Collections.emptyList());
     Folder deletedUsersGallery = new Folder();
@@ -341,7 +342,7 @@ class TemplateTransferServiceTest {
 
     BaseRecord template1 = Mockito.mock(BaseRecord.class);
     Mockito.when(template1.getId()).thenReturn(1L);
-    Mockito.when(recordManager.getTemplatesSharedByUserAndUsedByOtherUsers(originalOwner))
+    Mockito.when(recordManager.getTemplatesOwnedByUserAndUsedByOtherUsers(originalOwner))
         .thenReturn(List.of(template1));
     Mockito.when(recordGroupSharingDao.getRecordGroupSharingsForRecord(1L))
         .thenReturn(Collections.emptyList());

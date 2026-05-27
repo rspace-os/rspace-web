@@ -676,12 +676,14 @@ public interface RecordManager {
   boolean hasUserSharedTemplatesUsedByOtherUsers(User u);
 
   /**
-   * Gets all templates shared from a specific user.
+   * Gets all templates from a specific user that have been used by another
+   * user.  This includes templates that might have once been shared, but
+   * which are currently no longer shared.
    *
    * @param u user
    * @return
    */
-  List<BaseRecord> getTemplatesSharedByUserAndUsedByOtherUsers(User u);
+  List<BaseRecord> getTemplatesOwnedByUserAndUsedByOtherUsers(User u);
 
   /**
    * Move templates from one owner to a new owner. Optional: Update the name of the original user
