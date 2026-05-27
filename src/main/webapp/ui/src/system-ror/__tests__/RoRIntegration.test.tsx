@@ -7,6 +7,7 @@ import {
   screen,
   fireEvent,
   act,
+  cleanup,
   waitFor,
 } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
@@ -48,6 +49,8 @@ const setupRoRMocks = (existingGlobalRoRID = "") => {
     .reply(200, existingGlobalRoRID);
 };
 beforeEach(() => {
+  cleanup();
+  document.body.innerHTML = "";
   mockAxios.resetHandlers();
   setupRoRMocks();
 
@@ -88,12 +91,10 @@ describe("Renders page with ROR data", () => {
       '<a href="#" id="rorRegistryLink">RoR</a><div id="mainArea">stale content</div>';
 
     window.dispatchEvent(new Event("load"));
-    fireEvent.click(document.getElementById("rorRegistryLink") as HTMLElement);
+    fireEvent.click(screen.getByRole("link", { name: "RoR" }));
 
     await waitFor(() =>
-      expect(document.getElementById("mainArea")?.textContent).not.toContain(
-        "stale content"
-      )
+      expect(screen.queryByText("stale content")).not.toBeInTheDocument()
     );
     await screen.findByText("Research Organization Registry (ROR) Integration");
   });
