@@ -471,9 +471,6 @@ public class UserProfileController extends BaseController {
       @RequestParam("firstNameInput") String firstNameInput,
       @RequestParam("surnameInput") String surnameInput,
       @RequestParam(value = "newAffiliation", required = false) String affiliation,
-      @RequestParam("externalLinkInput") String externalLinkInput,
-      @RequestParam("linkDescriptionInput") String linkDescriptionInput,
-      @RequestParam("additionalInfoArea") String additionalInfoArea,
       Principal principal,
       HttpSession session) {
 
@@ -510,16 +507,6 @@ public class UserProfileController extends BaseController {
     if (errors != null) {
       return new AjaxReturnObject<>(null, errors);
     }
-
-    userProfile.setExternalLinkDisplay(linkDescriptionInput);
-    if (userProfile.isTooLong(externalLinkInput)) {
-      ErrorList el =
-          ErrorList.of(
-              getText(ERRORS_MAXLENGTH, new String[] {"Link", UserProfile.MAX_FIELD_LENG + ""}));
-      return new AjaxReturnObject<>(null, el);
-    }
-    userProfile.setExternalLinkURL(externalLinkInput);
-    userProfile.setProfileText(additionalInfoArea);
 
     user = userManager.save(user);
     userProfileManager.saveUserProfile(userProfile);

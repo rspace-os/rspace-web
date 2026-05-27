@@ -54,18 +54,7 @@
 				</div>
 			</rst:hasDeploymentProperty>
 
-			<div class="col-xs-12 profileGreyBlocks" style="line-height: 1.5em;">
-				<strong><span id="linkDescription">${profile.externalLinkDisplay}</span></strong>
-				<a id="externalLink" href="${profile.externalLinkURL}" <c:if test="${empty profile.externalLinkURL}">style="display:
-					none;"</c:if>>
-					${profile.externalLinkURL}
-				</a>
-			</div>
-
 			<div class="col-xs-12 profileGreyBlocks">
-				<div id="additionalInfo" class="col-xs-7">
-					${profile.profileText}
-				</div>
 				<c:if test="${canEdit == true}">
 					<div class="profileEditBar pull-right col-xs-5">
 						<a href="#" class="profileEditButton pull-right" id="userEditProfileButton">
@@ -392,31 +381,6 @@
 						</td>
 					</tr>
 				</rst:hasDeploymentProperty>
-				<tr>
-					<td>
-						<label for="externalLinkInput">
-							<fmt:message key="dialogs.editProfile.label.link"></fmt:message>
-						</label>
-					</td>
-					<td><input value="" id="externalLinkInput" name="externalLinkInput" class="form-control" /></td>
-				</tr>
-				<tr>
-					<td>
-						<label for="linkDescriptionInput">
-							<fmt:message key="dialogs.editProfile.label.linkDescription"></fmt:message>
-						</label>
-					</td>
-					<td><input value="" id="linkDescriptionInput" name="linkDescriptionInput" class="form-control" /></td>
-				</tr>
-				<tr>
-					<td>
-						<label for="additionalInfoArea">
-							<fmt:message key="dialogs.editProfile.label.additional"></fmt:message>
-						</label>
-					</td>
-					<td><textarea rows="5" id="additionalInfoArea" name="additionalInfoArea"
-							class="form-control"> ${profile.profileText} </textarea></td>
-				</tr>
 			</table>
 		</form>
 		<div id="msgAreaProfile" class="msgArea"></div>

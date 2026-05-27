@@ -395,33 +395,16 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
 
     MvcResult result2 =
         mockMvc
-            .perform(
-                post("/userform/ajax/editProfile")
-                    .param("firstNameInput", "")
-                    .param("surnameInput", "")
-                    .param("externalLinkInput", CoreTestUtils.getRandomName(8))
-                    .param("linkDescriptionInput", CoreTestUtils.getRandomName(8))
-                    .param("additionalInfoArea", CoreTestUtils.getRandomName(100))
-                    .principal(new MockPrincipal(user.getUsername())))
-            .andExpect(status().isOk())
-            .andReturn();
+                    .perform(
+                        post("/userform/ajax/editProfile")
+                            .param("firstNameInput", "")
+                            .param("surnameInput", "")
+                            .principal(new MockPrincipal(user.getUsername())))
+                    .andExpect(status().isOk())
+                    .andReturn();
     Map resp2 = parseJSONObjectFromResponseStream(result2);
     assertNull(resp2.get("data"));
 
-    MvcResult result3 =
-        mockMvc
-            .perform(
-                post("/userform/ajax/editProfile")
-                    .param("firstNameInput", CoreTestUtils.getRandomName(8))
-                    .param("surnameInput", CoreTestUtils.getRandomName(8))
-                    .param("externalLinkInput", CoreTestUtils.getRandomName(300))
-                    .param("linkDescriptionInput", CoreTestUtils.getRandomName(8))
-                    .param("additionalInfoArea", CoreTestUtils.getRandomName(100))
-                    .principal(new MockPrincipal(user.getUsername())))
-            .andExpect(status().isOk())
-            .andReturn();
-
-    assertTrue(result3.getResponse().getContentAsString().contains("cannot be greater than"));
   }
 
   private ResultActions postProfileUpdate(User user, String newfirstNAme, String newLastNAme)
@@ -430,9 +413,6 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
         post("/userform/ajax/editProfile")
             .param("firstNameInput", newfirstNAme)
             .param("surnameInput", newLastNAme)
-            .param("externalLinkInput", CoreTestUtils.getRandomName(8))
-            .param("linkDescriptionInput", CoreTestUtils.getRandomName(8))
-            .param("additionalInfoArea", CoreTestUtils.getRandomName(100))
             .principal(new MockPrincipal(user.getUsername())));
   }
 
