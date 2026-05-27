@@ -22,6 +22,7 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.MediaManager;
@@ -183,5 +184,11 @@ public class EvernoteEnexImporter implements ExternalFileImporter {
   private Element attachmentChemDiv(Document docx) {
     Elements img = docx.getElementsByClass("chem");
     return img.first();
+  }
+
+  @Override
+  public BaseRecord replace(InputStream wordFile, User user, Long toReplaceId, String originalName)
+      throws IOException, DocumentAlreadyEditedException {
+    throw new UnsupportedOperationException("Replace not supported");
   }
 }

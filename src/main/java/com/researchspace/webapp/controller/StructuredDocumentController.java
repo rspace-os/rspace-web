@@ -178,6 +178,7 @@ public class StructuredDocumentController extends BaseController {
   public AjaxReturnObject<List<RecordInformation>> createSDFromWordFile(
       @PathVariable("parentId") Long parentFolderId,
       @RequestParam("wordXfile") List<MultipartFile> mswordOrEvernoteFile,
+      @RequestParam(value = "recordToReplaceId", required = false) Long recordToReplaceId,
       @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       HttpSession session)
       throws IOException {
@@ -191,6 +192,31 @@ public class StructuredDocumentController extends BaseController {
       return new AjaxReturnObject<List<RecordInformation>>(null, el);
     }
 
+    StructuredDocument toReplace = null;
+    if (recordToReplaceId != null) {
+      log.info("want to save into existing document: " + recordToReplaceId);
+
+      Record record = recordManager.get(recordToReplaceId);
+      if (record == null || !permissionUtils.isPermitted(record, PermissionType.WRITE, user)) {
+        el.addErrorMsg(
+            getText("error.authorization.failure.polite", new String[] {"overwrite document"}));
+        return new AjaxReturnObject<List<RecordInformation>>(null, el);
+      }
+      if (record.isStructuredDocument()) {
+        toReplace = (StructuredDocument) record;
+        if (!toReplace.isBasicDocument()) {
+          el.addErrorMsg(getText("workspace.create.fromMSWord.replace.error.notbasic"));
+          return new AjaxReturnObject<List<RecordInformation>>(null, el);
+        }
+      } else {
+        el.addErrorMsg(getText("errors.strucdoc.required", new String[] {recordToReplaceId + ""}));
+        return new AjaxReturnObject<List<RecordInformation>>(null, el);
+      }
+      if (mswordOrEvernoteFile.size() > 1) {
+        el.addErrorMsg(getText("workspace.create.fromMSWord.replace.error.1only"));
+        return new AjaxReturnObject<List<RecordInformation>>(null, el);
+      }
+    }
     Folder originalParentFolder = folderManager.getFolder(parentFolderId, user);
     assertAuthorisation(user, originalParentFolder, PermissionType.READ);
     List<RecordInformation> rc = new ArrayList<>();
@@ -209,11 +235,22 @@ public class StructuredDocumentController extends BaseController {
           log.warn(error);
           continue;
         }
-        createdOrUpdated =
-            importer
-                .get()
-                .create(
-                    mf.getInputStream(), user, originalParentFolder, null, mf.getOriginalFilename());
+        if (recordToReplaceId == null) {
+          createdOrUpdated =
+              importer
+                  .get()
+                  .create(
+                      mf.getInputStream(),
+                      user,
+                      originalParentFolder,
+                      null,
+                      mf.getOriginalFilename());
+        } else {
+          createdOrUpdated =
+              importer
+                  .get()
+                  .replace(mf.getInputStream(), user, recordToReplaceId, mf.getOriginalFilename());
+        }
         if (createdOrUpdated != null) {
           rc.add(createdOrUpdated.toRecordInfo());
           if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(

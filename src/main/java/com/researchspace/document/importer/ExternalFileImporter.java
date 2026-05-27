@@ -3,6 +3,7 @@ package com.researchspace.document.importer;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
+import com.researchspace.service.DocumentAlreadyEditedException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -22,4 +23,18 @@ public interface ExternalFileImporter {
   BaseRecord create(
       InputStream srcFile, User user, Folder targetFolder, Folder imageFolder, String originalName)
       throws IOException;
+
+  /**
+   * Replaces content of existing document
+   *
+   * @param wordFile
+   * @param user
+   * @param toReplaceId
+   * @param originalName
+   * @return
+   * @throws IOException
+   * @throws DocumentAlreadyEditedException
+   */
+  BaseRecord replace(InputStream wordFile, User user, Long toReplaceId, String originalName)
+      throws IOException, DocumentAlreadyEditedException;
 }
