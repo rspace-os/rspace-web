@@ -108,6 +108,7 @@ export function TreeItem<Item, Id extends string>({
  * to manually manage ID-to-object mappings. You provide a function to extract IDs from your
  * data, and all callbacks receive your original data objects.
  *
+ * @param multiSelect
  * @param getId                 Function to extract a unique ID from each data item. This is
  *                              used internally to map between MUI's string-based IDs and your data objects.
  * @param expandedItems         Array of data items that should be expanded (optional)
@@ -169,6 +170,14 @@ export function Tree<
   ) => void;
 }): React.ReactNode {
   const [idMap] = React.useState<Map<Id, Item>>(new Map());
+  const getItemForId = (id: string): Item => {
+    const item = idMap.get(id as Id);
+    if (!item) {
+      throw new Error(`Item with id ${id} has not previously been rendered as TreeNode`);
+    }
+    return item;
+  };
+
   return (
     <TreeProvider idMap={idMap} getId={getId}>
       <SimpleTreeView
@@ -207,42 +216,25 @@ export function Tree<
                 : string,
             }
           : {})}
-        onItemSelectionToggle={(...args) => {
-          console.debug("onItemSelectionToggle", args);
-        }}
         {...(onSelectedItemsChange !== undefined
           ? {
               onSelectedItemsChange: (
                 event,
                 itemIds: string[] | string | null,
               ) => {
-                console.debug(
-                  "onSelectedItemsChange",
-                  itemIds,
-                  Array.isArray(itemIds),
-                );
                 onSelectedItemsChange(
                   event,
-                  Array.isArray(itemIds as any)
-                    ? (itemIds as any).map((id: any) => {
-                        const item = idMap.get(id);
-                        if (!item) {
-                          throw new Error(
-                            `Item with id ${id} has not previously been rendered as TreeNode`,
-                          );
-                        }
-                        return item;
-                      })
+                  (multiSelect
+                    ? (Array.isArray(itemIds) ? itemIds : itemIds ? [itemIds] : []).map(
+                        getItemForId,
+                      )
                     : (() => {
-                        if (itemIds === "") return null;
-                        const item = idMap.get(itemIds as Id);
-                        if (!item) {
-                          throw new Error(
-                            `Item with id ${itemIds} has not previously been rendered as TreeNode`,
-                          );
-                        }
-                        return item;
-                      })(),
+                        const itemId = Array.isArray(itemIds)
+                          ? itemIds[itemIds.length - 1]
+                          : itemIds;
+                        if (!itemId) return null;
+                        return getItemForId(itemId);
+                      })()) as MultiSelect extends true ? Array<Item> : Item | null,
                 );
               },
             }
