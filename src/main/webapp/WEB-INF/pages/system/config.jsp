@@ -14,7 +14,7 @@
             baseUrl: "/"
         });
 
-        // full paths to support MD5 rename
+        // full paths for RequireJS module loading
         var nfs_mod_path = '/scripts/pages/system/netfilesystem_mod.js'.replace(/.js$/, '');
         var ldap_mod_path = '/scripts/pages/system/ldap_mod.js'.replace(/.js$/, '');
         var settings_mod_path = '/scripts/pages/system/settings_mod.js'.replace(/.js$/, '');
@@ -43,4 +43,3 @@
 </div><br/><br/><br/><br/>
 
 <div id="mainArea"></div>
-
