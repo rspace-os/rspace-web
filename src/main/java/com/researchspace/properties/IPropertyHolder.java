@@ -107,8 +107,6 @@ public interface IPropertyHolder extends Versionable {
    */
   String getExportFolderLocation();
 
-  String getOfflineButtonVisible();
-
   String getNetFileStoresEnabled();
 
   boolean isNetFileStoresEnabled();
