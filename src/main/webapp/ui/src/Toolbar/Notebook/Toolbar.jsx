@@ -37,6 +37,8 @@ class NotebookToolbar extends React.Component {
         props.domContainer.getAttribute("data-pio-enabled") === "true",
       evernoteEnabled:
         props.domContainer.getAttribute("data-evernote-enabled") === "true",
+      asposeEnabled:
+        props.domContainer.getAttribute("data-aspose-enabled") === "true",
       canDelete: props.domContainer.getAttribute("data-can-delete") === "true",
       canShare: props.domContainer.getAttribute("data-can-share") === "true",
     };
@@ -66,6 +68,7 @@ class NotebookToolbar extends React.Component {
             <CreateMenu
               pioEnabled={this.state.pioEnabled}
               evernoteEnabled={this.state.evernoteEnabled}
+              asposeEnabled={this.state.asposeEnabled}
             />
           )}
           <Tooltip title="Edit" enterDelay={300}>

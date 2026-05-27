@@ -1,5 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
     <c:if test="${permDTO.createRecord}">
+    <div id="createDocForm">
+        <axt:importFromWord isNotebook="${isNotebook}" parentId="${selectedNotebookId}"/>
+    </div>
         <axt:importFromProtocolsIo parentId="${selectedNotebookId}" />
     </c:if>
     <c:url var="createFromTemplateURL" value="/workspace/editor/structuredDocument/create/${selectedNotebookId}"></c:url>
