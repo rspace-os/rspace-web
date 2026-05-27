@@ -3,8 +3,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta charset="UTF-8">
     <title><spring:message code="system.createCommunity.button.label" /></title>
-    <link rel="stylesheet" href="<c:url value='/styles/system.css'/>" />
-    <script src="<c:url value='/scripts/pages/system/system.js'/>"></script>
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+    <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
 </head>
 <body>
   <div id="topSection" class="bootstrap-custom-flat">

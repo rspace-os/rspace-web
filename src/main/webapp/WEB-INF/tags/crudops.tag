@@ -3,7 +3,7 @@
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst" %>
 <%@ taglib prefix="shiro" uri="http://shiro.apache.org/tags" %>
-<script src="<c:url value='/scripts/tags/shareDlg.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tags/shareDlg.js'/>"></script>
 <%--
 This is a reusable menu bar for CRUD type operations on resources.
 It defines operations for move, copy, delete, revision and rename.
@@ -86,7 +86,7 @@ d) A function 'idsToNames' gets ids and names of records based on a clicked chec
   </rst:hasDeploymentProperty>
 
   <c:if test="${not empty extMessaging}">
-      <script src="<c:url value='/scripts/pages/messaging/extMessagingCreation.js'/>"></script>
+      <script src="<rst:assetUrl value='/scripts/pages/messaging/extMessagingCreation.js'/>"></script>
       <c:forEach items="${extMessaging}" var="extMessageTarget">
           <c:if test="${extMessageTarget.available and extMessageTarget.enabled && extMessageTarget.hasOptions()}">
               <li class="crudopsAction sendToIcon" id="sendTo${extMessageTarget.name}"

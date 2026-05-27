@@ -1,11 +1,12 @@
-<%-- 
+<%--
 	Dialog that lists templates
 --%>
+<%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 
-<script src="/scripts/tags/createFromTemplateDlg.js"></script>
-<link rel="stylesheet" href="/styles/tags/createFromTemplateDlg.css" />
+<script src="<rst:assetUrl value='/scripts/tags/createFromTemplateDlg.js'/>"></script>
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/tags/createFromTemplateDlg.css'/>" />
 
-<link rel="stylesheet" href="/scripts/bootstrap-namespace/bootstrap-namespace.min.css" />
+<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bootstrap-namespace/bootstrap-namespace.min.css'/>" />
 
 <div id="createFromTemplateDlg" style="display: none">
 

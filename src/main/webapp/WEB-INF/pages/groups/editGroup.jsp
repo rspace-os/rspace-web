@@ -7,7 +7,7 @@
   <meta name="heading" content="<fmt:message key='groups.heading'/>" />
   <meta name="menu" content="MainMenu" />
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="<c:url value='/styles/system.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
   <style>
     .error {
       color: red;
@@ -40,5 +40,5 @@
 <div id="newLabGroup"></div>
 
 <!-- React Scripts -->
-<script src="<c:url value='/ui/dist/newLabGroup.js'/>"></script>
+<rst:bundle bundle="newLabGroup" />
 <!--End React Scripts -->

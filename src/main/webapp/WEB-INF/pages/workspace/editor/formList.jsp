@@ -2,8 +2,8 @@
 <%@ include file="include/templatePublishShareDlg.jsp"%>
 <head>
   <title><fmt:message key="forms.manage.title" /></title>
-  <script src="<c:url value='/scripts/pages/workspace/editor/formlist.js'/>"></script>
-  <!-- <script src="<c:url value='/scripts/pages/admin.js'/>"></script> -->
+  <script src="<rst:assetUrl value='/scripts/pages/workspace/editor/formlist.js'/>"></script>
+  <!-- <script src="<rst:assetUrl value='/scripts/pages/admin.js'/>"></script> -->
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
 
@@ -97,4 +97,4 @@
 <jsp:include page="/WEB-INF/pages/recordInfoPanel.jsp"></jsp:include>
 
 <!-- Import React search -->
-<script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
+<rst:bundle bundle="baseSearch" />

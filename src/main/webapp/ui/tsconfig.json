@@ -21,5 +21,6 @@
       "@sa11y/vitest",
       "jquery",
     ]
-  }
+  },
+  "exclude": ["dist"]
 }

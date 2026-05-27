@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <title><spring:message code="system.config.button.label" /></title>
 
-    <link rel="stylesheet" href="<c:url value='/styles/system.css'/>" />
-    <script src="<c:url value='/scripts/pages/system/system.js'/>"></script>
-    <script src="<c:url value='/scripts/pages/system/config.js'/>"></script>
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+    <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/system/config.js'/>"></script>
 
-    <script src="<c:url value='/scripts/require.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/require.js'/>"></script>
     <script type="text/javascript">
         require.config({
             baseUrl: "/"

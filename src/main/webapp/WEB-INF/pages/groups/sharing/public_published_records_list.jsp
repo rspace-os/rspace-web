@@ -2,29 +2,28 @@
 <%@ include file="/common/meta.jsp"%>
 
 <head>
-  <script src="<c:url value='/public/ui/dist/runtime.js'/>"></script>
-  <link rel="stylesheet" href="<c:url value='/styles/bootstrap-custom-flat.css'/>" />
-  <link media="all" href="<c:url value='/styles/simplicity/theme.css'/>" rel="stylesheet" />
-  <link media="print" href="<c:url value='/styles/simplicity/print.css'/>" rel="stylesheet" />
-  <link href="<c:url value='/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css'/>" rel="stylesheet" />
-  <link href="<c:url value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
-  <link href="<c:url value='/styles/rs-global.css'/>" rel="stylesheet" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
+  <link media="all" href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" rel="stylesheet" />
+  <link media="print" href="<rst:assetUrl value='/styles/simplicity/print.css'/>" rel="stylesheet" />
+  <link href="<rst:assetUrl value='/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css'/>" rel="stylesheet" />
+  <link href="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
+  <link href="<rst:assetUrl value='/styles/rs-global.css'/>" rel="stylesheet" />
   
-  <script src="<c:url value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
-  <script src="<c:url value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
-  <script src="<c:url value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
-  <script src="<c:url value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
-  <script src="<c:url value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
-  <script src="<c:url value='/scripts/jquery.toastmessage.js'/>"></script>
-  <script src="<c:url value='/scripts/global.js'/>"></script>
-  <script src="<c:url value='/scripts/global.settingsStorage.js'/>"></script>
-  <link rel="stylesheet" href="<c:url value='/styles/jquery.toastmessage.css'/>" />
+  <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/jquery.toastmessage.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/global.settingsStorage.js'/>"></script>
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/jquery.toastmessage.css'/>" />
   
-  <script src="<c:url value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
   
-  <script src="<c:url value='/scripts/pages/workspace/editor/public_documentView.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/rspace/sharedRecordsList.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/utils/columnSortToggle.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/workspace/editor/public_documentView.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/rspace/sharedRecordsList.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/utils/columnSortToggle.js'/>"></script>
 
   <script>
     var workspaceSettings = {};
@@ -38,7 +37,7 @@
   <meta name="heading" content="<fmt:message key='groups.shared.title'/>"/>
   <meta name="robots" content="noarchive, nosnippet"/>
   <meta name="menu" content="MainMenu"/>
-  <link rel="stylesheet" media="all" href="<c:url value='/styles/simplicity/theme.css'/>" />
+  <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" />
 
 </head>
 
@@ -76,6 +75,6 @@
   </div>
 
   <!-- Import React search -->
-  <script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
+  <rst:bundle bundle="baseSearch" />
 
 </body>

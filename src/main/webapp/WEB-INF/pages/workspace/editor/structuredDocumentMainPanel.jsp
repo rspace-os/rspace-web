@@ -7,36 +7,36 @@
     <link rel="canonical" href="${applicationScope['RS_DEPLOY_PROPS']['serverUrl']}${requestScope['javax.servlet.forward.servlet_path']}" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 </head>
-<link href="<c:url value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
+<link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
 
-<link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace.css'/>" />
-<link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-toolbar.css'/>">
-<link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-widgets.css'/>" />
-<link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-extra-icons.css'/>" />
-<link rel="stylesheet" href="<c:url value='/styles/pages/workspace/workspace-dialogs.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-toolbar.css'/>">
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-widgets.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-extra-icons.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-dialogs.css'/>" />
 
-<link rel="stylesheet" href="<c:url value='/styles/structuredDocument.css'/>" />
-<link rel="stylesheet" href="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" />
-<link rel="stylesheet" href="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
-<link rel="stylesheet" href="<c:url value='/styles/messages.css'/>" />
-<link rel="stylesheet" href="<c:url value='/scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css'/>" />
-<link rel="stylesheet" href="<c:url value='/styles/tinymce_rs.css'/>" />
-<link rel="stylesheet" href="<c:url value='/styles/plugins/autocomplete.css'/>" />
-<link rel="stylesheet" href="<c:url value='/scripts/bower_components/font-awesome/css/font-awesome.min.css'/>" />
-<script src="<c:url value='/ui/dist/tinymceGalleryUtils.js'/>"></script>
-<script src="<c:url value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>
-<script src="<c:url value='/scripts/bower_components/tableexport.js/dist/js/tableexport.js'/>"></script>
-<script src="<c:url value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>
-<script src="<c:url value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
-<script src="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
-<script src="<c:url value='/scripts/bower_components/jquery.scrollTo/jquery.scrollTo.min.js'/>"></script>
-<script src="<c:url value='/scripts/jwplayer.js'/>"></script>
-<script src="<c:url value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
-<script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-<script src="<c:url value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
-<script src="<c:url value='/scripts/tags/shareDlg.js'/>"></script>
-<script src="<c:url value='/scripts/pages/coreEditor.js'/>"></script>
-<script src="<c:url value='/scripts/pages/workspace/editor/documentView.js'/>"></script>
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/structuredDocument.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/messages.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/tinymce_rs.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/plugins/autocomplete.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/font-awesome/css/font-awesome.min.css'/>" />
+<rst:bundle bundle="tinymceGalleryUtils" />
+<script src="<rst:assetUrl value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/tableexport.js/dist/js/tableexport.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/jquery.scrollTo/jquery.scrollTo.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/jwplayer.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tags/shareDlg.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/coreEditor.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/workspace/editor/documentView.js'/>"></script>
     <axt:toolbar hideSearch="true">
       <jsp:attribute name="menu">
         <axt:saveAsTemplate structuredDocument="${structuredDocument}"></axt:saveAsTemplate>

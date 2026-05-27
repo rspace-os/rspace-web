@@ -102,7 +102,7 @@ images or visualising data on a map.
 
 One thing to note about this technique, however, is that if ANY other part of
 the codebase imports the lazily loaded code in the usual manner then it causes
-webpack to entirely ignore the lazy loading. This does make some sense as if
+the bundler to entirely ignore the lazy loading. This does make some sense as if
 the code has already been loaded in the main bundle then there is no need to
 dynamically loaded the same code again but it does mean that it is very easy to
 inadvertently break some lazy loading through spooky action at a distance.

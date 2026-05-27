@@ -4,7 +4,7 @@
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
-<link rel="stylesheet" media="all" href="<c:url value='/styles/messages.css'/>" />
+<link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/messages.css'/>" />
 
 <%-- Reusable tag for incorporating a 'my requests' dialog into a page. --%>
 <axt:paginate paginationList="${paginationList}" />

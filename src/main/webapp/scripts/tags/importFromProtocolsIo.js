@@ -15,7 +15,7 @@ $(document).ready(function() {
 });
 
 function openProtocolsIoChooserDlg() {
-  $('#protocolsIoChooserDlgIframe').attr('src', '/scripts/externalTinymcePlugins/protocols_io/iframe.html');
+  $('#protocolsIoChooserDlgIframe').attr('src', RS.withCacheVersion('/scripts/externalTinymcePlugins/protocols_io/iframe.html'));
   $('#protocolsIoChooserDlg').dialog('open');
 }
 

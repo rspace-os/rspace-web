@@ -5,10 +5,10 @@
   <meta name="heading" content="<fmt:message key='groups.heading'/>"/>
   <meta name="menu" content="MainMenu"/>
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="<c:url value='/styles/pages/groups/viewGroup.css'/>" />
-  <link href="<c:url value='/scripts/bower_components/jquery-tagit/css/jquery.tagit.css'/>" rel="stylesheet" />
-  <link href="<c:url value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
-  <script src="<c:url value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
+  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/groups/viewGroup.css'/>" />
+  <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/jquery.tagit.css'/>" rel="stylesheet" />
+  <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
+  <script src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
   <script type="text/javascript">
     $(document).ready(function() {
     <c:if test="${not empty error}">
@@ -16,9 +16,9 @@
     </c:if>
     });
   </script>
-  <script src="<c:url value='/scripts/pages/viewGroupEditing.js'/>"></script>
-  <script src="<c:url value='/scripts/pages/messaging/messageCreation.js'/>"></script>
-  <script src="<c:url value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/viewGroupEditing.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
   <shiro:hasRole name="ROLE_PI">
     <c:set var="userRole" value="pi" />
   </shiro:hasRole>
@@ -241,11 +241,11 @@
 </script>
 
   <!-- MJJA React Scripts -->
-<script src="<c:url value='/ui/dist/myLabGroups.js'/>"></script>
+<rst:bundle bundle="myLabGroups" />
   <!--End MJJA React Scripts -->
 
 <!-- Other React Scripts -->
-<script src="<c:url value='/ui/dist/groupUserActivity.js'/>"></script>
-<script src="<c:url value='/ui/dist/groupEditBar.js'/>"></script>
-<script src="<c:url value='/ui/dist/memberAutoshareStatusWrapper.js'/>"></script>
+<rst:bundle bundle="groupUserActivity" />
+<rst:bundle bundle="groupEditBar" />
+<rst:bundle bundle="memberAutoshareStatusWrapper" />
 <!--End React Scripts -->
