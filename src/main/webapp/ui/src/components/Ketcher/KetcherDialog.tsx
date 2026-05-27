@@ -208,6 +208,31 @@ const KetcherDialog = ({
           </ValidatingSubmitButton>
         )}
       </DialogActions>
+      <Dialog
+        open={showDiscardConfirm}
+        onClose={() => setShowDiscardConfirm(false)}
+      >
+        <DialogTitle>Discard changes?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You have unsaved changes. Are you sure you want to discard them?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDiscardConfirm(false)}>
+            Keep Editing
+          </Button>
+          <Button
+            onClick={() => {
+              setShowDiscardConfirm(false);
+              closeAndReset();
+            }}
+            color="primary"
+          >
+            Discard
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };

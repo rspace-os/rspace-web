@@ -85,6 +85,7 @@ function ContextMenuButton({
             }
             disabled={disabledHelp !== ""}
             aria-disabled={disabledHelp !== ""}
+            aria-label={label}
             {...props}
           >
             {label}
