@@ -6,11 +6,14 @@
 
     <changeSet id="2026-05-27-clear-removed-user-profile-fields" context="run" author="copilot">
         <comment>Clear user profile fields that are no longer displayed or editable.</comment>
-        <update tableName="UserProfile">
-            <column name="externalLinkDisplay" valueComputed="NULL"/>
-            <column name="externalLinkURL" valueComputed="NULL"/>
-            <column name="profileText" valueComputed="NULL"/>
-            <where>externalLinkDisplay IS NOT NULL OR externalLinkURL IS NOT NULL OR profileText IS NOT NULL</where>
-        </update>
+        <sql>
+            UPDATE UserProfile
+            SET externalLinkDisplay = NULL,
+                externalLinkURL = NULL,
+                profileText = NULL
+            WHERE externalLinkDisplay IS NOT NULL
+               OR externalLinkURL IS NOT NULL
+               OR profileText IS NOT NULL;
+        </sql>
     </changeSet>
 </databaseChangeLog>
