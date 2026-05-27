@@ -468,8 +468,14 @@ def branchToDbName (String name) {
 // Replaces characters that are unsafe in filesystem paths or AWS/host resource names (notably '/') with '-',
 // keeping dots, underscores and hyphens, and appends a short hash of the original name so that distinct
 // branches that would otherwise collide (e.g. 'feature/foo' and 'feature-foo') stay unique.
+def branchNameHash (String name) {
+    byte[] digest = java.security.MessageDigest.getInstance('MD5')
+        .digest(name.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+    return digest.collect { String.format('%02x', it & 0xff) }.join().take(8)
+}
+
 def branchToSafeName (String name) {
-    String hash = name.md5().take(8)
+    String hash = branchNameHash(name)
     String newname = name.replaceAll('[^A-Za-z0-9._-]', '-')
     String candidate = "${newname}-${hash}"
     if (candidate.length() > 63) {
