@@ -284,12 +284,9 @@ class TemplateTransferServiceTest {
     newOwnerGalleryRoot.setId(60L);
     Mockito.when(folderManager.getGalleryRootFolderForUser(newOwner))
         .thenReturn(newOwnerGalleryRoot);
-    Mockito.when(folderManager.getSubFolders(newOwnerGalleryRoot))
-        .thenReturn(Collections.emptyList());
     Folder newOwnerImagesFolder = new Folder();
     newOwnerImagesFolder.setId(61L);
-    Mockito.when(folderManager.createNewFolder(newOwnerGalleryRoot.getId(), "Images", newOwner))
-        .thenReturn(newOwnerImagesFolder);
+    Mockito.when(recordManager.getGalleryMediaFolderForUser("Images", newOwner)).thenReturn(newOwnerImagesFolder);
     Mockito.when(folderManager.getSubFolders(newOwnerImagesFolder))
         .thenReturn(Collections.emptyList());
     Folder deletedUsersGallery = new Folder();
