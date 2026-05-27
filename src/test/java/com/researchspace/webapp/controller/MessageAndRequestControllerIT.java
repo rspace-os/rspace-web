@@ -23,7 +23,6 @@ import com.researchspace.model.comms.MsgOrReqstCreationCfg;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.testutils.RSpaceTestUtils;
 import java.time.Year;
 import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;

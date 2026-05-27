@@ -99,10 +99,10 @@
                               <br/>
                           </c:if>
                           <c:if test="${not message.simpleMessage}">
-                               <c:if test="${not empty message.requestedCompletionDate }">
-                                   <strong>Due for completion by: </strong>
-                                   <fmt:formatDate pattern="E dd MMM yyyy HH:mm" value="${message.requestedCompletionDate}"></fmt:formatDate>
-                               </c:if>
+                              <c:if test="${not empty message.requestedCompletionDate }">
+                                  <strong>Due for completion by: </strong>
+                                  <fmt:formatDate pattern="E dd MMM yyyy HH:mm" value="${message.requestedCompletionDate}"></fmt:formatDate>
+                              </c:if>
                               <c:if test="${not empty message.messageType.moreInfo}">
                                   <div class="messageMoreInfo">${message.messageType.moreInfo}</div>
                               </c:if>
