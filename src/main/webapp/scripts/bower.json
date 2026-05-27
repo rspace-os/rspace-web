@@ -28,7 +28,6 @@
     "photoswipe": "~4.1.1",
     "zeroclipboard": "~2.2.0",
     "Apprise-v2": "ThrivingKings/Apprise-v2",
-    "requirejs": "requirejs-bower#^2.3.2",
     "jasmine-ajax": "^3.4.0",
     "jasmine-core": "^3.5.0",
     "jasmine-jquery": "^2.1.1",
