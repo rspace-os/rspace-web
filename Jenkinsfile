@@ -31,14 +31,11 @@ pipeline {
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
 
-    // these are defined in Jenkins global tool configurations. The JDK is the one used to run the Jenkins build, it does
-    // not set the maven toolchain, this is set in the ./mvnw command line
-
-    tools {
-        // this is the JDK used to run maven itself
-        // the toolchain settings just affect compilation
-        jdk 'OPEN-JDK-17'
-    }
+    //tools {
+    //    // this is the JDK used to run maven itself
+    //    // the toolchain settings just affect compilation
+    //    jdk 'OPEN-JDK-17'
+    //}
 
     environment {
         BUILD_FAILURE_EMAIL_LIST = 'dev@researchspace.com'
