@@ -4,6 +4,7 @@ import bundleEntries from "./bundleEntries.json";
 import { defineConfig } from "vitest/config";
 import type { Alias, PluginOption, UserConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 import browserslist from "browserslist";
 import browserslistToEsbuild from "browserslist-to-esbuild";
 import { browserslistToTargets } from "lightningcss";
@@ -78,7 +79,13 @@ const resolvedBundleEntries = Object.fromEntries(
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [react()];
+  const plugins: PluginOption[] = [
+    react(),
+    nodePolyfills({
+      globals: { process: true, Buffer: true, global: true },
+      protocolImports: false,
+    }),
+  ];
 
   if (shouldGenerateBuildStats) {
     const { visualizer } = await import("rollup-plugin-visualizer");
