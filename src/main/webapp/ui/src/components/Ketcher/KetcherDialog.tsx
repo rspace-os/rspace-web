@@ -227,7 +227,7 @@ const KetcherDialog = ({
               setShowDiscardConfirm(false);
               closeAndReset();
             }}
-            color="primary"
+            color="error"
           >
             Discard
           </Button>
