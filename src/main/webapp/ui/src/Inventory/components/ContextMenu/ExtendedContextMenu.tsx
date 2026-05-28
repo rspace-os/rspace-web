@@ -11,7 +11,7 @@ import React, { useLayoutEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
-import { StyledMenu } from "../../../components/StyledMenu";
+import StyledMenu from "../../../components/StyledMenu";
 
 type ExtendedContextMenuArgs = {
   prefixActions: Array<

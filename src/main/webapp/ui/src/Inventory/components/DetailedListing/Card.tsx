@@ -19,7 +19,7 @@ import ContentsChips from "../../Container/Content/ContentsChips";
 import SearchContext from "../../../stores/contexts/Search";
 import useStores from "../../../stores/use-stores";
 import ImagePreview from "../../../components/ImagePreview";
-import { StyledMenu } from "../../../components/StyledMenu";
+import StyledMenu from "../../../components/StyledMenu";
 import Portal from "@mui/material/Portal";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import { UserCancelledAction } from "../../../util/error";

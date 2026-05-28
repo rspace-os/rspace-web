@@ -5,7 +5,7 @@ import Box from "@mui/material/Box";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import contextActions from "./ContextActions";
 import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
-import { StyledMenu } from "../../../components/StyledMenu";
+import StyledMenu from "../../../components/StyledMenu";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 

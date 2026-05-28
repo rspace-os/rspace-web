@@ -2,7 +2,8 @@ import React, { useContext, useState } from "react";
 import { observer } from "mobx-react-lite";
 import Badge from "@mui/material/Badge";
 import ListItemText from "@mui/material/ListItemText";
-import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
+import StyledMenu from "../../../components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import useStores from "../../../stores/use-stores";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
@@ -75,7 +76,7 @@ function SavedList<T extends SavedItem>({
       >
         {items.length > 0 ? (
           items.map((item, i) => (
-            <StyledMenuItem
+            <MenuItem
               key={i}
               sx={{ minWidth: "300px", pr: "120px" }}
               onClick={() => onSelect(item)}
@@ -132,7 +133,7 @@ function SavedList<T extends SavedItem>({
                   </IconButton>
                 </CustomTooltip>
               </ListItemSecondaryAction>
-            </StyledMenuItem>
+            </MenuItem>
           ))
         ) : (
           <Alert

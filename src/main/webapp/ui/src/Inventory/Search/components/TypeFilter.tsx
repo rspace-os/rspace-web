@@ -2,7 +2,8 @@ import React, { useContext } from "react";
 import SearchContext from "../../../stores/contexts/Search";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
+import StyledMenu from "../../../components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import { type ResultType } from "../../../stores/definitions/Search";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle } from "@fortawesome/free-regular-svg-icons/faCircle";
@@ -33,7 +34,7 @@ export default function TypeFilter({
           onClose(current);
         }}
       >
-        <StyledMenuItem
+        <MenuItem
           selected={current === "ALL"}
           aria-current={current === "ALL"}
           onClick={() => {
@@ -53,8 +54,8 @@ export default function TypeFilter({
                 : "Enter a search query first."
             }
           />
-        </StyledMenuItem>
-        <StyledMenuItem
+        </MenuItem>
+        <MenuItem
           selected={current === "CONTAINER"}
           aria-current={current === "CONTAINER"}
           onClick={() => {
@@ -73,8 +74,8 @@ export default function TypeFilter({
             />
           </ListItemIcon>
           <ListItemText primary="Containers" />
-        </StyledMenuItem>
-        <StyledMenuItem
+        </MenuItem>
+        <MenuItem
           selected={current === "SAMPLE"}
           aria-current={current === "SAMPLE"}
           onClick={() => {
@@ -103,8 +104,8 @@ export default function TypeFilter({
               [() => true, ""],
             ])()}
           />
-        </StyledMenuItem>
-        <StyledMenuItem
+        </MenuItem>
+        <MenuItem
           selected={current === "SUBSAMPLE"}
           aria-current={current === "SUBSAMPLE"}
           onClick={() => {
@@ -123,8 +124,8 @@ export default function TypeFilter({
             />
           </ListItemIcon>
           <ListItemText primary="Subsamples" />
-        </StyledMenuItem>
-        <StyledMenuItem
+        </MenuItem>
+        <MenuItem
           selected={current === "TEMPLATE"}
           aria-current={current === "TEMPLATE"}
           onClick={() => {
@@ -160,7 +161,7 @@ export default function TypeFilter({
               [() => true, ""],
             ])()}
           />
-        </StyledMenuItem>
+        </MenuItem>
       </StyledMenu>
     </div>
   );

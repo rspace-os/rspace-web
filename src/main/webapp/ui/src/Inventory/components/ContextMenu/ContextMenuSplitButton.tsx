@@ -6,7 +6,8 @@ import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Box from "@mui/material/Box";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Tooltip from "@mui/material/Tooltip";
-import { StyledMenuItem, StyledMenu } from "../../../components/StyledMenu";
+import StyledMenu from "../../../components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
 export type SplitButtonOption = {
   text: string;
@@ -122,14 +123,14 @@ export default function ContextMenuSplitButton({
                 onClose={handleClose}
               >
                 {options.map((option, index) => (
-                  <StyledMenuItem
+                  <MenuItem
                     key={index}
                     selected={index === selectedIndex}
                     aria-current={index === selectedIndex}
                     onClick={() => handleMenuItemClick(index)}
                   >
                     <ListItemText primary={option.text} />
-                  </StyledMenuItem>
+                  </MenuItem>
                 ))}
               </StyledMenu>
             </Box>

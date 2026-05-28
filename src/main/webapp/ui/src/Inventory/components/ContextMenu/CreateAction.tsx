@@ -2,7 +2,7 @@ import React, { forwardRef } from "react";
 import ContextMenuAction, {
   type ContextMenuRenderOptions,
 } from "./ContextMenuAction";
-import { StyledMenuItem } from "../../../components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import { Observer } from "mobx-react-lite";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import CreateDialog from "./CreateDialog";
@@ -18,7 +18,7 @@ type CreateActionArgs = {
 };
 
 const CreateAction = forwardRef<
-  React.ElementRef<typeof StyledMenuItem>,
+  React.ElementRef<typeof MenuItem>,
   CreateActionArgs
 >(({ as, disabled, selectedResults, closeMenu }, ref) => {
   const [openCreateDialog, setOpenCreateDialog] = React.useState(false);

@@ -3,7 +3,8 @@ import { observer } from "mobx-react-lite";
 import SearchContext from "../../../stores/contexts/Search";
 import TableCell from "@mui/material/TableCell";
 import RsSet from "../../../util/set";
-import { StyledMenu, StyledMenuItem } from "@/components/StyledMenu";
+import StyledMenu from "@/components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import Grid from "@mui/material/Grid";
 import SortableProperty, { type SortProperty } from "./SortableProperty";
@@ -71,7 +72,7 @@ function AdjustableHeadCell<T extends AdjustableTableRowLabel>({
         onClose={() => setAdjustableColumnMenu(null)}
       >
         {options.map((option) => (
-          <StyledMenuItem
+          <MenuItem
             onClick={() => {
               setAdjustableColumnMenu(null);
               onChange(option);
@@ -81,7 +82,7 @@ function AdjustableHeadCell<T extends AdjustableTableRowLabel>({
             aria-current={option === current}
           >
             <ListItemText primary={option} />
-          </StyledMenuItem>
+          </MenuItem>
         ))}
       </StyledMenu>
     </>

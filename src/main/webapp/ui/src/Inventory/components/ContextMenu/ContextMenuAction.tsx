@@ -6,7 +6,7 @@ import ContextMenuSplitButton, {
 } from "./ContextMenuSplitButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import { StyledMenuItem } from "../../../components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import EventBoundary from "../../../components/EventBoundary";
 export type ContextMenuRenderOptions = "button" | "menuitem";
 type CommonArgs = {
@@ -26,7 +26,7 @@ type RegularButtonArgs = {
 type ContextMenuActionsArgs = CommonArgs &
   (SplitButtonArgs | RegularButtonArgs);
 const ContextMenuAction = forwardRef<
-  React.ElementRef<typeof StyledMenuItem>,
+  React.ElementRef<typeof MenuItem>,
   ContextMenuActionsArgs
 >(
   (
@@ -72,7 +72,7 @@ const ContextMenuAction = forwardRef<
               </>
             )
           ) : (
-            <StyledMenuItem
+            <MenuItem
               ref={ref}
               onClick={onClick}
               disabled={disabledHelp !== ""}
@@ -97,7 +97,7 @@ const ContextMenuAction = forwardRef<
               {Boolean(children) && (
                 <EventBoundary>{children ?? null}</EventBoundary>
               )}
-            </StyledMenuItem>
+            </MenuItem>
           )
         }
       </Observer>

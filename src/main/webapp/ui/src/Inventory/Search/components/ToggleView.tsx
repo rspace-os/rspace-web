@@ -5,7 +5,8 @@ import Box from "@mui/material/Box";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import ListOutlinedIcon from "@mui/icons-material/ListOutlined";
-import { StyledMenu, StyledMenuItem } from "@/components/StyledMenu";
+import StyledMenu from "@/components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import AppsOutlinedIcon from "@mui/icons-material/AppsOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import DropdownButton from "../../../components/DropdownButton";
@@ -72,7 +73,7 @@ export default function ToggleView({
           onClose={handleClose}
         >
           {views.map((type, i) => (
-            <StyledMenuItem
+            <MenuItem
               key={i}
               onClick={() => setView(type)}
               selected={type === currentView}
@@ -82,7 +83,7 @@ export default function ToggleView({
                 <Icon type={type} />
               </ListItemIcon>
               <ListItemText primary={TYPE_LABEL[type]} />
-            </StyledMenuItem>
+            </MenuItem>
           ))}
         </StyledMenu>
       </DropdownButton>

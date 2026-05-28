@@ -2,7 +2,8 @@ import React, { useContext, useState } from "react";
 import ListItemText from "@mui/material/ListItemText";
 import { match, toTitleCase } from "../../../util/Util";
 import SvgIcon from "@mui/material/SvgIcon";
-import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
+import StyledMenu from "../../../components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../stores/contexts/Search";
 import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
@@ -90,7 +91,7 @@ function SortControls(): React.ReactNode {
         >
           {sortProperties.map(({ key, label, adjustColumn }) => {
             return (
-              <StyledMenuItem
+              <MenuItem
                 key={key}
                 onClick={() =>
                   setOrder({
@@ -103,7 +104,7 @@ function SortControls(): React.ReactNode {
                 aria-current={search.fetcher.isCurrentSort(key)}
               >
                 <ListItemText primary={menuItemLabel(key, label)} />
-              </StyledMenuItem>
+              </MenuItem>
             );
           })}
         </StyledMenu>
