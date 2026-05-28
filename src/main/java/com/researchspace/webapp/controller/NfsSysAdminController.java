@@ -9,6 +9,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -109,7 +110,10 @@ public class NfsSysAdminController extends BaseController {
         if (userManager.getUserByUsername(token) == null) {
           unknown.add(token);
         }
-      } catch (RuntimeException notFound) {
+      } catch (ObjectRetrievalFailureException notFound) {
+        // The default Hibernate-backed implementation throws this when the user
+        // does not exist; other RuntimeExceptions (e.g. DB connectivity) are not
+        // swallowed so they surface to the caller and the save is aborted.
         unknown.add(token);
       }
     }

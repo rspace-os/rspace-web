@@ -431,6 +431,12 @@ function refreshWhitelistRows() {
     $('.fileSystemDetailsReadWhitelistRow').toggle(showReadQuestion);
     $('#fileSystemReadWhitelist').toggle(
         showReadQuestion && $('#fileSystemLimitReadYes').prop('checked'));
+
+    // Force the sysadmin to make an explicit choice on each visible group. The
+    // required flag is toggled together with row visibility so non-S3 / non-NONE
+    // filesystems don't get blocked by an invisible required field.
+    $('#fileSystemLimitWriteNo').prop('required', showWhitelists);
+    $('#fileSystemLimitReadNo').prop('required', showReadQuestion);
 }
 
 // Maps a persisted whitelist value to the radio + input pair:
@@ -457,6 +463,9 @@ function setWhitelistFields(suffix, value) {
 // Inverse of setWhitelistFields: derive the value to submit from the current radio + input.
 // If write access isn't limited (everyone writes), everyone reads too, so the read value
 // is forced to '*' regardless of any orphan state in the hidden read radio/input.
+// The radio groups are marked required via JS (see refreshWhitelistRows), so a missing
+// selection should already be blocked by HTML5 validation; the fall-throughs below also
+// pick spec-safe defaults (read='*', write='') in case validation is bypassed.
 function collectWhitelistValue(suffix) {
     if (suffix === 'Read' && $('#fileSystemLimitWriteNo').prop('checked')) {
         return '*';
@@ -468,7 +477,12 @@ function collectWhitelistValue(suffix) {
     if (limit === 'nobody') {
         return '';
     }
-    return $('#fileSystem' + suffix + 'Whitelist').val();
+    if (limit === 'yes') {
+        return $('#fileSystem' + suffix + 'Whitelist').val();
+    }
+    // Nothing selected: default to spec-safe values matching the upgrade backfill
+    // (everyone can read, nobody can write) rather than locking everyone out.
+    return suffix === 'Read' ? '*' : '';
 }
 
 function showWhitelistWarnings(result) {

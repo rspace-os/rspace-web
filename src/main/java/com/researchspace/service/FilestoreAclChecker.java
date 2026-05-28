@@ -41,6 +41,9 @@ public class FilestoreAclChecker {
   }
 
   public boolean canRead(User user, NfsFileSystem fs) {
+    if (fs.getAuthType() == null) {
+      return false;
+    }
     if (!isGated(fs)) {
       return true;
     }
@@ -48,6 +51,9 @@ public class FilestoreAclChecker {
   }
 
   public boolean canWrite(User user, NfsFileSystem fs) {
+    if (fs.getAuthType() == null) {
+      return false;
+    }
     if (!isGated(fs)) {
       return true;
     }

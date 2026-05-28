@@ -140,6 +140,26 @@ public class FilestoreAclCheckerTest {
   }
 
   @Test
+  public void canRead_nullAuthType_denies() {
+    // a misconfigured row with no auth type should not bypass the ACL
+    NfsFileSystem fs = new NfsFileSystem();
+    fs.setClientType(NfsClientType.S3);
+    fs.setAuthType(null);
+    fs.setReadWhitelist("*");
+    fs.setWriteWhitelist("*");
+    assertFalse(checker.canRead(user("alice"), fs));
+  }
+
+  @Test
+  public void canWrite_nullAuthType_denies() {
+    NfsFileSystem fs = new NfsFileSystem();
+    fs.setClientType(NfsClientType.S3);
+    fs.setAuthType(null);
+    fs.setWriteWhitelist("*");
+    assertFalse(checker.canWrite(user("alice"), fs));
+  }
+
+  @Test
   public void canRead_authTypeNoneOnNonS3Backend_stillEnforced() {
     // hypothetical: Samba configured with authType=NONE should still be gated
     NfsFileSystem fs = new NfsFileSystem();
