@@ -36,6 +36,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class CsvSampleImporter extends InventoryItemCsvImporter {
 
+  private static final String DEFAULT_SAMPLES_IMPORT_FILENAME = "imported_samples.csv";
+
   @Value("${inventory.import.samplesLimit}")
   private Integer csvSampleLinesLimit;
 
@@ -59,10 +61,11 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
         new ApiInventoryImportSampleParseResult();
     readCsvIntoParseResults(inputStream, sampleParseResult, createdBy);
 
+    String safeFilename = StringUtils.defaultIfBlank(filename, DEFAULT_SAMPLES_IMPORT_FILENAME);
     String templateName =
-        filename.toLowerCase().endsWith(".csv")
-            ? filename.substring(0, filename.length() - 4)
-            : filename;
+        safeFilename.toLowerCase().endsWith(".csv")
+            ? safeFilename.substring(0, safeFilename.length() - 4)
+            : safeFilename;
     Sample template = recordFactory.createSample(templateName, createdBy);
     template.setTemplate(true);
     setDefaultsInSuggestedParsedTemplate(template);

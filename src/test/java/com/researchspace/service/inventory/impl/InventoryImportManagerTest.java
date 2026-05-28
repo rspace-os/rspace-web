@@ -357,6 +357,19 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void testParsingSampleCsvFileWithMissingFilenameUsesDefaultTemplateName() throws IOException {
+    InputStream sampleCsvIS = IOUtils.toInputStream("Name, Data\nTestSample1,TestData");
+
+    ApiInventoryImportSampleParseResult parseResult =
+        importMgr.parseSamplesCsvFile(null, sampleCsvIS, testUser);
+    assertEquals("imported_samples", parseResult.getTemplateInfo().getName());
+
+    sampleCsvIS = IOUtils.toInputStream("Name, Data\nTestSample1,TestData");
+    parseResult = importMgr.parseSamplesCsvFile(" ", sampleCsvIS, testUser);
+    assertEquals("imported_samples", parseResult.getTemplateInfo().getName());
+  }
+
+  @Test
   public void testSampleCsvImportWithTemplateErrors() throws IOException {
     // create the DOI to assign
     DigitalObjectIdentifier doi1 = new DigitalObjectIdentifier("10.82316/hm02-fz20", null);
