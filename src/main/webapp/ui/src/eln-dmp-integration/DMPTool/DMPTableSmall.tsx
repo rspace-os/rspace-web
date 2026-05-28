@@ -30,12 +30,6 @@ const tableRowCellSx: SxProps<Theme> = (_theme) => ({
     p: 0.5,
   },
 });
-const tableSubCellSx = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
 function PlanHeaderRow() {
   return (
     <TableRow sx={tableRowSx}>
@@ -106,7 +100,15 @@ function PlanRow({
         <Box component="span" sx={(theme) => ({ flex: 5, color: theme.palette.primary.main })}>
           {plan.dmpTitle}
         </Box>
-        <Box component="span" sx={{ ...tableSubCellSx, flex: 3 }}>
+        <Box
+          component="span"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flex: 3,
+          }}
+        >
           {plan.dmpId}
         </Box>
       </TableCell>

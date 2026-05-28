@@ -7,16 +7,12 @@ type LoadingFadeArgs = {
 };
 
 const LoadingFade = (props: LoadingFadeArgs): React.ReactNode => {
-  const styles = {
-    loadingBar: {
-      width: "100%",
-      minWidth: "50px",
-    },
-  };
-
   return (
     <Fade in={props.loading}>
-      <LinearProgress color="primary" sx={styles.loadingBar} />
+      <LinearProgress
+        color="primary"
+        sx={{ width: "100%", minWidth: "50px" }}
+      />
     </Fade>
   );
 };
