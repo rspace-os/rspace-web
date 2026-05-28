@@ -463,9 +463,9 @@ function setWhitelistFields(suffix, value) {
 // Inverse of setWhitelistFields: derive the value to submit from the current radio + input.
 // If write access isn't limited (everyone writes), everyone reads too, so the read value
 // is forced to '*' regardless of any orphan state in the hidden read radio/input.
-// The radio groups are marked required via JS (see refreshWhitelistRows), so a missing
-// selection should already be blocked by HTML5 validation; the fall-throughs below also
-// pick spec-safe defaults (read='*', write='') in case validation is bypassed.
+// The radio groups are marked required via JS (see refreshWhitelistRows), so HTML5
+// form validation prevents save when no choice is made; the sysadmin is forced to
+// pick explicitly rather than relying on a silent default.
 function collectWhitelistValue(suffix) {
     if (suffix === 'Read' && $('#fileSystemLimitWriteNo').prop('checked')) {
         return '*';
@@ -477,12 +477,7 @@ function collectWhitelistValue(suffix) {
     if (limit === 'nobody') {
         return '';
     }
-    if (limit === 'yes') {
-        return $('#fileSystem' + suffix + 'Whitelist').val();
-    }
-    // Nothing selected: default to spec-safe values matching the upgrade backfill
-    // (everyone can read, nobody can write) rather than locking everyone out.
-    return suffix === 'Read' ? '*' : '';
+    return $('#fileSystem' + suffix + 'Whitelist').val();
 }
 
 function showWhitelistWarnings(result) {
