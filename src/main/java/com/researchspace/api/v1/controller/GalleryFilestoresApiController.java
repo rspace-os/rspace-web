@@ -183,7 +183,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   @Override
   public List<NfsFileSystemInfo> getFilesystems(@RequestAttribute(name = "user") User user) {
     assertFilestoresApiEnabled(user);
-    return nfsManager.getActiveFileSystemInfos();
+    return nfsManager.getActiveFileSystemInfos(user);
   }
 
   @Override

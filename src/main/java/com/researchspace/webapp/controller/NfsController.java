@@ -78,9 +78,9 @@ public class NfsController extends BaseController {
   }
 
   private void addFileStoresAndFileSystemsToView(Model model, Principal p) {
-    List<NfsFileStoreInfo> userStoreInfos =
-        nfsManager.getFileStoreInfosForUser(getPrincipalUser(p));
-    List<NfsFileSystemInfo> activeSystemInfos = nfsManager.getActiveFileSystemInfos();
+    User principalUser = getPrincipalUser(p);
+    List<NfsFileStoreInfo> userStoreInfos = nfsManager.getFileStoreInfosForUser(principalUser);
+    List<NfsFileSystemInfo> activeSystemInfos = nfsManager.getActiveFileSystemInfos(principalUser);
 
     String userStoresJson = null;
     String activeSystemsJson = null;

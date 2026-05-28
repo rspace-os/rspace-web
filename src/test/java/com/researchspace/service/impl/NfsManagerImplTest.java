@@ -12,13 +12,19 @@ import com.researchspace.dao.NfsDao;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsClientType;
+import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.netfiles.NfsFileSystemInfo;
+import com.researchspace.model.netfiles.NfsUserPermissions;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.NfsRSpaceProvidedAuthentication;
 import com.researchspace.netfiles.s3.S3NfsClient;
+import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.aws.S3Utilities;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,6 +62,9 @@ public class NfsManagerImplTest {
     s3FileSystem.setAuthType(NfsAuthenticationType.NONE);
 
     when(nfsDao.getNfsFileSystem(FILE_SYSTEM_ID)).thenReturn(s3FileSystem);
+
+    // real ACL checker; FilestoreAclChecker has no dependencies of its own
+    nfsManager.setAclChecker(new FilestoreAclChecker());
   }
 
   @Test
@@ -93,6 +102,71 @@ public class NfsManagerImplTest {
     String loggedAs = nfsManager.getLoggedAsUsernameIfUserLoggedIn(2L, nfsClients, testUser);
 
     assertNull(loggedAs, "disabled filesystem should return null");
+  }
+
+  @Test
+  public void getActiveFileSystemInfos_populatesUserPermissionsForRequestingUser() {
+    s3FileSystem.setReadWhitelist("testUser");
+    s3FileSystem.setWriteWhitelist(null);
+    when(nfsDao.getActiveFileSystems()).thenReturn(List.of(s3FileSystem));
+
+    List<NfsFileSystemInfo> infos = nfsManager.getActiveFileSystemInfos(testUser);
+
+    assertEquals(1, infos.size());
+    NfsUserPermissions perms = infos.get(0).getUserPermissions();
+    assertNotNull(perms);
+    assertEquals(true, perms.isCanRead());
+    assertEquals(false, perms.isCanWrite());
+  }
+
+  @Test
+  public void getActiveFileSystemInfos_userNotInAnyList_canReadAndWriteAreFalse() {
+    s3FileSystem.setReadWhitelist("alice");
+    s3FileSystem.setWriteWhitelist("alice");
+    when(nfsDao.getActiveFileSystems()).thenReturn(List.of(s3FileSystem));
+
+    List<NfsFileSystemInfo> infos = nfsManager.getActiveFileSystemInfos(testUser);
+
+    NfsUserPermissions perms = infos.get(0).getUserPermissions();
+    assertEquals(false, perms.isCanRead());
+    assertEquals(false, perms.isCanWrite());
+  }
+
+  @Test
+  public void getActiveFileSystemInfos_perUserAuthBackend_isAlwaysReadableAndWritable() {
+    NfsFileSystem irods = new NfsFileSystem();
+    irods.setId(99L);
+    irods.setName("irods");
+    irods.setClientType(NfsClientType.IRODS);
+    irods.setAuthType(NfsAuthenticationType.PASSWORD);
+    // empty whitelists; should be ignored because authType != NONE
+    when(nfsDao.getActiveFileSystems()).thenReturn(List.of(irods));
+
+    List<NfsFileSystemInfo> infos = nfsManager.getActiveFileSystemInfos(testUser);
+
+    NfsUserPermissions perms = infos.get(0).getUserPermissions();
+    assertEquals(true, perms.isCanRead());
+    assertEquals(true, perms.isCanWrite());
+  }
+
+  @Test
+  public void getFileStoreInfosForUser_populatesUserPermissionsFromUnderlyingFilesystem() {
+    s3FileSystem.setReadWhitelist("*");
+    s3FileSystem.setWriteWhitelist(null);
+    NfsFileStore filestore = new NfsFileStore();
+    filestore.setId(42L);
+    filestore.setName("staleFilestore");
+    filestore.setUser(testUser);
+    filestore.setFileSystem(s3FileSystem);
+    when(nfsDao.getUserFileStores(testUser.getId())).thenReturn(List.of(filestore));
+
+    List<NfsFileStoreInfo> infos = nfsManager.getFileStoreInfosForUser(testUser);
+
+    assertEquals(1, infos.size());
+    NfsUserPermissions perms = infos.get(0).getUserPermissions();
+    assertNotNull(perms);
+    assertEquals(true, perms.isCanRead());
+    assertEquals(false, perms.isCanWrite());
   }
 
   @Test

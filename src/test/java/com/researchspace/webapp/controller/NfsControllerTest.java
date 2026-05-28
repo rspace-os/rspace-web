@@ -125,7 +125,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
     testNfsFileSystemInfoList.add(testNfsFileSystem.toFileSystemInfo());
 
     when(nfsManagerMock.getFileStoreInfosForUser(testUser)).thenReturn(testNfsFileStoreInfoList);
-    when(nfsManagerMock.getActiveFileSystemInfos()).thenReturn(testNfsFileSystemInfoList);
+    when(nfsManagerMock.getActiveFileSystemInfos(testUser)).thenReturn(testNfsFileSystemInfoList);
     controller.getNetFilesLoginView(model, principalStub);
 
     // filesystem json double-escaped (RSPAC-2360)
