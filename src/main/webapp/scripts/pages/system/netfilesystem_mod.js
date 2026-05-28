@@ -369,10 +369,11 @@ function refreshClientTypeRows() {
     $('#fileSystemS3Region').prop('required', isS3Client);
     $('.fileSystemDetailsS3PathStyleRow').toggle(isS3Client && !isS3AWSClient);
 
-    if (isSambaClient || isIrodsClient) {
-        $('#fileSystemAuthTypePassword').click();
-    } else if (isS3Client) {
+    if (isS3Client) {
         $('#fileSystemAuthTypeNone').click();
+    } else if (isSambaClient || isIrodsClient
+            || (isSftpClient && $('#fileSystemAuthTypeNone').prop('checked'))) {
+        $('#fileSystemAuthTypePassword').click();
     }
     $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
     $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
