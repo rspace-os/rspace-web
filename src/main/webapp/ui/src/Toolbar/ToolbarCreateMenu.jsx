@@ -1,6 +1,7 @@
 /* global configurePermittedActions */
 import React from "react";
 import axios from "@/common/axios";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -78,18 +79,20 @@ export default function CreateMenu(props) {
           New entry
         </MenuItem>
         <MenuItem id="createFolder" data-test-id="create-btn-folder">
-          <img
+          <Box
+            component="img"
             src="/images/icons/folder.png"
             alt="Folder icon"
-            style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
+            sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
           Folder
         </MenuItem>
         <MenuItem data-test-id="create-btn-notebook" id="createNotebook">
-          <img
+          <Box
+            component="img"
             src="/images/icons/notebook.png"
             alt="Notebook Icon"
-            style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
+            sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
           Notebook
         </MenuItem>
@@ -102,10 +105,11 @@ export default function CreateMenu(props) {
               .toLowerCase()
               .replace(" ", "-")}`}
           >
-            <img
+            <Box
+              component="img"
               src={entry.iconURL}
               alt="Folder icon"
-              style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
+              sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
             />
             {entry.name}
             <input type="hidden" name="template" value={entry.id} />
@@ -122,10 +126,11 @@ export default function CreateMenu(props) {
           </MenuItem>
         )}
         <MenuItem id="createFromTemplate" data-test-id="create-btn-template">
-          <span style={{ paddingRight: "6px" }}>
+          <Box component="span" sx={{ paddingRight: "6px" }}>
             <FontAwesomeIcon icon={faFolderOpen} />
-            <span
-              style={{
+            <Box
+              component="span"
+              sx={{
                 position: "absolute",
                 color: "white",
                 fontSize: "9px",
@@ -135,8 +140,8 @@ export default function CreateMenu(props) {
               }}
             >
               T
-            </span>
-          </span>
+            </Box>
+          </Box>
           From Template
         </MenuItem>
         {props.asposeEnabled && (
@@ -164,10 +169,11 @@ export default function CreateMenu(props) {
             id="createFromProtocolsIo"
             data-test-id="create-btn-protocols"
           >
-            <img
+            <Box
+              component="img"
               src="/images/integrations/protocolsio.png"
               alt="Protocols.io Icon"
-              style={{ paddingRight: "5px", width: "22px", marginLeft: "-5px" }}
+              sx={{ paddingRight: "5px", width: "22px", marginLeft: "-5px" }}
             />
             From Protocols.io
           </MenuItem>

@@ -836,7 +836,7 @@ export default function TagsCombobox<
             tabIndex={0}
             fullWidth
             value={filter}
-            style={{
+            sx={{
               fontSize: "1.1em",
             }}
             slotProps={{

@@ -140,8 +140,8 @@ function DnaPreview({
         </ButtonGroup>
       </Stack>
       {}
-      <div
-        style={{
+      <Box
+        sx={{
           borderRadius: "3px",
           border: `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
           overflow: "hidden",
@@ -185,13 +185,14 @@ function DnaPreview({
         {error ? (
           <div>{error}</div>
         ) : (
-          <img
+          <Box
+            component="img"
             alt={`DNA preview of ${file.name}`}
             {...(image !== null ? { src: image } : {})}
             onError={() => {
               setError("Coult not load DNA preview image.");
             }}
-            style={{
+            sx={{
               maxHeight: "100%",
               maxWidth: "100%",
               transform: `scale(${zoom})`,
@@ -201,7 +202,7 @@ function DnaPreview({
             }}
           />
         )}
-      </div>
+      </Box>
     </Stack>
   );
 }
@@ -345,7 +346,7 @@ function RestrictionSites({
         {!error && loading && <LoadingCircular />}
         {!error && !loading && (
           <>
-            <TableContainer style={{ maxHeight: "387px" }}>
+            <TableContainer sx={{ maxHeight: "387px" }}>
               <Table
                 stickyHeader
                 aria-labelledby="Enzyme table"
@@ -378,7 +379,7 @@ function RestrictionSites({
                       </TableRow>
                     ))}
                   {emptyRows > 0 && (
-                    <TableRow style={{ height: 33 * emptyRows }}>
+                    <TableRow sx={{ height: 33 * emptyRows }}>
                       <TableCell colSpan={6} />
                     </TableRow>
                   )}
@@ -461,13 +462,14 @@ function ViewAsFasta({
   }, [file]);
 
   return (
-    <section
+    <Box
+      component="section"
       role="tabpanel"
-      style={{ display: show ? "flex" : "none" }}
+      sx={{ display: show ? "flex" : "none" }}
       aria-labelledby={idOfViewAsFastaTab}
     >
       <pre>{sequence}</pre>
-    </section>
+    </Box>
   );
 }
 
@@ -613,7 +615,7 @@ function OrfTable({
         {loading && !error && <LoadingCircular />}
         {!loading && !error && (
           <>
-            <TableContainer style={{ maxHeight: "449px" }}>
+            <TableContainer sx={{ maxHeight: "449px" }}>
               <Table
                 stickyHeader
                 aria-labelledby="ORF table"
@@ -648,7 +650,7 @@ function OrfTable({
                       </TableRow>
                     ))}
                   {emptyRows > 0 && (
-                    <TableRow style={{ height: 33 * emptyRows }}>
+                    <TableRow sx={{ height: 33 * emptyRows }}>
                       <TableCell colSpan={6} />
                     </TableRow>
                   )}

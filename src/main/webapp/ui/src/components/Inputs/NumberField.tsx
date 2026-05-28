@@ -33,7 +33,6 @@ export type NumberFieldArgs = {
   sx?: TextFieldProps["sx"];
   variant?: "filled" | "outlined" | "standard";
   ariaLabel?: string;
-  className?: string;
   id?: string;
   noValueLabel?: string | null;
 };

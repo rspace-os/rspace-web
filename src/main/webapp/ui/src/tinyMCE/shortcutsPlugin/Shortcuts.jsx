@@ -416,7 +416,7 @@ class Shortcuts extends React.Component {
             onChange={this.handleChange}
             indicatorColor="primary"
             textColor="primary"
-            style={{ marginBottom: "15px" }}
+            sx={{ marginBottom: "15px" }}
             centered
           >
             <Tab label="Actions" />

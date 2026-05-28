@@ -26,7 +26,7 @@ import Checkbox from "@mui/material/Checkbox";
 import UsedQuantityField from "./UsedQuantityField";
 import SubSampleModel from "../../stores/models/SubSampleModel";
 import { hasQuantity } from "../../stores/models/HasQuantity";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
 function NameCell({ material }: { material: Material }): React.ReactNode {
   return (
     <>
@@ -64,29 +64,32 @@ function TableSubCell({
   flex,
   children,
   className,
-  style,
+  sx,
   datatestid,
 }: {
   flex: number;
   className?: string;
-  style?: React.CSSProperties;
+  sx?: SxProps<Theme>;
   children: React.ReactNode;
   datatestid?: string;
 }): React.ReactNode {
   return (
-    <span
+    <Box
+      component="span"
       className={className}
-      style={{
-        flex,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        ...style,
-      }}
+      sx={[
+        {
+          flex,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        ...(Array.isArray(sx) ? sx : [sx]),
+      ]}
       data-test-id={datatestid}
     >
       {children}
-    </span>
+    </Box>
   );
 }
 function MaterialsTable({
@@ -180,45 +183,34 @@ function MaterialsTable({
         }}
       >
         <TableCell sx={tableRowCellSx}>
-          <span
-            style={{
-              flex: 5,
-            }}
-          >
+          <Box component="span" sx={{ flex: 5 }}>
             Name
-          </span>
+          </Box>
           <Tooltip title="For subsamples only" enterDelay={200}>
-            <span
-              style={{
-                flex: 2,
-                textAlign: "center",
-              }}
-            >
+            <Box component="span" sx={{ flex: 2, textAlign: "center" }}>
               Consumed Quantity
-            </span>
+            </Box>
           </Tooltip>
-          <span
-            style={{
-              flex: 2,
-              textAlign: "center",
-            }}
-          >
+          <Box component="span" sx={{ flex: 2, textAlign: "center" }}>
             Inventory Quantity
-          </span>
+          </Box>
         </TableCell>
         {editingMode ? (
           <TableCell sx={tableRowCellSx}>
-            <div
-              style={{
+            <Box
+              sx={{
                 flex: 3,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
               }}
             >
-              <span style={!isSingleColumn ? { textAlign: "center" } : undefined}>
+              <Box
+                component="span"
+                sx={!isSingleColumn ? { textAlign: "center" } : undefined}
+              >
                 Batch Edit
-              </span>
+              </Box>
               <Select
                 sx={{
                   width: "75px",
@@ -238,50 +230,31 @@ function MaterialsTable({
                   </MenuItem>
                 ))}
               </Select>
-            </div>
-            <span
-              style={{
-                flex: 4,
-                textAlign: "center",
-              }}
-            >
+            </Box>
+            <Box component="span" sx={{ flex: 4, textAlign: "center" }}>
               Additional Consumed Quantity
-            </span>
-            <span
-              style={{
-                flex: 3,
-                textAlign: "center",
-              }}
-            >
+            </Box>
+            <Box component="span" sx={{ flex: 3, textAlign: "center" }}>
               Update Inventory Quantity
-            </span>
+            </Box>
           </TableCell>
         ) : (
           <TableCell sx={tableRowCellSx}>
-            <span
-              style={{
+            <Box
+              component="span"
+              sx={{
                 flex: 5,
                 ...(!isSingleColumn ? { textAlign: "center" } : {}),
               }}
             >
               Location
-            </span>
-            <span
-              style={{
-                flex: 2,
-                textAlign: "center",
-              }}
-            >
+            </Box>
+            <Box component="span" sx={{ flex: 2, textAlign: "center" }}>
               Global ID
-            </span>
-            <span
-              style={{
-                flex: 2,
-                textAlign: "center",
-              }}
-            >
+            </Box>
+            <Box component="span" sx={{ flex: 2, textAlign: "center" }}>
               Owner
-            </span>
+            </Box>
           </TableCell>
         )}
       </TableRow>
@@ -332,8 +305,9 @@ function MaterialsTable({
         })}
       >
         <CustomTableCell>
-          <span
-            style={{
+          <Box
+            component="span"
+            sx={{
               flex: 5,
               display: "flex",
               alignItems: "center",
@@ -356,18 +330,18 @@ function MaterialsTable({
                 disabled={!canEdit}
               />
             )}
-          </span>
+          </Box>
           <TableSubCell
             flex={2}
             datatestid={`material-used-quantity-${globalId}`}
-            style={{ color: colorCodedQuantity(material, list, quantityColors) }}
+            sx={{ color: colorCodedQuantity(material, list, quantityColors) }}
           >
             {material.usedQuantity ? material.usedQuantityLabel : <>&mdash;</>}
           </TableSubCell>
           <TableSubCell
             datatestid={`material-inventory-quantity-${globalId}`}
             flex={2}
-            style={{ color: colorCodedQuantity(material, list, quantityColors) }}
+            sx={{ color: colorCodedQuantity(material, list, quantityColors) }}
           >
             {hasQuantity(record).isEmpty() || noQuantitySample ? (
               <>&mdash;</>
@@ -390,7 +364,7 @@ function MaterialsTable({
             <TableSubCell flex={4}>
               <UsedQuantityField material={material} list={list} />
             </TableSubCell>
-            <TableSubCell style={{ color: theme.palette.primary.main }} flex={3}>
+            <TableSubCell sx={{ color: theme.palette.primary.main }} flex={3}>
               <Checkbox
                 color="primary"
                 onChange={() => {
@@ -416,7 +390,7 @@ function MaterialsTable({
             <TableSubCell flex={4}>
               <>&mdash;</>
             </TableSubCell>
-            <TableSubCell style={{ color: theme.palette.primary.main }} flex={3}>
+            <TableSubCell sx={{ color: theme.palette.primary.main }} flex={3}>
               <>&mdash;</>
             </TableSubCell>
           </CustomTableCell>
@@ -428,7 +402,7 @@ function MaterialsTable({
             <TableSubCell flex={2}>
               <GlobalId record={record} />
             </TableSubCell>
-            <TableSubCell style={{ color: theme.palette.primary.main }} flex={2}>
+            <TableSubCell sx={{ color: theme.palette.primary.main }} flex={2}>
               {record.owner ? (
                 <UserDetails
                   userId={record.owner.id}

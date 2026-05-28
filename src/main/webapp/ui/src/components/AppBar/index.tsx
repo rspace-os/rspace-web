@@ -405,8 +405,8 @@ function GalleryAppBar({
       <Toolbar variant="dense">
         {variant === "page" && !isViewportSmall && (
           <>
-            <div
-              style={{
+            <Box
+              sx={{
                 height: "40px",
                 backgroundColor: "white",
                 width: "4px",
@@ -414,7 +414,7 @@ function GalleryAppBar({
                 marginLeft: "4px",
                 marginRight: "-1px",
               }}
-            ></div>
+            ></Box>
             <svg width="0" height="0" viewBox="0 0 3.9 40">
               <defs>
                 <clipPath id={leftClipId}>
@@ -473,15 +473,15 @@ function GalleryAppBar({
         </Box>
         {variant === "page" && !isViewportSmall && (
           <>
-            <div
-              style={{
+            <Box
+              sx={{
                 height: "40px",
                 backgroundColor: "white",
                 width: "12px",
                 clipPath: `url(#${rightClipId})`,
                 marginLeft: "-1px",
               }}
-            ></div>
+            ></Box>
             <svg width="0" height="0">
               <defs>
                 <clipPath id={rightClipId}>

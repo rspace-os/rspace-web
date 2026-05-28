@@ -10,6 +10,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
+import Box from "@mui/material/Box";
 import UserDetails from "@/components/UserDetails";
 import { stripDiacritics } from "@/util/StringUtils";
 
@@ -122,16 +123,16 @@ export default function UserList({ listTitle, onSelect, selected, users }) {
         }}
       />
       {visibleUsers.length === 0 && (
-        <div style={{ color: "grey" }} data-test-id={`${listTitleId}-empty`}>
+        <Box sx={{ color: "grey" }} data-test-id={`${listTitleId}-empty`}>
           No users found
-        </div>
+        </Box>
       )}
       {visibleUsers.length > 0 && (
         <List
           dense
           component="div"
           role="list"
-          style={{ height: "350px", overflowY: "auto" }}
+          sx={{ height: "350px", overflowY: "auto" }}
           data-test-id={`${listTitleId}-list`}
         >
           {visibleUsers.map((u) => (

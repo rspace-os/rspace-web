@@ -1,5 +1,6 @@
 "use strict";
 import React from "react";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
@@ -63,14 +64,14 @@ class MyLabGroups extends React.Component {
     return (
       <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
-          <div style={styles.actions}>
+          <Box sx={styles.actions}>
             <h3>Members</h3>
             {this.state.isCloud && (
               <Button
                 id="inviteNewMembersGrpLink"
                 variant="outlined"
                 size="small"
-                style={{ margin: "0 0 0.5em 15px" }}
+                sx={{ margin: "0 0 0.5em 15px" }}
                 data-test-id="button-invite-members"
               >
                 Invite
@@ -83,7 +84,7 @@ class MyLabGroups extends React.Component {
                   onClick={this.openDialog}
                   variant="outlined"
                   size="small"
-                  style={{ margin: "0 0 0.5em 15px" }}
+                  sx={{ margin: "0 0 0.5em 15px" }}
                   data-test-id="button-add-members"
                 >
                   Invite
@@ -94,7 +95,7 @@ class MyLabGroups extends React.Component {
                 onClick={this.openDialog}
                 variant="outlined"
                 size="small"
-                style={{ margin: "0 0 0.5em 15px" }}
+                sx={{ margin: "0 0 0.5em 15px" }}
                 data-test-id="button-add-members"
               >
                 Add
@@ -143,7 +144,7 @@ class MyLabGroups extends React.Component {
                 canManageOntologies={this.state.canManageOntologies}
               />
             }
-          </div>
+          </Box>
           <MyLabGroupsDialog
             ref={this.membersDialog}
             role={this.state.role}

@@ -11,7 +11,6 @@ type DrawerTabProps = {
   icon: React.ReactNode;
   label: React.ReactNode;
   index: number;
-  className?: string;
   selected: boolean;
   onClick: () => void;
   tabIndex: number;
@@ -23,7 +22,6 @@ const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
       icon,
       label,
       index,
-      className,
       selected,
       onClick,
       tabIndex,
@@ -34,7 +32,6 @@ const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
   ) => (
     <ListItem
       disablePadding
-      className={className}
       sx={(theme) => ({
         position: "static",
         "& .MuiListItemText-root": {

@@ -5,6 +5,7 @@ import FormGroup from "@mui/material/FormGroup";
 import FormLabel from "@mui/material/FormLabel";
 import FormHelperText from "@mui/material/FormHelperText";
 import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
 import { Heading } from "../DynamicHeadingLevel";
 
@@ -25,8 +26,8 @@ function FullLabel({
     <>
       <Heading>{label}</Heading>
       {explanation && (
-        <div
-          style={{
+        <Box
+          sx={{
             fontWeight: 400,
             lineHeight: 1.5,
             marginTop: theme.spacing(0.5),
@@ -34,7 +35,7 @@ function FullLabel({
           id={explanationId}
         >
           {explanation}
-        </div>
+        </Box>
       )}
     </>
   );
@@ -122,7 +123,7 @@ function CustomFormControl({
         )}
         {actions}
       </Stack>
-      <FormGroup style={{ display: inline ? "inline" : "inherit", flexWrap }}>
+      <FormGroup sx={{ display: inline ? "inline" : "inherit", flexWrap }}>
         {children}
       </FormGroup>
       {error && <FormHelperText>{helperText}</FormHelperText>}

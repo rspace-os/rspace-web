@@ -189,8 +189,8 @@ export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
 
   return (
     <PreviewInfoFrame>
-      <div
-        style={{
+      <Box
+        sx={{
           display: "flex",
           minHeight: "200px",
           maxHeight: "334px",
@@ -211,7 +211,7 @@ export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
           />
         </Box>
         <ChemCard item={item} inline />
-      </div>
+      </Box>
       {stoichiometryReference && (
         <StoichiometryPreviewSection
           stoichiometryId={stoichiometryReference.id}

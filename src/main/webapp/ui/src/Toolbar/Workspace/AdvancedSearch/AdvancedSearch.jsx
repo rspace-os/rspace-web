@@ -281,7 +281,7 @@ class AdvancedSearch extends React.Component {
             data-test-id={`a-search-type-${idx}`}
             value={query.filter}
             onChange={this.handleChange(idx, "filter")}
-            style={{
+            sx={{
               paddingTop: ["created", "lastModified"].includes(query.filter)
                 ? "16px"
                 : "0px",
@@ -400,12 +400,12 @@ class AdvancedSearch extends React.Component {
   render() {
     return (
       <CardWrapper>
-        <Card style={{ overflow: "visible" }}>
+        <Card sx={{ overflow: "visible" }}>
           <CardHeader subheader="Advanced search" />
           <CardContent>
-            <table style={{ width: "80%", marginBottom: "0px" }}>
+            <Box component="table" sx={{ width: "80%", marginBottom: "0px" }}>
               <tbody>{this.searchQueries()}</tbody>
-            </table>
+            </Box>
             {this.state.queries.length > 1 && (
               <RadioGroup
                 value={this.state.fulfillAll}
@@ -431,7 +431,7 @@ class AdvancedSearch extends React.Component {
                         <Tooltip title="At least one of the 'Within records' conditions will always be satisfied.">
                           <IconButton
                             data-test-id={`show-condition-info`}
-                            style={{
+                            sx={{
                               width: "40px",
                               height: "40px",
                               marginLeft: "10px",
@@ -467,7 +467,7 @@ class AdvancedSearch extends React.Component {
                         <Tooltip title="At least one of the 'Within records' conditions will always be satisfied.">
                           <IconButton
                             data-test-id={`show-condition-info`}
-                            style={{
+                            sx={{
                               width: "40px",
                               height: "40px",
                               marginLeft: "10px",
@@ -485,7 +485,7 @@ class AdvancedSearch extends React.Component {
               </RadioGroup>
             )}
           </CardContent>
-          <CardActions style={{ backgroundColor: "#eceff1" }}>
+          <CardActions sx={{ backgroundColor: "#eceff1" }}>
             <span></span>
             <span className="group-right">
               <Button onClick={this.reset} data-test-id="a-search-reset">

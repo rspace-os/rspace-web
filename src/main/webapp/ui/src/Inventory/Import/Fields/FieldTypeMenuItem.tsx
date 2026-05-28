@@ -71,8 +71,8 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
               </IconButton>
             )}
           </Stack>
-          <div
-            style={{
+          <Box
+            sx={{
               height: open ? 110 : 0,
               transition: "all 0.2s ease 0s",
               transitionDelay: open ? "0.05s" : "0s",
@@ -116,7 +116,7 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
                 </Box>
               </>
             )}
-          </div>
+          </Box>
         </Box>
       </MenuItem>
     );
@@ -127,7 +127,7 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
           inMenu ? (
             menuItem
           ) : (
-            <div style={{ height: 72 }}>
+            <Box sx={{ height: 72 }}>
               <Paper
                 sx={{
                   transition: "transform 0.2s ease 0s, width 0.2s ease 0s",
@@ -142,8 +142,8 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
               >
                 {menuItem}
               </Paper>
-              <div
-                style={{
+              <Box
+                sx={{
                   backgroundColor: "rgba(0, 0, 0, 0.5)",
                   position: "fixed",
                   left: 0,
@@ -162,7 +162,7 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
                 role="button"
                 tabIndex={0}
               />
-            </div>
+            </Box>
           )
         }
       </Observer>

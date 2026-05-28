@@ -4,8 +4,6 @@ import Grid from "@mui/material/Grid";
 import { type SxProps, type Theme } from "@mui/material/styles";
 import { mergeSx } from "@/modules/common/utils/styles";
 
-const baseSx: SxProps<Theme> = { width: "100%", ml: -0.25, mb: 0 };
-
 type BatchGridContainerArgs = {
   children: Array<React.ReactNode>;
   sx?: SxProps<Theme>;
@@ -15,8 +13,6 @@ const BatchGridContainer = React.forwardRef<
   React.ElementRef<typeof Grid>,
   BatchGridContainerArgs
 >(({ children, sx }, ref) => {
-  const composedSx: SxProps<Theme> = mergeSx(baseSx, sx);
-
   return (
     <Observer>
       {() => (
@@ -24,7 +20,7 @@ const BatchGridContainer = React.forwardRef<
           container
           spacing={2}
           direction="row"
-          sx={composedSx}
+          sx={mergeSx({ width: "100%", ml: -0.25, mb: 0 }, sx)}
           ref={ref}
         >
           {children}

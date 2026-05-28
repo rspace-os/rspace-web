@@ -8,6 +8,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import RemoveButton from "../../components/RemoveButton";
 import NoValue from "../../components/NoValue";
 import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 
 export type RadioOption<OptionValue extends string> = {
   label: React.ReactNode;
@@ -83,14 +84,14 @@ function RadioField<OptionValue extends string>({
           },
           i
         ) => (
-          <div
+          <Box
             key={i}
-            style={{
+            sx={{
               display: "flex",
               flexDirection: "row",
               alignItems: "center",
               justifyContent: !option.editing ? "space-between" : undefined,
-              marginBottom: typeof option.label !== "string" ? 16 : undefined,
+              marginBottom: typeof option.label !== "string" ? "16px" : undefined,
             }}
           >
             <FormControlLabel
@@ -178,7 +179,7 @@ function RadioField<OptionValue extends string>({
                 }}
               />
             )}
-          </div>
+          </Box>
         )
       )
     );

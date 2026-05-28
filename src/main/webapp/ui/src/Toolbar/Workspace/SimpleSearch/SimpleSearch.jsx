@@ -30,50 +30,6 @@ function formatDateForTooltip(date /*: ?Date*/) /*: string*/ {
   return truncateIsoTimestamp(date, "date").orElse("Invalid date");
 }
 
-const searchBarSx = {
-  padding: "2px 2px",
-  display: "flex",
-  alignItems: "center",
-  "& .MuiInputBase-root": {
-    flexGrow: 1,
-    "& input:focus, & input:hover": {
-      backgroundColor: "transparent !important",
-    },
-  },
-  "& .MuiDivider-root": {
-    width: "1px",
-    height: "35px",
-    margin: "4px",
-  },
-  "& .MuiTextField-root": {
-    "& .MuiInputLabel-formControl": {
-      transform: "translate(0, 16px) scale(1)",
-    },
-    "& .MuiInputLabel-formControl.Mui-focused, & .MuiInputLabel-formControl.MuiFormLabel-filled":
-      {
-        transform: "translate(5px, 0) scale(0.75)",
-        transformOrigin: "top left",
-      },
-    "& label + .MuiInput-formControl": {
-      marginTop: "5px",
-    },
-    "& .MuiInput-underline:before, & .MuiInput-underline:after": {
-      borderBottom: 0,
-    },
-  },
-  "& button.MuiIconButton-root": {
-    width: 44,
-    height: 44,
-    fontSize: "16px !important",
-  },
-  "& .grow": {
-    flexGrow: 1,
-  },
-  "& .MuiChip-root": {
-    margin: "6px",
-  },
-};
-
 const FILTERS = {
   global: "All",
   fullText: "Text",
@@ -327,9 +283,54 @@ class SimpleSearch extends React.Component {
     return (
       <>
         <>
-          <Paper style={{ flexGrow: "1", display: "flex" }} elevation={0}>
-            <form onSubmit={this.submitSearch} style={{ width: "100%" }}>
-              <Box sx={searchBarSx}>
+          <Paper sx={{ flexGrow: "1", display: "flex" }} elevation={0}>
+            <Box component="form" onSubmit={this.submitSearch} sx={{ width: "100%" }}>
+              <Box
+                sx={{
+                  padding: "2px 2px",
+                  display: "flex",
+                  alignItems: "center",
+                  "& .MuiInputBase-root": {
+                    flexGrow: 1,
+                    "& input:focus, & input:hover": {
+                      backgroundColor: "transparent !important",
+                    },
+                  },
+                  "& .MuiDivider-root": {
+                    width: "1px",
+                    height: "35px",
+                    margin: "4px",
+                  },
+                  "& .MuiTextField-root": {
+                    "& .MuiInputLabel-formControl": {
+                      transform: "translate(0, 16px) scale(1)",
+                    },
+                    "& .MuiInputLabel-formControl.Mui-focused, & .MuiInputLabel-formControl.MuiFormLabel-filled":
+                      {
+                        transform: "translate(5px, 0) scale(0.75)",
+                        transformOrigin: "top left",
+                      },
+                    "& label + .MuiInput-formControl": {
+                      marginTop: "5px",
+                    },
+                    "& .MuiInput-underline:before, & .MuiInput-underline:after":
+                      {
+                        borderBottom: 0,
+                      },
+                  },
+                  "& button.MuiIconButton-root": {
+                    width: 44,
+                    height: 44,
+                    fontSize: "16px !important",
+                  },
+                  "& .grow": {
+                    flexGrow: 1,
+                  },
+                  "& .MuiChip-root": {
+                    margin: "6px",
+                  },
+                }}
+              >
                 {(this.state.filter === "global" ||
                   this.state.filter === "chemical") && (
                   <Tooltip title="Filters" enterDelay={300}>
@@ -382,7 +383,7 @@ class SimpleSearch extends React.Component {
                       data-test-id={`s-search-filter-${key}`}
                       onClick={() => this.handleSelect(key)}
                       key={key}
-                      style={{ minHeight: "25px" }}
+                      sx={{ minHeight: "25px" }}
                       selected={this.state.filter == key}
                     >
                       {FILTERS[key]}
@@ -475,7 +476,7 @@ class SimpleSearch extends React.Component {
                   </IconButton>
                 </Tooltip>
               </Box>
-            </form>
+            </Box>
             <ScopeDialog
               open={this.state.recordsDialog}
               selectedRecords={this.state.selectedRecords}

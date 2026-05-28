@@ -7,6 +7,7 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
+import type { SxProps, Theme } from "@mui/material/styles";
 
 type ClearSearchArgs = {
   handleReset: () => void;
@@ -25,13 +26,6 @@ const ClearSearch = ({ handleReset }: ClearSearchArgs) => (
     </IconButton>
   </CustomTooltip>
 );
-
-type StyleArgs = {
-  display: string;
-  background: string;
-  border: string;
-  alignItems: string;
-};
 
 type FormArgs = {
   handleSearch: (newQuery: string) => void;
@@ -62,12 +56,13 @@ const Form = observer(
 
     return (
       <>
-        <form
+        <Box
+          component="form"
           onSubmit={(e) => {
             e.preventDefault();
             onSearch();
           }}
-          style={{ width: "100%" }}
+          sx={{ width: "100%" }}
         >
           <InputBase
             data-test-id="s-search-input-normal"
@@ -88,7 +83,7 @@ const Form = observer(
               <SearchOutlinedIcon />
             </IconButton>
           </CustomTooltip>
-        </form>
+        </Box>
         {query && <ClearSearch handleReset={handleReset} />}
       </>
     );
@@ -97,31 +92,33 @@ const Form = observer(
 
 type GenericsearchbarArgs = {
   handleSearch: (newQuery: string) => void;
-  style: StyleArgs;
+  sx?: SxProps<Theme>;
   placeholder: string;
   searchToolTip: string;
 };
 
+const defaultSx = {
+  display: "flex",
+  alignItems: "center",
+  background: "white",
+  border: "1px solid #808080",
+} as const;
+
 function Genericsearchbar({
   handleSearch,
-  style = {
-    display: "flex",
-    alignItems: "center",
-    background: "white",
-    border: "1px solid #808080",
-  },
+  sx = defaultSx,
   placeholder = "Search",
   searchToolTip = "Search",
 }: GenericsearchbarArgs): React.ReactNode {
   return (
-    <div style={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1 }}>
       <Box
         sx={{
           "& form": {
             display: "flex",
             alignItems: "center",
             borderRadius: "25px",
-            background: style.background || "white",
+            background: "white",
             paddingLeft: 5,
           },
           '& span[role="tooltip"]': {
@@ -140,7 +137,7 @@ function Genericsearchbar({
           },
         }}
       >
-        <Paper style={style} elevation={0}>
+        <Paper sx={sx} elevation={0}>
           <Form
             handleSearch={handleSearch}
             placeholder={placeholder}
@@ -148,7 +145,7 @@ function Genericsearchbar({
           />
         </Paper>
       </Box>
-    </div>
+    </Box>
   );
 }
 

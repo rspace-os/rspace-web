@@ -8,17 +8,6 @@ import Checkbox from "@mui/material/Checkbox";
 import { type Order } from "../util/types";
 import { type SxProps, type Theme } from "@mui/material/styles";
 
-const visuallyHiddenSx = {
-  border: 0,
-  clip: "rect(0 0 0 0)",
-  height: 1,
-  margin: -1,
-  overflow: "hidden",
-  p: 0,
-  position: "absolute",
-  top: 20,
-  width: 1,
-} as const;
 export type Cell<COLUMN_ID_TYPE extends React.Key> = {
   id: COLUMN_ID_TYPE;
   numeric: boolean;
@@ -105,7 +94,20 @@ export default function EnhancedTableHead<COLUMN_ID_TYPE extends React.Key>(
               >
                 {headCell.label}
                 {orderBy === headCell.id ? (
-                  <Box component="span" sx={visuallyHiddenSx}>
+                  <Box
+                    component="span"
+                    sx={{
+                      border: 0,
+                      clip: "rect(0 0 0 0)",
+                      height: 1,
+                      margin: -1,
+                      overflow: "hidden",
+                      p: 0,
+                      position: "absolute",
+                      top: 20,
+                      width: 1,
+                    }}
+                  >
                     {order === "desc"
                       ? "sorted descending"
                       : "sorted ascending"}

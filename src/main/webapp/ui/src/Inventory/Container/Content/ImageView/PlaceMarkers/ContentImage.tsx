@@ -2,6 +2,7 @@ import NumberedLocation from "../NumberedLocation";
 import LocationModel from "../../../../../stores/models/LocationModel";
 import Draggable from "../../../../../components/Draggable";
 import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
 import React, { useLayoutEffect, useState, useRef } from "react";
 import useStores from "../../../../../stores/use-stores";
 import { clamp } from "../../../../../util/Util";
@@ -226,9 +227,10 @@ function ContentImage({
             cursor: editable ? "crosshair" : "default",
           }}
         >
-          <img
+          <Box
+            component="img"
             src={activeResult.locationsImage || ""}
-            style={{
+            sx={{
               padding: 0,
               width: "auto",
               height: "auto",

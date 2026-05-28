@@ -351,12 +351,12 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
       )}
       {tooltipText ? (
         <CustomTooltip title={tooltipText}>
-          <div
+          <Box
             aria-disabled="true"
-            style={{ filter: "grayscale(1)", opacity: 0.6 }}
+            sx={{ filter: "grayscale(1)", opacity: 0.6 }}
           >
-            <div style={{ pointerEvents: "none" }}>{card}</div>
-          </div>
+            <Box sx={{ pointerEvents: "none" }}>{card}</Box>
+          </Box>
         </CustomTooltip>
       ) : (
         card

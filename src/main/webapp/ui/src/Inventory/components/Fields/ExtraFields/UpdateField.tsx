@@ -167,7 +167,7 @@ export default function UpdateField({
               {extraField.initial ? "Apply" : "Update"}
             </Button>
             <Button
-              style={{ marginLeft: "10px" }}
+              sx={{ marginLeft: "10px" }}
               disableElevation
               variant="text"
               aria-label="Cancel update"

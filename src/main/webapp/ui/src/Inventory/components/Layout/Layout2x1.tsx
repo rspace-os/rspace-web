@@ -94,17 +94,17 @@ const Layout2x1 = observer((props: Layout2x1Args) => {
   const hideLeftPanel = isSingleColumnLayout && uiStore.visiblePanel !== "left";
   const hideRightPanel =
     isSingleColumnLayout && uiStore.visiblePanel !== "right";
-  const outerSx = isSingleColumnLayout
-    ? { width: "100%", height: "100%", p: 0 }
-    : props.isDialog
-      ? { height: "calc(100vh - 100px)", p: 0, width: "100%", m: 0 }
-      : { p: 0, width: "100%", m: 0, height: "100%" };
-
   return (
     <Grid
       container
       spacing={isSingleColumnLayout ? 0 : 1}
-      sx={outerSx}
+      sx={
+        isSingleColumnLayout
+          ? { width: "100%", height: "100%", p: 0 }
+          : props.isDialog
+            ? { height: "calc(100vh - 100px)", p: 0, width: "100%", m: 0 }
+            : { p: 0, width: "100%", m: 0, height: "100%" }
+      }
     >
       <Grid
         hidden={hideLeftPanel}

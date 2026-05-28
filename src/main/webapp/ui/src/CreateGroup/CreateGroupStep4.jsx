@@ -1,5 +1,6 @@
 "use strict";
 import React from "react";
+import Box from "@mui/material/Box";
 
 const createGroupStep4 = (props) => {
   const styles = {
@@ -13,12 +14,14 @@ const createGroupStep4 = (props) => {
   const selfService = $("#selfServiceLabGroup").length != 0;
   const projectGroup = $("#projectGroup").length != 0;
   return (
-    <div style={styles.container}>
+    <Box sx={styles.container}>
       <h3>Summary</h3>
       <p data-test-id="createGroupSummaryGroupName">
         <strong>Group name:</strong>{" "}
         {props.summary.groupName === "" ? (
-          <span style={styles.error}>You require a group name</span>
+          <Box component="span" sx={styles.error}>
+            You require a group name
+          </Box>
         ) : (
           props.summary.groupName
         )}
@@ -27,7 +30,9 @@ const createGroupStep4 = (props) => {
         {projectGroup && <strong>Group Owner:</strong>}
         {!projectGroup && <strong>PI:</strong>}{" "}
         {props.summary.selectPI.selectedUser === "" ? (
-          <span style={styles.error}>You must select a PI</span>
+          <Box component="span" sx={styles.error}>
+            You must select a PI
+          </Box>
         ) : (
           props.summary.selectPI.selectedUser
         )}
@@ -42,7 +47,7 @@ const createGroupStep4 = (props) => {
           {props.summary.newUsers.join(", ")}
         </p>
       )}
-    </div>
+    </Box>
   );
 };
 

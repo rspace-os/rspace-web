@@ -92,7 +92,7 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
          */
         e.stopPropagation();
       }}
-      style={{
+      sx={{
         maxWidth: 500,
         /*
          * This stops the text content of the card from becoming selected when
@@ -108,13 +108,13 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
       <CardHeader
         title={record.name}
         subheader={record.cardTypeLabel}
-        style={{ paddingBottom: "4px" }}
+        sx={{ paddingBottom: "4px" }}
       />
-      <CardContent style={{ overflowY: "auto" }}>
+      <CardContent sx={{ overflowY: "auto" }}>
         <RecordDetails record={record} hideName />
       </CardContent>
       {record instanceof InventoryBaseRecord && (
-        <CardActions style={{ justifyContent: "flex-end" }}>
+        <CardActions sx={{ justifyContent: "flex-end" }}>
           {moveStore.isMoving ? (
             moveActions(record)
           ) : (

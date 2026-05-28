@@ -99,7 +99,7 @@ function InitialScreen(): React.ReactNode {
       <Main>
         <Layout
           colLeft={
-            <Container style={{ margin: "20px 0px" }}>
+            <Container sx={{ margin: "20px 0px" }}>
               <Typography variant="subtitle1" gutterBottom>
                 Navigate to:
               </Typography>

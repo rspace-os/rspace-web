@@ -7,6 +7,7 @@ import {
   StyledEngineProvider,
   ThemeProvider,
 } from "@mui/material";
+import Box from "@mui/material/Box";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
@@ -235,7 +236,7 @@ export function TreeViewWithFiles(): React.ReactNode {
                   <DisableDragAndDropByDefault>
                     <Alerts>
                       <LandmarksProvider>
-                        <div style={{ width: 300, height: 400 }}>
+                        <Box sx={{ width: 300, height: 400 }}>
                           <TreeView
                             listing={listing}
                             path={[]}
@@ -244,7 +245,7 @@ export function TreeViewWithFiles(): React.ReactNode {
                             sortOrder="ASC"
                             orderBy="name"
                           />
-                        </div>
+                        </Box>
                       </LandmarksProvider>
                     </Alerts>
                   </DisableDragAndDropByDefault>
@@ -282,7 +283,7 @@ export function TreeViewLoading(): React.ReactNode {
                         <CallableImagePreview>
                           <CallablePdfPreview>
                             <OpenFolderProvider setPath={() => {}}>
-                              <div style={{ width: 300, height: 400 }}>
+                              <Box sx={{ width: 300, height: 400 }}>
                                 <TreeView
                                   listing={listing}
                                   path={[]}
@@ -291,7 +292,7 @@ export function TreeViewLoading(): React.ReactNode {
                                   sortOrder="ASC"
                                   orderBy="name"
                                 />
-                              </div>
+                              </Box>
                             </OpenFolderProvider>
                           </CallablePdfPreview>
                         </CallableImagePreview>
@@ -332,7 +333,7 @@ export function TreeViewFoldersOnly(): React.ReactNode {
                         <CallableImagePreview>
                           <CallablePdfPreview>
                             <OpenFolderProvider setPath={() => {}}>
-                              <div style={{ width: 300, height: 400 }}>
+                              <Box sx={{ width: 300, height: 400 }}>
                                 <TreeView
                                   listing={listing}
                                   path={[]}
@@ -342,7 +343,7 @@ export function TreeViewFoldersOnly(): React.ReactNode {
                                   orderBy="name"
                                   foldersOnly={true}
                                 />
-                              </div>
+                              </Box>
                             </OpenFolderProvider>
                           </CallablePdfPreview>
                         </CallableImagePreview>
@@ -381,7 +382,7 @@ export function TreeViewEmpty(): React.ReactNode {
                         <CallableImagePreview>
                           <CallablePdfPreview>
                             <OpenFolderProvider setPath={() => {}}>
-                              <div style={{ width: 300, height: 400 }}>
+                              <Box sx={{ width: 300, height: 400 }}>
                                 <TreeView
                                   listing={listing}
                                   path={[]}
@@ -390,7 +391,7 @@ export function TreeViewEmpty(): React.ReactNode {
                                   sortOrder="ASC"
                                   orderBy="name"
                                 />
-                              </div>
+                              </Box>
                             </OpenFolderProvider>
                           </CallablePdfPreview>
                         </CallableImagePreview>

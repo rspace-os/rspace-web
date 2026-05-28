@@ -225,8 +225,8 @@ const DragCancelFab = () => {
   return (
     <>
       {dndInProgress && (
-        <div
-          style={{
+        <Box
+          sx={{
             position: "fixed",
             right: "16px",
             bottom: "16px",
@@ -238,11 +238,11 @@ const DragCancelFab = () => {
             ref={(node) => {
               setDropRef(node);
             }}
-            style={dropStyle}
+            sx={dropStyle}
           >
             Cancel
           </Fab>
-        </div>
+        </Box>
       )}
     </>
   );
@@ -992,11 +992,11 @@ const GridView = observer(
       );
     return (
       <>
-        <div
+        <Box
           role="grid"
           aria-label="grid view of files"
           aria-multiselectable="true"
-          style={{
+          sx={{
             display: "grid",
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
             gap: theme.spacing(2),
@@ -1100,10 +1100,10 @@ const GridView = observer(
         >
           {ArrayUtils.chunksOf(cols, listing.list).map(
             (files: Array<GalleryFile>, y: number) => (
-              <div
+              <Box
                 role="row"
                 key={y}
-                style={{
+                sx={{
                   display: "contents",
                 }}
               >
@@ -1237,10 +1237,10 @@ const GridView = observer(
                     }}
                   />
                 ))}
-              </div>
+              </Box>
             ),
           )}
-        </div>
+        </Box>
         {listing.loadMore
           .map((loadMore) => (
             <Box

@@ -57,7 +57,6 @@ type CardStructureArgs = {
   subheader: React.ReactNode | string;
   title: React.ReactNode;
   onClick?: () => void;
-  className?: string;
   deleted?: boolean;
   sx?: React.ComponentProps<typeof Card>["sx"];
 };
@@ -71,35 +70,36 @@ function CardStructure({
   subheader,
   title,
   onClick,
-  className,
   deleted = false,
   sx,
 }: CardStructureArgs): React.ReactNode {
   const theme = useTheme();
-  const cardSx = (
-    sx
-      ? [
-          {
-            height: "100%",
-            "&:hover": {
-              backgroundColor: theme.palette.background.default,
-            },
-          },
-          sx,
-        ]
-      : [
-          {
-            height: "100%",
-            "&:hover": {
-              backgroundColor: theme.palette.background.default,
-            },
-          },
-        ]
-  ) as React.ComponentProps<typeof Card>["sx"];
 
   return (
-    <Card className={className} sx={cardSx} role="region">
-      <Grid container style={{ height: "100%" }}>
+    <Card
+      sx={
+        (sx
+          ? [
+              {
+                height: "100%",
+                "&:hover": {
+                  backgroundColor: theme.palette.background.default,
+                },
+              },
+              sx,
+            ]
+          : [
+              {
+                height: "100%",
+                "&:hover": {
+                  backgroundColor: theme.palette.background.default,
+                },
+              },
+            ]) as React.ComponentProps<typeof Card>["sx"]
+      }
+      role="region"
+    >
+      <Grid container sx={{ height: "100%" }}>
         <Grid
           sx={{
             filter: deleted ? "grayscale(1)" : "none",

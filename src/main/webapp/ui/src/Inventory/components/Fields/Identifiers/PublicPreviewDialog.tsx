@@ -32,13 +32,9 @@ const missingDataAlert: string =
 /**
  * Alert to display when required identifier data is missing
  */
-export const MissingDataAlert = ({
-  className,
-}: {
-  className?: string;
-}): React.ReactNode => {
+export const MissingDataAlert = (): React.ReactNode => {
   return (
-    <Alert severity="warning" className={className}>
+    <Alert severity="warning">
       {missingDataAlert}
     </Alert>
   );

@@ -7,6 +7,7 @@ import InputBase from "@mui/material/InputBase";
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
 import { createRoot } from "react-dom/client";
+import Box from "@mui/material/Box";
 
 function BaseSearch(props: {
   onSubmit?: string | (() => void);
@@ -45,9 +46,10 @@ function BaseSearch(props: {
       variant={props.variant}
       data-test-id="base-search-content"
     >
-      <form
+      <Box
+        component="form"
         onSubmit={submitSearch}
-        style={{
+        sx={{
           display: "flex",
           width: "100%",
           alignItems: "center",
@@ -74,7 +76,7 @@ function BaseSearch(props: {
         >
           <SearchIcon />
         </IconButton>
-      </form>
+      </Box>
     </Paper>
   );
 }

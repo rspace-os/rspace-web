@@ -8,23 +8,15 @@ type MainArgs = {
   sx?: SxProps<Theme>;
 } & React.HTMLAttributes<HTMLElement>;
 
-const baseSx: SxProps<Theme> = {
-  flexGrow: 1,
-  minWidth: 0,
-  height: "100%",
-};
-
 export default React.forwardRef<HTMLElement, MainArgs>(function Main(
   { children, sx, ...htmlAttributes },
   ref,
 ) {
-  const composedSx: SxProps<Theme> = mergeSx(baseSx, sx);
-
   return (
     <Box
       component="main"
       ref={ref}
-      sx={composedSx}
+      sx={mergeSx({ flexGrow: 1, minWidth: 0, height: "100%" }, sx)}
       {...htmlAttributes}
     >
       {children}

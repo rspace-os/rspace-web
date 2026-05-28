@@ -12,6 +12,7 @@ import Select from "react-select";
 import EmailValidator from "email-validator";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
+import Box from "@mui/material/Box";
 
 class createGroupStep3 extends React.Component {
   constructor(props) {
@@ -71,7 +72,7 @@ class createGroupStep3 extends React.Component {
 
     for (let i = 0; i < emailList.length; i++) {
       display.push(
-        <Grid style={this.styles.chipSpacing} size={12}>
+        <Grid sx={{ marginBottom: "5px" }} size={12}>
           <Chip
             label={emailList[i].slice(0, 20)}
             onDelete={() => this.handleDelete(emailList[i], type)}
@@ -135,26 +136,6 @@ class createGroupStep3 extends React.Component {
     });
   };
 
-  styles = {
-    container: {
-      padding: "0 25px 10px 25px",
-    },
-    paperContainer: {
-      padding: "10px",
-    },
-    chipSpacing: {
-      marginBottom: "5px",
-    },
-    selectSpacing: {
-      marginTop: "36.5px",
-      paddingBottom: "6px",
-    },
-    userDisplay: {
-      overflow: "auto",
-      maxHeight: "250px",
-    },
-  };
-
   componentDidMount() {
     this.setState({
       existingUsers: [...this.props.existingUsers],
@@ -183,15 +164,15 @@ class createGroupStep3 extends React.Component {
       : this.buildUserDisplay("newUsers");
 
     return (
-      <div style={this.styles.container}>
+      <Box sx={{ padding: "0 25px 10px 25px" }}>
         <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider theme={materialTheme}>
             <Grid container spacing={8}>
               <Grid size={6}>
-                <Paper style={this.styles.paperContainer}>
+                <Paper sx={{ padding: "10px" }}>
                   <h2>Invite RSpace users</h2>
-                  <div
-                    style={this.styles.selectSpacing}
+                  <Box
+                    sx={{ marginTop: "36.5px", paddingBottom: "6px" }}
                     data-test-id="createGroupInviteMembers"
                   >
                     {" "}
@@ -200,7 +181,7 @@ class createGroupStep3 extends React.Component {
                       type at least 3 characters
                     </p>
                     <Select
-                      style={this.styles.selectSpacing}
+                      style={{ marginTop: "36.5px", paddingBottom: "6px" }}
                       name="existingUsers"
                       options={this.state.returnedUserList}
                       onInputChange={this.getCurrentUsers}
@@ -208,15 +189,15 @@ class createGroupStep3 extends React.Component {
                       placeholder="Enter email address"
                       classNamePrefix="seleniumTest"
                     />
-                  </div>
-                  <Grid style={this.styles.userDisplay}>
+                  </Box>
+                  <Grid sx={{ overflow: "auto", maxHeight: "250px" }}>
                     {existingUsersDisplay}
                   </Grid>
                 </Paper>
               </Grid>
               {newUsersDisplay && (
                 <Grid size={6}>
-                  <Paper style={this.styles.paperContainer}>
+                  <Paper sx={{ padding: "10px" }}>
                     <h2>Invite new users</h2>
                     <FormControl error aria-describedby="email-error-text">
                       <TextField
@@ -236,7 +217,7 @@ class createGroupStep3 extends React.Component {
                         </FormHelperText>
                       )}
                     </FormControl>
-                    <Grid style={this.styles.userDisplay}>
+                    <Grid sx={{ overflow: "auto", maxHeight: "250px" }}>
                       {newUsersDisplay}
                     </Grid>
                   </Paper>
@@ -245,7 +226,7 @@ class createGroupStep3 extends React.Component {
             </Grid>
           </ThemeProvider>
         </StyledEngineProvider>
-      </div>
+      </Box>
     );
   }
 }

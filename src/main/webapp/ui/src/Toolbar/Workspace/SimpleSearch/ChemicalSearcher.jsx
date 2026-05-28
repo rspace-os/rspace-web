@@ -137,10 +137,11 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
       {
         headerName: "Preview",
         renderCell: (params) => (
-          <img
+          <Box
+            component="img"
             src={params.value}
             alt="Chemical Preview"
-            style={{ width: "150px", height: "150px", marginTop: "8px" }}
+            sx={{ width: "150px", height: "150px", marginTop: "8px" }}
           />
         ),
         sortable: false,

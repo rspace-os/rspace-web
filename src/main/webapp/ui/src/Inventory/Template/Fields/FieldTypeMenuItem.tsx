@@ -49,9 +49,9 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
           inMenu ? (
             menuItem
           ) : (
-            <div style={{ height: 72 }}>
+            <Box sx={{ height: 72 }}>
               <Paper>{menuItem}</Paper>
-            </div>
+            </Box>
           )
         }
       </Observer>

@@ -10,6 +10,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
+import Box from "@mui/material/Box";
 
 function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }) {
   const [bioOntologiesAllowedStatus, setBioOntologiesAllowedStatus] =
@@ -157,14 +158,14 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }) {
                   BioPortal Ontologies Portal
                 </a>{" "}
                 and use the values to generate tag suggestions{" "}
-                <div style={{ fontSize: "8px" }}>
+                <Box sx={{ fontSize: "8px" }}>
                   Whetzel PL, Noy NF, Shah NH, Alexander PR, Nyulas C, Tudorache
                   T, Musen MA. BioPortal: enhanced functionality via new Web
                   services from the National Center for Biomedical Ontology to
                   access and use ontologies in software applications. Nucleic
                   Acids Res. 2011 Jul;39(Web Server issue):W541-5. Epub 2011 Jun
                   14.
-                </div>
+                </Box>
               </DialogContentText>
             </DialogContent>
             <DialogActions>

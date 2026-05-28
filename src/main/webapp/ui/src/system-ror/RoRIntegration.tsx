@@ -10,6 +10,7 @@ import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
 import { faMinus } from "@fortawesome/free-solid-svg-icons/faMinus";
 import Alert from "@mui/material/Alert";
 import { Button } from "@mui/material";
+import Box from "@mui/material/Box";
 
 type Location = { geonames_details: { name: string; country_name: string } };
 type Name = { types: Array<string>; value: string };
@@ -28,24 +29,27 @@ type RoRApiResponse = RORDataV2;
 
 type RSpaceApiResponse = { data: { exceptionMessage?: string } };
 
-function RorDetails(props: React.HTMLAttributes<HTMLDivElement>): React.ReactNode {
+function RorDetails(
+  props: React.HTMLAttributes<HTMLDivElement>,
+): React.ReactNode {
   return (
-    <div
+    <Box
       {...props}
-      style={{ fontSize: "18px", margin: "0.5em 0.5em 0.5em 0", ...props.style }}
+      sx={{ fontSize: "18px", margin: "0.5em 0.5em 0.5em 0" }}
     />
   );
 }
 
-function RorHelpText(props: React.HTMLAttributes<HTMLDivElement>): React.ReactNode {
+function RorHelpText(
+  props: React.HTMLAttributes<HTMLDivElement>,
+): React.ReactNode {
   return (
-    <div
+    <Box
       {...props}
-      style={{
+      sx={{
         width: "80%",
         fontSize: "14px",
         margin: "0.5em 0.5em 0.5em 0",
-        ...props.style,
       }}
     />
   );
@@ -55,9 +59,10 @@ function RorErrorHelpText(
   props: React.HTMLAttributes<HTMLSpanElement>,
 ): React.ReactNode {
   return (
-    <span
+    <Box
+      component="span"
       {...props}
-      style={{ fontSize: "14px", backgroundColor: "#d9d9d9", ...props.style }}
+      sx={{ fontSize: "14px", backgroundColor: "#d9d9d9" }}
     />
   );
 }
@@ -263,7 +268,7 @@ function RoRIntegration(): React.ReactNode {
           {!ror && (
             <GenericsearchBar
               handleSearch={handleSearch}
-              style={{
+              sx={{
                 alignItems: "center",
                 display: "flex",
                 background: "white",

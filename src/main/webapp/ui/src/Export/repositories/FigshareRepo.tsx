@@ -49,7 +49,7 @@ export default function FigshareRepo({
   publish,
 }: FigshareArgs): React.ReactNode {
   return (
-    <Grid container style={{ width: "100%" }}>
+    <Grid container sx={{ width: "100%" }}>
       <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.title}
@@ -121,14 +121,14 @@ export default function FigshareRepo({
         </TextField>
       </Grid>
       <Grid size={12}>
-        <FormControl component="fieldset" style={{ marginTop: "20px" }}>
+        <FormControl component="fieldset" sx={{ marginTop: "20px" }}>
           <FormLabel component="legend">Publishing status</FormLabel>
           <RadioGroup
             aria-label="Publishing status"
             name="publish"
             // @ts-expect-error React event handlers are not parameterised by the name prop
             onChange={handleChange}
-            style={{
+            sx={{
               flexDirection: "row",
             }}
             value={publish}

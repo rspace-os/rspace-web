@@ -162,7 +162,7 @@ const Fields = observer(
                 </TableCell>
                 <TableCell>{f.name}</TableCell>
                 <TableCell
-                  style={{
+                  sx={{
                     opacity: f.selected ? 1.0 : 0.3,
                   }}
                 >

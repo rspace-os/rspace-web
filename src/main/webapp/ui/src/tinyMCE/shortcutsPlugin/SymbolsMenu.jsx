@@ -35,7 +35,7 @@ export default function SymbolsMenu(props) {
 
   return (
     <Paper
-      style={{
+      sx={{
         border: "1px solid rgb(240,240,240)",
         margin: "0px 0px 15px 0px",
         width: "100%",
@@ -60,7 +60,7 @@ export default function SymbolsMenu(props) {
             <Tooltip title={symbol[1]} aria-label={symbol[1]} key={symbol[0]}>
               <Button
                 onClick={() => props.onNewShortcut(symbol)}
-                style={{ fontSize: "18px", minWidth: "45px" }}
+                sx={{ fontSize: "18px", minWidth: "45px" }}
               >
                 {String.fromCharCode(symbol[0])}
               </Button>

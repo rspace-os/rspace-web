@@ -13,28 +13,6 @@ import useIsTextWiderThanField from "../../../hooks/ui/useIsTextWiderThanField";
 import SearchDialog from "../../../components/SearchDialog";
 import { runInAction } from "mobx";
 
-const searchBarSx = {
-  "& form": {
-    display: "flex",
-    alignItems: "center",
-    width: "100%",
-  },
-  "& .MuiTextField-root": {
-    flexGrow: 1,
-    "& .MuiOutlinedInput-root": {
-      "& input:focus, & input:hover": {
-        backgroundColor: "transparent !important",
-      },
-    },
-    "& .MuiOutlinedInput-input": {
-      padding: "8px 0 8px 0",
-    },
-  },
-  "& .grow": {
-    flexGrow: 1,
-  },
-};
-
 type FormArgs = {
   handleSearch: (query: string) => void;
 };
@@ -67,12 +45,13 @@ const Form = observer(({ handleSearch }: FormArgs) => {
 
   return (
     <>
-      <form
+      <Box
+        component="form"
         onSubmit={(e) => {
           e.preventDefault();
           onSearch();
         }}
-        style={{ width: "100%" }}
+        sx={{ width: "100%" }}
       >
         <TextField
           data-test-id="s-search-input-normal"
@@ -118,7 +97,7 @@ const Form = observer(({ handleSearch }: FormArgs) => {
           query={search.fetcher.query ?? ""}
           setQuery={handleChange}
         />
-      </form>
+      </Box>
     </>
   );
 });
@@ -147,10 +126,32 @@ type SearchbarArgs = {
 
 function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
   return (
-    <div style={{ flexGrow: 1 }}>
-      <Box sx={searchBarSx}>
+    <Box sx={{ flexGrow: 1 }}>
+      <Box
+        sx={{
+          "& form": {
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+          },
+          "& .MuiTextField-root": {
+            flexGrow: 1,
+            "& .MuiOutlinedInput-root": {
+              "& input:focus, & input:hover": {
+                backgroundColor: "transparent !important",
+              },
+            },
+            "& .MuiOutlinedInput-input": {
+              padding: "8px 0 8px 0",
+            },
+          },
+          "& .grow": {
+            flexGrow: 1,
+          },
+        }}
+      >
         <Paper
-          style={{
+          sx={{
             display: "flex",
             alignItems: "center",
           }}
@@ -159,7 +160,7 @@ function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
           <Form handleSearch={handleSearch} />
         </Paper>
       </Box>
-    </div>
+    </Box>
   );
 }
 

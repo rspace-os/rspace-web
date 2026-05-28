@@ -3,6 +3,7 @@ import React from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../theme";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import OAuthTable from "./OAuthTable";
 import { createRoot } from "react-dom/client";
@@ -18,11 +19,11 @@ export default function OAuthTrigger(props) {
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         {!open && (
-          <div style={{ width: "690px", padding: "0px 15px" }}>
+          <Box sx={{ width: "690px", padding: "0px 15px" }}>
             <Button color="primary" onClick={handleOpen}>
               Show Created OAuth Apps
             </Button>
-          </div>
+          </Box>
         )}
         {open && <OAuthTable />}
       </ThemeProvider>

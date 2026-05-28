@@ -1,4 +1,5 @@
 import React from "react";
+import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 
 type BenchIconArgs = {
@@ -8,7 +9,10 @@ type BenchIconArgs = {
 function BenchIcon({ color }: BenchIconArgs): React.ReactNode {
   const theme = useTheme();
   return (
-    <span style={{ width: 16, position: "relative", display: "block" }}>
+    <Box
+      component="span"
+      sx={{ width: 16, position: "relative", display: "block" }}
+    >
       <svg
         version="1.1"
         id="Layer_1"
@@ -31,7 +35,7 @@ function BenchIcon({ color }: BenchIconArgs): React.ReactNode {
       C97.25,28.47,96.28,28,95.083,28z M62.326,46H37.685l2.54-8h19.562L62.326,46z"
         />
       </svg>
-    </span>
+    </Box>
   );
 }
 

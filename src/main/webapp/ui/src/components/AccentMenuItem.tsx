@@ -68,9 +68,7 @@ type AccentMenuItemArgs = {
  */
 const AccentMenuItem = React.forwardRef<
   typeof MenuItem,
-  AccentMenuItemArgs & {
-    className?: string;
-  }
+  AccentMenuItemArgs
 >(
   (
     {
@@ -78,7 +76,6 @@ const AccentMenuItem = React.forwardRef<
       backgroundColor,
       avatarBackgroundColor,
       compact,
-      className,
       onClick,
       onKeyDown,
       disabled,
@@ -98,7 +95,6 @@ const AccentMenuItem = React.forwardRef<
   ) => (
     <MenuItem
       ref={ref}
-      className={className}
       onKeyDown={onKeyDown}
       onClick={onClick}
       disabled={disabled}

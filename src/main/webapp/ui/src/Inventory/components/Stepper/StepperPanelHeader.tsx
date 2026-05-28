@@ -153,7 +153,7 @@ function StepperPanelHeader_({
             {title}
           </Heading>
         </Grid>
-        <Grid style={{ flexGrow: 1 }}></Grid>
+        <Grid sx={{ flexGrow: 1 }}></Grid>
         <Grid>
           <Slide direction="left" in={allBtn}>
             <Chip

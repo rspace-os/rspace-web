@@ -219,7 +219,7 @@ export default function DataciteCard({
            */
           disabled={unsavedChanges}
           variant="outlined"
-          style={{ minWidth: "max-content" }}
+          sx={{ minWidth: "max-content" }}
           onClick={() => {
             ApiService.get<boolean>("/identifiers/testDataCiteConnection")
               .then(({ data }) => {

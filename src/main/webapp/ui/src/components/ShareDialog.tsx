@@ -894,7 +894,7 @@ export function ShareDialog({
                             <Typography
                               variant="body2"
                               color="text.secondary"
-                              style={{ fontStyle: "italic" }}
+                              sx={{ fontStyle: "italic" }}
                             >
                               This {singularName} is not directly shared with
                               anyone.

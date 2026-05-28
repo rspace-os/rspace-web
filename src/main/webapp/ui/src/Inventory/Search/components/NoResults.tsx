@@ -25,18 +25,18 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
         mb: 1,
       }}
     >
-      <div
-        style={{
+      <Box
+        sx={{
           flexGrow: 1,
           background: `center / contain no-repeat url("${NoResultsSvg}")`,
           width: "100%",
           minHeight: "50px",
           maxHeight: "200px",
         }}
-      ></div>
-      <span style={{ color: darken(theme.palette.primary.main, 0.2) }}>
+      />
+      <Box component="span" sx={{ color: darken(theme.palette.primary.main, 0.2) }}>
         No results.
-      </span>
+      </Box>
       <Typography
         sx={{
           textAlign: "center",

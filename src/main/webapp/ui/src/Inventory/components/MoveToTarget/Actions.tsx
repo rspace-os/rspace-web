@@ -1,6 +1,7 @@
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import useStores from "../../../stores/use-stores";
 import Stepper from "./Stepper";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
@@ -76,7 +77,7 @@ function Actions({
   return !isSingleColumnLayout ? (
     <>
       <TopLevelButton onClose={handleClose} />
-      <div style={{ flexGrow: 1 }}></div>
+      <Box sx={{ flexGrow: 1 }} />
       <CancelButton onClick={handleClose} />
       <MoveSubmitButton
         handleSubmit={handleMove}

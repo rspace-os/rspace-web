@@ -84,12 +84,6 @@ const containerTypeSx = (
   return undefined;
 };
 
-const greyOutSx: React.ComponentProps<typeof Box>["sx"] = {
-  filter: "grayscale(1)",
-  pointerEvents: "none",
-  opacity: 0.6,
-};
-
 type LocationContentArgs = {
   location: Location;
   container: Container;
@@ -167,23 +161,6 @@ type EmptyLocationContentProps = {
   hasFocus: boolean;
 };
 
-const EMPTY_GRID_CELL_STYLE: React.CSSProperties = {
-  fontSize: "12px",
-  backgroundColor: "white",
-  width: "100%",
-  height: "100%",
-  textAlign: "center",
-  paddingTop: "calc(50% - 10px)",
-};
-
-const EMPTY_IMAGE_CELL_STYLE: React.CSSProperties = {
-  fontSize: "12px",
-  backgroundColor: "white",
-  width: "100%",
-  height: "100%",
-  textAlign: "center",
-};
-
 const EmptyLocationContent = ({
   location,
   tabIndex,
@@ -200,9 +177,19 @@ const EmptyLocationContent = ({
         (location.parentContainer.gridLayout?.columnsNumber || 0) +
       location.coordX;
     return (
-      <div tabIndex={tabIndex} style={EMPTY_GRID_CELL_STYLE}>
+      <Box
+        tabIndex={tabIndex}
+        sx={{
+          fontSize: "12px",
+          backgroundColor: "white",
+          width: "100%",
+          height: "100%",
+          textAlign: "center",
+          paddingTop: "calc(50% - 10px)",
+        }}
+      >
         {gridIndex()}
-      </div>
+      </Box>
     );
   }
   if (location.parentContainer.cType === "IMAGE") {
@@ -215,7 +202,17 @@ const EmptyLocationContent = ({
           loc.coordX === location.coordX && loc.coordY === location.coordY
       ) + 1;
     return (
-      <div style={EMPTY_IMAGE_CELL_STYLE}>{imageIndex()}</div>
+      <Box
+        sx={{
+          fontSize: "12px",
+          backgroundColor: "white",
+          width: "100%",
+          height: "100%",
+          textAlign: "center",
+        }}
+      >
+        {imageIndex()}
+      </Box>
     );
   }
   return <></>;
@@ -233,16 +230,24 @@ function LocationContent({
   const theme = useTheme();
   const { search } = React.useContext(SearchContext);
 
-  const composedWrapperSx = [
-    wrapperSx(theme),
-    containerTypeSx(location),
-    selectionSx(location, theme, search),
-    location.isGreyedOut(search) ? greyOutSx : undefined,
-  ] as React.ComponentProps<typeof Box>["sx"];
-
   return (
-    <Box sx={composedWrapperSx}>
-      <RelativeBox style={{ width: "100%", height: "100%" }}>
+    <Box
+      sx={
+        [
+          wrapperSx(theme),
+          containerTypeSx(location),
+          selectionSx(location, theme, search),
+          location.isGreyedOut(search)
+            ? {
+                filter: "grayscale(1)",
+                pointerEvents: "none",
+                opacity: 0.6,
+              }
+            : undefined,
+        ] as React.ComponentProps<typeof Box>["sx"]
+      }
+    >
+      <RelativeBox sx={{ width: "100%", height: "100%" }}>
         {location.content ? (
           <DragAndDrop.Draggable
             container={container}

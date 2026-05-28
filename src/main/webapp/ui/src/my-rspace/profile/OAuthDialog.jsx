@@ -184,7 +184,7 @@ export default function OAuthDialog(props) {
                     label="Client ID"
                     variant="filled"
                     value={clientId}
-                    style={{ marginRight: "10px", width: "calc(100% - 55px)" }}
+                    sx={{ marginRight: "10px", width: "calc(100% - 55px)" }}
                     slotProps={{
                       htmlInput: { "aria-label": "Client ID" },
                     }}
@@ -198,13 +198,13 @@ export default function OAuthDialog(props) {
                     </IconButton>
                   </Tooltip>
                 </Grid>
-                <Grid style={{ marginTop: "10px" }} size={12}>
+                <Grid sx={{ marginTop: "10px" }} size={12}>
                   <TextField
                     inputRef={clientSecretRef}
                     label="Client Secret"
                     variant="filled"
                     value={unhashedClientSecret}
-                    style={{ marginRight: "10px", width: "calc(100% - 55px)" }}
+                    sx={{ marginRight: "10px", width: "calc(100% - 55px)" }}
                     slotProps={{
                       htmlInput: { "aria-label": "Client secret" },
                     }}
@@ -222,7 +222,7 @@ export default function OAuthDialog(props) {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleClose} style={{ color: "grey" }}>
+            <Button onClick={handleClose} sx={{ color: "grey" }}>
               {created ? "Close" : "Cancel"}
             </Button>
             {!created && (

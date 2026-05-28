@@ -121,7 +121,7 @@ function Template(): React.ReactNode {
             direction="row"
             sx={{ alignItems: "center", justifyContent: "space-between" }}
           >
-            <Grid style={{ flexGrow: 1 }}>
+            <Grid sx={{ flexGrow: 1 }}>
               <SummaryInfo
                 template={template}
                 loading={

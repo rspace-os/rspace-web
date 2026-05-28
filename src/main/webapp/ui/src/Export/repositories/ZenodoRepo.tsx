@@ -84,7 +84,7 @@ export default function ZenodoRepo({
   }, []);
 
   return (
-    <Grid container style={{ width: "100%" }}>
+    <Grid container sx={{ width: "100%" }}>
       <Grid size={12}>
         <TextField
           name="title"

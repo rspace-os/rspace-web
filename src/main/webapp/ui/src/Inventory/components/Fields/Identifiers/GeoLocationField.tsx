@@ -481,16 +481,17 @@ const GeoLocationField = ({
           <Divider orientation="horizontal" variant="middle" />
           <CardContent sx={{ pt: 1 }}>
             <Stack spacing={1}>
-              <fieldset
-                style={{
+              <Box
+                component="fieldset"
+                sx={{
                   border: "1px solid rgba(0, 0, 0, 0.12)",
                   margin: 0,
                   borderRadius: "4px",
-                  padding: 16,
+                  padding: "16px",
                   paddingTop: 0,
                 }}
               >
-                <legend style={{ padding: "2px 8px" }}>Point</legend>
+                <Box component="legend" sx={{ padding: "2px 8px" }}>Point</Box>
                 <Grid container direction="row" spacing={1}>
                   <Grid size={6}>
                     <InputWrapper label="Latitude">
@@ -507,35 +508,37 @@ const GeoLocationField = ({
                     </InputWrapper>
                   </Grid>
                 </Grid>
-              </fieldset>
-              <fieldset
-                style={{
+              </Box>
+              <Box
+                component="fieldset"
+                sx={{
                   border: "1px solid rgba(0, 0, 0, 0.12)",
                   margin: 0,
                   borderRadius: "4px",
-                  padding: 16,
+                  padding: "16px",
                   paddingTop: 0,
                 }}
               >
-                <legend style={{ padding: "2px 8px" }}>Place</legend>
+                <Box component="legend" sx={{ padding: "2px 8px" }}>Place</Box>
                 <InputWrapper label="Description">
                   {geoLocationPlace ? (
                     geoLocationPlace
                   ) : (
-                    <em style={{ color: "#949494" }}>None</em>
+                    <Box component="em" sx={{ color: "#949494" }}>None</Box>
                   )}
                 </InputWrapper>
-              </fieldset>
-              <fieldset
-                style={{
+              </Box>
+              <Box
+                component="fieldset"
+                sx={{
                   border: "1px solid rgba(0, 0, 0, 0.12)",
                   margin: 0,
                   borderRadius: "4px",
-                  padding: 16,
+                  padding: "16px",
                   paddingTop: 0,
                 }}
               >
-                <legend style={{ padding: "2px 8px" }}>Box</legend>
+                <Box component="legend" sx={{ padding: "2px 8px" }}>Box</Box>
                 <Grid container direction="row" spacing={1}>
                   <Grid size={6}>
                     <InputWrapper label="North Latitude">
@@ -566,7 +569,7 @@ const GeoLocationField = ({
                     </InputWrapper>
                   </Grid>
                 </Grid>
-              </fieldset>
+              </Box>
               <CustomFieldset>
                 <legend>Polygon</legend>
                 <Stack direction="row">

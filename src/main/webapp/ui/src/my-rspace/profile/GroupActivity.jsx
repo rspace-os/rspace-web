@@ -3,6 +3,7 @@ import React from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../theme";
+import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -52,7 +53,7 @@ export default function GroupActivity(props) {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
-        <div style={{ width: "690px", padding: "0px 15px" }}>
+        <Box sx={{ width: "690px", padding: "0px 15px" }}>
           {!fetched && (
             <Button color="primary" onClick={loadUserActivity}>
               Show group activity
@@ -100,7 +101,7 @@ export default function GroupActivity(props) {
               </Table>
             </>
           )}
-        </div>
+        </Box>
       </ThemeProvider>
     </StyledEngineProvider>
   );

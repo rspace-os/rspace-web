@@ -10,6 +10,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { preventEventBubbling } from "../../../../../util/Util";
 import { observer } from "mobx-react-lite";
+import Box from "@mui/material/Box";
 import InfoBadge from "../../../../components/InfoBadge";
 import InfoCard from "../../../../components/InfoCard";
 import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
@@ -93,7 +94,7 @@ function LocationsTable({
               <InfoCard record={location.content} />
             </InfoBadge>
           )}
-          {location.name ?? <span style={{ paddingLeft: 20 }}>&mdash;</span>}
+          {location.name ?? <Box component="span" sx={{ paddingLeft: "20px" }}>&mdash;</Box>}
         </TableCell>
         <TableCell sx={{ paddingRight: 0 }}>
           <ButtonGroup color="primary" size="small">

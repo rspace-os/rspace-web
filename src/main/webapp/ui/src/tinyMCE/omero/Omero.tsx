@@ -9,6 +9,7 @@ import {
   getImage,
   getPlateAcquisitions,
 } from "./OmeroClient";
+import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import { FormControlLabel, Stack } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -612,18 +613,18 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       const restOfText = annotation.substring(originalText.length);
       return annotation.indexOf("Publication Title") !== -1 ? (
         <div key={annotationId}>
-          <div
+          <Box
             id={`${item.type}_first_description_${item.id}`}
-              style={{ fontStyle: "italic", fontWeight: "bold" }}
+            sx={{ fontStyle: "italic", fontWeight: "bold" }}
           >
             {publicationTitle}
-          </div>
-          <div
+          </Box>
+          <Box
             id={`${item.type}_rest_description_${item.id}`}
-              style={{ fontWeight: "lighter" }}
+            sx={{ fontWeight: "lighter" }}
           >
             {restOfText}
-          </div>
+          </Box>
         </div>
       ) : (
         <div key={annotationId} data-testid={annotationId}>

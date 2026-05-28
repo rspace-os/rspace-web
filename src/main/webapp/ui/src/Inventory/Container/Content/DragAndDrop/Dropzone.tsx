@@ -123,13 +123,13 @@ export const Dropzone = observer(
          * operation.
          */
         return (
-          <div
-            style={{
+          <Box
+            sx={{
               filter: "grayscale(0.65) opacity(0.75)",
             }}
           >
             {children}
-          </div>
+          </Box>
         );
       if (thisLocationIsTheOrigin(location))
         /*
@@ -145,7 +145,7 @@ export const Dropzone = observer(
        * may be moved into these locations during the same drag-and-drop
        * operation i.e. consider a list of items all being moved one along.
        */
-      return <div style={{ opacity: 0 }}>{children}</div>;
+      return <Box sx={{ opacity: 0 }}>{children}</Box>;
     }
 
     return (

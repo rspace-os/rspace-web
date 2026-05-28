@@ -116,7 +116,7 @@ export default function ChoiceField<OptionValue extends string>({
               />
             }
             label={option.editing ? "" : option.label}
-            style={{
+            sx={{
               marginRight: option.editing ? 0 : "initial",
               overflowWrap: "anywhere",
             }}

@@ -2,6 +2,7 @@
 import React from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import Box from "@mui/material/Box";
 import materialTheme from "../theme";
 import { createRoot } from "react-dom/client";
 
@@ -17,10 +18,11 @@ export default function FileTreeToolbar() {
    */
   function content() {
     return (
-      <div style={{ display: "flex", width: "100%" }}>
+      <Box sx={{ display: "flex", width: "100%" }}>
         <TreeSort justifyContent="flex-start" selectPaddingLeft={5} />
-        <ul
-          style={{
+        <Box
+          component="ul"
+          sx={{
             position: "absolute",
             right: 0,
             height: "100%",
@@ -34,14 +36,14 @@ export default function FileTreeToolbar() {
           }}
         >
           <li>
-            <button
+            <Box
+              component="button"
               type="button"
               id="hideFileTreeSmall"
-              className="rs-actionbar__item rs-actionbar__item--icon"
               title="Hide tree browser"
               data-test-id="hide-tree"
               aria-label="Hide tree browser"
-              style={{
+              sx={{
                 color: "white",
                 fontSize: "18px",
                 background: "transparent",
@@ -51,10 +53,10 @@ export default function FileTreeToolbar() {
               }}
             >
               <span className="glyphicon glyphicon-menu-right"></span>
-            </button>
+            </Box>
           </li>
-        </ul>
-      </div>
+        </Box>
+      </Box>
     );
   }
 

@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../theme";
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import PrintButton from "../components/PrintButton";
@@ -47,7 +48,7 @@ class NotebookToolbar extends React.Component {
   content = () => {
     return (
       <>
-        <span style={{ display: "flex", width: "100%" }}>
+        <Box component="span" sx={{ display: "flex", width: "100%" }}>
           <Tooltip title="Back" enterDelay={300}>
             <IconButton
               id="close"
@@ -57,13 +58,14 @@ class NotebookToolbar extends React.Component {
               <FontAwesomeIcon icon={faTimes} />
             </IconButton>
           </Tooltip>
-          <span
-            style={{
+          <Box
+            component="span"
+            sx={{
               borderRight: "1px solid transparent",
               margin: "0px 10px",
               height: "100%",
             }}
-          ></span>
+          ></Box>
           {this.state.canCreateRecord && (
             <CreateMenu
               pioEnabled={this.state.pioEnabled}
@@ -120,13 +122,14 @@ class NotebookToolbar extends React.Component {
               </IconButton>
             </Tooltip>
           )}
-          <span
-            style={{
+          <Box
+            component="span"
+            sx={{
               borderRight: "1px solid transparent",
               margin: "0px 10px",
               height: "100%",
             }}
-          ></span>
+          ></Box>
           {this.props.conditionalRender.export && (
             <Tooltip title="Export" enterDelay={300}>
               <IconButton
@@ -144,10 +147,10 @@ class NotebookToolbar extends React.Component {
           )}
           <SocialActions
             showExternal={true}
-            style={{ flexGrow: "1", justifyContent: "flex-end" }}
+            sx={{ flexGrow: "1", justifyContent: "flex-end" }}
             onCreateRequest={this.props.eventHandlers.onCreateRequest}
           />
-        </span>
+        </Box>
         <ShareDialog />
       </>
     );

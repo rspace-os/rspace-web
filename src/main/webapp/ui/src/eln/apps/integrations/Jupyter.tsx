@@ -5,6 +5,7 @@ import JupyterIcon from "../../../assets/branding/Jupyter/logo.svg";
 import { observer } from "mobx-react-lite";
 import { LOGO_COLOR } from "@/assets/branding/Jupyter";
 import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 
 function Jupyter(): React.ReactNode {
   return (
@@ -31,15 +32,16 @@ function Jupyter(): React.ReactNode {
                 <b>Configure Jupyter instance for all notebooks:</b> Follow the instructions in RSpace help docs to use pip to install RSpace client. Run a python cell with the following code:
                 <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
                   <strong>One time install step:</strong>
-                  <pre
-                      style={{
+                  <Box
+                      component="pre"
+                      sx={{
                         background: "#f5f5f5",
                         padding: "8px",
                         overflowX: "auto",
                       }}
                   >
             {`%pip install rspace-client==2.6.2`}
-              </pre>
+              </Box>
                 </Typography>
                 Run the cell then <b>restart the kernel</b> and <b>refresh the browser </b> tab running Jupyter.
               </li>
@@ -47,15 +49,16 @@ function Jupyter(): React.ReactNode {
                 <b>Configure notebook:</b> Follow the instructions in RSpace help docs to import the sync_notebook script.
             <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
               <strong>Do this step once per notebook:</strong>
-              <pre
-                style={{
+              <Box
+                component="pre"
+                sx={{
                   background: "#f5f5f5",
                   padding: "8px",
                   overflowX: "auto",
                 }}
               >
                 {`from rspace_client.notebook_sync import sync_notebook`}
-              </pre>
+              </Box>
             </Typography>
                Run the cell,  <b>restart the kernel</b> and then run the cell one more time <b>without a kernel restart. Save the Notebook.</b>
               </li>
@@ -63,8 +66,9 @@ function Jupyter(): React.ReactNode {
                 <b>Run the code:</b>
                 <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
                   Paste this code into <b>the last cell in the notebook:</b>
-                  <pre
-                      style={{
+                  <Box
+                      component="pre"
+                      sx={{
                         background: "#f5f5f5",
                         padding: "8px",
                         overflowX: "auto",
@@ -73,7 +77,7 @@ function Jupyter(): React.ReactNode {
                 {`await sync_notebook.sync_notebook_to_rspace(
 rspace_url="https://researchspace2.eu.ngrok.io/",
 rspace_username="user1a")`}
-              </pre>
+              </Box>
                 </Typography>
               </li>
             </ol>

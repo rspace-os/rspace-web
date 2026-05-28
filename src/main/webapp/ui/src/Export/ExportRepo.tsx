@@ -82,7 +82,7 @@ const DmpSelector = observer(
 
     return mapNullable(
       (dmps) => (
-        <Grid container style={{ width: "100%" }}>
+        <Grid container sx={{ width: "100%" }}>
           <Grid size={12}>
             <FormControlLabel
               control={

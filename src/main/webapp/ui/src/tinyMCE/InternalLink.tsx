@@ -416,7 +416,7 @@ export default function InternalLink(
                 })}
               {emptyRows > 0 && (
                 <TableRow
-                  style={{
+                  sx={{
                     height: 33 * emptyRows,
                   }}
                 >

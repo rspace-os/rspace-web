@@ -19,6 +19,7 @@ import TextField from "@mui/material/TextField";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
+import Box from "@mui/material/Box";
 import { capitaliseJustFirstChar } from "../../../../util/Util";
 import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
 
@@ -128,7 +129,7 @@ const MultipleInputHandler = ({
                   />
                 ) : (
                   <TextField
-                    style={{
+                    sx={{
                       marginBottom:
                         // @ts-expect-error - subFields accepts field.value[i]
                         subFields(field.value[i]).length > 0 ? "10px" : "0px",
@@ -252,7 +253,7 @@ const MultipleInputHandler = ({
                           {sf.value ? (
                             <>{String(sf.value)}</>
                           ) : (
-                            <em style={{ color: "#949494" }}>None</em>
+                            <Box component="em" sx={{ color: "#949494" }}>None</Box>
                           )}
                         </Grid>
                       </Grid>

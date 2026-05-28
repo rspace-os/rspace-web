@@ -73,9 +73,10 @@ function DescriptionList({
                 component="div"
               />
             )}
-            <dt
+            <Box
+              component="dt"
               className={below ? "below" : undefined}
-              style={{
+              sx={{
                 color: theme.palette.text.secondary,
                 fontWeight: 600,
                 marginRight: theme.spacing(2),
@@ -84,10 +85,11 @@ function DescriptionList({
               }}
             >
               {label}
-            </dt>
-            <dd
+            </Box>
+            <Box
+              component="dd"
               className={below ? "below" : undefined}
-              style={{
+              sx={{
                 marginInlineStart: 0,
                 justifySelf: "end",
                 ...(reducedPadding ? ddReducedPaddingStyle : {}),
@@ -100,7 +102,7 @@ function DescriptionList({
               }}
             >
               {value}
-            </dd>
+            </Box>
           </React.Fragment>
         ),
       )}

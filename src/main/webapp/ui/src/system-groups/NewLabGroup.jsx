@@ -13,6 +13,7 @@ import { createRoot } from "react-dom/client";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 
 const scrollToRef = (ref) => window.scrollTo(0, ref.current.offsetTop);
 const PROJECT_GROUP = "PROJECT_GROUP";
@@ -188,7 +189,7 @@ export default function NewLabGroup() {
               {values.groupType === LAB_GROUP && (
                 <Grid container>
                   <Typography
-                    style={{ margin: "20px 0px 10px 0px" }}
+                    sx={{ margin: "20px 0px 10px 0px" }}
                     variant="subtitle1"
                     gutterBottom
                     color={values.pisError ? "error" : "inherit"}
@@ -207,7 +208,7 @@ export default function NewLabGroup() {
               {values.groupType === PROJECT_GROUP && (
                 <Grid container>
                   <Typography
-                    style={{ margin: "20px 0px 10px 0px" }}
+                    sx={{ margin: "20px 0px 10px 0px" }}
                     variant="subtitle1"
                     gutterBottom
                     color={values.groupOwnerError ? "error" : "inherit"}
@@ -227,13 +228,15 @@ export default function NewLabGroup() {
               {values.groupType && (
                 <Grid container>
                   <Typography
-                    style={{ margin: "20px 0px 10px 0px" }}
+                    sx={{ margin: "20px 0px 10px 0px" }}
                     variant="subtitle1"
                     gutterBottom
                     color="inherit"
                   >
                     Select group members{" "}
-                    <span style={{ color: "grey" }}>(optional)</span>
+                    <Box component="span" sx={{ color: "grey" }}>
+                      (optional)
+                    </Box>
                   </Typography>
                   <UserSelect
                     users={users}
@@ -244,7 +247,7 @@ export default function NewLabGroup() {
                 </Grid>
               )}
             </Grid>
-            <Grid size={12} style={{ margin: "20px 0px 40px 0px" }}>
+            <Grid size={12} sx={{ margin: "20px 0px 40px 0px" }}>
               <Grid container sx={{ justifyContent: "flex-end" }}>
                 <Button
                   variant="contained"

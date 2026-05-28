@@ -17,6 +17,7 @@ import { faPencilAlt } from "@fortawesome/free-solid-svg-icons/faPencilAlt";
 import Tooltip from "@mui/material/Tooltip";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
+import Box from "@mui/material/Box";
 import axios from "@/common/axios";
 import { CardWrapper } from "../../../styles/CommonStyles";
 import { createRoot } from "react-dom/client";
@@ -143,17 +144,6 @@ class GroupEditBar extends React.Component {
     this.setState({ toast: false });
   };
 
-  styles = {
-    icon_button: {
-      fontSize: "18px",
-      width: "auto",
-    },
-    card_actions: {
-      display: "flex",
-      justifyContent: "flex-end",
-    },
-  };
-
   render() {
     return (
       <StyledEngineProvider injectFirst enableCssLayer>
@@ -168,7 +158,7 @@ class GroupEditBar extends React.Component {
                     <Tooltip title="Edit profile settings">
                       <IconButton
                         onClick={this.handleClickEdit}
-                        style={this.styles.icon_button}
+                        sx={{ fontSize: "18px", width: "auto" }}
                         data-test-id="button-edit-profile"
                       >
                         <FontAwesomeIcon icon={faPencilAlt} />
@@ -196,7 +186,7 @@ class GroupEditBar extends React.Component {
                 />
                 {(this.state.pi_can_edit_permission ||
                   this.state.pi_can_edit_value) && (
-                  <div style={{ marginTop: "10px" }}>
+                  <Box sx={{ marginTop: "10px" }}>
                     <FormControlLabel
                       sx={{ width: "100%" }}
                       control={
@@ -214,12 +204,12 @@ class GroupEditBar extends React.Component {
                       }
                       label="PI can edit all work in this lab group."
                     />
-                  </div>
+                  </Box>
                 )}
                 {this.state.profile_hiding_enabled &&
                   (this.state.can_hide_profile ||
                     this.state.profile_is_hidden) && (
-                    <div style={{ marginTop: "10px" }}>
+                    <Box sx={{ marginTop: "10px" }}>
                       <FormControlLabel
                         sx={{ width: "100%" }}
                         control={
@@ -237,11 +227,13 @@ class GroupEditBar extends React.Component {
                         }
                         label="Hide the group from public listings"
                       />
-                    </div>
+                    </Box>
                   )}
               </CardContent>
               {this.state.editing && (
-                <CardActions style={this.styles.card_actions}>
+                <CardActions
+                  sx={{ display: "flex", justifyContent: "flex-end" }}
+                >
                   <Button
                     onClick={this.handleClickClose}
                     data-test-id="button-cancel-edit"

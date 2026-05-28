@@ -92,11 +92,6 @@ const tableSx = {
   },
 } as const;
 
-const loadingCellSx = {
-  p: 0.5,
-  borderBottom: "none",
-} as const;
-
 interface LoadedContentProps {
   container: ContainerModel;
 }
@@ -433,7 +428,10 @@ const ContentGrid: React.FC = () => {
                   {container.columns.map((col) => (
                     <TableCell
                       key={`row-${row.value}-col-${col.value}`}
-                      sx={loadingCellSx}
+                      sx={{
+                        p: 0.5,
+                        borderBottom: "none",
+                      }}
                     >
                       <Skeleton
                         variant="rectangular"

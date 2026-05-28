@@ -31,7 +31,7 @@ const ActionButton = ({
     disabled={disabled}
     onClick={onClick}
     size="small"
-    style={{ pointerEvents: "initial" }}
+    sx={{ pointerEvents: "initial" }}
   >
     {children}
   </Button>

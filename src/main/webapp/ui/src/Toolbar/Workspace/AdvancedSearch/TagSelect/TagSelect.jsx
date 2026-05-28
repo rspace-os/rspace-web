@@ -9,39 +9,6 @@ import Paper from "@mui/material/Paper";
 import MenuItem from "@mui/material/MenuItem";
 import PropTypes from "prop-types";
 
-const wrapperSx = {
-  display: "flex",
-  flexGrow: 1,
-  "& .css-1pcexqc-container": {
-    flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  "& .myReactSelect .Select-arrow-zone": {
-    display: "none",
-  },
-  "& .advanced-search": {
-    "& .search-input .MuiInputBase-input": {
-      height: 32,
-    },
-    "& .dropdown-item": {
-      margin: 0,
-      width: "100%",
-    },
-  },
-  "& .simple-search": {
-    "& .search-input": {
-      marginTop: "3px",
-      minHeight: "36px",
-    },
-  },
-  "& .MuiButtonBase-root:not(.MuiChip-root)": {
-    width: "fit-content !important",
-    fontSize: 15,
-    marginLeft: "10px",
-  },
-};
-
 function NoOptionsMessage(props) {
   return (
     <Typography
@@ -113,7 +80,7 @@ function Option(props) {
       ref={props.innerRef}
       selected={props.isFocused}
       component="div"
-      style={{ fontWeight: props.isSelected ? 500 : 400 }}
+      sx={{ fontWeight: props.isSelected ? 500 : 400 }}
       {...props.innerProps}
     >
       {props.children}
@@ -149,8 +116,8 @@ Placeholder.propTypes = {
 
 function ValueContainer(props) {
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         display: "flex",
         flexWrap: "wrap",
         flex: 1,
@@ -159,7 +126,7 @@ function ValueContainer(props) {
       }}
     >
       {props.children}
-    </div>
+    </Box>
   );
 }
 
@@ -275,7 +242,40 @@ export default function TagSelect(props) {
   }, []);
 
   return (
-    <Box sx={wrapperSx}>
+    <Box
+      sx={{
+        display: "flex",
+        flexGrow: 1,
+        "& .css-1pcexqc-container": {
+          flexGrow: 1,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        "& .myReactSelect .Select-arrow-zone": {
+          display: "none",
+        },
+        "& .advanced-search": {
+          "& .search-input .MuiInputBase-input": {
+            height: 32,
+          },
+          "& .dropdown-item": {
+            margin: 0,
+            width: "100%",
+          },
+        },
+        "& .simple-search": {
+          "& .search-input": {
+            marginTop: "3px",
+            minHeight: "36px",
+          },
+        },
+        "& .MuiButtonBase-root:not(.MuiChip-root)": {
+          width: "fit-content !important",
+          fontSize: 15,
+          marginLeft: "10px",
+        },
+      }}
+    >
       <Select
         className={props.advanced ? "advanced-search" : "simple-search"}
         styles={selectStyles}

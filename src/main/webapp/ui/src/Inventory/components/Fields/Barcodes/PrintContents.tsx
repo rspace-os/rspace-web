@@ -21,31 +21,12 @@ const itemMmWidths = {
 
 const contentsWrapperSx = { m: 0 };
 const blockSx = { display: "block" };
-const printItemWrapperSx = {
-  display: "inline-block",
-  border: "1px dotted #ccc",
-  m: 0.25,
-  "@media print": {
-    pageBreakInside: "avoid",
-    img: { breakInside: "avoid" },
-  },
-};
 const smallPxSx = { width: itemPxWidths.small, maxWidth: itemPxWidths.small, p: 0.25 };
 const largePxSx = { width: itemPxWidths.full, maxWidth: itemPxWidths.full, p: 0.25 };
 const smallMmSx = { width: itemMmWidths.small, maxWidth: itemMmWidths.small, p: 0.25 };
 const largeMmSx = { width: itemMmWidths.large, maxWidth: itemMmWidths.large, p: 0.5 };
 const singlePcSx = { width: "90%", maxWidth: "90%", p: 0.25 };
-const bottomSpacedSx = { mb: 0 };
-const centeredSelfSx = { alignSelf: "center", mt: 0.25 };
 const centeredTextSx = { textAlign: "center" };
-const wrappingTextSx = { wordBreak: "break-word" };
-const smallTextSx = { fontSize: "11px" };
-const pageBreakSx = {
-  "@media print": {
-    breakAfter: "always",
-    pageBreakAfter: "always",
-  },
-};
 
 type Target = "screen" | "multiplePrint" | "singlePrint";
 
@@ -91,23 +72,37 @@ export const PreviewPrintItem = ({
             : singlePcSx; // no small and large for singlePrint case
   return (
     <>
-      <Box component="div" sx={[printItemWrapperSx, sizePerTarget()]}>
+      <Box
+        component="div"
+        sx={[
+          {
+            display: "inline-block",
+            border: "1px dotted #ccc",
+            m: 0.25,
+            "@media print": {
+              pageBreakInside: "avoid",
+              img: { breakInside: "avoid" },
+            },
+          },
+          sizePerTarget(),
+        ]}
+      >
         <Grid
           container
-          sx={[wrappingTextSx, { flexDirection: "column" }]}
+          sx={[{ wordBreak: "break-word" }, { flexDirection: "column" }]}
           spacing={1}
         >
           {imageLinks && (
             <>
               <Box
                 component="img"
-                sx={centeredSelfSx}
+                sx={{ alignSelf: "center", mt: 0.25 }}
                 src={imageLinks[index]}
                 title="Barcode Image"
                 alt="Barcode"
                 width="75%"
               />
-              <Grid sx={[centeredTextSx, bottomSpacedSx]}>
+              <Grid sx={[centeredTextSx, { mb: 0 }]}>
                 {target === "singlePrint" ? (
                   itemOwner.globalId
                 ) : (
@@ -120,7 +115,7 @@ export const PreviewPrintItem = ({
             <Grid>
               <Grid
                 container
-                sx={[centeredTextSx, smallTextSx, { flexDirection: "column" }]}
+                sx={[centeredTextSx, { fontSize: "11px" }, { flexDirection: "column" }]}
                 spacing={1}
               >
                 <Grid>{item.description.split("//")[1]}</Grid>
@@ -147,7 +142,12 @@ export const PreviewPrintItem = ({
         </Grid>
       </Box>
       {/* force page break after item (when wrapper in display block) */}
-      {printerType === "LABEL" && <Box component="div" sx={pageBreakSx}></Box>}
+      {printerType === "LABEL" && (
+        <Box
+          component="div"
+          sx={{ "@media print": { breakAfter: "always", pageBreakAfter: "always" } }}
+        ></Box>
+      )}
     </>
   );
 };

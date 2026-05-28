@@ -28,7 +28,7 @@ const GetStartedButton = () => (
     target="_blank"
     rel="noreferrer"
     underline="always"
-    style={{
+    sx={{
       fontSize: "1.4em",
       textUnderlineOffset: "3px",
     }}

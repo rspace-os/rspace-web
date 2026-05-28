@@ -20,8 +20,8 @@ function MenuWrapper({
 }): React.ReactNode {
   const muiTheme = useTheme();
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         backgroundColor: (
           muiTheme.palette.record[recordType] as RecordPalette
         ).bg,
@@ -32,7 +32,7 @@ function MenuWrapper({
       }}
     >
       {children}
-    </div>
+    </Box>
   );
 }
 
@@ -45,8 +45,8 @@ function RoundedWhiteContainer({
 }): React.ReactNode {
   const muiTheme = useTheme();
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         borderTopLeftRadius: muiTheme.spacing(1),
         borderTopRightRadius: isSingleColumnLayout ? muiTheme.spacing(1) : 0,
         borderBottomLeftRadius: isSingleColumnLayout
@@ -56,7 +56,7 @@ function RoundedWhiteContainer({
       }}
     >
       {children}
-    </div>
+    </Box>
   );
 }
 

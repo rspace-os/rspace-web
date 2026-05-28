@@ -1,6 +1,7 @@
 "use strict";
 import React from "react";
 import { produce } from "immer";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -92,7 +93,7 @@ class FilePicker extends React.Component {
       <>
         {this.state.selectedFiles.map((f) => (
           <Chip
-            style={{ marginRight: "10px" }}
+            sx={{ marginRight: "10px" }}
             key={f}
             icon={this.recordIcon(f)}
             label={f}
@@ -118,9 +119,9 @@ class FilePicker extends React.Component {
           </IconButton>
         </Tooltip>
         {this.props.error && (
-          <span style={{ fontSize: "1.3em" }}>
+          <Box component="span" sx={{ fontSize: "1.3em" }}>
             Click on the folder icon to select records.
-          </span>
+          </Box>
         )}
         <Dialog
           open={this.state.dialogOpen}

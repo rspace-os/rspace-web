@@ -148,7 +148,7 @@ export default function OrfTable(props) {
         {loading && <LoadingCircular />}
         {!loading && (
           <>
-            <TableContainer style={{ maxHeight: "449px" }}>
+            <TableContainer sx={{ maxHeight: "449px" }}>
               <Table
                 stickyHeader
                 aria-labelledby="ORF table"
@@ -183,7 +183,7 @@ export default function OrfTable(props) {
                       </TableRow>
                     ))}
                   {emptyRows > 0 && (
-                    <TableRow style={{ height: 33 * emptyRows }}>
+                    <TableRow sx={{ height: 33 * emptyRows }}>
                       <TableCell colSpan={6} />
                     </TableRow>
                   )}

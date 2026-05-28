@@ -196,8 +196,9 @@ export default function StoichiometryInventoryUpdateDialog({
         },
       }}
     >
-      <form
-        style={{
+      <Box
+        component="form"
+        sx={{
           display: "contents",
         }}
         onSubmit={(event) => {
@@ -334,7 +335,7 @@ export default function StoichiometryInventoryUpdateDialog({
             {saveMutation.isPending ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
-      </form>
+      </Box>
     </Dialog>
   );
 }

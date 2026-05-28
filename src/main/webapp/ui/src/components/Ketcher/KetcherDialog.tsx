@@ -147,7 +147,7 @@ const KetcherDialog = ({
       }}
     >
       <DialogTitle>{title}</DialogTitle>
-      <DialogContent style={{ minHeight: "0" }}>
+      <DialogContent sx={{ minHeight: "0" }}>
         <Stack sx={{ height: "100%" }}>
           {instructionText && (
             <Typography variant="body2" sx={{ pb: 2 }}>

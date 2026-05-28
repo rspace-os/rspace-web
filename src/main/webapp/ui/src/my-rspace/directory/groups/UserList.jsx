@@ -76,7 +76,7 @@ class UserList extends React.Component {
             dense
             component="div"
             role="list"
-            style={{ height: "350px", overflowY: "auto" }}
+            sx={{ height: "350px", overflowY: "auto" }}
           >
             {this.visibleUsers().map((user) => (
               <ListItem

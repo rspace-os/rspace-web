@@ -10,6 +10,7 @@ import LocationWrapper from "./LocationWrapper";
 import LocationContent from "../LocationContent";
 import { pick } from "../../../../util/unsafeUtils";
 import * as DragAndDrop from "../DragAndDrop";
+import Box from "@mui/material/Box";
 
 function PreviewImage(): React.ReactNode {
   const { scopedResult, search } = useContext(SearchContext);
@@ -95,10 +96,11 @@ function PreviewImage(): React.ReactNode {
           container.moveSelection(e);
         }}
       >
-        <img
+        <Box
+          component="img"
           src={container.locationsImage || undefined}
           alt="Container preview"
-          style={{
+          sx={{
             width: "auto",
             height: "auto",
             maxWidth: "100%",

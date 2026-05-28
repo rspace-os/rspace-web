@@ -94,25 +94,10 @@ const cardSx = {
   backgroundColor: "unset",
 } as const;
 
-const cardHeaderSx = {
-  p: "7px",
-  background: "white",
-} as const;
-
-const cardContentSx = {
-  p: 0,
-  paddingBottom: "0px !important",
-} as const;
-
 const tableCellSx = {
   maxWidth: "150px",
   overflowX: "auto",
   whiteSpace: "nowrap",
-} as const;
-
-const tableSx = {
-  mb: 0,
-  backgroundColor: "white",
 } as const;
 
 export default function ChemCard(props: ChemCardProps) {
@@ -162,7 +147,7 @@ export default function ChemCard(props: ChemCardProps) {
 
     return (
       <React.Fragment key={`${chemical.role ?? "chemical"}-${chemical.formula ?? ""}`}>
-        <TableRow style={{ background: "rgb(240,240,240" }}>
+        <TableRow sx={{ background: "rgb(240,240,240" }}>
           <TableCell component="th" scope="row"></TableCell>
           <TableCell component="th" scope="row" align="center">
             {chemical.role}
@@ -295,7 +280,10 @@ export default function ChemCard(props: ChemCardProps) {
     >
       {!props.inline && (
         <CardHeader
-          sx={cardHeaderSx}
+          sx={{
+            p: "7px",
+            background: "white",
+          }}
           subheader={
             <Box
               component="img"
@@ -322,8 +310,19 @@ export default function ChemCard(props: ChemCardProps) {
           }
         />
       )}
-      <CardContent sx={cardContentSx}>
-        <Table size="small" sx={tableSx}>
+      <CardContent
+        sx={{
+          p: 0,
+          paddingBottom: "0px !important",
+        }}
+      >
+        <Table
+          size="small"
+          sx={{
+            mb: 0,
+            backgroundColor: "white",
+          }}
+        >
           <TableBody>
             {chem.reaction && (
               <TableRow>

@@ -28,7 +28,7 @@ const OneItemList = ({
       <ListItemAvatar>{avatar}</ListItemAvatar>
       <ListItemText
         primary={text}
-        style={{ overflowWrap: "anywhere", maxWidth: "60%" }}
+        sx={{ overflowWrap: "anywhere", maxWidth: "60%" }}
       />
       <ListItemSecondaryAction>{action}</ListItemSecondaryAction>
     </ListItem>

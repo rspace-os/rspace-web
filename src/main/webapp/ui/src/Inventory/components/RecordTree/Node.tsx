@@ -3,6 +3,7 @@ import { Observer } from "mobx-react-lite";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
 import CardHeader from "@mui/material/CardHeader";
 import NameWithBadge from "../NameWithBadge";
 import { match } from "../../../util/Util";
@@ -37,8 +38,9 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
     match<void, React.ReactNode>([
       [
         () => Boolean(node.thumbnail),
-        <img
-          style={{ width: theme.spacing(5), maxHeight: "44px" }}
+        <Box
+          component="img"
+          sx={{ width: theme.spacing(5), maxHeight: "44px" }}
           src={node.thumbnail || ""}
           alt="Record thumbnail"
           key={2}

@@ -38,8 +38,8 @@ function ExtraFields({
                   renderInput={(props) => (
                     <>
                       {extraFieldsDisabled ? null : (
-                        <div
-                          style={{
+                        <Box
+                          sx={{
                             position: "absolute",
                             top: 0,
                             right: 0,
@@ -62,7 +62,7 @@ function ExtraFields({
                             }
                             icon={<CloseIcon fontSize="small" />}
                           />
-                        </div>
+                        </Box>
                       )}
                       <NumberField
                         {...props}
@@ -97,8 +97,8 @@ function ExtraFields({
                   renderInput={({ error: _error, id: _id, ...props }) => (
                     <>
                       {extraFieldsDisabled ? null : (
-                        <div
-                          style={{
+                        <Box
+                          sx={{
                             position: "absolute",
                             top: 0,
                             right: 0,
@@ -121,7 +121,7 @@ function ExtraFields({
                             }
                             icon={<CloseIcon fontSize="small" />}
                           />
-                        </div>
+                        </Box>
                       )}
                       <Box sx={{ mt: 1 }}>
                         <TextField

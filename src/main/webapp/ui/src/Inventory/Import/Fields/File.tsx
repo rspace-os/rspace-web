@@ -5,6 +5,7 @@ import { observer } from "mobx-react-lite";
 import { useTheme } from "@mui/material/styles";
 import TitledBox from "@/components/TitledBox";
 import RemoveButton from "@/components/RemoveButton";
+import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 
 function ErrorDetails({
@@ -14,18 +15,18 @@ function ErrorDetails({
 }): React.ReactNode {
   const theme = useTheme();
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         display: "flex",
         alignItems: "center",
         padding: theme.spacing(0.5, 2),
       }}
     >
-      <dt style={{ color: theme.palette.text.secondary }}>Error details:</dt>
-      <dd style={{ marginLeft: theme.spacing(1), color: theme.palette.error.main }}>
+      <Box component="dt" sx={{ color: theme.palette.text.secondary }}>Error details:</Box>
+      <Box component="dd" sx={{ marginLeft: theme.spacing(1), color: theme.palette.error.main }}>
         {errorMessage}
-      </dd>
-    </div>
+      </Box>
+    </Box>
   );
 }
 

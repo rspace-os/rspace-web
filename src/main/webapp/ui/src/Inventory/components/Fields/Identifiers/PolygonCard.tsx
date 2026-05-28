@@ -113,7 +113,7 @@ const PolygonEditor = observer(
               />
             ) : (
               /* last point is edited by editing first */
-              (point.pointLatitude || <span style={{ color: "#949494" }}>-</span>)
+              (point.pointLatitude || <Box component="span" sx={{ color: "#949494" }}>-</Box>)
             )}
           </InputWrapper>
         </Grid>
@@ -145,7 +145,7 @@ const PolygonEditor = observer(
               />
             ) : (
               /* last point is edited by editing first */
-              (point.pointLongitude || (<span style={{ color: "#949494" }}>-</span>))
+              (point.pointLongitude || (<Box component="span" sx={{ color: "#949494" }}>-</Box>))
             )}
           </InputWrapper>
         </Grid>
@@ -240,7 +240,7 @@ function PolygonCard({
               />
             ) : (
               geoLocationInPolygonPoint.pointLatitude || (
-                <span style={{ color: "#949494" }}>-</span>
+                <Box component="span" sx={{ color: "#949494" }}>-</Box>
               )
             )}
           </InputWrapper>
@@ -285,7 +285,7 @@ function PolygonCard({
               />
             ) : (
               geoLocationInPolygonPoint.pointLongitude || (
-                <span style={{ color: "#949494" }}>-</span>
+                <Box component="span" sx={{ color: "#949494" }}>-</Box>
               )
             )}
           </InputWrapper>

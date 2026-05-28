@@ -25,34 +25,13 @@ const itemMmSize = {
 };
 
 const contentsWrapperSx = { m: 0 };
-const blockSx = { display: "block" };
-const printItemWrapperSx = {
-  display: "inline-block",
-  border: "1px dotted #ccc",
-  m: 0.25,
-  "@media print": {
-    pageBreakInside: "avoid",
-    img: { breakInside: "avoid" },
-  },
-};
+const horzSx = { maxWidth: "47vw", p: 0.25 };
+const largeMmHorzSx = { maxWidth: "47vw", p: 0.5 };
 const smallPxSx = { width: itemPxWidth.small, maxWidth: itemPxWidth.small, p: 0.25 };
 const largePxSx = { width: itemPxWidth.full, maxWidth: itemPxWidth.full, p: 0.25 };
-const smallPxHorzSx = { maxWidth: "47vw", p: 0.25 };
-const largePxHorzSx = { maxWidth: "47vw", p: 0.25 };
 const smallMmSx = { width: itemMmSize.small, maxWidth: itemMmSize.small, p: 0.25 };
 const largeMmSx = { width: itemMmSize.large, maxWidth: itemMmSize.large, p: 0.5 };
-const smallMmHorzSx = { maxWidth: "47vw", p: 0.25 };
-const largeMmHorzSx = { maxWidth: "47vw", p: 0.5 };
 const singlePcSx = { width: "90%", maxWidth: "90%", p: 0.25 };
-const bottomSpacedSx = { mb: 0 };
-const wrappingTextSx = { wordBreak: "break-word" };
-const smallTextSx = { fontSize: "11px" };
-const pageBreakSx = {
-  "@media print": {
-    breakAfter: "always",
-    pageBreakAfter: "always",
-  },
-};
 
 /*
  * "screen"        - for previewing print on screen
@@ -99,15 +78,15 @@ export const PreviewPrintItem = ({
   const sizeClass = () => {
     if (target === "screen") {
       if (printOptions.printCopies === "2") {
-        if (printSize === "SMALL") return smallPxHorzSx;
-        if (printSize === "LARGE") return largePxHorzSx;
+        if (printSize === "SMALL") return horzSx;
+        if (printSize === "LARGE") return horzSx;
       }
       if (printSize === "SMALL") return smallPxSx;
       if (printSize === "LARGE") return largePxSx;
     }
     if (target === "multiplePrint") {
       if (printOptions.printCopies === "2") {
-        if (printSize === "SMALL") return smallMmHorzSx;
+        if (printSize === "SMALL") return horzSx;
         if (printSize === "LARGE") return largeMmHorzSx;
       }
       if (printSize === "SMALL") return smallMmSx;
@@ -121,14 +100,14 @@ export const PreviewPrintItem = ({
     return printOptions.printIdentifierType === "GLOBAL ID"
       ? printLabelContents.globalId.map((globalId) => (
           <Fragment key={globalId}>
-            <strong style={{ fontSize: "0.8em" }}>RSPACE GLOBAL ID</strong>
+            <Box component="strong" sx={{ fontSize: "0.8em" }}>RSPACE GLOBAL ID</Box>
             <br />
             {globalId}
           </Fragment>
         ))
       : printLabelContents.identifier.map(({ doi }) => (
           <Fragment key={doi}>
-            <strong style={{ fontSize: "0.8em" }}>IGSN ID</strong>
+            <Box component="strong" sx={{ fontSize: "0.8em" }}>IGSN ID</Box>
             <br />
             {doi}
           </Fragment>
@@ -143,11 +122,25 @@ export const PreviewPrintItem = ({
 
   return (
     <>
-      <Box component="div" sx={[printItemWrapperSx, sizeClass()]}>
+      <Box
+        component="div"
+        sx={[
+          {
+            display: "inline-block",
+            border: "1px dotted #ccc",
+            m: 0.25,
+            "@media print": {
+              pageBreakInside: "avoid",
+              img: { breakInside: "avoid" },
+            },
+          },
+          sizeClass(),
+        ]}
+      >
         <Grid
           container
           sx={[
-            wrappingTextSx,
+            { wordBreak: "break-word" },
             {
               flexWrap: "nowrap",
               flexDirection: printOptions.printCopies === "2" ? "row" : "column",
@@ -170,9 +163,9 @@ export const PreviewPrintItem = ({
             <Grid
               container
               spacing={0.5}
-                sx={[smallTextSx, { flexDirection: "column", lineHeight: "1.2", p: 1 }]}
+                sx={[{ fontSize: "11px" }, { flexDirection: "column", lineHeight: "1.2", p: 1 }]}
             >
-                <Grid sx={bottomSpacedSx}>
+                <Grid sx={{ mb: 0 }}>
                 {target === "singlePrint" ? (
                   header
                 ) : (
@@ -216,7 +209,12 @@ export const PreviewPrintItem = ({
         </Grid>
       </Box>
       {/* force page break after item (when wrapper in display block) */}
-      {printerType === "LABEL" && <Box component="div" sx={pageBreakSx}></Box>}
+      {printerType === "LABEL" && (
+        <Box
+          component="div"
+          sx={{ "@media print": { breakAfter: "always", pageBreakAfter: "always" } }}
+        ></Box>
+      )}
     </>
   );
 };
@@ -230,7 +228,7 @@ const PrintContents = forwardRef<HTMLDivElement, PrintContentsArgs>(
         spacing={1}
         sx={
           printOptions.printerType === "LABEL"
-            ? [contentsWrapperSx, blockSx]
+            ? [contentsWrapperSx, { display: "block" }]
             : contentsWrapperSx
         }
       >

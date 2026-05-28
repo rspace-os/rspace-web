@@ -4,6 +4,7 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import AppBar from "../components/AppBar";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import Box from "@mui/material/Box";
 import createAccentedTheme from "../accentedTheme";
 import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
@@ -41,7 +42,7 @@ window.addEventListener("load", () => {
           <ErrorBoundary>
             <CssBaseline />
             <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
-              <div style={{ fontSize: "1rem", lineHeight: "1.5" }}>
+              <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
                 {/*
                  * We use a DialogBoundary to keep the menu inside the shadow DOM
                  */}
@@ -52,8 +53,8 @@ window.addEventListener("load", () => {
                     accessibilityTips={{}}
                   />
                 </DialogBoundary>
-              </div>
-              <div style={{ height: "30px" }}></div>
+              </Box>
+              <Box sx={{ height: "30px" }}></Box>
             </ThemeProvider>
           </ErrorBoundary>
         </Analytics>

@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import * as v from "valibot";
-import { Button, Stack, TextField as MuiTextField } from "@mui/material";
+import { Box, Button, Stack, TextField as MuiTextField } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import {
   raidQueryKeys,
@@ -78,8 +78,9 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
   }));
 
   return (
-    <form
-      style={{ display: "contents" }}
+    <Box
+      component="form"
+      sx={{ display: "contents" }}
       onSubmit={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -152,7 +153,7 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
           )}
         </form.Subscribe>
       </Stack>
-    </form>
+    </Box>
   );
 };
 

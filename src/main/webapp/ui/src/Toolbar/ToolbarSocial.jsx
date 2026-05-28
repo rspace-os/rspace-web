@@ -1,6 +1,7 @@
 /* global MSTEAMS, SLACK */
 import React, { useEffect } from "react";
 import axios from "@/common/axios";
+import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Badge from "@mui/material/Badge";
@@ -37,7 +38,7 @@ export default function ToolbarSocial(props) {
   }, []);
 
   return (
-    <div style={{ display: "flex", ...props.style }}>
+    <Box sx={{ display: "flex", ...props.sx }}>
       <Tooltip title="Notifications" enterDelay={300}>
         <IconButton
           id="openNotificationDlgLink"
@@ -78,15 +79,16 @@ export default function ToolbarSocial(props) {
           <IconButton
             color="inherit"
             data-test-id="toolbar-send-message-slack"
-            style={{ backgroundColor: "white" }}
+            sx={{ backgroundColor: "white" }}
             className="createExtMessage"
             data-app="SLACK"
             aria-label="Send a message on Slack"
           >
-            <img
+            <Box
+              component="img"
               src="/images/icons/slack.png"
               alt="Slack"
-              style={{ width: "24px" }}
+              sx={{ width: "24px" }}
             />
           </IconButton>
         </Tooltip>
@@ -95,25 +97,26 @@ export default function ToolbarSocial(props) {
         <Tooltip title="Send message on MicrosoftTeams" enterDelay={300}>
           <IconButton
             data-test-id="toolbar-send-message-teams"
-            style={{ backgroundColor: "white" }}
+            sx={{ backgroundColor: "white" }}
             className="createExtMessage"
             data-app="MSTEAMS"
             aria-label="Send message on MicrosoftTeams"
           >
-            <img
+            <Box
+              component="img"
               src="/images/icons/microsoftteams.png"
               alt="Microsoft Teams"
-              style={{ width: "24px" }}
+              sx={{ width: "24px" }}
             />
           </IconButton>
         </Tooltip>
       )}
-    </div>
+    </Box>
   );
 }
 
 ToolbarSocial.propTypes = {
   onCreateRequest: PropTypes.func,
   showExternal: PropTypes.bool,
-  style: PropTypes.object,
+  sx: PropTypes.object,
 };

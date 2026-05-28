@@ -15,11 +15,6 @@ import {
   TYPE_LABEL,
 } from "@/stores/definitions/Search";
 
-const iconSx: SxProps<Theme> = (theme) => ({
-  borderRadius: theme.spacing(1),
-  color: theme.palette.standardIcon.main,
-});
-
 const Icon = ({ type, sx }: { type: SearchView; sx?: SxProps<Theme> }) =>
   ({
     LIST: <ListOutlinedIcon sx={sx} />,
@@ -58,7 +53,15 @@ export default function ToggleView({
   return (
     <Box sx={{ alignSelf: "center" }}>
       <DropdownButton
-        name={<Icon type={currentView} sx={iconSx} />}
+        name={
+          <Icon
+            type={currentView}
+            sx={(theme) => ({
+              borderRadius: theme.spacing(1),
+              color: theme.palette.standardIcon.main,
+            })}
+          />
+        }
         onClick={handleClick}
         title="Change view"
       >

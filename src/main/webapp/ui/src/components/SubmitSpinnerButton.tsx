@@ -1,4 +1,5 @@
 import React from "react";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -22,7 +23,6 @@ type SubmitSpinnerButtonArgs = {
   fullWidth?: boolean;
   type?: "button" | "submit";
   size?: "small" | "medium" | "large";
-  className?: string;
   color?: "primary" | "callToAction";
   sx?: SxProps<Theme>;
 };
@@ -36,15 +36,9 @@ function SubmitSpinnerButton({
   fullWidth = false,
   type = "button",
   size = "medium",
-  className,
   color = "callToAction",
   sx,
 }: SubmitSpinnerButtonArgs): React.ReactNode {
-  const composedSx: SxProps<Theme> = mergeSx(
-    { position: "relative", overflow: "hidden" },
-    sx,
-  );
-
   return (
     <Button
       color={color}
@@ -56,11 +50,10 @@ function SubmitSpinnerButton({
       data-test-id="SubmitButton"
       type={type}
       size={size}
-      classes={{ root: className }}
-      sx={composedSx}
+      sx={mergeSx({ position: "relative", overflow: "hidden" }, sx)}
     >
-      <div
-        style={{
+      <Box
+        sx={{
           position: "absolute",
           marginLeft: 10,
           opacity: loading ? 1 : 0,
@@ -72,10 +65,10 @@ function SubmitSpinnerButton({
           size="lg"
           style={{ marginRight: "10px" }}
         />
-      </div>
+      </Box>
       {progress !== null && typeof progress !== "undefined" ? (
-        <div
-          style={{
+        <Box
+          sx={{
             height: 36,
             width: asPercentageString(progress),
             backgroundColor: "rgba(0,0,0,0.2)",
@@ -90,9 +83,9 @@ function SubmitSpinnerButton({
           aria-valuemax={ariaValueMax()}
         />
       ) : null}
-      <div style={{ display: "flex", opacity: loading ? 0 : 1 }}>
+      <Box sx={{ display: "flex", opacity: loading ? 0 : 1 }}>
         {label}
-      </div>
+      </Box>
     </Button>
   );
 }

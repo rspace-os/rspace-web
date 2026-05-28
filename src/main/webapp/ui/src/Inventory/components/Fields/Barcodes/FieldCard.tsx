@@ -287,13 +287,14 @@ const CollapseContents = observer(
                         disabled={!imgUrlsAvailable}
                         onClick={doNotAwait(() => handlePrintAll())}
                       />
-                      <span
-                        style={{
+                      <Box
+                        component="span"
+                        sx={{
                           marginLeft: "8px",
                         }}
                       >
                         Print All
-                      </span>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 )}

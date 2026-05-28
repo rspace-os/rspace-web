@@ -79,15 +79,6 @@ function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dial
   );
 }
 
-const cardWrapperSx = {
-  position: "absolute",
-  right: 0,
-  top: 0,
-  bottom: 0,
-  zIndex: 100,
-  width: "100%",
-};
-
 const barWrapperSx = {
   display: "flex",
   alignSelf: "center",
@@ -119,20 +110,11 @@ const hideWhenPrintingSx = {
   "@media print": { display: "none" },
 };
 
-const contentWrapperSx = {
-  overscrollBehavior: "contain",
-  WebkitOverflowScrolling: "unset",
-};
-
 const disableBackgroundSx = (openSlide: boolean) => ({
   transition: "all 225ms ease-in-out",
   filter: openSlide ? "grayscale(1) opacity(0.3)" : "none",
   pointerEvents: openSlide ? "none" : "unset",
 });
-
-const warningRedSx = {
-  color: "warningRed",
-};
 
 const CardWrapper = forwardRef<
   React.ElementRef<typeof Grid>,
@@ -145,7 +127,14 @@ const CardWrapper = forwardRef<
       {() => (
         <Grid
           {...gridProps}
-          sx={cardWrapperSx}
+          sx={{
+            position: "absolute",
+            right: 0,
+            top: 0,
+            bottom: 0,
+            zIndex: 100,
+            width: "100%",
+          }}
           className={className}
           ref={ref}
           onClick={preventEventBubbling()}
@@ -339,10 +328,10 @@ const ActionsBar = observer(
         )}
         {anyDataInList && (
           <Grid>
-            <p style={{ margin: 0 }}>
+            <Box component="p" sx={{ margin: 0 }}>
               Tip: to edit an item click its Global ID, then the Edit button in
               the new browser tab.
-            </p>
+            </Box>
           </Grid>
         )}
       </Grid>
@@ -473,7 +462,12 @@ function MaterialsDialog({
                     />
                   )}
                 </DialogTitle>
-                <DialogContent sx={contentWrapperSx}>
+                <DialogContent
+                  sx={{
+                    overscrollBehavior: "contain",
+                    WebkitOverflowScrolling: "unset",
+                  }}
+                >
                   <Grid container>
                     <Grid sx={disableBackgroundSx(openSlide)} size={12}>
                       {isSingleColumn && (
@@ -577,7 +571,7 @@ function MaterialsDialog({
                     </Button>
                     {isListExisting && (
                       <Button
-                        sx={[warningRedSx, { mx: 1 }]}
+                        sx={[{ color: "warningRed" }, { mx: 1 }]}
                         disableElevation
                         onClick={doNotAwait(() => confirmListDeletion())}
                         disabled={!canEdit}

@@ -341,30 +341,31 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   </div>
                                 )),
                               )}
-                              <div style={{ fontWeight: "bold", fontSize: "16px" }}>
+                              <Box sx={{ fontWeight: "bold", fontSize: "16px" }}>
                                 {item.paths}
-                              </div>
+                              </Box>
                             </>
                           ) : cell.id === "path" ? (
                             <div>
-                              <div
+                              <Box
                                 id={`${item.type}_name_display_${item.id}`}
                                 data-testid={`${item.type}_name_display_${item.id}`}
-                                style={{ fontWeight: "bold", fontSize: "16px" }}
+                                sx={{ fontWeight: "bold", fontSize: "16px" }}
                               >
                                 {item.name}
-                              </div>
-                              <div style={{ fontWeight: "bold" }}>
+                              </Box>
+                              <Box sx={{ fontWeight: "bold" }}>
                                 {item.displayType ?? item.type}
-                              </div>
+                              </Box>
                               <div>
                                 {item.fetched ? (
-                                  <span
+                                  <Box
+                                    component="span"
                                     id={`${item.type}_details_fetched_${item.id}`}
-                                    style={{ fontWeight: "bold" }}
+                                    sx={{ fontWeight: "bold" }}
                                   >
                                     details fetched
-                                  </span>
+                                  </Box>
                                 ) : (
                                   <a
                                     id={`${item.type}_fetch_details_${item.id}`}
@@ -417,14 +418,15 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                             );
                                           }}
                                         >
-                                          <span
+                                          <Box
+                                            component="span"
                                             id={`${item.type}_show_grid_${item.id}`}
                                             data-testid={`${item.type}_show_grid_${item.id}`}
-                                            style={{ fontWeight: "bold" }}
+                                            sx={{ fontWeight: "bold" }}
                                           >
                                             show grid of wells for field{" "}
                                             {pos + 1}
-                                          </span>
+                                          </Box>
                                         </a>
                                       </div>
                                     ))}
@@ -440,16 +442,17 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                         void addGridOfThumbnailsToItem(item, 0);
                                       }}
                                     >
-                                      <span
+                                      <Box
+                                        component="span"
                                         id={`${item.type}_show_grid_${item.id}`}
                                         data-testid={`${item.type}_show_grid_${item.id}`}
-                                        style={{ fontWeight: "bold" }}
+                                        sx={{ fontWeight: "bold" }}
                                       >
                                         show image grid{" "}
                                         {item.childCounts !== 0
                                           ? " [" + item.childCounts + "] "
                                           : " [1]"}
-                                      </span>
+                                      </Box>
                                     </a>
                                   </div>
                                 ) : null}{" "}
@@ -528,10 +531,10 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                 )}
                               </div>
                               {item.parentType && (
-                                <div
+                                <Box
                                   id={`${item.type}_link_parent_${item.id}`}
                                   data-testid={`${item.type}_link_parent_${item.id}`}
-                                  style={{ fontWeight: "bold" }}
+                                  sx={{ fontWeight: "bold" }}
                                 >
                                   <a
                                     href={
@@ -541,15 +544,15 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   >
                                     {" -> parent_" + item.parentType}
                                   </a>
-                                </div>
+                                </Box>
                               )}
                             </div>
                           ) : (
                             <>
                               {item.descriptionElems}
-                              <div style={{ fontWeight: "bold", fontSize: "16px" }}>
+                              <Box sx={{ fontWeight: "bold", fontSize: "16px" }}>
                                 {item.paths}
-                              </div>
+                              </Box>
                             </>
                           )}
                         </TableCell>

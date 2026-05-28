@@ -1,4 +1,5 @@
 import Chip from "@mui/material/Chip";
+import Box from "@mui/material/Box";
 import React from "react";
 import { match } from "../../util/Util";
 import { useTheme } from "@mui/material/styles";
@@ -36,18 +37,18 @@ function StatusChip({
     [() => Boolean(selectedFilename), selectedFilename],
     [() => true, "None"],
   ])();
-  const iconStyle: React.CSSProperties = {
+  const iconStyle = {
     width: 18,
     height: 18,
-    marginLeft: 2,
+    marginLeft: "2px",
     color: theme.palette.primary.contrastText,
   };
   const avatar = match<void, React.ReactElement | null>([
     [() => loading, null],
-    [() => error, <ErrorIcon key="erroricon" style={iconStyle} />],
+    [() => error, <ErrorIcon key="erroricon" sx={iconStyle} />],
     [
       () => Boolean(selectedFilename),
-      <CheckCircleIcon key="checkicon" style={iconStyle} />,
+      <CheckCircleIcon key="checkicon" sx={iconStyle} />,
     ],
     [() => true, null],
   ])();
@@ -88,22 +89,22 @@ function SelectedFileInfo({
 }: SelectedFileInfoArgs): React.ReactNode {
   const theme = useTheme();
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         display: "flex",
         alignItems: "center",
         padding: theme.spacing(0.5, 2),
       }}
     >
-      <dt style={{ color: theme.palette.text.secondary }}>File selected:</dt>
-      <dd style={{ marginLeft: theme.spacing(1) }}>
+      <Box component="dt" sx={{ color: theme.palette.text.secondary }}>File selected:</Box>
+      <Box component="dd" sx={{ marginLeft: theme.spacing(1) }}>
         <StatusChip
           selectedFilename={selectedFilename}
           error={error}
           loading={loading}
         />
-      </dd>
-    </div>
+      </Box>
+    </Box>
   );
 }
 

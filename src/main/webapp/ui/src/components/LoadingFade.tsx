@@ -16,7 +16,7 @@ const LoadingFade = (props: LoadingFadeArgs): React.ReactNode => {
 
   return (
     <Fade in={props.loading}>
-      <LinearProgress color="primary" style={styles.loadingBar} />
+      <LinearProgress color="primary" sx={styles.loadingBar} />
     </Fade>
   );
 };

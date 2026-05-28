@@ -7,6 +7,7 @@
  */
 import React from "react";
 import Tooltip from "@mui/material/Tooltip";
+import Box from "@mui/material/Box";
 
 type CustomTooltipArgs = {
   title: string,
@@ -41,9 +42,9 @@ export default function CustomTooltip({
       }}
       role="tooltip"
     >
-      <span style={block ? { display: "block", height: 24 } : undefined}>
+      <Box component="span" sx={block ? { display: "block", height: 24 } : undefined}>
         {children}
-      </span>
+      </Box>
     </Tooltip>
   );
 }

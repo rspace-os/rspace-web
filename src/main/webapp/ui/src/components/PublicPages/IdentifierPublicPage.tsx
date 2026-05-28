@@ -366,7 +366,7 @@ export const IdentifierDataGrid = ({
                             {sf.value ? (
                               <>{sf.value}</>
                             ) : (
-                              <em style={{ color: "#949494" }}>None</em>
+                              <Box component="em" sx={{ color: "#949494" }}>None</Box>
                             )}
                           </Grid>
                         </Grid>

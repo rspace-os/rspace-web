@@ -40,7 +40,7 @@ function TemplateDetails(): ReactNode {
       />
       <Box sx={{ ml: 4, mb: 4, mt: 1 }}>
         <FormControl component="fieldset" fullWidth>
-          <FormGroup style={{ maxWidth: 660 }}>
+          <FormGroup sx={{ maxWidth: 660 }}>
             <TemplateName
               disabled={importStore.importData?.createNewTemplate === false}
             />

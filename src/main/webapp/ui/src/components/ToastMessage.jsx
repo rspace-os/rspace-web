@@ -71,8 +71,8 @@ export default function Snackbars() {
   }, [addToast]);
 
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         position: "fixed",
         top: "20px",
         right: "20px",
@@ -86,7 +86,7 @@ export default function Snackbars() {
           {...toastParams}
         />
       ))}
-    </div>
+    </Box>
   );
 }
 
@@ -132,7 +132,7 @@ function ToastMessage({ callback, closeToast, id, open, variant, message }) {
       }}
       open={open}
       onClose={handleClose}
-      style={{
+      sx={{
         position: "relative",
         marginBottom: "10px",
         maxWidth: "500px",
@@ -209,7 +209,7 @@ const MySnackbarContentWrapper = forwardRef(
             color="inherit"
             onClick={onClose}
           >
-            <CloseIcon style={iconStyle} />
+            <CloseIcon sx={iconStyle} />
           </IconButton>,
         ]}
         {...other}

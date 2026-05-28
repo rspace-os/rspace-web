@@ -1,5 +1,6 @@
 /* global $, clientUISettings, sortFileTreeBrowser, updateClientUISetting */
 import React, { useEffect } from "react";
+import Box from "@mui/material/Box";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import PropTypes from "prop-types";
@@ -63,9 +64,9 @@ export default function TreeSort({
   }, []);
 
   return (
-    <div
+    <Box
       className="sortingSettings"
-      style={{
+      sx={{
         display: "flex",
         flexGrow: 1,
         alignItems: "center",
@@ -114,7 +115,7 @@ export default function TreeSort({
           Descending
         </MenuItem>
       </Select>
-    </div>
+    </Box>
   );
 }
 

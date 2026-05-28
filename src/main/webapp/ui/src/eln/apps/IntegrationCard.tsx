@@ -157,33 +157,6 @@ function IntegrationCard<Credentials>({
   const theme = useTheme();
   const { trackEvent } = useContext(AnalyticsContext);
 
-  const cardSx = {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
-    borderRadius: 8,
-    justifyContent: "space-between",
-    boxShadow:
-      mode === "UNAVAILABLE"
-        ? "unset"
-        : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 8px 0px`,
-    filter: mode === "UNAVAILABLE" ? "grayscale(0.6) opacity(0.8)" : "unset",
-    transitionDuration: window.matchMedia("(prefers-reduced-motion: reduce)")
-      .matches
-      ? "0s"
-      : "0.3s",
-    "&:hover": {
-      boxShadow:
-        mode === "UNAVAILABLE"
-          ? "unset"
-          : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 12px 4px`,
-    },
-    "&:focus-within": {
-      boxShadow: `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 12px 4px`,
-      borderColor: theme.palette.primary.main,
-    },
-  } as const;
-
   const cardMediaWrapperSx = {
     borderRadius: theme.spacing(0.75),
     margin: theme.spacing(0.5),
@@ -192,43 +165,6 @@ function IntegrationCard<Credentials>({
     alignSelf: "flex-start",
   } as const;
 
-  const dialogSx = {
-    // these styles allow callers of this component to use regular HTML tags to
-    // markup the `setupSection`
-    "& ol": {
-      marginTop: theme.spacing(0.5),
-      paddingLeft: theme.spacing(3),
-      marginBottom: 0,
-    },
-    "& ol > li": {
-      position: "relative",
-      paddingLeft: theme.spacing(1),
-      color: mainTextColor(color),
-      paddingBottom: theme.spacing(0.5),
-      lineHeight: 1.6,
-      fontSize: "0.875rem",
-      "&::marker": {
-        color: mainTextColor(color),
-        fontWeight: 500,
-        content: "counter(list-item) ' '",
-        paddingRight: theme.spacing(0.25),
-        paddingLeft: theme.spacing(0.25),
-      },
-      "&:before": {
-        content: "''",
-        width: theme.spacing(2.5),
-        height: theme.spacing(2.5),
-        display: "block",
-        position: "absolute",
-        left: "-18px",
-        top: "1px",
-        borderRadius: "50%",
-        backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
-          ? "transparent"
-          : borderColor(color),
-      },
-    },
-  } as const;
   return (
     <ThemeProvider
       theme={createTheme(theme as unknown as ThemeOptions, {
@@ -426,7 +362,43 @@ function IntegrationCard<Credentials>({
         },
       })}
     >
-      <Card variant="outlined" aria-label={name} sx={cardSx}>
+      <Card
+        variant="outlined"
+        aria-label={name}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+          borderRadius: 8,
+          justifyContent: "space-between",
+          boxShadow:
+            mode === "UNAVAILABLE"
+              ? "unset"
+              : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 8px 0px`,
+          filter:
+            mode === "UNAVAILABLE" ? "grayscale(0.6) opacity(0.8)" : "unset",
+          transitionDuration: window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+          ).matches
+            ? "0s"
+            : "0.3s",
+          "&:hover": {
+            boxShadow:
+              mode === "UNAVAILABLE"
+                ? "unset"
+                : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 12px 4px`,
+          },
+          "&:focus-within": {
+            boxShadow: `${hsl(
+              color.hue,
+              color.saturation,
+              20,
+              20,
+            )} 0px 2px 12px 4px`,
+            borderColor: theme.palette.primary.main,
+          },
+        }}
+      >
         <CardActionArea
           disabled={mode === "UNAVAILABLE"}
           onClick={() => {
@@ -460,7 +432,44 @@ function IntegrationCard<Credentials>({
         maxWidth="sm"
         fullWidth
         transitionDuration={isTestEnv ? 0 : undefined}
-        sx={dialogSx}
+        sx={{
+          // these styles allow callers of this component to use regular HTML tags to
+          // markup the `setupSection`
+          "& ol": {
+            marginTop: theme.spacing(0.5),
+            paddingLeft: theme.spacing(3),
+            marginBottom: 0,
+          },
+          "& ol > li": {
+            position: "relative",
+            paddingLeft: theme.spacing(1),
+            color: mainTextColor(color),
+            paddingBottom: theme.spacing(0.5),
+            lineHeight: 1.6,
+            fontSize: "0.875rem",
+            "&::marker": {
+              color: mainTextColor(color),
+              fontWeight: 500,
+              content: "counter(list-item) ' '",
+              paddingRight: theme.spacing(0.25),
+              paddingLeft: theme.spacing(0.25),
+            },
+            "&:before": {
+              content: "''",
+              width: theme.spacing(2.5),
+              height: theme.spacing(2.5),
+              display: "block",
+              position: "absolute",
+              left: "-18px",
+              top: "1px",
+              borderRadius: "50%",
+              backgroundColor: window.matchMedia("(prefers-contrast: more)")
+                .matches
+                ? "transparent"
+                : borderColor(color),
+            },
+          },
+        }}
         disableAutoFocus={isTestEnv}
         disableEnforceFocus={isTestEnv}
         disableRestoreFocus={isTestEnv}

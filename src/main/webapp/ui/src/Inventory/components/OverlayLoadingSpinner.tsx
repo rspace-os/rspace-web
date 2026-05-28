@@ -1,13 +1,14 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import React from "react";
 
 function OverlayLoadingSpinner(): React.ReactNode {
   const theme = useTheme();
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         display: "flex",
         justifyContent: "center",
         position: "absolute",
@@ -17,15 +18,15 @@ function OverlayLoadingSpinner(): React.ReactNode {
         backgroundColor: "rgba(255,255,255,0.7)",
       }}
     >
-      <div style={{ alignSelf: "center" }}>
+      <Box sx={{ alignSelf: "center" }}>
         <FontAwesomeIcon
           icon={faSpinner}
           spin
           size="5x"
           style={{ marginRight: "10px", color: theme.palette.standardIcon.main }}
         />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
 

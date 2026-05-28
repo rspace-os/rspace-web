@@ -127,7 +127,7 @@ export default function EnzymeTable(props) {
         {loading && <LoadingCircular />}
         {!loading && (
           <>
-            <TableContainer style={{ maxHeight: "387px" }}>
+            <TableContainer sx={{ maxHeight: "387px" }}>
               <Table
                 stickyHeader
                 aria-labelledby="Enzyme table"
@@ -160,7 +160,7 @@ export default function EnzymeTable(props) {
                       </TableRow>
                     ))}
                   {emptyRows > 0 && (
-                    <TableRow style={{ height: 33 * emptyRows }}>
+                    <TableRow sx={{ height: 33 * emptyRows }}>
                       <TableCell colSpan={6} />
                     </TableRow>
                   )}

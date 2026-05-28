@@ -83,7 +83,7 @@ export function ConfirmationDialog({
           <DialogTitle id={formTitle}>
             <>{title}</>
           </DialogTitle>
-          <DialogContent style={{ overscrollBehavior: "contain" }}>
+          <DialogContent sx={{ overscrollBehavior: "contain" }}>
             {typeof consequences === "string" ? (
               <Typography
                 variant="subtitle1"

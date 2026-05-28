@@ -91,7 +91,7 @@ export default function NewNotebook() {
       <DialogActions>
         <Button
           onClick={() => setOpen(false)}
-          style={{ color: "grey" }}
+          sx={{ color: "grey" }}
           data-test-id="new-notebook-cancel"
         >
           Cancel

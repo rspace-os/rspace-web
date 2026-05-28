@@ -86,7 +86,7 @@ export default function TagListing({
                 ? "filled"
                 : "outlined"
             }
-            style={{
+            sx={{
               /*
                * By unsetting the userSelect style, when the chip is right
                * clicked the browser's context menu provides the option of

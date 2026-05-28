@@ -12,7 +12,7 @@ export default function ActionsTab(props) {
         <Typography
           variant="overline"
           display="block"
-          style={{ marginTop: "8px" }}
+          sx={{ marginTop: "8px" }}
         >
           {props.config.actions[k].description}
         </Typography>

@@ -40,11 +40,15 @@ function PlanHeaderRow() {
   return (
     <TableRow sx={tableRowSx}>
       <TableCell sx={tableRowCellSx}>
-        <span style={{ flex: 1 }}>Select</span>
-        <span style={{ flex: 5 }}>DMP Title</span>
-        <span style={{ flex: 3, textAlign: "center" }}>
+        <Box component="span" sx={{ flex: 1 }}>
+          Select
+        </Box>
+        <Box component="span" sx={{ flex: 5 }}>
+          DMP Title
+        </Box>
+        <Box component="span" sx={{ flex: 3, textAlign: "center" }}>
           ID
-        </span>
+        </Box>
       </TableCell>
     </TableRow>
   );
@@ -81,7 +85,15 @@ function PlanRow({
       data-testid={plan.dmpId}
     >
       <TableCell sx={tableRowCellSx}>
-        <span style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Box
+          component="span"
+          sx={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <Checkbox
             color="primary"
             onChange={() => toggleSelected()}
@@ -89,14 +101,14 @@ function PlanRow({
             checked={isCurrentlySelected(plan.dmpUserInternalId)}
             slotProps={{ input: { "aria-label": "Plan selection" } }}
           />
-        </span>
+        </Box>
 
         <Box component="span" sx={(theme) => ({ flex: 5, color: theme.palette.primary.main })}>
           {plan.dmpTitle}
         </Box>
-        <span style={{ ...tableSubCellSx, flex: 3 }}>
+        <Box component="span" sx={{ ...tableSubCellSx, flex: 3 }}>
           {plan.dmpId}
-        </span>
+        </Box>
       </TableCell>
     </TableRow>
   );
@@ -116,12 +128,12 @@ export default function DMPTableSmall({
   removeSelectedPlan,
 }: TableArgs): React.ReactNode {
   return (
-    <TableContainer style={{ overflowX: "hidden" }}>
+    <TableContainer sx={{ overflowX: "hidden" }}>
       <Table size="small">
-        <TableHead style={{ maxWidth: "100%" }}>
+        <TableHead sx={{ maxWidth: "100%" }}>
           <PlanHeaderRow />
         </TableHead>
-        <TableBody style={{ maxWidth: "100%" }}>
+        <TableBody sx={{ maxWidth: "100%" }}>
           {plans.map((plan, i) => (
             <PlanRow
               key={i}

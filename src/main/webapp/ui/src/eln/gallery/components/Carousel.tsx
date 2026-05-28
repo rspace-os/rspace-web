@@ -89,10 +89,10 @@ const PreviewWrapper = ({
   }
 
   return (
-    <div
+    <Box
       role="button"
       tabIndex={0}
-      style={{
+      sx={{
         borderRadius: "3px",
         border: `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
         position: "relative",
@@ -204,7 +204,7 @@ const PreviewWrapper = ({
       }}
     >
       {children}
-    </div>
+    </Box>
   );
 };
 
@@ -349,10 +349,11 @@ const Preview = ({
   if (imageSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={false} visible={visible}>
-        <img
+        <Box
+          component="img"
           alt={`Preview of ${file.name}`}
           src={imageSrc}
-          style={{
+          sx={{
             maxHeight: "100%",
             maxWidth: "100%",
             transform: `scale(${zoom})`,

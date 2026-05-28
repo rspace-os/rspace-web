@@ -249,16 +249,12 @@ export default function IgsnManagementPage({
                   />
                 </Menu>
               </Stack>
-              <div
-                style={{
-                  width: "100%",
-                }}
-              >
+              <Box sx={{ width: "100%" }}>
                 <IgsnTable
                   selectedIgsns={selectedIgsns}
                   setSelectedIgsns={setSelectedIgsns}
                 />
-              </div>
+              </Box>
             </Stack>
           </TitledBox>
         </Stack>

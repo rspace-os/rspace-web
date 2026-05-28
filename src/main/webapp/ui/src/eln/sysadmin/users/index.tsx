@@ -1313,7 +1313,7 @@ const UsersToolbar = ({
         width: "100%",
         display: "flex",
         alignItems: "center",
-        gap: 8,
+        gap: "8px",
         flexWrap: "wrap",
       }}
     >
@@ -1740,8 +1740,8 @@ export const UsersPage = (): React.ReactNode => {
     <Analytics>
       <ErrorBoundary topOfViewport>
         <Alerts>
-          <div
-            style={{
+          <Box
+            sx={{
               width: "calc(100% - 16px)",
               backgroundColor: "#f5f5f5",
               padding: "8px",
@@ -1930,11 +1930,7 @@ export const UsersPage = (): React.ReactNode => {
                       selectedIds={selectedIds as ReadonlyArray<UserId>}
                       fetchedListing={userListing}
                     />
-                    <div
-                      style={{
-                        width: "100%",
-                      }}
-                    >
+                    <Box sx={{ width: "100%" }}>
                       <DataGrid
                         sx={{
                           "& .MuiTablePagination-selectLabel": {
@@ -2086,7 +2082,7 @@ export const UsersPage = (): React.ReactNode => {
                         })}
                         showToolbar
                       />
-                    </div>
+                    </Box>
                     <Panel
                       anchorEl={groupsAnchorEl}
                       onClose={() => setGroupsAnchorEl(null)}
@@ -2125,7 +2121,7 @@ export const UsersPage = (): React.ReactNode => {
                 </Stack>
               </CardContent>
             </Card>
-          </div>
+          </Box>
         </Alerts>
       </ErrorBoundary>
     </Analytics>

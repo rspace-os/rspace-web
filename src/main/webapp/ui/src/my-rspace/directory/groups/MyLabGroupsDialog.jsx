@@ -15,6 +15,7 @@ import { faCaretLeft } from "@fortawesome/free-solid-svg-icons/faCaretLeft";
 import { faCaretRight } from "@fortawesome/free-solid-svg-icons/faCaretRight";
 import { faAngleDoubleLeft } from "@fortawesome/free-solid-svg-icons/faAngleDoubleLeft";
 import axios from "@/common/axios";
+import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 
 const DEFAULT_STATE = {
@@ -211,13 +212,6 @@ class MyLabGroupsDialog extends React.Component {
     }
   };
 
-  styles = {
-    toastSuccess: {
-      backgroundColor: "#4CAF50",
-      color: "white",
-    },
-  };
-
   render() {
     return (
       <div>
@@ -242,8 +236,8 @@ class MyLabGroupsDialog extends React.Component {
                 />
               </Grid>
               <Grid size={2}>
-                <div
-                  style={{
+                <Box
+                  sx={{
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -275,7 +269,7 @@ class MyLabGroupsDialog extends React.Component {
                   >
                     <FontAwesomeIcon icon={faAngleDoubleLeft} />
                   </IconButton>
-                </div>
+                </Box>
               </Grid>
               <Grid size={5}>
                 <UserList
@@ -318,7 +312,7 @@ class MyLabGroupsDialog extends React.Component {
           <SnackbarContent
             onClose={this.closeUsersAddedToast}
             message={this.state.usersAddedMsg}
-            style={this.styles.toastSuccess}
+            sx={{ backgroundColor: "#4CAF50", color: "white" }}
           />
         </Snackbar>
       </div>

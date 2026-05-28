@@ -42,7 +42,7 @@ window.addEventListener("load", () => {
           <ErrorBoundary>
             <CssBaseline />
             <ThemeProvider theme={createAccentedTheme(OTHER_COLOR)}>
-              <div style={{ fontSize: "1rem", lineHeight: "1.5" }}>
+              <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
                 <DialogBoundary>
                   <Container maxWidth="sm">
                     <Box sx={{ py: 4 }}>
@@ -58,7 +58,7 @@ window.addEventListener("load", () => {
                     </Box>
                   </Container>
                 </DialogBoundary>
-              </div>
+              </Box>
             </ThemeProvider>
           </ErrorBoundary>
         </Analytics>

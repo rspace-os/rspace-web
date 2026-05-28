@@ -5,6 +5,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import axios from "@/common/axios";
 import { type ExportSelection } from "./common";
 import { type Validator } from "../util/Validator";
@@ -336,7 +337,9 @@ function FormatChoice({
           )}
         </Stack>
       </RadioGroup>
-      <h3 style={{ marginTop: "20px" }}>Choose additional destinations</h3>
+      <Box component="h3" sx={{ marginTop: "20px" }}>
+        Choose additional destinations
+      </Box>
       <Grid size={12}>
         <FormControlLabel
           control={
