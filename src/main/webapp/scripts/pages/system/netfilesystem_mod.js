@@ -417,24 +417,21 @@ function refreshWhitelistRows() {
     // read question is moot and its whole row stays hidden.
     // The username input next to each 'Only the following users:' radio shows
     // only when that radio is selected.
+    // Visibility and 'required' are kept in sync so a hidden field can never block
+    // form save: switching away from S3 clears required on the now-invisible radios.
     var isS3Client = $('#fileSystemClientTypeS3').prop('checked');
     var isNoneAuth = $('#fileSystemAuthTypeNone').prop('checked');
     var showWhitelists = isS3Client && isNoneAuth;
-    $('.fileSystemDetailsWhitelistsRow').toggle(showWhitelists);
-    if (!showWhitelists) {
-        return;
-    }
-    var writeOnly = $('#fileSystemLimitWriteYes').prop('checked');
-    var writeNobody = $('#fileSystemLimitWriteNobody').prop('checked');
-    $('#fileSystemWriteWhitelist').toggle(writeOnly);
+    var writeOnly = showWhitelists && $('#fileSystemLimitWriteYes').prop('checked');
+    var writeNobody = showWhitelists && $('#fileSystemLimitWriteNobody').prop('checked');
     var showReadQuestion = writeOnly || writeNobody;
+
+    $('.fileSystemDetailsWhitelistsRow').toggle(showWhitelists);
+    $('#fileSystemWriteWhitelist').toggle(writeOnly);
     $('.fileSystemDetailsReadWhitelistRow').toggle(showReadQuestion);
     $('#fileSystemReadWhitelist').toggle(
         showReadQuestion && $('#fileSystemLimitReadYes').prop('checked'));
 
-    // Force the sysadmin to make an explicit choice on each visible group. The
-    // required flag is toggled together with row visibility so non-S3 / non-NONE
-    // filesystems don't get blocked by an invisible required field.
     $('#fileSystemLimitWriteNo').prop('required', showWhitelists);
     $('#fileSystemLimitReadNo').prop('required', showReadQuestion);
 }
