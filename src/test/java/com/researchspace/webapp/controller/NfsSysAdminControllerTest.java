@@ -99,6 +99,48 @@ public class NfsSysAdminControllerTest {
   }
 
   @Test
+  public void saveFileSystem_usernameInBothLists_rejectedAndNotSaved() {
+    nfs.setReadWhitelist("alice,carol");
+    nfs.setWriteWhitelist("alice,bob");
+
+    IllegalArgumentException ex =
+        org.junit.Assert.assertThrows(
+            IllegalArgumentException.class, () -> nfsSystemCtrller.saveFileSystem(nfs));
+    org.junit.Assert.assertTrue(
+        "expected error to name the duplicated user, got: " + ex.getMessage(),
+        ex.getMessage().contains("alice"));
+    verify(netFilesMgr, never()).saveNfsFileSystem(nfs);
+  }
+
+  @Test
+  public void saveFileSystem_everyoneSentinelInBothLists_isAllowed() {
+    // '*' in both lists means 'everyone reads, everyone writes' — a valid configuration,
+    // not a duplicate of a named user.
+    nfs.setReadWhitelist("*");
+    nfs.setWriteWhitelist("*");
+
+    NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
+
+    assertEquals(12L, result.getFileSystemId().longValue());
+    verify(netFilesMgr, atLeastOnce()).saveNfsFileSystem(nfs);
+  }
+
+  @Test
+  public void saveFileSystem_emptyWriteWhitelist_isNobodyAndDoesNotTriggerLookup() {
+    // The 'Nobody (read access only)' radio submits an empty string for the write list.
+    // parseList returns an empty set, so no lookup is attempted; the value is persisted as-is.
+    nfs.setReadWhitelist("alice");
+    nfs.setWriteWhitelist("");
+    when(userMgr.getUserByUsername("alice")).thenReturn(sysadmin);
+
+    NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
+
+    assertTrue(result.getUnknownReadWhitelistUsernames().isEmpty());
+    assertTrue(result.getUnknownWriteWhitelistUsernames().isEmpty());
+    verify(netFilesMgr, atLeastOnce()).saveNfsFileSystem(nfs);
+  }
+
+  @Test
   public void saveFileSystem_everyoneSentinel_doesNotTriggerLookup() {
     nfs.setReadWhitelist("*");
     nfs.setWriteWhitelist("*");

@@ -5,7 +5,9 @@ import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.NfsManager;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -65,12 +67,31 @@ public class NfsSysAdminController extends BaseController {
   @ResponseBody
   public NfsFileSystemSaveResult saveFileSystem(@RequestBody NfsFileSystem nfsFileSystem) {
     assertIsSysAdmin();
+    rejectIfUsernamesInBothLists(nfsFileSystem);
 
     List<String> unknownReaders = findUnknownUsernames(nfsFileSystem.getReadWhitelist());
     List<String> unknownWriters = findUnknownUsernames(nfsFileSystem.getWriteWhitelist());
 
     nfsManager.saveNfsFileSystem(nfsFileSystem);
     return new NfsFileSystemSaveResult(nfsFileSystem.getId(), unknownReaders, unknownWriters);
+  }
+
+  /**
+   * Read-only and read+write lists are conceptually disjoint under the new UI labels; a named
+   * username appearing in both is treated as a sysadmin mistake. The 'everyone' sentinel is exempt
+   * because each list independently expressing 'everyone' is a legitimate configuration.
+   */
+  private void rejectIfUsernamesInBothLists(NfsFileSystem nfsFileSystem) {
+    Set<String> intersection =
+        new LinkedHashSet<>(FilestoreAclChecker.parseList(nfsFileSystem.getReadWhitelist()));
+    intersection.retainAll(FilestoreAclChecker.parseList(nfsFileSystem.getWriteWhitelist()));
+    intersection.remove(FilestoreAclChecker.EVERYONE);
+    if (!intersection.isEmpty()) {
+      throw new IllegalArgumentException(
+          "These users are listed for both read and write access; please remove them"
+              + " from one of the lists: "
+              + String.join(", ", intersection));
+    }
   }
 
   /**

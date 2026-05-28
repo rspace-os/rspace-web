@@ -195,6 +195,9 @@
                 </td>
             </tr>
 
+            <tr class="fileSystemDetailsS3Row">
+                <td colspan="2"><hr /></td>
+            </tr>
             <tr class="fileSystemDetailsAuthRow">
                 <td><label><spring:message code="system.netfilesystem.details.auth" /></label></td>
                 <td>
@@ -226,24 +229,31 @@
             </tr>
 
             <tr class="fileSystemDetailsWhitelistsRow">
-                <td colspan="2">
-                    <h4><spring:message code="system.netfilesystem.details.whitelists.header" /></h4>
-                    <div class="fileSystemDetailsWhitelistsHelp" style="font-size: 0.9em; color: #555; margin-bottom: 0.5em;">
-                        <spring:message code="system.netfilesystem.details.whitelists.help" arguments="*" />
-                    </div>
+                <td><label><spring:message code="system.netfilesystem.details.whitelists.write.question" /></label></td>
+                <td>
+                    <label><input type="radio" id="fileSystemLimitWriteNo" name="fileSystemLimitWrite" value="no">
+                        <spring:message code="system.netfilesystem.details.whitelists.anyone" /></label><br/>
+                    <label><input type="radio" id="fileSystemLimitWriteYes" name="fileSystemLimitWrite" value="yes">
+                        <spring:message code="system.netfilesystem.details.whitelists.only.these" /></label>
+                    <input id="fileSystemWriteWhitelist" type="text" style="width: 15em" placeholder="alice, bob" /><br/>
+                    <label><input type="radio" id="fileSystemLimitWriteNobody" name="fileSystemLimitWrite" value="nobody">
+                        <spring:message code="system.netfilesystem.details.whitelists.nobody" /></label>
                 </td>
             </tr>
-            <tr class="fileSystemDetailsWhitelistsRow">
-                <td><label for="fileSystemReadWhitelist">
-                    <spring:message code="system.netfilesystem.details.read.whitelist" /></label></td>
-                <td><textarea id="fileSystemReadWhitelist" rows="2" style="width: 20em" placeholder="*, alice, bob"></textarea></td>
-            </tr>
-            <tr class="fileSystemDetailsWhitelistsRow">
-                <td><label for="fileSystemWriteWhitelist">
-                    <spring:message code="system.netfilesystem.details.write.whitelist" /></label></td>
-                <td><textarea id="fileSystemWriteWhitelist" rows="2" style="width: 20em" placeholder="alice, bob"></textarea></td>
+            <tr class="fileSystemDetailsWhitelistsRow fileSystemDetailsReadWhitelistRow">
+                <td><label><spring:message code="system.netfilesystem.details.whitelists.read.question" /></label></td>
+                <td>
+                    <label><input type="radio" id="fileSystemLimitReadNo" name="fileSystemLimitRead" value="no">
+                        <spring:message code="system.netfilesystem.details.whitelists.anyone" /></label><br/>
+                    <label><input type="radio" id="fileSystemLimitReadYes" name="fileSystemLimitRead" value="yes">
+                        <spring:message code="system.netfilesystem.details.whitelists.only.these" /></label>
+                    <input id="fileSystemReadWhitelist" type="text" style="width: 15em" placeholder="carol" />
+                </td>
             </tr>
 
+            <tr class="fileSystemDetailsS3Row">
+                <td colspan="2"><hr /></td>
+            </tr>
             <tr>
                 <td><label><spring:message code="system.netfilesystem.details.status" /></label></td>
                 <td>

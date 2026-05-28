@@ -211,8 +211,8 @@ function displayFileSystemDetailsDiv(fileSystem) {
         }
     }
 
-    $('#fileSystemReadWhitelist').val(fileSystem.readWhitelist || "");
-    $('#fileSystemWriteWhitelist').val(fileSystem.writeWhitelist || "");
+    setWhitelistFields('Read', fileSystem.readWhitelist);
+    setWhitelistFields('Write', fileSystem.writeWhitelist);
     refreshWhitelistRows();
 
     var isEnabled = isExistingFileSystem && !fileSystem.disabled;
@@ -281,8 +281,8 @@ function saveFileSystem() {
             + "\nS3_PATH_STYLE_ACCESS_ENABLED=" + s3PathStyleEnabled;
     }
 
-    var readWhitelist = $('#fileSystemReadWhitelist').val();
-    var writeWhitelist = $('#fileSystemWriteWhitelist').val();
+    var readWhitelist = collectWhitelistValue('Read');
+    var writeWhitelist = collectWhitelistValue('Write');
     var fileSystem = {
             id: $('#fileSystemId').html(),
             name: $('#fileSystemName').val(),
@@ -299,7 +299,7 @@ function saveFileSystem() {
     var jqxhr = RS.sendJsonPostRequestToUrl('/system/netfilesystem/save', fileSystem);
     jqxhr.done(function(result) {
         $().toastmessage('showSuccessToast', 'File System saved');
-        showWhitelistWarnings(result, writeWhitelist);
+        showWhitelistWarnings(result);
         loadNetFileSystemsList();
     });
     jqxhr.fail(function () {
@@ -392,6 +392,11 @@ function refreshClientTypeRows() {
         $('#fileSystemUrl').removeAttr('title').removeAttr('pattern');
     }
     $('#fileSystemUrl').prop('required', !isS3AWSClient);
+
+    // Hide whitelist rows when switching away from S3. The NONE auth radio may still
+    // be 'checked' after such a switch (its label is hidden by the block above, but
+    // the radio state lingers), so refreshAuthTypeRows wouldn't fire on its own.
+    refreshWhitelistRows();
 }
 
 function refreshAuthTypeRows() {
@@ -403,12 +408,70 @@ function refreshAuthTypeRows() {
 }
 
 function refreshWhitelistRows() {
-    // whitelists only apply to filesystems with server-wide auth (authType=NONE)
+    // Whitelists only apply when the NONE auth radio is both selected AND available
+    // for the current client type (today that's S3 only). Requiring both guards the
+    // transient state right after switching client type, when the NONE radio's check
+    // state still lingers from the previous S3 selection.
+    // The read question is meaningful when writers are restricted ('only listed users'
+    // or 'nobody'); when writers are 'anyone', everyone already has read+write so the
+    // read question is moot and its whole row stays hidden.
+    // The username input next to each 'Only the following users:' radio shows
+    // only when that radio is selected.
+    var isS3Client = $('#fileSystemClientTypeS3').prop('checked');
     var isNoneAuth = $('#fileSystemAuthTypeNone').prop('checked');
-    $('.fileSystemDetailsWhitelistsRow').toggle(isNoneAuth);
+    var showWhitelists = isS3Client && isNoneAuth;
+    $('.fileSystemDetailsWhitelistsRow').toggle(showWhitelists);
+    if (!showWhitelists) {
+        return;
+    }
+    var writeOnly = $('#fileSystemLimitWriteYes').prop('checked');
+    var writeNobody = $('#fileSystemLimitWriteNobody').prop('checked');
+    $('#fileSystemWriteWhitelist').toggle(writeOnly);
+    var showReadQuestion = writeOnly || writeNobody;
+    $('.fileSystemDetailsReadWhitelistRow').toggle(showReadQuestion);
+    $('#fileSystemReadWhitelist').toggle(
+        showReadQuestion && $('#fileSystemLimitReadYes').prop('checked'));
 }
 
-function showWhitelistWarnings(result, writeWhitelist) {
+// Maps a persisted whitelist value to the radio + input pair:
+//   '*' (everyone)              -> "Anyone with an RSpace account"; input cleared
+//   'alice,bob' (named list)    -> "Only the following users"; input populated
+//   '' or null   (write only)   -> "Nobody (read access only)" radio when suffix==='Write'
+//                                  (Read has no Nobody option, so falls through to no
+//                                  preselection)
+//   undefined    (fresh add)    -> no radio preselected; input cleared
+function setWhitelistFields(suffix, value) {
+    var isEveryone = value === '*';
+    var hasNames = typeof value === 'string' && value !== '' && !isEveryone;
+    $('#fileSystemLimit' + suffix + 'No').prop('checked', isEveryone);
+    $('#fileSystemLimit' + suffix + 'Yes').prop('checked', hasNames);
+    if (suffix === 'Write') {
+        // persisted '' or null means nobody is on the write list; undefined means
+        // a fresh-add filesystem where no choice has been made yet.
+        var isNobody = value === '' || value === null;
+        $('#fileSystemLimitWriteNobody').prop('checked', isNobody);
+    }
+    $('#fileSystem' + suffix + 'Whitelist').val(hasNames ? value : '');
+}
+
+// Inverse of setWhitelistFields: derive the value to submit from the current radio + input.
+// If write access isn't limited (everyone writes), everyone reads too, so the read value
+// is forced to '*' regardless of any orphan state in the hidden read radio/input.
+function collectWhitelistValue(suffix) {
+    if (suffix === 'Read' && $('#fileSystemLimitWriteNo').prop('checked')) {
+        return '*';
+    }
+    var limit = $('input[name=fileSystemLimit' + suffix + ']:checked').val();
+    if (limit === 'no') {
+        return '*';
+    }
+    if (limit === 'nobody') {
+        return '';
+    }
+    return $('#fileSystem' + suffix + 'Whitelist').val();
+}
+
+function showWhitelistWarnings(result) {
     if (!result) {
         return;
     }
@@ -422,10 +485,6 @@ function showWhitelistWarnings(result, writeWhitelist) {
             'Unknown usernames on write whitelist (saved as typed): '
             + result.unknownWriteWhitelistUsernames.join(', '));
     }
-    if (writeWhitelist && writeWhitelist.split(',').map(function(s) { return s.trim(); }).indexOf('*') !== -1) {
-        $().toastmessage('showWarningToast',
-            "Write whitelist is set to '*': any logged-in user will be able to write to this file system.");
-    }
 }
 
 $(document).ready(function() {	
@@ -437,6 +496,8 @@ $(document).ready(function() {
     $(document).on('change', 'input[name="fileSystemClientTypeSamba"]', refreshClientTypeRows);
     $(document).on('change', 'input[name="fileSystemClientTypeS3"]', refreshClientTypeRows);
     $(document).on('change', 'input[name="fileSystemAuthType"]', refreshAuthTypeRows);
+    $(document).on('change', 'input[name="fileSystemLimitRead"]', refreshWhitelistRows);
+    $(document).on('change', 'input[name="fileSystemLimitWrite"]', refreshWhitelistRows);
     $(document).on('click','#addNewFileSystem', addNewFileSystem);
     $(document).on('submit', '#fileSystemDetailsForm', saveFileSystem);
 });
