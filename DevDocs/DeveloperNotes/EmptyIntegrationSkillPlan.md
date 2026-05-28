@@ -70,7 +70,6 @@ The skill / human implementer needs four pieces of data:
 | `src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js`                 | Add `<name>Enabled` const, plus an `if (<name>Enabled) { ... }` block containing both `localTinymcesetup.external_plugins["<name>"] = "..."` AND `addToToolbarIfNotPresent(localTinymcesetup, " | <name>")` (the second line is required for the toolbar button to appear). |
 | `src/main/java/com/researchspace/webapp/controller/IntegrationController.java`       | Add `rc.put(<NAME>_APP_NAME, ...)` in `getAll(User)` and the corresponding static import.                             |
 | `src/main/webapp/scripts/tinymce/tinymce5109/icons/custom_icons/icons.js`            | Register a `<name>` SVG icon entry.                                                                                   |
-| `build-resources/resources_to_MD5_rename.txt`                                              | Add `scripts/externalTinymcePlugins/<name>/plugin.min.js` line.                                                       |
 | `src/main/webapp/ui/bundleEntries.json`                                                    | Add `"tinymce<Name>": "src/tinyMCE/<name>/index.tsx"` entry.                                                          |
 
 ## Out of scope (explicitly NOT touched)
@@ -151,4 +150,3 @@ The empty-integration skill **does not** modify any of:
 5. Replace the TinyMCE icon SVG in `icons.js` with a properly-designed icon.
 6. Choose the appropriate sysadmin-settings category in `settings_mod.js`
    (the skill defaults to `'Other'`).
-
