@@ -7,9 +7,7 @@
 
   <changeSet id="2026-05-28-nfs-filesystem-whitelist-columns" context="run" author="matthias">
     <comment>
-      Per-filesystem read/write user whitelists (RSDEV-1111). Values are
-      comma-separated usernames, '*' for everyone, NULL/empty for nobody.
-      Only consulted when authType=NONE (server-wide credentials).
+      Per-filesystem read/write user whitelists (RSDEV-1111).
     </comment>
     <addColumn tableName="NfsFileSystem">
       <column name="readWhitelist" type="VARCHAR(4000)"/>
@@ -23,7 +21,6 @@
     <comment>
       On upgrade, existing server-wide-auth file systems retain read access
       for everyone (preserving prior behaviour) and write access for nobody.
-      Sysadmins must explicitly grant write access via the new UI.
     </comment>
     <sql>
       UPDATE NfsFileSystem SET readWhitelist = '*' WHERE authType = 'NONE';

@@ -87,9 +87,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
   /**
    * Returns an NfsClient for the given user and filesystem after asserting the user has read
-   * access. Throws {@link org.apache.shiro.authz.AuthorizationException} (mapped to 403) if not.
-   * All read paths on this controller (browse, download) route through here so the assertion cannot
-   * be forgotten.
+   * access.
    */
   private NfsClient getNfsClientForUserAndFilesystem(User user, NfsFileSystem filesystem) {
     aclChecker.assertCanRead(user, filesystem);
