@@ -130,52 +130,52 @@ afterEach(() => {
 });
 
 describe("DMPDialog", () => {
-  describe("Row selection (radio per DMP)", () => {
-    test("renders one radio per DMP returned by the listing.", async () => {
+  describe("Row selection (checkbox per DMP)", () => {
+    test("renders one checkbox per DMP returned by the listing.", async () => {
       stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
 
       renderDialog();
 
       expect(
-        await screen.findByRole("radio", { name: "Select Plan One" }),
+        await screen.findByRole("checkbox", { name: "Select Plan One" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("radio", { name: "Select Plan Two" }),
+        screen.getByRole("checkbox", { name: "Select Plan Two" }),
       ).toBeInTheDocument();
     });
 
-    test("clicking a radio selects that DMP.", async () => {
+    test("clicking a checkbox selects that DMP.", async () => {
       stubListPlans([makePlan(1, "Plan One")]);
 
       renderDialog();
 
-      const radio = await screen.findByRole("radio", {
+      const cb = await screen.findByRole("checkbox", {
         name: "Select Plan One",
       });
-      expect(radio).not.toBeChecked();
+      expect(cb).not.toBeChecked();
 
-      fireEvent.click(radio);
+      fireEvent.click(cb);
 
-      expect(radio).toBeChecked();
+      expect(cb).toBeChecked();
     });
 
-    test("clicking an already-selected radio deselects it.", async () => {
+    test("clicking an already-selected checkbox deselects it.", async () => {
       stubListPlans([makePlan(1, "Plan One")]);
 
       renderDialog();
 
-      const radio = await screen.findByRole("radio", {
+      const cb = await screen.findByRole("checkbox", {
         name: "Select Plan One",
       });
-      fireEvent.click(radio);
-      expect(radio).toBeChecked();
+      fireEvent.click(cb);
+      expect(cb).toBeChecked();
 
-      fireEvent.click(radio);
+      fireEvent.click(cb);
 
-      expect(radio).not.toBeChecked();
+      expect(cb).not.toBeChecked();
     });
 
-    test("multiple radios can be selected at the same time.", async () => {
+    test("multiple checkboxes can be selected at the same time.", async () => {
       stubListPlans([
         makePlan(1, "Plan One"),
         makePlan(2, "Plan Two"),
@@ -184,18 +184,18 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      const radio1 = await screen.findByRole("radio", {
+      const cb1 = await screen.findByRole("checkbox", {
         name: "Select Plan One",
       });
-      const radio2 = screen.getByRole("radio", { name: "Select Plan Two" });
-      const radio3 = screen.getByRole("radio", { name: "Select Plan Three" });
+      const cb2 = screen.getByRole("checkbox", { name: "Select Plan Two" });
+      const cb3 = screen.getByRole("checkbox", { name: "Select Plan Three" });
 
-      fireEvent.click(radio1);
-      fireEvent.click(radio3);
+      fireEvent.click(cb1);
+      fireEvent.click(cb3);
 
-      expect(radio1).toBeChecked();
-      expect(radio2).not.toBeChecked();
-      expect(radio3).toBeChecked();
+      expect(cb1).toBeChecked();
+      expect(cb2).not.toBeChecked();
+      expect(cb3).toBeChecked();
     });
   });
 
@@ -206,7 +206,7 @@ describe("DMPDialog", () => {
       renderDialog();
 
       fireEvent.click(
-        await screen.findByRole("radio", { name: "Select Plan One" }),
+        await screen.findByRole("checkbox", { name: "Select Plan One" }),
       );
 
       expect(screen.getByRole("button", { name: "Import" })).toBeInTheDocument();
@@ -222,10 +222,10 @@ describe("DMPDialog", () => {
       renderDialog();
 
       fireEvent.click(
-        await screen.findByRole("radio", { name: "Select Plan One" }),
+        await screen.findByRole("checkbox", { name: "Select Plan One" }),
       );
       fireEvent.click(
-        screen.getByRole("radio", { name: "Select Plan Two" }),
+        screen.getByRole("checkbox", { name: "Select Plan Two" }),
       );
 
       expect(
@@ -233,7 +233,7 @@ describe("DMPDialog", () => {
       ).toBeInTheDocument();
 
       fireEvent.click(
-        screen.getByRole("radio", { name: "Select Plan Three" }),
+        screen.getByRole("checkbox", { name: "Select Plan Three" }),
       );
 
       expect(
@@ -255,7 +255,7 @@ describe("DMPDialog", () => {
         renderDialog();
 
         // wait until the dialog finishes loading and the Import button is present
-        await screen.findByRole("radio", { name: "Select Plan One" });
+        await screen.findByRole("checkbox", { name: "Select Plan One" });
 
         fireEvent.click(screen.getByRole("button", { name: "Import" }));
 
@@ -279,10 +279,10 @@ describe("DMPDialog", () => {
       fireEvent.click(selectAll);
 
       expect(
-        screen.getByRole("radio", { name: "Select Plan One" }),
+        screen.getByRole("checkbox", { name: "Select Plan One" }),
       ).toBeChecked();
       expect(
-        screen.getByRole("radio", { name: "Select Plan Two" }),
+        screen.getByRole("checkbox", { name: "Select Plan Two" }),
       ).toBeChecked();
       expect(
         screen.getByRole("button", { name: "Import (2)" }),
@@ -302,10 +302,10 @@ describe("DMPDialog", () => {
       fireEvent.click(selectAll);
 
       expect(
-        screen.getByRole("radio", { name: "Select Plan One" }),
+        screen.getByRole("checkbox", { name: "Select Plan One" }),
       ).not.toBeChecked();
       expect(
-        screen.getByRole("radio", { name: "Select Plan Two" }),
+        screen.getByRole("checkbox", { name: "Select Plan Two" }),
       ).not.toBeChecked();
     });
 
@@ -317,10 +317,10 @@ describe("DMPDialog", () => {
 
         renderDialog();
 
-        const radio1 = await screen.findByRole("radio", {
+        const cb1 = await screen.findByRole("checkbox", {
           name: "Select Plan One",
         });
-        fireEvent.click(radio1);
+        fireEvent.click(cb1);
 
         const selectAll = screen.getByRole("checkbox", {
           name: "Select all DMPs on this page",
@@ -342,10 +342,10 @@ describe("DMPDialog", () => {
         renderDialog();
 
         fireEvent.click(
-          await screen.findByRole("radio", { name: "Select Plan One" }),
+          await screen.findByRole("checkbox", { name: "Select Plan One" }),
         );
         fireEvent.click(
-          screen.getByRole("radio", { name: "Select Plan Two" }),
+          screen.getByRole("checkbox", { name: "Select Plan Two" }),
         );
 
         const selectAll = screen.getByRole("checkbox", {
@@ -371,10 +371,10 @@ describe("DMPDialog", () => {
         renderDialog();
 
         fireEvent.click(
-          await screen.findByRole("radio", { name: "Select Plan One" }),
+          await screen.findByRole("checkbox", { name: "Select Plan One" }),
         );
         fireEvent.click(
-          screen.getByRole("radio", { name: "Select Plan Two" }),
+          screen.getByRole("checkbox", { name: "Select Plan Two" }),
         );
 
         fireEvent.click(screen.getByRole("button", { name: "Import (2)" }));
@@ -402,6 +402,61 @@ describe("DMPDialog", () => {
           "Plan One",
           "Plan Two",
         ]);
+      },
+    );
+  });
+
+  describe("Listing failure", () => {
+    test(
+      "closes the dialog when the listing fetch fails so the upstream " +
+        "response (which may include HTML) is never rendered inside the dialog.",
+      async () => {
+        // The upstream-403 response shape that triggered the original bug:
+        // backend returned `{ data: null, error: { errorMessages: [<HTML>] } }`.
+        mockAxios.onGet(/\/apps\/dmpassistant\/plans.*/).reply(200, {
+          data: null,
+          error: {
+            errorMessages: [
+              "DMP Assistant returned an error: 403 Forbidden.",
+            ],
+          },
+        });
+        const setOpen = vi.fn();
+
+        render(
+          <ThemeProvider theme={materialTheme}>
+            <DMPDialog open setOpen={setOpen} />
+          </ThemeProvider>,
+        );
+
+        await waitFor(() => {
+          expect(setOpen).toHaveBeenCalledWith(false);
+        });
+      },
+    );
+
+    test(
+      "never renders raw HTML from a failed listing response inside the " +
+        "dialog body.",
+      async () => {
+        const upstreamHtml =
+          "<!DOCTYPE html><html><body>Just a moment...</body></html>";
+        mockAxios.onGet(/\/apps\/dmpassistant\/plans.*/).reply(200, {
+          data: null,
+          error: { errorMessages: [upstreamHtml] },
+        });
+
+        const { container } = render(
+          <ThemeProvider theme={materialTheme}>
+            <DMPDialog open setOpen={() => {}} />
+          </ThemeProvider>,
+        );
+
+        // Wait for the listing fetch to resolve, then assert that the upstream
+        // HTML never appears in the dialog DOM (neither parsed nor as text).
+        await waitFor(() => {
+          expect(container.textContent ?? "").not.toContain("Just a moment");
+        });
       },
     );
   });
