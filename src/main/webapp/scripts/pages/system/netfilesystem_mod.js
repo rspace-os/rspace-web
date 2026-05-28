@@ -211,6 +211,10 @@ function displayFileSystemDetailsDiv(fileSystem) {
         }
     }
 
+    $('#fileSystemReadWhitelist').val(fileSystem.readWhitelist || "");
+    $('#fileSystemWriteWhitelist').val(fileSystem.writeWhitelist || "");
+    refreshWhitelistRows();
+
     var isEnabled = isExistingFileSystem && !fileSystem.disabled;
     var isDisabled = isExistingFileSystem && fileSystem.disabled;
     $('#fileSystemStatusEnabled').prop('checked', isEnabled);
@@ -277,6 +281,8 @@ function saveFileSystem() {
             + "\nS3_PATH_STYLE_ACCESS_ENABLED=" + s3PathStyleEnabled;
     }
 
+    var readWhitelist = $('#fileSystemReadWhitelist').val();
+    var writeWhitelist = $('#fileSystemWriteWhitelist').val();
     var fileSystem = {
             id: $('#fileSystemId').html(),
             name: $('#fileSystemName').val(),
@@ -285,12 +291,15 @@ function saveFileSystem() {
             clientType: clientType,
             authType: authType,
             clientOptions: clientOptions,
-            authOptions: authOptions
+            authOptions: authOptions,
+            readWhitelist: authType === 'NONE' ? readWhitelist : null,
+            writeWhitelist: authType === 'NONE' ? writeWhitelist : null
         };
     RS.blockPage("Saving...");
     var jqxhr = RS.sendJsonPostRequestToUrl('/system/netfilesystem/save', fileSystem);
-    jqxhr.done(function() {
+    jqxhr.done(function(result) {
         $().toastmessage('showSuccessToast', 'File System saved');
+        showWhitelistWarnings(result, writeWhitelist);
         loadNetFileSystemsList();
     });
     jqxhr.fail(function () {
@@ -387,9 +396,36 @@ function refreshClientTypeRows() {
 
 function refreshAuthTypeRows() {
     var isPubKeyAuth = $('#fileSystemAuthTypePubKey').prop('checked');
-    
+
     $('.fileSystemDetailsPubKeyRow').toggle(isPubKeyAuth);
     $('#fileSystemPubKeyRegistrationUrl').prop('required', isPubKeyAuth);
+    refreshWhitelistRows();
+}
+
+function refreshWhitelistRows() {
+    // whitelists only apply to filesystems with server-wide auth (authType=NONE)
+    var isNoneAuth = $('#fileSystemAuthTypeNone').prop('checked');
+    $('.fileSystemDetailsWhitelistsRow').toggle(isNoneAuth);
+}
+
+function showWhitelistWarnings(result, writeWhitelist) {
+    if (!result) {
+        return;
+    }
+    if (result.unknownReadWhitelistUsernames && result.unknownReadWhitelistUsernames.length) {
+        $().toastmessage('showWarningToast',
+            'Unknown usernames on read whitelist (saved as typed): '
+            + result.unknownReadWhitelistUsernames.join(', '));
+    }
+    if (result.unknownWriteWhitelistUsernames && result.unknownWriteWhitelistUsernames.length) {
+        $().toastmessage('showWarningToast',
+            'Unknown usernames on write whitelist (saved as typed): '
+            + result.unknownWriteWhitelistUsernames.join(', '));
+    }
+    if (writeWhitelist && writeWhitelist.split(',').map(function(s) { return s.trim(); }).indexOf('*') !== -1) {
+        $().toastmessage('showWarningToast',
+            "Write whitelist is set to '*': any logged-in user will be able to write to this file system.");
+    }
 }
 
 $(document).ready(function() {	

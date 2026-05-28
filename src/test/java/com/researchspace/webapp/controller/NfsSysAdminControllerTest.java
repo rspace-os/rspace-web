@@ -75,8 +75,39 @@ public class NfsSysAdminControllerTest {
 
   @Test
   public void saveFileSystem() {
-    assertEquals(12, nfsSystemCtrller.saveFileSystem(nfs).intValue());
+    NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
+    assertEquals(12L, result.getFileSystemId().longValue());
+    assertTrue(result.getUnknownReadWhitelistUsernames().isEmpty());
+    assertTrue(result.getUnknownWriteWhitelistUsernames().isEmpty());
     verify(netFilesMgr, atLeastOnce()).saveNfsFileSystem(nfs);
+  }
+
+  @Test
+  public void saveFileSystem_unknownUsernames_returnedAsWarningButSaveSucceeds() {
+    nfs.setReadWhitelist("alice,bob");
+    nfs.setWriteWhitelist("carol");
+    when(userMgr.getUserByUsername("alice")).thenReturn(sysadmin);
+    when(userMgr.getUserByUsername("bob")).thenReturn(null);
+    when(userMgr.getUserByUsername("carol"))
+        .thenThrow(new org.springframework.orm.ObjectRetrievalFailureException("User", "carol"));
+
+    NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
+
+    assertEquals(java.util.List.of("bob"), result.getUnknownReadWhitelistUsernames());
+    assertEquals(java.util.List.of("carol"), result.getUnknownWriteWhitelistUsernames());
+    verify(netFilesMgr, atLeastOnce()).saveNfsFileSystem(nfs);
+  }
+
+  @Test
+  public void saveFileSystem_everyoneSentinel_doesNotTriggerLookup() {
+    nfs.setReadWhitelist("*");
+    nfs.setWriteWhitelist("*");
+
+    NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
+
+    assertTrue(result.getUnknownReadWhitelistUsernames().isEmpty());
+    assertTrue(result.getUnknownWriteWhitelistUsernames().isEmpty());
+    verify(userMgr, never()).getUserByUsername(Mockito.anyString());
   }
 
   @Test(expected = AuthorizationException.class)

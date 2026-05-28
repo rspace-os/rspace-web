@@ -225,6 +225,25 @@
                 </td>
             </tr>
 
+            <tr class="fileSystemDetailsWhitelistsRow">
+                <td colspan="2">
+                    <h4><spring:message code="system.netfilesystem.details.whitelists.header" /></h4>
+                    <div class="fileSystemDetailsWhitelistsHelp" style="font-size: 0.9em; color: #555; margin-bottom: 0.5em;">
+                        <spring:message code="system.netfilesystem.details.whitelists.help" arguments="*" />
+                    </div>
+                </td>
+            </tr>
+            <tr class="fileSystemDetailsWhitelistsRow">
+                <td><label for="fileSystemReadWhitelist">
+                    <spring:message code="system.netfilesystem.details.read.whitelist" /></label></td>
+                <td><textarea id="fileSystemReadWhitelist" rows="2" style="width: 20em" placeholder="*, alice, bob"></textarea></td>
+            </tr>
+            <tr class="fileSystemDetailsWhitelistsRow">
+                <td><label for="fileSystemWriteWhitelist">
+                    <spring:message code="system.netfilesystem.details.write.whitelist" /></label></td>
+                <td><textarea id="fileSystemWriteWhitelist" rows="2" style="width: 20em" placeholder="alice, bob"></textarea></td>
+            </tr>
+
             <tr>
                 <td><label><spring:message code="system.netfilesystem.details.status" /></label></td>
                 <td>

@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class FilestoreAclChecker {
 
-  static final String EVERYONE = "*";
+  public static final String EVERYONE = "*";
 
   /**
    * Parses a whitelist string into a trimmed, deduplicated set of tokens. Whitespace is stripped
