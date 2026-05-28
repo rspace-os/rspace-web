@@ -142,6 +142,13 @@ public class FilestoreAclCheckerTest {
   }
 
   @Test
+  public void canRead_nullFilesystem_deniesWithoutNpe() {
+    // a stale filestore binding might return null from getFileSystem(); treat as no access
+    assertFalse(checker.canRead(user("alice"), null));
+    assertFalse(checker.canWrite(user("alice"), null));
+  }
+
+  @Test
   public void canRead_nullAuthType_denies() {
     // a misconfigured row with no auth type should not bypass the ACL
     NfsFileSystem fs = new NfsFileSystem();
