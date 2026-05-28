@@ -38,15 +38,6 @@ function DescriptionList({
   sx,
 }: DescriptionListArgs): React.ReactNode {
   const theme = useTheme();
-  const dtReducedPaddingStyle = {
-    marginTop: `-${theme.spacing(1)}`,
-    marginBottom: `-${theme.spacing(1)}`,
-  };
-  const ddReducedPaddingStyle = {
-    marginTop: `-${theme.spacing(1)}`,
-    marginBottom: `-${theme.spacing(1)}`,
-  };
-
   return (
     <Box
       component="dl"
@@ -81,7 +72,12 @@ function DescriptionList({
                 fontWeight: 600,
                 marginRight: theme.spacing(2),
                 alignSelf: "center",
-                ...(reducedPadding ? dtReducedPaddingStyle : {}),
+                ...(reducedPadding
+                  ? {
+                      marginTop: `-${theme.spacing(1)}`,
+                      marginBottom: `-${theme.spacing(1)}`,
+                    }
+                  : {}),
               }}
             >
               {label}
@@ -92,7 +88,12 @@ function DescriptionList({
               sx={{
                 marginInlineStart: 0,
                 justifySelf: "end",
-                ...(reducedPadding ? ddReducedPaddingStyle : {}),
+                ...(reducedPadding
+                  ? {
+                      marginTop: `-${theme.spacing(1)}`,
+                      marginBottom: `-${theme.spacing(1)}`,
+                    }
+                  : {}),
                 ...(below
                   ? {
                       gridColumn: "1 / span 2",
