@@ -31,21 +31,16 @@ pipeline {
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
 
-    // these are defined in Jenkins global tool configurations. The JDK is the one used to run the Jenkins build, it does
-    // not set the maven toolchain, this is set in the ./mvnw command line
-
-    tools {
-        // this is the JDK used to run maven itself
-        // the toolchain settings just affect compilation
-        jdk 'OPEN-JDK-17'
-    }
+    //tools {
+    //    // this is the JDK used to run maven itself
+    //    // the toolchain settings just affect compilation
+    //    jdk 'OPEN-JDK-17'
+    //}
 
     environment {
         BUILD_FAILURE_EMAIL_LIST = 'dev@researchspace.com'
         CI = 'true'
-        // BRANCH_NAME may contain '/' (e.g. feature/foo); sanitise before using it in filesystem paths or resource names
-        SAFE_BRANCH_NAME = branchToSafeName("${BRANCH_NAME}")
-        RS_FILE_BASE = "/var/lib/jenkins/userContent/${SAFE_BRANCH_NAME}-filestore"
+        RS_FILE_BASE = "/var/lib/jenkins/userContent/${BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
         AWS_TOMCAT_AMI = 'ami-0ccb4189a68a02c7d'
         APP_VERSION = readMavenPom().getVersion()
@@ -65,7 +60,7 @@ pipeline {
                 '''
                 echo 'Cleaning out filestore'
                 sh "rm -rf $RS_FILE_BASE"
-                sh "mkdir -p $RS_FILE_BASE"
+                sh "mkdir $RS_FILE_BASE"
                 echo "Workspace jenkins var is $WORKSPACE"
             }
         }
@@ -349,7 +344,7 @@ pipeline {
                                 [
                                         $class: 'StringParameterValue',
                                         name: 'SERVER_NAME',
-                                        value: "$SAFE_BRANCH_NAME-$BUILD_ID"
+                                        value: "$BRANCH_NAME-$BUILD_ID"
                                 ],
                                 [
                                         $class: 'StringParameterValue',
@@ -364,7 +359,7 @@ pipeline {
                                 [
                                         $class: 'StringParameterValue',
                                         name: 'DEPLOYMENT_PROPERTY_OVERRIDE',
-                                        value: "$WORKSPACE/${SAFE_BRANCH_NAME}.properties"
+                                        value: "$WORKSPACE/${BRANCH_NAME}.properties"
                                 ]
                         ],
                         wait: false
@@ -463,12 +458,6 @@ def branchToDbName (String name) {
         newname = newname.substring(0, 63)
     }
     return newname
-}
-
-// Replaces characters that are unsafe in filesystem paths or AWS/host resource names (notably '/') with '-',
-// keeping dots, underscores and hyphens. Used so branches like 'feature/foo' don't break path/name construction.
-def branchToSafeName (String name) {
-    return name.replaceAll('[^A-Za-z0-9._-]', '-')
 }
 
 def notifySlack(String buildStatus = 'STARTED', String info = '') {
