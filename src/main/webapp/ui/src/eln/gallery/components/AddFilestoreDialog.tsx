@@ -64,6 +64,7 @@ function FilesystemSelectionStep(props: {
     id: number;
     name: string;
     url: string;
+    canRead: boolean;
   }>>(null);
   const { getToken } = useOauthToken();
   const api = React.useRef(
@@ -97,12 +98,23 @@ function FilesystemSelectionStep(props: {
                     const url = Parsers.getValueWithKey("url")(obj)
                       .flatMap(Parsers.isString)
                       .elseThrow();
-                    return Result.Ok({ id, name, url });
+                    // userPermissions is absent for non-NONE auth (and on older
+                    // backends), in which case treat the filesystem as readable.
+                    const canRead = Parsers.getValueWithKey("userPermissions")(
+                      obj,
+                    )
+                      .flatMap(Parsers.isObject)
+                      .flatMap(Parsers.isNotNull)
+                      .flatMap(Parsers.getValueWithKey("canRead"))
+                      .flatMap(Parsers.isBoolean)
+                      .orElse(true);
+                    return Result.Ok({ id, name, url, canRead });
                   } catch (e) {
                     return Result.Error<{
                       id: number;
                       name: string;
                       url: string;
+                      canRead: boolean;
                     }>([e instanceof Error ? e : new Error("Unknown error")]);
                   }
                 }),
@@ -147,7 +159,23 @@ function FilesystemSelectionStep(props: {
               key={fs.id}
               value={fs.id}
               control={<Radio />}
-              label={fs.name}
+              disabled={!fs.canRead}
+              label={
+                fs.canRead ? (
+                  fs.name
+                ) : (
+                  <>
+                    {fs.name}
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      sx={{ ml: 1, color: "text.secondary" }}
+                    >
+                      (no read access; contact your sysadmin)
+                    </Typography>
+                  </>
+                )
+              }
             />
           ))}
         </RadioGroup>
