@@ -714,6 +714,7 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
    * @param updatedOriginalOwnerName - An updated name, if any, for the original owner. (e.g. In the
    *     case the user has been deleted and updated with a suffix to denote that.)
    */
+  @Override
   public void transferTemplates(
       User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName) {
     Query<?> query;

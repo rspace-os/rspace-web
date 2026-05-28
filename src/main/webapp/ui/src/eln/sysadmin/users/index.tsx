@@ -866,7 +866,7 @@ const DeleteAction = ({
                           <strong>
                             the owner of Forms and/or Templates that are used by other users.
                           </strong>
-                          To ensure continued access to these Forms/Templates, the system
+                          {" "}To ensure continued access to these Forms/Templates, the system
                           <strong> will transfer ownership</strong> of those files to
                           <strong> this System Administrator</strong> account. Forms and
                           Templates that are not used by others will be deleted.
