@@ -74,6 +74,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     assertFilestoresApiEnabled(user);
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     NfsFileSystem filesystem = filestore.getFileSystem();
+    aclChecker.assertCanRead(user, filesystem);
     NfsClient nfsClient = getNfsClientForUserAndFilesystem(user, filesystem);
 
     String combinedPath = filestore.getPath();
@@ -119,6 +120,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     NfsFileSystem filesystem = filestore.getFileSystem();
+    aclChecker.assertCanRead(user, filesystem);
     NfsClient nfsClient = getNfsClientForUserAndFilesystem(user, filesystem);
 
     String fullPath = filestore.getAbsolutePath(remotePath);
@@ -145,6 +147,8 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
       @RequestAttribute(name = "user") User user) {
 
     assertFilestoresApiEnabled(user);
+    NfsFileSystem filesystem = nfsManager.getFileSystem(filesystemId);
+    aclChecker.assertCanRead(user, filesystem);
     boolean filestoreNameUnique = nfsManager.verifyFileStoreNameUniqueForUser(filestoreName, user);
     if (!filestoreNameUnique) {
       throw new IllegalArgumentException(
@@ -191,6 +195,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     assertFilestoresApiEnabled(user);
     NfsFileSystem filesystem = nfsManager.getFileSystem(filesystemId);
+    aclChecker.assertCanRead(user, filesystem);
     NfsClient nfsClient = getNfsClientForUserAndFilesystem(user, filesystem);
 
     NfsFileTreeNode fileTree = nfsClient.createFileTree(browsePath, null, null);

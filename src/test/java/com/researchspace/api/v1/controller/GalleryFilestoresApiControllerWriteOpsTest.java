@@ -23,6 +23,7 @@ import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
@@ -34,6 +35,7 @@ import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
+import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
@@ -84,10 +86,12 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     filestoreWriteManager.setBaseRecordManager(baseRecordManager);
     filestoreWriteManager.setExternalStorageManager(externalStorageManager);
     filestoreWriteManager.setCredentialsStore(credentialsStore);
+    filestoreWriteManager.setAclChecker(new FilestoreAclChecker());
 
     controller = new GalleryFilestoresApiController();
     controller.nfsManager = nfsManager;
     controller.credentialsStore = credentialsStore;
+    controller.aclChecker = new FilestoreAclChecker();
     controller.deletionManager = deletionManager;
     controller.filestoreWriteManager = filestoreWriteManager;
     controller.setNfsFileHandler(nfsFileHandler);
@@ -553,6 +557,53 @@ class GalleryFilestoresApiControllerWriteOpsTest {
                     user));
 
     assertEquals(1, ex.getAllErrors().size());
+  }
+
+  @Test
+  void moveToFilestore_userNotOnWriteWhitelist_throwsAuthorizationException() throws IOException {
+    // override the permissive default with a whitelist that excludes the request's user
+    NfsFileStore restrictedFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(2L, "restricted", user);
+    NfsFileSystem restrictedFs = restrictedFilestore.getFileSystem();
+    restrictedFs.setReadWhitelist("*");
+    restrictedFs.setWriteWhitelist("alice"); // USER's username is "username", not "alice"
+    when(nfsManager.getNfsFileStore(2L)).thenReturn(restrictedFilestore);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(
+            validRecordIds, new ApiNfsCredentials(null, USERNAME, PASSWORD));
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            controller.moveToFilestore(
+                2L, request, new BeanPropertyBindingResult(request, "request"), user));
+
+    verify(nfsManager, never())
+        .uploadFilesToNfs(anyCollection(), anyString(), any(WritableNfsClient.class), any());
+  }
+
+  @Test
+  void transferBetweenFilestores_userNotOnWriteWhitelist_throwsAuthorizationException() {
+    Long srcId = 10L;
+    Long dstId = 20L;
+    NfsFileStore srcFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user);
+    srcFilestore.getFileSystem().setWriteWhitelist("alice"); // user is "username"
+    when(nfsManager.getNfsFileStore(srcId)).thenReturn(srcFilestore);
+    when(nfsManager.getNfsFileStore(dstId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", false);
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            controller.transferBetweenFilestores(
+                srcId, request, new BeanPropertyBindingResult(request, "request"), user));
   }
 
   @Test

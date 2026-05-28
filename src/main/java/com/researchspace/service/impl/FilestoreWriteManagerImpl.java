@@ -20,6 +20,7 @@ import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
+import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.FilestoreWriteManager;
 import com.researchspace.service.NfsManager;
 import java.io.IOException;
@@ -47,6 +48,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
   @Autowired @Setter private BaseRecordManager baseRecordManager;
   @Autowired @Setter private ExternalStorageManager externalStorageManager;
   @Autowired @Setter private GalleryFilestoresCredentialsStore credentialsStore;
+  @Autowired @Setter private FilestoreAclChecker aclChecker;
 
   @Override
   public UploadOutcome uploadToFilestore(
@@ -58,6 +60,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
 
     Set<Long> recordIds = request.getRecordIds();
     NfsFileStore filestore = validateInputAndGetFilestore(recordIds, filestoreId, errors);
+    aclChecker.assertCanWrite(user, filestore.getFileSystem());
     WritableNfsClient writableClient =
         resolveWritableClient(user, filestore, request.getCredentials(), errors);
     String absolutePath = resolveAbsoluteFilestorePath(filestore);
@@ -138,6 +141,9 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
               "Could not find file store with id: " + request.getDestFilestoreId()));
     }
     throwBindExceptionIfErrors(errors);
+
+    aclChecker.assertCanWrite(user, sourceFilestore.getFileSystem());
+    aclChecker.assertCanWrite(user, destFilestore.getFileSystem());
 
     WritableNfsClient sourceClient = resolveWritableClient(user, sourceFilestore, null, errors);
     WritableNfsClient destClient = resolveWritableClient(user, destFilestore, null, errors);
