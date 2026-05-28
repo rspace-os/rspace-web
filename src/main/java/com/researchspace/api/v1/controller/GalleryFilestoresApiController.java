@@ -74,7 +74,6 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     assertFilestoresApiEnabled(user);
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     NfsFileSystem filesystem = filestore.getFileSystem();
-    aclChecker.assertCanRead(user, filesystem);
     NfsClient nfsClient = getNfsClientForUserAndFilesystem(user, filesystem);
 
     String combinedPath = filestore.getPath();
@@ -86,7 +85,14 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     return getRemotePathBrowseResult(filesystem, nfsClient, fileTree);
   }
 
+  /**
+   * Returns an NfsClient for the given user and filesystem after asserting the user has read
+   * access. Throws {@link org.apache.shiro.authz.AuthorizationException} (mapped to 403) if not.
+   * All read paths on this controller (browse, download) route through here so the assertion cannot
+   * be forgotten.
+   */
   private NfsClient getNfsClientForUserAndFilesystem(User user, NfsFileSystem filesystem) {
+    aclChecker.assertCanRead(user, filesystem);
     if (NfsAuthenticationType.NONE.equals(filesystem.getAuthType())) {
       return nfsFactory.getNfsClient(user.getUsername(), null, filesystem);
     }
@@ -120,7 +126,6 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     NfsFileSystem filesystem = filestore.getFileSystem();
-    aclChecker.assertCanRead(user, filesystem);
     NfsClient nfsClient = getNfsClientForUserAndFilesystem(user, filesystem);
 
     String fullPath = filestore.getAbsolutePath(remotePath);
@@ -195,7 +200,6 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     assertFilestoresApiEnabled(user);
     NfsFileSystem filesystem = nfsManager.getFileSystem(filesystemId);
-    aclChecker.assertCanRead(user, filesystem);
     NfsClient nfsClient = getNfsClientForUserAndFilesystem(user, filesystem);
 
     NfsFileTreeNode fileTree = nfsClient.createFileTree(browsePath, null, null);

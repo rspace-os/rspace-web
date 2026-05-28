@@ -13,6 +13,7 @@ import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.netfiles.NfsViewProperty;
+import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserKeyManager;
@@ -67,6 +68,8 @@ public class NfsController extends BaseController {
   @Autowired private NfsFileHandler nfsFileHandler;
 
   @Autowired private UserKeyManager userKeyManager;
+
+  @Autowired private FilestoreAclChecker aclChecker;
 
   /**
    * @return a view of login dialog for file system
@@ -218,6 +221,7 @@ public class NfsController extends BaseController {
     if (fileStore == null) {
       throw new IllegalArgumentException("could not find file store with id: " + fileStoreId);
     }
+    aclChecker.assertCanRead(user, fileStore.getFileSystem());
 
     Long fileSystemId = fileStore.getFileSystem().getId();
     if (!nfsManager.checkIfUserLoggedIn(fileSystemId, nfsClients, user)) {
@@ -264,6 +268,7 @@ public class NfsController extends BaseController {
     if (fileStore == null) {
       throw new IllegalArgumentException("could not find file store with id: " + fileStoreId);
     }
+    aclChecker.assertCanRead(user, fileStore.getFileSystem());
 
     Long fileSystemId = fileStore.getFileSystem().getId();
     if (!nfsManager.checkIfUserLoggedIn(fileSystemId, nfsClients, user)) {

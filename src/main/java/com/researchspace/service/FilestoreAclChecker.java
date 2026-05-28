@@ -56,24 +56,25 @@ public class FilestoreAclChecker {
 
   public void assertCanRead(User user, NfsFileSystem fs) {
     if (!canRead(user, fs)) {
-      throw new AuthorizationException(
-          "User '"
-              + user.getUsername()
-              + "' has no read access to filesystem '"
-              + fs.getName()
-              + "'");
+      throw denied(user, fs, "read");
     }
   }
 
   public void assertCanWrite(User user, NfsFileSystem fs) {
     if (!canWrite(user, fs)) {
-      throw new AuthorizationException(
-          "User '"
-              + user.getUsername()
-              + "' has no write access to filesystem '"
-              + fs.getName()
-              + "'");
+      throw denied(user, fs, "write");
     }
+  }
+
+  private static AuthorizationException denied(User user, NfsFileSystem fs, String op) {
+    return new AuthorizationException(
+        "User '"
+            + user.getUsername()
+            + "' has no "
+            + op
+            + " access to filesystem '"
+            + fs.getName()
+            + "'");
   }
 
   private static boolean isGated(NfsFileSystem fs) {
