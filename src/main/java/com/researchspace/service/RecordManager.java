@@ -676,9 +676,8 @@ public interface RecordManager {
   boolean hasUserSharedTemplatesUsedByOtherUsers(User u);
 
   /**
-   * Gets all templates from a specific user that have been used by another
-   * user.  This includes templates that might have once been shared, but
-   * which are currently no longer shared.
+   * Gets all templates from a specific user that have been used by another user. This includes
+   * templates that might have once been shared, but which are currently no longer shared.
    *
    * @param u user
    * @return

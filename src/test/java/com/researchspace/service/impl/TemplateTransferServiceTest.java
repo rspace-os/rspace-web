@@ -18,6 +18,7 @@ import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import java.util.Collections;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -26,9 +27,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 
 @ExtendWith(MockitoExtension.class)
 class TemplateTransferServiceTest {
+
+  @Mock MessageSource messageSource;
 
   @Mock AuditTrailService auditTrailService;
 
@@ -45,6 +49,30 @@ class TemplateTransferServiceTest {
   @Mock SharingHandler recordSharingHandler;
 
   @InjectMocks TemplateTransferService templateTransferService;
+
+  @BeforeEach
+  void setUpMessageSourceStubs() {
+    Mockito.lenient()
+        .when(
+            messageSource.getMessage(
+                TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER, null, null))
+        .thenReturn("Deleted Users");
+    Mockito.lenient()
+        .when(
+            messageSource.getMessage(TemplateTransferService.DELETED_USER_NAME_SUFFIX, null, null))
+        .thenReturn(" (Deleted)");
+    Mockito.lenient()
+        .when(
+            messageSource.getMessage(
+                Mockito.eq("templates.transfer.audit.description"),
+                Mockito.any(Object[].class),
+                Mockito.isNull()))
+        .thenAnswer(
+            inv -> {
+              Object[] args = inv.getArgument(1);
+              return "Ownership of template transferred from " + args[0] + " to " + args[1];
+            });
+  }
 
   @Test
   void transferOwnershipDoesNothingWhenUserHasNoSharedTemplates() {
@@ -66,6 +94,7 @@ class TemplateTransferServiceTest {
   void transferOwnershipUnsharesMovesTransfersAndNotifiesAuditTrail_whenFoldersExist() {
     templateTransferService =
         new TemplateTransferService(
+            messageSource,
             auditTrailService,
             recordGroupSharingDao,
             folderDao,
@@ -100,7 +129,7 @@ class TemplateTransferServiceTest {
     templateRoot.setName("Templates");
     Folder deletedUsersTemplates = new Folder();
     deletedUsersTemplates.setId(200L);
-    deletedUsersTemplates.setName(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER);
+    deletedUsersTemplates.setName("Deleted Users");
     Folder deletedUserFolder = new Folder();
     deletedUserFolder.setId(300L);
     deletedUserFolder.setName(originalOwner.getUsername());
@@ -130,7 +159,7 @@ class TemplateTransferServiceTest {
             originalOwner,
             newOwner,
             expectedTemplateIds,
-            originalOwner.getUsername() + TemplateTransferService.DELETED_USER_NAME_SUFFIX);
+            originalOwner.getUsername() + " (Deleted)");
 
     Mockito.verify(folderManager, Mockito.never())
         .createNewFolder(Mockito.anyLong(), Mockito.anyString(), Mockito.any(User.class));
@@ -147,6 +176,7 @@ class TemplateTransferServiceTest {
   void transferOwnershipCreatesDeletedUsersFoldersWhenMissing() {
     templateTransferService =
         new TemplateTransferService(
+            messageSource,
             auditTrailService,
             recordGroupSharingDao,
             folderDao,
@@ -174,11 +204,11 @@ class TemplateTransferServiceTest {
 
     Folder deletedUsersTemplates = new Folder();
     deletedUsersTemplates.setId(200L);
-    deletedUsersTemplates.setName(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER);
+    deletedUsersTemplates.setName("Deleted Users");
     Mockito.when(
             folderManager.createNewFolder(
                 Mockito.eq(templateRoot.getId().longValue()),
-                Mockito.eq(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER),
+                Mockito.eq("Deleted Users"),
                 Mockito.eq(newOwner)))
         .thenReturn(deletedUsersTemplates);
     Mockito.when(folderManager.getSubFolders(deletedUsersTemplates))
@@ -197,10 +227,7 @@ class TemplateTransferServiceTest {
     templateTransferService.transferOwnership(originalOwner, newOwner);
 
     Mockito.verify(folderManager)
-        .createNewFolder(
-            templateRoot.getId().longValue(),
-            TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER,
-            newOwner);
+        .createNewFolder(templateRoot.getId().longValue(), "Deleted Users", newOwner);
     Mockito.verify(folderManager)
         .createNewFolder(
             deletedUsersTemplates.getId().longValue(), originalOwner.getUsername(), newOwner);
@@ -209,16 +236,14 @@ class TemplateTransferServiceTest {
         .moveUsersRecordsToFolder(List.of(1L), originalOwner, deletedUserFolder);
     Mockito.verify(recordManager)
         .transferTemplates(
-            originalOwner,
-            newOwner,
-            List.of(1L),
-            originalOwner.getUsername() + TemplateTransferService.DELETED_USER_NAME_SUFFIX);
+            originalOwner, newOwner, List.of(1L), originalOwner.getUsername() + " (Deleted)");
   }
 
   @Test
   void transferOwnership_transfersGalleryItemsLinkedFromTemplates() {
     templateTransferService =
         new TemplateTransferService(
+            messageSource,
             auditTrailService,
             recordGroupSharingDao,
             folderDao,
@@ -246,11 +271,7 @@ class TemplateTransferServiceTest {
     Mockito.when(folderManager.getSubFolders(templateRoot)).thenReturn(Collections.emptyList());
     Folder deletedUsersTemplates = new Folder();
     deletedUsersTemplates.setId(200L);
-    Mockito.when(
-            folderManager.createNewFolder(
-                templateRoot.getId(),
-                TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER,
-                newOwner))
+    Mockito.when(folderManager.createNewFolder(templateRoot.getId(), "Deleted Users", newOwner))
         .thenReturn(deletedUsersTemplates);
     Mockito.when(folderManager.getSubFolders(deletedUsersTemplates))
         .thenReturn(Collections.emptyList());
@@ -276,8 +297,8 @@ class TemplateTransferServiceTest {
     Mockito.when(folderManager.getGalleryRootFolderForUser(originalOwner))
         .thenReturn(originalGalleryRoot);
     // item's parent is imagesFolder; imagesFolder's parent is gallery root → path = ["Images"]
-    Mockito.when(folderDao.getParentFolder(10L)).thenReturn(imagesFolder);
-    Mockito.when(folderDao.getParentFolder(51L)).thenReturn(originalGalleryRoot);
+    Mockito.when(folderDao.getParentFolders(10L)).thenReturn(List.of(imagesFolder));
+    Mockito.when(folderDao.getParentFolders(51L)).thenReturn(List.of(originalGalleryRoot));
 
     // new owner's gallery root (ID=60); structure: Gallery/Images/Deleted Users/<username>/
     Folder newOwnerGalleryRoot = new Folder();
@@ -293,10 +314,7 @@ class TemplateTransferServiceTest {
     Folder deletedUsersGallery = new Folder();
     deletedUsersGallery.setId(62L);
     Mockito.when(
-            folderManager.createNewFolder(
-                newOwnerImagesFolder.getId(),
-                TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER,
-                newOwner))
+            folderManager.createNewFolder(newOwnerImagesFolder.getId(), "Deleted Users", newOwner))
         .thenReturn(deletedUsersGallery);
     Mockito.when(folderManager.getSubFolders(deletedUsersGallery))
         .thenReturn(Collections.emptyList());
@@ -315,10 +333,7 @@ class TemplateTransferServiceTest {
     // ownership transferred
     Mockito.verify(recordManager)
         .transferTemplates(
-            originalOwner,
-            newOwner,
-            List.of(10L),
-            originalOwner.getUsername() + TemplateTransferService.DELETED_USER_NAME_SUFFIX);
+            originalOwner, newOwner, List.of(10L), originalOwner.getUsername() + " (Deleted)");
     // FileProperty owner updated
     Mockito.verify(recordManager)
         .updateFilePropertyOwnerForMediaFiles(List.of(10L), newOwner.getUsername());
@@ -328,6 +343,7 @@ class TemplateTransferServiceTest {
   void transferOwnership_skipsGalleryTransferWhenNoItemsLinkedFromTemplates() {
     templateTransferService =
         new TemplateTransferService(
+            messageSource,
             auditTrailService,
             recordGroupSharingDao,
             folderDao,
@@ -353,11 +369,7 @@ class TemplateTransferServiceTest {
     Mockito.when(folderManager.getSubFolders(templateRoot)).thenReturn(Collections.emptyList());
     Folder deletedUsersTemplates = new Folder();
     deletedUsersTemplates.setId(200L);
-    Mockito.when(
-            folderManager.createNewFolder(
-                templateRoot.getId(),
-                TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER,
-                newOwner))
+    Mockito.when(folderManager.createNewFolder(templateRoot.getId(), "Deleted Users", newOwner))
         .thenReturn(deletedUsersTemplates);
     Mockito.when(folderManager.getSubFolders(deletedUsersTemplates))
         .thenReturn(Collections.emptyList());

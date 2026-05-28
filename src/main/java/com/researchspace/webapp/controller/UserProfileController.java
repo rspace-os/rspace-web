@@ -107,6 +107,7 @@ import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -142,9 +143,9 @@ public class UserProfileController extends BaseController {
   private static final String ERRORS_MAXLENGTH = "errors.maxlength";
   private static final String AFFILIATION = "affiliation";
   public static final String API_KEY_IS_ACTIVE = "apiKey is ACTIVE";
-  private static final String USER_NOT_FOUND =
-      "User with ID [%s] could not be found. The user may have been deleted.";
+  private static final String USER_NOT_FOUND = "errors.user.notfound";
 
+  private @Autowired MessageSource messageSource;
   private @Autowired IReauthenticator reauthenticator;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissionUtils;
   private @Autowired CommunityUserManager cloudUserManager;
@@ -211,7 +212,8 @@ public class UserProfileController extends BaseController {
       try {
         user = userManager.getUser(userId + "");
       } catch (ObjectRetrievalFailureException e) {
-        throw new UserNotFoundException(String.format(USER_NOT_FOUND, userId));
+        throw new UserNotFoundException(
+            messageSource.getMessage(USER_NOT_FOUND, new Object[] {userId}, null));
       }
     }
 
