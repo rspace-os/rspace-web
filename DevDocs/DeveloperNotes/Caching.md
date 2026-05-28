@@ -38,19 +38,16 @@ storage, but __only__ for non-sensitive data (always have a shared-computer
 scenario in mind).
 
 ### Static resources caching
- 
+
 Static resource caching is tricky - in most cases we want things like `js/css`
 files to be downloaded once and then reused, for better performance. However,
 setting longer caching date on a particular resource means that browser won't
 even check if there is a newer version of it (without user explicitly 'clearing
 the cache'), so if the resource eventually changes the user has partially stale
-view (JSPs are dynamic and non-cacheable, but will link to non-updated files). 
- 
-To solve this problem we have /build-resources/resources_to_MD5_rename.txt
-file that lists browser-cacheable resources (like `js` scripts or `css`
-stylesheets). The file is processed whenever RSpace is packaged into `.war`
-file. The packaging stage renames the resources listed in the file by adding
-their MD5 at the end of the resource name - so if the content of the file
-changes, the filename will be different from last time, and browser will
-re-download it.
+view (JSPs are dynamic and non-cacheable, but will link to non-updated files).
+
+To solve this problem, JSPs should emit browser-cacheable resource URLs through
+the `rst:assetUrl` tag. The tag appends the shared cache-busting version query
+parameter so browsers re-download changed resources without requiring filename
+rewrites during packaging.
   

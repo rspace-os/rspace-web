@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../theme";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import GenericsearchBar from "../components/GenericsearchBar";
 import axios from "@/common/axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -374,13 +374,40 @@ function RoRIntegration(): React.ReactNode {
   );
 }
 
-window.addEventListener("loadROR", () => {
-  const domContainer = document.getElementById("rorIntegration");
+type HTMLElementWithRorRoot = HTMLElement & { rorRoot?: Root };
 
-  if (domContainer) {
-    const root = createRoot(domContainer);
-    root.render(<RoRIntegration />);
+function mountRoRIntegration(event?: Event) {
+  event?.preventDefault();
+
+  const mainArea: HTMLElementWithRorRoot | null =
+    document.getElementById("mainArea");
+
+  if (!mainArea) {
+    return;
   }
+
+  mainArea.rorRoot?.unmount();
+
+  let domContainer = document.getElementById("rorIntegration");
+
+  if (!domContainer) {
+    domContainer = document.createElement("div");
+    domContainer.id = "rorIntegration";
+  }
+
+  domContainer.style.width = "70%";
+
+  mainArea.replaceChildren(domContainer);
+
+  const root = createRoot(domContainer);
+  mainArea.rorRoot = root;
+  root.render(<RoRIntegration />);
+}
+
+window.addEventListener("load", () => {
+  document
+    .getElementById("rorRegistryLink")
+    ?.addEventListener("click", (event) => void mountRoRIntegration(event));
 });
 
 export default RoRIntegration;

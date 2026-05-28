@@ -24,13 +24,6 @@ public class RoRSysAdminController extends BaseController {
 
   @Autowired private RoRService roRService;
 
-  /** Returns ror page fragment (from JSP - which just loads React app). */
-  @GetMapping("/ajax/view")
-  public String getRorSystemsView() {
-    assertIsSysAdmin();
-    return "system/ror";
-  }
-
   @GetMapping("/existingGlobalRoRID")
   public @ResponseBody String getExistingRoR() {
     return roRService.getSystemRoRValue();

@@ -13,17 +13,7 @@
     <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
     <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 
-    <script src="<rst:assetUrl value='/scripts/require.js'/>"></script>
-    <script type="text/javascript">
-        require.config({ 
-            baseUrl: "/"
-        });
-        
-        var maint_mod_path = '/scripts/pages/system/maintenance_mod.js'.replace(/.js$/, '');
-        require(['.' + maint_mod_path], function (maint) {
-            console.info('maint loaded');
-        });
-	</script>
+    <script src="<rst:assetUrl value='/scripts/pages/system/maintenance_mod.js'/>"></script>
 
     <style>
         .ui-timepicker-div .ui-widget-header { margin-bottom: 8px; }
@@ -87,4 +77,3 @@
 </div>
 
 <div id="mainArea"></div>
-
