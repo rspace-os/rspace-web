@@ -18,7 +18,6 @@ import {
 import { makeStyles } from "tss-react/mui";
 import { ThemeProvider } from "@mui/material/styles";
 import Link from "@mui/material/Link";
-import Radio from "@mui/material/Radio";
 import Checkbox from "@mui/material/Checkbox";
 import AlertContext from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
@@ -84,6 +83,14 @@ const DMPDialogContent = ({
   React.useEffect(() => {
     setListing(firstPage);
   }, [firstPage]);
+
+  // If the listing fetch fails (e.g. upstream 403 from DMP Assistant) the user
+  // has already been told via the alert toast raised by useDmpAssistantEndpoint;
+  // close the dialog so the upstream response — which may include an HTML
+  // challenge page from Cloudflare — never reaches the screen.
+  React.useEffect(() => {
+    if (listing.tag === "error") setOpen(false);
+  }, [listing, setOpen]);
 
   const toggleDmpSelection = (id: string) => {
     setSelectedDmpIds((prev) => {
@@ -166,14 +173,11 @@ const DMPDialogContent = ({
         />
       ),
       renderCell: (params: GridRenderCellParams<DmpSummary>) => (
-        <Radio
+        <Checkbox
           color="primary"
           checked={selectedDmpIds.has(String(params.id))}
-          onChange={() => {}}
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleDmpSelection(String(params.id));
-          }}
+          onChange={() => toggleDmpSelection(String(params.id))}
+          onClick={(e) => e.stopPropagation()}
           inputProps={{ "aria-label": `Select ${params.row.title}` }}
         />
       ),
@@ -251,14 +255,10 @@ const DMPDialogContent = ({
                   Loading listing of DMPs.
                 </Typography>
               ),
-              error: (error) => (
-                <>
-                  <Typography variant="body2">
-                    Failed to load listing of DMPs. Please try refreshing.
-                  </Typography>
-                  <samp>{error}</samp>
-                </>
-              ),
+              // The dialog is closed by the effect above when listing fails, so
+              // we render nothing here — the upstream message (which may contain
+              // HTML) is never displayed.
+              error: () => <></>,
               success: () => <></>,
             })}
             <DataGrid

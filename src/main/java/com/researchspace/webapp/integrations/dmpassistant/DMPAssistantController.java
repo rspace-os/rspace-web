@@ -7,7 +7,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
-import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
@@ -164,8 +163,13 @@ public class DMPAssistantController extends BaseController {
       User user = userManager.getUserByUsername(principal.getName());
       return new AjaxReturnObject<>(call.call(user), null);
     } catch (HttpStatusCodeException e) {
+      // Log the full upstream message (which may include the response body, e.g. a
+      // Cloudflare HTML challenge page on 403) but never surface that to the user —
+      // build a clean, status-coded message from the bundle for the error envelope.
       log.warn("DMP Assistant request failed: {}", e.getMessage());
-      return new AjaxReturnObject<>(null, ErrorList.of(e.getMessage()));
+      String statusLabel = e.getStatusCode().value() + " " + e.getStatusCode().getReasonPhrase();
+      return new AjaxReturnObject<>(
+          null, getErrorListFromMessageCode("apps.dmpassistant.error.upstream", statusLabel));
     } catch (Exception e) {
       log.warn("Error connecting to DMP Assistant", e);
       return new AjaxReturnObject<>(

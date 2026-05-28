@@ -1,11 +1,14 @@
 /**
- * The colour used in the background of the logo. Tuned to the mustard /
- * goldenrod of the DMP Assistant brand mark.
+ * The colour used in the background of the logo. White backplate so the
+ * mustard / goldenrod brand mark in logo.svg reads at full contrast; the
+ * hue/saturation are retained so text and borders derived from this triple
+ * (via IntegrationCard / AccentMenuItem foregroundColor) still carry the
+ * mustard accent.
  */
 export const LOGO_COLOR = {
   hue: 45,
   saturation: 72,
-  lightness: 48,
+  lightness: 100,
 };
 
 /**
