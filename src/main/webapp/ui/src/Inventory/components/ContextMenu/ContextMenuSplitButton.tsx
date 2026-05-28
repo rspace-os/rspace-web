@@ -68,7 +68,8 @@ export default function ContextMenuSplitButton({
           >
             <Box sx={{ zIndex: 3 }}>
               <ButtonGroup
-                /* using "text" variant to integrate our button style, and add icon */ variant="text"
+                /* using "text" variant to integrate our button style, and add icon */
+                variant="text"
                 size="small"
                 ref={anchorRef}
                 aria-label="split button"

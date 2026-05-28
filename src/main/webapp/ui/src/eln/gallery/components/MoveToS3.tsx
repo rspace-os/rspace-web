@@ -31,14 +31,6 @@ import useS3Filestores, {
 } from "./useS3Filestores";
 
 
-const NoFilestoreAlert = () => (
-  <Alert severity="error">
-    <AlertTitle>No S3 filestore has been configured.</AlertTitle>
-    Add a new one in the filestore section of the Gallery or speak to your
-    system administrator.
-  </Alert>
-);
-
 type MoveCopyDialogArgs = {
   dialogOpen: boolean;
   setDialogOpen: (open: boolean) => void;
@@ -174,7 +166,13 @@ function MoveCopyDialog({
                 ),
                 success: (filestores) =>
                   filestores.length === 0 ? (
-                    <NoFilestoreAlert />
+                    <Alert severity="error">
+                      <AlertTitle>
+                        No S3 filestore has been configured.
+                      </AlertTitle>
+                      Add a new one in the filestore section of the Gallery or
+                      speak to your system administrator.
+                    </Alert>
                   ) : (
                     <>
                       <Typography variant="body2">

@@ -80,7 +80,8 @@ const ActionButton = ({
        * nought to do with the sliding of the card. As such, we capture that
        * touch start event and prevent it from bubbling up to the
        * SwipeableDrawer component.
-       */ onTouchStart={(e) => {
+       */
+      onTouchStart={(e) => {
         e.stopPropagation();
       }}
       disabled={disabled}
@@ -205,7 +206,8 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
             /*
              * We use multiline so that long names wrap, but prevent the user
              * from typing in a return character by using string replacement.
-             */ multiline
+             */
+            multiline
             onChange={({ target: { value } }) =>
               setName(value.replace(/\n/g, ""))
             }

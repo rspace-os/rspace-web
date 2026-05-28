@@ -31,23 +31,6 @@ import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 import { CallableSnippetPreview } from "../components/CallableSnippetPreview";
 import { FilestoreLoginProvider } from "@/eln/gallery/components/FilestoreLoginDialog";
 
-const CustomGrow = React.forwardRef<
-  typeof Grow,
-  React.ComponentProps<typeof Grow>
->((props, ref) => (
-  <Grow
-    {...props}
-    ref={ref}
-    timeout={
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300
-    }
-    easing="ease-in-out"
-    style={{
-      transformOrigin: "center 70%",
-    }}
-  />
-));
-CustomGrow.displayName = "CustomGrow";
 const Picker = observer(
   ({
     open,
@@ -158,9 +141,20 @@ const Picker = observer(
                     paper: {
                       "aria-label": "Gallery Picker",
                     },
+                    transition: {
+                      timeout: window.matchMedia(
+                        "(prefers-reduced-motion: reduce)",
+                      ).matches
+                        ? 0
+                        : 300,
+                      easing: "ease-in-out",
+                      style: {
+                        transformOrigin: "center 70%",
+                      },
+                    },
                   }}
                   slots={{
-                    transition: CustomGrow,
+                    transition: Grow,
                   }}
                 >
                   <AppBar

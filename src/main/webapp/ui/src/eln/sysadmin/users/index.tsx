@@ -1040,7 +1040,8 @@ const SelectionActions = ({
                    * MenuItem with the arrow keys remains possible. See
                    * ../../../../../QuirksOfMaterialUi.md, section
                    * "Custom components that wrap `MenuItem`s"
-                   */ autoFocus
+                   */
+                  autoFocus
                   selectedUser={selectedUser}
                   setActionsAnchorEl={setActionsAnchorEl}
                 />

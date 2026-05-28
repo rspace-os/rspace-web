@@ -114,59 +114,6 @@ function useIsBeingMoved(): (
     return false;
   };
 }
-const StyledBreadcrumbs = (props: React.ComponentProps<typeof Breadcrumbs>) => (
-  <Breadcrumbs
-    {...props}
-    sx={{
-      "& .MuiBreadcrumbs-ol": {
-        flexWrap: "nowrap",
-        overflowX: "auto",
-      },
-      "& .MuiBreadcrumbs-separator": {
-        marginLeft: (theme) => theme.spacing(0.5),
-        marginRight: (theme) => theme.spacing(0.5),
-      },
-      ...props.sx,
-    }}
-  />
-);
-const StyledBreadcrumb = React.forwardRef<
-  HTMLDivElement,
-  {
-    label: React.ReactNode;
-    icon?: React.ReactNode;
-    onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
-    tabIndex: number;
-    sx?: SxProps<Theme>;
-  }
->(({ label, icon, onClick, tabIndex, sx }, ref) => (
-  <Box ref={ref} onClick={onClick} tabIndex={tabIndex} sx={sx}>
-    <Chip
-      clickable
-      component={ReactRouterLink}
-      to=""
-      label={label}
-      icon={React.isValidElement(icon) ? icon : undefined}
-      sx={(theme) => ({
-        height: theme.spacing(3.5),
-        color: alpha(theme.palette.primary.contrastText, 0.85),
-        paddingLeft: theme.spacing(0.5),
-        paddingRight: theme.spacing(0.5),
-        paddingTop: theme.spacing(0.25),
-        paddingBottom: theme.spacing(0.25),
-        border: `2px solid ${theme.palette.primary.main}`,
-        fontWeight: 500,
-        fontSize: "1rem",
-        cursor: "pointer",
-        "& .MuiChip-icon": {
-          fontSize: "1.05rem",
-          marginRight: theme.spacing(-0.5),
-        },
-      })}
-    />
-  </Box>
-));
-StyledBreadcrumb.displayName = "StyledBreadcrumb";
 const DragOverlayContents = observer(() => {
     const dndContext = useDndContext();
     const selection = useGallerySelection();
@@ -276,8 +223,19 @@ const BreadcrumbLink = React.forwardRef<
   const dndInProgress = Boolean(dndContext.active);
   const { openFolder } = useFolderOpen();
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const icon = folder
+    ? undefined
+    : getByKey(section, gallerySectionIcon).orElse(undefined);
+  const label =
+    folder?.name ?? getByKey(section, gallerySectionLabel).orElse("UNKNOWN");
   return (
-    <StyledBreadcrumb
+    <Box
+      ref={(node: HTMLDivElement | null) => {
+        setDropRef(node);
+        if (!ref) return;
+        if (typeof ref === "function") ref(node);
+        else ref.current = node;
+      }}
       onClick={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         e.preventDefault();
         e.stopPropagation();
@@ -288,23 +246,7 @@ const BreadcrumbLink = React.forwardRef<
           setSelectedSection(section);
         }
       }}
-      ref={(node) => {
-        setDropRef(node);
-        if (!ref) return;
-        if (typeof ref === "function") ref(node);
-        else ref.current = node;
-      }}
       tabIndex={tabIndex}
-      label={
-        folder?.name ?? getByKey(section, gallerySectionLabel).orElse("UNKNOWN")
-      }
-      {...(folder
-        ? {}
-        : getByKey(section, gallerySectionIcon)
-            .map((icon) => ({
-              icon,
-            }))
-            .orElse({}))}
       sx={mergeSx(
         dndInProgress && !isOver
           ? { animation: "drop 2s linear infinite" }
@@ -312,7 +254,31 @@ const BreadcrumbLink = React.forwardRef<
         isOver ? { border: SELECTED_OR_FOCUS_BORDER } : undefined,
         sx,
       )}
-    />
+    >
+      <Chip
+        clickable
+        component={ReactRouterLink}
+        to=""
+        label={label}
+        icon={React.isValidElement(icon) ? icon : undefined}
+        sx={(theme) => ({
+          height: theme.spacing(3.5),
+          color: alpha(theme.palette.primary.contrastText, 0.85),
+          paddingLeft: theme.spacing(0.5),
+          paddingRight: theme.spacing(0.5),
+          paddingTop: theme.spacing(0.25),
+          paddingBottom: theme.spacing(0.25),
+          border: `2px solid ${theme.palette.primary.main}`,
+          fontWeight: 500,
+          fontSize: "1rem",
+          cursor: "pointer",
+          "& .MuiChip-icon": {
+            fontSize: "1.05rem",
+            marginRight: theme.spacing(-0.5),
+          },
+        })}
+      />
+    </Box>
   );
 });
 BreadcrumbLink.displayName = "BreadcrumbLink";
@@ -338,11 +304,21 @@ const Path = observer(
     const { addAlert } = React.useContext(AlertContext);
     return (
       <Stack direction="row">
-        <StyledBreadcrumbs
+        <Breadcrumbs
           onFocus={onFocus}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
           aria-label="Breadcrumbs"
+          sx={{
+            "& .MuiBreadcrumbs-ol": {
+              flexWrap: "nowrap",
+              overflowX: "auto",
+            },
+            "& .MuiBreadcrumbs-separator": {
+              marginLeft: (theme) => theme.spacing(0.5),
+              marginRight: (theme) => theme.spacing(0.5),
+            },
+          }}
         >
           <BreadcrumbLink
             section={section}
@@ -367,7 +343,7 @@ const Path = observer(
                 tabIndex={getTabIndex(i + 1)}
               />
             ))}
-        </StyledBreadcrumbs>
+        </Breadcrumbs>
         <IconButtonWithTooltip
           title="Copy to clipboard"
           onClick={doNotAwait(async () => {
@@ -403,30 +379,10 @@ const Path = observer(
           icon={<LinkIcon />}
           sx={{
             backgroundColor: (theme) =>
-              alpha(
-                lighten(
-                  (
-                    theme.palette.primary as {
-                      main: string;
-                    }
-                  ).main,
-                  0.1,
-                ),
-                0.6,
-              ),
+              alpha(lighten(theme.palette.primary.main, 0.1), 0.6),
             "&:hover": {
               backgroundColor: (theme) =>
-                alpha(
-                  lighten(
-                    (
-                      theme.palette.primary as {
-                        main: string;
-                      }
-                    ).main,
-                    0.1,
-                  ),
-                  0.85,
-                ),
+                alpha(lighten(theme.palette.primary.main, 0.1), 0.85),
             },
             padding: "2px",
             marginLeft: (theme) => theme.spacing(1),
@@ -682,13 +638,15 @@ const FileCard = observer(
               })}
               /*
                * These are for dragging files from outside the browser
-               */ onDrop={onDrop}
+               */
+              onDrop={onDrop}
               onDragOver={onDragOver}
               onDragEnter={onDragEnter}
               onDragLeave={onDragLeave}
               /*
                * These are for dragging files between folders within the gallery
-               */ ref={(node: HTMLDivElement) => {
+               */
+              ref={(node: HTMLDivElement) => {
                 setDropRef(node);
                 setDragRef(node);
                 if (ref) {
@@ -731,7 +689,8 @@ const FileCard = observer(
                * `open` action (which is to say it is a folder), leaving the
                * keyDown event to propagate up to the KeyboardSensor of the
                * drag-and-drop mechanism for all other files
-               */ {...file.canOpen
+               */
+              {...file.canOpen
                 .map(() => ({
                   onKeyDown: (e: React.KeyboardEvent) => {
                     if (e.key === " ") openFolder(file);
@@ -1257,12 +1216,6 @@ const GridView = observer(
     );
   },
 );
-const StyledCloseIcon = (props: React.ComponentProps<typeof CloseIcon>) => (
-  <CloseIcon
-    {...props}
-    sx={{ color: "standardIcon.main", height: 20, width: 20, ...props.sx }}
-  />
-);
 const PathAndSearch = observer(
   ({
     appliedSearchTerm,
@@ -1375,7 +1328,15 @@ const PathAndSearch = observer(
                         searchTerm !== "" || searchOpen ? (
                           <IconButtonWithTooltip
                             title="Clear"
-                            icon={<StyledCloseIcon />}
+                            icon={
+                              <CloseIcon
+                                sx={{
+                                  color: "standardIcon.main",
+                                  height: 20,
+                                  width: 20,
+                                }}
+                              />
+                            }
                             size="small"
                             onClick={() => {
                               setSearchTerm("");
@@ -1934,7 +1895,8 @@ function GalleryMainPanel({
                  * field so the component would think that it is in a modified
                  * state and should open the Save and Cancel buttons. Same
                  * applies to the Description field.
-                 */ key={selection
+                 */
+                key={selection
                   .asSet()
                   .reduce((acc, f) => `${acc},${f.key}`, "")}
               />

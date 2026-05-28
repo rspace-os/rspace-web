@@ -30,55 +30,6 @@ import docLinks from "../../../assets/DocLinks";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
 
-function CustomFieldset({ children }: { children: React.ReactNode }): React.ReactNode {
-  return (
-    <Box
-      component="fieldset"
-      sx={(theme) => ({
-        border: theme.borders.card,
-        margin: 0,
-        borderRadius: theme.spacing(0.5),
-        padding: theme.spacing(2),
-        paddingTop: theme.spacing(0.5),
-        "& > legend": {
-          padding: theme.spacing(0.25, 1),
-          fontWeight: 700,
-          fontSize: "1rem",
-          letterSpacing: "0.02em",
-          color: "#3b5958",
-        },
-        "& label": {
-          fontSize: "0.9rem",
-          letterSpacing: "0.03em",
-        },
-        "& input": {
-          padding: theme.spacing(1),
-        },
-      })}
-    >
-      {children}
-    </Box>
-  );
-}
-
-const ErrorAlert = ({ message }: { message: string }) => {
-  if (message === "No iRODS filestore configured")
-    return (
-      <Alert severity="error">
-        <AlertTitle>No iRODS filestore has been configured.</AlertTitle>
-        Add a new one in the filestore section of the Gallery or speak to your
-        system administrator.
-      </Alert>
-    );
-  return (
-    <Alert severity="error">
-      <AlertTitle>{message}</AlertTitle>
-      Please check with your System Admin to ensure iRODS is correctly
-      configured.
-    </Alert>
-  );
-};
-
 type MoveCopyDialogArgs = {
   selectedIds: ReadonlyArray<string>;
   dialogOpen: boolean;
@@ -234,7 +185,22 @@ function MoveCopyDialog({
             >
               {FetchingData.match(irods, {
                 loading: () => <></>,
-                error: (errorMsg) => <ErrorAlert message={errorMsg} />,
+                error: (errorMsg) =>
+                  errorMsg === "No iRODS filestore configured" ? (
+                    <Alert severity="error">
+                      <AlertTitle>
+                        No iRODS filestore has been configured.
+                      </AlertTitle>
+                      Add a new one in the filestore section of the Gallery or
+                      speak to your system administrator.
+                    </Alert>
+                  ) : (
+                    <Alert severity="error">
+                      <AlertTitle>{errorMsg}</AlertTitle>
+                      Please check with your System Admin to ensure iRODS is
+                      correctly configured.
+                    </Alert>
+                  ),
                 success: ({ serverUrl, configuredLocations }) => (
                   <>
                     <Typography variant="body2">
@@ -313,7 +279,30 @@ function MoveCopyDialog({
                       )}
                     />
                     {showUsernamePasswordForm && (
-                      <CustomFieldset>
+                      <Box
+                        component="fieldset"
+                        sx={(theme) => ({
+                          border: theme.borders.card,
+                          margin: 0,
+                          borderRadius: theme.spacing(0.5),
+                          padding: theme.spacing(2),
+                          paddingTop: theme.spacing(0.5),
+                          "& > legend": {
+                            padding: theme.spacing(0.25, 1),
+                            fontWeight: 700,
+                            fontSize: "1rem",
+                            letterSpacing: "0.02em",
+                            color: "#3b5958",
+                          },
+                          "& label": {
+                            fontSize: "0.9rem",
+                            letterSpacing: "0.03em",
+                          },
+                          "& input": {
+                            padding: theme.spacing(1),
+                          },
+                        })}
+                      >
                         <legend>iRODS login</legend>
                         <Stack spacing={1}>
                           <Typography variant="body2">
@@ -346,7 +335,7 @@ function MoveCopyDialog({
                             )}
                           />
                         </Stack>
-                      </CustomFieldset>
+                      </Box>
                     )}
                   </>
                 ),

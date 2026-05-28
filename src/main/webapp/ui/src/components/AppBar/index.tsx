@@ -830,7 +830,8 @@ function GalleryAppBar({
                             /*
                              * The styling of this component is dictated by the ORCID display guidelines
                              * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
-                             */ sx={{
+                             */
+                            sx={{
                               mt: -0.5,
                             }}
                             primary={
