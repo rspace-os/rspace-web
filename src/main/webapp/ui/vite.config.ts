@@ -97,6 +97,13 @@ export default defineConfig(async ({ mode }) => {
     base: "/ui/dist/",
     define: {
       global: "globalThis",
+      process: JSON.stringify({
+        env: { NODE_ENV: mode },
+        browser: true,
+        version: "",
+        versions: {},
+        platform: "browser",
+      }),
     },
     plugins,
     resolve: {
