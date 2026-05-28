@@ -43,14 +43,18 @@ const colorCodedQuantity = (
   material: Material,
   list: ListOfMaterials,
   colors: { warningRed: string; modifiedHighlight: string; primary: string },
-): string =>
-  material.editing && (!material.enoughLeft || !list.validAdditionalAmount)
-    ? colors.warningRed
-    : material.editing && material.usedQuantityChanged
-      ? colors.modifiedHighlight
-      : material.editing
-        ? colors.primary
-        : "";
+): string => {
+  if (!material.editing) {
+    return "";
+  }
+  if (!material.enoughLeft || !list.validAdditionalAmount) {
+    return colors.warningRed;
+  }
+  if (material.usedQuantityChanged) {
+    return colors.modifiedHighlight;
+  }
+  return colors.primary;
+};
 type BodyRowArgs = {
   material: Material;
 };
