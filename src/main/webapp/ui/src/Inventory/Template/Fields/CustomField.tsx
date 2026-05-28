@@ -16,7 +16,6 @@ import FieldTypeMenu from "./FieldTypeMenu";
 import DefaultValueField from "./DefaultValueField";
 import NameField from "./CustomFieldNameField";
 import Typography from "@mui/material/Typography";
-import RelativeBox from "../../../components/RelativeBox";
 import RemoveButton from "../../../components/RemoveButton";
 import RemoveMenu, {
   type DeleteOption,
@@ -130,7 +129,7 @@ function CustomField({
           {field.deleteFieldRequest ? (
             <DeletionRecap field={field} />
           ) : (
-            <RelativeBox sx={{ p: 2 }}>
+            <Box sx={{ position: "relative", p: 2 }}>
               <Box
                 sx={{
                   width: "100%",
@@ -206,7 +205,7 @@ function CustomField({
                   onClick={(newIndex) => onMove(newIndex)}
                 />
               )}
-            </RelativeBox>
+            </Box>
           )}
         </Paper>
       </div>

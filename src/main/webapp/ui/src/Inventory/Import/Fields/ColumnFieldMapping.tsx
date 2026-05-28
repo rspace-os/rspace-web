@@ -12,7 +12,7 @@ import TableRow from "@mui/material/TableRow";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import OverlayLoadingSpinner from "../../components/OverlayLoadingSpinner";
-import RelativeBox from "../../../components/RelativeBox";
+import Box from "@mui/material/Box";
 import ImportModel, {
   ColumnFieldMap,
 } from "../../../stores/models/ImportModel";
@@ -280,7 +280,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
         rowCount={rowCount}
         onTypeSelect={onTypeSelect}
       />
-      <RelativeBox>
+      <Box sx={{ position: "relative" }}>
           <TableContainer>
             <Table size="small">
               <TableHead>
@@ -317,7 +317,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
           {importData.isSamplesImport &&
             !importData.createNewTemplate &&
             importData.template?.loading && <OverlayLoadingSpinner />}
-        </RelativeBox>
+        </Box>
         <HelpTextAlert
         severity="info"
         condition={

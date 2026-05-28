@@ -6,7 +6,6 @@ import InfoBadge from "../../components/InfoBadge";
 import InfoCard from "../../components/InfoCard";
 import { useTheme, type Theme } from "@mui/material/styles";
 import { observer, Observer } from "mobx-react-lite";
-import RelativeBox from "../../../components/RelativeBox";
 import {
   type Location,
   type Container,
@@ -247,7 +246,7 @@ function LocationContent({
         ] as React.ComponentProps<typeof Box>["sx"]
       }
     >
-      <RelativeBox sx={{ width: "100%", height: "100%" }}>
+      <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
         {location.content ? (
           <DragAndDrop.Draggable
             container={container}
@@ -268,7 +267,7 @@ function LocationContent({
             hasFocus={hasFocus}
           />
         )}
-      </RelativeBox>
+      </Box>
     </Box>
   );
 }

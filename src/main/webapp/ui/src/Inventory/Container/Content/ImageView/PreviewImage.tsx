@@ -2,7 +2,6 @@ import React, { useContext, useRef, useState, useLayoutEffect } from "react";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../../stores/contexts/Search";
 import Dragger from "../Dragger";
-import RelativeBox from "../../../../components/RelativeBox";
 import OverlayLoadingSpinner from "../../../components/OverlayLoadingSpinner";
 import EmptyListing from "../../../Search/components/EmptyListing";
 import ContainerModel from "../../../../stores/models/ContainerModel";
@@ -63,8 +62,8 @@ function PreviewImage(): React.ReactNode {
 
   return (
     <DragAndDrop.Context container={container}>
-      <RelativeBox
-        sx={{ m: 1 }}
+      <Box
+        sx={{ position: "relative", m: 1 }}
         onMouseDown={(e: React.MouseEvent) => {
           if (noSelection) return;
           setMouseDownPoint({
@@ -149,7 +148,7 @@ function PreviewImage(): React.ReactNode {
         {container.locationsImage && container.loading && (
           <OverlayLoadingSpinner />
         )}
-      </RelativeBox>
+      </Box>
     </DragAndDrop.Context>
   );
 }

@@ -1,6 +1,6 @@
 import { type URL } from "../../../util/types";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
-import RelativeBox from "../../../components/RelativeBox";
+import Box from "@mui/material/Box";
 import useStores from "../../../stores/use-stores";
 import { doNotAwait } from "../../../util/Util";
 import CommonEditActions from "../CommonEditActions";
@@ -180,11 +180,11 @@ function _Stepper({
         recordType={activeResult.recordType}
         stickyAlert={stickyAlert}
       />
-      <RelativeBox sx={{ minHeight: 0, overflowY: "auto" }}>
+      <Box sx={{ position: "relative", minHeight: 0, overflowY: "auto" }}>
         <HeadingContext level={3}>{children}</HeadingContext>
         <FooterActions />
         {state === "preview" && <MoreInfoSidebar factory={factory || null} />}
-      </RelativeBox>
+      </Box>
     </>
   );
 }

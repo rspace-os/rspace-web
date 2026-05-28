@@ -14,7 +14,6 @@ import React from "react";
 import { useTheme } from "@mui/material/styles";
 import { UserCancelledAction } from "../../../util/error";
 import { type AllowedFormTypes } from "../../../stores/contexts/FormSections";
-import RelativeBox from "../../../components/RelativeBox";
 import StickyMenu from "../Stepper/StickyMenu";
 import StickyStatus from "../StickyStatus";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
@@ -123,12 +122,12 @@ function CustomToolbar({
       {activeResult && <StickyMenu stickyAlert={stickyAlert} />}
       <Box sx={{ pb: 0.25 }} />
       {(record !== undefined || batch === true) && (
-        <RelativeBox>
+        <Box sx={{ position: "relative" }}>
           <StickyStatus
             recordState={record?.state || "edit"}
             deleted={record?.deleted || false}
           />
-        </RelativeBox>
+        </Box>
       )}
     </AppBar>
   );
