@@ -246,8 +246,9 @@ function IntegrationCard<Credentials>({
             styleOverrides: {
               root: {
                 padding: theme.spacing(1),
-                marginBottom: theme.spacing(2),
+                margin: 0,
                 borderBottom: `1px solid ${borderColor(color, 20)}`,
+                textTransform: "none",
               },
             },
           },
@@ -255,6 +256,7 @@ function IntegrationCard<Credentials>({
             styleOverrides: {
               root: {
                 padding: `${theme.spacing(1.5)} ${theme.spacing(2)}`,
+                paddingTop: theme.spacing(2),
               },
             },
           },
@@ -369,7 +371,7 @@ function IntegrationCard<Credentials>({
           display: "flex",
           flexDirection: "column",
           width: "100%",
-          borderRadius: 8,
+          borderRadius: theme.spacing(1),
           justifyContent: "space-between",
           boxShadow:
             mode === "UNAVAILABLE"
@@ -488,8 +490,8 @@ function IntegrationCard<Credentials>({
             sx={{
               flexWrap: "nowrap",
               alignItems: "flex-start",
+              gap: 1,
             }}
-            spacing={1}
           >
             <Box>
               <Box sx={cardMediaWrapperSx}>
@@ -509,36 +511,38 @@ function IntegrationCard<Credentials>({
             </Box>
           </Stack>
         </DialogTitle>
-        <DialogContent>
-          <section>
-            <Typography variant="body2">{usageText}</Typography>
-            {typeof website === "string" ? (
-              <Typography variant="body2">
-                See{" "}
-                <Link
-                  href={
-                    website.startsWith("/") ? website : `https://${website}`
-                  }
-                >
-                  {website}
-                </Link>
-                {" and our "}
-                <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
+        <DialogContent sx={{ p: 0 }}>
+          <Stack sx={{ p: 2}}>
+            <section>
+              <Typography variant="body2">{usageText}</Typography>
+              {typeof website === "string" ? (
+                <Typography variant="body2">
+                  See{" "}
+                  <Link
+                    href={
+                      website.startsWith("/") ? website : `https://${website}`
+                    }
+                  >
+                    {website}
+                  </Link>
+                  {" and our "}
+                  <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
+                </Typography>
+              ) : (
+                <Typography variant="body2">
+                  See our <Link href={docLinks[docLink]}>{helpLinkText}</Link>{" "}
+                  for more.
+                </Typography>
+              )}
+            </section>
+            <Divider orientation="horizontal" sx={{ gap: 0 }} />
+            <section>
+              <Typography variant="subtitle1" component="h4">
+                Setup
               </Typography>
-            ) : (
-              <Typography variant="body2">
-                See our <Link href={docLinks[docLink]}>{helpLinkText}</Link> for
-                more.
-              </Typography>
-            )}
-          </section>
-          <Divider orientation="horizontal" />
-          <section>
-            <Typography variant="subtitle1" component="h4">
-              Setup
-            </Typography>
-            {setupSection}
-          </section>
+              {setupSection}
+            </section>
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button

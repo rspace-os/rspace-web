@@ -117,7 +117,7 @@ const SnackbarContentWrapper = forwardRef<
           </Box>
         </Grid>
         <Grid sx={{ flexGrow: 1 }}></Grid>
-        <Grid sx={{ margin: -12, flexShrink: 0, ml: 0 }}>
+        <Grid sx={{ flexShrink: 0 }}>
           {alert.actionLabel !== null &&
             typeof alert.actionLabel !== "undefined" && (
               <Button

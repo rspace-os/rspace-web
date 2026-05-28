@@ -213,21 +213,21 @@ function App(): React.ReactNode {
                 mx: "auto",
               }}
             >
-              <Box sx={{ mt: 4 }}>
+              <Box sx={{ my: 4 }}>
                 <Typography variant="h1">Apps</Typography>
+                <Typography variant="body1">
+                  RSpace provides integrations with various third-party apps
+                  that enable extra features. Apps need to be enabled to work,
+                  and some require authentication.{" "}
+                  <Link
+                    href={docLinks.appsIntroduction}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    See Apps Introduction to learn more.
+                  </Link>
+                </Typography>
                 <Stack spacing={6} sx={{ mt: 1 }}>
-                  <Typography variant="body1">
-                    RSpace provides integrations with various third-party apps
-                    that enable extra features. Apps need to be enabled to work,
-                    and some require authentication.{" "}
-                    <Link
-                      href={docLinks.appsIntroduction}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      See Apps Introduction to learn more.
-                    </Link>
-                  </Typography>
                   <AppsSection
                     id="enabled"
                     title="Enabled"
