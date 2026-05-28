@@ -7,8 +7,6 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import type { SxProps, Theme } from "@mui/material/styles";
-
 type ClearSearchArgs = {
   handleReset: () => void;
 };
@@ -92,21 +90,15 @@ const Form = observer(
 
 type GenericsearchbarArgs = {
   handleSearch: (newQuery: string) => void;
-  sx?: SxProps<Theme>;
   placeholder: string;
   searchToolTip: string;
 };
 
-const defaultSx = {
-  display: "flex",
-  alignItems: "center",
-  background: "white",
-  border: "1px solid #808080",
-} as const;
-
+/**
+ * @deprecated
+ */
 function Genericsearchbar({
   handleSearch,
-  sx = defaultSx,
   placeholder = "Search",
   searchToolTip = "Search",
 }: GenericsearchbarArgs): React.ReactNode {
@@ -137,7 +129,15 @@ function Genericsearchbar({
           },
         }}
       >
-        <Paper sx={sx} elevation={0}>
+        <Paper
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            background: "white",
+            border: "1px solid #808080",
+          }}
+          elevation={0}
+        >
           <Form
             handleSearch={handleSearch}
             placeholder={placeholder}

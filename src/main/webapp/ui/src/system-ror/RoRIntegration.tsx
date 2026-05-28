@@ -268,12 +268,6 @@ function RoRIntegration(): React.ReactNode {
           {!ror && (
             <GenericsearchBar
               handleSearch={handleSearch}
-              sx={{
-                alignItems: "center",
-                display: "flex",
-                background: "white",
-                border: "1px solid #808080",
-              }}
               placeholder={"https://ror.org/038xqyz77"}
               searchToolTip={"Search Registry"}
             />
