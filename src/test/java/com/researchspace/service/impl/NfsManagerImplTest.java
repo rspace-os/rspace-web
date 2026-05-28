@@ -21,8 +21,8 @@ import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.NfsRSpaceProvidedAuthentication;
 import com.researchspace.netfiles.s3.S3NfsClient;
-import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.aws.S3Utilities;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,8 +63,7 @@ public class NfsManagerImplTest {
 
     when(nfsDao.getNfsFileSystem(FILE_SYSTEM_ID)).thenReturn(s3FileSystem);
 
-    // real ACL checker; FilestoreAclChecker has no dependencies of its own
-    nfsManager.setAclChecker(new FilestoreAclChecker());
+    nfsManager.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
   }
 
   @Test

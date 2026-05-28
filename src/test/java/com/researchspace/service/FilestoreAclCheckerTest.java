@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
@@ -21,6 +22,7 @@ public class FilestoreAclCheckerTest {
   @Before
   public void setUp() {
     checker = new FilestoreAclChecker();
+    checker.setMessages(mock(MessageSourceUtils.class));
   }
 
   // --- parseList ---

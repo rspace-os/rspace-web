@@ -1,7 +1,7 @@
 import { test, describe, expect, beforeEach, vi, afterEach } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@/__tests__/customQueries";
 import MockAdapter from "axios-mock-adapter";
 
 import axios from "@/common/axios";

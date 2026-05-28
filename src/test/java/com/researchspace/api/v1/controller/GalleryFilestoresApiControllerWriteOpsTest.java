@@ -35,7 +35,6 @@ import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
-import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
@@ -86,12 +85,12 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     filestoreWriteManager.setBaseRecordManager(baseRecordManager);
     filestoreWriteManager.setExternalStorageManager(externalStorageManager);
     filestoreWriteManager.setCredentialsStore(credentialsStore);
-    filestoreWriteManager.setAclChecker(new FilestoreAclChecker());
+    filestoreWriteManager.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
 
     controller = new GalleryFilestoresApiController();
     controller.nfsManager = nfsManager;
     controller.credentialsStore = credentialsStore;
-    controller.aclChecker = new FilestoreAclChecker();
+    controller.aclChecker = GalleryFilestoreTestUtils.filestoreAclCheckerForTest();
     controller.deletionManager = deletionManager;
     controller.filestoreWriteManager = filestoreWriteManager;
     controller.setNfsFileHandler(nfsFileHandler);

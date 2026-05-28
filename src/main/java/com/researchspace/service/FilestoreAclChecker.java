@@ -6,7 +6,9 @@ import com.researchspace.model.netfiles.NfsFileSystem;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import lombok.Setter;
 import org.apache.shiro.authz.AuthorizationException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -20,6 +22,8 @@ import org.springframework.stereotype.Component;
 public class FilestoreAclChecker {
 
   public static final String EVERYONE = "*";
+
+  @Autowired @Setter private MessageSourceUtils messages;
 
   /**
    * Parses a whitelist string into a trimmed, deduplicated set of tokens. Whitespace is stripped
@@ -72,15 +76,10 @@ public class FilestoreAclChecker {
     }
   }
 
-  private static AuthorizationException denied(User user, NfsFileSystem fs, String op) {
+  private AuthorizationException denied(User user, NfsFileSystem fs, String op) {
     return new AuthorizationException(
-        "User '"
-            + user.getUsername()
-            + "' has no "
-            + op
-            + " access to filesystem '"
-            + fs.getName()
-            + "'");
+        messages.getMessage(
+            "netfilestores.acl.denied." + op, new Object[] {user.getUsername(), fs.getName()}));
   }
 
   private static boolean isGated(NfsFileSystem fs) {

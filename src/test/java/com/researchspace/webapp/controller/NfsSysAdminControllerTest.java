@@ -5,6 +5,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -46,6 +48,14 @@ public class NfsSysAdminControllerTest {
     sysadmin = TestFactory.createAnyUserWithRole("any", Constants.SYSADMIN_ROLE);
     otherUser = TestFactory.createAnyUserWithRole("any", Constants.ADMIN_ROLE);
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(sysadmin);
+    // resolve any i18n key to a string containing the first arg so existing
+    // assertions on exception message content keep working
+    when(msgSource.getMessage(anyString(), any(Object[].class)))
+        .thenAnswer(
+            inv -> {
+              Object[] args = inv.getArgument(1);
+              return args == null || args.length == 0 ? "" : String.valueOf(args[0]);
+            });
     nfs = new NfsFileSystem();
     nfs.setId(12L);
   }

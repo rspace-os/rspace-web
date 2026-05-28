@@ -11,7 +11,6 @@ import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.properties.IPropertyHolder;
-import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
@@ -44,7 +43,7 @@ class GalleryFilestoresApiControllerReadAclTest {
 
     controller = new GalleryFilestoresApiController();
     controller.nfsManager = nfsManager;
-    controller.aclChecker = new FilestoreAclChecker();
+    controller.aclChecker = GalleryFilestoreTestUtils.filestoreAclCheckerForTest();
     controller.deletionManager = deletionManager;
     controller.setNfsFileHandler(nfsFileHandler);
     controller.setNfsFactory(nfsFactory);

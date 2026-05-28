@@ -89,9 +89,9 @@ public class NfsSysAdminController extends BaseController {
     intersection.remove(FilestoreAclChecker.EVERYONE);
     if (!intersection.isEmpty()) {
       throw new IllegalArgumentException(
-          "These users are listed for both read and write access; please remove them"
-              + " from one of the lists: "
-              + String.join(", ", intersection));
+          getText(
+              "netfilestores.acl.users.in.both.lists",
+              new Object[] {String.join(", ", intersection)}));
     }
   }
 
