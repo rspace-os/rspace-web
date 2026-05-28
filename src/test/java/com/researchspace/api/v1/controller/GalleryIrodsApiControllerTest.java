@@ -25,6 +25,7 @@ import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
+import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.impl.FilestoreWriteManagerImpl;
@@ -82,6 +83,7 @@ class GalleryIrodsApiControllerTest {
     filestoreWriteManager.setBaseRecordManager(baseRecordManager);
     filestoreWriteManager.setExternalStorageManager(externalStorageManager);
     filestoreWriteManager.setCredentialsStore(credentialsStore);
+    filestoreWriteManager.setAclChecker(new FilestoreAclChecker());
     galleryIrodsApiController.setFilestoreWriteManager(filestoreWriteManager);
 
     when(propertyHolder.isNetFileStoresEnabled()).thenReturn(true);
