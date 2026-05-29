@@ -1,7 +1,13 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runInNewContext } from "node:vm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Resolve from this file's location rather than process.cwd(): the jsdom test
+// environment polyfills `process` (vite-plugin-node-polyfills), so
+// `process.cwd()` returns "/" instead of the ui directory.
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 type TinyDialogConfig = {
   title: string;
@@ -95,7 +101,10 @@ function instantiatePlugin() {
   };
 
   const pluginSource = readFileSync(
-    resolve(process.cwd(), "../scripts/externalTinymcePlugins/video/plugin.js"),
+    resolve(
+      __dirname,
+      "../../../../../scripts/externalTinymcePlugins/video/plugin.js",
+    ),
     "utf8",
   );
   runInNewContext(pluginSource, globalThis);
