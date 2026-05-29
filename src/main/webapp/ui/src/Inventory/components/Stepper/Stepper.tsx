@@ -18,15 +18,6 @@ import { HeadingContext } from "../../../components/DynamicHeadingLevel";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import Stack from "@mui/material/Stack";
 
-type WrapperProps = {
-  children: ReactNode;
-};
-
-const Wrapper = React.forwardRef<HTMLDivElement, WrapperProps>(
-  ({ children }, ref) => <div ref={ref}>{children}</div>,
-);
-Wrapper.displayName = "Wrapper";
-
 type StepperArgs = {
   // The title string to be displayed in the top left corner of the form.
   titleText: string;

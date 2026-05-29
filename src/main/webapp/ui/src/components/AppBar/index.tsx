@@ -176,15 +176,15 @@ const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
     </div>
   );
 };
-const StyledAvatar = React.forwardRef<
-  React.ElementRef<typeof Avatar>,
-  {
-    size?: "small";
-  } & React.ComponentPropsWithoutRef<typeof Avatar>
->(({ size, sx, ...props }, ref) => (
+const StyledAvatar = ({
+  size,
+  sx,
+  ...props
+}: {
+  size?: "small";
+} & React.ComponentPropsWithoutRef<typeof Avatar>): React.ReactNode => (
   <Avatar
     {...props}
-    ref={ref}
     sx={{
       color: "#fce8f0",
       backgroundColor: "#ed1064",
@@ -198,8 +198,7 @@ const StyledAvatar = React.forwardRef<
       ...sx,
     }}
   />
-));
-StyledAvatar.displayName = "StyledAvatar";
+);
 
 /**
  * This image is used to indicate the current user
@@ -264,11 +263,7 @@ const DynamicAvatar = ({
   });
 };
 const OrcidIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    version="1.1"
-    viewBox="0 0 50 50"
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 50 50">
     <g>
       <g id="Layer_1">
         <g>
@@ -277,10 +272,7 @@ const OrcidIcon = () => (
             d="M49.3,25c0,13.4-10.9,24.3-24.3,24.3S.7,38.4.7,25,11.6.7,25,.7s24.3,10.9,24.3,24.3Z"
           />
           <g>
-            <path
-              fill="#fff"
-              d="M17.1,36.1h-2.9V15.7h2.9v20.3Z"
-            />
+            <path fill="#fff" d="M17.1,36.1h-2.9V15.7h2.9v20.3Z" />
             <path
               fill="#fff"
               d="M21.4,15.7h7.9c7.5,0,10.8,5.4,10.8,10.2s-4.1,10.2-10.8,10.2h-7.9s0-20.4,0-20.4ZM24.3,33.4h4.7c6.6,0,8.1-5,8.1-7.5,0-4.1-2.6-7.5-8.3-7.5h-4.5v15.1h0Z"

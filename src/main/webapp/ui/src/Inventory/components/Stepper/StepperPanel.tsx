@@ -24,88 +24,78 @@ type StepperPanelArgs = {
   thickBorder?: boolean;
 };
 
-const StepperPanel = React.forwardRef<
-  React.ElementRef<typeof Box>,
-  StepperPanelArgs
->(
-  (
-    {
-      title,
-      children,
-      sectionName,
-      formSectionError,
-      recordType,
-      icon,
-      thickBorder,
-    },
-    ref,
-  ) => {
-    const theme = useTheme();
-    const headingId = useId();
-    const formSectionContext = useContext(FormSectionsContext);
-    if (!formSectionContext)
-      throw new Error("FormSectionContext is required by StepperPanel");
-    return (
-      <Observer>
-        {() => (
-          <Box
+function StepperPanel({
+  title,
+  children,
+  sectionName,
+  formSectionError,
+  recordType,
+  icon,
+  thickBorder,
+}: StepperPanelArgs): React.ReactNode {
+  const theme = useTheme();
+  const headingId = useId();
+  const formSectionContext = useContext(FormSectionsContext);
+  if (!formSectionContext)
+    throw new Error("FormSectionContext is required by StepperPanel");
+  return (
+    <Observer>
+      {() => (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            flexWrap: "nowrap",
+            backgroundColor: theme.palette.background.alt,
+            overflowX: "hidden",
+          }}
+          role="region"
+          aria-labelledby={headingId}
+        >
+          <StepperPanelHeader
+            onToggle={(value) =>
+              formSectionContext.setExpanded(recordType, sectionName, value)
+            }
+            open={formSectionContext.isExpanded(recordType, sectionName)}
+            title={title}
+            formSectionError={formSectionError}
+            id={headingId}
+            recordType={recordType}
+            icon={icon}
+          />
+          <Collapse
+            in={formSectionContext.isExpanded(recordType, sectionName)}
             sx={{
-              display: "flex",
-              flexDirection: "column",
-              flexWrap: "nowrap",
-              backgroundColor: theme.palette.background.alt,
-              overflowX: "hidden",
+              transitionDuration: window.matchMedia(
+                "(prefers-reduced-motion: reduce)",
+              ).matches
+                ? "0s !important"
+                : "initial",
             }}
-            ref={ref}
-            role="region"
-            aria-labelledby={headingId}
           >
-            <StepperPanelHeader
-              onToggle={(value) =>
-                formSectionContext.setExpanded(recordType, sectionName, value)
-              }
-              open={formSectionContext.isExpanded(recordType, sectionName)}
-              title={title}
-              formSectionError={formSectionError}
-              id={headingId}
-              recordType={recordType}
-              icon={icon}
-            />
-            <Collapse
-              in={formSectionContext.isExpanded(recordType, sectionName)}
-              sx={{
-                transitionDuration: window.matchMedia(
-                  "(prefers-reduced-motion: reduce)",
-                ).matches
-                  ? "0s !important"
-                  : "initial",
-              }}
-            >
-              <Box sx={{ p: 2, pt: 1 }}>
-                <HeadingContext>
-                  <Stack spacing={3} sx={{ mt: 0.5 }}>
-                    {children}
-                  </Stack>
-                </HeadingContext>
-              </Box>
-            </Collapse>
-            <Divider
-              orientation="horizontal"
-              sx={
-                thickBorder
-                  ? {
-                      borderWidth: "1px",
-                      borderColor: theme.palette.record[recordType].bg,
-                    }
-                  : {}
-              }
-            />
-          </Box>
-        )}
-      </Observer>
-    );
-  },
-);
+            <Box sx={{ p: 2, pt: 1 }}>
+              <HeadingContext>
+                <Stack spacing={3} sx={{ mt: 0.5 }}>
+                  {children}
+                </Stack>
+              </HeadingContext>
+            </Box>
+          </Collapse>
+          <Divider
+            orientation="horizontal"
+            sx={
+              thickBorder
+                ? {
+                    borderWidth: "1px",
+                    borderColor: theme.palette.record[recordType].bg,
+                  }
+                : {}
+            }
+          />
+        </Box>
+      )}
+    </Observer>
+  );
+}
 
-StepperPanel.displayName = "StepperPanel";
 export default StepperPanel;
