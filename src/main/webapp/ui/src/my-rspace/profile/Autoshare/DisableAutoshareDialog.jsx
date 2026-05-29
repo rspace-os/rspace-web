@@ -106,8 +106,8 @@ function DisableAutoshareDialog({
         <DialogTitle id="form-dialog-title">Disable autosharing</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Disabling autosharing will unshare all work for user
-            <strong> {username}</strong> from group{" "}
+            Disabling autosharing will unshare all work for user{" "}
+            <strong>{username}</strong> from group{" "}
             <strong>{group.groupDisplayName}</strong>.<br />
             <br />
             Individual documents and notebooks can still be shared as usual.

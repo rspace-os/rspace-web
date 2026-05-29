@@ -6,6 +6,24 @@ import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 
+function ParameterChip({
+  label,
+  onDelete,
+}: {
+  label: string;
+  onDelete?: () => void;
+}): React.ReactNode {
+  return (
+    <Chip
+      size="small"
+      sx={{ maxWidth: "100%" }}
+      slotProps={{ label: { sx: { letterSpacing: "0.02em", p: "4px 12px" } } }}
+      label={label}
+      onDelete={onDelete}
+    />
+  );
+}
+
 function SearchParameterChips(): React.ReactNode {
   const { search } = useContext(SearchContext);
   const { searchStore } = useStores();
@@ -14,37 +32,26 @@ function SearchParameterChips(): React.ReactNode {
     void searchStore.getBaskets();
   }, []);
 
+  const { resultType } = search.fetcher;
+  const currentBasket = search.currentBasket(searchStore.savedBaskets);
+
   return (
     <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-      {["CONTAINER", "SAMPLE", "SUBSAMPLE", "TEMPLATE"].map(
-        (resultType) =>
-          search.fetcher.resultType === resultType && (
-            <Chip
-              key={resultType}
-              size="small"
-              sx={{ maxWidth: "100%" }}
-              slotProps={{
-                label: { sx: { letterSpacing: "0.02em", p: "4px 12px" } },
-              }}
-              label={`Type: ${toTitleCase(resultType)}s`}
-              onDelete={
-                search.fetcher.allTypesAllowed &&
-                search.uiConfig.allowedTypeFilters.has("ALL")
-                  ? () => {
-                      search.setTypeFilter("ALL");
-                    }
-                  : undefined
-              }
-            />
-          ),
+      {resultType && resultType !== "ALL" && (
+        <ParameterChip
+          label={`Type: ${toTitleCase(resultType)}s`}
+          onDelete={
+            search.fetcher.allTypesAllowed &&
+            search.uiConfig.allowedTypeFilters.has("ALL")
+              ? () => {
+                  search.setTypeFilter("ALL");
+                }
+              : undefined
+          }
+        />
       )}
       {search.fetcher.owner && (
-        <Chip
-          size="small"
-          sx={{ maxWidth: "100%" }}
-          slotProps={{
-            label: { sx: { letterSpacing: "0.02em", p: "4px 12px" } },
-          }}
+        <ParameterChip
           label={`Owner: ${search.fetcher.owner.label}`}
           onDelete={() => {
             search.setOwner(null);
@@ -52,12 +59,7 @@ function SearchParameterChips(): React.ReactNode {
         />
       )}
       {search.fetcher.benchOwner && (
-        <Chip
-          size="small"
-          sx={{ maxWidth: "100%" }}
-          slotProps={{
-            label: { sx: { letterSpacing: "0.02em", p: "4px 12px" } },
-          }}
+        <ParameterChip
           label={`Bench Owner: ${search.fetcher.benchOwner.label}`}
           onDelete={() => {
             search.setBench(null);
@@ -65,12 +67,7 @@ function SearchParameterChips(): React.ReactNode {
         />
       )}
       {search.fetcher.deletedItems && (
-        <Chip
-          size="small"
-          sx={{ maxWidth: "100%" }}
-          slotProps={{
-            label: { sx: { letterSpacing: "0.02em", p: "4px 12px" } },
-          }}
+        <ParameterChip
           label={`Status: ${search.fetcher.deletedItemsLabel}`}
           onDelete={
             search.fetcher.deletedItems !== "EXCLUDE" && search.showStatusFilter
@@ -81,16 +78,9 @@ function SearchParameterChips(): React.ReactNode {
           }
         />
       )}
-      {search.currentBasket(searchStore.savedBaskets) && (
-        <Chip
-          size="small"
-          sx={{ maxWidth: "100%" }}
-          slotProps={{
-            label: { sx: { letterSpacing: "0.02em", p: "4px 12px" } },
-          }}
-          label={`Basket: ${
-            search.currentBasket(searchStore.savedBaskets)?.name ?? "UNKNOWN"
-          }`}
+      {currentBasket && (
+        <ParameterChip
+          label={`Basket: ${currentBasket.name ?? "UNKNOWN"}`}
           onDelete={() => {
             search.setParentGlobalId(null);
           }}
@@ -99,12 +89,7 @@ function SearchParameterChips(): React.ReactNode {
       {search.fetcher.parentGlobalId &&
         (search.fetcher.parentIsSample || search.fetcher.parentIsContainer) &&
         !search.uiConfig.hideContentsOfChip && (
-          <Chip
-            size="small"
-            sx={{ maxWidth: "100%" }}
-            slotProps={{
-              label: { sx: { letterSpacing: "0.02em", p: "4px 12px" } },
-            }}
+          <ParameterChip
             label={`Contents of: ${search.fetcher.parentGlobalId}`}
             onDelete={() => {
               search.setParentGlobalId(null);

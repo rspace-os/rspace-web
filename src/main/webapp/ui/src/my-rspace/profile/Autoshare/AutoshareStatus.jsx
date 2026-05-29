@@ -7,7 +7,7 @@ export default function AutoshareStatus(props) {
   return (
     <>
       {!props.group.labGroup && (
-        <em>Autosharing is only possible for LabGroups </em>
+        <em>Autosharing is only possible for LabGroups</em>
       )}
       {props.isCurrentlySharing && props.group.labGroup && (
         <em>Autosharing is in progress</em>
