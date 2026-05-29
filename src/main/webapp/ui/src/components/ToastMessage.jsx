@@ -166,7 +166,7 @@ const variantIcon = {
 };
 
 const MySnackbarContentWrapper = forwardRef(
-  ({ className, message, onClose, variant, ...other }, ref) => {
+  ({ message, onClose, variant, ...other }, ref) => {
     const theme = useTheme();
     const Icon = variantIcon[variant];
     const backgroundColors = {
@@ -182,7 +182,6 @@ const MySnackbarContentWrapper = forwardRef(
     return (
       <SnackbarContent
         data-test-id="toast-content"
-        className={className}
         aria-describedby="client-snackbar"
         sx={{ backgroundColor }}
         message={
@@ -220,7 +219,6 @@ const MySnackbarContentWrapper = forwardRef(
 );
 
 MySnackbarContentWrapper.propTypes = {
-  className: PropTypes.string,
   message: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
   variant: PropTypes.oneOf(["success", "warning", "error", "notice"])

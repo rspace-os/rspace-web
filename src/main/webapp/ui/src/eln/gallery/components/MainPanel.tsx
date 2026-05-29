@@ -412,7 +412,6 @@ const FileCard = observer(
     (
       {
         file,
-        className,
         selected,
         index,
         onClick,
@@ -421,7 +420,6 @@ const FileCard = observer(
         onBlur,
       }: {
         file: GalleryFile;
-        className?: string;
         selected: boolean;
         index: number;
         onClick: (event: React.MouseEvent) => void;
@@ -575,7 +573,6 @@ const FileCard = observer(
             <Card
               component="div"
               elevation={0}
-              className={className}
               sx={(theme) => ({
                 height: "150px",
                 "& .versionIndicator": {

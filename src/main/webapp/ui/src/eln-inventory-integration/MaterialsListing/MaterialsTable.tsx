@@ -52,12 +52,10 @@ type TableArgs = {
 function TableSubCell({
   flex,
   children,
-  className,
   sx,
   datatestid,
 }: {
   flex: number;
-  className?: string;
   sx?: SxProps<Theme>;
   children: React.ReactNode;
   datatestid?: string;
@@ -65,7 +63,6 @@ function TableSubCell({
   return (
     <Box
       component="span"
-      className={className}
       sx={[
         {
           flex,

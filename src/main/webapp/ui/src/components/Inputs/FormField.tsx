@@ -249,8 +249,6 @@ export type FormFieldArgs<T> = {
    */
   doNotAttachIdToLabel?: boolean;
 
-  className?: string;
-
   sx?: SxProps<Theme>;
 };
 
@@ -267,7 +265,6 @@ export default function FormField<T>({
   required,
   asFieldset,
   doNotAttachIdToLabel,
-  className,
   sx,
 }: FormFieldArgs<T>): React.ReactNode {
   const inputId = React.useId();
@@ -296,7 +293,6 @@ export default function FormField<T>({
   return (
     <FormControl
       role="group"
-      className={className}
       sx={sx}
       fullWidth
       error={
