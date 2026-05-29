@@ -394,9 +394,6 @@ function refreshClientTypeRows() {
     }
     $('#fileSystemUrl').prop('required', !isS3AWSClient);
 
-    // Hide whitelist rows when switching away from S3. The NONE auth radio may still
-    // be 'checked' after such a switch (its label is hidden by the block above, but
-    // the radio state lingers), so refreshAuthTypeRows wouldn't fire on its own.
     refreshWhitelistRows();
 }
 
@@ -409,17 +406,8 @@ function refreshAuthTypeRows() {
 }
 
 function refreshWhitelistRows() {
-    // Whitelists only apply when the NONE auth radio is both selected AND available
-    // for the current client type (today that's S3 only). Requiring both guards the
-    // transient state right after switching client type, when the NONE radio's check
-    // state still lingers from the previous S3 selection.
-    // The read question is meaningful when writers are restricted ('only listed users'
-    // or 'nobody'); when writers are 'anyone', everyone already has read+write so the
-    // read question is moot and its whole row stays hidden.
-    // The username input next to each 'Only the following users:' radio shows
-    // only when that radio is selected.
-    // Visibility and 'required' are kept in sync so a hidden field can never block
-    // form save: switching away from S3 clears required on the now-invisible radios.
+    // Both isS3Client and isNoneAuth must be checked: the NONE radio's state can
+    // linger from a prior S3 selection after switching client type.
     var isS3Client = $('#fileSystemClientTypeS3').prop('checked');
     var isNoneAuth = $('#fileSystemAuthTypeNone').prop('checked');
     var showWhitelists = isS3Client && isNoneAuth;
@@ -437,33 +425,20 @@ function refreshWhitelistRows() {
     $('#fileSystemLimitReadNo').prop('required', showReadQuestion);
 }
 
-// Maps a persisted whitelist value to the radio + input pair:
-//   '*' (everyone)              -> "Anyone with an RSpace account"; input cleared
-//   'alice,bob' (named list)    -> "Only the following users"; input populated
-//   '' or null   (write only)   -> "Nobody (read access only)" radio when suffix==='Write'
-//                                  (Read has no Nobody option, so falls through to no
-//                                  preselection)
-//   undefined    (fresh add)    -> no radio preselected; input cleared
 function setWhitelistFields(suffix, value) {
     var isEveryone = value === '*';
     var hasNames = typeof value === 'string' && value !== '' && !isEveryone;
     $('#fileSystemLimit' + suffix + 'No').prop('checked', isEveryone);
     $('#fileSystemLimit' + suffix + 'Yes').prop('checked', hasNames);
     if (suffix === 'Write') {
-        // persisted '' or null means nobody is on the write list; undefined means
-        // a fresh-add filesystem where no choice has been made yet.
         var isNobody = value === '' || value === null;
         $('#fileSystemLimitWriteNobody').prop('checked', isNobody);
     }
     $('#fileSystem' + suffix + 'Whitelist').val(hasNames ? value : '');
 }
 
-// Inverse of setWhitelistFields: derive the value to submit from the current radio + input.
-// If write access isn't limited (everyone writes), everyone reads too, so the read value
-// is forced to '*' regardless of any orphan state in the hidden read radio/input.
-// The radio groups are marked required via JS (see refreshWhitelistRows), so HTML5
-// form validation prevents save when no choice is made; the sysadmin is forced to
-// pick explicitly rather than relying on a silent default.
+// If write is unrestricted, everyone writes (and therefore reads); force read='*'
+// regardless of any orphan state in the hidden read radio/input.
 function collectWhitelistValue(suffix) {
     if (suffix === 'Read' && $('#fileSystemLimitWriteNo').prop('checked')) {
         return '*';

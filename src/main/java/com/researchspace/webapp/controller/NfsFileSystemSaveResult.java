@@ -6,11 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Response payload for the sysadmin save-filesystem endpoint. Carries the saved filesystem id and
- * any non-fatal warnings raised during validation (currently the list of whitelisted usernames that
- * do not match any RSpace user; the save still succeeds and the list is persisted as typed).
- */
+/** Response payload for the sysadmin save-filesystem endpoint. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

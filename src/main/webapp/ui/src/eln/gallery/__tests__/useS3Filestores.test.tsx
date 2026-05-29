@@ -11,7 +11,7 @@ import Alerts from "../../../components/Alerts/Alerts";
 // The hook calls axios.create(...) and uses the returned instance, but
 // axios-mock-adapter only intercepts the instance it was constructed against.
 // Stub axios.create so it returns the default instance, which has the mock
-// adapter attached.
+// adapter attached; this also bypasses baseURL so the path is just "/filestores".
 
 function FilestoreList() {
   const result = useS3Filestores();
@@ -45,7 +45,6 @@ describe("useS3Filestores", () => {
   });
 
   test("populates canRead/canWrite from userPermissions when present", async () => {
-    // after the axios.create stub, baseURL is ignored, so the path is just "/filestores"
     mockAxios.onGet("/filestores").reply(200, [
       {
         id: 1,
@@ -79,7 +78,6 @@ describe("useS3Filestores", () => {
   test("stale filestore (canRead=false) is still listed", async () => {
     // a filestore the user has lost access to since binding remains visible
     // so the UI can render it as inaccessible rather than silently dropping it
-    // after the axios.create stub, baseURL is ignored, so the path is just "/filestores"
     mockAxios.onGet("/filestores").reply(200, [
       {
         id: 3,
@@ -104,7 +102,6 @@ describe("useS3Filestores", () => {
   test("defaults canRead/canWrite to true when userPermissions absent", async () => {
     // older backend or non-NONE auth filesystem omits the permissions snapshot;
     // the UI should remain permissive in that case rather than blocking the user
-    // after the axios.create stub, baseURL is ignored, so the path is just "/filestores"
     mockAxios.onGet("/filestores").reply(200, [
       {
         id: 4,
@@ -126,7 +123,6 @@ describe("useS3Filestores", () => {
   });
 
   test("non-S3 filestores are filtered out of the list", async () => {
-    // after the axios.create stub, baseURL is ignored, so the path is just "/filestores"
     mockAxios.onGet("/filestores").reply(200, [
       {
         id: 5,

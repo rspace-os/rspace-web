@@ -98,8 +98,6 @@ function FilesystemSelectionStep(props: {
                     const url = Parsers.getValueWithKey("url")(obj)
                       .flatMap(Parsers.isString)
                       .elseThrow();
-                    // userPermissions is absent for non-NONE auth (and on older
-                    // backends), in which case treat the filesystem as readable.
                     const canRead = Parsers.getValueWithKey("userPermissions")(
                       obj,
                     )

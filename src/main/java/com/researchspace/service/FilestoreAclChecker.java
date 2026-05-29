@@ -23,13 +23,9 @@ public class FilestoreAclChecker {
 
   public static final String EVERYONE = "*";
 
-  @Autowired @Setter private MessageSourceUtils messages;
+  private @Autowired @Setter MessageSourceUtils messages;
 
-  /**
-   * Parses a whitelist string into a trimmed, deduplicated set of tokens. Whitespace is stripped
-   * around each token; empty tokens are dropped. Returns an empty set for {@code null} or blank
-   * input.
-   */
+  /** Splits a comma-separated whitelist into trimmed, non-empty tokens. */
   public static Set<String> parseList(String whitelist) {
     if (whitelist == null) {
       return Collections.emptySet();

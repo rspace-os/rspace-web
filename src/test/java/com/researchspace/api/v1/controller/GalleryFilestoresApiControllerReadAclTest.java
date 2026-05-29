@@ -25,7 +25,7 @@ import org.mockito.MockitoAnnotations;
 
 class GalleryFilestoresApiControllerReadAclTest {
 
-  private static final String USERNAME = "username"; // not in any restrictive whitelist below
+  private static final String USERNAME = "username";
 
   @Mock private NfsManager nfsManager;
   @Mock private RecordDeletionManager deletionManager;
@@ -57,13 +57,12 @@ class GalleryFilestoresApiControllerReadAclTest {
   void browseFilesystem_userNotOnReadWhitelist_throwsAuthorizationException() {
     Long fsId = 1L;
     NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(fsId);
-    fs.setReadWhitelist("alice"); // USERNAME is not "alice"
+    fs.setReadWhitelist("alice");
     fs.setWriteWhitelist(null);
     when(nfsManager.getFileSystem(fsId)).thenReturn(fs);
 
     assertThrows(AuthorizationException.class, () -> controller.browseFilesystem(fsId, null, user));
 
-    // assertion happens before client construction; nfs factory must not be invoked
     verify(nfsFactory, never()).getNfsClient(any(), any(), any());
   }
 
@@ -110,15 +109,12 @@ class GalleryFilestoresApiControllerReadAclTest {
         AuthorizationException.class,
         () -> controller.createFilestore(fsId, "myStore", "/some/path", user));
 
-    // assertion happens before any save attempt
     verify(nfsManager, never()).createAndSaveNewFileStore(any(), any(), any(), any());
   }
 
   @Test
   void browseFilesystem_userOnWriteWhitelistOnly_isAllowed() throws IOException {
-    // write implies read: a user on the write list but not on the read list can still browse.
-    // We don't stub a full happy-path browse here; we just assert that the read-side check does
-    // NOT throw. Any later failure (e.g. NPE constructing the nfs client) is fine for this test.
+    // write implies read: user on write list but not read list can still browse
     Long fsId = 1L;
     NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(fsId);
     fs.setReadWhitelist(null);
