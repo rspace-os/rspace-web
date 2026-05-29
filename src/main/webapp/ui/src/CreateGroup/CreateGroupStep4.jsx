@@ -1,6 +1,7 @@
 "use strict";
 import React from "react";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 const createGroupStep4 = (props) => {
   const styles = {
@@ -19,9 +20,9 @@ const createGroupStep4 = (props) => {
       <p data-test-id="createGroupSummaryGroupName">
         <strong>Group name:</strong>{" "}
         {props.summary.groupName === "" ? (
-          <Box component="span" sx={styles.error}>
+          <Typography variant="inherit" component="span" sx={styles.error}>
             You require a group name
-          </Box>
+          </Typography>
         ) : (
           props.summary.groupName
         )}
@@ -30,9 +31,9 @@ const createGroupStep4 = (props) => {
         {projectGroup && <strong>Group Owner:</strong>}
         {!projectGroup && <strong>PI:</strong>}{" "}
         {props.summary.selectPI.selectedUser === "" ? (
-          <Box component="span" sx={styles.error}>
+          <Typography variant="inherit" component="span" sx={styles.error}>
             You must select a PI
-          </Box>
+          </Typography>
         ) : (
           props.summary.selectPI.selectedUser
         )}

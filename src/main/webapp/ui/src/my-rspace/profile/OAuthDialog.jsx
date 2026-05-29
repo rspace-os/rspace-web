@@ -152,7 +152,9 @@ export default function OAuthDialog(props) {
               {created && (
                 <>
                   Please write down the client secret.{" "}
-                  <b>It will not be available once you close this window.</b>
+                  <strong>
+                    It will not be available once you close this window.
+                  </strong>
                 </>
               )}
             </DialogContentText>

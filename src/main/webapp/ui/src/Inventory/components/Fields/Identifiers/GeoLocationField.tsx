@@ -35,7 +35,11 @@ import { runInAction } from "mobx";
  */
 const LazyMapViewer = lazy(() => import("./MapViewer"));
 
-function CustomFieldset({ children }: { children: React.ReactNode }): ReactNode {
+function CustomFieldset({
+  children,
+}: {
+  children: React.ReactNode;
+}): ReactNode {
   return (
     <Box
       component="fieldset"
@@ -491,7 +495,9 @@ const GeoLocationField = ({
                   paddingTop: 0,
                 }}
               >
-                <Box component="legend" sx={{ padding: "2px 8px" }}>Point</Box>
+                <Box component="legend" sx={{ padding: "2px 8px" }}>
+                  Point
+                </Box>
                 <Grid container direction="row" spacing={1}>
                   <Grid size={6}>
                     <InputWrapper label="Latitude">
@@ -519,12 +525,20 @@ const GeoLocationField = ({
                   paddingTop: 0,
                 }}
               >
-                <Box component="legend" sx={{ padding: "2px 8px" }}>Place</Box>
+                <Box component="legend" sx={{ padding: "2px 8px" }}>
+                  Place
+                </Box>
                 <InputWrapper label="Description">
                   {geoLocationPlace ? (
                     geoLocationPlace
                   ) : (
-                    <Box component="em" sx={{ color: "#949494" }}>None</Box>
+                    <Typography
+                      variant="inherit"
+                      component="em"
+                      sx={{ color: "#949494" }}
+                    >
+                      None
+                    </Typography>
                   )}
                 </InputWrapper>
               </Box>
@@ -538,7 +552,9 @@ const GeoLocationField = ({
                   paddingTop: 0,
                 }}
               >
-                <Box component="legend" sx={{ padding: "2px 8px" }}>Box</Box>
+                <Box component="legend" sx={{ padding: "2px 8px" }}>
+                  Box
+                </Box>
                 <Grid container direction="row" spacing={1}>
                   <Grid size={6}>
                     <InputWrapper label="North Latitude">

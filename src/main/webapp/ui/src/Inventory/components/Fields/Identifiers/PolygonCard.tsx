@@ -2,6 +2,7 @@ import React, { type ReactNode, type ComponentType } from "react";
 import { observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import {
@@ -85,9 +86,11 @@ const PolygonEditor = observer(
           width: "100%",
         }}
       >
-        <Grid size={{
-          md: 5
-        }}>
+        <Grid
+          size={{
+            md: 5,
+          }}
+        >
           <InputWrapper label={`Point ${i + 1} Latitude`}>
             {editable && i < geoLocationPolygon.length - 1 ? (
               <AmberNumberField
@@ -113,13 +116,23 @@ const PolygonEditor = observer(
               />
             ) : (
               /* last point is edited by editing first */
-              (point.pointLatitude || <Box component="span" sx={{ color: "#949494" }}>-</Box>)
+              point.pointLatitude || (
+                <Typography
+                  variant="inherit"
+                  component="span"
+                  sx={{ color: "#949494" }}
+                >
+                  -
+                </Typography>
+              )
             )}
           </InputWrapper>
         </Grid>
-        <Grid size={{
-          md: 5
-        }}>
+        <Grid
+          size={{
+            md: 5,
+          }}
+        >
           <InputWrapper label={`Point ${i + 1} Longitude`}>
             {editable && i < geoLocationPolygon.length - 1 ? (
               <AmberNumberField
@@ -145,13 +158,23 @@ const PolygonEditor = observer(
               />
             ) : (
               /* last point is edited by editing first */
-              (point.pointLongitude || (<Box component="span" sx={{ color: "#949494" }}>-</Box>))
+              point.pointLongitude || (
+                <Typography
+                  variant="inherit"
+                  component="span"
+                  sx={{ color: "#949494" }}
+                >
+                  -
+                </Typography>
+              )
             )}
           </InputWrapper>
         </Grid>
-        <Grid size={{
-          md: 1
-        }}>
+        <Grid
+          size={{
+            md: 1,
+          }}
+        >
           {canBeAdded(i) ? (
             <AddButton
               onClick={() => handleAddPoint(i)}
@@ -161,9 +184,11 @@ const PolygonEditor = observer(
             <>&nbsp;</>
           )}
         </Grid>
-        <Grid size={{
-          md: 1
-        }}>
+        <Grid
+          size={{
+            md: 1,
+          }}
+        >
           {canBeRemoved(i) ? (
             <RemoveButton
               onClick={() => handleRemovePoint(i)}
@@ -175,7 +200,7 @@ const PolygonEditor = observer(
         </Grid>
       </Grid>
     ));
-  }
+  },
 );
 
 type PolygonCardArgs = {
@@ -202,9 +227,11 @@ function PolygonCard({
           width: "100%",
         }}
       >
-        <Grid size={{
-          md: 5
-        }}>
+        <Grid
+          size={{
+            md: 5,
+          }}
+        >
           <InputWrapper label={`In Polygon Point Latitude`}>
             {editable ? (
               <AmberNumberField
@@ -232,7 +259,7 @@ function PolygonCard({
                   (isEmpty(geoLocationInPolygonPoint.pointLatitude) &&
                     inPolygonPointIncomplete) ||
                   isOutOfRangeY(
-                    Number(geoLocationInPolygonPoint.pointLatitude)
+                    Number(geoLocationInPolygonPoint.pointLatitude),
                   ) ? (
                     <>Between &minus;90.0˚ and 90.0˚.</>
                   ) : null
@@ -240,14 +267,22 @@ function PolygonCard({
               />
             ) : (
               geoLocationInPolygonPoint.pointLatitude || (
-                <Box component="span" sx={{ color: "#949494" }}>-</Box>
+                <Typography
+                  variant="inherit"
+                  component="span"
+                  sx={{ color: "#949494" }}
+                >
+                  -
+                </Typography>
               )
             )}
           </InputWrapper>
         </Grid>
-        <Grid size={{
-          md: 5
-        }}>
+        <Grid
+          size={{
+            md: 5,
+          }}
+        >
           <InputWrapper label={`In Polygon Point Longitude`}>
             {editable ? (
               <AmberNumberField
@@ -270,14 +305,14 @@ function PolygonCard({
                   (isEmpty(geoLocationInPolygonPoint.pointLongitude) &&
                     inPolygonPointIncomplete) ||
                   isOutOfRangeX(
-                    Number(geoLocationInPolygonPoint.pointLongitude)
+                    Number(geoLocationInPolygonPoint.pointLongitude),
                   )
                 }
                 helperText={
                   (isEmpty(geoLocationInPolygonPoint.pointLongitude) &&
                     inPolygonPointIncomplete) ||
                   isOutOfRangeX(
-                    Number(geoLocationInPolygonPoint.pointLongitude)
+                    Number(geoLocationInPolygonPoint.pointLongitude),
                   ) ? (
                     <>Between &minus;180.0˚ and 180.0˚.</>
                   ) : null
@@ -285,7 +320,13 @@ function PolygonCard({
               />
             ) : (
               geoLocationInPolygonPoint.pointLongitude || (
-                <Box component="span" sx={{ color: "#949494" }}>-</Box>
+                <Typography
+                  variant="inherit"
+                  component="span"
+                  sx={{ color: "#949494" }}
+                >
+                  -
+                </Typography>
               )
             )}
           </InputWrapper>

@@ -121,7 +121,7 @@ function OptionsListing({
       start > -1 ? (
         <>
           {name.substring(0, start)}
-          <b>{filter}</b>
+          <strong>{filter}</strong>
           {name.substring(end)}
         </>
       ) : (
@@ -257,7 +257,7 @@ export default function TagsCombobox({
   const [filter, setFilter] = useState("");
   const [error, setError] = useState(false);
   const [keyboardFocusIndex, setKeyboardFocusIndex] = useState<number | null>(
-    null
+    null,
   );
   const listRef = useRef<VariableSizeList | null>(null);
 
@@ -270,7 +270,7 @@ export default function TagsCombobox({
     setError(false);
     try {
       const { data } = await axios.get<Array<string>>(
-        `/system/users/allUserTags?tagFilter=${filter}`
+        `/system/users/allUserTags?tagFilter=${filter}`,
       );
       return {
         lastPage: true,
@@ -342,7 +342,7 @@ export default function TagsCombobox({
     },
     onClose: (
       event: React.SyntheticEvent<Element, Event>,
-      reason: AutocompleteCloseReason
+      reason: AutocompleteCloseReason,
     ) => {
       /*
        * This event is fired whenever the user taps inside the Popover. There
@@ -377,8 +377,9 @@ export default function TagsCombobox({
     if (typeof autocompleteInputRef === "function") {
       autocompleteInputRef(node);
     } else if (autocompleteInputRef) {
-      (autocompleteInputRef as React.MutableRefObject<HTMLInputElement | null>).current =
-        node;
+      (
+        autocompleteInputRef as React.MutableRefObject<HTMLInputElement | null>
+      ).current = node;
     }
   };
 
@@ -392,17 +393,17 @@ export default function TagsCombobox({
       tags.map((tag) => ({
         ...tag,
         selected: alreadySelectedTagStrings.has(tag.value),
-      }))
+      })),
     );
     listRef.current?.resetAfterIndex(0);
   }, [value]);
 
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
-    null
+    null,
   );
   function debounce<FuncReturn>(
     func: () => FuncReturn,
-    timeout: number = 1000
+    timeout: number = 1000,
   ): () => void {
     return () => {
       if (debounceTimeout) {
@@ -470,7 +471,7 @@ export default function TagsCombobox({
           backdrop: {
             invisible: false,
             transitionDuration: window.matchMedia(
-              "(prefers-reduced-motion: reduce)"
+              "(prefers-reduced-motion: reduce)",
             ).matches
               ? 0
               : 225,
@@ -483,8 +484,9 @@ export default function TagsCombobox({
               paddingBottom: "12px",
               width: POPOVER_WIDTH,
             },
-          }
-        }}>
+          },
+        }}
+      >
         <div
           {...getRootProps()}
           style={{
@@ -614,8 +616,9 @@ export default function TagsCombobox({
 
               inputLabel: {
                 htmlFor: textFieldId,
-              }
-            }} />
+              },
+            }}
+          />
         </div>
         {groupedOptions.length > 0 && (
           <OptionsListing

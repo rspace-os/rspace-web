@@ -50,7 +50,7 @@ export default function main(props) {
     if (props.maxSelected && props.maxSelected < selected.length) {
       setSnackbarMessage(
         <span>
-          Please, select only <b>one</b> PI
+          Please, select only <strong>one</strong> PI
         </span>,
       );
       setSnackbar(true);

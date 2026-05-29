@@ -107,8 +107,9 @@ function EnableAutoshareDialog({
         <DialogContent>
           <DialogContentText>
             Autosharing work will ensure that all current and future documents
-            and notebooks for user <b>{username}</b> will be shared with group
-            <b> {group.groupDisplayName}</b> with the READ permission.
+            and notebooks for user <strong>{username}</strong> will be shared
+            with group
+            <strong> {group.groupDisplayName}</strong> with the READ permission.
             <br />
             <br />
             The EDIT permission can be granted or items can be unshared from the

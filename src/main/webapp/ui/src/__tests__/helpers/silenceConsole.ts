@@ -57,8 +57,15 @@ export const silenceProcessOutput = (
     return () => {};
   }
   const normalizedMatchers = matchers.map(normalizeMatcher);
-  const restores = streams.map((stream) => {
+  const restores = streams.flatMap((stream) => {
     const target = process[stream];
+    // Under the jsdom test environment the `process` global is the browser
+    // shim injected by vite-plugin-node-polyfills, which has no real
+    // stdout/stderr streams. There is nothing to silence in that case, so
+    // skip the stream instead of crashing.
+    if (!target || typeof target.write !== "function") {
+      return [];
+    }
     const originalWrite = target.write.bind(target);
     const spy = vi.spyOn(target, "write").mockImplementation(
       (chunk: unknown, encoding?: any, callback?: () => void) => {
@@ -72,7 +79,7 @@ export const silenceProcessOutput = (
         return originalWrite(chunk as any, encoding, callback);
       }
     );
-    return () => spy.mockRestore();
+    return [() => spy.mockRestore()];
   });
 
   return () => {

@@ -1,6 +1,5 @@
 "use strict";
 import React, { useEffect, useRef } from "react";
-import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
@@ -42,7 +41,13 @@ export default function SymbolsTab(props) {
               display="block"
               sx={{ marginTop: "8px" }}
             >
-              <Box component="b" sx={{ marginRight: "10px" }}>{String.fromCharCode(key)}</Box>
+              <Typography
+                variant="inherit"
+                component="strong"
+                sx={{ marginRight: "10px" }}
+              >
+                {String.fromCharCode(key)}
+              </Typography>
               {label(key)}
             </Typography>
           </Grid>

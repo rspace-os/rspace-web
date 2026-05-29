@@ -164,8 +164,9 @@ function GroupPublishManager({
             <DialogContent>
               <DialogContentText>
                 Enabling group-wide publication will allow non-PI members in the{" "}
-                <b>{groupDisplayName}</b> group to publish and unpublish their
-                own documents. PIs can also unpublish these documents.
+                <strong>{groupDisplayName}</strong> group to publish and
+                unpublish their own documents. PIs can also unpublish these
+                documents.
               </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -196,8 +197,8 @@ function GroupPublishManager({
             <DialogContent>
               <DialogContentText>
                 Disabling group-wide publication will prevent non PI members of
-                the <b>{groupDisplayName}</b> group publishing their own
-                documents. They may still unpublish previously published
+                the <strong>{groupDisplayName}</strong> group publishing their
+                own documents. They may still unpublish previously published
                 documents.
               </DialogContentText>
             </DialogContent>

@@ -154,10 +154,10 @@ function GroupSeoManager({
             <DialogContent>
               <DialogContentText>
                 Enabling group-wide SEO for published documents will allow
-                non-PI members in the <b>{groupDisplayName}</b> group to choose
-                to have their documents indexed by SEO bots. These documents
-                will also be shown on the 'Published' page visible to the
-                public.
+                non-PI members in the <strong>{groupDisplayName}</strong> group
+                to choose to have their documents indexed by SEO bots. These
+                documents will also be shown on the 'Published' page visible to
+                the public.
               </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -188,9 +188,10 @@ function GroupSeoManager({
             <DialogContent>
               <DialogContentText>
                 Disabling group-wide SEO of public documents will prevent non PI
-                members of the <b>{groupDisplayName}</b> group from allowing SEO
-                bots to index their documents. Their published documents will
-                not appear on the 'Published' page visible to the public.
+                members of the <strong>{groupDisplayName}</strong> group from
+                allowing SEO bots to index their documents. Their published
+                documents will not appear on the 'Published' page visible to the
+                public.
               </DialogContentText>
             </DialogContent>
             <DialogActions>

@@ -5,7 +5,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
 import { type ExportSelection } from "./common";
 import { type Validator } from "../util/Validator";
@@ -79,10 +79,7 @@ function FormatChoice({
     const url = "/repository/ajax/repo/uiConfig";
 
     axios
-      .get<
-        | Array<RepoUiConfig>
-        | { exceptionMessage: string }
-      >(url)
+      .get<Array<RepoUiConfig> | { exceptionMessage: string }>(url)
       .then((response) => {
         const repos = response.data;
         if (!Array.isArray(repos)) throw new Error(repos.exceptionMessage);
@@ -140,10 +137,7 @@ function FormatChoice({
           ];
         });
 
-        exportConfigUpdate(
-          "repoData",
-          normalizedRepos,
-        );
+        exportConfigUpdate("repoData", normalizedRepos);
       })
       .catch(() => {
         setMsgBlockingRepoChoice(
@@ -337,9 +331,9 @@ function FormatChoice({
           )}
         </Stack>
       </RadioGroup>
-      <Box component="h3" sx={{ marginTop: "20px" }}>
+      <Typography variant="h6" component="h3" sx={{ marginTop: "20px" }}>
         Choose additional destinations
-      </Box>
+      </Typography>
       <Grid size={12}>
         <FormControlLabel
           control={

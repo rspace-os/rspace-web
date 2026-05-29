@@ -1,7 +1,7 @@
 "use strict";
 import React from "react";
 import { produce } from "immer";
-import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -119,9 +119,13 @@ class FilePicker extends React.Component {
           </IconButton>
         </Tooltip>
         {this.props.error && (
-          <Box component="span" sx={{ fontSize: "1.3em" }}>
+          <Typography
+            variant="inherit"
+            component="span"
+            sx={{ fontSize: "1.3em" }}
+          >
             Click on the folder icon to select records.
-          </Box>
+          </Typography>
         )}
         <Dialog
           open={this.state.dialogOpen}

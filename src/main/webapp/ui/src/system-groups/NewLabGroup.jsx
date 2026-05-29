@@ -13,7 +13,6 @@ import { createRoot } from "react-dom/client";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
 
 const scrollToRef = (ref) => window.scrollTo(0, ref.current.offsetTop);
 const PROJECT_GROUP = "PROJECT_GROUP";
@@ -234,9 +233,13 @@ export default function NewLabGroup() {
                     color="inherit"
                   >
                     Select group members{" "}
-                    <Box component="span" sx={{ color: "grey" }}>
+                    <Typography
+                      variant="inherit"
+                      component="span"
+                      sx={{ color: "grey" }}
+                    >
                       (optional)
-                    </Box>
+                    </Typography>
                   </Typography>
                   <UserSelect
                     users={users}

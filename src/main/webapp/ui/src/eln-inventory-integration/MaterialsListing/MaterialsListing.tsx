@@ -8,6 +8,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { faVial } from "@fortawesome/free-solid-svg-icons/faVial";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import { type ElnFieldId } from "../../stores/models/MaterialsModel";
 import MenuItem from "@mui/material/MenuItem";
@@ -27,14 +28,12 @@ import Analytics from "../../components/Analytics";
 
 const FAB_SIZE = 48;
 
-
 const itemTextSx = {
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
   width: "240px",
 } as const;
-
 
 const MaterialsLauncher = observer(
   ({
@@ -108,13 +107,16 @@ const MaterialsLauncher = observer(
                 transition
                 disablePortal
                 placement="left"
-                  sx={{
-                    zIndex: 1,
-                    pointerEvents: "auto",
-                  }}
+                sx={{
+                  zIndex: 1,
+                  pointerEvents: "auto",
+                }}
               >
                 {({ TransitionProps }) => (
-                  <Grow {...TransitionProps} style={{ transformOrigin: "center right" }}>
+                  <Grow
+                    {...TransitionProps}
+                    style={{ transformOrigin: "center right" }}
+                  >
                     <Paper
                       sx={{
                         maxHeight: "calc(100vh - 16px)",
@@ -135,12 +137,20 @@ const MaterialsLauncher = observer(
                                 handleClose();
                               }}
                             >
-                              <Box component="span" sx={itemTextSx}>
+                              <Typography
+                                variant="inherit"
+                                component="span"
+                                sx={itemTextSx}
+                              >
                                 {i + 1}: {list.name}
-                              </Box>
-                              <Box component="em" sx={itemTextSx}>
+                              </Typography>
+                              <Typography
+                                variant="inherit"
+                                component="em"
+                                sx={itemTextSx}
+                              >
                                 {list.description}
-                              </Box>
+                              </Typography>
                             </MenuItem>
                           ))}
                         </MenuList>
@@ -174,7 +184,6 @@ const MaterialsListing = observer(
 
     useEffect(() => {
       materialsStore.canEdit = canEdit;
-
     }, [canEdit]);
 
     useEffect(() => {
@@ -182,13 +191,11 @@ const MaterialsListing = observer(
         .setup()
         .then(() => setLoading(false))
         .catch((e) => console.error(e));
-
     }, []);
 
     useEffect(() => {
       if (!loading)
         void materialsStore.getFieldMaterialsListings(parseInt(elnFieldId, 10));
-
     }, [loading]);
 
     return !loading ? (

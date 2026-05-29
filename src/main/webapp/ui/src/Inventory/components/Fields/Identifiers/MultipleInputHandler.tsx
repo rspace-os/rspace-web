@@ -19,7 +19,7 @@ import TextField from "@mui/material/TextField";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
-import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { capitaliseJustFirstChar } from "../../../../util/Util";
 import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
 
@@ -253,7 +253,13 @@ const MultipleInputHandler = ({
                           {sf.value ? (
                             <>{String(sf.value)}</>
                           ) : (
-                            <Box component="em" sx={{ color: "#949494" }}>None</Box>
+                            <Typography
+                              variant="inherit"
+                              component="em"
+                              sx={{ color: "#949494" }}
+                            >
+                              None
+                            </Typography>
                           )}
                         </Grid>
                       </Grid>
@@ -326,7 +332,12 @@ const MultipleInputHandler = ({
             container
             direction="row"
             spacing={1}
-            sx={{ justifyContent: "space-between", flexWrap: "nowrap", width: "100%", m: 0.5 }}
+            sx={{
+              justifyContent: "space-between",
+              flexWrap: "nowrap",
+              width: "100%",
+              m: 0.5,
+            }}
             key={i}
           >
             {field.key === "Geolocations" ? (

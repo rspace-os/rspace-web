@@ -43,26 +43,6 @@ type CardWrapperArgs = {
   children: React.ReactNode;
 };
 
-function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
-  return (
-    <Dialog
-      {...props}
-      fullScreen={fullScreen}
-      slotProps={{
-        paper: {
-          sx: {
-            overflow: "hidden",
-            // this is to avoid intercom help button
-            maxHeight: fullScreen ? "unset" : "86vh",
-            // this is to ensure the picker has enough height even when list is empty
-            minHeight: "86vh",
-          },
-        },
-      }}
-    />
-  );
-}
-
 const barWrapperSx = {
   display: "flex",
   alignSelf: "center",
@@ -71,12 +51,11 @@ const barWrapperSx = {
   alignItems: "center",
 };
 
-const fullWidthSx = { width: "100%" };
-
 const spacedBetweenRowSx = {
   display: "flex",
   flexDirection: "row",
   justifyContent: "space-between",
+  width: "100%",
 };
 
 const disabledBlackInputSx = {
@@ -133,14 +112,25 @@ const CardWrapper = forwardRef<
 
 CardWrapper.displayName = "CardWrapper";
 
-function BigButton({ icon, onClick }: { onClick: () => void; icon: React.ReactNode }): React.ReactNode {
+function BigButton({
+  icon,
+  onClick,
+}: {
+  onClick: () => void;
+  icon: React.ReactNode;
+}): React.ReactNode {
   return (
     <IconButton
       component="div"
       size="small"
       color="primary"
       onClick={onClick}
-      sx={{ p: 0, cursor: "pointer", m: 0.25, "& svg": { width: "2rem", height: "2rem" } }}
+      sx={{
+        p: 0,
+        cursor: "pointer",
+        m: 0.25,
+        "& svg": { width: "2rem", height: "2rem" },
+      }}
     >
       {icon}
     </IconButton>
@@ -159,7 +149,7 @@ const MetadataBar = observer(
   }) => {
     return (
       <Box sx={[barWrapperSx, { mb: isSingleColumn ? 2 : 0.5 }]}>
-        <Box sx={[spacedBetweenRowSx, fullWidthSx]}>
+        <Box sx={spacedBetweenRowSx}>
           <TextField
             variant="standard"
             sx={[textFieldSx, !canEdit && disabledBlackInputSx, { flex: 5 }]}
@@ -241,11 +231,7 @@ const ActionsBar = observer(
     };
 
     return (
-      <Grid
-        container
-        spacing={2}
-        sx={{ ...hideWhenPrintingSx, mb: 1 }}
-      >
+      <Grid container spacing={2} sx={{ ...hideWhenPrintingSx, mb: 1 }}>
         <Grid>
           <Button
             color="primary"
@@ -312,10 +298,10 @@ const ActionsBar = observer(
         )}
         {anyDataInList && (
           <Grid>
-            <Box component="p" sx={{ margin: 0 }}>
+            <Typography variant="inherit" component="p" sx={{ margin: 0 }}>
               Tip: to edit an item click its Global ID, then the Edit button in
               the new browser tab.
-            </Box>
+            </Typography>
           </Grid>
         )}
       </Grid>
@@ -336,6 +322,7 @@ function MaterialsDialog({
 }: DialogArgs): React.ReactNode {
   const { materialsStore } = useStores();
   const isSingleColumn = useIsSingleColumnLayout();
+  const fullScreen = isSingleColumn || standalonePage;
 
   const [openPicker, setOpenPicker] = useState<boolean>(false);
   const [openExporter, setOpenExporter] = useState<boolean>(false);
@@ -417,7 +404,7 @@ function MaterialsDialog({
         <Portal>
           <Alerts>
             <DialogBoundary>
-              <CustomDialog
+              <Dialog
                 onClose={() => {
                   materialsStore.setCurrentList(materialsStore.originalList);
                   setOpen(false);
@@ -425,7 +412,18 @@ function MaterialsDialog({
                 open={open}
                 maxWidth="lg"
                 fullWidth
-                fullScreen={isSingleColumn || standalonePage}
+                fullScreen={fullScreen}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      overflow: "hidden",
+                      // this is to avoid intercom help button
+                      maxHeight: fullScreen ? "unset" : "86vh",
+                      // this is to ensure the picker has enough height even when list is empty
+                      minHeight: "86vh",
+                    },
+                  },
+                }}
                 onClick={() => {
                   setOpenPicker(false);
                   setOpenExporter(false);
@@ -488,10 +486,7 @@ function MaterialsDialog({
                         </Typography>
                       )}
                     </Grid>
-                    <Slide
-                      in={openSlide}
-                      direction="left"
-                    >
+                    <Slide in={openSlide} direction="left">
                       <CardWrapper>
                         {openPicker && currentList?.pickerSearch && (
                           <InventoryPicker
@@ -534,9 +529,13 @@ function MaterialsDialog({
                   </Box>
                 )}
                 <DialogActions
-                  sx={[barWrapperSx, disableBackgroundSx(openSlide), hideWhenPrintingSx]}
+                  sx={[
+                    barWrapperSx,
+                    disableBackgroundSx(openSlide),
+                    hideWhenPrintingSx,
+                  ]}
                 >
-                  <Box sx={[spacedBetweenRowSx, fullWidthSx]}>
+                  <Box sx={spacedBetweenRowSx}>
                     <Button
                       color="primary"
                       variant="contained"
@@ -619,7 +618,7 @@ function MaterialsDialog({
                   </Box>
                 </DialogActions>
                 <Confirm />
-              </CustomDialog>
+              </Dialog>
             </DialogBoundary>
           </Alerts>
         </Portal>

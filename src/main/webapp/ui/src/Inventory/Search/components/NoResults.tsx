@@ -34,9 +34,13 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
           maxHeight: "200px",
         }}
       />
-      <Box component="span" sx={{ color: darken(theme.palette.primary.main, 0.2) }}>
+      <Typography
+        variant="inherit"
+        component="span"
+        sx={{ color: darken(theme.palette.primary.main, 0.2) }}
+      >
         No results.
-      </Box>
+      </Typography>
       <Typography
         sx={{
           textAlign: "center",

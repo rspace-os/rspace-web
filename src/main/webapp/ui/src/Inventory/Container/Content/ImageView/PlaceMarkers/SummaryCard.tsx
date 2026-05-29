@@ -83,7 +83,7 @@ function SummaryCard({
                     inline
                     selected={selected === number}
                   />
-                  {location.name ?? <i>Empty Location</i>}
+                  {location.name ?? <em>Empty Location</em>}
                 </Typography>
                 <Typography
                   variant="body2"

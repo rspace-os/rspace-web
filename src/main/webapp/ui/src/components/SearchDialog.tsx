@@ -13,6 +13,7 @@ import TextField from "@mui/material/TextField";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 import docLinks from "../assets/DocLinks";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 type TextAreaDialogArgs = {
   query: string;
@@ -63,7 +64,13 @@ export default function TextAreaDialog({
             <Box>
               <DialogContentText>
                 Tip: Create powerful Lucene queries by prefixing your query with{" "}
-                <Box component="samp" sx={{ bgcolor: "#eee", borderRadius: "3px", p: "1px 2px" }}>l:</Box>
+                <Typography
+                  variant="inherit"
+                  component="samp"
+                  sx={{ bgcolor: "#eee", borderRadius: "3px", p: "1px 2px" }}
+                >
+                  l:
+                </Typography>
               </DialogContentText>
               <DialogContentText>
                 For more information, see{" "}

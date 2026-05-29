@@ -33,10 +33,7 @@ function RorDetails(
   props: React.HTMLAttributes<HTMLDivElement>,
 ): React.ReactNode {
   return (
-    <Box
-      {...props}
-      sx={{ fontSize: "18px", margin: "0.5em 0.5em 0.5em 0" }}
-    />
+    <Box {...props} sx={{ fontSize: "18px", margin: "0.5em 0.5em 0.5em 0" }} />
   );
 }
 
@@ -74,7 +71,7 @@ function RoRIntegration(): React.ReactNode {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const handleNetworkError = (e: Error) => {
     setErrorMessage(
-      e.message ? e.message : "There is a problem, please try again later"
+      e.message ? e.message : "There is a problem, please try again later",
     );
   };
 
@@ -82,7 +79,7 @@ function RoRIntegration(): React.ReactNode {
     const fetchExistingRor = async () => {
       try {
         const response: { data: string } = await axios.get(
-          "/system/ror/existingGlobalRoRID"
+          "/system/ror/existingGlobalRoRID",
         );
         setRor(response.data);
       } catch (e) {
@@ -98,7 +95,7 @@ function RoRIntegration(): React.ReactNode {
       //error from ROR API
       return rorErrorMessage.substring(
         rorErrorMessage.indexOf("errors") + 10,
-        rorErrorMessage.length - 6
+        rorErrorMessage.length - 6,
       );
     }
     return rorErrorMessage; //RSpace error message
@@ -112,7 +109,7 @@ function RoRIntegration(): React.ReactNode {
       : "";
     try {
       const response: RSpaceApiResponse = await axios.post(
-        "/system/ror/rorForID/" + updatedRoR
+        "/system/ror/rorForID/" + updatedRoR,
       );
       if (response.data.exceptionMessage) {
         const message: string = response.data.exceptionMessage;
@@ -128,7 +125,7 @@ function RoRIntegration(): React.ReactNode {
   const deleteRor = async () => {
     try {
       const response: RSpaceApiResponse = await axios.delete(
-        "/system/ror/rorForID/"
+        "/system/ror/rorForID/",
       );
       if (response.data.exceptionMessage) {
         setErrorMessage(parseRorError(response.data.exceptionMessage));
@@ -150,7 +147,7 @@ function RoRIntegration(): React.ReactNode {
         : "";
       try {
         const response: { data: RoRApiResponse } = await axios.get(
-          "/system/ror/rorForID/" + searchTerm
+          "/system/ror/rorForID/" + searchTerm,
         );
         if (response.data.exceptionMessage) {
           setErrorMessage(parseRorError(response.data.exceptionMessage));
@@ -291,16 +288,16 @@ function RoRIntegration(): React.ReactNode {
           )}
           {candidateRor && rorDoesNotMatchCandidateRor() && !errorMessage && (
             <RorHelpText>
-              ROR ID found. Click <b>Link</b> to associate with this RSpace
-              Instance.
+              ROR ID found. Click <strong>Link</strong> to associate with this
+              RSpace Instance.
             </RorHelpText>
           )}
           {(rorMatchesCandidateRor() || (ror && !candidateRor)) &&
             !errorMessage && (
               <RorHelpText>
                 A ROR ID is linked to this RSpace Instance. Click on{" "}
-                <b>UNLINK</b> to remove the association. Future published or
-                updated DOIs will not include the ROR ID.
+                <strong>UNLINK</strong> to remove the association. Future
+                published or updated DOIs will not include the ROR ID.
               </RorHelpText>
             )}
           {rorDetails && (

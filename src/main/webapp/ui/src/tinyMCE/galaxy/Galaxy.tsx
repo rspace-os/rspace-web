@@ -245,14 +245,14 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                     will see 'Unnamed History'){" "}
                   </p>
                   <p>
-                    <b>
+                    <strong>
                       {" "}
                       The data you have uploaded to Galaxy has links back to
                       RSpace present in its 'annotation' metadata.
-                    </b>
+                    </strong>
                   </p>
                   <p>
-                    <b>
+                    <strong>
                       {" "}
                       Data uploaded to this history is now viewable by clicking
                       on the 'workflow' icon which will appear in your document.
@@ -261,7 +261,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                       click on this 'workflow' icon. The badge count on the
                       workflow icon indicates how many Galaxy Invocations are
                       using the uploaded data.
-                    </b>
+                    </strong>
                   </p>
                 </Stack>
               </TitledBox>
@@ -302,11 +302,11 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                   which will be available for immediate use. The list dataset
                   will be named after this RSpace document, using the format:
                   <p>
-                    <b>
+                    <strong>
                       "RSPACE_" + document name + "_" + global ID of document +
                       "_" + name of field data was attached to + "_" + global ID
                       of that field.
-                    </b>
+                    </strong>
                   </p>
                   When you click 'Upload to Galaxy', a new history will be
                   created in Galaxy named after your RSpace document with the
@@ -314,11 +314,11 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                   data will be uploaded to this new history. You can make this
                   history active in Galaxy by switching to it.
                   <p>
-                    <b>
+                    <strong>
                       RSpace will store the details of the files you have
                       uploaded and also any use of these files on Galaxy in
                       Invocations will be tracked.
-                    </b>
+                    </strong>
                   </p>
                   {errorMessage && (
                     <ErrorView

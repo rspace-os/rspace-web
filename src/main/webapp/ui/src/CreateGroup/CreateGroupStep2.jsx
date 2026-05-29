@@ -11,6 +11,7 @@ import CreatableSelect from "react-select/creatable";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import EmailValidator from "email-validator";
 
 class createGroupStep2 extends React.Component {
@@ -149,9 +150,13 @@ class createGroupStep2 extends React.Component {
                     Nominate a PI, make me Lab Admin, and supply users for
                     pending invitations.
                     <br />
-                    <Box component="i" sx={{ fontSize: "11px" }}>
+                    <Typography
+                      variant="inherit"
+                      component="em"
+                      sx={{ fontSize: "11px" }}
+                    >
                       Note: group wont be created until PI accepts invitation
-                    </Box>
+                    </Typography>
                   </span>
                 }
               />

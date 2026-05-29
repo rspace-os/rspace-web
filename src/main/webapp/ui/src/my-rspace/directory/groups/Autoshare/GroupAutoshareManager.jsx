@@ -162,8 +162,8 @@ function GroupAutoshareManager({
               <DialogContent>
                 <DialogContentText>
                   Enabling group-wide autosharing will enable autosharing for
-                  all non-PI members in the <b>{groupDisplayName}</b> group.
-                  Once enabled, new non-PI members will have autosharing
+                  all non-PI members in the <strong>{groupDisplayName}</strong>{" "}
+                  group. Once enabled, new non-PI members will have autosharing
                   automatically enabled on joining.
                 </DialogContentText>
                 <AdditionalInfo />
@@ -196,9 +196,9 @@ function GroupAutoshareManager({
               <DialogContent>
                 <DialogContentText>
                   Disabling group-wide autosharing will unshare all work shared
-                  by non-PI members in the <b>{groupDisplayName}</b> group. Once
-                  disabled, new non-PI members will no longer have autosharing
-                  automatically enabled on joining.
+                  by non-PI members in the <strong>{groupDisplayName}</strong>{" "}
+                  group. Once disabled, new non-PI members will no longer have
+                  autosharing automatically enabled on joining.
                 </DialogContentText>
                 <AdditionalInfo />
               </DialogContent>

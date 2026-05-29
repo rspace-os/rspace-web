@@ -27,10 +27,26 @@ const itemMmSize = {
 const contentsWrapperSx = { m: 0 };
 const horzSx = { maxWidth: "47vw", p: 0.25 };
 const largeMmHorzSx = { maxWidth: "47vw", p: 0.5 };
-const smallPxSx = { width: itemPxWidth.small, maxWidth: itemPxWidth.small, p: 0.25 };
-const largePxSx = { width: itemPxWidth.full, maxWidth: itemPxWidth.full, p: 0.25 };
-const smallMmSx = { width: itemMmSize.small, maxWidth: itemMmSize.small, p: 0.25 };
-const largeMmSx = { width: itemMmSize.large, maxWidth: itemMmSize.large, p: 0.5 };
+const smallPxSx = {
+  width: itemPxWidth.small,
+  maxWidth: itemPxWidth.small,
+  p: 0.25,
+};
+const largePxSx = {
+  width: itemPxWidth.full,
+  maxWidth: itemPxWidth.full,
+  p: 0.25,
+};
+const smallMmSx = {
+  width: itemMmSize.small,
+  maxWidth: itemMmSize.small,
+  p: 0.25,
+};
+const largeMmSx = {
+  width: itemMmSize.large,
+  maxWidth: itemMmSize.large,
+  p: 0.5,
+};
 const singlePcSx = { width: "90%", maxWidth: "90%", p: 0.25 };
 
 /*
@@ -100,14 +116,26 @@ export const PreviewPrintItem = ({
     return printOptions.printIdentifierType === "GLOBAL ID"
       ? printLabelContents.globalId.map((globalId) => (
           <Fragment key={globalId}>
-            <Box component="strong" sx={{ fontSize: "0.8em" }}>RSPACE GLOBAL ID</Box>
+            <Typography
+              variant="inherit"
+              component="strong"
+              sx={{ fontSize: "0.8em" }}
+            >
+              RSPACE GLOBAL ID
+            </Typography>
             <br />
             {globalId}
           </Fragment>
         ))
       : printLabelContents.identifier.map(({ doi }) => (
           <Fragment key={doi}>
-            <Box component="strong" sx={{ fontSize: "0.8em" }}>IGSN ID</Box>
+            <Typography
+              variant="inherit"
+              component="strong"
+              sx={{ fontSize: "0.8em" }}
+            >
+              IGSN ID
+            </Typography>
             <br />
             {doi}
           </Fragment>
@@ -143,7 +171,8 @@ export const PreviewPrintItem = ({
             { wordBreak: "break-word" },
             {
               flexWrap: "nowrap",
-              flexDirection: printOptions.printCopies === "2" ? "row" : "column",
+              flexDirection:
+                printOptions.printCopies === "2" ? "row" : "column",
             },
           ]}
         >
@@ -163,9 +192,12 @@ export const PreviewPrintItem = ({
             <Grid
               container
               spacing={0.5}
-                sx={[{ fontSize: "11px" }, { flexDirection: "column", lineHeight: "1.2", p: 1 }]}
+              sx={[
+                { fontSize: "11px" },
+                { flexDirection: "column", lineHeight: "1.2", p: 1 },
+              ]}
             >
-                <Grid sx={{ mb: 0 }}>
+              <Grid sx={{ mb: 0 }}>
                 {target === "singlePrint" ? (
                   header
                 ) : (
@@ -212,7 +244,9 @@ export const PreviewPrintItem = ({
       {printerType === "LABEL" && (
         <Box
           component="div"
-          sx={{ "@media print": { breakAfter: "always", pageBreakAfter: "always" } }}
+          sx={{
+            "@media print": { breakAfter: "always", pageBreakAfter: "always" },
+          }}
         ></Box>
       )}
     </>
