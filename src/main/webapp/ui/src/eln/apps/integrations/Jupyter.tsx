@@ -29,7 +29,6 @@ function Jupyter(): React.ReactNode {
           <>
             <ol>
               <li>
-                {" "}
                 <strong>Enable API access:</strong> Generate your API key in My
                 RSpace → My Profile.
               </li>
