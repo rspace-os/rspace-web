@@ -37,6 +37,7 @@ import {
   GridColumnVisibilityModel,
   GridRowSelectionModel,
   GridSortModel,
+  GridSlotProps,
 } from "@mui/x-data-grid";
 import TextField from "@mui/material/TextField";
 import ViewColumnIcon from "@mui/icons-material/ViewColumn";
@@ -80,7 +81,6 @@ import { doNotAwait, sleep } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Dialog from "@mui/material/Dialog";
 import Alerts from "../../../components/Alerts/Alerts";
-import Badge from "@mui/material/Badge";
 import docLinks from "../../../assets/DocLinks";
 import createAccentedTheme from "../../../accentedTheme";
 import UserAliasIcon from "@mui/icons-material/ContactEmergency";
@@ -93,6 +93,22 @@ import useUiPreference, {
 } from "../../../hooks/api/useUiPreference";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 import Analytics from "../../../components/Analytics";
+
+/*
+ * `userListing` and `selectedCount` are passed to the `UsersToolbar` slot via
+ * `slotProps.toolbar`, so they are added to the DataGrid's toolbar prop types
+ * here. Passing them through `slotProps` (rather than wrapping the slot in a
+ * `useCallback` closure that changes identity when `userListing` updates) keeps
+ * the slot component referentially stable. That way the DataGrid re-renders the
+ * toolbar with fresh props instead of remounting it, which would otherwise
+ * reset the toolbar's filter state and hide the active-filters chip.
+ */
+declare module "@mui/x-data-grid" {
+  interface ToolbarPropsOverrides {
+    userListing: FetchingData.Fetched<UserListing>;
+    selectedCount: number;
+  }
+}
 
 /*
  * All of the DOM events that happen inside of components that are themselves
@@ -213,9 +229,9 @@ const TagDialog = ({
           <Stack spacing={2}>
             <Typography variant="body2">
               You can tag users to categorise them, and filter users by tag.
-              These tags are only visible to System Admins and Community
-              Admins. If you&apos;ve selected several users, only shared tags
-              will be shown.{" "}
+              These tags are only visible to System Admins and Community Admins.
+              If you&apos;ve selected several users, only shared tags will be
+              shown.{" "}
               <Link
                 target="_blank"
                 rel="noreferrer"
@@ -333,7 +349,7 @@ const SearchBox = ({
         value={searchTerm}
         sx={{
           "& .MuiInputBase-input": {
-            p: '5px 0',
+            p: "5px 0",
           },
         }}
         slotProps={{
@@ -1230,21 +1246,21 @@ const SelectionActions = ({
                   />
                 </EventBoundary>
               </Menu>
-          </Box>
-          <Typography
-            variant="body2"
-            sx={{
-              ml: 0.5,
-              p: 0,
-              color: selectedIds.length > 0 ? "initial" : "grey",
-            }}
-          >
-            {selectedIds.length > 0
-              ? `${selectedIds.length} user${selectedIds.length > 1 ? "s" : ""} selected`
-              : "No selection"}
-          </Typography>
-        </Stack>
-      ),
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{
+                ml: 0.5,
+                p: 0,
+                color: selectedIds.length > 0 ? "initial" : "grey",
+              }}
+            >
+              {selectedIds.length > 0
+                ? `${selectedIds.length} user${selectedIds.length > 1 ? "s" : ""} selected`
+                : "No selection"}
+            </Typography>
+          </Stack>
+        ),
       })}
       <ExportDialog
         open={exportDialogOpen}
@@ -1264,10 +1280,7 @@ const SelectionActions = ({
 const UsersToolbar = ({
   userListing,
   selectedCount,
-}: {
-  userListing: FetchingData.Fetched<UserListing>;
-  selectedCount: number;
-}) => {
+}: GridSlotProps["toolbar"]) => {
   const [filterAnchorEl, setFilterAnchorEl] =
     React.useState<HTMLElement | null>(null);
   const [tagsComboboxAnchorEl, setTagsComboboxAnchorEl] =
@@ -1319,24 +1332,33 @@ const UsersToolbar = ({
       }}
     >
       <SearchBox userListing={userListing} />
-      <Badge
-        badgeContent={tagsChecked ? tags.length : null}
-        color="primary"
+      <Button
+        variant="outlined"
+        color={tagsChecked && tags.length > 0 ? "primary" : "standardIcon"}
+        startIcon={<FilterListIcon />}
+        onClick={(e) => {
+          setFilterAnchorEl(e.currentTarget);
+        }}
+        aria-label="Filter users"
+        aria-haspopup="dialog"
+        aria-expanded={Boolean(filterAnchorEl)}
       >
-        <Button
-          variant="outlined"
-          color={tagsChecked && tags.length > 0 ? "primary" : "standardIcon"}
-          startIcon={<FilterListIcon />}
-          onClick={(e) => {
-            setFilterAnchorEl(e.currentTarget);
-          }}
-          aria-label="Filter users"
-          aria-haspopup="dialog"
-          aria-expanded={Boolean(filterAnchorEl)}
-        >
-          Filters
-        </Button>
-      </Badge>
+        Filters
+        {tagsChecked && tags.length > 0 && (
+          <Chip
+            label={tags.length}
+            size="small"
+            color="primary"
+            aria-label={`${tags.length} filter${tags.length === 1 ? "" : "s"} active`}
+            sx={{
+              ml: 1,
+              height: 20,
+              pointerEvents: "none",
+              "& .MuiChip-label": { px: 1 },
+            }}
+          />
+        )}
+      </Button>
       <Panel
         anchorEl={filterAnchorEl}
         onClose={() => {
@@ -1352,38 +1374,33 @@ const UsersToolbar = ({
           >
             <Stack spacing={1}>
               <FormControlLabel
-                    control={
-                      <Switch
-                        size="small"
-                        checked={tagsChecked}
-                        onChange={(event) => {
-                          setTagsChecked(event.target.checked);
-                          // When turning the Tags filter off, always refetch
-                          // so any previously-applied tag filter is cleared
-                          // from the listing. When turning it on, only
-                          // refetch if there are tags selected — otherwise
-                          // toggling on with no tags is a no-op for the
-                          // listing and would just cause an unnecessary
-                          // re-render of the whole page.
-                          if (event.target.checked && tags.length === 0)
-                            return;
-                          FetchingData.getSuccessValue(userListing).do(
-                            (listing) => {
-                              void listing.applyTagsFilter(
-                                event.target.checked ? tags : [],
-                              );
-                            },
+                control={
+                  <Switch
+                    size="small"
+                    checked={tagsChecked}
+                    onChange={(event) => {
+                      setTagsChecked(event.target.checked);
+                      // When turning the Tags filter off, always refetch
+                      // so any previously-applied tag filter is cleared
+                      // from the listing. When turning it on, only
+                      // refetch if there are tags selected — otherwise
+                      // toggling on with no tags is a no-op for the
+                      // listing and would just cause an unnecessary
+                      // re-render of the whole page.
+                      if (event.target.checked && tags.length === 0) return;
+                      FetchingData.getSuccessValue(userListing).do(
+                        (listing) => {
+                          void listing.applyTagsFilter(
+                            event.target.checked ? tags : [],
                           );
-                        }}
-                      />
-                    }
+                        },
+                      );
+                    }}
+                  />
+                }
                 label="Tags"
               />
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ flexWrap: "nowrap" }}
-              >
+              <Stack direction="row" spacing={1} sx={{ flexWrap: "nowrap" }}>
                 <Box sx={{ width: 30, flexShrink: 0 }} />
                 <Stack
                   direction="row"
@@ -1410,37 +1427,38 @@ const UsersToolbar = ({
                   ))}
                   <Box>
                     <Chip
-                        icon={<AddIcon />}
-                        label="Add Tag"
-                        color="primary"
-                        skipFocusWhenDisabled
-                        onClick={(e) => {
-                          setTagsComboboxAnchorEl(e.currentTarget);
-                        }}
-                        disabled={!tagsChecked}
-                      />
-                      <TagsCombobox
-                        value={new RsSet(tags)}
-                        anchorEl={tagsComboboxAnchorEl}
-                        onSelection={(newTag) => {
-                          if (!tags.includes(newTag)) {
-                            const newTags = [...tags, newTag];
-                            setTags(newTags);
-                            FetchingData.getSuccessValue(userListing).do(
-                              (listing) => {
-                                void listing.applyTagsFilter(newTags);
-                              },
-                            );
-                          }
-                        }}
-                        onClose={() => {
-                          setTagsComboboxAnchorEl(null);
-                        }}
-                      />
-                    </Box>
-                  </Stack>
+                      icon={<AddIcon />}
+                      label="Add Tag"
+                      color="primary"
+                      skipFocusWhenDisabled
+                      onClick={(e) => {
+                        setTagsComboboxAnchorEl(e.currentTarget);
+                      }}
+                      disabled={!tagsChecked}
+                    />
+                    <TagsCombobox
+                      value={new RsSet(tags)}
+                      anchorEl={tagsComboboxAnchorEl}
+                      allowNewTags={false}
+                      onSelection={(newTag) => {
+                        if (!tags.includes(newTag)) {
+                          const newTags = [...tags, newTag];
+                          setTags(newTags);
+                          FetchingData.getSuccessValue(userListing).do(
+                            (listing) => {
+                              void listing.applyTagsFilter(newTags);
+                            },
+                          );
+                        }
+                      }}
+                      onClose={() => {
+                        setTagsComboboxAnchorEl(null);
+                      }}
+                    />
+                  </Box>
                 </Stack>
               </Stack>
+            </Stack>
           </CardContent>
         </Card>
       </Panel>
@@ -1494,63 +1512,51 @@ export const UsersPage = (): React.ReactNode => {
     null,
   );
   const [tagsList, setTagsList] = React.useState<Array<string>>([]);
-  const [columnVisibility, setColumnVisibility] = useUiPreference<GridColumnVisibilityModel>(
-    PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS,
-    {
-      defaultValue: {
-        email: false,
-        recordCount: false,
-        created: false,
-        firstName: false,
-        lastName: false,
-        locked: false,
-        tags: false,
-        usernameAlias: false,
+  const [columnVisibility, setColumnVisibility] =
+    useUiPreference<GridColumnVisibilityModel>(
+      PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS,
+      {
+        defaultValue: {
+          email: false,
+          recordCount: false,
+          created: false,
+          firstName: false,
+          lastName: false,
+          locked: false,
+          tags: false,
+          usernameAlias: false,
+        },
       },
-    },
-  );
+    );
   const selectedIds = React.useMemo(
     () =>
       rowSelectionModel.type === "include" ? [...rowSelectionModel.ids] : [],
     [rowSelectionModel],
   );
-  const ToolbarSlot = React.useCallback(
-    () => (
-      <UsersToolbar
-        userListing={userListing}
-        selectedCount={selectedIds.length}
-      />
-    ),
-    [selectedIds.length, userListing],
-  );
   const columns = [
-    DataGridColumn.newColumnWithValueMapper(
-      "fullNameSurnameFirst",
-      (v) => v,
-      {
-        headerName: "Full Name",
-        flex: 1,
-        renderCell: (params: {
-          value?: string;
-          row: User;
-          tabIndex: number;
-        }): React.ReactNode => {
-          if (!params.value) return null;
-          return (
-            <Link
-              tabIndex={params.tabIndex}
-              href={params.row.url}
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
-              {params.value}
-            </Link>
-          );
-        },
-        disableExport: true,
+    DataGridColumn.newColumnWithValueMapper("fullNameSurnameFirst", (v) => v, {
+      headerName: "Full Name",
+      flex: 1,
+      renderCell: (params: {
+        value?: string;
+        row: User;
+        tabIndex: number;
+      }): React.ReactNode => {
+        if (!params.value) return null;
+        return (
+          <Link
+            tabIndex={params.tabIndex}
+            href={params.row.url}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            {params.value}
+          </Link>
+        );
       },
-    ),
+      disableExport: true,
+    }),
     DataGridColumn.newColumnWithFieldName<"firstName", User>("firstName", {
       headerName: "First Name",
       flex: 1,
@@ -2065,7 +2071,13 @@ export const UsersPage = (): React.ReactNode => {
                           });
                         }}
                         slots={{
-                          toolbar: ToolbarSlot,
+                          toolbar: UsersToolbar,
+                        }}
+                        slotProps={{
+                          toolbar: {
+                            userListing,
+                            selectedCount: selectedIds.length,
+                          },
                         }}
                         loading={FetchingData.match(userListing, {
                           loading: () => true,

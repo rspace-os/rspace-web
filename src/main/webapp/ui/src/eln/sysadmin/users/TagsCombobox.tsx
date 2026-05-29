@@ -50,11 +50,14 @@ import axios from "@/common/axios";
  * https://react-window.vercel.app/#/examples/list/variable-size
  * https://www.npmjs.com/package/react-window-infinite-loader
  *
- * Note that there is a bug with useAutocomplete that makes it report an
- * error to the JS console about a missing <input> ref. This is an issue that
- * is not easy to resolve, but doesn't appear to cause any issues. See
- * this discussions:
- * https://github.com/mui/material-ui/issues/28687
+ * `useAutocomplete` validates, once on mount, that the ref returned by
+ * `getInputProps` resolves to an <input> element (see
+ * https://github.com/mui/material-ui/issues/28687). If the hook mounts while
+ * its input is not yet in the DOM it logs "Unable to find the input element".
+ * To guarantee the input is always present, the hook and the input it binds
+ * to live together in `TagsComboboxContent`, which is only mounted while the
+ * Popover is open, so the input is rendered in the same commit that mounts
+ * the hook.
  */
 
 /*
@@ -244,14 +247,23 @@ type TagsComboboxArgs = {
    * actually close the popup.
    */
   onClose: () => void;
+
+  /*
+   * Whether the user may enter a brand new tag of their own, in addition to
+   * choosing from the suggestions. Defaults to true, which is appropriate when
+   * tagging. When the combobox is used to filter by tag, pass false: only tags
+   * that already exist can be filtered on, so the user is neither told to press
+   * Enter to add a new tag nor able to do so.
+   */
+  allowNewTags?: boolean;
 };
 
-export default function TagsCombobox({
+function TagsComboboxContent({
   onSelection,
   value,
-  anchorEl,
   onClose,
-}: TagsComboboxArgs): React.ReactNode {
+  allowNewTags = true,
+}: Omit<TagsComboboxArgs, "anchorEl">): React.ReactNode {
   const [tags, setTags] = useState<Array<InternalTag>>([]);
   const [isNextPageLoading, setIsNextPageLoading] = useState(false);
   const [filter, setFilter] = useState("");
@@ -316,7 +328,7 @@ export default function TagsCombobox({
     getOptionProps,
     groupedOptions,
   } = useAutocomplete({
-    open: Boolean(anchorEl),
+    open: true,
     options: sortedOptions,
     getOptionLabel: (option) => {
       // this can happen when user types in a filter
@@ -428,222 +440,247 @@ export default function TagsCombobox({
   }, []);
 
   useEffect(() => {
-    if (anchorEl) {
-      /*
-       * After opening the Popover, focus the filter TextField so that
-       * the user can just type without having to click again. It't not
-       * clear why the setTimeout is necessary, given that `keepMounted`
-       * is set in the Popover and `getInputProps().ref.current` should
-       * already be set.
-       */
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 0);
-    }
-  }, [anchorEl]);
+    /*
+     * This content component is only mounted while the Popover is open, so on
+     * mount we focus the filter TextField so the user can type without having
+     * to click again. The setTimeout defers the focus until after the Popover
+     * transition has attached the input to the DOM.
+     */
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const textFieldId = useId();
   return (
     <>
-      <Popover
-        onClose={() => {
-          onClose();
-          setKeyboardFocusIndex(null);
-        }}
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "left",
-        }}
-        elevation={0}
-        keepMounted
-        transitionDuration={
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches
-            ? 0
-            : "auto"
-        }
-        slotProps={{
-          backdrop: {
-            invisible: false,
-            transitionDuration: window.matchMedia(
-              "(prefers-reduced-motion: reduce)",
-            ).matches
-              ? 0
-              : 225,
-          },
-
-          paper: {
-            variant: "outlined",
-            style: {
-              padding: "4px",
-              paddingBottom: "12px",
-              width: POPOVER_WIDTH,
-            },
-          },
+      <div
+        {...getRootProps()}
+        style={{
+          padding: "8px",
+          ...getRootProps().style,
         }}
       >
-        <div
-          {...getRootProps()}
-          style={{
-            padding: "8px",
-            ...getRootProps().style,
+        <TextField
+          variant="standard"
+          label="Filter suggested tags"
+          inputRef={setInputRef}
+          onFocus={() => {
+            /*
+             * When the user taps on the "Add Tag" button we open the Popover
+             * and focus this filter Textfield. When this happens, we want to
+             * reset the state of the Popover by clearing the field and
+             * reseting back to the first page so that the user can
+             * immediately start a new filter.
+             */
+            if (filter !== "") {
+              setFilter("");
+            }
           }}
-        >
-          <TextField
-            variant="standard"
-            label="Filter suggested tags"
-            inputRef={setInputRef}
-            onFocus={() => {
-              /*
-               * When the user taps on the "Add Tag" button we open the Popover
-               * and focus this filter Textfield. When this happens, we want to
-               * reset the state of the Popover by clearing the field and
-               * reseting back to the first page so that the user can
-               * immediately start a new filter.
-               */
-              if (filter !== "") {
-                setFilter("");
-              }
-            }}
-            onKeyDown={({ key }) => {
-              if (key === "Enter") {
-                if (keyboardFocusIndex !== null) {
-                  const chosenTag = sortedOptions[keyboardFocusIndex];
-                  onSelection(chosenTag.value);
-                  setKeyboardFocusIndex(null);
-                  onClose();
-                  return;
-                }
-
-                /*
-                 * In addition to selecting a tag from the menu, users can also
-                 * enter any tag they like.
-                 */
-                if (isAllowed(checkUserInputString(filter))) {
-                  onSelection(filter);
-                  setKeyboardFocusIndex(null);
-                  onClose();
-                }
-                return;
-              }
-
-              if (key === "Escape") {
+          onKeyDown={({ key }) => {
+            if (key === "Enter") {
+              if (keyboardFocusIndex !== null) {
+                const chosenTag = sortedOptions[keyboardFocusIndex];
+                onSelection(chosenTag.value);
                 setKeyboardFocusIndex(null);
                 onClose();
                 return;
               }
 
-              // focus next allowed tag; do nothing if there are no more
-              if (key === "ArrowDown") {
-                let newIndex = keyboardFocusIndex ?? -1;
-                do {
-                  newIndex++;
-                  if (
-                    newIndex === tags.length - 1 &&
-                    sortedOptions[newIndex].selected
-                  ) {
-                    newIndex = keyboardFocusIndex ?? 0;
-                    break;
-                  }
-                } while (sortedOptions[newIndex].selected);
-                setKeyboardFocusIndex(newIndex);
-                listRef.current?.scrollToItem(newIndex);
-                return;
+              /*
+               * In addition to selecting a tag from the menu, users can also
+               * enter any tag they like -- unless the combobox is being used to
+               * filter (allowNewTags === false), in which case only a tag that
+               * already exists may be chosen (e.g. by typing its exact name).
+               */
+              const tagAlreadyExists = sortedOptions.some(
+                (t) => t.value === filter,
+              );
+              if (
+                (allowNewTags || tagAlreadyExists) &&
+                isAllowed(checkUserInputString(filter))
+              ) {
+                onSelection(filter);
+                setKeyboardFocusIndex(null);
+                onClose();
               }
+              return;
+            }
 
-              // focus previous allowed tag; do nothing if on first allowed
-              if (key === "ArrowUp") {
-                let newIndex = keyboardFocusIndex ?? tags.length;
-                do {
-                  newIndex--;
-                  if (newIndex === 0 && sortedOptions[newIndex].selected) {
-                    newIndex = keyboardFocusIndex ?? 0;
-                    break;
-                  }
-                } while (sortedOptions[newIndex].selected);
-                setKeyboardFocusIndex(newIndex);
-                listRef.current?.scrollToItem(newIndex);
-                return;
-              }
-
-              // any other key resets keyboard focus as filter has changed
+            if (key === "Escape") {
               setKeyboardFocusIndex(null);
-            }}
-            error={!isAllowed(checkUserInputString(filter))}
-            helperText={helpText(checkUserInputString(filter))}
-            tabIndex={0}
-            fullWidth
-            value={filter}
-            sx={{
-              fontSize: "1.1em",
-            }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <FilterIcon />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="start">
-                    {/* Because the icon is so small, the animations need to be
-                     * more exagerated, hence the timeout and animationDuration
-                     */}
-                    <Grow in={isNextPageLoading} timeout={300}>
-                      <div>
-                        <FontAwesomeIcon
-                          icon={faSpinner}
-                          spin
-                          size="sm"
-                          style={{ animationDuration: "1.5s" }}
-                        />
-                      </div>
-                    </Grow>
-                  </InputAdornment>
-                ),
-              },
+              onClose();
+              return;
+            }
 
-              htmlInput: {
-                ...inputProps,
-                id: textFieldId,
-                value: filter,
-              },
+            // focus next allowed tag; do nothing if there are no more
+            if (key === "ArrowDown") {
+              let newIndex = keyboardFocusIndex ?? -1;
+              do {
+                newIndex++;
+                if (
+                  newIndex === tags.length - 1 &&
+                  sortedOptions[newIndex].selected
+                ) {
+                  newIndex = keyboardFocusIndex ?? 0;
+                  break;
+                }
+              } while (sortedOptions[newIndex].selected);
+              setKeyboardFocusIndex(newIndex);
+              listRef.current?.scrollToItem(newIndex);
+              return;
+            }
 
-              inputLabel: {
-                htmlFor: textFieldId,
-              },
-            }}
-          />
-        </div>
-        {groupedOptions.length > 0 && (
-          <OptionsListing
-            sortedOptions={sortedOptions}
-            getOptionProps={getOptionProps}
-            groupedOptions={groupedOptions}
-            listboxProps={getListboxProps()}
-            listRef={listRef}
-            keyboardFocusIndex={keyboardFocusIndex}
-            filter={filter}
-          />
-        )}
-        {!error && groupedOptions.length === 0 && filter.length > 1 && (
-          <Alert severity="info">
-            <AlertTitle>No matching tag suggestions </AlertTitle>
-            <>To use a new tag, press Enter.</>
-          </Alert>
-        )}
-        {error && (
-          <Alert severity="warning">
-            <AlertTitle>Error fetching tags</AlertTitle>
+            // focus previous allowed tag; do nothing if on first allowed
+            if (key === "ArrowUp") {
+              let newIndex = keyboardFocusIndex ?? tags.length;
+              do {
+                newIndex--;
+                if (newIndex === 0 && sortedOptions[newIndex].selected) {
+                  newIndex = keyboardFocusIndex ?? 0;
+                  break;
+                }
+              } while (sortedOptions[newIndex].selected);
+              setKeyboardFocusIndex(newIndex);
+              listRef.current?.scrollToItem(newIndex);
+              return;
+            }
+
+            // any other key resets keyboard focus as filter has changed
+            setKeyboardFocusIndex(null);
+          }}
+          error={!isAllowed(checkUserInputString(filter))}
+          helperText={helpText(checkUserInputString(filter))}
+          tabIndex={0}
+          fullWidth
+          value={filter}
+          sx={{
+            fontSize: "1.1em",
+          }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <FilterIcon />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="start">
+                  {/* Because the icon is so small, the animations need to be
+                   * more exagerated, hence the timeout and animationDuration
+                   */}
+                  <Grow in={isNextPageLoading} timeout={300}>
+                    <div>
+                      <FontAwesomeIcon
+                        icon={faSpinner}
+                        spin
+                        size="sm"
+                        style={{ animationDuration: "1.5s" }}
+                      />
+                    </div>
+                  </Grow>
+                </InputAdornment>
+              ),
+            },
+
+            htmlInput: {
+              ...inputProps,
+              id: textFieldId,
+              value: filter,
+            },
+
+            inputLabel: {
+              htmlFor: textFieldId,
+            },
+          }}
+        />
+      </div>
+      {groupedOptions.length > 0 && (
+        <OptionsListing
+          sortedOptions={sortedOptions}
+          getOptionProps={getOptionProps}
+          groupedOptions={groupedOptions}
+          listboxProps={getListboxProps()}
+          listRef={listRef}
+          keyboardFocusIndex={keyboardFocusIndex}
+          filter={filter}
+        />
+      )}
+      {!error && groupedOptions.length === 0 && filter.length > 1 && (
+        <Alert severity="info">
+          <AlertTitle>No matching tag suggestions</AlertTitle>
+          {allowNewTags && <>To use a new tag, press Enter.</>}
+        </Alert>
+      )}
+      {error && (
+        <Alert severity="warning">
+          <AlertTitle>Error fetching tags</AlertTitle>
+          {allowNewTags ? (
             <>Simply type in the tag and press enter instead.</>
-          </Alert>
-        )}
-      </Popover>
+          ) : (
+            <>Please try again.</>
+          )}
+        </Alert>
+      )}
     </>
+  );
+}
+
+export default function TagsCombobox({
+  onSelection,
+  value,
+  anchorEl,
+  onClose,
+  allowNewTags,
+}: TagsComboboxArgs): React.ReactNode {
+  return (
+    <Popover
+      onClose={onClose}
+      open={Boolean(anchorEl)}
+      anchorEl={anchorEl}
+      anchorOrigin={{
+        vertical: "top",
+        horizontal: "right",
+      }}
+      transformOrigin={{
+        vertical: "top",
+        horizontal: "left",
+      }}
+      elevation={0}
+      transitionDuration={
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? 0
+          : "auto"
+      }
+      slotProps={{
+        backdrop: {
+          invisible: false,
+          transitionDuration: window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+          ).matches
+            ? 0
+            : 225,
+        },
+
+        paper: {
+          variant: "outlined",
+          style: {
+            padding: "4px",
+            paddingBottom: "12px",
+            width: POPOVER_WIDTH,
+          },
+        },
+      }}
+    >
+      {Boolean(anchorEl) && (
+        <TagsComboboxContent
+          value={value}
+          onSelection={onSelection}
+          onClose={onClose}
+          allowNewTags={allowNewTags}
+        />
+      )}
+    </Popover>
   );
 }
