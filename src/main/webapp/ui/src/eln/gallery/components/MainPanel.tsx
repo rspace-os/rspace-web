@@ -576,26 +576,6 @@ const FileCard = observer(
               elevation={0}
               sx={(theme) => ({
                 height: "150px",
-                "& .versionIndicator": {
-                  position: "absolute",
-                  top: "0",
-                  right: "0",
-                  margin: theme.spacing(0.25),
-                  padding: theme.spacing(0.25, 0.5),
-                  borderRadius: "5px",
-                  color: window.matchMedia("(prefers-contrast: more)").matches
-                    ? "rgb(255,255,255)"
-                    : `hsl(${ACCENT_COLOR.contrastText.hue}deg, ${ACCENT_COLOR.contrastText.saturation}%, ${ACCENT_COLOR.contrastText.lightness}%, 100%)`,
-                  border: `1px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
-                  ...(selected
-                    ? {
-                        borderColor: window.matchMedia("(prefers-contrast: more)")
-                          .matches
-                          ? "black"
-                          : theme.palette.callToAction.main,
-                      }
-                    : {}),
-                },
                 ...(selected
                   ? {
                       border: window.matchMedia("(prefers-contrast: more)")
@@ -822,12 +802,33 @@ const FileCard = observer(
                   </Grid>
                 </Grid>
                 {typeof file.version === "number" && file.version > 1 && (
-                  <div
-                    className="versionIndicator"
+                  <Box
                     aria-label={`version ${file.version}`}
+                    sx={(theme) => ({
+                      position: "absolute",
+                      top: "0",
+                      right: "0",
+                      margin: theme.spacing(0.25),
+                      padding: theme.spacing(0.25, 0.5),
+                      borderRadius: "5px",
+                      color: window.matchMedia("(prefers-contrast: more)")
+                        .matches
+                        ? "rgb(255,255,255)"
+                        : `hsl(${ACCENT_COLOR.contrastText.hue}deg, ${ACCENT_COLOR.contrastText.saturation}%, ${ACCENT_COLOR.contrastText.lightness}%, 100%)`,
+                      border: `1px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
+                      ...(selected
+                        ? {
+                            borderColor: window.matchMedia(
+                              "(prefers-contrast: more)",
+                            ).matches
+                              ? "black"
+                              : theme.palette.callToAction.main,
+                          }
+                        : {}),
+                    })}
                   >
                     v{file.version}
-                  </div>
+                  </Box>
                 )}
               </CardActionArea>
             </Card>

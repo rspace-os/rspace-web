@@ -138,9 +138,6 @@ function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
               padding: "8px 0 8px 0",
             },
           },
-          "& .grow": {
-            flexGrow: 1,
-          },
         }}
       >
         <Paper

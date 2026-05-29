@@ -21,7 +21,7 @@ import { cardActionAreaClasses } from "@mui/material/CardActionArea";
 import { buttonClasses } from "@mui/material/Button";
 import { iconButtonClasses } from "@mui/material/IconButton";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
-import { gridClasses } from "@mui/x-data-grid";
+import { gridClasses, getDataGridUtilityClass } from "@mui/x-data-grid";
 import { alertTitleClasses } from "@mui/material/AlertTitle";
 import { chipClasses } from "@mui/material/Chip";
 import { formLabelClasses } from "@mui/material/FormLabel";
@@ -33,7 +33,7 @@ import { checkboxClasses } from "@mui/material/Checkbox";
 import { radioClasses } from "@mui/material/Radio";
 import { buttonGroupClasses } from "@mui/material/ButtonGroup";
 import { touchRippleClasses } from "@mui/material/ButtonBase";
-import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
+import { treeItemClasses, getTreeItemUtilityClass } from "@mui/x-tree-view/TreeItem";
 
 /**
  * Represents an HSL color.
@@ -810,7 +810,9 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 "&:hover": {
                   backgroundColor: `hsl(${accent.background.hue}deg, 40%, ${accent.background.lightness}%, 25%)`,
                 },
-                "&.Mui-selected": {
+                // DataGrid exposes no state-class constant; its own
+                // getDataGridUtilityClass resolves the global Mui-selected class.
+                [`&.${getDataGridUtilityClass("selected")}`]: {
                   backgroundColor: `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, ${accent.main.lightness}%, 20%)`,
                 },
               },
@@ -1111,9 +1113,11 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                   ? "transparent"
                   : darken(secondaryBackground, hoverDarkenCoefficient * 2),
               },
-              "&.Mui-selected": {
+              // Tree View exposes no state-class constants; its own
+              // getTreeItemUtilityClass resolves the global Mui-selected/Mui-focused classes.
+              [`&.${getTreeItemUtilityClass("selected")}`]: {
                 backgroundColor: accentedBackground,
-                "&.Mui-focused": {
+                [`&.${getTreeItemUtilityClass("focused")}`]: {
                   backgroundColor: prefersMoreContrast
                     ? accentedBackground
                     : darken(secondaryBackground, hoverDarkenCoefficient * 5),

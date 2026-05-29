@@ -6,6 +6,7 @@ import {
 } from "@mui/material/styles";
 import { grey, red } from "@mui/material/colors";
 import { inputLabelClasses } from "@mui/material/InputLabel";
+import { formLabelClasses } from "@mui/material/FormLabel";
 import { hslToHex } from "./util/colors";
 
 /**
@@ -365,7 +366,7 @@ export default createTheme({
             fontWeight: "initial",
             fontSize: "1.1em",
           },
-          "&.Mui-focused": {
+          [`&.${formLabelClasses.focused}`]: {
             color: "rgb(10,10,10)",
           },
         },
