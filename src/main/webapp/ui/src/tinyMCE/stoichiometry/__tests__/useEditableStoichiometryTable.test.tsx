@@ -1195,7 +1195,9 @@ describe("useEditableStoichiometryTable", () => {
 
     // Simulates the PubChem import path: the molecule-info lookup resolves
     // with a molecular weight that drives the table grid's MW column and
-    // mole / yield calculations, so the request must carry it through.
+    // mole / yield calculations, and a chemical formula. Both are intrinsic
+    // properties the backend persists from the request payload (it does not
+    // derive them from SMILES), so the request must carry them through.
     mockGetMoleculeInfoMutateAsync.mockResolvedValueOnce({
       molecularWeight: 18.015,
       formula: "H2O",
@@ -1242,6 +1244,7 @@ describe("useEditableStoichiometryTable", () => {
       name: "New Water",
       smiles: "O",
       molecularWeight: 18.015,
+      formula: "H2O",
     });
   });
 

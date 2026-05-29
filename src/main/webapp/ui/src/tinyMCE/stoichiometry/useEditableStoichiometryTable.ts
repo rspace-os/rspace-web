@@ -107,6 +107,7 @@ function toStoichiometryRequest(
 
       return {
         ...base,
+        formula: m.formula ?? undefined,
         molecularWeight: m.molecularWeight ?? undefined,
       } as NewMolecule;
     }),
