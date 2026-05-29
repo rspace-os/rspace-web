@@ -3,7 +3,7 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton, {
   listItemButtonClasses,
 } from "@mui/material/ListItemButton";
-import ListItemText, { listItemTextClasses } from "@mui/material/ListItemText";
+import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Badge, { badgeClasses } from "@mui/material/Badge";
 import { darken, alpha } from "@mui/system";
@@ -20,31 +20,16 @@ type DrawerTabProps = {
 };
 const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
   (
-    {
-      icon,
-      label,
-      index,
-      selected,
-      onClick,
-      tabIndex,
-      badge,
-      drawerOpen,
-    },
+    { icon, label, index, selected, onClick, tabIndex, badge, drawerOpen },
     ref,
   ) => (
-    <ListItem
-      disablePadding
-      sx={(theme) => ({
-        position: "static",
-        [`& .${listItemTextClasses.root}`]: {
-          transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-            ? "none"
-            : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
-          opacity: drawerOpen ? 1 : 0,
-          transform: drawerOpen ? "unset" : "translateX(-20px)",
-          textTransform: "uppercase",
-        },
-        [`& .${listItemButtonClasses.root}`]: {
+    <ListItem disablePadding sx={{ position: "static" }}>
+      <ListItemButton
+        selected={selected}
+        onClick={onClick}
+        tabIndex={tabIndex}
+        ref={ref}
+        sx={(theme) => ({
           "&:hover": {
             backgroundColor: alpha(theme.palette.primary.background, 0.25),
           },
@@ -53,14 +38,21 @@ const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
               backgroundColor: darken(theme.palette.primary.background, 0.1),
             },
           },
-        },
-      })}
-    >
-      <ListItemButton selected={selected} onClick={onClick} tabIndex={tabIndex} ref={ref}>
+        })}
+      >
         <ListItemIcon>{icon}</ListItemIcon>
         <ListItemText
           primary={label}
-          sx={{ transitionDelay: `${(index + 1) * 0.02}s !important` }}
+          sx={{
+            transition: window.matchMedia("(prefers-reduced-motion: reduce)")
+              .matches
+              ? "none"
+              : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
+            opacity: drawerOpen ? 1 : 0,
+            transform: drawerOpen ? "unset" : "translateX(-20px)",
+            textTransform: "uppercase",
+            transitionDelay: `${(index + 1) * 0.02}s !important`,
+          }}
         />
         {badge !== undefined && badge !== null && badge !== 0 && (
           <Badge

@@ -1,9 +1,7 @@
 import React from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
-import Dialog, { dialogClasses } from "@mui/material/Dialog";
-import { paperClasses } from "@mui/material/Paper";
-import { dialogContentClasses } from "@mui/material/DialogContent";
+import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
 import AppBar from "../../../components/AppBar";
 import DialogContent from "@mui/material/DialogContent";
@@ -139,19 +137,13 @@ function MoveCopyDialog({
       onKeyDown={(e) => {
         e.stopPropagation();
       }}
-      sx={{
-        [`& .${dialogClasses.container} > .${paperClasses.root}`]: {
-          width: "530px",
-          maxWidth: "530px",
-          height: "calc(90% - 32px)",
-        },
-        [`& .${dialogContentClasses.root}`]: {
-          height: "calc(100% - 48px)",
-          overflowY: "auto",
-          paddingBottom: 0,
-        },
-        "& form": {
-          height: "100%",
+      slotProps={{
+        paper: {
+          sx: {
+            width: "530px",
+            maxWidth: "530px",
+            height: "calc(90% - 32px)",
+          },
         },
       }}
     >
@@ -177,7 +169,13 @@ function MoveCopyDialog({
           }}
         >
           <DialogTitle variant="h3">Move to iRODS</DialogTitle>
-          <DialogContent>
+          <DialogContent
+            sx={{
+              height: "calc(100% - 48px)",
+              overflowY: "auto",
+              paddingBottom: 0,
+            }}
+          >
             <Stack
               spacing={2}
               sx={{
@@ -212,10 +210,10 @@ function MoveCopyDialog({
                       <Link target="_blank" href={serverUrl}>
                         {serverUrl}
                       </Link>
-                      . By default, the items will be added to iRODS and
-                      removed from RSpace. You will be able to link to the
-                      iRODS items inside of RSpace documents and include them
-                      into any exports through our iRODS integration.
+                      . By default, the items will be added to iRODS and removed
+                      from RSpace. You will be able to link to the iRODS items
+                      inside of RSpace documents and include them into any
+                      exports through our iRODS integration.
                     </Typography>
                     <ChoiceField
                       name="keep"
@@ -289,13 +287,6 @@ function MoveCopyDialog({
                           borderRadius: theme.spacing(0.5),
                           padding: theme.spacing(2),
                           paddingTop: theme.spacing(0.5),
-                          "& > legend": {
-                            padding: theme.spacing(0.25, 1),
-                            fontWeight: 700,
-                            fontSize: "1rem",
-                            letterSpacing: "0.02em",
-                            color: "#3b5958",
-                          },
                           "& label": {
                             fontSize: "0.9rem",
                             letterSpacing: "0.03em",
@@ -305,7 +296,18 @@ function MoveCopyDialog({
                           },
                         })}
                       >
-                        <legend>iRODS login</legend>
+                        <Box
+                          component="legend"
+                          sx={(theme) => ({
+                            padding: theme.spacing(0.25, 1),
+                            fontWeight: 700,
+                            fontSize: "1rem",
+                            letterSpacing: "0.02em",
+                            color: "#3b5958",
+                          })}
+                        >
+                          iRODS login
+                        </Box>
                         <Stack spacing={1}>
                           <Typography variant="body2">
                             Please provide your login credentials for{" "}

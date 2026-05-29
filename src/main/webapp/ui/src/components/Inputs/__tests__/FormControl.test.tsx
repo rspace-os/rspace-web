@@ -6,9 +6,13 @@ import FormControl from "../FormControl";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 
-vi.mock("@mui/material/FormLabel", () => ({
-  default: vi.fn(() => <div></div>),
-}));
+vi.mock("@mui/material/FormLabel", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@mui/material/FormLabel")>();
+  return {
+    ...actual,
+    default: vi.fn(() => <div></div>),
+  };
+});
 describe("FormControl", () => {
   afterEach(() => {
     vi.clearAllMocks();

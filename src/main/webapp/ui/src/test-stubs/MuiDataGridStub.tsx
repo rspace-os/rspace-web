@@ -110,6 +110,29 @@ export const gridClasses = new Proxy(
   },
 ) as Record<string, string>;
 
+/*
+ * Mirrors MUI's generateUtilityClass: global state slots (e.g. "selected")
+ * resolve to the framework-wide `Mui-<slot>` class, everything else to
+ * `MuiDataGrid-<slot>`.
+ */
+const GLOBAL_STATE_SLOTS = new Set([
+  "active",
+  "checked",
+  "completed",
+  "disabled",
+  "error",
+  "expanded",
+  "focused",
+  "focusVisible",
+  "open",
+  "readOnly",
+  "required",
+  "selected",
+]);
+
+export const getDataGridUtilityClass = (slot: string): string =>
+  GLOBAL_STATE_SLOTS.has(slot) ? `Mui-${slot}` : `MuiDataGrid-${slot}`;
+
 export const GRID_CHECKBOX_SELECTION_COL_DEF = {
   field: "__checkbox__",
 };
