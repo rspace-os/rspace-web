@@ -23,6 +23,7 @@ import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.FilestoreAclChecker;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsExportManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.archive.export.NfsExportContext;
@@ -51,6 +52,8 @@ public class NfsExportManagerImpl implements NfsExportManager {
   @Autowired private NfsManager nfsManager;
 
   @Autowired @Setter private FilestoreAclChecker aclChecker;
+
+  @Autowired @Setter private MessageSourceUtils messages;
 
   @Override
   public NfsExportPlan generateQuickExportPlan(List<GlobalIdentifier> recordsToExport) {
@@ -188,7 +191,8 @@ public class NfsExportManagerImpl implements NfsExportManager {
 
     for (NfsFileDetails fileToCheck : nfsFilesToCheck) {
       String exportFiltersMsg =
-          NfsExportContext.checkNfsExportFiltersMsgForFile(fileToCheck, archiveExportConfig);
+          NfsExportContext.checkNfsExportFiltersMsgForFile(
+              fileToCheck, archiveExportConfig, messages);
       if (exportFiltersMsg != null) {
         plan.addCheckedNfsLinkMsg(
             fileToCheck.getFileSystemId(), fileToCheck.getFileSystemFullPath(), exportFiltersMsg);
