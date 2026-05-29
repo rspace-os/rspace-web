@@ -105,7 +105,10 @@ function toStoichiometryRequest(
         throw new Error("New reagents must have a name");
       }
 
-      return base as NewMolecule;
+      return {
+        ...base,
+        molecularWeight: m.molecularWeight ?? undefined,
+      } as NewMolecule;
     }),
   };
 }

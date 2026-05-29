@@ -1184,6 +1184,67 @@ describe("useEditableStoichiometryTable", () => {
     });
   });
 
+  it("includes PubChem-supplied molecular weight in the request payload for newly-added reagents", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+
+    // Simulates the PubChem import path: the molecule-info lookup resolves
+    // with a molecular weight that drives the table grid's MW column and
+    // mole / yield calculations, so the request must carry it through.
+    mockGetMoleculeInfoMutateAsync.mockResolvedValueOnce({
+      molecularWeight: 18.015,
+      formula: "H2O",
+    });
+
+    mockUpdateStoichiometryMutateAsync.mockResolvedValueOnce({
+      id: 3,
+      revision: 2,
+      molecules: [],
+    });
+
+    renderWithProviders({
+      queryClient,
+      onValue: (value) => {
+        latestValue = value;
+      },
+    });
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
+
+    await act(async () => {
+      await latestValue?.tableController.addReagent("O", "New Water", "pubchem");
+    });
+
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(5);
+    });
+
+    await act(async () => {
+      await latestValue?.save();
+    });
+
+    const saveCall = mockUpdateStoichiometryMutateAsync.mock.calls[0]?.[0] as
+      | { stoichiometryData: StoichiometryRequest }
+      | undefined;
+    const newReagent = saveCall!.stoichiometryData.molecules.find(
+      (m) => !("id" in m) && m.name === "New Water",
+    );
+
+    expect(newReagent).toBeDefined();
+    expect(newReagent).toMatchObject({
+      name: "New Water",
+      smiles: "O",
+      molecularWeight: 18.015,
+    });
+  });
+
   it("allows stock deduction to proceed even when the link was already marked as deducted", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
