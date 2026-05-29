@@ -20,11 +20,14 @@ import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.FilestoreAclChecker;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.StaticMessageSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class NfsExportManagerImplTest {
@@ -40,12 +43,15 @@ class NfsExportManagerImplTest {
   private ArchiveExportConfig exportConfig;
   private NfsExportPlan plan;
   private Map<Long, NfsClient> nfsClients;
+  private MessageSourceUtils messages;
 
   @BeforeEach
   void setUp() {
     manager = new NfsExportManagerImpl();
     FilestoreAclChecker aclChecker = GalleryFilestoreTestUtils.filestoreAclCheckerForTest();
     manager.setAclChecker(aclChecker);
+    messages = exportMessageSource();
+    manager.setMessages(messages);
     ReflectionTestUtils.setField(manager, "diskSpaceChecker", mock(DiskSpaceChecker.class));
 
     nfsClient = mock(NfsClient.class);
@@ -75,6 +81,20 @@ class NfsExportManagerImplTest {
     nfsClients = Collections.singletonMap(FS_ID, nfsClient);
   }
 
+  private static MessageSourceUtils exportMessageSource() {
+    StaticMessageSource source = new StaticMessageSource();
+    Locale loc = Locale.getDefault();
+    source.addMessage(
+        NfsExportManagerImpl.RESOURCE_NOT_ACCESSIBLE_MSG_KEY, loc, "resource not accessible");
+    source.addMessage(
+        NfsExportManagerImpl.NOT_LOGGED_INTO_FILE_SYSTEM_MSG_KEY,
+        loc,
+        "not logged into connected File System");
+    source.addMessage(
+        NfsExportManagerImpl.SUBFOLDER_NOT_INCLUDED_MSG_KEY, loc, "subfolder of linked folder");
+    return new MessageSourceUtils(source);
+  }
+
   @Test
   void userNotOnReadWhitelist_marksResourceNotAccessibleAndSkipsQuery() {
     fileSystem.setReadWhitelist("alice");
@@ -83,7 +103,7 @@ class NfsExportManagerImplTest {
     manager.scanFileSystemsForFoundNfsLinks(plan, nfsClients, exportConfig);
 
     assertEquals(
-        NfsExportManagerImpl.RESOURCE_NOT_ACCESSIBLE_MSG,
+        messages.getMessage(NfsExportManagerImpl.RESOURCE_NOT_ACCESSIBLE_MSG_KEY),
         plan.getCheckedNfsLinkMessages().get(FS_ID + "_/test.txt"));
     verify(nfsClient, never()).queryForNfsFile(any(NfsTarget.class));
   }

@@ -122,12 +122,14 @@ public class NfsExportManagerImpl implements NfsExportManager {
     setArchiveSizeLimitProperties(plan);
   }
 
-  public static final String SUBFOLDER_NOT_INCLUDED_MSG = "subfolder of linked folder";
+  public static final String SUBFOLDER_NOT_INCLUDED_MSG_KEY =
+      "archive.export.nfs.subfolder.not.included";
 
-  public static final String RESOURCE_NOT_ACCESSIBLE_MSG = "resource not accessible";
+  public static final String RESOURCE_NOT_ACCESSIBLE_MSG_KEY =
+      "archive.export.nfs.resource.not.accessible";
 
-  public static final String NOT_LOGGED_INTO_FILE_SYSTEM_MSG =
-      "not logged into connected File System";
+  public static final String NOT_LOGGED_INTO_FILE_SYSTEM_MSG_KEY =
+      "archive.export.nfs.not.logged.in";
 
   private void checkFoundLinksOnConnectedFileSystems(
       NfsExportPlan plan, Map<Long, NfsClient> nfsClients, User exporter) {
@@ -141,12 +143,14 @@ public class NfsExportManagerImpl implements NfsExportManager {
         NfsResourceDetails foundDetails = null;
         NfsClient nfsClient = nfsClients.get(fileSystemId);
         if (nfsClient == null || !nfsClient.isUserLoggedIn()) {
-          plan.addCheckedNfsLinkMsg(fileSystemId, absolutePath, NOT_LOGGED_INTO_FILE_SYSTEM_MSG);
+          plan.addCheckedNfsLinkMsg(
+              fileSystemId, absolutePath, messages.getMessage(NOT_LOGGED_INTO_FILE_SYSTEM_MSG_KEY));
         } else if (exporter != null
             && aclChecker != null
             && !aclChecker.canRead(exporter, fileStore.getFileSystem())) {
           // skip the remote query when the exporter has no read access on the filesystem
-          plan.addCheckedNfsLinkMsg(fileSystemId, absolutePath, RESOURCE_NOT_ACCESSIBLE_MSG);
+          plan.addCheckedNfsLinkMsg(
+              fileSystemId, absolutePath, messages.getMessage(RESOURCE_NOT_ACCESSIBLE_MSG_KEY));
         } else {
           if (nfsElem.isFolderLink()) {
             try {
@@ -158,7 +162,8 @@ public class NfsExportManagerImpl implements NfsExportManager {
             foundDetails = nfsClient.queryForNfsFile(nfsTarget);
           }
           if (foundDetails == null) {
-            plan.addCheckedNfsLinkMsg(fileSystemId, absolutePath, RESOURCE_NOT_ACCESSIBLE_MSG);
+            plan.addCheckedNfsLinkMsg(
+                fileSystemId, absolutePath, messages.getMessage(RESOURCE_NOT_ACCESSIBLE_MSG_KEY));
           } else {
             NfsExportContext.applyFileSystemIdToNfsResource(foundDetails, fileSystemId);
           }
@@ -185,7 +190,7 @@ public class NfsExportManagerImpl implements NfsExportManager {
               plan.addCheckedNfsLinkMsg(
                   folderContentResource.getFileSystemId(),
                   folderContentResource.getFileSystemFullPath(),
-                  SUBFOLDER_NOT_INCLUDED_MSG);
+                  messages.getMessage(SUBFOLDER_NOT_INCLUDED_MSG_KEY));
             }
           }
         }
