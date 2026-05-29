@@ -96,7 +96,6 @@ import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
-import * as StringUtils from "../../../util/StringUtils";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import LinkIcon from "@mui/icons-material/Link";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -1657,17 +1656,21 @@ function GalleryMainPanel({
                 }}
               >
                 <AccentMenuItem
-                  title={`Name${match<void, string>([
-                    [() => orderBy !== "name", ""],
-                    [
-                      () => sortOrder === "ASC",
-                      ` ${StringUtils.replaceSpacesWithNonBreakingSpaces("(Sorted from A to Z)")}`,
-                    ],
-                    [
-                      () => sortOrder === "DESC",
-                      ` ${StringUtils.replaceSpacesWithNonBreakingSpaces("(Sorted from Z to A)")}`,
-                    ],
-                  ])()}`}
+                  title={
+                    <>
+                      Name
+                      {orderBy === "name" && (
+                        <>
+                          {" "}
+                          <Box component="span" sx={{ whiteSpace: "nowrap" }}>
+                            {sortOrder === "ASC"
+                              ? "(Sorted from A to Z)"
+                              : "(Sorted from Z to A)"}
+                          </Box>
+                        </>
+                      )}
+                    </>
+                  }
                   subheader={match<void, string>([
                     [() => orderBy !== "name", "Tap to sort from A to Z"],
                     [() => sortOrder === "ASC", "Tap to sort from Z to A"],
@@ -1702,26 +1705,23 @@ function GalleryMainPanel({
                     });
                   }}
                   current={orderBy === "name"}
-                  slotProps={{
-                    title: {
-                      sx: {
-                        whiteSpace: "break-spaces",
-                      },
-                    },
-                  }}
                 />
                 <AccentMenuItem
-                  title={`Modification Date${match<void, string>([
-                    [() => orderBy !== "modificationDate", ""],
-                    [
-                      () => sortOrder === "ASC",
-                      ` ${StringUtils.replaceSpacesWithNonBreakingSpaces("(Sorted oldest first)")}`,
-                    ],
-                    [
-                      () => sortOrder === "DESC",
-                      ` ${StringUtils.replaceSpacesWithNonBreakingSpaces("(Sorted newest first)")}`,
-                    ],
-                  ])()}`}
+                  title={
+                    <>
+                      Modification Date
+                      {orderBy === "modificationDate" && (
+                        <>
+                          {" "}
+                          <Box component="span" sx={{ whiteSpace: "nowrap" }}>
+                            {sortOrder === "ASC"
+                              ? "(Sorted oldest first)"
+                              : "(Sorted newest first)"}
+                          </Box>
+                        </>
+                      )}
+                    </>
+                  }
                   subheader={match<void, string>([
                     [
                       () => orderBy !== "modificationDate",
@@ -1759,13 +1759,6 @@ function GalleryMainPanel({
                     });
                   }}
                   current={orderBy === "modificationDate"}
-                  slotProps={{
-                    title: {
-                      sx: {
-                        whiteSpace: "break-spaces",
-                      },
-                    },
-                  }}
                 />
               </StyledMenu>
             </Stack>

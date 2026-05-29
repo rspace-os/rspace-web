@@ -12,7 +12,7 @@ type AccentMenuItemSlotProps = {
 };
 
 type AccentMenuItemArgs = {
-  title: string;
+  title: React.ReactNode;
   avatar?: React.ReactNode;
   subheader?: React.ReactNode;
   foregroundColor?:
