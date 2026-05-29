@@ -199,6 +199,16 @@ class FilestoreAclCheckerTest {
     assertThrows(AuthorizationException.class, () -> checker.assertCanWrite(user("bob"), fs));
   }
 
+  @Test
+  void assertCanRead_nullFilesystem_throwsAuthorizationExceptionNotNpe() {
+    assertThrows(AuthorizationException.class, () -> checker.assertCanRead(user("alice"), null));
+  }
+
+  @Test
+  void assertCanWrite_nullFilesystem_throwsAuthorizationExceptionNotNpe() {
+    assertThrows(AuthorizationException.class, () -> checker.assertCanWrite(user("alice"), null));
+  }
+
   // --- helpers ---
 
   private static User user(String username) {
