@@ -1,9 +1,9 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.researchspace.model.User;
@@ -12,15 +12,15 @@ import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class FilestoreAclCheckerTest {
+class FilestoreAclCheckerTest {
 
   private FilestoreAclChecker checker;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     checker = new FilestoreAclChecker();
     checker.setMessages(mock(MessageSourceUtils.class));
   }
@@ -28,21 +28,21 @@ public class FilestoreAclCheckerTest {
   // --- parseList ---
 
   @Test
-  public void parseList_nullOrEmpty_returnsEmpty() {
+  void parseList_nullOrEmpty_returnsEmpty() {
     assertTrue(FilestoreAclChecker.parseList(null).isEmpty());
     assertTrue(FilestoreAclChecker.parseList("").isEmpty());
     assertTrue(FilestoreAclChecker.parseList("   ").isEmpty());
   }
 
   @Test
-  public void parseList_singleToken() {
+  void parseList_singleToken() {
     Set<String> tokens = FilestoreAclChecker.parseList("alice");
     assertEquals(1, tokens.size());
     assertTrue(tokens.contains("alice"));
   }
 
   @Test
-  public void parseList_multipleTokensTrimsWhitespace() {
+  void parseList_multipleTokensTrimsWhitespace() {
     Set<String> tokens = FilestoreAclChecker.parseList("  alice ,  bob  ");
     assertEquals(2, tokens.size());
     assertTrue(tokens.contains("alice"));
@@ -50,7 +50,7 @@ public class FilestoreAclCheckerTest {
   }
 
   @Test
-  public void parseList_dropsEmptyTokens() {
+  void parseList_dropsEmptyTokens() {
     Set<String> tokens = FilestoreAclChecker.parseList("alice,,bob,");
     assertEquals(2, tokens.size());
     assertTrue(tokens.contains("alice"));
@@ -58,7 +58,7 @@ public class FilestoreAclCheckerTest {
   }
 
   @Test
-  public void parseList_everyoneSentinel() {
+  void parseList_everyoneSentinel() {
     Set<String> tokens = FilestoreAclChecker.parseList("*");
     assertEquals(1, tokens.size());
     assertTrue(tokens.contains("*"));
@@ -67,21 +67,21 @@ public class FilestoreAclCheckerTest {
   // --- canRead / canWrite, authType=NONE ---
 
   @Test
-  public void canRead_emptyWhitelists_deniesEveryone() {
+  void canRead_emptyWhitelists_deniesEveryone() {
     NfsFileSystem fs = s3FileSystem(null, null);
     assertFalse(checker.canRead(user("alice"), fs));
     assertFalse(checker.canRead(user("bob"), fs));
   }
 
   @Test
-  public void canRead_everyoneSentinel_grantsAll() {
+  void canRead_everyoneSentinel_grantsAll() {
     NfsFileSystem fs = s3FileSystem("*", null);
     assertTrue(checker.canRead(user("alice"), fs));
     assertTrue(checker.canRead(user("anyone"), fs));
   }
 
   @Test
-  public void canRead_namedList_grantsOnlyListedUsers() {
+  void canRead_namedList_grantsOnlyListedUsers() {
     NfsFileSystem fs = s3FileSystem("alice,bob", null);
     assertTrue(checker.canRead(user("alice"), fs));
     assertTrue(checker.canRead(user("bob"), fs));
@@ -89,39 +89,39 @@ public class FilestoreAclCheckerTest {
   }
 
   @Test
-  public void canRead_writeImpliesRead_namedWriter() {
+  void canRead_writeImpliesRead_namedWriter() {
     NfsFileSystem fs = s3FileSystem(null, "alice");
     assertTrue(checker.canRead(user("alice"), fs));
     assertFalse(checker.canRead(user("bob"), fs));
   }
 
   @Test
-  public void canRead_writeImpliesRead_everyoneWrite() {
+  void canRead_writeImpliesRead_everyoneWrite() {
     NfsFileSystem fs = s3FileSystem(null, "*");
     assertTrue(checker.canRead(user("anyone"), fs));
   }
 
   @Test
-  public void canRead_isCaseSensitive() {
+  void canRead_isCaseSensitive() {
     NfsFileSystem fs = s3FileSystem("Alice", null);
     assertTrue(checker.canRead(user("Alice"), fs));
     assertFalse(checker.canRead(user("alice"), fs));
   }
 
   @Test
-  public void canWrite_emptyWriteList_deniesEveryoneEvenIfRead() {
+  void canWrite_emptyWriteList_deniesEveryoneEvenIfRead() {
     NfsFileSystem fs = s3FileSystem("*", null);
     assertFalse(checker.canWrite(user("alice"), fs));
   }
 
   @Test
-  public void canWrite_everyoneSentinel_grantsAll() {
+  void canWrite_everyoneSentinel_grantsAll() {
     NfsFileSystem fs = s3FileSystem(null, "*");
     assertTrue(checker.canWrite(user("alice"), fs));
   }
 
   @Test
-  public void canWrite_namedList_grantsOnlyListedUsers() {
+  void canWrite_namedList_grantsOnlyListedUsers() {
     NfsFileSystem fs = s3FileSystem(null, "alice");
     assertTrue(checker.canWrite(user("alice"), fs));
     assertFalse(checker.canWrite(user("bob"), fs));
@@ -130,26 +130,26 @@ public class FilestoreAclCheckerTest {
   // --- authType gate ---
 
   @Test
-  public void canRead_nonNoneAuthType_shortCircuitsTrue_evenIfWhitelistsEmpty() {
+  void canRead_nonNoneAuthType_shortCircuitsTrue_evenIfWhitelistsEmpty() {
     NfsFileSystem fs = perUserAuthFileSystem(NfsClientType.SAMBA);
     assertTrue(checker.canRead(user("alice"), fs));
   }
 
   @Test
-  public void canWrite_nonNoneAuthType_shortCircuitsTrue_evenIfWhitelistsEmpty() {
+  void canWrite_nonNoneAuthType_shortCircuitsTrue_evenIfWhitelistsEmpty() {
     NfsFileSystem fs = perUserAuthFileSystem(NfsClientType.IRODS);
     assertTrue(checker.canWrite(user("alice"), fs));
   }
 
   @Test
-  public void canRead_nullFilesystem_deniesWithoutNpe() {
+  void canRead_nullFilesystem_deniesWithoutNpe() {
     // a stale filestore binding might return null from getFileSystem(); treat as no access
     assertFalse(checker.canRead(user("alice"), null));
     assertFalse(checker.canWrite(user("alice"), null));
   }
 
   @Test
-  public void canRead_nullAuthType_denies() {
+  void canRead_nullAuthType_denies() {
     // a misconfigured row with no auth type should not bypass the ACL
     NfsFileSystem fs = new NfsFileSystem();
     fs.setClientType(NfsClientType.S3);
@@ -160,7 +160,7 @@ public class FilestoreAclCheckerTest {
   }
 
   @Test
-  public void canWrite_nullAuthType_denies() {
+  void canWrite_nullAuthType_denies() {
     NfsFileSystem fs = new NfsFileSystem();
     fs.setClientType(NfsClientType.S3);
     fs.setAuthType(null);
@@ -169,7 +169,7 @@ public class FilestoreAclCheckerTest {
   }
 
   @Test
-  public void canRead_authTypeNoneOnNonS3Backend_stillEnforced() {
+  void canRead_authTypeNoneOnNonS3Backend_stillEnforced() {
     // hypothetical: Samba configured with authType=NONE should still be gated
     NfsFileSystem fs = new NfsFileSystem();
     fs.setClientType(NfsClientType.SAMBA);
@@ -182,31 +182,21 @@ public class FilestoreAclCheckerTest {
   // --- assert variants ---
 
   @Test
-  public void assertCanRead_authorized_doesNotThrow() {
+  void assertCanRead_authorized_doesNotThrow() {
     NfsFileSystem fs = s3FileSystem("alice", null);
     checker.assertCanRead(user("alice"), fs);
   }
 
   @Test
-  public void assertCanRead_unauthorized_throws() {
+  void assertCanRead_unauthorized_throws() {
     NfsFileSystem fs = s3FileSystem("alice", null);
-    try {
-      checker.assertCanRead(user("bob"), fs);
-      fail("expected AuthorizationException");
-    } catch (AuthorizationException expected) {
-      // ok
-    }
+    assertThrows(AuthorizationException.class, () -> checker.assertCanRead(user("bob"), fs));
   }
 
   @Test
-  public void assertCanWrite_unauthorized_throws() {
+  void assertCanWrite_unauthorized_throws() {
     NfsFileSystem fs = s3FileSystem(null, "alice");
-    try {
-      checker.assertCanWrite(user("bob"), fs);
-      fail("expected AuthorizationException");
-    } catch (AuthorizationException expected) {
-      // ok
-    }
+    assertThrows(AuthorizationException.class, () -> checker.assertCanWrite(user("bob"), fs));
   }
 
   // --- helpers ---
