@@ -1,16 +1,17 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 import NoValue from "../../components/NoValue";
-import { isValidDate } from "../../util/Util";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { parseISO } from "date-fns";
+import { isValid, parse, parseISO } from "date-fns";
 import { enGB } from "date-fns/locale";
+
+const DATE_FORMAT = "yyyy-MM-dd";
 
 export type DateFieldArgs = {
   // required
-  value: string | null;
+  value: string | Date | null;
 
   // optional
   label?: React.ReactNode;
@@ -45,12 +46,28 @@ function DateField({
   maxDate,
   disableFuture,
   placeholder,
+  "data-test-id": dataTestId,
   variant = "standard",
   disableWidthLimit = false,
   id,
 }: DateFieldArgs): React.ReactNode {
-  const error = !(!value || isValidDate(value));
-  const parsedValue = value && isValidDate(value) ? parseISO(value) : null;
+  const parsedValue = parseDateFieldValue(value);
+  const error = Boolean(value && !parsedValue);
+  const textFieldSlotProps = {
+    variant,
+    error,
+    helperText: error ? "Invalid date." : "",
+    style: {
+      maxWidth: disableWidthLimit ? "initial" : "10em",
+    },
+    id,
+    "data-test-id": dataTestId,
+    slotProps: {
+      htmlInput: {
+        placeholder,
+      },
+    },
+  };
 
   return disabled && !value ? (
     <NoValue label={noValueLabel ?? "None"} />
@@ -63,17 +80,9 @@ function DateField({
           onChange={(newValue) => {
             onChange?.({ target: { value: newValue } });
           }}
-          format="yyyy-MM-dd"
+          format={DATE_FORMAT}
           slotProps={{
-            textField: {
-              variant,
-              error,
-              helperText: error ? "Invalid date." : "",
-              style: {
-                maxWidth: disableWidthLimit ? "initial" : "10em",
-              },
-              id,
-            },
+            textField: textFieldSlotProps,
           }}
           disabled={disabled}
           minDate={minDate}
@@ -84,6 +93,28 @@ function DateField({
       {alert}
     </>
   );
+}
+
+function parseDateFieldValue(value: string | Date | null): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return isValid(value) ? value : null;
+  }
+
+  const parsedIsoDate = parseISO(value);
+  if (isValid(parsedIsoDate)) {
+    return parsedIsoDate;
+  }
+
+  const parsedDate = parse(value, DATE_FORMAT, new Date());
+  if (isValid(parsedDate)) {
+    return parsedDate;
+  }
+
+  return null;
 }
 
 export default observer(DateField);
