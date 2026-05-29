@@ -1,5 +1,5 @@
 import React from "react";
-import MenuItem from "@mui/material/MenuItem";
+import MenuItem, { menuItemClasses } from "@mui/material/MenuItem";
 import CardHeader, { cardHeaderClasses } from "@mui/material/CardHeader";
 import { cardMediaClasses } from "@mui/material/CardMedia";
 import { svgIconClasses } from "@mui/material/SvgIcon";
@@ -142,7 +142,7 @@ const AccentMenuItem = React.forwardRef<
           "&:hover": {
             backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.36),
           },
-          "&.Mui-selected": {
+          [`&.${menuItemClasses.selected}`]: {
             backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.5),
             "&:hover": {
               backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.72),

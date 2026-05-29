@@ -27,6 +27,8 @@ import AnalyticsContext from "../../stores/contexts/Analytics";
 import { type Hsl } from "../../accentedTheme";
 import { typographyClasses } from "@mui/material/Typography";
 import { svgIconClasses } from "@mui/material/SvgIcon";
+import { formControlLabelClasses } from "@mui/material/FormControlLabel";
+import { radioClasses } from "@mui/material/Radio";
 function hsl(
   hue: number,
   saturation: number,
@@ -318,7 +320,7 @@ function IntegrationCard<Credentials>({
                 marginBottom: theme.spacing(1),
               },
               label: {
-                "&.Mui-disabled": {
+                [`&.${formControlLabelClasses.disabled}`]: {
                   [`& .${typographyClasses.root}`]: {
                     color: "grey",
                   },
@@ -332,7 +334,7 @@ function IntegrationCard<Credentials>({
                 [`& .${svgIconClasses.root}`]: {
                   color: accentTextColor(color),
                 },
-                "&.Mui-disabled": {
+                [`&.${radioClasses.disabled}`]: {
                   [`& .${svgIconClasses.root}`]: {
                     color: "grey",
                   },

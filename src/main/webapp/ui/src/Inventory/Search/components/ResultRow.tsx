@@ -6,7 +6,7 @@ import NavigateContext from "../../../stores/contexts/Navigate";
 import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import TableCell from "./TableCell";
 import { tableCellClasses } from "@mui/material/TableCell";
-import TableRow from "@mui/material/TableRow";
+import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Checkbox, { checkboxClasses } from "@mui/material/Checkbox";
 import NameWithBadge from "../../components/NameWithBadge";
 import AdjustableCell from "../../components/Tables/AdjustableCell";
@@ -118,7 +118,7 @@ function ResultRow({
             pointerEvents: "none !important",
           }),
         }),
-        "&.Mui-selected": {
+        [`&.${tableRowClasses.selected}`]: {
           backgroundColor: theme.palette.primary.background,
           color: theme.palette.primary.contrastText,
           [`& .${tableCellClasses.root}`]: {
@@ -126,13 +126,13 @@ function ResultRow({
           },
         },
         "@media (prefers-contrast: more)": {
-          [`&.Mui-selected .${checkboxClasses.root}, &.Mui-selected .${radioClasses.root}`]:
+          [`&.${tableRowClasses.selected} .${checkboxClasses.root}, &.${tableRowClasses.selected} .${radioClasses.root}`]:
             {
               color: theme.palette.primary.contrastText,
             },
         },
         ...(!rowIsFilteredOut && {
-          "&.Mui-selected:hover": {
+          [`&.${tableRowClasses.selected}:hover`]: {
             backgroundColor: `${alpha(theme.palette.primary.background, 0.8)} !important`,
           },
           "&:hover": {

@@ -20,7 +20,7 @@ export type FormFieldArgs<T> = BaseFormFieldArgs<T>;
  * preview mode, not an inaccessible state.
  */
 export const INVENTORY_FORM_FIELD_SX = {
-  [`& .${inputBaseClasses.root}.Mui-disabled, & .${formControlLabelClasses.label}.Mui-disabled`]:
+  [`& .${inputBaseClasses.root}.${inputBaseClasses.disabled}, & .${formControlLabelClasses.label}.${formControlLabelClasses.disabled}`]:
     {
       color: "black !important",
       "& input": {
@@ -34,7 +34,7 @@ export const INVENTORY_FORM_FIELD_SX = {
     {
       padding: "11px 10px 10px 10px",
     },
-  "& .Mui-disabled::before": {
+  [`& .${inputBaseClasses.disabled}::before`]: {
     borderBottom: "0px !important",
   },
   [`& > .${formLabelClasses.root}`]: {

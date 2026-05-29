@@ -1,6 +1,7 @@
 import React, { useContext, type SyntheticEvent } from "react";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
+import { muiStateClasses } from "../../../util/muiStateClasses";
 import { observer } from "mobx-react-lite";
 import Node from "./Node";
 import SearchContext from "../../../stores/contexts/Search";
@@ -28,7 +29,7 @@ function RecordTree(): React.ReactNode {
       sx={{
         pt: 1,
         flexGrow: 1,
-        [`& .Mui-selected > .${treeItemClasses.content} .${treeItemClasses.label}`]:
+        [`& .${muiStateClasses.selected} > .${treeItemClasses.content} .${treeItemClasses.label}`]:
           {
             backgroundColor: "rgba(0, 173, 239, 0.08) !important",
           },

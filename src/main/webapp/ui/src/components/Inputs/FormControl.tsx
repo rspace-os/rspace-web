@@ -90,7 +90,7 @@ function CustomFormControl({
       {...(explanation ? { "aria-describedby": explanationId } : {})}
       fullWidth
       sx={{
-        [`& .${inputBaseClasses.root}.Mui-disabled, & .${formControlLabelClasses.label}.Mui-disabled`]:
+        [`& .${inputBaseClasses.root}.${inputBaseClasses.disabled}, & .${formControlLabelClasses.label}.${formControlLabelClasses.disabled}`]:
           {
             color: "black",
             "& input": { color: "unset" },
@@ -102,7 +102,7 @@ function CustomFormControl({
           {
             padding: "11px 10px 10px 10px",
           },
-        "& .Mui-disabled::before": { borderBottom: "0px !important" },
+        [`& .${inputBaseClasses.disabled}::before`]: { borderBottom: "0px !important" },
       }}
     >
       <Stack

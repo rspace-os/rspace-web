@@ -6,7 +6,7 @@ import EnhancedTableHead, {
 } from "../../components/EnhancedTableHead";
 import TableBody from "@mui/material/TableBody";
 import { getSorting, stableSort } from "../../util/table";
-import TableRow from "@mui/material/TableRow";
+import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import Checkbox from "@mui/material/Checkbox";
 import Typography from "@mui/material/Typography";
@@ -265,8 +265,8 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                     <TableRow
                       id={labelId}
                       sx={{
-                        "&.Mui-selected": { backgroundColor: "#e3f2fd" },
-                        "&.Mui-selected:hover": { backgroundColor: "#e3f2fd" },
+                        [`&.${tableRowClasses.selected}`]: { backgroundColor: "#e3f2fd" },
+                        [`&.${tableRowClasses.selected}:hover`]: { backgroundColor: "#e3f2fd" },
                         backgroundColor:
                           item.type === "project" ? "#EFEFEF"
                           : item.type === "screen" ? "#edfcfc"

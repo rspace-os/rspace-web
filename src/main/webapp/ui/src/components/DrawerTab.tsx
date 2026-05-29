@@ -48,7 +48,7 @@ const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
           "&:hover": {
             backgroundColor: alpha(theme.palette.primary.background, 0.25),
           },
-          "&.Mui-selected": {
+          [`&.${listItemButtonClasses.selected}`]: {
             "&:hover": {
               backgroundColor: darken(theme.palette.primary.background, 0.1),
             },
