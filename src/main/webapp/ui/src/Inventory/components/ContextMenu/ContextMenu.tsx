@@ -75,11 +75,6 @@ function ContextMenu({
     return () => io.disconnect();
   }, [buttonList.length, selectedResults]);
 
-  // close overflow menu when nothing is in overflow
-  useLayoutEffect(() => {
-    if (overflow.size === 0) setAnchorEl(null);
-  }, [overflow.size]);
-
   const alertMessage =
     mixedSelectedStatus &&
     `Please select only 'Current' or 'In Trash' items to view more actions`;
@@ -133,7 +128,7 @@ function ContextMenu({
           />
           <StyledMenu
             anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
+            open={Boolean(anchorEl) && overflow.size > 0}
             onClose={() => setAnchorEl(null)}
             disableAutoFocusItem={true}
           >

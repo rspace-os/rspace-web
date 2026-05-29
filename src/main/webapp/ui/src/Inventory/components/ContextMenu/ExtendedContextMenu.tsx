@@ -79,10 +79,6 @@ function ExtendedContextMenu({
     return () => io.disconnect();
   }, [prefixActions.length]);
 
-  useLayoutEffect(() => {
-    if (overflow.size === 0) setAnchorEl(null);
-  }, [overflow.size]);
-
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Box
@@ -130,7 +126,7 @@ function ExtendedContextMenu({
       />
       <StyledMenu
         anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
+        open={Boolean(anchorEl) && overflow.size > 0}
         onClose={() => setAnchorEl(null)}
         disableAutoFocusItem
         sx={{
