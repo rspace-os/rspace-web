@@ -29,6 +29,8 @@ type RoRApiResponse = RORDataV2;
 
 type RSpaceApiResponse = { data: { exceptionMessage?: string } };
 
+const RSPACE_ROR_FORWARD_SLASH_DELIM = "__rspacror_forsl__";
+
 function RorDetails(
   props: React.HTMLAttributes<HTMLDivElement>,
 ): React.ReactNode {
@@ -101,12 +103,11 @@ function RoRIntegration(): React.ReactNode {
     return rorErrorMessage; //RSpace error message
   };
 
-  const RSPACE_ROR_FORWARD_SLASH_DELIM = "__rspacror_forsl__";
-
   const updateRor = async () => {
-    const updatedRoR = candidateRor
-      ? candidateRor.replaceAll("/", RSPACE_ROR_FORWARD_SLASH_DELIM)
-      : "";
+    const updatedRoR = candidateRor.replaceAll(
+      "/",
+      RSPACE_ROR_FORWARD_SLASH_DELIM,
+    );
     try {
       const response: RSpaceApiResponse = await axios.post(
         "/system/ror/rorForID/" + updatedRoR,
@@ -142,9 +143,10 @@ function RoRIntegration(): React.ReactNode {
 
   const fetchDetails = async (rorID: string) => {
     if (rorID) {
-      const searchTerm = rorID
-        ? rorID.replaceAll("/", RSPACE_ROR_FORWARD_SLASH_DELIM)
-        : "";
+      const searchTerm = rorID.replaceAll(
+        "/",
+        RSPACE_ROR_FORWARD_SLASH_DELIM,
+      );
       try {
         const response: { data: RoRApiResponse } = await axios.get(
           "/system/ror/rorForID/" + searchTerm,
@@ -181,41 +183,6 @@ function RoRIntegration(): React.ReactNode {
     void fetchDetails(candidateRor);
   }, [candidateRor]);
 
-  const getCityCountryAddressesFromRoRDetails = () => {
-    if (rorDetails) {
-      return rorDetails.locations.map((location, index) => {
-        const cityCountry =
-          location.geonames_details.name +
-          ", " +
-          location.geonames_details.country_name;
-        return (
-          <RorDetails
-            key={`${location.geonames_details.name}-${location.geonames_details.country_name}-${index}`}
-          >
-            <h5>{cityCountry}</h5>
-          </RorDetails>
-        );
-      });
-    }
-  };
-
-  const getLinksFromRoRDetails = () => {
-    if (rorDetails && "locations" in rorDetails) {
-      return rorDetails.links.map((link, index) => {
-        //v2 api
-        return (
-          <RorDetails key={`${link.value}-${index}`}>
-            <h5>
-              <a target="_blank" rel="noreferrer" href={link.value}>
-                {link.value}
-              </a>
-            </h5>
-          </RorDetails>
-        );
-      });
-    }
-  };
-
   const getDisplayName = (): string | null => {
     if (rorDetails && rorDetails.names) {
       return rorDetails.names
@@ -238,9 +205,12 @@ function RoRIntegration(): React.ReactNode {
       return false;
     }
   };
-  const rorDoesNotMatchCandidateRor = (): boolean => {
-    return !rorMatchesCandidateRor();
-  };
+
+  const showLinkAction =
+    Boolean(candidateRor) && !rorMatchesCandidateRor() && !errorMessage;
+  const showUnlinkAction =
+    (rorMatchesCandidateRor() || (Boolean(ror) && !candidateRor)) &&
+    !errorMessage;
 
   return (
     <>
@@ -286,20 +256,19 @@ function RoRIntegration(): React.ReactNode {
               </a>
             </RorHelpText>
           )}
-          {candidateRor && rorDoesNotMatchCandidateRor() && !errorMessage && (
+          {showLinkAction && (
             <RorHelpText>
               ROR ID found. Click <strong>Link</strong> to associate with this
               RSpace Instance.
             </RorHelpText>
           )}
-          {(rorMatchesCandidateRor() || (ror && !candidateRor)) &&
-            !errorMessage && (
-              <RorHelpText>
-                A ROR ID is linked to this RSpace Instance. Click on{" "}
-                <strong>UNLINK</strong> to remove the association. Future
-                published or updated DOIs will not include the ROR ID.
-              </RorHelpText>
-            )}
+          {showUnlinkAction && (
+            <RorHelpText>
+              A ROR ID is linked to this RSpace Instance. Click on{" "}
+              <strong>UNLINK</strong> to remove the association. Future
+              published or updated DOIs will not include the ROR ID.
+            </RorHelpText>
+          )}
           {rorDetails && (
             <>
               <RorDetails>
@@ -314,8 +283,28 @@ function RoRIntegration(): React.ReactNode {
                 {" "}
                 <h2>{getDisplayName()}</h2>
               </RorDetails>
-              {getCityCountryAddressesFromRoRDetails()}
-              {getLinksFromRoRDetails()}
+              {rorDetails.locations.map((location, index) => {
+                const cityCountry =
+                  location.geonames_details.name +
+                  ", " +
+                  location.geonames_details.country_name;
+                return (
+                  <RorDetails
+                    key={`${location.geonames_details.name}-${location.geonames_details.country_name}-${index}`}
+                  >
+                    <h5>{cityCountry}</h5>
+                  </RorDetails>
+                );
+              })}
+              {rorDetails.links.map((link, index) => (
+                <RorDetails key={`${link.value}-${index}`}>
+                  <h5>
+                    <a target="_blank" rel="noreferrer" href={link.value}>
+                      {link.value}
+                    </a>
+                  </h5>
+                </RorDetails>
+              ))}
               <RorDetails>
                 <h5>Status: {rorDetails.status}</h5>
               </RorDetails>
@@ -334,7 +323,7 @@ function RoRIntegration(): React.ReactNode {
               <RorErrorHelpText>02mhbdp94</RorErrorHelpText>
             </RorHelpText>
           )}
-          {candidateRor && rorDoesNotMatchCandidateRor() && !errorMessage && (
+          {showLinkAction && (
             <Button
               color="primary"
               data-test-id="ror-link"
@@ -346,19 +335,18 @@ function RoRIntegration(): React.ReactNode {
               Link
             </Button>
           )}
-          {(rorMatchesCandidateRor() || (ror && !candidateRor)) &&
-            !errorMessage && (
-              <Button
-                color="primary"
-                data-test-id="ror-link"
-                variant="contained"
-                sx={{ marginTop: "10px" }}
-                onClick={() => void deleteRor()}
-                startIcon={<FontAwesomeIcon icon={faMinus} />}
-              >
-                UnLink
-              </Button>
-            )}
+          {showUnlinkAction && (
+            <Button
+              color="primary"
+              data-test-id="ror-link"
+              variant="contained"
+              sx={{ marginTop: "10px" }}
+              onClick={() => void deleteRor()}
+              startIcon={<FontAwesomeIcon icon={faMinus} />}
+            >
+              UnLink
+            </Button>
+          )}
         </ThemeProvider>
       </StyledEngineProvider>
     </>

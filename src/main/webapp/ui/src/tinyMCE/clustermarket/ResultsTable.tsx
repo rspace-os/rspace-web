@@ -1,16 +1,15 @@
 import React from "react";
-import { TableContainer } from "@mui/material";
+import TableContainer from "@mui/material/TableContainer";
 import Table from "@mui/material/Table";
 import EnhancedTableHead, { Cell } from "../../components/EnhancedTableHead";
 import TableBody from "@mui/material/TableBody";
 import { getSorting, stableSort } from "../../util/table";
-import TableRow from "@mui/material/TableRow";
+import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import Checkbox from "@mui/material/Checkbox";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import { BookingType, Order } from "./Enums";
-import PropTypes from "prop-types";
 import { BookingAndEquipmentDetails } from "./ClustermarketData";
 type HeaderCellId =
   | "bookingID"
@@ -51,20 +50,9 @@ export default function ResultsTable({
     event: unknown,
     item_id: BookingAndEquipmentDetails["bookingID"],
   ) {
-    const selectedIndex = selectedBookingIds.indexOf(item_id);
-    let newSelected: Array<BookingAndEquipmentDetails["bookingID"]> = [];
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selectedBookingIds, item_id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selectedBookingIds.slice(1));
-    } else if (selectedIndex === selectedBookingIds.length - 1) {
-      newSelected = newSelected.concat(selectedBookingIds.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selectedBookingIds.slice(0, selectedIndex),
-        selectedBookingIds.slice(selectedIndex + 1),
-      );
-    }
+    const newSelected = selectedBookingIds.includes(item_id)
+      ? selectedBookingIds.filter((id) => id !== item_id)
+      : [...selectedBookingIds, item_id];
     setSelectedBookingIds(newSelected);
   }
   function handleRequestSort(
@@ -118,8 +106,12 @@ export default function ResultsTable({
                   <TableRow
                     id={labelId}
                     sx={{
-                      "&.Mui-selected": { backgroundColor: "#e3f2fd" },
-                      "&.Mui-selected:hover": { backgroundColor: "#e3f2fd" },
+                      [`&.${tableRowClasses.selected}`]: {
+                        backgroundColor: "#e3f2fd",
+                      },
+                      [`&.${tableRowClasses.selected}:hover`]: {
+                        backgroundColor: "#e3f2fd",
+                      },
                     }}
                     hover
                     tabIndex={-1}
@@ -130,7 +122,7 @@ export default function ResultsTable({
                     }
                     aria-checked={isItemSelected}
                     selected={isItemSelected}
-                    key={index}
+                    key={getBookingOrEquipmentID(booking)}
                   >
                     <TableCell padding="checkbox">
                       <Checkbox
@@ -188,7 +180,19 @@ export default function ResultsTable({
           </TableBody>
         </Table>
       </TableContainer>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: "fixed", left: 0, bottom: 0, width: "calc(100% - 16px)", ml: "8px", backgroundColor: "#f6f6f6" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          position: "fixed",
+          left: 0,
+          bottom: 0,
+          width: "calc(100% - 16px)",
+          ml: "8px",
+          backgroundColor: "#f6f6f6",
+        }}
+      >
         <Typography
           sx={{ pl: "16px" }}
           component="span"
@@ -201,15 +205,3 @@ export default function ResultsTable({
     </>
   );
 }
-ResultsTable.propTypes = {
-  clustermarket_web_url: PropTypes.string,
-  visibleHeaderCells: PropTypes.array,
-  results: PropTypes.array,
-  order: PropTypes.string,
-  setOrder: PropTypes.func,
-  orderBy: PropTypes.string,
-  setOrderBy: PropTypes.func,
-  selectedBookingIds: PropTypes.array,
-  setSelectedBookingIds: PropTypes.func,
-  bookingType: PropTypes.string,
-};
