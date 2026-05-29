@@ -99,20 +99,6 @@ export default function main(props) {
         display: "flex",
         width: "100%",
         backgroundColor: "rgb(245, 245, 245) !important",
-        "& .grow": {
-          flexGrow: 1,
-        },
-        "& select": {
-          minHeight: "300px",
-          border: "1px solid rgb(255, 255, 255)",
-        },
-        "& a": {
-          color: "inherit",
-        },
-        "& a:hover": {
-          color: "#1465b7 !important",
-          fontWeight: 500,
-        },
       }}
     >
       <UserList

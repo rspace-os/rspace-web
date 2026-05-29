@@ -104,7 +104,7 @@ export default function UserList({ listTitle, onSelect, selected, users }) {
   return (
     <FormControl
       fullWidth
-      className="grow"
+      sx={{ flexGrow: 1 }}
       data-test-id={`${listTitleId}-column`}
     >
       <InputLabel shrink htmlFor="select-multiple-native">
