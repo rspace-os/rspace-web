@@ -7,6 +7,9 @@ import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Paper from "@mui/material/Paper";
 import MenuItem from "@mui/material/MenuItem";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { buttonBaseClasses } from "@mui/material/ButtonBase";
+import { chipClasses } from "@mui/material/Chip";
 import PropTypes from "prop-types";
 
 function NoOptionsMessage(props) {
@@ -96,24 +99,6 @@ Option.propTypes = {
   isSelected: PropTypes.bool,
 };
 
-function Placeholder(props) {
-  return (
-    <Typography
-      color="textSecondary"
-      sx={{ position: "absolute", left: 2, bottom: 6, fontSize: 16 }}
-      {...props.innerProps}
-    >
-      {props.children}
-    </Typography>
-  );
-}
-
-Placeholder.propTypes = {
-  children: PropTypes.node,
-  innerProps: PropTypes.object,
-  selectProps: PropTypes.object.isRequired,
-};
-
 function ValueContainer(props) {
   return (
     <Box
@@ -181,6 +166,21 @@ const components = {
   DropdownIndicator: null,
 };
 
+const RSPACE_ONTOLOGY_URL_DELIMITER = "__RSP_EXTONT_URL_DELIM__";
+
+const replaceCommaDelimiterInTag = (tag) =>
+  tag.replaceAll("__rspactags_comma__", ",");
+
+const replaceForwardSlashInTag = (tag) =>
+  tag.replaceAll("/", "__rspactags_forsl__");
+
+const parseDelimitedTags = (tag) =>
+  tag.includes(RSPACE_ONTOLOGY_URL_DELIMITER)
+    ? replaceCommaDelimiterInTag(
+        tag.split(RSPACE_ONTOLOGY_URL_DELIMITER)[0].trim(),
+      )
+    : tag;
+
 export default function TagSelect(props) {
   const theme = useTheme();
   const [multi, setMulti] = React.useState(null);
@@ -203,39 +203,18 @@ export default function TagSelect(props) {
       const result = await axios(
         "/workspace/editor/structuredDocument/userTags",
       );
-      const RSPACE_ONTOLOGY_URL_DELIMITER = "__RSP_EXTONT_URL_DELIM__";
-      const parseDelimitedTags = (tag) => {
-        if (tag.includes(RSPACE_ONTOLOGY_URL_DELIMITER)) {
-          return replaceCommaDelimiterInTag(
-            tag.split(RSPACE_ONTOLOGY_URL_DELIMITER)[0].trim(),
-          );
-        }
-        return tag;
-      };
-      const replaceForwardSlashInTag = (tag) => {
-        tag = tag.replaceAll("/", "__rspactags_forsl__");
-        return tag;
-      };
-      const replaceCommaDelimiterInTag = (tag) => {
-        tag = tag.replaceAll("__rspactags_comma__", ",");
-        return tag;
-      };
 
-      const tags = result.data.data.map((suggestion) => ({
-        value: replaceForwardSlashInTag(parseDelimitedTags(suggestion)),
-        label: parseDelimitedTags(suggestion),
-      }));
-
+      const tags = result.data.data.map((suggestion) => {
+        const label = parseDelimitedTags(suggestion);
+        return { value: replaceForwardSlashInTag(label), label };
+      });
       setSuggestions(tags);
 
       if (props.selected) {
-        const selected = props.selected.split("<<>>");
-        const local_selected = [];
-        selected.map((s) => {
-          const idx = tags.findIndex((r) => r.label == s);
-          local_selected.push(tags[idx]);
-        });
-        handleChangeMulti(local_selected);
+        const localSelected = props.selected
+          .split("<<>>")
+          .map((s) => tags.find((r) => r.label === s));
+        handleChangeMulti(localSelected);
       }
     };
     fetchData();
@@ -246,16 +225,11 @@ export default function TagSelect(props) {
       sx={{
         display: "flex",
         flexGrow: 1,
-        "& .css-1pcexqc-container": {
-          flexGrow: 1,
-          alignItems: "center",
-          justifyContent: "center",
-        },
         "& .myReactSelect .Select-arrow-zone": {
           display: "none",
         },
         "& .advanced-search": {
-          "& .search-input .MuiInputBase-input": {
+          [`& .search-input .${inputBaseClasses.input}`]: {
             height: 32,
           },
           "& .dropdown-item": {
@@ -269,7 +243,7 @@ export default function TagSelect(props) {
             minHeight: "36px",
           },
         },
-        "& .MuiButtonBase-root:not(.MuiChip-root)": {
+        [`& .${buttonBaseClasses.root}:not(.${chipClasses.root})`]: {
           width: "fit-content !important",
           fontSize: 15,
           marginLeft: "10px",

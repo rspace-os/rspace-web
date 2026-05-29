@@ -100,6 +100,51 @@ const tableCellSx = {
   whiteSpace: "nowrap",
 } as const;
 
+/** A label/value row: a `th` label and a right-aligned value cell. */
+function PropertyRow({
+  label,
+  value,
+}: {
+  label: React.ReactNode;
+  value: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <TableRow>
+      <TableCell component="th" scope="row">
+        {label}
+      </TableCell>
+      <TableCell align="right" sx={tableCellSx}>
+        {value}
+      </TableCell>
+    </TableRow>
+  );
+}
+
+/** Renders arbitrary metadata key/value pairs, linkifying URL values. */
+function MetadataRows({
+  metadata,
+  keyPrefix,
+}: {
+  metadata: MetadataMap;
+  keyPrefix: string;
+}): React.ReactNode {
+  return Object.entries(metadata).map(([key, value]) => (
+    <PropertyRow
+      key={`${keyPrefix}-${key}`}
+      label={key}
+      value={
+        isUrl(value) ? (
+          <a href={value} target="_blank" rel="noopener noreferrer">
+            {value}
+          </a>
+        ) : (
+          value
+        )
+      }
+    />
+  ));
+}
+
 export default function ChemCard(props: ChemCardProps) {
   const [chem, setChem] = React.useState<ChemInfo>({
     reactants: [],
@@ -109,16 +154,20 @@ export default function ChemCard(props: ChemCardProps) {
   const chemId =
     props.item.id !== undefined ? Number.parseInt(props.item.id, 10) : Number.NaN;
   const additionalMetadata = getAdditionalMetadata(chem.additionalMetadata);
+  const inlineHeight =
+    Number(props.height) < 200
+      ? "200px"
+      : `${Number.parseInt(String(props.height), 10) + 6}px`;
 
   // fetch chem details
-  const fetchChemDetails = (): void => {
+  useEffect(() => {
     if (Number.isNaN(chemId) || chemId < 0) {
       return;
     }
 
     const publicView = document.getElementById("public_document_view");
     const publicUrlPrepend = publicView ? "/public/publicView" : "";
-    const url = publicUrlPrepend + `/chemical/ajax/getInfo?chemId=${chemId}`;
+    const url = `${publicUrlPrepend}/chemical/ajax/getInfo?chemId=${chemId}`;
     axios
       .get<ChemInfoResponse>(url)
       .then((response): void => {
@@ -134,19 +183,35 @@ export default function ChemCard(props: ChemCardProps) {
       .catch((error: unknown): void => {
         console.warn(error);
       });
-  };
-
-  useEffect(() => {
-    if (!Number.isNaN(chemId) && chemId >= 0) {
-      fetchChemDetails();
-    }
   }, [chemId]);
 
   const chemInfoTable = (chemical: ChemicalInfo): React.ReactElement => {
     const chemicalMetadata = getAdditionalMetadata(chemical.additionalMetadata);
+    const keyPrefix = chemical.formula ?? chemical.role ?? "chemical";
+    const properties: ReadonlyArray<{
+      label: React.ReactNode;
+      value: React.ReactNode;
+    }> = [
+      { label: "Formula", value: renderFormattedFormula(chemical.formula) },
+      { label: "Mass", value: chemical.mass },
+      // Monoisotopic mass symbol = Exact mass
+      {
+        label: (
+          <>
+            M<sub>mi</sub>
+          </>
+        ),
+        value: chemical.exactMass,
+      },
+      { label: "Charge", value: chemical.formalCharge },
+      { label: "Bonds", value: chemical.bondCount },
+      { label: "Atoms", value: chemical.atomCount },
+    ];
 
     return (
-      <React.Fragment key={`${chemical.role ?? "chemical"}-${chemical.formula ?? ""}`}>
+      <React.Fragment
+        key={`${chemical.role ?? "chemical"}-${chemical.formula ?? ""}`}
+      >
         <TableRow sx={{ background: "rgb(240,240,240" }}>
           <TableCell component="th" scope="row"></TableCell>
           <TableCell component="th" scope="row" align="center">
@@ -154,81 +219,16 @@ export default function ChemCard(props: ChemCardProps) {
           </TableCell>
         </TableRow>
         {chemical.name != "" && (
-          <TableRow>
-            <TableCell component="th" scope="row">
-              Name
-            </TableCell>
-            <TableCell align="right" sx={tableCellSx}>
-              {chemical.name}
-            </TableCell>
-          </TableRow>
+          <PropertyRow label="Name" value={chemical.name} />
         )}
-        <TableRow>
-          <TableCell component="th" scope="row">
-            Formula
-          </TableCell>
-          <TableCell align="right" sx={tableCellSx}>
-            {renderFormattedFormula(chemical.formula)}
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell component="th" scope="row">
-            Mass
-          </TableCell>
-          <TableCell align="right" sx={tableCellSx}>
-            {chemical.mass}
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell component="th" scope="row">
-            {/* Monoisotopic mass symbol = Exact mass */}M<sub>mi</sub>
-          </TableCell>
-          <TableCell align="right" sx={tableCellSx}>
-            {chemical.exactMass}
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell component="th" scope="row">
-            Charge
-          </TableCell>
-          <TableCell align="right" sx={tableCellSx}>
-            {chemical.formalCharge}
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell component="th" scope="row">
-            Bonds
-          </TableCell>
-          <TableCell align="right" sx={tableCellSx}>
-            {chemical.bondCount}
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell component="th" scope="row">
-            Atoms
-          </TableCell>
-          <TableCell align="right" sx={tableCellSx}>
-            {chemical.atomCount}
-          </TableCell>
-        </TableRow>
-        {Object.entries(chemicalMetadata).map(
-          ([k, v]) => (
-            <TableRow key={`${chemical.formula ?? chemical.role ?? "chemical"}-${k}`}>
-              <TableCell component="th" scope="row">
-                {k}
-              </TableCell>
-              <TableCell align="right" sx={tableCellSx}>
-                {isUrl(v) ? (
-                  <a href={v} target="_blank" rel="noopener noreferrer">
-                    {v}
-                  </a>
-                ) : (
-                  v
-                )}
-              </TableCell>
-            </TableRow>
-          ),
-        )}
+        {properties.map((property, index) => (
+          <PropertyRow
+            key={`${keyPrefix}-prop-${index}`}
+            label={property.label}
+            value={property.value}
+          />
+        ))}
+        <MetadataRows metadata={chemicalMetadata} keyPrefix={keyPrefix} />
       </React.Fragment>
     );
   };
@@ -238,23 +238,11 @@ export default function ChemCard(props: ChemCardProps) {
       <Card
         sx={{
           ...cardSx,
-          ...(props.inline
-            ? {
-                height:
-                  Number(props.height) < 200
-                    ? "200px"
-                    : `${Number.parseInt(String(props.height), 10) + 6}px`,
-                width: "200px",
-                margin: "0px",
-                border: "1px solid #eee",
-                backgroundColor: "#fafafa",
-              }
-            : {
-                height: "200px",
-                width: "200px",
-                border: "1px solid #eee",
-                backgroundColor: "#fafafa",
-              }),
+          width: "200px",
+          border: "1px solid #eee",
+          backgroundColor: "#fafafa",
+          height: props.inline ? inlineHeight : "200px",
+          ...(props.inline ? { margin: "0px" } : {}),
         }}
         elevation={props.inline ? 0 : 4}
       />
@@ -267,10 +255,7 @@ export default function ChemCard(props: ChemCardProps) {
         ...cardSx,
         ...(props.inline
           ? {
-              height:
-                Number(props.height) < 200
-                  ? "200px"
-                  : `${Number.parseInt(String(props.height), 10) + 6}px`,
+              height: inlineHeight,
               overflowY: "auto",
               margin: "0px",
             }
@@ -325,36 +310,15 @@ export default function ChemCard(props: ChemCardProps) {
         >
           <TableBody>
             {chem.reaction && (
-              <TableRow>
-                <TableCell component="th" scope="row">
-                  Formula
-                </TableCell>
-                <TableCell align="right" sx={tableCellSx}>
-                  {renderFormattedFormula(chem.formula)}
-                </TableCell>
-              </TableRow>
+              <PropertyRow
+                label="Formula"
+                value={renderFormattedFormula(chem.formula)}
+              />
             )}
             {chem.reactants.map((r) => chemInfoTable(r))}
             {chem.products.map((p) => chemInfoTable(p))}
             {chem.molecules.map((m) => chemInfoTable(m))}
-            {Object.entries(additionalMetadata).map(
-              ([k, v]) => (
-                <TableRow key={k}>
-                  <TableCell component="th" scope="row">
-                    {k}
-                  </TableCell>
-                  <TableCell align="right" sx={tableCellSx}>
-                    {isUrl(v) ? (
-                      <a href={v} target="_blank" rel="noopener noreferrer">
-                        {v}
-                      </a>
-                    ) : (
-                      v
-                    )}
-                  </TableCell>
-                </TableRow>
-              ),
-            )}
+            <MetadataRows metadata={additionalMetadata} keyPrefix="metadata" />
           </TableBody>
         </Table>
       </CardContent>

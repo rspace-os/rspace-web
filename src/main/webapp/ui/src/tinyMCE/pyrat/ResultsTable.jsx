@@ -4,14 +4,13 @@ import Table from "@mui/material/Table";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import TableBody from "@mui/material/TableBody";
 import { getSorting, stableSort } from "../../util/table";
-import TableRow from "@mui/material/TableRow";
+import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import Checkbox from "@mui/material/Checkbox";
 import TablePagination from "@mui/material/TablePagination";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import { Order } from "./Enums";
-import useLocalStorage from "../../hooks/browser/useLocalStorage";
 
 export default function ResultsTable({
   page,
@@ -29,24 +28,12 @@ export default function ResultsTable({
   rowsPerPage,
   count,
 }) {
-  function onRowClick(event, eartag) {
-    const selectedIndex = selectedAnimalIds.indexOf(eartag);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selectedAnimalIds, eartag);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selectedAnimalIds.slice(1));
-    } else if (selectedIndex === selectedAnimalIds.length - 1) {
-      newSelected = newSelected.concat(selectedAnimalIds.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selectedAnimalIds.slice(0, selectedIndex),
-        selectedAnimalIds.slice(selectedIndex + 1),
-      );
-    }
-
-    setSelectedAnimalIds(newSelected);
+  function onRowClick(eartag) {
+    setSelectedAnimalIds(
+      selectedAnimalIds.includes(eartag)
+        ? selectedAnimalIds.filter((id) => id !== eartag)
+        : [...selectedAnimalIds, eartag],
+    );
   }
 
   function handleRequestSort(event, property) {
@@ -99,13 +86,17 @@ export default function ResultsTable({
                   <TableRow
                     id={labelId}
                     sx={{
-                      "&.Mui-selected": { backgroundColor: "#e3f2fd" },
-                      "&.Mui-selected:hover": { backgroundColor: "#e3f2fd" },
+                      [`&.${tableRowClasses.selected}`]: {
+                        backgroundColor: "#e3f2fd",
+                      },
+                      [`&.${tableRowClasses.selected}:hover`]: {
+                        backgroundColor: "#e3f2fd",
+                      },
                     }}
                     hover
                     tabIndex={-1}
                     role="checkbox"
-                    onClick={(event) => onRowClick(event, animal.eartag_or_id)}
+                    onClick={() => onRowClick(animal.eartag_or_id)}
                     aria-checked={isItemSelected}
                     selected={isItemSelected}
                     key={index}

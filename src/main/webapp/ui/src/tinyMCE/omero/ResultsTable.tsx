@@ -12,7 +12,7 @@ import Checkbox from "@mui/material/Checkbox";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import { Order } from "./Enums";
-import type { OmeroItem } from "./OmeroTypes";
+import type { OmeroItem, OmeroDataTypes } from "./OmeroTypes";
 function getLinkToOmero(item: OmeroItem, omero_web_url: string): string {
   if (item.type !== "plateAcquisition") {
     return omero_web_url + "webclient/?show=" + item.type + "-" + item.id;
@@ -23,6 +23,24 @@ function getLinkToOmero(item: OmeroItem, omero_web_url: string): string {
   }
   return omero_web_url + "webclient/?show=plate-" + item.id;
 }
+
+// Row background colour by item type
+const ROW_BACKGROUND_COLOR: Partial<Record<OmeroDataTypes, string>> = {
+  project: "#EFEFEF",
+  screen: "#edfcfc",
+  plate: "#f5fcfc",
+  dataset: "#F4F4F4",
+  image: "#FCFCFC",
+};
+
+// Left indent (px) of the checkbox cell, nesting children under their parents
+const CHECKBOX_CELL_INDENT: Partial<Record<OmeroDataTypes, number>> = {
+  project: 16,
+  screen: 16,
+  dataset: 28,
+  plate: 28,
+  image: 40,
+};
 
 /**
  * @param results
@@ -194,19 +212,15 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
     const isDataSetOrPlateAcquistion = (item: OmeroItem): boolean =>
       item.type === "dataset" || item.type === "plateAcquisition";
     const getFetchText = (item: OmeroItem): string => {
-      return item.showingChildren
-        ? "hide children"
-        : isDataSetOrPlateAcquistion(item)
-          ? "show children"
-          : item.type === "plate" && item.childCounts > 1
-            ? "show plateAcquisitions "
-            : item.type === "plate"
-              ? " show grid of wells  "
-              : item.type === "project"
-                ? "show datasets"
-                : item.type === "screen"
-                  ? "show plates"
-                  : "";
+      if (item.showingChildren) return "hide children";
+      if (isDataSetOrPlateAcquistion(item)) return "show children";
+      if (item.type === "plate")
+        return item.childCounts > 1
+          ? "show plateAcquisitions "
+          : " show grid of wells  ";
+      if (item.type === "project") return "show datasets";
+      if (item.type === "screen") return "show plates";
+      return "";
     };
     const toggleSelected = (item: OmeroItem): void => {
       item.selected = !item.selected;
@@ -261,19 +275,14 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                   const isItemSelected =
                     selectedItemIds.indexOf(item.type + "_" + item.id) !== -1;
                   const labelId = `item-search-results-checkbox-${index}`;
+                  const nameAnchorHref = `#${item.type}_name_display_${item.id}`;
                   return (
                     <TableRow
                       id={labelId}
                       sx={{
                         [`&.${tableRowClasses.selected}`]: { backgroundColor: "#e3f2fd" },
                         [`&.${tableRowClasses.selected}:hover`]: { backgroundColor: "#e3f2fd" },
-                        backgroundColor:
-                          item.type === "project" ? "#EFEFEF"
-                          : item.type === "screen" ? "#edfcfc"
-                          : item.type === "plate" ? "#f5fcfc"
-                          : item.type === "dataset" ? "#F4F4F4"
-                          : item.type === "image" ? "#FCFCFC"
-                          : undefined,
+                        backgroundColor: ROW_BACKGROUND_COLOR[item.type],
                       }}
                       hover
                       tabIndex={-1}
@@ -283,23 +292,9 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                       key={index}
                     >
                       <TableCell
-                        sx={
-                          item.type === "dataset" || item.type === "plate"
-                            ? {
-                                padding: "0px 0px 0px 28px",
-                              }
-                            : item.type === "project" || item.type === "screen"
-                              ? {
-                                  padding: "0px 0px 0px 16px",
-                                }
-                              : item.type === "image"
-                                ? {
-                                    padding: "0px 0px 0px 40px",
-                                  }
-                                : {
-                                    padding: "0px 0px 0px 0px",
-                                  }
-                        }
+                        sx={{
+                          padding: `0px 0px 0px ${CHECKBOX_CELL_INDENT[item.type] ?? 0}px`,
+                        }}
                       >
                         {!item.gridShown && (
                           <Checkbox
@@ -370,10 +365,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   <a
                                     id={`${item.type}_fetch_details_${item.id}`}
                                     data-testid={`${item.type}_fetch_details_${item.id}`}
-                                    href={
-                                      "#" +
-                                      `${item.type}_name_display_${item.id}`
-                                    }
+                                    href={nameAnchorHref}
                                     onClick={() => {
                                       void addDetailsToItem(item);
                                       item.fetched = true;
@@ -388,10 +380,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   <a
                                     id={`${item.type}_hide_grid_${item.id}`}
                                     data-testid={`${item.type}_hide_grid_${item.id}`}
-                                    href={
-                                      "#" +
-                                      `${item.type}_name_display_${item.id}`
-                                    }
+                                    href={nameAnchorHref}
                                     onClick={() => {
                                       hideChildren(item, true);
                                     }}
@@ -407,10 +396,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                     {item.samplesUrls?.map((url, pos) => (
                                       <div key={pos}>
                                         <a
-                                          href={
-                                            "#" +
-                                            `${item.type}_name_display_${item.id}`
-                                          }
+                                          href={nameAnchorHref}
                                           onClick={() => {
                                             void addGridOfThumbnailsToItem(
                                               item,
@@ -434,10 +420,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                 ) : item.type === "dataset" ? (
                                   <div>
                                     <a
-                                      href={
-                                        "#" +
-                                        `${item.type}_name_display_${item.id}`
-                                      }
+                                      href={nameAnchorHref}
                                       onClick={() => {
                                         void addGridOfThumbnailsToItem(item, 0);
                                       }}
@@ -507,10 +490,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                 {itemHasFetchableChildren(item) && (
                                   <a
                                     data-testid={`${item.type}_fetch_childrenLink_${item.id}`}
-                                    href={
-                                      "#" +
-                                      `${item.type}_name_display_${item.id}`
-                                    }
+                                    href={nameAnchorHref}
                                     onClick={() => {
                                       if (item.showingChildren) {
                                         hideChildren(item);

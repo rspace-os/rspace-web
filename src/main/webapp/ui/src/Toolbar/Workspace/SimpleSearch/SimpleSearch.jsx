@@ -1,16 +1,19 @@
 "use strict";
 import React from "react";
 import axios from "@/common/axios";
-import { produce } from "immer";
 import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
+import IconButton, { iconButtonClasses } from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Paper from "@mui/material/Paper";
-import InputBase from "@mui/material/InputBase";
-import Divider from "@mui/material/Divider";
+import InputBase, { inputBaseClasses } from "@mui/material/InputBase";
+import Divider, { dividerClasses } from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import Chip from "@mui/material/Chip";
+import Chip, { chipClasses } from "@mui/material/Chip";
+import { textFieldClasses } from "@mui/material/TextField";
+import { inputLabelClasses } from "@mui/material/InputLabel";
+import { formLabelClasses } from "@mui/material/FormLabel";
+import { inputClasses } from "@mui/material/Input";
 import DateField from "../../../components/Inputs/DateField";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilter } from "@fortawesome/free-solid-svg-icons/faFilter";
@@ -79,8 +82,6 @@ class SimpleSearch extends React.Component {
     });
   };
 
-  // let chemistryProvider;
-
   componentDidMount = () => {
     axios
       .get("/integration/integrationInfo", {
@@ -105,11 +106,8 @@ class SimpleSearch extends React.Component {
         this.setState({ chemistryProvider: response.data });
       });
 
-    const toolbar = this;
     // Bad practise. Change when the reset button is in React
-    $(document).on("click", "#resetSearch", (e) => {
-      toolbar.resetState();
-    });
+    $(document).on("click", "#resetSearch", () => this.resetState());
   };
 
   toggleAdvanced = () => {
@@ -165,13 +163,11 @@ class SimpleSearch extends React.Component {
 
   isValid = () => {
     if (
-      ["lastModified", "created", "owner", "tag"].findIndex(
-        (i) => i == this.state.filter,
-      ) == -1
+      !["lastModified", "created", "owner", "tag"].includes(this.state.filter)
     ) {
       return this.state.term.length >= 2;
     }
-    if (["owner", "tag"].findIndex((i) => i == this.state.filter) != -1) {
+    if (["owner", "tag"].includes(this.state.filter)) {
       return this.state.term.length >= 1;
     }
     return true;
@@ -181,10 +177,8 @@ class SimpleSearch extends React.Component {
     e.preventDefault();
     const selectedRecords = getSelectedGlobalIds();
 
-    if (!this.isValid) {
-    } else if (selectedRecords.length) {
-      this.setState({ selectedRecords });
-      this.setState({ recordsDialog: true });
+    if (selectedRecords.length) {
+      this.setState({ selectedRecords, recordsDialog: true });
     } else {
       this.submit();
     }
@@ -270,226 +264,218 @@ class SimpleSearch extends React.Component {
 
   removeRecord = (record_id) => {
     this.setState((prevState) => ({
-      selectedRecords: produce(prevState.selectedRecords, (draft) => {
-        const idx = draft.findIndex((r) => r == record_id);
-        if (idx !== -1) {
-          draft.splice(idx, 1);
-        }
-      }),
+      selectedRecords: prevState.selectedRecords.filter((r) => r != record_id),
     }));
   };
 
   render() {
     return (
       <>
-        <>
-          <Paper sx={{ flexGrow: "1", display: "flex" }} elevation={0}>
-            <Box component="form" onSubmit={this.submitSearch} sx={{ width: "100%" }}>
-              <Box
-                sx={{
-                  padding: "2px 2px",
-                  display: "flex",
-                  alignItems: "center",
-                  "& .MuiInputBase-root": {
-                    flexGrow: 1,
-                    "& input:focus, & input:hover": {
-                      backgroundColor: "transparent !important",
+        <Paper sx={{ flexGrow: "1", display: "flex" }} elevation={0}>
+          <Box
+            component="form"
+            onSubmit={this.submitSearch}
+            sx={{ width: "100%" }}
+          >
+            <Box
+              sx={{
+                padding: "2px 2px",
+                display: "flex",
+                alignItems: "center",
+                [`& .${inputBaseClasses.root}`]: {
+                  flexGrow: 1,
+                  "& input:focus, & input:hover": {
+                    backgroundColor: "transparent !important",
+                  },
+                },
+                [`& .${dividerClasses.root}`]: {
+                  width: "1px",
+                  height: "35px",
+                  margin: "4px",
+                },
+                [`& .${textFieldClasses.root}`]: {
+                  [`& .${inputLabelClasses.formControl}`]: {
+                    transform: "translate(0, 16px) scale(1)",
+                  },
+                  [`& .${inputLabelClasses.formControl}.${inputLabelClasses.focused}, & .${inputLabelClasses.formControl}.${formLabelClasses.filled}`]:
+                    {
+                      transform: "translate(5px, 0) scale(0.75)",
+                      transformOrigin: "top left",
                     },
-                  },
-                  "& .MuiDivider-root": {
-                    width: "1px",
-                    height: "35px",
-                    margin: "4px",
-                  },
-                  "& .MuiTextField-root": {
-                    "& .MuiInputLabel-formControl": {
-                      transform: "translate(0, 16px) scale(1)",
+                  [`& .${inputClasses.underline}:before, & .${inputClasses.underline}:after`]:
+                    {
+                      borderBottom: 0,
                     },
-                    "& .MuiInputLabel-formControl.Mui-focused, & .MuiInputLabel-formControl.MuiFormLabel-filled":
-                      {
-                        transform: "translate(5px, 0) scale(0.75)",
-                        transformOrigin: "top left",
-                      },
-                    "& label + .MuiInput-formControl": {
-                      marginTop: "5px",
-                    },
-                    "& .MuiInput-underline:before, & .MuiInput-underline:after":
-                      {
-                        borderBottom: 0,
-                      },
-                  },
-                  "& button.MuiIconButton-root": {
-                    width: 44,
-                    height: 44,
-                    fontSize: "16px !important",
-                  },
-                  "& .grow": {
-                    flexGrow: 1,
-                  },
-                  "& .MuiChip-root": {
-                    margin: "6px",
-                  },
-                }}
-              >
-                {(this.state.filter === "global" ||
-                  this.state.filter === "chemical") && (
-                  <Tooltip title="Filters" enterDelay={300}>
-                    <IconButton
-                      data-test-id="s-search-filter"
-                      color="default"
-                      aria-haspopup="true"
-                      onClick={this.handleOpen}
-                      disabled={this.props.advancedOpen}
-                      aria-label="Filters"
-                    >
-                      <FontAwesomeIcon icon={faFilter} />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {this.state.filter !== "global" &&
-                  this.state.filter !== "chemical" && (
-                    <Chip
-                      data-test-id="s-search-filtered"
-                      label={FILTERS[this.state.filter]}
-                      clickable={!this.props.advancedOpen}
-                      variant={this.props.advancedOpen ? "default" : "outlined"}
-                      color={this.props.advancedOpen ? "default" : "primary"}
-                      aria-haspopup="true"
-                      onClick={
-                        this.props.advancedOpen ? () => {} : this.handleOpen
-                      }
-                      onDelete={() => this.handleSelect("global")}
-                      deleteIcon={
-                        <FontAwesomeIcon
-                          icon={faTimes}
-                          style={{ padding: "10px" }}
-                          data-test-id="s-search-rm-filter"
-                        />
-                      }
-                    />
-                  )}
-                <Menu
-                  anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "left",
-                  }}
-                  anchorEl={this.state.anchorEl}
-                  keepMounted
-                  open={this.state.filterDropdownIsOpen}
-                  onClose={this.handleClose}
-                >
-                  {Object.keys(FILTERS).map((key) => (
-                    <MenuItem
-                      data-test-id={`s-search-filter-${key}`}
-                      onClick={() => this.handleSelect(key)}
-                      key={key}
-                      sx={{ minHeight: "25px" }}
-                      selected={this.state.filter == key}
-                    >
-                      {FILTERS[key]}
-                    </MenuItem>
-                  ))}
-                </Menu>
-                {!["lastModified", "created", "owner", "tag"].includes(
-                  this.state.filter,
-                ) && (
-                  <InputBase
-                    data-test-id="s-search-input-normal"
-                    disabled={this.props.advancedOpen}
-                    placeholder="Search"
-                    value={this.state.term}
-                    onChange={this.handleChange}
-                    slotProps={{ input: { "aria-label": "Search" } }}
-                  />
-                )}
-                {this.state.filter == "owner" && (
-                  <UserSelect
-                    updateSelected={this.handleSelectAutocomplete}
-                    selected={
-                      this.state.filter == "owner" ? this.state.term : null
-                    }
-                    testId="s-search-input-user"
-                  />
-                )}
-                {this.state.filter == "tag" && (
-                  <TagSelect
-                    updateSelected={this.handleSelectAutocomplete}
-                    selected={
-                      this.state.filter == "tag" ? this.state.term : null
-                    }
-                    testId="s-search-input-tag"
-                  />
-                )}
-                {["lastModified", "created"].includes(this.state.filter) && (
-                  <>
-                    <Tooltip title={formatDateForTooltip(this.state.from)}>
-                      <div>
-                        <DateField
-                          value={this.state.from}
-                          onChange={({ target: { value } }) =>
-                            this.handleDateChange("from", value)
-                          }
-                          maxDate={this.state.to || new Date()}
-                          disableFuture
-                          placeholder="the beginning"
-                          label="From"
-                          data-test-id="s-search-input-from"
-                        />
-                      </div>
-                    </Tooltip>
-                    <Tooltip title={formatDateForTooltip(this.state.to)}>
-                      <div>
-                        <DateField
-                          value={this.state.to}
-                          onChange={({ target: { value } }) =>
-                            this.handleDateChange("to", value)
-                          }
-                          minDate={this.state.from || new Date(1990, 1, 1)}
-                          disableFuture
-                          placeholder="now"
-                          label="To"
-                          data-test-id="s-search-input-to"
-                        />
-                      </div>
-                    </Tooltip>
-                  </>
-                )}
-                <IconButton
-                  aria-label="Search"
-                  type="submit"
-                  onClick={this.submitSearch}
-                  disabled={this.props.advancedOpen || !this.isValid()}
-                  data-test-id="s-search-submit"
-                >
-                  <FontAwesomeIcon icon={faSearch} />
-                </IconButton>
-                <Tooltip
-                  title="Advanced search"
-                  enterDelay={300}
-                  data-test-id="toggle-advanced"
-                >
+                },
+                [`& button.${iconButtonClasses.root}`]: {
+                  width: 44,
+                  height: 44,
+                  fontSize: "16px !important",
+                },
+                "& .grow": {
+                  flexGrow: 1,
+                },
+                [`& .${chipClasses.root}`]: {
+                  margin: "6px",
+                },
+              }}
+            >
+              {(this.state.filter === "global" ||
+                this.state.filter === "chemical") && (
+                <Tooltip title="Filters" enterDelay={300}>
                   <IconButton
-                    onClick={this.toggleAdvanced}
-                    aria-label="Advanced search"
+                    data-test-id="s-search-filter"
+                    color="default"
+                    aria-haspopup="true"
+                    onClick={this.handleOpen}
+                    disabled={this.props.advancedOpen}
+                    aria-label="Filters"
                   >
-                    <FontAwesomeIcon icon={faBars} />
+                    <FontAwesomeIcon icon={faFilter} />
                   </IconButton>
                 </Tooltip>
-              </Box>
+              )}
+              {this.state.filter !== "global" &&
+                this.state.filter !== "chemical" && (
+                  <Chip
+                    data-test-id="s-search-filtered"
+                    label={FILTERS[this.state.filter]}
+                    clickable={!this.props.advancedOpen}
+                    variant={this.props.advancedOpen ? "default" : "outlined"}
+                    color={this.props.advancedOpen ? "default" : "primary"}
+                    aria-haspopup="true"
+                    onClick={
+                      this.props.advancedOpen ? () => {} : this.handleOpen
+                    }
+                    onDelete={() => this.handleSelect("global")}
+                    deleteIcon={
+                      <FontAwesomeIcon
+                        icon={faTimes}
+                        style={{ padding: "10px" }}
+                        data-test-id="s-search-rm-filter"
+                      />
+                    }
+                  />
+                )}
+              <Menu
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "left",
+                }}
+                anchorEl={this.state.anchorEl}
+                keepMounted
+                open={this.state.filterDropdownIsOpen}
+                onClose={this.handleClose}
+              >
+                {Object.keys(FILTERS).map((key) => (
+                  <MenuItem
+                    data-test-id={`s-search-filter-${key}`}
+                    onClick={() => this.handleSelect(key)}
+                    key={key}
+                    sx={{ minHeight: "25px" }}
+                    selected={this.state.filter == key}
+                  >
+                    {FILTERS[key]}
+                  </MenuItem>
+                ))}
+              </Menu>
+              {!["lastModified", "created", "owner", "tag"].includes(
+                this.state.filter,
+              ) && (
+                <InputBase
+                  data-test-id="s-search-input-normal"
+                  disabled={this.props.advancedOpen}
+                  placeholder="Search"
+                  value={this.state.term}
+                  onChange={this.handleChange}
+                  slotProps={{ input: { "aria-label": "Search" } }}
+                />
+              )}
+              {this.state.filter == "owner" && (
+                <UserSelect
+                  updateSelected={this.handleSelectAutocomplete}
+                  selected={
+                    this.state.filter == "owner" ? this.state.term : null
+                  }
+                  testId="s-search-input-user"
+                />
+              )}
+              {this.state.filter == "tag" && (
+                <TagSelect
+                  updateSelected={this.handleSelectAutocomplete}
+                  selected={this.state.filter == "tag" ? this.state.term : null}
+                  testId="s-search-input-tag"
+                />
+              )}
+              {["lastModified", "created"].includes(this.state.filter) && (
+                <>
+                  <Tooltip title={formatDateForTooltip(this.state.from)}>
+                    <div>
+                      <DateField
+                        value={this.state.from}
+                        onChange={({ target: { value } }) =>
+                          this.handleDateChange("from", value)
+                        }
+                        maxDate={this.state.to || new Date()}
+                        disableFuture
+                        placeholder="the beginning"
+                        label="From"
+                        data-test-id="s-search-input-from"
+                      />
+                    </div>
+                  </Tooltip>
+                  <Tooltip title={formatDateForTooltip(this.state.to)}>
+                    <div>
+                      <DateField
+                        value={this.state.to}
+                        onChange={({ target: { value } }) =>
+                          this.handleDateChange("to", value)
+                        }
+                        minDate={this.state.from || new Date(1990, 1, 1)}
+                        disableFuture
+                        placeholder="now"
+                        label="To"
+                        data-test-id="s-search-input-to"
+                      />
+                    </div>
+                  </Tooltip>
+                </>
+              )}
+              <IconButton
+                aria-label="Search"
+                type="submit"
+                onClick={this.submitSearch}
+                disabled={this.props.advancedOpen || !this.isValid()}
+                data-test-id="s-search-submit"
+              >
+                <FontAwesomeIcon icon={faSearch} />
+              </IconButton>
+              <Tooltip
+                title="Advanced search"
+                enterDelay={300}
+                data-test-id="toggle-advanced"
+              >
+                <IconButton
+                  onClick={this.toggleAdvanced}
+                  aria-label="Advanced search"
+                >
+                  <FontAwesomeIcon icon={faBars} />
+                </IconButton>
+              </Tooltip>
             </Box>
-            <ScopeDialog
-              open={this.state.recordsDialog}
-              selectedRecords={this.state.selectedRecords}
-              removeRecord={(r) => this.removeRecord(r)}
-              submit={this.submit}
-              searchEverywhere={this.searchEverywhere}
-            />
-          </Paper>
-          <ChemicalSearcher
-            isOpen={this.state.chemicalSearchDialogOpen}
-            onClose={() => this.setState({ chemicalSearchDialogOpen: false })}
+          </Box>
+          <ScopeDialog
+            open={this.state.recordsDialog}
+            selectedRecords={this.state.selectedRecords}
+            removeRecord={(r) => this.removeRecord(r)}
+            submit={this.submit}
+            searchEverywhere={this.searchEverywhere}
           />
-        </>
+        </Paper>
+        <ChemicalSearcher
+          isOpen={this.state.chemicalSearchDialogOpen}
+          onClose={() => this.setState({ chemicalSearchDialogOpen: false })}
+        />
       </>
     );
   }

@@ -127,9 +127,10 @@ export default function CreateMenu(props) {
         )}
         <MenuItem id="createFromTemplate" data-test-id="create-btn-template">
           <Box component="span" sx={{ paddingRight: "6px" }}>
-            <FontAwesomeIcon icon={faFolderOpen} />
+            <FontAwesomeIcon icon={faFolderOpen} aria-hidden="true" />
             <Box
               component="span"
+              aria-hidden="true"
               sx={{
                 position: "absolute",
                 color: "white",

@@ -229,7 +229,7 @@ export default function CompoundSearchDialog({
   const [hasSearched, setHasSearched] = React.useState(false);
   const [displayedSearchTerm, setDisplayedSearchTerm] = React.useState("");
   const validationResult = React.useMemo(() => {
-    return Object.values(selectedCompounds).some((isSelected) => isSelected)
+    return Object.values(selectedCompounds).some(Boolean)
       ? IsValid()
       : IsInvalid("Please select at least one compound.");
   }, [selectedCompounds]);
@@ -240,19 +240,16 @@ export default function CompoundSearchDialog({
       searchType,
     }).then((newResults) => {
       setResults(newResults);
+      // Auto-select when there's exactly one result.
+      setSelectedCompounds(
+        Object.fromEntries(
+          newResults.map((c) => [c.pubchemId, newResults.length === 1]),
+        ),
+      );
       setHasSearched(true);
       setDisplayedSearchTerm(searchTerm);
     });
   }
-  React.useEffect(() => {
-    if (open) {
-      setSelectedCompounds(
-        Object.fromEntries(
-          results.map((c) => [c.pubchemId, results.length === 1]),
-        ),
-      );
-    }
-  }, [open, results]);
   React.useEffect(() => {
     if (!open) {
       setSearchTerm("");
@@ -280,12 +277,7 @@ export default function CompoundSearchDialog({
     }
   }
   function handleSubmit() {
-    // Get the selected compounds
-    const selected = Object.entries(selectedCompounds)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([id]) => results.find((r) => r.pubchemId === id))
-      .filter(Boolean) as ChemicalCompound[];
-    onCompoundsSelected(selected);
+    onCompoundsSelected(results.filter((r) => selectedCompounds[r.pubchemId]));
     onClose();
   }
   return (
