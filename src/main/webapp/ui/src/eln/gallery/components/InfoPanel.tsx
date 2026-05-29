@@ -91,46 +91,6 @@ const ActionButton = ({
   );
 };
 
-const CustomSwipeableDrawer: typeof SwipeableDrawer = (props) => (
-  <SwipeableDrawer
-    {...props}
-    sx={{
-      zIndex: 1400,
-      [`& .${paperClasses.root}`]: {
-        height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
-        overflow: "visible",
-      },
-      ...props.sx,
-    }}
-  />
-);
-
-/**
- * This components wraps all of the content inside of the floating info panel,
- * adjusting the positioning of the content so that the title and action button
- * are shown even when the panel is closed.
- */
-const MobileInfoPanelContent: React.ComponentType<{
-  children: React.ReactNode;
-}> = ({ children }) => (
-  <Box
-    sx={(theme) => ({
-      position: "absolute",
-      top: -CLOSED_MOBILE_INFO_PANEL_HEIGHT,
-      height: "100%",
-      visibility: "visible",
-      right: 0,
-      left: 0,
-      backgroundColor: "white",
-      borderTopLeftRadius: theme.spacing(2),
-      borderTopRightRadius: theme.spacing(2),
-      boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
-    })}
-  >
-    {children}
-  </Box>
-);
-
 /**
  * In addition to simply stating the name of the selected file, this text field
  * allows users to rename the file in place. At a glance it looks just like the
@@ -740,25 +700,6 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
     />
   );
 };
-const AsposePreviewButton = ({ file }: { file: GalleryFile }) => {
-  const { openAsposePreview, loading } = useAsposePreview();
-  return (
-    <Grid>
-      <ActionButton
-        disabled={loading}
-        onClick={() => {
-          void openAsposePreview(file);
-        }}
-        label={loading ? "Loading" : "View"}
-        sx={{
-          height: "100%",
-          marginTop: "8px",
-        }}
-      />
-    </Grid>
-  );
-};
-
 /**
  * On larger viewports, the info panel is shown in the right column of the
  * gallery. This component is responsible for rendering the metadata of the
@@ -771,6 +712,7 @@ export function InfoPanelForLargeViewports() {
   const { openPdfPreview } = usePdfPreview();
   const { openSnapGenePreview } = useSnapGenePreview();
   const { openSnippetPreview } = useSnippetPreview();
+  const { openAsposePreview, loading: asposeLoading } = useAsposePreview();
   const primaryAction = usePrimaryAction();
   const { openFolder } = useFolderOpen();
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -935,7 +877,21 @@ export function InfoPanelForLargeViewports() {
                     </Grid>
                   );
                 if (action.tag === "aspose")
-                  return <AsposePreviewButton key={null} file={file} />;
+                  return (
+                    <Grid key={null}>
+                      <ActionButton
+                        disabled={asposeLoading}
+                        onClick={() => {
+                          void openAsposePreview(file);
+                        }}
+                        label={asposeLoading ? "Loading" : "View"}
+                        sx={{
+                          height: "100%",
+                          marginTop: "8px",
+                        }}
+                      />
+                    </Grid>
+                  );
                 if (action.tag === "snapgene")
                   return (
                     <Grid
@@ -1058,11 +1014,16 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
   const { openFolder } = useFolderOpen();
   const { trackEvent } = React.useContext(AnalyticsContext);
   return (
-    <CustomSwipeableDrawer
+    <SwipeableDrawer
       key={null}
       anchor="bottom"
       open={mobileInfoPanelOpen}
       sx={{
+        zIndex: 1400,
+        [`& .${paperClasses.root}`]: {
+          height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
+          overflow: "visible",
+        },
         display: {
           xs: "block",
           md: "none",
@@ -1097,7 +1058,24 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
         },
       }}
     >
-      <MobileInfoPanelContent>
+      {/*
+       * Wraps all of the floating info panel's content, positioning it so the
+       * title and action button remain visible even when the panel is closed.
+       */}
+      <Box
+        sx={(theme) => ({
+          position: "absolute",
+          top: -CLOSED_MOBILE_INFO_PANEL_HEIGHT,
+          height: "100%",
+          visibility: "visible",
+          right: 0,
+          left: 0,
+          backgroundColor: "white",
+          borderTopLeftRadius: theme.spacing(2),
+          borderTopRightRadius: theme.spacing(2),
+          boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
+        })}
+      >
         <Stack
           spacing={1}
           sx={{
@@ -1217,7 +1195,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
               .orElse(null)}
           </CardContent>
         </Stack>
-      </MobileInfoPanelContent>
-    </CustomSwipeableDrawer>
+      </Box>
+    </SwipeableDrawer>
   );
 };
