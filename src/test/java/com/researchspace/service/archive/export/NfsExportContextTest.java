@@ -347,6 +347,23 @@ public class NfsExportContextTest {
   }
 
   @Test
+  public void testNullExporterSkipsDownloadAndRecordsNoReadAccess() throws IOException {
+    // a null exporter has no identity to evaluate the ACL against; deny rather than NPE
+    when(nfsClient.isUserLoggedIn()).thenReturn(true);
+    exportConfig.setExporter(null);
+
+    NfsResourceDetails denied =
+        nfsContext.getDownloadedNfsResourceDetails(testNfsFileElem, support);
+    assertNull(denied);
+    assertEquals(1, nfsContext.getErrors().size());
+    assertEquals(
+        "no read access to 'Test FS' File System",
+        nfsContext.getErrors().values().iterator().next());
+
+    verify(mockNfsFileHandler, never()).downloadNfsFileToRSpace(any(), any(), any());
+  }
+
+  @Test
   public void checkNfsDownloadNotStartedIfNotEnoughDiskSpace() throws IOException {
 
     // mock nfs client being logged in

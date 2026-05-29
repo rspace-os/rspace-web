@@ -2,6 +2,7 @@ package com.researchspace.service.archive.export;
 
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.archive.model.IArchiveExportConfig;
+import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -95,7 +96,8 @@ public class NfsExportContext {
               + fileSystemId);
       return null;
     }
-    if (aclChecker != null && !aclChecker.canRead(exportConfig.getExporter(), fileSystem)) {
+    User exporter = exportConfig.getExporter();
+    if (aclChecker != null && (exporter == null || !aclChecker.canRead(exporter, fileSystem))) {
       errors.put(
           fileMapKey,
           messages.getMessage(
