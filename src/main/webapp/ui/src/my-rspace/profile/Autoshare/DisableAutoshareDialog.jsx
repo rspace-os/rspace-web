@@ -1,6 +1,7 @@
 "use strict";
 import React from "react";
 import { Switch, Tooltip } from "@mui/material";
+import { switchClasses } from "@mui/material/Switch";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../../theme";
@@ -88,12 +89,12 @@ function DisableAutoshareDialog({
               onChange={handleClickOpen}
               slotProps={{ input: { "aria-label": "Disable autosharing" } }}
               sx={{
-                "& .MuiSwitch-switchBase": {
+                [`& .${switchClasses.switchBase}`]: {
                   color: blue[200],
-                  "&.Mui-checked": {
+                  [`&.${switchClasses.checked}`]: {
                     color: blue[400],
                   },
-                  "&.Mui-checked + .MuiSwitch-track": {
+                  [`&.${switchClasses.checked} + .${switchClasses.track}`]: {
                     backgroundColor: blue[400],
                   },
                 },
