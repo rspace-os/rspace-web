@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -69,7 +70,7 @@ public class NfsController extends BaseController {
 
   @Autowired private UserKeyManager userKeyManager;
 
-  @Autowired private FilestoreAclChecker aclChecker;
+  @Autowired @Setter private FilestoreAclChecker aclChecker;
 
   /**
    * @return a view of login dialog for file system
@@ -140,6 +141,7 @@ public class NfsController extends BaseController {
         return getText(NO_FILE_PATHS_IN_DIR_NAME);
     }
     User user = getPrincipalUser(p);
+    aclChecker.assertCanRead(user, nfsManager.getFileSystem(nfsLoginData.getFileSystemId()));
     Map<Long, NfsClient> nfsClients = retrieveNfsClientsMapFromSession(request);
 
     String loginResult =

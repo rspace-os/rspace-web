@@ -215,6 +215,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     assertFilestoresApiEnabled(user);
     NfsFileSystem filesystem = nfsManager.getFileSystem(filesystemId);
+    aclChecker.assertCanRead(user, filesystem);
     NfsClient nfsClient =
         credentialsStore.validateCredentialsAndLoginNfs(credentials, errors, user, filesystem);
     try {

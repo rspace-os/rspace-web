@@ -12,6 +12,7 @@ import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.DiskSpaceChecker;
+import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.NfsFileHandler;
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +45,8 @@ public class NfsExportContext {
   private Map<String, String> folderSummaryMsgs = new HashMap<>();
 
   private IArchiveExportConfig exportConfig;
+
+  private FilestoreAclChecker aclChecker;
 
   public NfsExportContext(IArchiveExportConfig aconfig) {
     exportConfig = aconfig;
@@ -83,6 +86,15 @@ public class NfsExportContext {
           "skipping export of nfs element "
               + nfsTarget.getPath()
               + " as user not logged into "
+              + fileSystemId);
+      return null;
+    }
+    if (aclChecker != null && !aclChecker.canRead(exportConfig.getExporter(), fileSystem)) {
+      errors.put(fileMapKey, "no read access to '" + fileSystem.getName() + "' File System");
+      log.info(
+          "skipping export of nfs element "
+              + nfsTarget.getPath()
+              + " as user has no read access to filesystem "
               + fileSystemId);
       return null;
     }

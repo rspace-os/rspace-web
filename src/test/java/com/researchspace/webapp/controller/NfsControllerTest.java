@@ -26,6 +26,7 @@ import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.netfiles.NfsViewProperty;
 import com.researchspace.service.NfsManager;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -36,6 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -140,8 +142,10 @@ public class NfsControllerTest extends SpringTransactionalTest {
 
   @Test
   public void testLoginToNfs() {
+    // before stubbing manager.loginToNfs the call returns NEED_LOG_IN_MSG
     String loginResult =
-        controller.loginToNfs(1L, "username", "password", "target_dir", request, principalStub);
+        controller.loginToNfs(
+            TEST_FILE_SYSTEM_ID, "username", "password", "target_dir", request, principalStub);
     assertEquals(NEED_LOG_IN_MSG, loginResult);
     when(nfsManagerMock.loginToNfs(
             eq(TEST_FILE_SYSTEM_ID),
@@ -205,6 +209,24 @@ public class NfsControllerTest extends SpringTransactionalTest {
 
     assertFalse("after download file should be deleted", tempFile.exists());
     assertFalse("temp parent folder should be deleted", tempParentFolder.exists());
+  }
+
+  @Test
+  public void loginToNfsWithJson_userNotOnReadWhitelistForNoneAuth_throwsAuthorizationException() {
+    // ACL check should fire before nfsManager.loginToNfs for NONE-auth filesystems
+    testNfsFileSystem.setAuthType(NfsAuthenticationType.NONE);
+    testNfsFileSystem.setReadWhitelist("someoneElse");
+    testNfsFileSystem.setWriteWhitelist(null);
+    controller.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
+
+    NfsController.NfsLoginData data =
+        new NfsController.NfsLoginData(TEST_FILE_SYSTEM_ID, "u", "p", null);
+    try {
+      controller.loginToNfsWithJson(data, request, principalStub);
+      org.junit.Assert.fail("expected AuthorizationException");
+    } catch (AuthorizationException expected) {
+      // expected
+    }
   }
 
   @Test

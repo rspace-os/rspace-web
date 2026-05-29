@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.NfsFileHandler;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.validation.BindException;
 
 class GalleryFilestoresApiControllerReadAclTest {
 
@@ -32,6 +34,7 @@ class GalleryFilestoresApiControllerReadAclTest {
   @Mock private NfsFileHandler nfsFileHandler;
   @Mock private NfsFactory nfsFactory;
   @Mock private IPropertyHolder propertyHolder;
+  @Mock private GalleryFilestoresCredentialsStore credentialsStore;
   @Mock private User user;
   @Mock private HttpServletResponse response;
 
@@ -44,6 +47,7 @@ class GalleryFilestoresApiControllerReadAclTest {
     controller = new GalleryFilestoresApiController();
     controller.nfsManager = nfsManager;
     controller.aclChecker = GalleryFilestoreTestUtils.filestoreAclCheckerForTest();
+    controller.credentialsStore = credentialsStore;
     controller.deletionManager = deletionManager;
     controller.setNfsFileHandler(nfsFileHandler);
     controller.setNfsFactory(nfsFactory);
@@ -110,6 +114,22 @@ class GalleryFilestoresApiControllerReadAclTest {
         () -> controller.createFilestore(fsId, "myStore", "/some/path", user));
 
     verify(nfsManager, never()).createAndSaveNewFileStore(any(), any(), any(), any());
+  }
+
+  @Test
+  void loginToFilesystem_userNotOnReadWhitelist_throwsAuthorizationException()
+      throws BindException {
+    Long fsId = 1L;
+    NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(fsId);
+    fs.setReadWhitelist("alice");
+    fs.setWriteWhitelist(null);
+    when(nfsManager.getFileSystem(fsId)).thenReturn(fs);
+
+    assertThrows(
+        AuthorizationException.class,
+        () -> controller.loginToFilesystem(fsId, new ApiNfsCredentials(), null, user));
+
+    verify(credentialsStore, never()).validateCredentialsAndLoginNfs(any(), any(), any(), any());
   }
 
   @Test

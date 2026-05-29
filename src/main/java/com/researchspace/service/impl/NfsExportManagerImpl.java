@@ -22,6 +22,7 @@ import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.DiskSpaceChecker;
+import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.NfsExportManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.archive.export.NfsExportContext;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +49,8 @@ public class NfsExportManagerImpl implements NfsExportManager {
   @Autowired private DiskSpaceChecker diskSpaceChecker;
 
   @Autowired private NfsManager nfsManager;
+
+  @Autowired @Setter private FilestoreAclChecker aclChecker;
 
   @Override
   public NfsExportPlan generateQuickExportPlan(List<GlobalIdentifier> recordsToExport) {
@@ -109,7 +113,7 @@ public class NfsExportManagerImpl implements NfsExportManager {
       IArchiveExportConfig archiveExportConfig) {
 
     plan.clearCheckedNfsLinks();
-    checkFoundLinksOnConnectedFileSystems(plan, nfsClients);
+    checkFoundLinksOnConnectedFileSystems(plan, nfsClients, archiveExportConfig.getExporter());
     addExportFilterMsgForCheckedLinksInPlan(plan, archiveExportConfig);
     setArchiveSizeLimitProperties(plan);
   }
@@ -122,7 +126,7 @@ public class NfsExportManagerImpl implements NfsExportManager {
       "not logged into connected File System";
 
   private void checkFoundLinksOnConnectedFileSystems(
-      NfsExportPlan plan, Map<Long, NfsClient> nfsClients) {
+      NfsExportPlan plan, Map<Long, NfsClient> nfsClients, User exporter) {
     for (NfsElement nfsElem : plan.getFoundNfsLinks().values()) {
       NfsFileStore fileStore = plan.getFoundFileStoresByIdMap().get(nfsElem.getFileStoreId());
       Long fileSystemId = fileStore.getFileSystem().getId();
@@ -134,6 +138,9 @@ public class NfsExportManagerImpl implements NfsExportManager {
         NfsClient nfsClient = nfsClients.get(fileSystemId);
         if (nfsClient == null || !nfsClient.isUserLoggedIn()) {
           plan.addCheckedNfsLinkMsg(fileSystemId, absolutePath, NOT_LOGGED_INTO_FILE_SYSTEM_MSG);
+        } else if (aclChecker != null && !aclChecker.canRead(exporter, fileStore.getFileSystem())) {
+          // skip the remote query when the exporter has no read access on the filesystem
+          plan.addCheckedNfsLinkMsg(fileSystemId, absolutePath, RESOURCE_NOT_ACCESSIBLE_MSG);
         } else {
           if (nfsElem.isFolderLink()) {
             try {
