@@ -333,7 +333,7 @@
           <usedDependencies>
             <!-- these dependencies show up as false positives in the unused dependency list -->
             <dependency>org.tuckey:urlrewritefilter</dependency> <!-- used but not referenced in code -->
-            <dependency>mysql:mysql-connector-java</dependency> <!-- used at runtime but also needed during compilation as used by another plugin -->
+            <dependency>com.mysql:mysql-connector-j</dependency> <!-- used at runtime but also needed during compilation as used by another plugin -->
             <dependency>jaxen:jaxen</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>com.fasterxml:classmate</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.hibernate.orm:hibernate-jcache</dependency> <!-- used but not referenced in code -->
@@ -599,8 +599,8 @@
     </dependency>
     <dependency>
       <!-- used at runtime but also needed during compilation as used by another plugin -->
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
       <version>${jdbc.version}</version>
     </dependency>
     <dependency>
@@ -1354,7 +1354,7 @@
           <artifactId>jboss-logging</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.hibernate</groupId>
+          <groupId>org.hibernate.orm</groupId>
           <artifactId>hibernate-core</artifactId>
         </exclusion>
       </exclusions>
@@ -1371,7 +1371,7 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.hibernate</groupId>
+      <groupId>org.hibernate.validator</groupId>
       <artifactId>hibernate-validator</artifactId>
       <version>${hibernate.validator.version}</version>
       <exclusions>
@@ -1388,12 +1388,12 @@
       <version>1.5.1</version>
     </dependency>
     <dependency>
-      <groupId>org.hibernate</groupId>
+      <groupId>org.hibernate.orm</groupId>
       <artifactId>hibernate-envers</artifactId>
       <version>${hibernate.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.hibernate</groupId>
+      <groupId>org.hibernate.orm</groupId>
       <artifactId>hibernate-core</artifactId>
       <version>${hibernate.version}</version>
       <exclusions>
@@ -2280,8 +2280,8 @@
             <dependencies>
               <!-- specify the dependent jdbc driver here -->
               <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${jdbc.version}</version>
               </dependency>
             </dependencies>
@@ -2392,8 +2392,8 @@
             <dependencies>
               <!-- specify the dependent jdbc driver here -->
               <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${jdbc.version}</version>
               </dependency>
             </dependencies>
