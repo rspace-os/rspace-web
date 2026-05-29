@@ -4,18 +4,25 @@ import { observer } from "mobx-react-lite";
 import { useTheme } from "@mui/material/styles";
 import SvgIcon from "@mui/material/SvgIcon";
 
-function StyledBadge({
-  inline,
-  selected,
-  ...rest
-}: {
-  inline: boolean;
-  selected: boolean;
-} & React.ComponentProps<typeof Badge>): React.ReactNode {
+type NumberedLocationArgs = {
+  number: number;
+  inline?: boolean;
+  shadow?: boolean;
+  selected?: boolean;
+};
+
+function NumberedLocation({
+  number,
+  inline = false,
+  shadow = false,
+  selected = false,
+}: NumberedLocationArgs): React.ReactNode {
   const theme = useTheme();
+
   return (
     <Badge
-      {...rest}
+      badgeContent={number}
+      showZero
       sx={{
         marginRight: inline ? 6 : 0,
         cursor: "inherit",
@@ -44,31 +51,6 @@ function StyledBadge({
           },
         },
       }}
-    />
-  );
-}
-
-type NumberedLocationArgs = {
-  number: number;
-  inline?: boolean;
-  shadow?: boolean;
-  selected?: boolean;
-};
-
-function NumberedLocation({
-  number,
-  inline = false,
-  shadow = false,
-  selected = false,
-}: NumberedLocationArgs): React.ReactNode {
-  const theme = useTheme();
-
-  return (
-    <StyledBadge
-      badgeContent={number}
-      showZero
-      inline={inline}
-      selected={selected}
     >
       <SvgIcon
         sx={{
@@ -96,7 +78,7 @@ function NumberedLocation({
           }}
         />
       </SvgIcon>
-    </StyledBadge>
+    </Badge>
   );
 }
 

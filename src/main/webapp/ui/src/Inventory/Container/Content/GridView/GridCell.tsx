@@ -88,7 +88,6 @@ function GridCell({
       onMouseDown={(e: React.MouseEvent) => {
         e.preventDefault();
       }}
-      width={width}
       onFocus={() => {
         location.toggleSelected(true);
       }}
@@ -106,7 +105,6 @@ function GridCell({
         color: "grey",
         borderBottom: "none",
         "&:hover, &:focus": { backgroundColor: theme.palette.grey[200] },
-        "&:active": {},
         padding: "3px !important",
         width,
         background: hoverEffect ? "rgba(0, 0, 0, 0.04)" : "unset",

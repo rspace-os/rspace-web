@@ -2,33 +2,10 @@ import FileField from "../../../components/Inputs/FileField";
 import React from "react";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
-import { useTheme } from "@mui/material/styles";
 import TitledBox from "@/components/TitledBox";
 import RemoveButton from "@/components/RemoveButton";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-
-function ErrorDetails({
-  errorMessage,
-}: {
-  errorMessage: string | null | undefined;
-}): React.ReactNode {
-  const theme = useTheme();
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        padding: theme.spacing(0.5, 2),
-      }}
-    >
-      <Box component="dt" sx={{ color: theme.palette.text.secondary }}>Error details:</Box>
-      <Box component="dd" sx={{ marginLeft: theme.spacing(1), color: theme.palette.error.main }}>
-        {errorMessage}
-      </Box>
-    </Box>
-  );
-}
 
 type FileArgs = {
   loadedFile?: File | null;
@@ -74,7 +51,14 @@ function FileForImport({ loadedFile }: FileArgs): React.ReactNode {
         </Grid>
       </TitledBox>
       {importStore.isCurrentImportState("parsingFailed") && (
-        <ErrorDetails errorMessage={importStore.importData?.fileErrorMessage} />
+        <Box sx={{ display: "flex", alignItems: "center", py: 0.5, px: 2 }}>
+          <Box component="dt" sx={{ color: "text.secondary" }}>
+            Error details:
+          </Box>
+          <Box component="dd" sx={{ ml: 1, color: "error.main" }}>
+            {importStore.importData?.fileErrorMessage}
+          </Box>
+        </Box>
       )}
     </>
   );

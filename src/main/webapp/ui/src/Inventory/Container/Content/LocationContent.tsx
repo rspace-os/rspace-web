@@ -83,6 +83,15 @@ const containerTypeSx = (
   return undefined;
 };
 
+// Shared styling for the placeholder number shown in empty GRID/IMAGE locations.
+const numberBoxSx = {
+  fontSize: "12px",
+  backgroundColor: "white",
+  width: "100%",
+  height: "100%",
+  textAlign: "center",
+} as const;
+
 type LocationContentArgs = {
   location: Location;
   container: Container;
@@ -200,14 +209,7 @@ function LocationContent({
         ) : location.parentContainer.cType === "GRID" ? (
           <Box
             tabIndex={tabIndex}
-            sx={{
-              fontSize: "12px",
-              backgroundColor: "white",
-              width: "100%",
-              height: "100%",
-              textAlign: "center",
-              paddingTop: "calc(50% - 10px)",
-            }}
+            sx={{ ...numberBoxSx, paddingTop: "calc(50% - 10px)" }}
           >
             {(location.coordY - 1) *
               (location.parentContainer.gridLayout?.columnsNumber || 0) +
@@ -225,17 +227,7 @@ function LocationContent({
                   loc.coordY === location.coordY,
               ) + 1;
             return (
-              <Box
-                sx={{
-                  fontSize: "12px",
-                  backgroundColor: "white",
-                  width: "100%",
-                  height: "100%",
-                  textAlign: "center",
-                }}
-              >
-                {imageIndex}
-              </Box>
+              <Box sx={numberBoxSx}>{imageIndex}</Box>
             );
           })()
         ) : (
