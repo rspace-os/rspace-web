@@ -101,4 +101,18 @@ class NfsExportManagerImplTest {
 
     verify(nfsClient).queryForNfsFile(any(NfsTarget.class));
   }
+
+  @Test
+  void nullExportConfig_skipsAclCheckAndStillScans() {
+    // a null config has no exporter to evaluate the ACL against; the scan must still run
+    fileSystem.setReadWhitelist("alice");
+    fileSystem.setWriteWhitelist(null);
+    NfsFileDetails details = new NfsFileDetails("test.txt");
+    details.setFileSystemFullPath("/test.txt");
+    when(nfsClient.queryForNfsFile(any(NfsTarget.class))).thenReturn(details);
+
+    manager.scanFileSystemsForFoundNfsLinks(plan, nfsClients, null);
+
+    verify(nfsClient).queryForNfsFile(any(NfsTarget.class));
+  }
 }

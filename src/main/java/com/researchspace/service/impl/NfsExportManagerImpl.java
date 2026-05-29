@@ -116,7 +116,8 @@ public class NfsExportManagerImpl implements NfsExportManager {
       IArchiveExportConfig archiveExportConfig) {
 
     plan.clearCheckedNfsLinks();
-    checkFoundLinksOnConnectedFileSystems(plan, nfsClients, archiveExportConfig.getExporter());
+    User exporter = archiveExportConfig == null ? null : archiveExportConfig.getExporter();
+    checkFoundLinksOnConnectedFileSystems(plan, nfsClients, exporter);
     addExportFilterMsgForCheckedLinksInPlan(plan, archiveExportConfig);
     setArchiveSizeLimitProperties(plan);
   }
@@ -141,7 +142,9 @@ public class NfsExportManagerImpl implements NfsExportManager {
         NfsClient nfsClient = nfsClients.get(fileSystemId);
         if (nfsClient == null || !nfsClient.isUserLoggedIn()) {
           plan.addCheckedNfsLinkMsg(fileSystemId, absolutePath, NOT_LOGGED_INTO_FILE_SYSTEM_MSG);
-        } else if (aclChecker != null && !aclChecker.canRead(exporter, fileStore.getFileSystem())) {
+        } else if (exporter != null
+            && aclChecker != null
+            && !aclChecker.canRead(exporter, fileStore.getFileSystem())) {
           // skip the remote query when the exporter has no read access on the filesystem
           plan.addCheckedNfsLinkMsg(fileSystemId, absolutePath, RESOURCE_NOT_ACCESSIBLE_MSG);
         } else {
