@@ -12,6 +12,7 @@ import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemOption;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
@@ -206,7 +207,26 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     Set<EcatMediaFile> filesRetrieved = new LinkedHashSet<>();
     for (Long recordId : recordIds) {
       try {
-        filesRetrieved.add(baseRecordManager.retrieveMediaFile(user, recordId));
+        BaseRecord record = baseRecordManager.get(recordId, user);
+        if (record.isFolder()) {
+          errors.addError(
+              new ObjectError(
+                  "recordIds",
+                  new String[] {"gallery.filestore.folder.upload.rejected"},
+                  null,
+                  "Cannot move folders to filestores."));
+        } else if (record.isMediaRecord()) {
+          // baseRecordManager.get() bypasses READ permission for record IDs; re-fetch via
+          // retrieveMediaFile() which asserts the permission before returning the file.
+          filesRetrieved.add(baseRecordManager.retrieveMediaFile(user, recordId));
+        } else {
+          errors.addError(
+              new ObjectError(
+                  "recordIds",
+                  new String[] {"gallery.filestore.not.media.file"},
+                  null,
+                  "Only media files can be moved to filestores."));
+        }
       } catch (ObjectRetrievalFailureException ex) {
         errors.addError(new ObjectError("recordIds", ex.getMessage()));
       }

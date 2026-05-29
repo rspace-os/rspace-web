@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
-<link href="<c:url value='/styles/preferences.css'/>" rel="stylesheet" />
-<script src="<c:url value='/scripts/pages/rspace/preferences.js'/>"></script>
+<link href="<rst:assetUrl value='/styles/preferences.css'/>" rel="stylesheet" />
+<script src="<rst:assetUrl value='/scripts/pages/rspace/preferences.js'/>"></script>
 
 <head>
     <title><fmt:message key="userList.title"/></title>

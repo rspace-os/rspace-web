@@ -105,12 +105,14 @@ class GalleryIrodsApiControllerTest {
     when(nfsAuthentication.login(eq(USERNAME), eq(PASSWORD), any(), any()))
         .thenReturn(nfsClientLoggedIn);
 
-    when(baseRecordManager.retrieveMediaFile(any(), eq(123L)))
-        .thenReturn(new EcatAudioFileStub(1L, "file1.wav"));
-    when(baseRecordManager.retrieveMediaFile(any(), eq(456L)))
-        .thenReturn(new EcatAudioFileStub(2L, "file2.wav"));
-    when(baseRecordManager.retrieveMediaFile(any(), eq(789L)))
+    when(baseRecordManager.get(eq(123L), any())).thenReturn(new EcatAudioFileStub(1L, "file1.wav"));
+    when(baseRecordManager.get(eq(456L), any())).thenReturn(new EcatAudioFileStub(2L, "file2.wav"));
+    when(baseRecordManager.get(eq(789L), any()))
         .thenThrow(new ObjectRetrievalFailureException("EcatMediaFile", "789"));
+    when(baseRecordManager.retrieveMediaFile(any(User.class), eq(123L)))
+        .thenReturn(new EcatAudioFileStub(1L, "file1.wav"));
+    when(baseRecordManager.retrieveMediaFile(any(User.class), eq(456L)))
+        .thenReturn(new EcatAudioFileStub(2L, "file2.wav"));
 
     when(nfsManager.uploadFilesToNfs(anyCollection(), anyString(), any(), any()))
         .thenReturn(new ApiExternalStorageOperationResult());

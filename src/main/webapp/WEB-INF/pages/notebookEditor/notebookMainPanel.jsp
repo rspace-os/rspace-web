@@ -6,8 +6,8 @@
         <axt:importFromProtocolsIo parentId="${selectedNotebookId}" />
     </c:if>
     <c:url var="createFromTemplateURL" value="/workspace/editor/structuredDocument/create/${selectedNotebookId}"></c:url>
-    <script src="<c:url value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>
-    <script src="<c:url value='/scripts/bower_components/tableexport.js/dist/js/tableexport.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/bower_components/tableexport.js/dist/js/tableexport.js'/>"></script>
     <div class="bootstrap-custom-flat">
         <div class="breadcrumb">
             <div class="container">

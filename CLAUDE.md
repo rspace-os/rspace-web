@@ -1,4 +1,4 @@
-# Claude.md
+# CLAUDE.md
 
 Project instructions for AI coding agents (Claude Code, OpenAI Codex, Gemini CLI, Cursor, etc.).
 
@@ -39,7 +39,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 
 **Frontend** (`src/main/webapp/ui/`):
 - TypeScript + React, Node 24, npm
-- Webpack bundler, Material-UI v5
+- Vite bundler, Material-UI v5
 - Vitest (unit tests), Playwright (component/E2E tests)
 - MobX (legacy state) + React Query (newer state)
 
@@ -67,11 +67,11 @@ The `rspacedbuser` credentials must match `src/main/resources/rs.properties`.
 
 ```bash
 # First run (creates/resets DB)
-./mvnw clean jetty:run -Denvironment=drop-recreate-db -DgenerateReactDist \
+./mvnw clean jetty:run -Denvironment=drop-recreate-db -DreactDevMode=true \
   -Dspring.profiles.active=run -DRS.devlogLevel=INFO
 
 # Subsequent runs (keep existing DB)
-./mvnw jetty:run -Denvironment=keepdbintact -Dspring.profiles.active=run
+./mvnw jetty:run -Denvironment=keepdbintact -Dspring.profiles.active=run -DreactDevMode=true
 ```
 
 Access at `http://localhost:8080`. Test users: `user1a`–`user8h`, admin: `sysadmin1`.
@@ -80,14 +80,14 @@ Access at `http://localhost:8080`. Test users: `user1a`–`user8h`, admin: `sysa
 
 ```bash
 cd src/main/webapp/ui
-npm ci --force
-npm run serve  # Webpack watch mode
+npm ci
+npm run serve  # Vite dev server
 ```
 
 ### Full Build (no tests)
 
 ```bash
-mvn clean package -DskipTests=true -DgenerateReactDist=clean
+mvn clean package -DskipTests=true
 ```
 
 ## Testing

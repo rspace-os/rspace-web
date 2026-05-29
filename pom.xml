@@ -84,6 +84,47 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>2.0.0</version>
+        <configuration>
+          <nodeVersion>v24.15.0</nodeVersion>
+          <npmVersion>11.14.1</npmVersion>
+          <workingDirectory>src/main/webapp/ui</workingDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <id>Install node and npm locally to the project</id>
+            <goals>
+              <goal>install-node-and-npm</goal>
+            </goals>
+            <configuration>
+              <skip>${reactDevMode}</skip>
+            </configuration>
+          </execution>
+          <execution>
+            <id>Collect npm dependencies</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>${npm.dependencies.collection.arg}</arguments>
+              <skip>${reactDevMode}</skip>
+            </configuration>
+          </execution>
+          <execution>
+            <id>Build react dist files</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run build</arguments>
+              <skip>${reactDevMode}</skip>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <executions>
@@ -260,7 +301,7 @@
           <configuration>
               <java>
                   <googleJavaFormat>
-                      <version>1.19.2</version>
+                      <version>1.28.0</version>
                       <style>GOOGLE</style>
                       <reflowLongStrings>true</reflowLongStrings>
                   </googleJavaFormat>
@@ -2481,191 +2522,6 @@
       </build>
     </profile>
 
-    <!-- generating react dist files, with npm dependencies downloaded through npm install or npm ci -->
-    <profile>
-      <id>generateReactDist-useNpmCi</id>
-      <activation>
-        <property>
-          <name>generateReactDist</name>
-          <value>clean</value>
-        </property>
-      </activation>
-      <properties>
-        <npm.dependencies.collection.arg>ci --force</npm.dependencies.collection.arg> <!-- overrides default value -->
-      </properties>
-    </profile>
-    <profile>
-      <id>generateReactDistFiles</id>
-      <activation>
-        <property>
-          <name>generateReactDist</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.github.eirslett</groupId>
-            <artifactId>frontend-maven-plugin</artifactId>
-            <version>1.15.1</version>
-            <configuration>
-              <nodeVersion>v24.13.1</nodeVersion>
-              <npmVersion>11.14.1</npmVersion>
-              <workingDirectory>src/main/webapp/ui</workingDirectory>
-            </configuration>
-            <executions>
-              <execution>
-                <id>Install node and npm locally to the project</id>
-                <goals>
-                  <goal>install-node-and-npm</goal>
-                </goals>
-              </execution>
-              <execution>
-                <id>Collect npm dependencies</id>
-                <goals>
-                  <goal>npm</goal>
-                </goals>
-                <configuration>
-                  <arguments>${npm.dependencies.collection.arg}</arguments>
-                </configuration>
-              </execution>
-              <execution>
-                <id>Build react dist files</id>
-                <goals>
-                  <goal>npm</goal>
-                </goals>
-                <configuration>
-                  <arguments>run build</arguments>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
-    <profile>
-      <id>rename-static-resources-with-MD5</id>
-      <activation>
-        <property>
-          <name>renameResourcesMD5</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <version>1.7</version>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <id>rename-static-resources-with-md5</id>
-                <phase>process-resources</phase>
-                <configuration>
-                  <target>
-                    <ant antfile="build-resources/md5-ant.xml" inheritRefs="true">
-                      <target name="all"/>
-                    </ant>
-                  </target>
-                </configuration>
-              </execution>
-
-              <execution>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <id>replace-static-resources-references-with-md5</id>
-                <phase>package</phase>
-                <configuration>
-                  <target>
-                    <!-- replace references to original files with ones having md5
-                      extension -->
-                    <replace
-                      dir="${project.build.directory}/${project.build.finalName}"
-                      replacefilterfile="${project.build.directory}/md5_final_replace_tokens.properties">
-                      <include name="**/*.jsp" />
-                      <include name="**/*.tag" />
-                      <include name="**/*.js" />
-                      <include name="**/*.css" />
-                      <include name="**/*.htm" />
-                      <include name="**/*.html" />
-                      <include name="**/integration-static-data*.json"/>
-                      <include name="WEB-INF/urlrewrite.xml" />
-                    </replace>
-                    <!-- remove non-md5 versions of the files to facilitate testing -->
-                    <delete>
-                      <fileset
-                        dir="${project.build.directory}/${project.build.finalName}">
-                        <includesfile
-                          name="${basedir}/build-resources/resources_to_MD5_rename.txt" />
-                      </fileset>
-                    </delete>
-                  </target>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-war-plugin</artifactId>
-            <version>3.3.1</version>
-            <configuration>
-              <webResources>
-                <resource>
-                  <directory>src/main/webapp/META-INF</directory>
-                  <filtering>true</filtering>
-                  <targetPath>META-INF</targetPath>
-                </resource>
-                <resource>
-                  <directory>src/main/webapp/WEB-INF</directory>
-                  <filtering>true</filtering>
-                  <targetPath>WEB-INF</targetPath>
-                  <includes>
-                    <include>security.xml</include>
-                  </includes>
-                </resource>
-                <resource>
-                  <directory>${project.build.directory}/md5_final_files</directory>
-                  <includes>
-                    <include>**/*</include>
-                  </includes>
-                </resource>
-              </webResources>
-            </configuration>
-            <executions>
-              <execution>
-                <!-- disable the default-war build step. -->
-                <id>default-war</id>
-                <phase>none</phase>
-              </execution>
-              <execution>
-                <!-- in prepare-package create an exploded war -->
-                <id>war-exploded</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>exploded</goal>
-                </goals>
-              </execution>
-              <execution>
-                <!-- build the war at the end of the package phase, but don't copy
-                  resources again -->
-                <id>custom-build-war</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>war</goal>
-                </goals>
-                <configuration>
-                  <warSourceExcludes>**/*</warSourceExcludes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
 
   </profiles>
 
@@ -2698,6 +2554,10 @@
     <deployment>dev</deployment>
     <!-- default location of external properties file is actually the classpath one! -->
     <propertyFileDirPlaceholder>classpath:deployments/${deployment}</propertyFileDirPlaceholder>
+    <!-- set to true when using a local Vite dev server, skipping the production Vite build -->
+    <reactDevMode>false</reactDevMode>
+    <!-- opt-in cache busting for legacy /scripts/** and /styles/** assets in dev mode; production always cache-busts -->
+    <legacyAssetCacheBustingInDevMode>false</legacyAssetCacheBustingInDevMode>
 
     <!-- set this to true to create groups in run profile -->
     <groupcreation>false</groupcreation>
@@ -2741,8 +2601,8 @@
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
-    <spotless.version>2.46.1</spotless.version>
-    <npm.dependencies.collection.arg>install --force</npm.dependencies.collection.arg>
+    <spotless.version>3.5.1</spotless.version>
+    <npm.dependencies.collection.arg>ci</npm.dependencies.collection.arg>
 
     <!--Sonar properties-->
     <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce5109/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>

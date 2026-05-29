@@ -1,4 +1,4 @@
-import { test, describe, expect, beforeEach,  } from 'vitest';
+import { test, describe, expect, beforeEach, afterEach } from "vitest";
 import RoRIntegration from "../../system-ror/RoRIntegration";
 import React from "react";
 import axios from "@/common/axios";
@@ -7,6 +7,7 @@ import {
   screen,
   fireEvent,
   act,
+  waitFor,
 } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import v2ROR from "./json/v2Ror.json";
@@ -15,6 +16,11 @@ import rorNotFound from "./json/rorNotFound.json";
 import rorUpdateSucess from "./json/rorUpdateSuccess.json";
 
 import "@/__tests__/__mocks__/resizeObserver";
+
+type HTMLElementWithRorRoot = HTMLElement & {
+  rorRoot?: { unmount: () => void };
+};
+
 const mockAxios = new MockAdapter(axios);
 const getWrapper = () => {
   return render(<RoRIntegration />);
@@ -48,7 +54,13 @@ const setupRoRMocks = (existingGlobalRoRID = "") => {
 beforeEach(() => {
   mockAxios.resetHandlers();
   setupRoRMocks();
+});
 
+afterEach(() => {
+  const existingMainArea: HTMLElementWithRorRoot | null =
+    document.getElementById("mainArea");
+  existingMainArea?.rorRoot?.unmount();
+  document.body.innerHTML = "";
 });
 const setUpComponent = () => {
   act(() => {
@@ -81,6 +93,21 @@ async function assertRoRDetailsText() {
 }
 
 describe("Renders page with ROR data", () => {
+  test("loads the RoR view into mainArea from the config link", async () => {
+    document.body.innerHTML =
+      '<a href="#" id="rorRegistryLink">RoR</a><div id="mainArea">stale content</div>';
+
+    act(() => {
+      window.dispatchEvent(new Event("load"));
+      fireEvent.click(screen.getByRole("link", { name: "RoR" }));
+    });
+
+    await waitFor(() =>
+      expect(screen.queryByText("stale content")).not.toBeInTheDocument()
+    );
+    await screen.findByText("Research Organization Registry (ROR) Integration");
+  });
+
   test("displays page with searchbar when RoR not linked", async () => {
     setUpComponent();
 

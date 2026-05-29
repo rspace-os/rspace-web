@@ -9,11 +9,11 @@
     </title>
 
     <!-- moved to default.jsp -->
-    <!-- <link rel="stylesheet" href="<c:url value='/styles/bootstrap-custom-flat.css'/>" /> -->
+    <!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
 
-    <link rel="stylesheet" href="<c:url value='/styles/system.css'/>" />
-    <script src="<c:url value='/scripts/pages/system/system.js'/>"></script>
-    <script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+    <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
   </head>
 
   <body>
@@ -42,8 +42,8 @@
 
 <!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
-<script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
-<script src="<c:url value='/ui/dist/sysadminUsers.js'/>"></script>
+<rst:bundle bundle="baseSearch" />
+<rst:bundle bundle="sysadminUsers" />
 <!--End React Scripts -->
 </body>
 </html>

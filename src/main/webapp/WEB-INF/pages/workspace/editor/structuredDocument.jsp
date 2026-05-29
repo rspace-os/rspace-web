@@ -4,25 +4,39 @@
   const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
 </script>
 
-<script src="<c:url value='/scripts/tinymceDialogUtils.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tinymceDialogUtils.js'/>"></script>
 
-<!-- Loading jQuery TinyMCE -->
-<script src="<c:url value='/scripts/tinymce/tinymce5109/dompurify.min.js'/>"></script>
-<script src="<c:url value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
-<script src="<c:url value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
-<script src="<c:url value='/ui/dist/tinymceGalleryUtils.js'/>"></script>
-<script src="<c:url value='/scripts/pages/workspace/editor/tinymce5_configuration.js'/>"></script>
-<script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_pasteHandler.js'/>"></script>
-<script src="<c:url value='/scripts/pages/workspace/editor/tinymceRS_scrollHandler.js'/>"></script>
+<!-- Load the legacy TinyMCE 5 runtime first, then preload Vite-managed helper bundles. -->
+<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/dompurify.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
+<rst:bundle bundle="tinymceGalleryUtils" />
+<script>
+  window.RSTinyMCEPluginBundleLoaderUrl = "<rst:assetUrl value='/scripts/viteBundleLoader.mjs'/>";
+  window.RSTinyMCEPluginBundles = Object.assign(
+    {},
+    window.RSTinyMCEPluginBundles,
+    {
+      gallery: "tinymceGallery",
+      pyrat: "tinymcePyrat",
+      stoichiometry: "tinymceStoichiometry",
+      identifiers: "tinymceIdentifiers",
+      pubchem: "tinymcePubchem",
+    },
+  );
+</script>
+<script src="<rst:assetUrl value='/scripts/pages/workspace/editor/tinymce5_configuration.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/workspace/editor/tinymceRS_pasteHandler.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/workspace/editor/tinymceRS_scrollHandler.js'/>"></script>
 
-<script src="<c:url value='/scripts/bower_components/blueimp-file-upload/js/jquery.fileupload.js'/>"></script>
-<script src="<c:url value='/scripts/bower_components/blueimp-file-upload/js/jquery.iframe-transport.js'/>"></script>
-<script src="<c:url value='/scripts/pages/gallery/galleryFileUpload.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/blueimp-file-upload/js/jquery.fileupload.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/blueimp-file-upload/js/jquery.iframe-transport.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/gallery/galleryFileUpload.js'/>"></script>
 
-<script src="<c:url value='/scripts/pages/workspace/editor/documentEdit.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/workspace/editor/documentEdit.js'/>"></script>
 
-<script src="<c:url value='/scripts/pages/messaging/notifications.js'/>"></script>
-<script src="<c:url value='/scripts/pages/messaging/messages.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/messaging/notifications.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
 <script>
   const enforceOntologies = "${enforce_ontologies}" === "true";
   const allowBioOntologies = "${allow_bioOntologies}"  === "true";
@@ -96,15 +110,15 @@
   <div id="tempData" style="display: none"></div>
 
   <!-- React Scripts -->
-  <script src="<c:url value='/ui/dist/structuredDocumentToolbar.js'/>"></script>
-  <script src="<c:url value='/ui/dist/fileTreeToolbar.js'/>"></script>
-  <script src="<c:url value='/ui/dist/tinymceSidebarInfo.js'/>"></script>
-  <script src="<c:url value='/ui/dist/InternalLink.js'/>"></script>
-  <script src="<c:url value='/ui/dist/materialsListing.js'/>"></script>
-    <script src="<c:url value='/ui/dist/externalWorkFlows.js'/>"></script>
-    <script src="<c:url value='/ui/dist/jupyterNotebooks.js'/>"></script>
-  <script src="<c:url value='/ui/dist/associatedInventoryRecords.js'/>"></script>
-  <script src="<c:url value='/ui/dist/tinymceKetcher.js'/>"></script>
-  <script src="<c:url value='/ui/dist/ketcherViewer.js'/>"></script>
+  <rst:bundle bundle="structuredDocumentToolbar" />
+  <rst:bundle bundle="fileTreeToolbar" />
+  <rst:bundle bundle="tinymceSidebarInfo" />
+  <rst:bundle bundle="internalLink" />
+  <rst:bundle bundle="materialsListing" />
+  <rst:bundle bundle="externalWorkFlows" />
+  <rst:bundle bundle="jupyterNotebooks" />
+  <rst:bundle bundle="associatedInventoryRecords" />
+  <rst:bundle bundle="tinymceKetcher" />
+  <rst:bundle bundle="ketcherViewer" />
 
   <!--End React Scripts -->

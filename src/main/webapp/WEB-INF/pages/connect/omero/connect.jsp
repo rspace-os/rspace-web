@@ -2,8 +2,8 @@
 <head>
 
 <title>Connect to Omero</title>
-<script src="/scripts/bower_components/jquery/dist/jquery.js"></script>
-<script src="<c:url value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 
 </head>
 <div id="mainBlock" class="bootstrap-custom-flat">

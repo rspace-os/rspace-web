@@ -1,9 +1,10 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="rst" uri="http://researchspace.com/tags"%>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags"%>
 
 <%@ attribute name="parentId" required="true" type="java.lang.Long"%>
 
-<script src="<c:url value='/scripts/tags/importFromProtocolsIo.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tags/importFromProtocolsIo.js'/>"></script>
 
 <style>
 .seamless {

@@ -11,9 +11,9 @@
     </c:choose>
   <meta name="heading" content="<fmt:message key='groups.shared.title'/>"/>
   <meta name="menu" content="MainMenu"/>
-  <link rel="stylesheet" media="all" href="<c:url value='/styles/simplicity/theme.css'/>" />
-  <script src="<c:url value='/scripts/pages/rspace/sharedRecordsList.js'/>"></script>
-	<script src="<c:url value='/scripts/pages/utils/columnSortToggle.js'/>"></script>   
+  <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" />
+  <script src="<rst:assetUrl value='/scripts/pages/rspace/sharedRecordsList.js'/>"></script>
+	<script src="<rst:assetUrl value='/scripts/pages/utils/columnSortToggle.js'/>"></script>   
 </head>
 
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
@@ -76,4 +76,4 @@
 </rst:hasDeploymentProperty>
 
 <!-- Import React search -->
-<script src="<c:url value='/ui/dist/baseSearch.js'/>"></script>
+<rst:bundle bundle="baseSearch" />

@@ -6,7 +6,7 @@
 </c:if>
 
 <rst:hasDeploymentProperty name="cloud" value="true">
-  <script src="<c:url value='/scripts/pages/signup/google-signin.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/pages/signup/google-signin.js'/>"></script>
   <script src="https://accounts.google.com/gsi/client?onload=onLoad" async defer></script>
 </rst:hasDeploymentProperty>
 
@@ -134,7 +134,7 @@
     </div>
 
     <div id="app-bar"></div>
-    <script type="module" src="/../ui/dist/appBar.js"></script>
+    <rst:bundle bundle="appBar" />
 
     <script type='text/javascript'>
       var AppContext_Glbal = new String("${pageContext.request.contextPath}");
@@ -142,7 +142,7 @@
 
     <rst:hasDeploymentProperty name="standalone" value="false">
       <c:if test="${empty sessionScope.com_rs_timezone or  sessionScope.firstRequest == true}">
-        <script src="<c:url value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
+        <script src="<rst:assetUrl value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
         <script type="text/javascript">
           $(document).ready(function () {
             // this will be run on 1st pageload in session or
@@ -217,11 +217,10 @@
 </div>
 
 <!-- Import React and Toast messages on any page that has a  header -->
-<script src="<c:url value='/ui/dist/runtime.js'/>"></script>
-<script src="<c:url value='/ui/dist/userDetails.js'/>"></script>
+<rst:bundle bundle="userDetails" />
 
 <div id="toast-message" data-test-id="toast-messages-wrapper"></div>
-<script src="<c:url value='/ui/dist/toastMessage.js'/>"></script>
+<rst:bundle bundle="toastMessage" />
 
-<script src="<c:url value='/ui/dist/confirmationDialog.js'/>"></script>
-<script src="<c:url value='/ui/dist/pdfPreviewDialog.js'/>"></script>
+<rst:bundle bundle="confirmationDialog" />
+<rst:bundle bundle="pdfPreviewDialog" />

@@ -58,20 +58,22 @@
 					</td>
 					</rst:hasDeploymentProperty>
 					<td>
-						<c:forEach items="${user.groups}" var="group">
-              <c:if test="${!(group.privateProfile and applicationScope['RS_DEPLOY_PROPS']['profileHidingEnabled'] and not subject.isConnectedToGroup(group))}">
-              	<a href="/groups/view/${group.id}"> ${group.displayName} </a>
-              </c:if>
-						</c:forEach>
+						<ul style="margin: 0; padding: 0;">
+							<c:forEach items="${user.groups}" var="group">
+							  <c:if test="${!(group.privateProfile and applicationScope['RS_DEPLOY_PROPS']['profileHidingEnabled'] and not subject.isConnectedToGroup(group))}">
+								<li><a href="/groups/view/${group.id}">${group.displayName}</a><br />(${group.groupType.label})</li>
+							  </c:if>
+							</c:forEach>
+						</ul>
 					</td>
 					<td style="word-wrap: break-word;">
 						${user.userInfo.email}
 					</td>
 					<td>
 						<c:if test="${not empty user.orcidId}">
-							<a class="orcidIdLink" target="_blank" href="http://orcid.org/${user.orcidId}">
-								<img class="orcidIdImg" src="/images/integrations/orcid-small.png" style="vertical-align: text-bottom;" />
-								http://orcid.org/${user.orcidId}
+							<a class="orcidIdLink" target="_blank" href="https://orcid.org/${user.orcidId}">
+								<img class="orcidIdImg" src="/images/integrations/orcid-small.png" style="vertical-align: text-bottom;" alt="ORCiD Logo" />
+								https://orcid.org/${user.orcidId}
 							</a>
 							<br />
 						</c:if> 

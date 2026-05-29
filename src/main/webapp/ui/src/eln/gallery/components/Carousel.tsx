@@ -51,13 +51,13 @@ const StyledDocument = styled(Document)(() => ({
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
- * functionality. Taken from the example code for react-pdf
- * https://github.com/wojtekmaj/react-pdf/blob/main/sample/webpack5/Sample.tsx
+ * functionality. Taken from the example code for react-pdf.
  */
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url,
-).toString();
+// @TODO This may not be necessary
+// pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+//   "pdfjs-dist/build/pdf.worker.min.mjs",
+//   import.meta.url,
+// ).toString();
 
 /*
  * Arbitrary number that determines how much the zoom in and out buttons zoom

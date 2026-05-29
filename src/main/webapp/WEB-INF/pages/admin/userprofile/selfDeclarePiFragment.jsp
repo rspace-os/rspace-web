@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<script src="/scripts/pages/rspace/selfDeclarePi.js"></script>
+<script src="<rst:assetUrl value='/scripts/pages/rspace/selfDeclarePi.js'/>"></script>
 
 <hr/>
 

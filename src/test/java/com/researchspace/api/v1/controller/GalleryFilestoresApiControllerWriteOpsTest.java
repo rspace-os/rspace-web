@@ -23,6 +23,7 @@ import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsAuthentication;
@@ -40,6 +41,7 @@ import com.researchspace.service.impl.FilestoreWriteManagerImpl;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.io.IOException;
 import java.util.Set;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -101,9 +103,11 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     when(nfsAuthentication.login(eq(USERNAME), eq(PASSWORD), any(), any()))
         .thenReturn(nfsClientLoggedIn);
 
-    when(baseRecordManager.retrieveMediaFile(any(), eq(123L)))
+    when(baseRecordManager.get(eq(123L), any())).thenReturn(new EcatAudioFileStub(1L, "file1.wav"));
+    when(baseRecordManager.get(eq(456L), any())).thenReturn(new EcatAudioFileStub(2L, "file2.wav"));
+    when(baseRecordManager.retrieveMediaFile(any(User.class), eq(123L)))
         .thenReturn(new EcatAudioFileStub(1L, "file1.wav"));
-    when(baseRecordManager.retrieveMediaFile(any(), eq(456L)))
+    when(baseRecordManager.retrieveMediaFile(any(User.class), eq(456L)))
         .thenReturn(new EcatAudioFileStub(2L, "file2.wav"));
 
     when(nfsManager.uploadFilesToNfs(
@@ -143,9 +147,9 @@ class GalleryFilestoresApiControllerWriteOpsTest {
 
   @Test
   void copyToFilestore_multipleInvalidRecordIds_allErrorsReported() {
-    when(baseRecordManager.retrieveMediaFile(any(), eq(789L)))
+    when(baseRecordManager.get(eq(789L), any()))
         .thenThrow(new ObjectRetrievalFailureException("EcatMediaFile", "789"));
-    when(baseRecordManager.retrieveMediaFile(any(), eq(987L)))
+    when(baseRecordManager.get(eq(987L), any()))
         .thenThrow(new ObjectRetrievalFailureException("EcatMediaFile", "987"));
     ApiGalleryFilestoreOperationRequest request =
         new ApiGalleryFilestoreOperationRequest(
@@ -503,5 +507,78 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         srcId, request, new BeanPropertyBindingResult(request, "request"), user);
 
     verify(srcClient).deleteFile("src-root/file.png");
+  }
+
+  @Test
+  void copyToFilestore_folderRecordId_throwsBindException() {
+    Long folderId = 999L;
+    BaseRecord folderMock = mock(BaseRecord.class);
+    when(folderMock.isFolder()).thenReturn(true);
+    when(baseRecordManager.get(eq(folderId), any())).thenReturn(folderMock);
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(
+            Set.of(folderId), new ApiNfsCredentials(null, USERNAME, PASSWORD));
+
+    BindException ex =
+        assertThrows(
+            BindException.class,
+            () ->
+                controller.copyToFilestore(
+                    validFilestorePathId,
+                    request,
+                    new BeanPropertyBindingResult(request, "request"),
+                    user));
+
+    assertEquals(1, ex.getAllErrors().size());
+  }
+
+  @Test
+  void moveToFilestore_folderRecordId_throwsBindException() {
+    Long folderId = 999L;
+    BaseRecord folderMock = mock(BaseRecord.class);
+    when(folderMock.isFolder()).thenReturn(true);
+    when(baseRecordManager.get(eq(folderId), any())).thenReturn(folderMock);
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(
+            Set.of(folderId), new ApiNfsCredentials(null, USERNAME, PASSWORD));
+
+    BindException ex =
+        assertThrows(
+            BindException.class,
+            () ->
+                controller.moveToFilestore(
+                    validFilestorePathId,
+                    request,
+                    new BeanPropertyBindingResult(request, "request"),
+                    user));
+
+    assertEquals(1, ex.getAllErrors().size());
+  }
+
+  @Test
+  void copyToFilestore_unauthorizedMediaFile_propagatesAuthorizationExceptionAndDoesNotUpload()
+      throws IOException {
+    // AuthorizationException must propagate (rather than be caught and translated to a
+    // BindException), so the surrounding transaction rolls back cleanly.
+    Long unauthorizedId = 888L;
+    when(baseRecordManager.get(eq(unauthorizedId), any()))
+        .thenReturn(new EcatAudioFileStub(unauthorizedId, "secret.wav"));
+    when(baseRecordManager.retrieveMediaFile(any(User.class), eq(unauthorizedId)))
+        .thenThrow(new AuthorizationException("no read permission"));
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(
+            Set.of(unauthorizedId), new ApiNfsCredentials(null, USERNAME, PASSWORD));
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            controller.copyToFilestore(
+                validFilestorePathId,
+                request,
+                new BeanPropertyBindingResult(request, "request"),
+                user));
+
+    verify(nfsManager, never())
+        .uploadFilesToNfs(anyCollection(), anyString(), any(WritableNfsClient.class), any());
   }
 }
