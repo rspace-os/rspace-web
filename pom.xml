@@ -301,7 +301,7 @@
           <configuration>
               <java>
                   <googleJavaFormat>
-                      <version>1.19.2</version>
+                      <version>1.28.0</version>
                       <style>GOOGLE</style>
                       <reflowLongStrings>true</reflowLongStrings>
                   </googleJavaFormat>
@@ -2601,7 +2601,7 @@
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
-    <spotless.version>2.46.1</spotless.version>
+    <spotless.version>3.5.1</spotless.version>
     <npm.dependencies.collection.arg>ci</npm.dependencies.collection.arg>
 
     <!--Sonar properties-->
