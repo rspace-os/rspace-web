@@ -2,20 +2,27 @@ import { type Id, type GlobalId } from "./BaseRecord";
 import { type InventoryRecord } from "./InventoryRecord";
 import { type ValidationResult } from "../../components/ValidatingSubmitButton";
 
-export type ExtraFieldType = "Text" | "Number";
+export type ExtraFieldType = "Text" | "Number" | "Link";
+
+export type ExtraInventoryLink = {
+  relationType: string;
+  targetGlobalId: string;
+  versionPin: number | null;
+};
 
 export type ExtraFieldAttrs = {
   id: Id;
   globalId: GlobalId | null;
   name: string;
   lastModified: string | null;
-  type: "text" | "number";
+  type: "text" | "number" | "link";
   content: string;
   parentGlobalId: GlobalId | null;
   editable?: boolean;
   editing?: boolean;
   initial?: boolean;
   newFieldRequest?: boolean;
+  link?: ExtraInventoryLink | null;
 };
 
 /**

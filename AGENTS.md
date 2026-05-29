@@ -157,6 +157,14 @@ pnpm run test -- src/components/MyComponent/__tests__/MyComponent.test.tsx
 - **Test setup:** Global setup in `src/__tests__/setup.ts` polyfills `localStorage`, `sessionStorage`, `TextEncoder`/`TextDecoder`.
 - **Console suppression:** Use `silenceConsole()` from test helpers to suppress expected errors.
 - **Test timeout:** 20 seconds (configured in `vitest.config.ts`).
+- - **Always run Vitest from `src/main/webapp/ui`.** The `vite.config.ts` that owns module aliases (most notably `Styles` -> `src/util/styles.ts`) lives there. Running `vitest` from a higher directory produces module-resolution failures such as `Cannot find package 'Styles'`, which look like a source bug but are a cwd problem. Either `cd src/main/webapp/ui` first or pass it explicitly to `npx vitest run --root`.
+- **Lint dialect required by this repo's ESLint config — write it compliant from the first draft instead of fixing up afterwards:**
+  - Use `expect(node).toBeInTheDocument()` / `not.toBeInTheDocument()`, never `.toBeTruthy()` / `toBeNull()` for DOM existence.
+  - Use `expect(node).toHaveAttribute(name, value)`, never `expect(node.getAttribute(name)).toBe(value)`.
+  - Use `expect(button).toBeDisabled()`, never `expect((button as HTMLButtonElement).disabled).toBe(true)`.
+  - For `vi.mocked(obj.method)`, extract the method to a local first (`const m = obj.method; vi.mocked(m)`), otherwise `@typescript-eslint/unbound-method` fires.
+  - `testing-library/no-container` and `no-node-access` are enabled. If you genuinely need `container.querySelector` (rare — usually to inspect a non-semantic child of a MUI component), wrap the block in `/* eslint-disable testing-library/no-node-access, testing-library/no-container */` with a comment explaining why.
+- **MUI `Select` inside `FormField` has a broken accessible name.** Its `aria-labelledby` is set to its own id rather than the label's, so `getByRole('combobox', { name: /field type/i })` returns no matches and `getByLabelText('Field type')` matches the wrapping FormControl group too, producing duplicate-match errors. The reliable query is a stable `data-testid` on the display element: pass `SelectDisplayProps={{ "data-testid": "MySelect" } as React.HTMLAttributes<HTMLDivElement>}` and then `screen.getByTestId('MySelect')`.
 
 ### Internationalization (i18n)
 

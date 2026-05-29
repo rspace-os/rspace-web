@@ -156,6 +156,8 @@
         <mapping class="com.researchspace.model.inventory.field.ExtraField"/>
         <mapping class="com.researchspace.model.inventory.field.ExtraNumberField"/>
         <mapping class="com.researchspace.model.inventory.field.ExtraTextField"/>
+        <mapping class="com.researchspace.model.inventory.field.ExtraLinkField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryLink"/>
         <mapping class="com.researchspace.model.inventory.field.InventoryRadioFieldDef"/>
         <mapping class="com.researchspace.model.inventory.field.InventoryChoiceFieldDef"/>
 

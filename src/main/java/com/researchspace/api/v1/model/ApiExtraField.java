@@ -12,6 +12,8 @@ import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
 import com.researchspace.model.User;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.model.inventory.field.ExtraLinkField;
+import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.record.IActiveUserStrategy;
 import java.util.Date;
 import lombok.Data;
@@ -35,6 +37,7 @@ import org.apache.commons.lang3.StringUtils;
   "modifiedBy",
   "type",
   "content",
+  "link",
   "parentGlobalId",
   "_links"
 })
@@ -45,6 +48,9 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
 
   @JsonProperty("content")
   private String content;
+
+  @JsonProperty("link")
+  private ApiInventoryLink link;
 
   @JsonProperty("lastModified")
   @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
@@ -75,7 +81,10 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
     TEXT("text"),
 
     @JsonProperty("number")
-    NUMBER("number");
+    NUMBER("number"),
+
+    @JsonProperty("link")
+    LINK("link");
 
     private String value;
 
@@ -106,6 +115,9 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
     setDeleted(field.isDeleted());
     setContent(field.getData());
     setGlobalId(field.getOid().toString());
+    if (field instanceof ExtraLinkField && ((ExtraLinkField) field).getLink() != null) {
+      setLink(new ApiInventoryLink(((ExtraLinkField) field).getLink()));
+    }
     if (field.getConnectedRecordOid() != null) {
       setParentGlobalId(field.getConnectedRecordGlobalIdentifier());
       setParentRecordInfo(ApiInventoryRecordInfo.fromInventoryRecord(field.getInventoryRecord()));
@@ -126,11 +138,39 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
         contentChanged = true;
       }
     }
+    if (dbField instanceof ExtraLinkField && link != null) {
+      contentChanged |= applyLinkPayload((ExtraLinkField) dbField);
+    }
     if (contentChanged) {
       dbField.setModificationDate(new Date());
       dbField.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
     }
     return contentChanged;
+  }
+
+  /**
+   * Applies relationType / versionPin changes from the incoming API payload onto the existing
+   * persisted InventoryLink. The link's target is treated as immutable for an existing link: a
+   * retarget should go through the create-new + delete-old path, not a silent rewrite.
+   */
+  private boolean applyLinkPayload(ExtraLinkField dbField) {
+    InventoryLink dbLink = dbField.getLink();
+    if (dbLink == null) {
+      return false;
+    }
+    boolean linkChanged = false;
+    String newRelation = link.getRelationType();
+    if (newRelation != null && !newRelation.equals(dbLink.getRelationType())) {
+      dbLink.setRelationType(newRelation);
+      linkChanged = true;
+    }
+    Long newVersionPin = link.getVersionPin();
+    Long currentVersionPin = dbLink.getVersionPin();
+    if (!java.util.Objects.equals(newVersionPin, currentVersionPin)) {
+      dbLink.setVersionPin(newVersionPin);
+      linkChanged = true;
+    }
+    return linkChanged;
   }
 
   /**

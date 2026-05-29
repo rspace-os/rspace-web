@@ -573,14 +573,50 @@ export default class InventoryBaseRecord
    * serialised and any changes here should be reflect in each of those.
    */
   get paramsForBackend(): Record<string, unknown> {
-    const extraFields = this.extraFields.map((ef) => ({
-      name: ef.name,
-      content: ef.content,
-      id: ef.id,
-      type: ef.type === "Text" ? "text" : "number",
-      newFieldRequest: ef.newFieldRequest,
-      deleteFieldRequest: ef.deleteFieldRequest,
-    }));
+    const apiTypeFor = (t: ExtraField["type"]): "text" | "number" | "link" => {
+      if (t === "Text") return "text";
+      if (t === "Number") return "number";
+      return "link";
+    };
+    const extraFields = this.extraFields.map((ef) => {
+      const base: {
+        name: string;
+        content: string;
+        id: ExtraField["id"];
+        type: "text" | "number" | "link";
+        newFieldRequest: boolean;
+        deleteFieldRequest: boolean;
+        link?: {
+          relationType: string;
+          targetGlobalId: string;
+          versionPin: number | null;
+        };
+      } = {
+        name: ef.name,
+        content: ef.content,
+        id: ef.id,
+        type: apiTypeFor(ef.type),
+        newFieldRequest: ef.newFieldRequest,
+        deleteFieldRequest: ef.deleteFieldRequest,
+      };
+      if (ef.type === "Link" && (ef as ExtraField & { link?: unknown }).link) {
+        const link = (
+          ef as ExtraField & {
+            link: {
+              relationType: string;
+              targetGlobalId: string;
+              versionPin: number | null;
+            };
+          }
+        ).link;
+        base.link = {
+          relationType: link.relationType,
+          targetGlobalId: link.targetGlobalId,
+          versionPin: link.versionPin ?? null,
+        };
+      }
+      return base;
+    });
 
     const params: {
       id: Id;
@@ -1437,22 +1473,38 @@ export default class InventoryBaseRecord
 
   updateExtraField(
     oldFieldName: string,
-    updatedField: { name: string; type: string },
+    updatedField: {
+      name: string;
+      type: string;
+      link?: {
+        relationType: string;
+        targetGlobalId: string;
+        versionPin: number | null;
+      };
+    },
   ) {
     const field = this.extraFields.find((ef) => ef.name === oldFieldName);
 
     if (field) {
-      const attrs = {
-        ...updatedField,
+      const typeChanged = field.type !== updatedField.type;
+      const attrs: Record<string, unknown> = {
+        name: updatedField.name,
+        type: updatedField.type,
         editing: false,
         initial: false,
-        content: field.type !== updatedField.type ? "" : field.content,
+        content: typeChanged ? "" : field.content,
       };
+      if (updatedField.type === "Link") {
+        attrs.link = updatedField.link ?? null;
+      } else if (typeChanged) {
+        attrs.link = null;
+      }
       const justNameAndType = pick("name", "type");
-      const areEqual = sameKeysAndValues(
-        justNameAndType(field),
-        justNameAndType(updatedField),
-      );
+      const areEqual =
+        sameKeysAndValues(
+          justNameAndType(field),
+          justNameAndType(updatedField),
+        ) && updatedField.type !== "Link";
       if (areEqual) {
         field.setAttributes(attrs);
       } else {

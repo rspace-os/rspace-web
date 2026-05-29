@@ -3,15 +3,19 @@ package com.researchspace.service.inventory;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInstrumentEntity;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
+import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.model.inventory.field.ExtraLinkField;
+import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.record.IRecordFactory;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +35,9 @@ import org.springframework.validation.Validator;
 public class ApiExtraFieldsHelper implements Validator {
 
   private IRecordFactory recordFactory;
+  private final InventoryLinkValidator linkValidator = new InventoryLinkValidator();
+
+  @Autowired private InventoryLinkManager inventoryLinkManager;
 
   public ApiExtraFieldsHelper(@Autowired IRecordFactory recordFactory) {
     this.recordFactory = recordFactory;
@@ -49,10 +56,32 @@ public class ApiExtraFieldsHelper implements Validator {
       ValidationUtils.rejectIfEmptyOrWhitespace(
           errors, "name", "errors.required", "name is required");
     }
+    if (aef.getTypeAsFieldType() == FieldType.LINK) {
+      validateLinkPayload(aef, errors);
+      return;
+    }
     ExtraField extraField = recordFactory.createExtraField(aef.getTypeAsFieldType());
     String validationMsg = extraField.validateNewData(aef.getContent());
     if (!StringUtils.isEmpty(validationMsg)) {
       errors.rejectValue("content", "", validationMsg);
+    }
+  }
+
+  private void validateLinkPayload(ApiExtraField aef, Errors errors) {
+    if (aef.getLink() == null) {
+      errors.rejectValue(
+          "link", "errors.required", new Object[] {"link"}, "link payload is required");
+      return;
+    }
+    String sourceGlobalId =
+        aef.getParentGlobalId() != null
+            ? aef.getParentGlobalId()
+            : (aef.getParentRecordInfo() != null ? aef.getParentRecordInfo().getGlobalId() : null);
+    errors.pushNestedPath("link");
+    try {
+      linkValidator.validate(aef.getLink(), sourceGlobalId, errors);
+    } finally {
+      errors.popNestedPath();
     }
   }
 
@@ -122,10 +151,32 @@ public class ApiExtraFieldsHelper implements Validator {
 
   private void addRecordExtraFieldForIncomingApiField(
       ApiExtraField apiField, User user, InventoryRecord parentInvRec) {
-    ExtraField newField =
-        recordFactory.createExtraField(
-            apiField.getName(), apiField.getTypeAsFieldType(), user, parentInvRec);
-    newField.setData(apiField.getContent());
+    ExtraField newField;
+    if (apiField.getTypeAsFieldType() == FieldType.LINK) {
+      newField = buildExtraLinkField(apiField, user, parentInvRec);
+    } else {
+      newField =
+          recordFactory.createExtraField(
+              apiField.getName(), apiField.getTypeAsFieldType(), user, parentInvRec);
+      newField.setData(apiField.getContent());
+    }
     parentInvRec.addExtraField(newField); // update parent's field list
+  }
+
+  private ExtraLinkField buildExtraLinkField(
+      ApiExtraField apiField, User user, InventoryRecord parentInvRec) {
+    ExtraLinkField linkField = new ExtraLinkField();
+    linkField.setInventoryRecord(parentInvRec);
+    if (!StringUtils.isBlank(apiField.getName())) {
+      linkField.setName(apiField.getName());
+    }
+    linkField.setCreatedBy(user.getUsername());
+    linkField.setModifiedBy(user.getUsername());
+    ApiInventoryLink apiLink = apiField.getLink();
+    if (apiLink != null) {
+      InventoryLink persisted = inventoryLinkManager.createLink(apiLink, user);
+      linkField.setLink(persisted);
+    }
+    return linkField;
   }
 }

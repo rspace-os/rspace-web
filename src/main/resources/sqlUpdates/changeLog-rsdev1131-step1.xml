@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <!--
+      RSDEV-1131 Step 1: Inventory Link related items.
+      Creates InventoryLink table and audit, adds link_id FK on ExtraField/ExtraField_AUD.
+  -->
+
+  <!-- ChangeSet 1: Create InventoryLink table -->
+  <changeSet id="2026-05-28-rsdev1131-create-inventorylink" context="run" author="nhanlon2">
+    <createTable tableName="InventoryLink">
+      <column name="id" type="bigint" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="target_globalid" type="varchar(64)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="target_prefix" type="varchar(8)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="target_db_id" type="bigint">
+        <constraints nullable="false"/>
+      </column>
+      <column name="version_pin" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="relation_type" type="varchar(64)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="datetime">
+        <constraints nullable="false"/>
+      </column>
+      <column name="modified_at" type="datetime">
+        <constraints nullable="false"/>
+      </column>
+      <column name="deleted" type="bit" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+
+    <createIndex tableName="InventoryLink"
+      indexName="IDX_InvLink_target_prefix_dbid">
+      <column name="target_prefix"/>
+      <column name="target_db_id"/>
+    </createIndex>
+
+    <createIndex tableName="InventoryLink"
+      indexName="IDX_InvLink_relation_type">
+      <column name="relation_type"/>
+    </createIndex>
+  </changeSet>
+
+  <!-- ChangeSet 2: Create InventoryLink_AUD audit table -->
+  <changeSet id="2026-05-28-rsdev1131-create-inventorylink-aud" context="run" author="nhanlon2">
+    <createTable tableName="InventoryLink_AUD">
+      <column name="id" type="bigint">
+        <constraints nullable="false"/>
+      </column>
+      <column name="REV" type="int">
+        <constraints nullable="false"/>
+      </column>
+      <column name="REVTYPE" type="tinyint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="target_globalid" type="varchar(64)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="target_prefix" type="varchar(8)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="target_db_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="version_pin" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+      <column name="relation_type" type="varchar(64)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="created_at" type="datetime">
+        <constraints nullable="true"/>
+      </column>
+      <column name="modified_at" type="datetime">
+        <constraints nullable="true"/>
+      </column>
+      <column name="deleted" type="bit">
+        <constraints nullable="true"/>
+      </column>
+    </createTable>
+
+    <addPrimaryKey tableName="InventoryLink_AUD"
+      columnNames="id, REV"
+      constraintName="PK_InventoryLink_AUD"/>
+
+    <addForeignKeyConstraint
+      constraintName="FK_InvLinkAud_to_RevInfo"
+      baseTableName="InventoryLink_AUD"
+      baseColumnNames="REV"
+      referencedTableName="REVINFO"
+      referencedColumnNames="REV"/>
+  </changeSet>
+
+  <!-- ChangeSet 3: Add link_id column + FK to ExtraField and ExtraField_AUD -->
+  <changeSet id="2026-05-28-rsdev1131-extrafield-link-id" context="run" author="nhanlon2">
+    <addColumn tableName="ExtraField">
+      <column name="link_id" type="bigint">
+        <constraints nullable="true" unique="true" uniqueConstraintName="UC_ExtraField_link_id"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="ExtraField_AUD">
+      <column name="link_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+
+    <addForeignKeyConstraint
+      constraintName="FK_ExtraField_to_InvLink"
+      baseTableName="ExtraField"
+      baseColumnNames="link_id"
+      referencedTableName="InventoryLink"
+      referencedColumnNames="id"/>
+  </changeSet>
+
+</databaseChangeLog>

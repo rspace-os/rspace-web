@@ -372,7 +372,15 @@ export interface InventoryRecord
   addExtraField(newExtraFieldAttrs: ExtraFieldAttrs): void;
   updateExtraField(
     oldFieldName: string,
-    updatedField: { name: string; type: string },
+    updatedField: {
+      name: string;
+      type: string;
+      link?: {
+        relationType: string;
+        targetGlobalId: string;
+        versionPin: number | null;
+      };
+    },
   ): void;
   removeExtraField(id: number | null, index: number): void;
   readonly visibleExtraFields: Array<ExtraField>;

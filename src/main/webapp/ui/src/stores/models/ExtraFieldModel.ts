@@ -5,6 +5,7 @@ import {
   type ExtraFieldAttrs,
   type ExtraFieldType,
   type ExtraField,
+  type ExtraInventoryLink,
 } from "../definitions/ExtraField";
 import { type InventoryRecord } from "../definitions/InventoryRecord";
 import {
@@ -41,6 +42,7 @@ export default class ExtraFieldModel implements ExtraField {
   // @ts-expect-error Set by the call to setAttributes
   owner: InventoryRecord;
   invalidInput: boolean;
+  link: ExtraInventoryLink | null = null;
 
   constructor(attrs: ExtraFieldAttrs, owner: InventoryBaseRecord) {
     makeObservable(this, {
@@ -55,6 +57,7 @@ export default class ExtraFieldModel implements ExtraField {
       initial: observable,
       owner: observable,
       invalidInput: observable,
+      link: observable,
       setAttributesDirty: action,
       setAttributes: action,
       isValid: computed,
@@ -64,7 +67,8 @@ export default class ExtraFieldModel implements ExtraField {
     this.setAttributes({
       ...attrs,
       owner,
-      type: attrs.type === "text" ? "Text" : "Number",
+      type: typeNameFromApi(attrs.type),
+      link: attrs.link ?? null,
     });
     this.invalidInput = false;
   }
@@ -108,10 +112,25 @@ export default class ExtraFieldModel implements ExtraField {
         );
       return IsValid();
     }
+    if (this.type === "Link") {
+      if (!this.link || !this.link.relationType || !this.link.targetGlobalId) {
+        return IsInvalid("Link fields require a relation type and target.");
+      }
+      return IsValid();
+    }
     return IsInvalid("Invalid field type");
   }
 
   get hasContent(): boolean {
+    if (this.type === "Link") {
+      return Boolean(this.link?.targetGlobalId);
+    }
     return Boolean(this.content);
   }
+}
+
+function typeNameFromApi(t: "text" | "number" | "link"): ExtraFieldType {
+  if (t === "text") return "Text";
+  if (t === "number") return "Number";
+  return "Link";
 }

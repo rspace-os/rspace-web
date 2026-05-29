@@ -11,6 +11,7 @@ import TextField from "../../../../components/Inputs/TextField";
 import NumberField from "../../../../components/Inputs/NumberField";
 import Box from "@mui/material/Box";
 import Result from "../../../../stores/models/InventoryBaseRecord";
+import LinkField from "../Link/LinkField";
 
 type ExtraFieldsArgs = {
   onErrorStateChange: (fieldIdentifier: string, newErrorState: boolean) => void;
@@ -30,7 +31,77 @@ function ExtraFields({
             <UpdateField extraField={ef} index={i} record={result} />
           ) : (
             <>
-              {ef.type === "Number" ? (
+              {ef.type === "Link" ? (
+                <Box mt={1} sx={{ position: "relative" }}>
+                  {!extraFieldsDisabled && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        right: 0,
+                        zIndex: 1,
+                      }}
+                    >
+                      <IconButtonWithTooltip
+                        title="Field settings"
+                        size="small"
+                        onClick={() => ef.setEditing(true)}
+                        icon={<SettingsIcon fontSize="small" />}
+                      />
+                      <IconButtonWithTooltip
+                        title="Delete field"
+                        size="small"
+                        onClick={() =>
+                          result.removeExtraField(
+                            ef.id,
+                            result.extraFields.indexOf(ef)
+                          )
+                        }
+                        icon={<CloseIcon fontSize="small" />}
+                      />
+                    </div>
+                  )}
+                  <LinkField
+                    name={ef.name}
+                    link={
+                      (ef as typeof ef & {
+                        link: {
+                          relationType: string;
+                          targetGlobalId: string;
+                          versionPin: number | null;
+                        };
+                      }).link
+                    }
+                    targetDeleted={false}
+                    editable={editable}
+                    onPeek={() => undefined}
+                    onOpen={() => {
+                      const link = (ef as typeof ef & {
+                        link: { targetGlobalId: string };
+                      }).link;
+                      if (link?.targetGlobalId) {
+                        window.open(
+                          `/globalId/${link.targetGlobalId}`,
+                          "_blank"
+                        );
+                      }
+                    }}
+                    onEdit={() => ef.setEditing(true)}
+                    onVersionPinChange={(versionPin) => {
+                      const currentLink = (ef as typeof ef & {
+                        link: {
+                          relationType: string;
+                          targetGlobalId: string;
+                          versionPin: number | null;
+                        };
+                      }).link;
+                      ef.setAttributesDirty({
+                        link: { ...currentLink, versionPin },
+                      });
+                    }}
+                  />
+                </Box>
+              ) : ef.type === "Number" ? (
                 <FormField
                   label={ef.name}
                   disabled={!editable}
