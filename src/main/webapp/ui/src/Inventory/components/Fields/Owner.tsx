@@ -14,28 +14,26 @@ export default function Owner<
 >({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
   const owner: Person | null = fieldOwner.fieldValues.owner;
 
-  const Content = () => {
-    if (!owner)
-      return (
-        <NoValue label={fieldOwner.noValueLabel.owner ?? "Unknown Owner"} />
-      );
-    const { id, fullName } = owner;
-    return (
-      <Box>
-        <UserDetails
-          userId={id}
-          fullName={fullName}
-          position={["bottom", "right"]}
-        />
-      </Box>
-    );
-  };
-
   return (
     <FormField
       value={void 0}
       label="Owner"
-      renderInput={() => <Content />}
+      renderInput={() => {
+        if (!owner)
+          return (
+            <NoValue label={fieldOwner.noValueLabel.owner ?? "Unknown Owner"} />
+          );
+        const { id, fullName } = owner;
+        return (
+          <Box>
+            <UserDetails
+              userId={id}
+              fullName={fullName}
+              position={["bottom", "right"]}
+            />
+          </Box>
+        );
+      }}
       disabled
     />
   );

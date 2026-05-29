@@ -334,29 +334,6 @@ const CollapseContents = observer(
     );
   },
 );
-const ToggleButton = ({
-  barcodeCount,
-  open,
-  setOpen,
-}: {
-  barcodeCount: number;
-  open: boolean;
-  setOpen: (value: boolean) => void;
-}) => (
-  <CustomTooltip
-    title={match<void, string>([
-      [() => barcodeCount === 0, "No current barcodes"],
-      [() => open, "Hide barcodes listing"],
-      [() => true, "Show barcodes listing"],
-    ])()}
-  >
-    <IconButton onClick={() => setOpen(!open)} disabled={barcodeCount === 0}>
-      <Badge color="primary" badgeContent={barcodeCount}>
-        <ExpandCollapseIcon open={open} />
-      </Badge>
-    </IconButton>
-  </CustomTooltip>
-);
 function FieldCard<
   Fields extends {
     barcodes: Array<BarcodeRecord>;
@@ -452,11 +429,22 @@ function FieldCard<
                   buttonPrefix="Save"
                 />
               </Popover>
-              <ToggleButton
-                barcodeCount={barcodes.length}
-                open={open}
-                setOpen={setOpen}
-              />
+              <CustomTooltip
+                title={match<void, string>([
+                  [() => barcodes.length === 0, "No current barcodes"],
+                  [() => open, "Hide barcodes listing"],
+                  [() => true, "Show barcodes listing"],
+                ])()}
+              >
+                <IconButton
+                  onClick={() => setOpen(!open)}
+                  disabled={barcodes.length === 0}
+                >
+                  <Badge color="primary" badgeContent={barcodes.length}>
+                    <ExpandCollapseIcon open={open} />
+                  </Badge>
+                </IconButton>
+              </CustomTooltip>
             </>
           }
         />

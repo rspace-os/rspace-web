@@ -7,36 +7,6 @@ import HeroImage from "/src/assets/graphics/NoActiveResult.svg";
 import docLinks from "../../../assets/DocLinks";
 import { darken } from "@mui/material/styles";
 
-const Title = () => (
-  <Typography variant="h1">Welcome to RSpace Inventory!</Typography>
-);
-
-const Subtitle = () => (
-  <Typography
-    variant="subtitle1"
-    sx={{
-      color: (theme) => darken(theme.palette.primary.main, 0.2),
-    }}
-  >
-    Let&apos;s get you started with the system.
-  </Typography>
-);
-
-const GetStartedButton = () => (
-  <Link
-    href={docLinks.gettingStarted}
-    target="_blank"
-    rel="noreferrer"
-    underline="always"
-    sx={{
-      fontSize: "1.4em",
-      textUnderlineOffset: "3px",
-    }}
-  >
-    Get Started Guide
-  </Link>
-);
-
 export default function NoActiveResultPlaceholder(): React.ReactNode {
   return (
     <Stack
@@ -45,13 +15,31 @@ export default function NoActiveResultPlaceholder(): React.ReactNode {
     >
       <Stack sx={{ alignSelf: "center", alignItems: "center" }}>
         <Box sx={{ mb: 1, mt: 2 }}>
-          <Title />
+          <Typography variant="h1">Welcome to RSpace Inventory!</Typography>
         </Box>
         <Box sx={{ mb: 3 }}>
-          <Subtitle />
+          <Typography
+            variant="subtitle1"
+            sx={{
+              color: (theme) => darken(theme.palette.primary.main, 0.2),
+            }}
+          >
+            Let&apos;s get you started with the system.
+          </Typography>
         </Box>
         <Box sx={{ mb: 2 }}>
-          <GetStartedButton />
+          <Link
+            href={docLinks.gettingStarted}
+            target="_blank"
+            rel="noreferrer"
+            underline="always"
+            sx={{
+              fontSize: "1.4em",
+              textUnderlineOffset: "3px",
+            }}
+          >
+            Get Started Guide
+          </Link>
         </Box>
         <img src={HeroImage} />
       </Stack>

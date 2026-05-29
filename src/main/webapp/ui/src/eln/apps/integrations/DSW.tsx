@@ -60,31 +60,6 @@ type NewConfig = {
   DSW_ALIAS: string;
 };
 
-const AddButton = ({
-  newConfig,
-  setNewConfig,
-}: {
-  newConfig: NewConfig | null;
-  setNewConfig: (newConfig: NewConfig) => void;
-}) => {
-  return (
-    <Button
-      disabled={Boolean(newConfig)}
-      onClick={() => {
-        setNewConfig(
-          observable({
-            DSW_ALIAS: "",
-            DSW_APIKEY: "",
-            DSW_URL: "",
-          }),
-        );
-      }}
-    >
-      Add
-    </Button>
-  );
-};
-
 const DialogContent = observer(
   ({
     configs,
@@ -430,7 +405,20 @@ const DialogContent = observer(
             </Card>
           )}
         </Stack>
-        <AddButton newConfig={newConfig} setNewConfig={setNewConfig} />
+        <Button
+          disabled={Boolean(newConfig)}
+          onClick={() => {
+            setNewConfig(
+              observable({
+                DSW_ALIAS: "",
+                DSW_APIKEY: "",
+                DSW_URL: "",
+              }),
+            );
+          }}
+        >
+          Add
+        </Button>
       </Stack>
     );
   },

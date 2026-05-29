@@ -2,53 +2,13 @@ import React, { useEffect, useState, useContext, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import RsSet, { unionWith, nullishToSingleton } from "../../../util/set";
-import Autocomplete, {
-  type AutocompleteRenderInputParams,
-} from "@mui/material/Autocomplete";
+import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
 import PersonModel, { sortPeople } from "../../../stores/models/PersonModel";
 import { type Username, type Person } from "../../../stores/definitions/Person";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-
-type RecipientTextFieldArgs = {
-  slotProps?: AutocompleteRenderInputParams["slotProps"];
-  loading: boolean;
-  label?: string;
-} & Omit<React.ComponentProps<typeof TextField>, "slotProps">;
-
-const RecipientTextField = ({
-  slotProps,
-  loading,
-  label,
-  ...rest
-}: RecipientTextFieldArgs) => (
-  <TextField
-    {...rest}
-    variant="outlined"
-    autoFocus
-    slotProps={{
-      ...slotProps,
-      input: {
-        ...slotProps?.input,
-        ...(label !== undefined
-          ? {
-              startAdornment: (
-                <InputAdornment position="start">&nbsp;{label}</InputAdornment>
-              ),
-            }
-          : {}),
-        endAdornment: (
-          <>
-            {loading && <CircularProgress color="inherit" size={20} />}
-            {slotProps?.input.endAdornment ?? null}
-          </>
-        ),
-      },
-    }}
-  />
-);
 
 type PeopleFieldArgs = {
   onSelection: (
@@ -156,8 +116,33 @@ function PeopleField({
       options={allUsers}
       groupBy={(u: PersonModel) => u.groupByLabel}
       getOptionLabel={(u: Person) => u.label}
-      renderInput={(props) => (
-        <RecipientTextField {...props} loading={loading} label={label} />
+      renderInput={({ slotProps: inputSlotProps, ...rest }) => (
+        <TextField
+          {...rest}
+          variant="outlined"
+          autoFocus
+          slotProps={{
+            ...inputSlotProps,
+            input: {
+              ...inputSlotProps?.input,
+              ...(label !== undefined
+                ? {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        &nbsp;{label}
+                      </InputAdornment>
+                    ),
+                  }
+                : {}),
+              endAdornment: (
+                <>
+                  {loading && <CircularProgress color="inherit" size={20} />}
+                  {inputSlotProps?.input.endAdornment ?? null}
+                </>
+              ),
+            },
+          }}
+        />
       )}
       size="small"
       value={recipient}

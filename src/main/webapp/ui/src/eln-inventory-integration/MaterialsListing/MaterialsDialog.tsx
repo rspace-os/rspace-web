@@ -39,22 +39,6 @@ import getRootStore from "../../stores/stores/RootStore";
 import { hasLocation } from "../../stores/models/HasLocation";
 import Analytics from "../../components/Analytics";
 
-const EmptyListText = ({
-  currentList,
-}: {
-  currentList: ListOfMaterials | null | undefined;
-}) =>
-  currentList && currentList.materials.length === 0 ? (
-    <Typography
-      component="div"
-      variant="body2"
-      color="textPrimary"
-      align="center"
-    >
-      Use &quot;Add items&quot; to add materials to this list.
-    </Typography>
-  ) : null;
-
 type CardWrapperArgs = {
   children: React.ReactNode;
 };
@@ -492,7 +476,17 @@ function MaterialsDialog({
                           canEdit={canEdit}
                         />
                       )}
-                      <EmptyListText currentList={currentList} />
+                      {currentList && currentList.materials.length === 0 && (
+                        <Typography
+                          component="div"
+                          variant="body2"
+                          color="textPrimary"
+                          align="center"
+                        >
+                          Use &quot;Add items&quot; to add materials to this
+                          list.
+                        </Typography>
+                      )}
                     </Grid>
                     <Slide
                       in={openSlide}

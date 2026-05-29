@@ -49,30 +49,6 @@ import DSWAccentMenuItem from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import { Integration, FetchedState } from "../../apps/useIntegrationsEndpoint";
 
-const AddButton = ({
-  drawerOpen,
-  ...props
-}: {
-  drawerOpen: boolean;
-} & React.ComponentProps<typeof Button>) => (
-  <Button
-    {...props}
-    fullWidth
-    aria-haspopup="menu"
-    variant="contained"
-    color="callToAction"
-    startIcon={
-      <AddIcon
-        sx={{
-          marginLeft: drawerOpen ? "0px" : "11px",
-        }}
-      />
-    }
-    sx={{ minWidth: "unset", overflowX: "hidden", height: "32px" }}
-  >
-    {drawerOpen && <div>Create</div>}
-  </Button>
-);
 const UploadMenuItem = ({
   folderId,
   onUploadComplete,
@@ -508,10 +484,23 @@ const Sidebar = ({
           p: 1.5,
         }}
       >
-        <AddButton
+        <Button
           onClick={(e) => setNewMenuAnchorEl(e.currentTarget)}
-          drawerOpen={drawerOpen}
-        />
+          fullWidth
+          aria-haspopup="menu"
+          variant="contained"
+          color="callToAction"
+          startIcon={
+            <AddIcon
+              sx={{
+                marginLeft: drawerOpen ? "0px" : "11px",
+              }}
+            />
+          }
+          sx={{ minWidth: "unset", overflowX: "hidden", height: "32px" }}
+        >
+          {drawerOpen && <div>Create</div>}
+        </Button>
         <Menu
           open={Boolean(newMenuAnchorEl)}
           anchorEl={newMenuAnchorEl}

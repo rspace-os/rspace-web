@@ -4,7 +4,7 @@ import Button from "@mui/material/Button";
 import CardActions from "@mui/material/CardActions";
 import useStores from "../../../stores/use-stores";
 import { mkAlert } from "@/stores/contexts/Alert";
-import HelpTextAlert from "../../../components/HelpTextAlert";
+import Alert from "@mui/material/Alert";
 import docLinks from "../../../assets/DocLinks";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Divider from "@mui/material/Divider";
@@ -81,24 +81,20 @@ export default function BarcodeScannerSkeleton({
           marginBottom: "8px",
         }}
       >
-        <HelpTextAlert
-          severity="info"
-          condition={true}
-          text={
-            loading ? (
-              `Loading Barcode Scanner...`
-            ) : barcode?.rawValue ? (
-              <>
-                {`Barcode detected: ${barcodeFormatAsString(barcode.format)}
-                format.`}
-                <br />
-                {`${barcode.rawValue}`}
-              </>
-            ) : (
-              `Barcode Scanner: ${beforeScanHelpText}.`
-            )
-          }
-        />
+        <Alert severity="info">
+          {loading ? (
+            `Loading Barcode Scanner...`
+          ) : barcode?.rawValue ? (
+            <>
+              {`Barcode detected: ${barcodeFormatAsString(barcode.format)}
+              format.`}
+              <br />
+              {`${barcode.rawValue}`}
+            </>
+          ) : (
+            `Barcode Scanner: ${beforeScanHelpText}.`
+          )}
+        </Alert>
         <HelpLinkIcon
           link={docLinks.barcodes}
           title="Info on using barcodes."

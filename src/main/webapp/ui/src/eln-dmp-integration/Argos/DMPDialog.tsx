@@ -81,24 +81,6 @@ const Panel = ({
     </form>
   </Popover>
 );
-const CustomStringField = ({
-  onChange,
-  value,
-  autoFocus = false,
-  fullWidth = false,
-}: {
-  onChange: (newValue: string) => void;
-  value: string;
-  autoFocus?: boolean;
-  fullWidth?: boolean;
-}) => (
-  <StringField
-    value={value}
-    onChange={({ target: { value: newValue } }) => onChange(newValue)}
-    autoFocus={autoFocus}
-    fullWidth={fullWidth}
-  />
-);
 type SearchControlArgs = {
   name: string;
   value: string | null;
@@ -119,9 +101,9 @@ const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
         onClose={() => setAnchorEl(null)}
         onSubmit={() => onSubmit()}
       >
-        <CustomStringField
+        <StringField
           value={value ?? ""}
-          onChange={(newValue) => onChange(newValue)}
+          onChange={({ target: { value: newValue } }) => onChange(newValue)}
           autoFocus={true}
           fullWidth={true}
         />

@@ -38,22 +38,6 @@ const icon = (
   </span>
 );
 
-const HelperText = () => (
-  <DialogContentText component="span">
-    <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-      Select someone to transfer ownership to. By performing this action you
-      will give the new owner full control over the item.{" "}
-      <strong>
-        This action can only be undone by the recipient or their PI.
-      </strong>
-    </Typography>
-    <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-      If the desired recipient cannot be found in this list, try searching for
-      their name or username.
-    </Typography>
-  </DialogContentText>
-);
-
 type TransferActionArgs = {
   as: ContextMenuRenderOptions;
   selectedResults: Array<InventoryRecord>;
@@ -131,7 +115,21 @@ const TransferAction = forwardRef<
           <ContextDialog open={Boolean(btnPos)} onClose={handleClose}>
             <DialogTitle>Transfer Ownership</DialogTitle>
             <DialogContent>
-              <HelperText />
+              <DialogContentText component="span">
+                <Typography component="p" variant="body1" sx={{ mb: 2 }}>
+                  Select someone to transfer ownership to. By performing this
+                  action you will give the new owner full control over the
+                  item.{" "}
+                  <strong>
+                    This action can only be undone by the recipient or their
+                    PI.
+                  </strong>
+                </Typography>
+                <Typography component="p" variant="body1" sx={{ mb: 2 }}>
+                  If the desired recipient cannot be found in this list, try
+                  searching for their name or username.
+                </Typography>
+              </DialogContentText>
               <FormControl component="fieldset" fullWidth>
                 <PeopleField
                   onSelection={(person) => setRecipient(person as PersonModel)}

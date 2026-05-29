@@ -2,44 +2,10 @@ import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
-import Autocomplete, {
-  type AutocompleteRenderInputParams,
-} from "@mui/material/Autocomplete";
+import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
 import { type Group } from "../../../stores/definitions/Group";
-const RecipientTextField = ({
-  slotProps,
-  loading,
-  label,
-  ...rest
-}: {
-  slotProps?: AutocompleteRenderInputParams["slotProps"];
-  loading: boolean;
-  label: string;
-} & Omit<React.ComponentProps<typeof TextField>, "slotProps">) => (
-  <TextField
-    {...rest}
-    variant="outlined"
-    autoFocus
-    slotProps={{
-      ...slotProps,
-      input: {
-        ...slotProps?.input,
-        startAdornment: (
-          <InputAdornment position="start">&nbsp;{label}</InputAdornment>
-        ),
-        endAdornment: (
-          <>
-            {loading && <CircularProgress color="inherit" size={20} />}
-            {slotProps?.input.endAdornment ?? null}
-          </>
-        ),
-      },
-    }}
-  />
-);
 
 type GroupsFieldArgs = {
   onSelection: (selectedGroup: Group) => Promise<void> | void;
@@ -81,8 +47,22 @@ function GroupsField({
       options={[...searchResults]}
       getOptionLabel={(g) => g.name}
       getOptionDisabled={getOptionDisabled}
-      renderInput={(props) => (
-        <RecipientTextField {...props} loading={false} label={label} />
+      renderInput={({ slotProps: inputSlotProps, ...rest }) => (
+        <TextField
+          {...rest}
+          variant="outlined"
+          autoFocus
+          slotProps={{
+            ...inputSlotProps,
+            input: {
+              ...inputSlotProps?.input,
+              startAdornment: (
+                <InputAdornment position="start">&nbsp;{label}</InputAdornment>
+              ),
+              endAdornment: inputSlotProps?.input.endAdornment ?? null,
+            },
+          }}
+        />
       )}
       size="small"
       value={null}

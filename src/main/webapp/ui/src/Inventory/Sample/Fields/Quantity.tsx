@@ -15,25 +15,6 @@ import Box from "@mui/material/Box";
 import { textFieldClasses } from "@mui/material/TextField";
 import { inputBaseClasses } from "@mui/material";
 
-function CustomFormField(
-  props: React.ComponentProps<typeof FormField<string | number>>,
-): React.ReactNode {
-  return (
-    <Box
-      sx={{
-        [`& .${textFieldClasses.root}`]: {
-          maxWidth: "264px",
-          [`& .${inputBaseClasses.root}`]: {
-            paddingRight: 0,
-          },
-        },
-      }}
-    >
-      <FormField {...props} />
-    </Box>
-  );
-}
-
 type QuantityArgs = {
   onErrorStateChange: (value: boolean) => void;
   sample: SampleModel;
@@ -131,49 +112,60 @@ function Quantity({
   return (
     <>
       {!sample.id && sample.quantity && (
-        <CustomFormField
-          label={`Quantity${
-            (sample.newSampleSubSamplesCount ?? 2) > 1
-              ? " per " + alias.alias
-              : ""
-          }`}
-          explanation="Quantity units can also be changed by editing templates."
-          value={amount}
-          error={!valid}
-          helperText={errorMessage()}
-          renderInput={({ ...props }) => (
-            <NumberField
-              {...props}
-              onChange={handleChangeUnitAmount}
-              helperText={totalSummaryLabel().orElse("")}
-              size="small"
-              variant="outlined"
-              slotProps={{
-                htmlInput: {
-                  min: 0,
-                  step: 0.001,
-                },
-                input: {
-                  endAdornment: (
-                    <>
-                      <UnitSelect
-                        categories={categories()}
-                        value={sample.quantityUnitId}
-                        handleChange={handleChangeQuantityUnit}
-                      />
-                      {(sample.newSampleSubSamplesCount ?? 2) > 1 && (
-                        <InputAdornment position="start">
-                          {"per "}
-                          {sample.template ? alias.alias : "subsample"}
-                        </InputAdornment>
-                      )}
-                    </>
-                  ),
-                },
-              }}
-            />
-          )}
-        />
+        <Box
+          sx={{
+            [`& .${textFieldClasses.root}`]: {
+              maxWidth: "264px",
+              [`& .${inputBaseClasses.root}`]: {
+                paddingRight: 0,
+              },
+            },
+          }}
+        >
+          <FormField
+            label={`Quantity${
+              (sample.newSampleSubSamplesCount ?? 2) > 1
+                ? " per " + alias.alias
+                : ""
+            }`}
+            explanation="Quantity units can also be changed by editing templates."
+            value={amount}
+            error={!valid}
+            helperText={errorMessage()}
+            renderInput={({ ...props }) => (
+              <NumberField
+                {...props}
+                onChange={handleChangeUnitAmount}
+                helperText={totalSummaryLabel().orElse("")}
+                size="small"
+                variant="outlined"
+                slotProps={{
+                  htmlInput: {
+                    min: 0,
+                    step: 0.001,
+                  },
+                  input: {
+                    endAdornment: (
+                      <>
+                        <UnitSelect
+                          categories={categories()}
+                          value={sample.quantityUnitId}
+                          handleChange={handleChangeQuantityUnit}
+                        />
+                        {(sample.newSampleSubSamplesCount ?? 2) > 1 && (
+                          <InputAdornment position="start">
+                            {"per "}
+                            {sample.template ? alias.alias : "subsample"}
+                          </InputAdornment>
+                        )}
+                      </>
+                    ),
+                  },
+                }}
+              />
+            )}
+          />
+        </Box>
       )}
       {sample.id !== null &&
         typeof sample.id !== "undefined" &&

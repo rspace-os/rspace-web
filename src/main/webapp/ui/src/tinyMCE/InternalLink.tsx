@@ -55,9 +55,6 @@ interface InternalLinkProps {
   version?: RevisionVersion | null;
   initialEl?: RemovableElement | null;
 }
-interface EnhancedTableToolbarProps {
-  selected?: RevisionVersion | null;
-}
 type InsertRevisionDetail = {
   id: RevisionIdentifier;
   version?: RevisionVersion | null;
@@ -148,18 +145,6 @@ function normalizeInitialElement(
     return initialEl;
   }
   return null;
-}
-function EnhancedTableToolbar(
-  props: EnhancedTableToolbarProps,
-): React.ReactElement {
-  return (
-    <Toolbar sx={{ pl: 2, pr: 1 }}>
-      <Typography sx={{ flex: "1 1 100%" }} color="inherit" variant="subtitle1">
-        The link currently points at{" "}
-        {props.selected ? `version ${props.selected}.` : "latest version."}
-      </Typography>
-    </Toolbar>
-  );
 }
 export default function InternalLink(
   props: InternalLinkProps,
@@ -274,7 +259,16 @@ export default function InternalLink(
         Internal link version options
       </DialogTitle>
       <DialogContent>
-        <EnhancedTableToolbar selected={props.version} />
+        <Toolbar sx={{ pl: 2, pr: 1 }}>
+          <Typography
+            sx={{ flex: "1 1 100%" }}
+            color="inherit"
+            variant="subtitle1"
+          >
+            The link currently points at{" "}
+            {props.version ? `version ${props.version}.` : "latest version."}
+          </Typography>
+        </Toolbar>
         {latestRevision && (
           <Table
             sx={{ minWidth: 750 }}
@@ -458,19 +452,6 @@ export default function InternalLink(
   );
 }
 
-/*
- * This is necessary because as of MUI v5 useStyles cannot be used in the same
- * component as the root MuiThemeProvider
- */
-function WrappedInternalLink(props: InternalLinkProps): React.ReactElement {
-  return (
-    <StyledEngineProvider injectFirst enableCssLayer>
-      <ThemeProvider theme={materialTheme}>
-        <InternalLink {...props} />
-      </ThemeProvider>
-    </StyledEngineProvider>
-  );
-}
 document.addEventListener("tinymce-insert-revision", (event: Event): void => {
   const detail = (event as InsertRevisionEvent).detail;
   if (!detail) {
@@ -480,11 +461,18 @@ document.addEventListener("tinymce-insert-revision", (event: Event): void => {
   container.className = "revision-dialog";
   document.body.appendChild(container);
   const root = createRoot(container);
+  // StyledEngineProvider + ThemeProvider wrapping is required because as of
+  // MUI v5 useStyles cannot be used in the same component as the root
+  // MuiThemeProvider.
   root.render(
-    <WrappedInternalLink
-      id={detail.id}
-      version={detail.version}
-      initialEl={normalizeInitialElement(detail.el)}
-    />,
+    <StyledEngineProvider injectFirst enableCssLayer>
+      <ThemeProvider theme={materialTheme}>
+        <InternalLink
+          id={detail.id}
+          version={detail.version}
+          initialEl={normalizeInitialElement(detail.el)}
+        />
+      </ThemeProvider>
+    </StyledEngineProvider>,
   );
 });

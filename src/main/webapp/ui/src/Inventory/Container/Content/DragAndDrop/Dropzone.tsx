@@ -55,23 +55,6 @@ const WrapperDiv = forwardRef<
 );
 WrapperDiv.displayName = "WrapperDiv";
 
-function AllowedIcon({ allowed }: { allowed: boolean }): React.ReactNode {
-  return (
-    <Box
-      sx={(theme: Theme) => ({
-        color: allowedColor(allowed, theme),
-        position: "absolute",
-        fontSize: "1.1rem",
-        top: "calc(50% - 15px)",
-        left: "calc(50% - 12px)",
-        transform: "scale(1.5)",
-      })}
-    >
-      {allowed ? <TickIcon /> : <CrossIcon />}
-    </Box>
-  );
-}
-
 type DropzoneArgs = {
   children: ReactNode;
 
@@ -157,7 +140,18 @@ export const Dropzone = observer(
       >
         {renderContent()}
         {dragAndDropInProgress && isChoosing(location) && (
-          <AllowedIcon allowed={allowed} />
+          <Box
+            sx={(theme: Theme) => ({
+              color: allowedColor(allowed, theme),
+              position: "absolute",
+              fontSize: "1.1rem",
+              top: "calc(50% - 15px)",
+              left: "calc(50% - 12px)",
+              transform: "scale(1.5)",
+            })}
+          >
+            {allowed ? <TickIcon /> : <CrossIcon />}
+          </Box>
         )}
       </WrapperDiv>
     );

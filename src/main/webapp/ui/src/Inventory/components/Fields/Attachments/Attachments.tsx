@@ -90,29 +90,6 @@ const CollapseContents = <
     </Box>
   );
 };
-const ToggleButton = ({
-  attachmentCount,
-  open,
-  setOpen,
-}: {
-  attachmentCount: number;
-  open: boolean;
-  setOpen: (value: boolean) => void;
-}): ReactNode => (
-  <CustomTooltip
-    title={match<void, string>([
-      [() => attachmentCount === 0, "No current attachments"],
-      [() => open, "Hide attachment listing"],
-      [() => true, "Show attachment listing"],
-    ])()}
-  >
-    <IconButton onClick={() => setOpen(!open)} disabled={attachmentCount === 0}>
-      <Badge color="primary" badgeContent={attachmentCount}>
-        <ExpandCollapseIcon open={open} />
-      </Badge>
-    </IconButton>
-  </CustomTooltip>
-);
 const FileSelector = ({
   activeResult,
   setOpen,
@@ -251,11 +228,22 @@ const FilesCard = observer(
           subheader="Attach files of any type, e.g. images, documents, or chemistry files."
           action={
             <>
-              <ToggleButton
-                attachmentCount={attachments.length}
-                open={open}
-                setOpen={setOpen}
-              />
+              <CustomTooltip
+                title={match<void, string>([
+                  [() => attachments.length === 0, "No current attachments"],
+                  [() => open, "Hide attachment listing"],
+                  [() => true, "Show attachment listing"],
+                ])()}
+              >
+                <IconButton
+                  onClick={() => setOpen(!open)}
+                  disabled={attachments.length === 0}
+                >
+                  <Badge color="primary" badgeContent={attachments.length}>
+                    <ExpandCollapseIcon open={open} />
+                  </Badge>
+                </IconButton>
+              </CustomTooltip>
             </>
           }
         />

@@ -4,7 +4,7 @@ import { observer } from "mobx-react-lite";
 import FileForImport from "./Fields/File";
 import ColumnFieldMapping from "./Fields/ColumnFieldMapping";
 import TemplateDetails from "./Fields/TemplateDetails";
-import HelpTextAlert from "../../components/HelpTextAlert";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import SubmitSpinner from "../../components/SubmitSpinnerButton";
 import Grid from "@mui/material/Grid";
@@ -149,30 +149,26 @@ function RecordsImport(): React.ReactNode {
           }}
         >
           <Grid sx={{ flexGrow: 1 }}>
-            <HelpTextAlert
-              severity="warning"
-              condition={showFooterAlert}
-              text={
-                <>
-                  Some csv documents cannot be imported: check Settings in the{" "}
-                  {notImportable().map((t, i) => (
-                    <span key={i}>
-                      {i > 0 && <>, </>}
-                      {t.toUpperCase() !== recordType ? (
-                        <Link
-                          to={onTypeSelect(t.toUpperCase() as ImportRecordType)}
-                        >
-                          {t}
-                        </Link>
-                      ) : (
-                        t
-                      )}
-                    </span>
-                  ))}
-                  {notImportable().length === 1 ? <> tab.</> : <> tabs.</>}
-                </>
-              }
-            />
+            {showFooterAlert ? (
+              <Alert severity="warning">
+                Some csv documents cannot be imported: check Settings in the{" "}
+                {notImportable().map((t, i) => (
+                  <span key={i}>
+                    {i > 0 && <>, </>}
+                    {t.toUpperCase() !== recordType ? (
+                      <Link
+                        to={onTypeSelect(t.toUpperCase() as ImportRecordType)}
+                      >
+                        {t}
+                      </Link>
+                    ) : (
+                      t
+                    )}
+                  </span>
+                ))}
+                {notImportable().length === 1 ? <> tab.</> : <> tabs.</>}
+              </Alert>
+            ) : null}
           </Grid>
           <Grid>
             <SubmitSpinner

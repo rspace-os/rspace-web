@@ -104,24 +104,18 @@ export const ExportOptionsWrapper = ({
   const showContainersModule: boolean =
     exportedRecordTypes.includes("CONTAINER") || exportType === "userData";
 
-  const HelperText = () => (
-    <>
-      <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-        {exportType === "userData"
-          ? "Exporting all items owned by the user."
-          : `Exporting ${
-              exportType === "contextMenu" ? "selected" : "all list items"
-            }: ${exportedRecordTypes
-              .map((t) => toTitleCase(t) + "s")
-              .join(", ")}.`}
-      </Typography>
-    </>
-  );
-
   return (
     <>
       <DialogContentText component="span">
-        <HelperText />
+        <Typography component="p" variant="body1" sx={{ mb: 2 }}>
+          {exportType === "userData"
+            ? "Exporting all items owned by the user."
+            : `Exporting ${
+                exportType === "contextMenu" ? "selected" : "all list items"
+              }: ${exportedRecordTypes
+                .map((t) => toTitleCase(t) + "s")
+                .join(", ")}.`}
+        </Typography>
       </DialogContentText>
       <FormControl component="fieldset" fullWidth>
         <Box sx={optionModuleWrapperSx}>

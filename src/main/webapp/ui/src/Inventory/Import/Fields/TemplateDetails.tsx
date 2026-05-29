@@ -1,7 +1,7 @@
 import useStores from "../../../stores/use-stores";
 import * as Parsers from "../../../util/parsers";
 import SummaryInfo from "../../Template/SummaryInfo";
-import HelpTextAlert from "../../../components/HelpTextAlert";
+import Alert from "@mui/material/Alert";
 import TemplateName from "./TemplateName";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -64,14 +64,12 @@ function TemplateDetails(): ReactNode {
             importStore.importData?.setDefaultUnitId(t.defaultUnitId);
           }}
         />
-        <HelpTextAlert
-          text="Select a template from which these imported samples will be created."
-          condition={
-            !importStore.importData?.createNewTemplate &&
-            !importStore.importData?.template
-          }
-          severity="info"
-        />
+        {!importStore.importData?.createNewTemplate &&
+        !importStore.importData?.template ? (
+          <Alert severity="info">
+            {"Select a template from which these imported samples will be created."}
+          </Alert>
+        ) : null}
       </Box>
     </RadioGroup>
   );

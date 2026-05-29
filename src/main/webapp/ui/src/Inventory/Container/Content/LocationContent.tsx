@@ -154,69 +154,6 @@ function ActualLocationContent({
   );
 }
 
-type EmptyLocationContentProps = {
-  location: Location;
-  tabIndex?: number;
-  hasFocus: boolean;
-};
-
-const EmptyLocationContent = ({
-  location,
-  tabIndex,
-
-  /*
-   * We don't do anything special with focus here, we just let the browser do
-   * its default thing with tabIndex
-   */
-  hasFocus: _hasFocus,
-}: EmptyLocationContentProps) => {
-  if (location.parentContainer.cType === "GRID") {
-    const gridIndex = () =>
-      (location.coordY - 1) *
-        (location.parentContainer.gridLayout?.columnsNumber || 0) +
-      location.coordX;
-    return (
-      <Box
-        tabIndex={tabIndex}
-        sx={{
-          fontSize: "12px",
-          backgroundColor: "white",
-          width: "100%",
-          height: "100%",
-          textAlign: "center",
-          paddingTop: "calc(50% - 10px)",
-        }}
-      >
-        {gridIndex()}
-      </Box>
-    );
-  }
-  if (location.parentContainer.cType === "IMAGE") {
-    if (!location.parentContainer.sortedLocations)
-      throw new Error("Locations of container must be known.");
-    const sortedLocations = location.parentContainer.sortedLocations;
-    const imageIndex = () =>
-      sortedLocations.findIndex(
-        (loc) =>
-          loc.coordX === location.coordX && loc.coordY === location.coordY
-      ) + 1;
-    return (
-      <Box
-        sx={{
-          fontSize: "12px",
-          backgroundColor: "white",
-          width: "100%",
-          height: "100%",
-          textAlign: "center",
-        }}
-      >
-        {imageIndex()}
-      </Box>
-    );
-  }
-  return <></>;
-};
-
 /**
  * Component that renders the content of a location
  */
@@ -260,12 +197,49 @@ function LocationContent({
               content={location.content}
             />
           </DragAndDrop.Draggable>
-        ) : (
-          <EmptyLocationContent
-            location={location}
+        ) : location.parentContainer.cType === "GRID" ? (
+          <Box
             tabIndex={tabIndex}
-            hasFocus={hasFocus}
-          />
+            sx={{
+              fontSize: "12px",
+              backgroundColor: "white",
+              width: "100%",
+              height: "100%",
+              textAlign: "center",
+              paddingTop: "calc(50% - 10px)",
+            }}
+          >
+            {(location.coordY - 1) *
+              (location.parentContainer.gridLayout?.columnsNumber || 0) +
+              location.coordX}
+          </Box>
+        ) : location.parentContainer.cType === "IMAGE" ? (
+          (() => {
+            if (!location.parentContainer.sortedLocations)
+              throw new Error("Locations of container must be known.");
+            const sortedLocations = location.parentContainer.sortedLocations;
+            const imageIndex =
+              sortedLocations.findIndex(
+                (loc) =>
+                  loc.coordX === location.coordX &&
+                  loc.coordY === location.coordY,
+              ) + 1;
+            return (
+              <Box
+                sx={{
+                  fontSize: "12px",
+                  backgroundColor: "white",
+                  width: "100%",
+                  height: "100%",
+                  textAlign: "center",
+                }}
+              >
+                {imageIndex}
+              </Box>
+            );
+          })()
+        ) : (
+          <></>
         )}
       </Box>
     </Box>

@@ -219,14 +219,6 @@ function PrintDialog({
     },
   });
 
-  const HelperText = () => (
-    <>
-      <Typography variant="body2" sx={{ textAlign: "center", mb: 1 }}>
-        <strong>Preview Barcode Label Layout</strong>
-      </Typography>
-    </>
-  );
-
   return (
     <ContextDialog
       open={showPrintDialog}
@@ -258,7 +250,9 @@ function PrintDialog({
               width: isSingleColumnLayout ? "100%" : "50%",
             }}
           >
-            <HelperText />
+            <Typography variant="body2" sx={{ textAlign: "center", mb: 1 }}>
+              <strong>Preview Barcode Label Layout</strong>
+            </Typography>
             {/* we preview only one item, resulting from choice of print options */}
             <PreviewPrintItem
               index={0}

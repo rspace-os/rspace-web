@@ -13,36 +13,6 @@ import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 import { type Option } from "../../../stores/definitions/Field";
 import { type GalleryFile } from "../../../eln/gallery/useGalleryListing";
 
-const AdditionalOptionButton = ({
-  field,
-}: {
-  field: FieldModel;
-}): React.ReactNode => {
-  return (
-    <Box sx={{ display: "inline", mt: 1 }}>
-      <Button
-        color="primary"
-        variant="outlined"
-        startIcon={<AddIcon />}
-        onClick={() => {
-          field.setAttributesDirty({
-            options: [
-              ...field.options,
-              {
-                value: "",
-                label: "",
-                editing: true,
-              },
-            ],
-          });
-        }}
-      >
-        Add Value
-      </Button>
-    </Box>
-  );
-};
-
 type DefaultValueFieldArgs = {
   field: FieldModel;
   editing: boolean;
@@ -228,7 +198,27 @@ function DefaultValueField({
       <>
         {custom}
         {hasOptions(field.fieldType) && editing && (
-          <AdditionalOptionButton field={field} />
+          <Box sx={{ display: "inline", mt: 1 }}>
+            <Button
+              color="primary"
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                field.setAttributesDirty({
+                  options: [
+                    ...field.options,
+                    {
+                      value: "",
+                      label: "",
+                      editing: true,
+                    },
+                  ],
+                });
+              }}
+            >
+              Add Value
+            </Button>
+          </Box>
         )}
       </>
     </InputWrapper>

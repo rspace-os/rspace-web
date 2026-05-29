@@ -7,24 +7,6 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-type ClearSearchArgs = {
-  handleReset: () => void;
-};
-
-const ClearSearch = ({ handleReset }: ClearSearchArgs) => (
-  <CustomTooltip title="Clear search">
-    <IconButton
-      size="small"
-      data-test-id="reset-search"
-      aria-label="close"
-      color="inherit"
-      onClick={handleReset}
-    >
-      <CloseIcon fontSize="small" />
-    </IconButton>
-  </CustomTooltip>
-);
-
 type FormArgs = {
   handleSearch: (newQuery: string) => void;
   placeholder: string;
@@ -82,7 +64,19 @@ const Form = observer(
             </IconButton>
           </CustomTooltip>
         </Box>
-        {query && <ClearSearch handleReset={handleReset} />}
+        {query && (
+          <CustomTooltip title="Clear search">
+            <IconButton
+              size="small"
+              data-test-id="reset-search"
+              aria-label="close"
+              color="inherit"
+              onClick={handleReset}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </CustomTooltip>
+        )}
       </>
     );
   }

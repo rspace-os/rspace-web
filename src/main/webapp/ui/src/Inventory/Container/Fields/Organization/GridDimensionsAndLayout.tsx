@@ -9,43 +9,6 @@ import IconButton from "@mui/material/IconButton";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
 import { type Container } from "../../../../stores/definitions/Container";
-function CustomHeader({
-  open,
-  setOpen,
-  id,
-  controls,
-  ...rest
-}: React.ComponentProps<typeof CardHeader> & {
-  open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  id: string;
-  controls: string;
-}): React.ReactNode {
-  return (
-    <CardHeader
-      sx={{ height: 48, p: "0 0 0 12px" }}
-      slotProps={{
-        action: {
-          sx: { m: 0, height: "100%", alignItems: "center", display: "flex" },
-        },
-        title: { variant: "body1", id },
-      }}
-      title="Configure Grid Labels"
-      onClick={() => setOpen(!open)}
-      aria-controls={controls}
-      aria-expanded={open}
-      action={
-        <IconButton
-          onClick={() => setOpen(!open)}
-          aria-label="Expand grid dimension controls group"
-        >
-          <ExpandCollapseIcon open={open} />
-        </IconButton>
-      }
-      {...rest}
-    />
-  );
-}
 type GridDimensionsAndLayoutArgs = {
   container: Container;
 };
@@ -64,11 +27,31 @@ export default function GridDimensionsAndLayout({
         }}
       >
         <Card variant="outlined" role="region" aria-labelledby={headingId}>
-          <CustomHeader
-            open={open}
-            setOpen={setOpen}
-            id={headingId}
-            controls={contentId}
+          <CardHeader
+            sx={{ height: 48, p: "0 0 0 12px" }}
+            slotProps={{
+              action: {
+                sx: {
+                  m: 0,
+                  height: "100%",
+                  alignItems: "center",
+                  display: "flex",
+                },
+              },
+              title: { variant: "body1", id: headingId },
+            }}
+            title="Configure Grid Labels"
+            onClick={() => setOpen(!open)}
+            aria-controls={contentId}
+            aria-expanded={open}
+            action={
+              <IconButton
+                onClick={() => setOpen(!open)}
+                aria-label="Expand grid dimension controls group"
+              >
+                <ExpandCollapseIcon open={open} />
+              </IconButton>
+            }
           />
           <Collapse in={open} id={contentId}>
             <CardContent sx={{ pb: "8px !important" }}>

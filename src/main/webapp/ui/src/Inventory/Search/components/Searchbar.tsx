@@ -78,7 +78,17 @@ const Form = observer(({ handleSearch }: FormArgs) => {
                 ? {
                     endAdornment: (
                       <InputAdornment position="end">
-                        <ClearSearch handleReset={handleReset} />
+                        <CustomTooltip title="Clear search">
+                          <IconButton
+                            size="small"
+                            data-test-id="reset-search"
+                            aria-label="close"
+                            color="inherit"
+                            onClick={handleReset}
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        </CustomTooltip>
                       </InputAdornment>
                     ),
                   }
@@ -101,24 +111,6 @@ const Form = observer(({ handleSearch }: FormArgs) => {
     </>
   );
 });
-
-type ClearSearchArgs = {
-  handleReset: () => void;
-};
-
-const ClearSearch = ({ handleReset }: ClearSearchArgs) => (
-  <CustomTooltip title="Clear search">
-    <IconButton
-      size="small"
-      data-test-id="reset-search"
-      aria-label="close"
-      color="inherit"
-      onClick={handleReset}
-    >
-      <CloseIcon fontSize="small" />
-    </IconButton>
-  </CustomTooltip>
-);
 
 type SearchbarArgs = {
   handleSearch: (query: string) => void;

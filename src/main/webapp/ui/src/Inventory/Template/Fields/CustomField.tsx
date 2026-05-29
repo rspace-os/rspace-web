@@ -31,14 +31,6 @@ const deleteOptions: Array<DeleteOption> = [
   },
 ];
 
-const FieldTypeLabel = ({ field }: { field: FieldModel }) => {
-  return (
-    <Typography variant="subtitle1" sx={{ whiteSpace: "nowrap" }}>
-      {FIELD_LABEL[field.fieldType]}
-    </Typography>
-  );
-};
-
 const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
   return (
     <InputWrapper label="Type">
@@ -84,23 +76,6 @@ const Mandatory = observer(
   },
 );
 
-const DeletionRecap = ({ field }: { field: FieldModel }) => {
-  return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="subtitle1">
-        <strong>{field.name}</strong> {FIELD_LABEL[field.fieldType]} field will
-        be deleted from this template.
-      </Typography>
-      <p>
-        New samples will not include this field.{" "}
-        {field.deleteFieldOnSampleUpdate
-          ? "The field will also be deleted from existing samples made with this template after the samples are updated to the latest template version."
-          : "The field will not be deleted from existing samples even if the samples are updated to the latest template version."}
-      </p>
-    </Box>
-  );
-};
-
 type CustomFieldArgs = {
   field: FieldModel;
   i: number;
@@ -127,7 +102,18 @@ function CustomField({
       <div data-testid="TemplateField">
         <Paper variant="outlined">
           {field.deleteFieldRequest ? (
-            <DeletionRecap field={field} />
+            <Box sx={{ p: 2 }}>
+              <Typography variant="subtitle1">
+                <strong>{field.name}</strong> {FIELD_LABEL[field.fieldType]}{" "}
+                field will be deleted from this template.
+              </Typography>
+              <p>
+                New samples will not include this field.{" "}
+                {field.deleteFieldOnSampleUpdate
+                  ? "The field will also be deleted from existing samples made with this template after the samples are updated to the latest template version."
+                  : "The field will not be deleted from existing samples even if the samples are updated to the latest template version."}
+              </p>
+            </Box>
           ) : (
             <Box sx={{ position: "relative", p: 2 }}>
               <Box
@@ -170,7 +156,11 @@ function CustomField({
                       )}
                     </Box>
                   )}
-                  {!field.initial && <FieldTypeLabel field={field} />}
+                  {!field.initial && (
+                    <Typography variant="subtitle1" sx={{ whiteSpace: "nowrap" }}>
+                      {FIELD_LABEL[field.fieldType]}
+                    </Typography>
+                  )}
                 </Box>
               </Box>
               <Box sx={{ mt: 4 }}>

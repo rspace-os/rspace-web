@@ -132,32 +132,6 @@ const MobileInfoPanelContent: React.ComponentType<{
 );
 
 /**
- * This button serves two purposes:
- *
- *  1. On touch devices, it provides a visual indicator that the panel can be
- *     swiped up and down to open and close, respectively.
- *
- *  2. On non-touch devices with small viewports, it provides a button that the
- *     user can tap to trigger the opening/closing of the floating panel.
- *
- */
-const Puller = (props: React.ComponentPropsWithoutRef<"button">) => (
-  <Box
-    component="button"
-    {...props}
-    sx={{
-      width: 30,
-      height: 6,
-      backgroundColor: grey[300],
-      borderRadius: 3,
-      position: "absolute",
-      top: 8,
-      left: "calc(50% - 15px)",
-    }}
-  />
-);
-
-/**
  * In addition to simply stating the name of the selected file, this text field
  * allows users to rename the file in place. At a glance it looks just like the
  * heading of the info panel, but on hover there is a subtle background and the
@@ -1133,7 +1107,13 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
           aria-label="info panel"
           id={mobileInfoPanelId}
         >
-          <Puller
+          {/*
+            * Drawer "puller": on touch devices a visual indicator that the
+            * panel can be swiped open/closed, on non-touch small viewports a
+            * tap target that toggles the floating panel.
+            */}
+          <Box
+            component="button"
             onClick={() => setMobileInfoPanelOpen(!mobileInfoPanelOpen)}
             onKeyDown={(e) => {
               if (e.key === " ") setMobileInfoPanelOpen(!mobileInfoPanelOpen);
@@ -1142,6 +1122,15 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
             tabIndex={0}
             aria-controls={mobileInfoPanelId}
             aria-expanded={mobileInfoPanelOpen ? "true" : "false"}
+            sx={{
+              width: 30,
+              height: 6,
+              backgroundColor: grey[300],
+              borderRadius: 3,
+              position: "absolute",
+              top: 8,
+              left: "calc(50% - 15px)",
+            }}
           />
           <CardContent>
             <Grid

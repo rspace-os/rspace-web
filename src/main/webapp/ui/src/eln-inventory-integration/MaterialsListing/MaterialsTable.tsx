@@ -27,18 +27,6 @@ import UsedQuantityField from "./UsedQuantityField";
 import SubSampleModel from "../../stores/models/SubSampleModel";
 import { hasQuantity } from "../../stores/models/HasQuantity";
 import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
-function NameCell({ material }: { material: Material }): React.ReactNode {
-  return (
-    <>
-      <Box sx={{ "@media print": { display: "none" } }}>
-        <NameWithBadge record={material.invRec} />
-      </Box>
-      <Box sx={{ display: "none", "@media print": { display: "block" } }}>
-        {material.invRec.name}
-      </Box>
-    </>
-  );
-}
 const colorCodedQuantity = (
   material: Material,
   list: ListOfMaterials,
@@ -318,7 +306,12 @@ function MaterialsTable({
               justifyContent: "space-between",
             }}
           >
-            <NameCell material={material} />
+            <Box sx={{ "@media print": { display: "none" } }}>
+              <NameWithBadge record={material.invRec} />
+            </Box>
+            <Box sx={{ display: "none", "@media print": { display: "block" } }}>
+              {material.invRec.name}
+            </Box>
             {onRemove && (
               <IconButtonWithTooltip
                 title="Remove from list"

@@ -34,144 +34,6 @@ import { hasRequiredPermissions } from "../../../stores/definitions/InventoryRec
 const REQUIRED_PERMISSIONS_TOOLTIP =
   "You do not have permission to select this item.";
 
-function CustomCardStructure({
-  navigateOnClick,
-  greyOut,
-  ...rest
-}: React.ComponentProps<typeof CardStructure> & {
-  navigateOnClick: boolean;
-  greyOut: boolean;
-}): React.ReactNode {
-  return (
-    <CardStructure
-      sx={{
-        transition: "filter .2s ease-in-out, opacity .2s ease-in-out",
-        cursor: navigateOnClick ? "pointer" : "default",
-        height: "100%",
-        ...(greyOut ? { filter: "grayscale(1)", pointerEvents: "none", opacity: 0.6 } : {}),
-      }}
-      {...rest}
-    />
-  );
-}
-
-function Details({ record }: { record: InventoryRecord }): React.ReactNode {
-  return (
-    <DescriptionList
-      content={[
-        ...(record.readAccessLevel === "full" && record instanceof ContainerModel
-          ? [
-              {
-                label: "Contents",
-                value: <ContentsChips record={record} />,
-              },
-            ]
-          : []),
-        ...(record.readAccessLevel === "full" && record instanceof SampleModel
-          ? [
-              {
-                label: "Total Quantity",
-                value: record.quantityLabel,
-              },
-            ]
-          : []),
-        ...(record.readAccessLevel === "full" && record instanceof SubSampleModel
-          ? [
-              {
-                label: "Quantity",
-                value: record.quantityLabel,
-              },
-            ]
-          : []),
-        ...(record.readAccessLevel !== "public" &&
-        record instanceof SubSampleModel
-          ? [
-              {
-                label: "Sample",
-                value: <RecordLink record={record.sample} overflow />,
-                reducedPadding: true,
-              },
-            ]
-          : []),
-        ...(record.owner
-          ? [
-              {
-                label: "Owner",
-                value: (
-                  <UserDetails
-                    userId={record.owner.id}
-                    fullName={record.owner.fullName}
-                    position={["bottom", "right"]}
-                  />
-                ),
-                reducedPadding: true,
-              },
-            ]
-          : []),
-        ...(record.readAccessLevel !== "public" &&
-        (record instanceof SubSampleModel || record instanceof ContainerModel) &&
-        record.immediateParentContainer
-          ? [
-              {
-                label: "Location",
-                value: (
-                  <Box sx={{ mt: 0.5 }}>
-                    <RecordLink
-                      record={record.immediateParentContainer}
-                      overflow
-                    />
-                  </Box>
-                ),
-                below: true,
-              },
-            ]
-          : []),
-      ]}
-    />
-  );
-}
-
-function Modified({ record }: { record: InventoryRecord }): React.ReactNode {
-  return (
-    <Box
-      sx={{
-        m: (theme) => theme.spacing(0, 1, 1, 1),
-        color: "text.secondary",
-        fontSize: "0.8em",
-      }}
-    >
-      <span>Modified </span>
-      <TimeAgoCustom
-        time={record.lastModified}
-        formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
-      />
-      <span> by </span>
-      {record.modifiedByFullName}
-    </Box>
-  );
-}
-
-function ImagePlaceholder(): React.ReactNode {
-  return (
-    <CardMedia
-      sx={{
-        display: "flex",
-        backgroundColor: (theme) => theme.palette.primary.saturated,
-        opacity: "0.3",
-        height: "100%",
-      }}
-    >
-      <PhotoIcon
-        sx={{
-          color: "white",
-          margin: "auto auto",
-          fontSize: "5em",
-        }}
-      />
-    </CardMedia>
-  );
-}
-
 type CardArgs = {
   record: InventoryRecord;
 };
@@ -257,10 +119,20 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
     basketSearch: search.fetcher.basketSearch,
   })("menuitem");
 
+  const navigateOnClick =
+    !disabled && !anchorEl && !cardIsGreyedOut && Boolean(isChild);
+  const greyOut = cardIsGreyedOut && !tooltipText;
   const card = (
-    <CustomCardStructure
+    <CardStructure
+      sx={{
+        transition: "filter .2s ease-in-out, opacity .2s ease-in-out",
+        cursor: navigateOnClick ? "pointer" : "default",
+        height: "100%",
+        ...(greyOut
+          ? { filter: "grayscale(1)", pointerEvents: "none", opacity: 0.6 }
+          : {}),
+      }}
       deleted={record.deleted}
-      greyOut={cardIsGreyedOut && !tooltipText}
       image={
         record.thumbnail ? (
           <CardMedia
@@ -274,7 +146,22 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
             onClick={openPreview}
           />
         ) : (
-          <ImagePlaceholder />
+          <CardMedia
+            sx={{
+              display: "flex",
+              backgroundColor: (theme) => theme.palette.primary.saturated,
+              opacity: "0.3",
+              height: "100%",
+            }}
+          >
+            <PhotoIcon
+              sx={{
+                color: "white",
+                margin: "auto auto",
+                fontSize: "5em",
+              }}
+            />
+          </CardMedia>
         )
       }
       headerAvatar={
@@ -319,9 +206,103 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
           </StyledMenu>
         </>
       }
-      content={<Details record={record} />}
+      content={
+        <DescriptionList
+          content={[
+            ...(record.readAccessLevel === "full" &&
+            record instanceof ContainerModel
+              ? [
+                  {
+                    label: "Contents",
+                    value: <ContentsChips record={record} />,
+                  },
+                ]
+              : []),
+            ...(record.readAccessLevel === "full" &&
+            record instanceof SampleModel
+              ? [
+                  {
+                    label: "Total Quantity",
+                    value: record.quantityLabel,
+                  },
+                ]
+              : []),
+            ...(record.readAccessLevel === "full" &&
+            record instanceof SubSampleModel
+              ? [
+                  {
+                    label: "Quantity",
+                    value: record.quantityLabel,
+                  },
+                ]
+              : []),
+            ...(record.readAccessLevel !== "public" &&
+            record instanceof SubSampleModel
+              ? [
+                  {
+                    label: "Sample",
+                    value: <RecordLink record={record.sample} overflow />,
+                    reducedPadding: true,
+                  },
+                ]
+              : []),
+            ...(record.owner
+              ? [
+                  {
+                    label: "Owner",
+                    value: (
+                      <UserDetails
+                        userId={record.owner.id}
+                        fullName={record.owner.fullName}
+                        position={["bottom", "right"]}
+                      />
+                    ),
+                    reducedPadding: true,
+                  },
+                ]
+              : []),
+            ...(record.readAccessLevel !== "public" &&
+            (record instanceof SubSampleModel ||
+              record instanceof ContainerModel) &&
+            record.immediateParentContainer
+              ? [
+                  {
+                    label: "Location",
+                    value: (
+                      <Box sx={{ mt: 0.5 }}>
+                        <RecordLink
+                          record={record.immediateParentContainer}
+                          overflow
+                        />
+                      </Box>
+                    ),
+                    below: true,
+                  },
+                ]
+              : []),
+          ]}
+        />
+      }
       contentFooter={
-        record.readAccessLevel === "full" ? <Modified record={record} /> : null
+        record.readAccessLevel === "full" ? (
+          <Box
+            sx={{
+              m: (theme) => theme.spacing(0, 1, 1, 1),
+              color: "text.secondary",
+              fontSize: "0.8em",
+            }}
+          >
+            <span>Modified </span>
+            <TimeAgoCustom
+              time={record.lastModified}
+              formatter={(value, unit, suffix) =>
+                `${value}${unit[0]} ${suffix}`
+              }
+            />
+            <span> by </span>
+            {record.modifiedByFullName}
+          </Box>
+        ) : null
       }
       onClick={() => {
         if (disabled || Boolean(anchorEl) || cardIsGreyedOut) {
@@ -333,7 +314,6 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
           activateResult(record);
         }
       }}
-      navigateOnClick={!disabled && !anchorEl && !cardIsGreyedOut && Boolean(isChild)}
     />
   );
 

@@ -30,92 +30,6 @@ const tableRowCellSx: SxProps<Theme> = (_theme) => ({
     p: 0.5,
   },
 });
-function PlanHeaderRow() {
-  return (
-    <TableRow sx={tableRowSx}>
-      <TableCell sx={tableRowCellSx}>
-        <Box component="span" sx={{ flex: 1 }}>
-          Select
-        </Box>
-        <Box component="span" sx={{ flex: 5 }}>
-          DMP Title
-        </Box>
-        <Box component="span" sx={{ flex: 3, textAlign: "center" }}>
-          ID
-        </Box>
-      </TableCell>
-    </TableRow>
-  );
-}
-
-type BodyRowArgs = {
-  plan: Plan;
-  selectedPlans: Array<DMPUserInternalId>;
-  addSelectedPlan: (id: DMPUserInternalId) => void;
-  removeSelectedPlan: (id: DMPUserInternalId) => void;
-};
-
-function PlanRow({
-  plan,
-  selectedPlans,
-  addSelectedPlan,
-  removeSelectedPlan,
-}: BodyRowArgs) {
-  const isCurrentlySelected = (id: DMPUserInternalId) =>
-    selectedPlans.includes(id);
-
-  const toggleSelected = () => {
-    const id = plan.dmpUserInternalId;
-    if (isCurrentlySelected(id)) removeSelectedPlan(id);
-    else addSelectedPlan(id);
-  };
-
-  return (
-    <TableRow
-      sx={(theme) => ({
-        ...tableRowSx,
-        borderBottom: `1px dotted ${theme.palette.primary.main}`,
-      })}
-      data-testid={plan.dmpId}
-    >
-      <TableCell sx={tableRowCellSx}>
-        <Box
-          component="span"
-          sx={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Checkbox
-            color="primary"
-            onChange={() => toggleSelected()}
-            value={"dmpUserInternalId"}
-            checked={isCurrentlySelected(plan.dmpUserInternalId)}
-            slotProps={{ input: { "aria-label": "Plan selection" } }}
-          />
-        </Box>
-
-        <Box component="span" sx={(theme) => ({ flex: 5, color: theme.palette.primary.main })}>
-          {plan.dmpTitle}
-        </Box>
-        <Box
-          component="span"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flex: 3,
-          }}
-        >
-          {plan.dmpId}
-        </Box>
-      </TableCell>
-    </TableRow>
-  );
-}
-
 type TableArgs = {
   plans: Array<Plan>;
   selectedPlans: Array<DMPUserInternalId>;
@@ -133,18 +47,80 @@ export default function DMPTableSmall({
     <TableContainer sx={{ overflowX: "hidden" }}>
       <Table size="small">
         <TableHead sx={{ maxWidth: "100%" }}>
-          <PlanHeaderRow />
+          <TableRow sx={tableRowSx}>
+            <TableCell sx={tableRowCellSx}>
+              <Box component="span" sx={{ flex: 1 }}>
+                Select
+              </Box>
+              <Box component="span" sx={{ flex: 5 }}>
+                DMP Title
+              </Box>
+              <Box component="span" sx={{ flex: 3, textAlign: "center" }}>
+                ID
+              </Box>
+            </TableCell>
+          </TableRow>
         </TableHead>
         <TableBody sx={{ maxWidth: "100%" }}>
-          {plans.map((plan, i) => (
-            <PlanRow
-              key={i}
-              plan={plan}
-              selectedPlans={selectedPlans}
-              addSelectedPlan={addSelectedPlan}
-              removeSelectedPlan={removeSelectedPlan}
-            />
-          ))}
+          {plans.map((plan, i) => {
+            const id = plan.dmpUserInternalId;
+            const isSelected = selectedPlans.includes(id);
+            return (
+              <TableRow
+                key={i}
+                sx={(theme) => ({
+                  ...tableRowSx,
+                  borderBottom: `1px dotted ${theme.palette.primary.main}`,
+                })}
+                data-testid={plan.dmpId}
+              >
+                <TableCell sx={tableRowCellSx}>
+                  <Box
+                    component="span"
+                    sx={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Checkbox
+                      color="primary"
+                      onChange={() => {
+                        if (isSelected) removeSelectedPlan(id);
+                        else addSelectedPlan(id);
+                      }}
+                      value={"dmpUserInternalId"}
+                      checked={isSelected}
+                      slotProps={{
+                        input: { "aria-label": "Plan selection" },
+                      }}
+                    />
+                  </Box>
+                  <Box
+                    component="span"
+                    sx={(theme) => ({
+                      flex: 5,
+                      color: theme.palette.primary.main,
+                    })}
+                  >
+                    {plan.dmpTitle}
+                  </Box>
+                  <Box
+                    component="span"
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flex: 3,
+                    }}
+                  >
+                    {plan.dmpId}
+                  </Box>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </TableContainer>

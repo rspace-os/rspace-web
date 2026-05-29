@@ -212,16 +212,6 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
   );
 }
 
-function SidebarInfoEntrypoint(props: SidebarInfoProps) {
-  return (
-    <StyledEngineProvider injectFirst enableCssLayer>
-      <ThemeProvider theme={materialTheme}>
-        <SidebarInfo {...props} />
-      </ThemeProvider>
-    </StyledEngineProvider>
-  );
-}
-
 document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
   const iframeSelector = getCustomEventDetail(event);
   if (typeof iframeSelector !== "string") {
@@ -238,7 +228,13 @@ document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
 
   const root = sidebarRoots.get(container) ?? createRoot(container);
   sidebarRoots.set(container, root);
-  root.render(<SidebarInfoEntrypoint iframe={iframe} />);
+  root.render(
+    <StyledEngineProvider injectFirst enableCssLayer>
+      <ThemeProvider theme={materialTheme}>
+        <SidebarInfo iframe={iframe} />
+      </ThemeProvider>
+    </StyledEngineProvider>,
+  );
 });
 
 function watchEditor(
