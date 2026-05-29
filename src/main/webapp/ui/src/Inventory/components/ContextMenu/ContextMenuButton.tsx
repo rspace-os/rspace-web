@@ -1,4 +1,4 @@
-import Button from "@mui/material/Button";
+import Button, { buttonClasses } from "@mui/material/Button";
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
@@ -51,7 +51,7 @@ function ContextMenuButton({
               borderRadius: 4,
               minWidth: "auto",
               fontSize: "0.8125rem",
-              "& .MuiButton-startIcon svg": {
+              [`& .${buttonClasses.startIcon} svg`]: {
                 fontSize: "1rem !important",
               },
               ...(active

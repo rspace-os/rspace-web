@@ -1,7 +1,9 @@
 import React from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
-import Dialog from "@mui/material/Dialog";
+import Dialog, { dialogClasses } from "@mui/material/Dialog";
+import { paperClasses } from "@mui/material/Paper";
+import { dialogContentClasses } from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import AppBar from "../../../components/AppBar";
 import DialogContent from "@mui/material/DialogContent";
@@ -138,12 +140,12 @@ function MoveCopyDialog({
         e.stopPropagation();
       }}
       sx={{
-        "& .MuiDialog-container > .MuiPaper-root": {
+        [`& .${dialogClasses.container} > .${paperClasses.root}`]: {
           width: "530px",
           maxWidth: "530px",
           height: "calc(90% - 32px)",
         },
-        "& .MuiDialogContent-root": {
+        [`& .${dialogContentClasses.root}`]: {
           height: "calc(100% - 48px)",
           overflowY: "auto",
           paddingBottom: 0,

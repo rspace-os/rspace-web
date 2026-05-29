@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import TextField from "@mui/material/TextField";
+import { inputBaseClasses } from "@mui/material/InputBase";
 import Box from "@mui/material/Box";
 import type { Alias } from "@/stores/definitions/Sample";
 import { toTitleCase } from "@/util/Util";
@@ -165,7 +166,7 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
                 variant={aliasDisabled ? "standard" : "outlined"}
                 size="small"
                 multiline
-                sx={{ m: 0.5, width: "45%", "& .MuiInputBase-input": { color: "black" } }}
+                sx={{ m: 0.5, width: "45%", [`& .${inputBaseClasses.input}`]: { color: "black" } }}
                 placeholder="Minimum 2 char."
                 value={customSelected ? value.alias : ""}
                 onChange={(e) => {
@@ -196,7 +197,7 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
                 variant={aliasDisabled ? "standard" : "outlined"}
                 size="small"
                 multiline
-                sx={{ m: 0.5, width: "45%", "& .MuiInputBase-input": { color: "black" } }}
+                sx={{ m: 0.5, width: "45%", [`& .${inputBaseClasses.input}`]: { color: "black" } }}
                 placeholder="Minimum 2 char."
                 value={customSelected ? value.plural : ""}
                 onChange={(e) => {

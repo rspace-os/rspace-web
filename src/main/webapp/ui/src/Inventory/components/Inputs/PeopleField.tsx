@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import RsSet, { unionWith, nullishToSingleton } from "../../../util/set";
 import Autocomplete from "@mui/material/Autocomplete";
+import { autocompleteClasses } from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -112,7 +113,10 @@ function PeopleField({
 
   return (
     <Autocomplete<PersonModel>
-      sx={{ maxWidth: 500, "& .MuiAutocomplete-option": { cursor: "default" } }}
+      sx={{
+        maxWidth: 500,
+        [`& .${autocompleteClasses.option}`]: { cursor: "default" },
+      }}
       options={allUsers}
       groupBy={(u: PersonModel) => u.groupByLabel}
       getOptionLabel={(u: Person) => u.label}

@@ -2,6 +2,7 @@ import Result from "../util/result";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 import React from "react";
 import Popover from "@mui/material/Popover";
+import { paperClasses } from "@mui/material/Paper";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import { type SxProps, type Theme } from "@mui/material/styles";
@@ -118,7 +119,7 @@ export default function ValidatingSubmitButton({
         transitionDuration={300}
         onClose={() => setAnchorEl(null)}
         sx={{
-          "& > .MuiPaper-root": {
+          [`& > .${paperClasses.root}`]: {
             padding: "2px",
             transitionDelay: "150ms !important",
           },

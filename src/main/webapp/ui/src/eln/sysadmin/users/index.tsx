@@ -11,7 +11,9 @@ import DialogActions from "@mui/material/DialogActions";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
-import Chip from "@mui/material/Chip";
+import Chip, { chipClasses } from "@mui/material/Chip";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { tablePaginationClasses } from "@mui/material/TablePagination";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
@@ -26,7 +28,7 @@ import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
+import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import {
   DataGrid,
@@ -348,7 +350,7 @@ const SearchBox = ({
         }}
         value={searchTerm}
         sx={{
-          "& .MuiInputBase-input": {
+          [`& .${inputBaseClasses.input}`]: {
             p: "5px 0",
           },
         }}
@@ -1354,7 +1356,7 @@ const UsersToolbar = ({
               ml: 1,
               height: 20,
               pointerEvents: "none",
-              "& .MuiChip-label": { px: 1 },
+              [`& .${chipClasses.label}`]: { px: 1 },
             }}
           />
         )}
@@ -1679,7 +1681,7 @@ export const UsersPage = (): React.ReactNode => {
               color: "standardIcon.main",
               textTransform: "capitalize",
               letterSpacing: "0.04em",
-              "& .MuiChip-deleteIcon": {
+              [`& .${chipClasses.deleteIcon}`]: {
                 color: "#94a7b2",
                 marginRight: 0,
               },
@@ -1725,7 +1727,7 @@ export const UsersPage = (): React.ReactNode => {
               color: "standardIcon.main",
               textTransform: "capitalize",
               letterSpacing: "0.04em",
-              "& .MuiChip-deleteIcon": {
+              [`& .${chipClasses.deleteIcon}`]: {
                 color: "#94a7b2",
                 marginRight: 0,
               },
@@ -1796,7 +1798,7 @@ export const UsersPage = (): React.ReactNode => {
                     <Table
                       size="small"
                       sx={(theme) => ({
-                        "& .MuiTableCell-root": {
+                        [`& .${tableCellClasses.root}`]: {
                           backgroundColor: "#edf7fc",
                           padding: "4px 12px",
                           borderBottom: theme.borders.themedDialogTitle?.(
@@ -1805,7 +1807,7 @@ export const UsersPage = (): React.ReactNode => {
                             20,
                           ),
                         },
-                        "& tr:last-of-type .MuiTableCell-root": {
+                        [`& tr:last-of-type .${tableCellClasses.root}`]: {
                           borderBottom: "unset",
                         },
                       })}
@@ -1940,7 +1942,7 @@ export const UsersPage = (): React.ReactNode => {
                     <Box sx={{ width: "100%" }}>
                       <DataGrid
                         sx={{
-                          "& .MuiTablePagination-selectLabel": {
+                          [`& .${tablePaginationClasses.selectLabel}`]: {
                             m: 0,
                           },
                         }}

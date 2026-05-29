@@ -25,6 +25,8 @@ import CardHeader from "@mui/material/CardHeader";
 import Stack from "@mui/material/Stack";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { type Hsl } from "../../accentedTheme";
+import { typographyClasses } from "@mui/material/Typography";
+import { svgIconClasses } from "@mui/material/SvgIcon";
 function hsl(
   hue: number,
   saturation: number,
@@ -317,7 +319,7 @@ function IntegrationCard<Credentials>({
               },
               label: {
                 "&.Mui-disabled": {
-                  "& .MuiTypography-root": {
+                  [`& .${typographyClasses.root}`]: {
                     color: "grey",
                   },
                 },
@@ -327,11 +329,11 @@ function IntegrationCard<Credentials>({
           MuiRadio: {
             styleOverrides: {
               root: {
-                "& .MuiSvgIcon-root": {
+                [`& .${svgIconClasses.root}`]: {
                   color: accentTextColor(color),
                 },
                 "&.Mui-disabled": {
-                  "& .MuiSvgIcon-root": {
+                  [`& .${svgIconClasses.root}`]: {
                     color: "grey",
                   },
                 },

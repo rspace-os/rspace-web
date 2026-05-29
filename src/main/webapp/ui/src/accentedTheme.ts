@@ -32,6 +32,8 @@ import { selectClasses } from "@mui/material/Select";
 import { checkboxClasses } from "@mui/material/Checkbox";
 import { radioClasses } from "@mui/material/Radio";
 import { buttonGroupClasses } from "@mui/material/ButtonGroup";
+import { touchRippleClasses } from "@mui/material/ButtonBase";
+import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
 
 /**
  * Represents an HSL color.
@@ -478,7 +480,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                     hoverDarkenCoefficient,
                   ),
                 },
-                "& .MuiTouchRipple-root": {
+                [`& .${touchRippleClasses.root}`]: {
                   color: accentedBackground,
                 },
                 [`& .${listItemIconClasses.root}`]: {
@@ -849,10 +851,10 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               border: accentedBorder,
             },
             menu: {
-              "& .MuiPaper-root": {
+              [`& .${paperClasses.root}`]: {
                 boxShadow: "none",
               },
-              "& .MuiDataGrid-menuList": {
+              [`& .${gridClasses.menuList}`]: {
                 border: accentedBorder,
               },
             },
@@ -1116,13 +1118,13 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                     ? accentedBackground
                     : darken(secondaryBackground, hoverDarkenCoefficient * 5),
                 },
-                "& .MuiTreeItem-label": {
+                [`& .${treeItemClasses.label}`]: {
                   color: contrastTextColor,
                   [`& .${typographyClasses.root}`]: {
                     color: contrastTextColor,
                   },
                 },
-                "& .MuiTreeItem-iconContainer": {
+                [`& .${treeItemClasses.iconContainer}`]: {
                   color: contrastTextColor,
                 },
                 "&:hover": {

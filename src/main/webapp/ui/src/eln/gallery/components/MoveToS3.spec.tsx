@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import * as Jwt from "jsonwebtoken";
 import AxeBuilder from "@axe-core/playwright";
+import { backdropClasses } from "@mui/material/Backdrop";
 import {
   MoveToS3DialogWithOneFile,
   MoveToS3DialogWithTwoFiles,
@@ -127,7 +128,7 @@ const feature = test.extend<{
           page.getByText(/a destination filestore is required/i),
         ).toBeVisible({ timeout: 5000 });
         // Dismiss the validation popover by clicking its backdrop
-        await page.locator(".MuiBackdrop-root").last().click();
+        await page.locator(`.${backdropClasses.root}`).last().click();
       },
       "the submit button should be enabled": async () => {
         await expect(
@@ -158,7 +159,7 @@ const feature = test.extend<{
           page.getByText(/a destination filestore is required/i),
         ).toBeVisible({ timeout: 5000 });
         // Dismiss the validation popover by clicking its backdrop
-        await page.locator(".MuiBackdrop-root").last().click();
+        await page.locator(`.${backdropClasses.root}`).last().click();
       },
       "the transfer button should be enabled": async () => {
         await expect(

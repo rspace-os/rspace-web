@@ -5,6 +5,8 @@ import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import CardHeader from "@mui/material/CardHeader";
+import { cardHeaderClasses } from "@mui/material/CardHeader";
+import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import NameWithBadge from "../NameWithBadge";
 import { match } from "../../../util/Util";
 import NavigateToNode from "./NavigateToNode";
@@ -55,7 +57,7 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
         <TreeItem
           sx={{
             transition: theme.transitions.filterToggle,
-            "& .MuiTreeItem-content": {
+            [`& .${treeItemClasses.content}`]: {
               cursor: "default",
             },
           }}
@@ -74,7 +76,7 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
               // TODO: requiredPermissions tooltips are not supported in tree view yet.
               sx={{
                 p: 0.5,
-                "& .MuiCardHeader-action": {
+                [`& .${cardHeaderClasses.action}`]: {
                   marginTop: "0 !important",
                   marginRight: "0 !important",
                 },

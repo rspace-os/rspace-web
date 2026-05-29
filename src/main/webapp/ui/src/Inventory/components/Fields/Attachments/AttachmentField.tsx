@@ -6,6 +6,7 @@ import TableContainer from "@mui/material/TableContainer";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TextField from "@mui/material/TextField";
+import { inputBaseClasses } from "@mui/material/InputBase";
 import Box from "@mui/material/Box";
 import FileField from "../../../../components/Inputs/FileField";
 import NoValue from "../../../../components/NoValue";
@@ -111,7 +112,7 @@ function AttachmentField<
           helperText={!error ? null : helperText}
           disabled={disabled}
           fullWidth
-          sx={{ "& .MuiInputBase-input": { fontSize: "14px" } }}
+          sx={{ [`& .${inputBaseClasses.input}`]: { fontSize: "14px" } }}
         />
       )}
       {/*

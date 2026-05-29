@@ -18,7 +18,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import CardActions from "@mui/material/CardActions";
-import Checkbox from "@mui/material/Checkbox";
+import Checkbox, { checkboxClasses } from "@mui/material/Checkbox";
 import ValidatingSubmitButton, {
   IsValid,
   IsInvalid,
@@ -103,7 +103,7 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
             : `2px solid ${theme.palette.callToAction.main} !important`,
           backgroundColor: `${alpha(theme.palette.callToAction.background, 0.05)} !important`,
         },
-        "& .MuiCheckbox-root": {
+        [`& .${checkboxClasses.root}`]: {
           color: selected
             ? theme.palette.callToAction.main
             : theme.palette.primary.main,

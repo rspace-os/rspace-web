@@ -1,9 +1,11 @@
 import React from "react";
 import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
+import ListItemButton, {
+  listItemButtonClasses,
+} from "@mui/material/ListItemButton";
+import ListItemText, { listItemTextClasses } from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import Badge from "@mui/material/Badge";
+import Badge, { badgeClasses } from "@mui/material/Badge";
 import { darken, alpha } from "@mui/system";
 
 type DrawerTabProps = {
@@ -34,7 +36,7 @@ const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
       disablePadding
       sx={(theme) => ({
         position: "static",
-        "& .MuiListItemText-root": {
+        [`& .${listItemTextClasses.root}`]: {
           transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
             ? "none"
             : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -42,7 +44,7 @@ const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
           transform: drawerOpen ? "unset" : "translateX(-20px)",
           textTransform: "uppercase",
         },
-        "& .MuiListItemButton-root": {
+        [`& .${listItemButtonClasses.root}`]: {
           "&:hover": {
             backgroundColor: alpha(theme.palette.primary.background, 0.25),
           },
@@ -73,7 +75,7 @@ const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
                 : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
               opacity: drawerOpen ? 1 : 0,
               transform: drawerOpen ? "unset" : "translateX(20px)",
-              "& .MuiBadge-badge": {
+              [`& .${badgeClasses.badge}`]: {
                 position: "static",
                 transform: "none",
                 minWidth: "20px",

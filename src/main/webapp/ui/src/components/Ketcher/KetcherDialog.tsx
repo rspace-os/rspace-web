@@ -1,7 +1,8 @@
 import "ketcher-react/dist/index.css";
 
 import React, { useMemo, useRef, useState } from "react";
-import Dialog from "@mui/material/Dialog";
+import Dialog, { dialogClasses } from "@mui/material/Dialog";
+import { paperClasses } from "@mui/material/Paper";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
@@ -141,7 +142,7 @@ const KetcherDialog = ({
       fullWidth
       maxWidth="xl"
       sx={{
-        "& > .MuiDialog-container > .MuiPaper-root": {
+        [`& > .${dialogClasses.container} > .${paperClasses.root}`]: {
           height: "calc(100% - 64px)",
         },
       }}

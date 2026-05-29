@@ -1,6 +1,9 @@
 import React from "react";
 import MenuItem from "@mui/material/MenuItem";
-import CardHeader from "@mui/material/CardHeader";
+import CardHeader, { cardHeaderClasses } from "@mui/material/CardHeader";
+import { cardMediaClasses } from "@mui/material/CardMedia";
+import { svgIconClasses } from "@mui/material/SvgIcon";
+import { typographyClasses } from "@mui/material/Typography";
 import { alpha, SxProps, Theme } from "@mui/system";
 
 type AccentMenuItemSlotProps = {
@@ -145,10 +148,10 @@ const AccentMenuItem = React.forwardRef<
               backgroundColor: prefersMoreContrast ? "#fff" : alpha(bg, 0.72),
             },
           },
-          "& .MuiCardHeader-root": {
+          [`& .${cardHeaderClasses.root}`]: {
             padding: theme.spacing(compact ? 1 : 2),
           },
-          "& .MuiCardHeader-avatar": {
+          [`& .${cardHeaderClasses.avatar}`]: {
             border: `${compact ? 3 : 4}px solid ${avatarBg}`,
             borderRadius: `${compact ? 4 : 6}px`,
             backgroundColor: avatarBg,
@@ -157,26 +160,26 @@ const AccentMenuItem = React.forwardRef<
               margin: "2px",
             },
           },
-          "& .MuiCardMedia-root": {
+          [`& .${cardMediaClasses.root}`]: {
             width: 28,
             height: 28,
             borderRadius: "4px",
             margin: theme.spacing(0.25),
           },
-          "& .MuiSvgIcon-root": {
+          [`& .${svgIconClasses.root}`]: {
             width: 28,
             height: 28,
             padding: compact ? 0 : theme.spacing(0.25),
             background: bg,
             color: fg,
           },
-          "& .MuiTypography-root": {
+          [`& .${typographyClasses.root}`]: {
             color: prefersMoreContrast ? "#000" : fg,
           },
-          "& .MuiCardHeader-content": {
+          [`& .${cardHeaderClasses.content}`]: {
             marginRight: theme.spacing(2),
           },
-          "& .MuiCardHeader-title": {
+          [`& .${cardHeaderClasses.title}`]: {
             fontSize: "1rem",
             fontWeight: 500,
           },

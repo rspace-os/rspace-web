@@ -7,7 +7,7 @@ import MenuItem from "@mui/material/MenuItem";
 import useStores from "../../../stores/use-stores";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
-import IconButton from "@mui/material/IconButton";
+import IconButton, { iconButtonClasses } from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import NameDialog from "../../../Inventory/Search/components/NameDialog";
@@ -85,13 +85,13 @@ function SavedList<T extends SavedItem>({
               <ListItemText primary={item.name} />
               <ListItemSecondaryAction
                 sx={(theme) => ({
-                  "& .MuiIconButton-root": {
+                  [`& .${iconButtonClasses.root}`]: {
                     backgroundColor: "white",
                     padding: theme.spacing(0.5),
                     marginLeft: theme.spacing(1),
                     marginRight: "-4px !important",
                   },
-                  "&:hover .MuiIconButton-root": {
+                  [`&:hover .${iconButtonClasses.root}`]: {
                     backgroundColor: "rgba(0, 0, 0, 0.04)",
                   },
                 })}

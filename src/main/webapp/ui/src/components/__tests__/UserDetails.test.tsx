@@ -6,6 +6,7 @@ import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import { render } from "@/__tests__/customQueries";
 import UserDetails from "../UserDetails";
+import { chipClasses } from "@mui/material/Chip";
 
 vi.mock("@/common/axios", async () => {
   const actual = await vi.importActual<typeof import("axios")>("axios");
@@ -74,7 +75,7 @@ describe("UserDetails", () => {
 
     const activator = screen.getByRole("button", { name: "ada" });
 
-    expect(activator).toHaveClass("MuiChip-outlined");
+    expect(activator).toHaveClass(chipClasses.outlined);
 
     await user.click(activator);
 

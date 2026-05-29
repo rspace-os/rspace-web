@@ -1,10 +1,10 @@
 import React from "react";
-import Alert from "@mui/material/Alert";
+import Alert, { alertClasses } from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
-import TableCell from "@mui/material/TableCell";
+import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { alpha, type Theme, useTheme } from "@mui/material/styles";
@@ -64,7 +64,7 @@ function getHelperAlertSx(theme: Theme) {
     borderColor: alpha(theme.palette.warning.main, 0.35),
     backgroundColor: alpha(theme.palette.warning.main, 0.12),
     color: theme.palette.warning.dark,
-    "& .MuiAlert-icon": {
+    [`& .${alertClasses.icon}`]: {
       color: theme.palette.warning.main,
     },
   } as const;
@@ -110,7 +110,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
         data-row-type="molecule"
         data-molecule-name={moleculeName}
         sx={{
-          "& > .MuiTableCell-root": {
+          [`& > .${tableCellClasses.root}`]: {
             ...sharedRowCellSx,
             borderBottom: mainRowHasSubRow ? 0 : undefined,
             verticalAlign: "top",
@@ -225,7 +225,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
           data-row-type="helper"
           data-molecule-name={moleculeName}
           sx={{
-            "& > .MuiTableCell-root": {
+            [`& > .${tableCellClasses.root}`]: {
               ...sharedRowCellSx,
             },
           }}

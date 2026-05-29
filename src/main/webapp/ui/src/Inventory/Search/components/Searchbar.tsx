@@ -2,7 +2,8 @@ import React, { useContext } from "react";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import CustomTooltip from "../../../components/CustomTooltip";
-import TextField from "@mui/material/TextField";
+import TextField, { textFieldClasses } from "@mui/material/TextField";
+import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
@@ -126,14 +127,14 @@ function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
             alignItems: "center",
             width: "100%",
           },
-          "& .MuiTextField-root": {
+          [`& .${textFieldClasses.root}`]: {
             flexGrow: 1,
-            "& .MuiOutlinedInput-root": {
+            [`& .${outlinedInputClasses.root}`]: {
               "& input:focus, & input:hover": {
                 backgroundColor: "transparent !important",
               },
             },
-            "& .MuiOutlinedInput-input": {
+            [`& .${outlinedInputClasses.input}`]: {
               padding: "8px 0 8px 0",
             },
           },

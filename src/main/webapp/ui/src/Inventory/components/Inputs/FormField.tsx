@@ -1,4 +1,9 @@
 import React from "react";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { formControlLabelClasses } from "@mui/material/FormControlLabel";
+import { svgIconClasses } from "@mui/material/SvgIcon";
+import { selectClasses } from "@mui/material/Select";
+import { formLabelClasses } from "@mui/material/FormLabel";
 import BaseFormField, {
   type FormFieldArgs as BaseFormFieldArgs,
 } from "../../../components/Inputs/FormField";
@@ -15,23 +20,24 @@ export type FormFieldArgs<T> = BaseFormFieldArgs<T>;
  * preview mode, not an inaccessible state.
  */
 export const INVENTORY_FORM_FIELD_SX = {
-  "& .MuiInputBase-root.Mui-disabled, & .MuiFormControlLabel-label.Mui-disabled":
+  [`& .${inputBaseClasses.root}.Mui-disabled, & .${formControlLabelClasses.label}.Mui-disabled`]:
     {
       color: "black !important",
       "& input": {
         color: "unset",
       },
-      "& .MuiSvgIcon-root.MuiSelect-icon": {
+      [`& .${svgIconClasses.root}.${selectClasses.icon}`]: {
         display: "none",
       },
     },
-  "& .MuiSelect-root.MuiSelect-select.MuiSelect-outlined": {
-    padding: "11px 10px 10px 10px",
-  },
+  [`& .${selectClasses.root}.${selectClasses.select}.${selectClasses.outlined}`]:
+    {
+      padding: "11px 10px 10px 10px",
+    },
   "& .Mui-disabled::before": {
     borderBottom: "0px !important",
   },
-  "& > .MuiFormLabel-root": {
+  [`& > .${formLabelClasses.root}`]: {
     textTransform: "uppercase",
   },
 } as const;

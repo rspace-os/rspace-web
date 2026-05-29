@@ -10,7 +10,7 @@ import React, {
 import { observer, useLocalObservable } from "mobx-react-lite";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
+import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import LocationContent from "../LocationContent";
@@ -81,13 +81,13 @@ const tableSx = {
   "& th": {
     maxWidth: 0,
   },
-  "& .MuiTableCell-head": {
+  [`& .${tableCellClasses.head}`]: {
     borderBottom: "none",
   },
   "& *": {
     outline: "none",
   },
-  "& .MuiTableCell-root:focus": {
+  [`& .${tableCellClasses.root}:focus`]: {
     backgroundColor: "unset",
   },
 } as const;

@@ -1,4 +1,4 @@
-import Alert from "@mui/material/Alert";
+import Alert, { alertClasses } from "@mui/material/Alert";
 import LinearProgress from "@mui/material/LinearProgress";
 import React, { useContext } from "react";
 import useStores from "../../../stores/use-stores";
@@ -80,11 +80,11 @@ function SearchFeedback(): React.ReactNode {
         backgroundColor: theme.palette.primary.background,
         color: theme.palette.primary.contrastText,
         minHeight: theme.spacing(4),
-        "& .MuiAlert-message": {
+        [`& .${alertClasses.message}`]: {
           p: 0,
           alignSelf: "center",
         },
-        "& .MuiAlert-action": {
+        [`& .${alertClasses.action}`]: {
           p: 0,
           alignSelf: "center",
         },

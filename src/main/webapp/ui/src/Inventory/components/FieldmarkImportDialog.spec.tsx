@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
 import AxeBuilder from "@axe-core/playwright";
+import { gridClasses } from "@mui/x-data-grid";
 import * as Jwt from "jsonwebtoken";
 import {
   clickWhenInViewport,
@@ -160,7 +161,7 @@ const feature = test.extend<{
               v.id !== "region" &&
               !(
                 v.id === "aria-required-children" &&
-                v.nodes[0]?.target[0] === ".MuiDataGrid-main" &&
+                v.nodes[0]?.target[0] === `.${gridClasses.main}` &&
                 (requiredChildrenValues?.values === "[role=progressbar]" ||
                   requiredChildrenValues?.values === "[role=presentation]")
               )

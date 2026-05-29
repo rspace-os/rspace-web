@@ -2,6 +2,7 @@ import React from "react";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Menu from "@mui/material/Menu";
+import { paperClasses } from "@mui/material/Paper";
 import PubChemLogo from "../../assets/branding/pubchem/logo.svg";
 import { ACCENT_COLOR as PUBCHEM_ACCENT_COLOR } from "@/assets/branding/pubchem";
 import { ACCENT_COLOR as GALLERY_COLOR } from "@/assets/branding/rspace/gallery";
@@ -121,7 +122,7 @@ const StoichiometryTableToolbar = ({
               sx={
                 Boolean(addReagantMenuAnchorEl)
                   ? {
-                      "& .MuiPaper-root": {
+                      [`& .${paperClasses.root}`]: {
                         transform: "translate(0px, 4px) !important",
                       },
                     }

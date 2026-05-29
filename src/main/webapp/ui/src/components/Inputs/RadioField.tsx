@@ -2,7 +2,9 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControlLabel, {
+  formControlLabelClasses,
+} from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import RemoveButton from "../../components/RemoveButton";
@@ -100,7 +102,7 @@ function RadioField<OptionValue extends string>({
                 overflowWrap: "anywhere",
                 ...(smallText
                   ? {
-                      "& .MuiFormControlLabel-label": {
+                      [`& .${formControlLabelClasses.label}`]: {
                         fontSize: "13px",
                       },
                     }

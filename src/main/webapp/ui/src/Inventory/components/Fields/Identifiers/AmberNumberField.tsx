@@ -1,5 +1,6 @@
 import { type ComponentType } from "react";
 import { type SxProps, type Theme } from "@mui/material/styles";
+import { formHelperTextClasses } from "@mui/material/FormHelperText";
 import NumberField, {
   type NumberFieldArgs,
 } from "../../../../components/Inputs/NumberField";
@@ -17,7 +18,7 @@ const amberNumberFieldSx: SxProps<Theme> = (theme) => ({
   "& .Mui-error::after, & .Mui-error::before": {
     borderBottomColor: theme.palette.warning.main,
   },
-  "& .MuiFormHelperText-root.Mui-error": {
+  [`& .${formHelperTextClasses.root}.Mui-error`]: {
     color: theme.palette.warning.main,
   },
 });

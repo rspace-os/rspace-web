@@ -1,6 +1,6 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import Badge from "@mui/material/Badge";
+import Badge, { badgeClasses } from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -9,7 +9,9 @@ import ErrorIcon from "@mui/icons-material/Error";
 import GlobalId from "../GlobalId";
 import Grid from "@mui/material/Grid";
 import InfoIcon from "@mui/icons-material/Info";
-import SnackbarContent from "@mui/material/SnackbarContent";
+import SnackbarContent, {
+  snackbarContentClasses,
+} from "@mui/material/SnackbarContent";
 import Stack from "@mui/material/Stack";
 import WarningIcon from "@mui/icons-material/Warning";
 import { green } from "@mui/material/colors";
@@ -79,7 +81,7 @@ const SnackbarContentWrapper = forwardRef<
             color="error"
             aria-hidden="true"
             sx={{
-              "& .MuiBadge-badge": {
+              [`& .${badgeClasses.badge}`]: {
                 right: 8,
                 top: 2,
                 width: 20,
@@ -218,7 +220,7 @@ const SnackbarContentWrapper = forwardRef<
         aria-labelledby={nameId}
         sx={{
           ...(backgroundColor ? { backgroundColor } : {}),
-          "& .MuiSnackbarContent-message": {
+          [`& .${snackbarContentClasses.message}`]: {
             width: "100%",
           },
         }}

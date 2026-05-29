@@ -2,6 +2,7 @@ import React from "react";
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
+import { svgIconClasses } from "@mui/material/SvgIcon";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import NotInterestedIcon from "@mui/icons-material/NotInterested";
 import PadlockIcon from "../../assets/graphics/PadlockIcon";
@@ -55,7 +56,7 @@ function InfoBadge({
                 top: 0,
                 right: -10,
               }),
-          "& .MuiSvgIcon-root": {
+          [`& .${svgIconClasses.root}`]: {
             height: 20,
             width: 20,
             borderRadius: 10,

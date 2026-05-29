@@ -1,5 +1,5 @@
 import React from "react";
-import Dialog from "@mui/material/Dialog";
+import Dialog, { dialogClasses } from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -9,7 +9,7 @@ const StoichiometryTableLoadingDialog = () => (
   <Dialog
     open={true}
     sx={{
-      "& .MuiDialog-paper": {
+      [`& .${dialogClasses.paper}`]: {
         minWidth: 300,
       },
     }}

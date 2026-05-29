@@ -3,6 +3,7 @@ import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import CreateNew from "../CreateNew";
 import Drawer from "@mui/material/Drawer";
+import { drawerClasses } from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import { useTheme } from "@mui/material/styles";
 import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
@@ -67,7 +68,7 @@ const CustomDrawer = observer(
                 width: theme.spacing(8),
               },
             }),
-          "& .MuiDrawer-paper": {
+          [`& .${drawerClasses.paper}`]: {
             position: "relative",
             ...(!alwaysVisible && { width: drawerWidth }),
             ...(alwaysVisible &&

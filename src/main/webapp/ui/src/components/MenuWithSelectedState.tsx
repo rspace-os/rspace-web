@@ -1,8 +1,9 @@
 import React from "react";
 import AccentMenuItem from "./AccentMenuItem";
-import Button from "@mui/material/Button";
+import Button, { buttonClasses } from "@mui/material/Button";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import Menu from "@mui/material/Menu";
+import { paperClasses } from "@mui/material/Paper";
 
 /**
  * This component renders a button that shows a regular label and a label for
@@ -37,7 +38,7 @@ export default function MenuWithSelectedState({
           height: theme.spacing(4),
           textTransform: "uppercase",
           letterSpacing: "0.04em",
-          "& .MuiButton-endIcon": {
+          [`& .${buttonClasses.endIcon}`]: {
             marginLeft: theme.spacing(0.5),
           },
           "& span.label": {
@@ -73,7 +74,7 @@ export default function MenuWithSelectedState({
           },
         }}
         sx={{
-          "& .MuiPaper-root": {
+          [`& .${paperClasses.root}`]: {
             ...(anchorEl
               ? {
                   transform: "translate(0px, 4px) !important",

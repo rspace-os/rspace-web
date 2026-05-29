@@ -8,6 +8,7 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
+import { dialogClasses } from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -74,7 +75,7 @@ const PublicPreviewDialog = ({
   return (
     <Dialog
       sx={{
-        "& .MuiDialog-paper": {
+        [`& .${dialogClasses.paper}`]: {
           height: "100%",
         },
       }}

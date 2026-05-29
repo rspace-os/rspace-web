@@ -7,7 +7,7 @@ import EnhancedTableHead, {
 import TableBody from "@mui/material/TableBody";
 import { getSorting, stableSort } from "../../util/table";
 import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
+import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import Checkbox from "@mui/material/Checkbox";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
@@ -321,7 +321,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                           key={`${cell.id}${i}`}
                           data-testid={`${cell.id}${index}`}
                           sx={{
-                            "&.MuiTableCell-root": { padding: "5px 5px 10px 5px", wordWrap: "break-word" },
+                            [`&.${tableCellClasses.root}`]: { padding: "5px 5px 10px 5px", wordWrap: "break-word" },
                             ...(cell.id === "description" && item.imageGridDetails
                               ? { whiteSpace: "nowrap" }
                               : cell.id === "description"

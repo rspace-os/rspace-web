@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
 import Autocomplete from "@mui/material/Autocomplete";
+import { autocompleteClasses } from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import { type Group } from "../../../stores/definitions/Group";
@@ -42,7 +43,10 @@ function GroupsField({
 
   return (
     <Autocomplete<Group>
-      sx={{ maxWidth: 500, "& .MuiAutocomplete-option": { cursor: "default" } }}
+      sx={{
+        maxWidth: 500,
+        [`& .${autocompleteClasses.option}`]: { cursor: "default" },
+      }}
       loading={false}
       options={[...searchResults]}
       getOptionLabel={(g) => g.name}

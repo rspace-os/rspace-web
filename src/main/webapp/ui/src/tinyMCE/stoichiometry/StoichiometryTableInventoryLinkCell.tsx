@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
+import Chip, { chipClasses } from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Dialog from "@mui/material/Dialog";
@@ -162,10 +162,10 @@ const StoichiometryTableInventoryLinkCell = ({
           icon={<FontAwesomeIcon icon={faTrashAlt} size="2xs" />}
           sx={(theme) => ({
             fontSize: theme.typography.caption.fontSize,
-            "& .MuiChip-label": {
+            [`& .${chipClasses.label}`]: {
               fontSize: "inherit",
             },
-            "& .MuiChip-icon": {
+            [`& .${chipClasses.icon}`]: {
               fontSize: "inherit",
             },
           })}

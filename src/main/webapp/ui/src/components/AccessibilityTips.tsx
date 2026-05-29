@@ -6,6 +6,7 @@ import Stack from "@mui/material/Stack";
 import AlertTitle from "@mui/material/AlertTitle";
 import Link from "@mui/material/Link";
 import SvgIcon from "@mui/material/SvgIcon";
+import { paperClasses } from "@mui/material/Paper";
 import AccentMenuItem from "./AccentMenuItem";
 
 /**
@@ -72,7 +73,7 @@ function AccessibilityTipsPopup({
       anchorOrigin={anchorOrigin}
       transformOrigin={transformOrigin}
       sx={{
-        "& > .MuiPaper-root": {
+        [`& > .${paperClasses.root}`]: {
           padding: "2px",
           maxWidth: "500px",
           ...(highContrastModeIsEnabled

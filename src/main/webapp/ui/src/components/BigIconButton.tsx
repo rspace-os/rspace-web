@@ -3,7 +3,7 @@ import React from "react";
 import ListItemText from "@mui/material/ListItemText";
 import ListItem from "@mui/material/ListItem";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
-import Avatar from "@mui/material/Avatar";
+import Avatar, { avatarClasses } from "@mui/material/Avatar";
 
 /**
  * This component is for displaying a button that has a large icon and a short
@@ -43,7 +43,7 @@ export default function BigIconButton({
         textTransform: "none",
         boxShadow:
           "0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12)",
-        "& .MuiAvatar-root": {
+        [`& .${avatarClasses.root}`]: {
           backgroundColor: theme.palette.primary.background,
           color: theme.palette.standardIcon.main,
         },

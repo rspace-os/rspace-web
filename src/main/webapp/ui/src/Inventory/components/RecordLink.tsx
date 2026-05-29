@@ -1,4 +1,5 @@
 import Chip from "@mui/material/Chip";
+import { chipClasses } from "@mui/material/Chip";
 import { type MouseEvent, useContext } from "react";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import useStores from "../../stores/use-stores";
@@ -69,7 +70,7 @@ const interactiveChipSx =
       boxShadow: theme.shadows[1],
       backgroundColor: emphasize(theme.palette.grey[300], 0.12),
     },
-    "& .MuiChip-label": {
+    [`& .${chipClasses.label}`]: {
       ...(overflow
         ? {
             whiteSpace: "break-spaces",
@@ -105,7 +106,7 @@ const staticChipSx =
       color: `${theme.palette.grey[800]} !important`,
     },
     fontWeight: theme.typography.fontWeightRegular ?? 400,
-    "& .MuiChip-label": {
+    [`& .${chipClasses.label}`]: {
       ...(overflow
         ? {
             whiteSpace: "break-spaces",

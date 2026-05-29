@@ -86,9 +86,10 @@ import LoadMoreButton from "./LoadMoreButton";
 import Carousel from "./Carousel";
 import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
 import { useFolderOpen } from "./OpenFolderProvider";
-import Breadcrumbs from "@mui/material/Breadcrumbs";
-import Chip from "@mui/material/Chip";
-import Badge from "@mui/material/Badge";
+import Breadcrumbs, { breadcrumbsClasses } from "@mui/material/Breadcrumbs";
+import Chip, { chipClasses } from "@mui/material/Chip";
+import Badge, { badgeClasses } from "@mui/material/Badge";
+import { paperClasses } from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
@@ -138,7 +139,7 @@ const DragOverlayContents = observer(() => {
           backgroundColor: alpha(theme.palette.callToAction.background, 0.15),
           border: `2px solid ${theme.palette.callToAction.main}`,
           cursor: "grabbing",
-          "& .MuiBadge-badge": {
+          [`& .${badgeClasses.badge}`]: {
             height: "75px",
             width: "75px",
             right: "50%",
@@ -272,7 +273,7 @@ const BreadcrumbLink = React.forwardRef<
           fontWeight: 500,
           fontSize: "1rem",
           cursor: "pointer",
-          "& .MuiChip-icon": {
+          [`& .${chipClasses.icon}`]: {
             fontSize: "1.05rem",
             marginRight: theme.spacing(-0.5),
           },
@@ -310,11 +311,11 @@ const Path = observer(
           onKeyDown={onKeyDown}
           aria-label="Breadcrumbs"
           sx={{
-            "& .MuiBreadcrumbs-ol": {
+            [`& .${breadcrumbsClasses.ol}`]: {
               flexWrap: "nowrap",
               overflowX: "auto",
             },
-            "& .MuiBreadcrumbs-separator": {
+            [`& .${breadcrumbsClasses.separator}`]: {
               marginLeft: (theme) => theme.spacing(0.5),
               marginRight: (theme) => theme.spacing(0.5),
             },
@@ -396,7 +397,7 @@ const StyledMenu = (props: React.ComponentProps<typeof Menu>) => (
   <Menu
     {...props}
     sx={{
-      "& .MuiPaper-root": {
+      [`& .${paperClasses.root}`]: {
         ...(props.anchorEl
           ? {
               transform: "translate(0px, 4px) !important",

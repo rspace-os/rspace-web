@@ -8,6 +8,7 @@ import AccentMenuItem from "../../components/AccentMenuItem";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
+import { paperClasses } from "@mui/material/Paper";
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import FieldmarkIcon from "../../assets/branding/fieldmark/logo.svg";
@@ -118,7 +119,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
           },
         }}
         sx={{
-          "& .MuiPaper-root": {
+          [`& .${paperClasses.root}`]: {
             ...(anchorEl
               ? {
                   transform: "translate(-4px, 4px) !important",

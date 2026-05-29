@@ -7,6 +7,7 @@ import {
   ReadOnlyStoichiometryTableStory,
   StoichiometryTableWithDataStory,
 } from "./StoichiometryTable.story";
+import { gridClasses } from "@mui/x-data-grid";
 
 import * as Jwt from "jsonwebtoken";
 
@@ -87,7 +88,7 @@ async function editNumericCell({
   await targetCell.press("Enter");
 
   const input = page.locator(
-    '.MuiDataGrid-cell--editing input, .MuiDataGrid-cell--editing textarea',
+    `.${gridClasses["cell--editing"]} input, .${gridClasses["cell--editing"]} textarea`,
   );
   await input.waitFor({ state: "visible" });
   await input.fill(value);
@@ -1613,7 +1614,7 @@ test.describe("Stoichiometry Table", () => {
         await benzeneMassCell.click();
         await benzeneMassCell.press("Enter");
         let input = page.locator(
-          '.MuiDataGrid-cell--editing input, .MuiDataGrid-cell--editing textarea',
+          `.${gridClasses["cell--editing"]} input, .${gridClasses["cell--editing"]} textarea`,
         );
         await input.waitFor({ state: "visible" });
         await input.fill("15");

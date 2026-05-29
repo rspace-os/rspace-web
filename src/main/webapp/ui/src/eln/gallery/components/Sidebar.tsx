@@ -22,6 +22,7 @@ import { type Id } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import * as FetchingData from "../../../util/fetchingData";
 import Dialog from "@mui/material/Dialog";
+import { paperClasses } from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -473,7 +474,7 @@ const Sidebar = ({
       sx={{
         width: drawerOpen ? "200px" : "64px",
         zIndex: 1300,
-        "& .MuiPaper-root": {
+        [`& .${paperClasses.root}`]: {
           position: "relative",
         },
       }}
@@ -509,7 +510,7 @@ const Sidebar = ({
             setNewMenuAnchorEl(null);
           }}
           sx={{
-            "& .MuiPaper-root": {
+            [`& .${paperClasses.root}`]: {
               ...(newMenuAnchorEl
                 ? {
                     transform: "translate(-4px, 4px) !important",

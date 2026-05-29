@@ -7,6 +7,7 @@ import {
 } from "@mui/material/styles";
 import { type ThemeOptions } from "@mui/material";
 import "@mui/x-data-grid/themeAugmentation";
+import { gridClasses } from "@mui/x-data-grid";
 
 export const STOICHIOMETRY_TABLE_CLASS = "stoichiometry-table";
 
@@ -71,23 +72,23 @@ export function createStoichiometryTheme(baseTheme: unknown) {
               [`&.${STOICHIOMETRY_TABLE_CLASS}`]: {
                 border: "none",
                 backgroundColor: tableBackground,
-                "& .MuiDataGrid-main": {
+                [`& .${gridClasses.main}`]: {
                   backgroundColor: tableBackground,
                 },
-                "& .MuiDataGrid-virtualScroller": {
+                [`& .${gridClasses.virtualScroller}`]: {
                   backgroundColor: tableBackground,
                 },
-                "& .MuiDataGrid-columnHeaders": {
+                [`& .${gridClasses.columnHeaders}`]: {
                   backgroundColor: tableBackground,
                   borderBottom: `2px solid ${theme.palette.divider}`,
                 },
-                "& .MuiDataGrid-cell": {
+                [`& .${gridClasses.cell}`]: {
                   borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
                 },
-                "& .MuiDataGrid-footerContainer": {
+                [`& .${gridClasses.footerContainer}`]: {
                   backgroundColor: tableBackground,
                 },
-                "& .MuiDataGrid-row:hover": {
+                [`& .${gridClasses.row}:hover`]: {
                   backgroundColor: theme.palette.action.hover,
                 },
                 "& .stoichiometry-disabled-cell": {

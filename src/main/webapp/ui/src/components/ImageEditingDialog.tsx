@@ -1,6 +1,7 @@
 import React from "react";
 import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
+import Dialog, { dialogClasses } from "@mui/material/Dialog";
+import { paperClasses } from "@mui/material/Paper";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import { observer } from "mobx-react-lite";
@@ -210,7 +211,7 @@ function ImageEditingDialog({
         transition: isTestEnv ? NoopTransition : undefined,
       }}
       sx={{
-        "& > .MuiDialog-container > .MuiPaper-root": {
+        [`& > .${dialogClasses.container} > .${paperClasses.root}`]: {
           /*
            * Even though this makes the dialog taller than it needs to be for
            * horizontal images, this is necessary to ensure that vertical images are

@@ -4,6 +4,7 @@ import { NestedFoldersWithImageFile, BunchOfImages } from "./MainPanel.story";
 import * as Jwt from "jsonwebtoken";
 
 import AxeBuilder from "@axe-core/playwright";
+import { cardClasses } from "@mui/material/Card";
 const feature = test.extend<{
   Given: {
     "the main panel is showing a nested folder structure": () => Promise<void>;
@@ -212,7 +213,7 @@ const feature = test.extend<{
         );
       },
       "there shouldn't be any axe violations": async () => {
-        const firstCard = page.locator(".MuiCard-root").first();
+        const firstCard = page.locator(`.${cardClasses.root}`).first();
         if ((await firstCard.count()) > 0) {
           await expect(firstCard).toHaveCSS("opacity", "1");
           await expect

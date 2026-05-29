@@ -1,6 +1,7 @@
 import { type URL } from "../util/types";
 import React from "react";
 import IconButton from "@mui/material/IconButton";
+import { svgIconClasses } from "@mui/material/SvgIcon";
 import HelpIcon from "@mui/icons-material/Help";
 import { useTheme } from "@mui/material/styles";
 import CustomTooltip from "./CustomTooltip";
@@ -42,7 +43,7 @@ function IconLink({
           // have to re-state to prevent ELN's a:hover red style from taking effect
           color: `${resolvedColor} !important`,
         },
-        "& .MuiSvgIcon-root": {
+        [`& .${svgIconClasses.root}`]: {
           color: `${resolvedColor} !important`,
         },
       }}

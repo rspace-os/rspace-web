@@ -4,6 +4,10 @@ import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
 import FormLabel from "@mui/material/FormLabel";
 import FormHelperText from "@mui/material/FormHelperText";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { formControlLabelClasses } from "@mui/material/FormControlLabel";
+import { svgIconClasses } from "@mui/material/SvgIcon";
+import { selectClasses } from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
 import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
@@ -86,15 +90,18 @@ function CustomFormControl({
       {...(explanation ? { "aria-describedby": explanationId } : {})}
       fullWidth
       sx={{
-        "& .MuiInputBase-root.Mui-disabled, & .MuiFormControlLabel-label.Mui-disabled":
+        [`& .${inputBaseClasses.root}.Mui-disabled, & .${formControlLabelClasses.label}.Mui-disabled`]:
           {
             color: "black",
             "& input": { color: "unset" },
-            "& .MuiSvgIcon-root.MuiSelect-icon": { display: "none" },
+            [`& .${svgIconClasses.root}.${selectClasses.icon}`]: {
+              display: "none",
+            },
           },
-        "& .MuiSelect-root.MuiSelect-select.MuiSelect-outlined": {
-          padding: "11px 10px 10px 10px",
-        },
+        [`& .${selectClasses.root}.${selectClasses.select}.${selectClasses.outlined}`]:
+          {
+            padding: "11px 10px 10px 10px",
+          },
         "& .Mui-disabled::before": { borderBottom: "0px !important" },
       }}
     >

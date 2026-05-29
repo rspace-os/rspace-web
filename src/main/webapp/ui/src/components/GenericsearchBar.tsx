@@ -1,7 +1,7 @@
-import IconButton from "@mui/material/IconButton";
+import IconButton, { iconButtonClasses } from "@mui/material/IconButton";
 import Box from "@mui/material/Box";
 import CustomTooltip from "./CustomTooltip";
-import InputBase from "@mui/material/InputBase";
+import InputBase, { inputBaseClasses } from "@mui/material/InputBase";
 import Paper from "@mui/material/Paper";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { observer } from "mobx-react-lite";
@@ -111,13 +111,13 @@ function Genericsearchbar({
             borderRadius: "25px",
             background: "white",
           },
-          "& .MuiInputBase-root": {
+          [`& .${inputBaseClasses.root}`]: {
             flexGrow: 1,
             "& input:focus, & input:hover": {
               backgroundColor: "transparent !important",
             },
           },
-          "& button.MuiIconButton-root": {
+          [`& button.${iconButtonClasses.root}`]: {
             width: 40,
             height: 40,
           },

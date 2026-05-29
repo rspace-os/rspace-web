@@ -1,4 +1,7 @@
 import { Dialog } from "../../../components/DialogBoundary";
+import { dialogClasses } from "@mui/material/Dialog";
+import { paperClasses } from "@mui/material/Paper";
+import { dialogContentClasses } from "@mui/material/DialogContent";
 import React from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import AppBar from "../../../components/AppBar";
@@ -123,14 +126,14 @@ const Picker = observer(
                           : "100%",
                       md: "unset",
                     },
-                    "& .MuiDialog-container > .MuiPaper-root": {
+                    [`& .${dialogClasses.container} > .${paperClasses.root}`]: {
                       height: "calc(100% - 32px)",
                       [theme.breakpoints.down("md")]: {
                         height: "100%",
                         borderRadius: 0,
                       },
                     },
-                    "& .MuiDialogContent-root": {
+                    [`& .${dialogContentClasses.root}`]: {
                       width: "100%",
                       height: "calc(100% - 52px)",
                       overflowY: "unset",

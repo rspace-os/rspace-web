@@ -1,6 +1,7 @@
 import React from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
+import { iconButtonClasses } from "@mui/material/IconButton";
 
 export default function BaseToolbar(props: { content: React.ReactNode }) {
   return (
@@ -9,11 +10,11 @@ export default function BaseToolbar(props: { content: React.ReactNode }) {
         sx={{
           padding: "0 12px !important",
           position: "relative",
-          "& button.MuiIconButton-root": {
+          [`& button.${iconButtonClasses.root}`]: {
             width: 48,
             height: 48,
           },
-          "& a.MuiIconButton-root": {
+          [`& a.${iconButtonClasses.root}`]: {
             width: 24,
             color: "white",
           },

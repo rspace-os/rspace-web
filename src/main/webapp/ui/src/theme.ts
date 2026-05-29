@@ -5,6 +5,7 @@ import {
   type Transitions,
 } from "@mui/material/styles";
 import { grey, red } from "@mui/material/colors";
+import { inputLabelClasses } from "@mui/material/InputLabel";
 import { hslToHex } from "./util/colors";
 
 /**
@@ -360,7 +361,7 @@ export default createTheme({
           marginBottom: baseTheme.spacing(0.25),
           fontWeight: 600,
           fontSize: "0.95em",
-          "&.MuiInputLabel-outlined": {
+          [`&.${inputLabelClasses.outlined}`]: {
             fontWeight: "initial",
             fontSize: "1.1em",
           },

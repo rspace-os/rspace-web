@@ -2,7 +2,7 @@
 
 import React from "react";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
+import Button, { buttonClasses } from "@mui/material/Button";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import CustomTooltip from "./CustomTooltip";
 import { type SxProps } from "@mui/system";
@@ -40,7 +40,7 @@ const DropdownButton = ({
           textTransform: "none",
           letterSpacing: "0.04em",
           border: "none",
-          "& .MuiButton-endIcon": {
+          [`& .${buttonClasses.endIcon}`]: {
             marginLeft: (theme) => theme.spacing(0.5),
           },
           ...sx,

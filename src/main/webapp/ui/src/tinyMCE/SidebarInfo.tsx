@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import materialTheme from "../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { paperClasses } from "@mui/material/Paper";
 
 interface SidebarItem extends Record<string, string | undefined> {
   id: string;
@@ -191,7 +192,7 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
         flexDirection: "column",
         overflowY: "auto",
         overflowX: "hidden",
-        "& .MuiPaper-root": {
+        [`& .${paperClasses.root}`]: {
           overflow: "visible",
         },
       }}

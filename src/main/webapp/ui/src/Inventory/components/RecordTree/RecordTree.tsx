@@ -1,12 +1,13 @@
 import React, { useContext, type SyntheticEvent } from "react";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import { observer } from "mobx-react-lite";
 import Node from "./Node";
 import SearchContext from "../../../stores/contexts/Search";
 import { type GlobalId } from "../../../stores/definitions/BaseRecord";
 
 const tappedToggleIcon = (event: SyntheticEvent) =>
-  !(event.target as HTMLElement).closest(".MuiTreeItem-label");
+  !(event.target as HTMLElement).closest(`.${treeItemClasses.label}`);
 
 function RecordTree(): React.ReactNode {
   const { search } = useContext(SearchContext);
@@ -27,9 +28,10 @@ function RecordTree(): React.ReactNode {
       sx={{
         pt: 1,
         flexGrow: 1,
-        "& .Mui-selected > .MuiTreeItem-content .MuiTreeItem-label": {
-          backgroundColor: "rgba(0, 173, 239, 0.08) !important",
-        },
+        [`& .Mui-selected > .${treeItemClasses.content} .${treeItemClasses.label}`]:
+          {
+            backgroundColor: "rgba(0, 173, 239, 0.08) !important",
+          },
       }}
       expandedItems={search.tree.expanded}
       selectedItems={search.tree.selected}

@@ -58,7 +58,7 @@ import { getRelativeTime } from "../../stores/definitions/Units";
 import Result from "../../util/result";
 import useSessionStorage from "../../hooks/browser/useSessionStorage";
 import useWebSocketNotifications from "../../hooks/websockets/useWebSocketNotifications";
-import Badge from "@mui/material/Badge";
+import Badge, { badgeClasses } from "@mui/material/Badge";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import useWhoAmI from "../../hooks/api/useWhoAmI";
@@ -93,7 +93,7 @@ const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
         badgeContent={notificationCount + messageCount + specialMessageCount}
         color="error"
         sx={{
-          "& .MuiBadge-badge": {
+          [`& .${badgeClasses.badge}`]: {
             transform: "translate(17%, -19%)",
           },
         }}
