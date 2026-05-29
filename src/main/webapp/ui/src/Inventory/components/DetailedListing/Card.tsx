@@ -38,6 +38,10 @@ type CardArgs = {
   record: InventoryRecord;
 };
 
+type ContentItem = React.ComponentProps<
+  typeof DescriptionList
+>["content"][number];
+
 function RecordCard({ record }: CardArgs): React.ReactNode {
   const {
     search,
@@ -122,6 +126,58 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   const navigateOnClick =
     !disabled && !anchorEl && !cardIsGreyedOut && Boolean(isChild);
   const greyOut = cardIsGreyedOut && !tooltipText;
+
+  const fullAccess = record.readAccessLevel === "full";
+  const notPublic = record.readAccessLevel !== "public";
+  const contentItems: Array<ContentItem> = [];
+  if (fullAccess && record instanceof ContainerModel) {
+    contentItems.push({
+      label: "Contents",
+      value: <ContentsChips record={record} />,
+    });
+  }
+  if (fullAccess && record instanceof SampleModel) {
+    contentItems.push({ label: "Total Quantity", value: record.quantityLabel });
+  }
+  if (fullAccess && record instanceof SubSampleModel) {
+    contentItems.push({ label: "Quantity", value: record.quantityLabel });
+  }
+  if (notPublic && record instanceof SubSampleModel) {
+    contentItems.push({
+      label: "Sample",
+      value: <RecordLink record={record.sample} overflow />,
+      reducedPadding: true,
+    });
+  }
+  if (record.owner) {
+    contentItems.push({
+      label: "Owner",
+      value: (
+        <UserDetails
+          userId={record.owner.id}
+          fullName={record.owner.fullName}
+          position={["bottom", "right"]}
+        />
+      ),
+      reducedPadding: true,
+    });
+  }
+  if (
+    notPublic &&
+    (record instanceof SubSampleModel || record instanceof ContainerModel) &&
+    record.immediateParentContainer
+  ) {
+    contentItems.push({
+      label: "Location",
+      value: (
+        <Box sx={{ mt: 0.5 }}>
+          <RecordLink record={record.immediateParentContainer} overflow />
+        </Box>
+      ),
+      below: true,
+    });
+  }
+
   const card = (
     <CardStructure
       sx={{
@@ -177,12 +233,8 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
           <IconButton
             sx={{ p: 1 }}
             onClick={preventEventBubbling(
-              (e: React.MouseEvent<HTMLButtonElement>) => {
-                const { currentTarget } = e;
-                if (currentTarget instanceof HTMLElement) {
-                  setAnchorEl(currentTarget);
-                }
-              },
+              (e: React.MouseEvent<HTMLButtonElement>) =>
+                setAnchorEl(e.currentTarget),
             )}
           >
             <MoreHorizIcon fontSize="small" />
@@ -195,94 +247,11 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
           >
             {menuItems
               .filter(({ hidden }) => !hidden)
-              .map(
-                ({
-                  component,
-                }: {
-                  hidden: boolean;
-                  component: React.ReactNode;
-                }) => component,
-              )}
+              .map(({ component }) => component)}
           </StyledMenu>
         </>
       }
-      content={
-        <DescriptionList
-          content={[
-            ...(record.readAccessLevel === "full" &&
-            record instanceof ContainerModel
-              ? [
-                  {
-                    label: "Contents",
-                    value: <ContentsChips record={record} />,
-                  },
-                ]
-              : []),
-            ...(record.readAccessLevel === "full" &&
-            record instanceof SampleModel
-              ? [
-                  {
-                    label: "Total Quantity",
-                    value: record.quantityLabel,
-                  },
-                ]
-              : []),
-            ...(record.readAccessLevel === "full" &&
-            record instanceof SubSampleModel
-              ? [
-                  {
-                    label: "Quantity",
-                    value: record.quantityLabel,
-                  },
-                ]
-              : []),
-            ...(record.readAccessLevel !== "public" &&
-            record instanceof SubSampleModel
-              ? [
-                  {
-                    label: "Sample",
-                    value: <RecordLink record={record.sample} overflow />,
-                    reducedPadding: true,
-                  },
-                ]
-              : []),
-            ...(record.owner
-              ? [
-                  {
-                    label: "Owner",
-                    value: (
-                      <UserDetails
-                        userId={record.owner.id}
-                        fullName={record.owner.fullName}
-                        position={["bottom", "right"]}
-                      />
-                    ),
-                    reducedPadding: true,
-                  },
-                ]
-              : []),
-            ...(record.readAccessLevel !== "public" &&
-            (record instanceof SubSampleModel ||
-              record instanceof ContainerModel) &&
-            record.immediateParentContainer
-              ? [
-                  {
-                    label: "Location",
-                    value: (
-                      <Box sx={{ mt: 0.5 }}>
-                        <RecordLink
-                          record={record.immediateParentContainer}
-                          overflow
-                        />
-                      </Box>
-                    ),
-                    below: true,
-                  },
-                ]
-              : []),
-          ]}
-        />
-      }
+      content={<DescriptionList content={contentItems} />}
       contentFooter={
         record.readAccessLevel === "full" ? (
           <Box

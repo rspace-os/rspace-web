@@ -77,26 +77,15 @@ function CardStructure({
 
   return (
     <Card
-      sx={
-        (sx
-          ? [
-              {
-                height: "100%",
-                "&:hover": {
-                  backgroundColor: theme.palette.background.default,
-                },
-              },
-              sx,
-            ]
-          : [
-              {
-                height: "100%",
-                "&:hover": {
-                  backgroundColor: theme.palette.background.default,
-                },
-              },
-            ]) as React.ComponentProps<typeof Card>["sx"]
-      }
+      sx={[
+        {
+          height: "100%",
+          "&:hover": {
+            backgroundColor: theme.palette.background.default,
+          },
+        },
+        ...(Array.isArray(sx) ? sx : [sx]),
+      ]}
       role="region"
     >
       <Grid container sx={{ height: "100%" }}>
