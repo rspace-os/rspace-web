@@ -483,15 +483,19 @@ function showWhitelistWarnings(result) {
         return;
     }
     if (result.unknownReadWhitelistUsernames && result.unknownReadWhitelistUsernames.length) {
-        $().toastmessage('showWarningToast',
+        showStickyWarning(
             'Unknown usernames on read whitelist (saved as typed): '
             + result.unknownReadWhitelistUsernames.join(', '));
     }
     if (result.unknownWriteWhitelistUsernames && result.unknownWriteWhitelistUsernames.length) {
-        $().toastmessage('showWarningToast',
+        showStickyWarning(
             'Unknown usernames on write whitelist (saved as typed): '
             + result.unknownWriteWhitelistUsernames.join(', '));
     }
+}
+
+function showStickyWarning(text) {
+    $().toastmessage('showToast', { text: text, type: 'warning', sticky: true });
 }
 
 $(document).ready(function() {	
