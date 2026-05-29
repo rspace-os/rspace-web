@@ -1,6 +1,7 @@
 "use strict";
 import React from "react";
 import { Switch, Tooltip } from "@mui/material";
+import { switchClasses } from "@mui/material/Switch";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../../theme";
@@ -92,7 +93,7 @@ function EnableAutoshareDialog({
         <Tooltip title={switchDisabledReason} aria-label={switchDisabledReason}>
           <div>
             <Switch
-              sx={{ "& .MuiSwitch-switchBase": { color: "#dddddd" } }}
+              sx={{ [`& .${switchClasses.switchBase}`]: { color: "#dddddd" } }}
               color="primary"
               checked={false}
               disabled={isSwitchDisabled}

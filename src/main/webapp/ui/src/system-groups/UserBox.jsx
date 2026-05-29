@@ -114,12 +114,10 @@ export default function main(props) {
           alignItems: "center",
           justifyContent: "center",
           padding: "0px 20px",
-          "& button": {
-            width: 48,
-          },
         }}
       >
         <IconButton
+          sx={{ width: 48 }}
           disabled={selectedLeft.length == 0}
           onClick={addUsers}
           data-test-id={`add-${props.labelRight.split(" ").join("-")}`}
@@ -127,6 +125,7 @@ export default function main(props) {
           <FontAwesomeIcon icon={faCaretRight} />
         </IconButton>
         <IconButton
+          sx={{ width: 48 }}
           disabled={selectedRight.length == 0}
           onClick={removeUsers}
           data-test-id={`remove-${props.labelRight.split(" ").join("-")}`}
@@ -134,6 +133,7 @@ export default function main(props) {
           <FontAwesomeIcon icon={faCaretLeft} />
         </IconButton>
         <IconButton
+          sx={{ width: 48 }}
           disabled={usersRight.length == 0}
           onClick={resetColumns}
           data-test-id={`remove-all-${props.labelRight.split(" ").join("-")}`}
