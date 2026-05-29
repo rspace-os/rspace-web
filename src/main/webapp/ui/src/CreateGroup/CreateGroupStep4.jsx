@@ -4,23 +4,15 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
 const createGroupStep4 = (props) => {
-  const styles = {
-    container: {
-      padding: "0 25px 10px 25px",
-    },
-    error: {
-      color: "#f44336",
-    },
-  };
   const selfService = $("#selfServiceLabGroup").length != 0;
   const projectGroup = $("#projectGroup").length != 0;
   return (
-    <Box sx={styles.container}>
+    <Box sx={{ padding: "0 25px 10px 25px" }}>
       <h3>Summary</h3>
       <p data-test-id="createGroupSummaryGroupName">
         <strong>Group name:</strong>{" "}
         {props.summary.groupName === "" ? (
-          <Typography variant="inherit" component="span" sx={styles.error}>
+          <Typography variant="inherit" component="span" sx={{ color: "#f44336" }}>
             You require a group name
           </Typography>
         ) : (
@@ -31,7 +23,7 @@ const createGroupStep4 = (props) => {
         {projectGroup && <strong>Group Owner:</strong>}
         {!projectGroup && <strong>PI:</strong>}{" "}
         {props.summary.selectPI.selectedUser === "" ? (
-          <Typography variant="inherit" component="span" sx={styles.error}>
+          <Typography variant="inherit" component="span" sx={{ color: "#f44336" }}>
             You must select a PI
           </Typography>
         ) : (

@@ -13,24 +13,6 @@ import GroupSeoManager from "./GroupSeoManager";
 import GroupOntologiesManager from "./GroupOntologiesManager";
 import GroupBioOntologiesManager from "./GroupBioOntologiesManager";
 
-const styles = {
-  iconButton: {
-    width: "20px",
-    height: "20px",
-    padding: "0px",
-    margin: "0px 0px 0px 15px",
-    fontSize: "18px",
-  },
-  heading: {
-    alignSelf: "center",
-  },
-  actions: {
-    display: "flex",
-    width: "100%",
-    alignItems: "center",
-  },
-};
-
 class MyLabGroups extends React.Component {
   constructor() {
     super();
@@ -64,7 +46,7 @@ class MyLabGroups extends React.Component {
     return (
       <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
-          <Box sx={styles.actions}>
+          <Box sx={{ display: "flex", width: "100%", alignItems: "center" }}>
             <h3>Members</h3>
             {this.state.isCloud && (
               <Button
