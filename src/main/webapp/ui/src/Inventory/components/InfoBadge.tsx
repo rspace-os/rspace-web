@@ -55,7 +55,7 @@ function InfoBadge({
                 top: 0,
                 right: -10,
               }),
-          "& .MuiSvgIcon-root, & .info-badge-custom-icon": {
+          "& .MuiSvgIcon-root": {
             height: 20,
             width: 20,
             borderRadius: 10,
@@ -65,9 +65,9 @@ function InfoBadge({
         {readAccessLevel === "public" ? (
           <NotInterestedIcon />
         ) : readAccessLevel === "limited" ? (
-          <PadlockIcon className="info-badge-custom-icon" color="white" />
+          <PadlockIcon color="white" />
         ) : record.owner && !record.currentUserIsOwner ? (
-          <PeopleIcon className="info-badge-custom-icon" />
+          <PeopleIcon />
         ) : (
           <InfoOutlinedIcon />
         )}
