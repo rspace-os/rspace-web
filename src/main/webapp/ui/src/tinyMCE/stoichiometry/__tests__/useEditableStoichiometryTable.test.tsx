@@ -1232,10 +1232,10 @@ describe("useEditableStoichiometryTable", () => {
       await latestValue?.save();
     });
 
-    const saveCall = mockUpdateStoichiometryMutateAsync.mock.calls[0]?.[0] as
+    const saveCall = mockUpdateStoichiometryMutateAsync.mock.calls.at(-1)?.[0] as
       | { stoichiometryData: StoichiometryRequest }
       | undefined;
-    const newReagent = saveCall!.stoichiometryData.molecules.find(
+    const newReagent = saveCall?.stoichiometryData.molecules.find(
       (m) => !("id" in m) && m.name === "New Water",
     );
 
