@@ -128,12 +128,7 @@ export default function EnzymeTable(props) {
         {!loading && (
           <>
             <TableContainer sx={{ maxHeight: "387px" }}>
-              <Table
-                stickyHeader
-                aria-labelledby="Enzyme table"
-                size="small"
-                aria-label="enhanced table"
-              >
+              <Table stickyHeader size="small" aria-label="Enzyme table">
                 <EnhancedTableHead
                   headCells={headCells}
                   order={order}

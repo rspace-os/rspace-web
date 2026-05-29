@@ -347,12 +347,7 @@ function RestrictionSites({
         {!error && !loading && (
           <>
             <TableContainer sx={{ maxHeight: "387px" }}>
-              <Table
-                stickyHeader
-                aria-labelledby="Enzyme table"
-                size="small"
-                aria-label="enhanced table"
-              >
+              <Table stickyHeader size="small" aria-label="Enzyme table">
                 <EnhancedTableHead
                   headCells={enzymeHeadCells}
                   order={order}
@@ -616,12 +611,7 @@ function OrfTable({
         {!loading && !error && (
           <>
             <TableContainer sx={{ maxHeight: "449px" }}>
-              <Table
-                stickyHeader
-                aria-labelledby="ORF table"
-                size="small"
-                aria-label="enhanced table"
-              >
+              <Table stickyHeader size="small" aria-label="ORF table">
                 <EnhancedTableHead
                   headCells={orfHeadCells}
                   order={order}

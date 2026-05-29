@@ -149,12 +149,7 @@ export default function OrfTable(props) {
         {!loading && (
           <>
             <TableContainer sx={{ maxHeight: "449px" }}>
-              <Table
-                stickyHeader
-                aria-labelledby="ORF table"
-                size="small"
-                aria-label="enhanced table"
-              >
+              <Table stickyHeader size="small" aria-label="ORF table">
                 <EnhancedTableHead
                   headCells={headCells}
                   order={order}
