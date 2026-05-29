@@ -22,7 +22,7 @@ export type DateFieldArgs = {
   maxDate?: Date;
   disableFuture?: boolean;
   placeholder?: string;
-  datatestid?: string;
+  "data-test-id"?: string;
   variant?: "standard" | "outlined";
   id?: string;
 
@@ -45,7 +45,6 @@ function DateField({
   maxDate,
   disableFuture,
   placeholder,
-  datatestid,
   variant = "standard",
   disableWidthLimit = false,
   id,

@@ -27,20 +27,6 @@ const IdentifierDataGrid = lazy(() =>
   )
 );
 
-const missingDataAlert: string =
-  "Some required details are missing. To enable publishing, please fill them in.";
-
-/**
- * Alert to display when required identifier data is missing
- */
-export const MissingDataAlert = (): React.ReactNode => {
-  return (
-    <Alert severity="warning">
-      {missingDataAlert}
-    </Alert>
-  );
-};
-
 type PreviewDialogArgs = {
   open: boolean;
   onClose: () => void;
@@ -142,7 +128,10 @@ const PublicPreviewDialog = ({
       <DialogActions>
         {!id.isValid && (
           <Box sx={{ flexGrow: 1 }}>
-            <MissingDataAlert />
+            <Alert severity="warning">
+              Some required details are missing. To enable publishing, please
+              fill them in.
+            </Alert>
           </Box>
         )}
         <Button onClick={onClose}>Close</Button>

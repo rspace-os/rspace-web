@@ -146,7 +146,7 @@ function ImageField({
           <FileField
             accept=".png, .jpg, .jpeg, .gif"
             buttonLabel={imageAsObjectURL ? "Replace Image" : "Add Image"}
-            datatestid={
+            data-test-id={
               imageAsObjectURL ? "ReplaceImageButton" : "AddImageButton"
             }
             id={id}

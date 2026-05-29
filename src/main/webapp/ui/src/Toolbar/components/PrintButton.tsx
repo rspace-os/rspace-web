@@ -5,12 +5,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPrint } from "@fortawesome/free-solid-svg-icons/faPrint";
 
 type PrintButtonArgs = {
-  dataTestId: string;
+  "data-test-id": string;
   onClick?: () => void;
 };
 
 export default function PrintButton({
-  dataTestId,
+  "data-test-id": dataTestId,
   onClick,
 }: PrintButtonArgs): React.ReactNode {
   return (

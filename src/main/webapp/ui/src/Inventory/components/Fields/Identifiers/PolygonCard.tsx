@@ -98,7 +98,7 @@ const PolygonEditor = observer(
                 size="small"
                 variant="standard"
                 fullWidth
-                datatestid={`Polygon-point-${i}-latitude`}
+                data-test-id={`Polygon-point-${i}-latitude`}
                 disabled={false}
                 value={point.pointLatitude ?? ""}
                 placeholder="Enter Point Latitude"
@@ -140,7 +140,7 @@ const PolygonEditor = observer(
                 size="small"
                 variant="standard"
                 fullWidth
-                datatestid={`Polygon-point-${i + 1}-longitude`}
+                data-test-id={`Polygon-point-${i + 1}-longitude`}
                 disabled={false}
                 value={point.pointLongitude ?? ""}
                 placeholder="Enter Point Longitude"
@@ -239,7 +239,7 @@ function PolygonCard({
                 size="small"
                 variant="standard"
                 fullWidth
-                datatestid={`In-polygon-point-latitude`}
+                data-test-id={`In-polygon-point-latitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLatitude}
                 placeholder="Enter Point Latitude"
@@ -290,7 +290,7 @@ function PolygonCard({
                 size="small"
                 variant="standard"
                 fullWidth
-                datatestid={`In-polygon-point-longitude`}
+                data-test-id={`In-polygon-point-longitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLongitude ?? ""}
                 placeholder="Enter Point Longitude"

@@ -1470,15 +1470,17 @@ const UsersToolbar = ({
       </ColumnsPanelTrigger>
       <GridToolbarExportContainer>
         <MenuItem
-          onClick={doNotAwait(async (event: React.MouseEvent<HTMLElement>) => {
-            await exportAllRows();
-            event.currentTarget.closest('[role="menu"]')?.dispatchEvent(
-              new KeyboardEvent("keydown", {
-                bubbles: true,
-                key: "Escape",
-              }),
-            );
-          })}
+          onClick={(event: React.MouseEvent<HTMLElement>) => {
+            void (async () => {
+              await exportAllRows();
+              event.currentTarget.closest('[role="menu"]')?.dispatchEvent(
+                new KeyboardEvent("keydown", {
+                  bubbles: true,
+                  key: "Escape",
+                }),
+              );
+            })();
+          }}
         >
           Export all rows to CSV
         </MenuItem>

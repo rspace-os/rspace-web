@@ -335,7 +335,7 @@ class AdvancedSearch extends React.Component {
             <Grid container spacing={1}>
               <Grid>
                 <DateField
-                  datatestid={`a-search-input-${idx}-from`}
+                  data-test-id={`a-search-input-${idx}-from`}
                   label="From"
                   value={query.from}
                   disableFuture
@@ -349,7 +349,7 @@ class AdvancedSearch extends React.Component {
               </Grid>
               <Grid>
                 <DateField
-                  datatestid={`a-search-input-${idx}-to`}
+                  data-test-id={`a-search-input-${idx}-to`}
                   label="To"
                   value={query.to}
                   disableFuture

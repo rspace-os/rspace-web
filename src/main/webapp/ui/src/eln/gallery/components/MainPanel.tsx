@@ -35,7 +35,7 @@ import {
   Destination,
 } from "../useGalleryActions";
 import { useGallerySelection } from "../useGallerySelection";
-import { doNotAwait, match } from "../../../util/Util";
+import { match } from "../../../util/Util";
 import {
   useDroppable,
   useDraggable,
@@ -347,35 +347,37 @@ const Path = observer(
         </Breadcrumbs>
         <IconButtonWithTooltip
           title="Copy to clipboard"
-          onClick={doNotAwait(async () => {
-            try {
-              await navigator.clipboard.writeText(
-                `${window.location.origin}/gallery${ArrayUtils.last(
-                  selection
-                    .asSet()
-                    .only.map((f) => f.path)
-                    .orElse(path),
-                )
-                  .map(({ id }) => `/${idToString(id).elseThrow()}`)
-                  .orElse(`?mediaType=${section}`)}`,
-              );
-              addAlert(
-                mkAlert({
-                  message: "Link copied to clipboard successfully!",
-                  variant: "success",
-                }),
-              );
-            } catch (e) {
-              console.error(e);
-              addAlert(
-                mkAlert({
-                  message:
-                    "Failed to copy link to clipboard. Please try again.",
-                  variant: "error",
-                }),
-              );
-            }
-          })}
+          onClick={() => {
+            void (async () => {
+              try {
+                await navigator.clipboard.writeText(
+                  `${window.location.origin}/gallery${ArrayUtils.last(
+                    selection
+                      .asSet()
+                      .only.map((f) => f.path)
+                      .orElse(path),
+                  )
+                    .map(({ id }) => `/${idToString(id).elseThrow()}`)
+                    .orElse(`?mediaType=${section}`)}`,
+                );
+                addAlert(
+                  mkAlert({
+                    message: "Link copied to clipboard successfully!",
+                    variant: "success",
+                  }),
+                );
+              } catch (e) {
+                console.error(e);
+                addAlert(
+                  mkAlert({
+                    message:
+                      "Failed to copy link to clipboard. Please try again.",
+                    variant: "error",
+                  }),
+                );
+              }
+            })();
+          }}
           color="standardIcon"
           icon={<LinkIcon />}
           sx={{
@@ -1407,27 +1409,31 @@ function GalleryMainPanel({
   const { addAlert } = React.useContext(AlertContext);
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
     useFileImportDropZone({
-      onDrop: doNotAwait(async (files) => {
-        const fId = FetchingData.getSuccessValue<Id>(folderId).orElseGet(() => {
-          addAlert(
-            mkAlert({
-              variant: "error",
-              message: "Cannot drop files to upload here.",
-            }),
+      onDrop: (files) => {
+        void (async () => {
+          const fId = FetchingData.getSuccessValue<Id>(folderId).orElseGet(
+            () => {
+              addAlert(
+                mkAlert({
+                  variant: "error",
+                  message: "Cannot drop files to upload here.",
+                }),
+              );
+              throw new Error("Unknown folder id");
+            },
           );
-          throw new Error("Unknown folder id");
-        });
-        await uploadFiles(fId, files);
-        void refreshListing();
-        if (!path) return;
-        if (path.length > 0) {
-          trackEvent("user:drag_uploads:file:into_current_folder");
-        } else {
-          trackEvent("user:drag_uploads:file:section_root", {
-            section: selectedSection,
-          });
-        }
-      }),
+          await uploadFiles(fId, files);
+          void refreshListing();
+          if (!path) return;
+          if (path.length > 0) {
+            trackEvent("user:drag_uploads:file:into_current_folder");
+          } else {
+            trackEvent("user:drag_uploads:file:section_root", {
+              section: selectedSection,
+            });
+          }
+        })();
+      },
     });
   const [viewMenuAnchorEl, setViewMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);

@@ -8,7 +8,7 @@ export type NumberFieldArgs = {
 
   // optional
   autoFocus?: boolean;
-  datatestid?: string;
+  "data-test-id"?: string;
   disabled?: boolean;
   placeholder?: string;
   error?: boolean;
@@ -44,7 +44,7 @@ export default function NumberField({
   error = false,
   helperText = null,
   noValueLabel,
-  datatestid,
+  "data-test-id": dataTestId,
   ariaLabel,
   slotProps,
   ...props
@@ -53,7 +53,7 @@ export default function NumberField({
     <NoValue label={noValueLabel ?? "None"} />
   ) : (
     <TextField
-      data-test-id={datatestid}
+      data-test-id={dataTestId}
       type="number"
       error={error}
       disabled={disabled}

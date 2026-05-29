@@ -33,7 +33,7 @@ import FormControl from "@mui/material/FormControl";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import RadioField from "../../../../components/Inputs/RadioField";
-import PublicPreviewDialog, { MissingDataAlert } from "./PublicPreviewDialog";
+import PublicPreviewDialog from "./PublicPreviewDialog";
 import MultipleInputHandler from "./MultipleInputHandler";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
@@ -539,7 +539,10 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                 </Grid>
                 {!id.isValid && (
                   <Grid sx={{ mb: 1 }}>
-                    <MissingDataAlert />
+                    <Alert severity="warning">
+                      Some required details are missing. To enable publishing,
+                      please fill them in.
+                    </Alert>
                   </Grid>
                 )}
               </Grid>

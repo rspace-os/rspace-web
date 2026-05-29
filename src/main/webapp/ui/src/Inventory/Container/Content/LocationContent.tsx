@@ -4,7 +4,7 @@ import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import Avatar from "@mui/material/Avatar";
 import InfoBadge from "../../components/InfoBadge";
 import InfoCard from "../../components/InfoCard";
-import { useTheme, type Theme } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import { observer, Observer } from "mobx-react-lite";
 import {
   type Location,
@@ -13,75 +13,9 @@ import {
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import * as DragAndDrop from "./DragAndDrop";
 import SearchContext from "../../../stores/contexts/Search";
-import { type Search } from "../../../stores/definitions/Search";
 
 const border = (color: string, isImportant: boolean = false) =>
   `3px solid ${color}${isImportant ? " !important" : ""}`;
-
-const wrapperSx = (theme: Theme) => ({
-  margin: "0 auto",
-  borderRadius: 3,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "white",
-  transition: theme.transitions.filterToggle,
-  aspectRatio: "1 / 1",
-
-  // an arbitrary value the ensures cells don't become excessively large on enormous displays
-  maxHeight: theme.spacing(10),
-
-  // this ensures that empty location on visual containers are square
-  minWidth: theme.spacing(3),
-
-  // overrides the cascading `pointerEvents: none` of LocationWrapper
-  pointerEvents: "auto",
-});
-
-const selectionSx = (
-  location: Location,
-  theme: Theme,
-  search: Search
-): React.ComponentProps<typeof Box>["sx"] => {
-  if (location.isShallowUnselected(search)) {
-    return {
-      border: border(theme.palette.action.disabled, true),
-    };
-  }
-  if (location.isShallowSelected(search)) {
-    return location.isSelectable(search)
-      ? {
-          border: border(theme.palette.primary.light, true),
-        }
-      : {
-          border: border(theme.palette.secondary.light, true),
-        };
-  }
-  if (location.selected) {
-    return {
-      border: border(theme.palette.primary.main, true),
-      backgroundColor: theme.palette.primary.main,
-    };
-  }
-  return undefined;
-};
-
-const containerTypeSx = (
-  location: Location,
-): React.ComponentProps<typeof Box>["sx"] => {
-  if (location.parentContainer.cType === "GRID") {
-    return {
-      border: border("white"),
-      color: "grey",
-    };
-  }
-  if (location.parentContainer.cType === "IMAGE") {
-    return {
-      border: border("grey"),
-    };
-  }
-  return undefined;
-};
 
 // Shared styling for the placeholder number shown in empty GRID/IMAGE locations.
 const numberBoxSx = {
@@ -179,9 +113,42 @@ function LocationContent({
     <Box
       sx={
         [
-          wrapperSx(theme),
-          containerTypeSx(location),
-          selectionSx(location, theme, search),
+          {
+            margin: "0 auto",
+            borderRadius: 3,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "white",
+            transition: theme.transitions.filterToggle,
+            aspectRatio: "1 / 1",
+
+            // an arbitrary value the ensures cells don't become excessively large on enormous displays
+            maxHeight: theme.spacing(10),
+
+            // this ensures that empty location on visual containers are square
+            minWidth: theme.spacing(3),
+
+            // overrides the cascading `pointerEvents: none` of LocationWrapper
+            pointerEvents: "auto",
+          },
+          location.parentContainer.cType === "GRID"
+            ? { border: border("white"), color: "grey" }
+            : location.parentContainer.cType === "IMAGE"
+              ? { border: border("grey") }
+              : undefined,
+          location.isShallowUnselected(search)
+            ? { border: border(theme.palette.action.disabled, true) }
+            : location.isShallowSelected(search)
+              ? location.isSelectable(search)
+                ? { border: border(theme.palette.primary.light, true) }
+                : { border: border(theme.palette.secondary.light, true) }
+              : location.selected
+                ? {
+                    border: border(theme.palette.primary.main, true),
+                    backgroundColor: theme.palette.primary.main,
+                  }
+                : undefined,
           location.isGreyedOut(search)
             ? {
                 filter: "grayscale(1)",
@@ -226,9 +193,7 @@ function LocationContent({
                   loc.coordX === location.coordX &&
                   loc.coordY === location.coordY,
               ) + 1;
-            return (
-              <Box sx={numberBoxSx}>{imageIndex}</Box>
-            );
+            return <Box sx={numberBoxSx}>{imageIndex}</Box>;
           })()
         ) : (
           <></>

@@ -92,7 +92,7 @@ export type FileFieldArgs = {
   // optional
   id?: string;
   buttonLabel?: string;
-  datatestid?: string;
+  "data-test-id"?: string;
   disabled?: boolean;
   error?: boolean;
   icon?: React.ReactNode;
@@ -133,7 +133,7 @@ function FileField({
   showSelectedFilename = false,
   loading = false,
   error = false,
-  datatestid,
+  "data-test-id": dataTestId,
   triggerButton,
   loadedFile,
   explanatoryText,
@@ -182,7 +182,7 @@ function FileField({
         onChange={handleChange}
         type="file"
         value={value}
-        data-test-id={datatestid}
+        data-test-id={dataTestId}
         disabled={disabled}
       />
       {triggerButton?.({ id }) ?? (

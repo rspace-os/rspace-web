@@ -122,7 +122,7 @@ const GeoLocationField = ({
           size="small"
           variant="standard"
           fullWidth
-          datatestid={`IdentifierRecommendedField-${"geolocation-point-latitude"}-${i}`}
+          data-test-id={`IdentifierRecommendedField-${"geolocation-point-latitude"}-${i}`}
           disabled={false}
           value={geoLocationPoint.pointLatitude}
           onChange={({ target: { value } }) => {
@@ -165,7 +165,7 @@ const GeoLocationField = ({
           size="small"
           variant="standard"
           fullWidth
-          datatestid={`IdentifierRecommendedField-${"geolocation-point-longitude"}-${i}`}
+          data-test-id={`IdentifierRecommendedField-${"geolocation-point-longitude"}-${i}`}
           disabled={false}
           value={geoLocationPoint.pointLongitude}
           onChange={({ target: { value } }) => {
@@ -261,7 +261,7 @@ const GeoLocationField = ({
                   slotProps={{ htmlInput: COORD_RANGE_Y }}
                   size="small"
                   variant="standard"
-                  datatestid={`IdentifierRecommendedField-${"geolocation-box-northbound"}-${i}`}
+                  data-test-id={`IdentifierRecommendedField-${"geolocation-box-northbound"}-${i}`}
                   value={geoLocationBox.northBoundLatitude}
                   onChange={({ target: { value } }) => {
                     runInAction(() => {
@@ -293,7 +293,7 @@ const GeoLocationField = ({
                   slotProps={{ htmlInput: COORD_RANGE_X }}
                   size="small"
                   variant="standard"
-                  datatestid={`IdentifierRecommendedField-${"geolocation-box-westbound"}-${i}`}
+                  data-test-id={`IdentifierRecommendedField-${"geolocation-box-westbound"}-${i}`}
                   value={geoLocationBox.westBoundLongitude}
                   onChange={({ target: { value } }) => {
                     runInAction(() => {
@@ -325,7 +325,7 @@ const GeoLocationField = ({
                   slotProps={{ htmlInput: COORD_RANGE_Y }}
                   size="small"
                   variant="standard"
-                  datatestid={`IdentifierRecommendedField-${"geolocation-box-southbound"}-${i}`}
+                  data-test-id={`IdentifierRecommendedField-${"geolocation-box-southbound"}-${i}`}
                   value={geoLocationBox.southBoundLatitude}
                   onChange={({ target: { value } }) => {
                     runInAction(() => {
@@ -357,7 +357,7 @@ const GeoLocationField = ({
                   slotProps={{ htmlInput: COORD_RANGE_X }}
                   size="small"
                   variant="standard"
-                  datatestid={`IdentifierRecommendedField-${"geolocation-box-eastbound"}-${i}`}
+                  data-test-id={`IdentifierRecommendedField-${"geolocation-box-eastbound"}-${i}`}
                   value={geoLocationBox.eastBoundLongitude}
                   onChange={({ target: { value } }) => {
                     runInAction(() => {

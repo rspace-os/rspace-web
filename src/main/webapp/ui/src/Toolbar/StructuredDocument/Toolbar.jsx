@@ -214,7 +214,7 @@ class StructuredDocumentToolbar extends React.Component {
                     "user:print:document:document_editor",
                   );
                 }}
-                dataTestId="notebooktoolbar-print"
+                data-test-id="notebooktoolbar-print"
               />
               <Box
                 component="span"

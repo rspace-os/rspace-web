@@ -84,7 +84,7 @@ function UsedQuantityField({
 
   return (
     <NumberField
-      datatestid={`material-additional-quantity-${globalId}`}
+      data-test-id={`material-additional-quantity-${globalId}`}
       disabled={!material.selected || mixedSelectedCategories}
       value={getNumericValue()}
 

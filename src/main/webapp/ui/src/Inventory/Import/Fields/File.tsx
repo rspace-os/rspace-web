@@ -32,7 +32,7 @@ function FileForImport({ loadedFile }: FileArgs): React.ReactNode {
                 fileByRecordTypeLoaded ? "Replace" : "Select"
               } ${labelByRecordType} CSV File`}
               name="file"
-              datatestid="csvFile"
+              data-test-id="csvFile"
               onChange={({ file }) => importStore.importData?.setFile(file)}
               showSelectedFilename={true}
               loading={importStore.isCurrentImportState("parsing")}

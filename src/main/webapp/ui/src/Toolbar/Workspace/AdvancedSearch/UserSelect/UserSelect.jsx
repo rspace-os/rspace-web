@@ -61,7 +61,7 @@ export default function UserSelect(props) {
       size="small"
       multiple
       value={multi}
-      dataTestId={props.testId}
+      data-test-id={props.testId}
     />
   );
 }

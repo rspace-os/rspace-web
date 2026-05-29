@@ -143,7 +143,7 @@ class NotebookToolbar extends React.Component {
             </Tooltip>
           )}
           {this.props.conditionalRender.print && (
-            <PrintButton dataTestId="notebooktoolbar-print" />
+            <PrintButton data-test-id="notebooktoolbar-print" />
           )}
           <SocialActions
             showExternal={true}

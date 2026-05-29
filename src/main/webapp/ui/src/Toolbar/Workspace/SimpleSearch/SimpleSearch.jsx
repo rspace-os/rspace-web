@@ -433,7 +433,7 @@ class SimpleSearch extends React.Component {
                           disableFuture
                           placeholder="the beginning"
                           label="From"
-                          datatestid="s-search-input-from"
+                          data-test-id="s-search-input-from"
                         />
                       </div>
                     </Tooltip>
@@ -448,7 +448,7 @@ class SimpleSearch extends React.Component {
                           disableFuture
                           placeholder="now"
                           label="To"
-                          datatestid="s-search-input-to"
+                          data-test-id="s-search-input-to"
                         />
                       </div>
                     </Tooltip>

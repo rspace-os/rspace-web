@@ -55,7 +55,7 @@ function Template(): React.ReactNode {
       <>
         <InputWrapper
           label="Sample Template"
-          dataTestId="ChooseTemplate"
+          data-test-id="ChooseTemplate"
           explanation={
             activeResult.isFieldEditable("template") ? (
               <>
@@ -97,7 +97,7 @@ function Template(): React.ReactNode {
     <>
       <InputWrapper
         label="Sample Template"
-        dataTestId="ChooseTemplate"
+        data-test-id="ChooseTemplate"
         disabled
         explanation={
           activeResult.isFieldEditable("template") ? (

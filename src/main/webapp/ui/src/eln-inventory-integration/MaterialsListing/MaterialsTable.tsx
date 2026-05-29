@@ -53,12 +53,12 @@ function TableSubCell({
   flex,
   children,
   sx,
-  datatestid,
+  "data-test-id": dataTestId,
 }: {
   flex: number;
   sx?: SxProps<Theme>;
   children: React.ReactNode;
-  datatestid?: string;
+  "data-test-id"?: string;
 }): React.ReactNode {
   return (
     <Box
@@ -72,7 +72,7 @@ function TableSubCell({
         },
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}
-      data-test-id={datatestid}
+      data-test-id={dataTestId}
     >
       {children}
     </Box>
@@ -313,7 +313,7 @@ function MaterialsTable({
                   </Box>
                   <TableSubCell
                     flex={2}
-                    datatestid={`material-used-quantity-${globalId}`}
+                    data-test-id={`material-used-quantity-${globalId}`}
                     sx={{
                       color: colorCodedQuantity(material, list, quantityColors),
                     }}
@@ -325,7 +325,7 @@ function MaterialsTable({
                     )}
                   </TableSubCell>
                   <TableSubCell
-                    datatestid={`material-inventory-quantity-${globalId}`}
+                    data-test-id={`material-inventory-quantity-${globalId}`}
                     flex={2}
                     sx={{
                       color: colorCodedQuantity(material, list, quantityColors),

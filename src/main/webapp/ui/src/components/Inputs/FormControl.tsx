@@ -54,7 +54,7 @@ export type FormControlArgs = {
   actions?: React.ReactNode;
   classes?: { formLabel?: string };
   slotProps?: { label?: { sx?: SxProps<Theme> } };
-  dataTestId?: string;
+  "data-test-id"?: string;
   required?: boolean;
   explanation?: React.ReactNode;
   "aria-label"?: string;
@@ -71,7 +71,7 @@ function CustomFormControl({
   actions = <div></div>,
   classes = {},
   slotProps,
-  dataTestId,
+  "data-test-id": dataTestId,
   required,
   explanation,
   ["aria-label"]: ariaLabel,

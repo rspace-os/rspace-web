@@ -124,8 +124,7 @@ const MultipleInputHandler = ({
                     onChange={({ target: { value } }) => {
                       if (value) handleUpdateValue(i, "value", value);
                     }}
-                    // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-                    datatestid={`IdentifierRecommendedField-${field.key}-${i}`}
+                    data-test-id={`IdentifierRecommendedField-${field.key}-${i}`}
                   />
                 ) : (
                   <TextField
