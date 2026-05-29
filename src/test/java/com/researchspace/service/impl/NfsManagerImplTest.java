@@ -169,6 +169,26 @@ public class NfsManagerImplTest {
   }
 
   @Test
+  public void getFileStoreInfosForUser_orphanedFilestore_marksUserPermissionsInaccessible() {
+    // filestore whose filesystem has been deleted: the listing endpoint must still expose
+    // explicit canRead=false/canWrite=false so the frontend renders it as inaccessible
+    // rather than defaulting to permissive when userPermissions is absent.
+    NfsFileStore orphan = new NfsFileStore();
+    orphan.setId(99L);
+    orphan.setName("orphan");
+    orphan.setUser(testUser);
+    orphan.setFileSystem(null);
+    when(nfsDao.getUserFileStores(testUser.getId())).thenReturn(List.of(orphan));
+
+    List<NfsFileStoreInfo> infos = nfsManager.getFileStoreInfosForUser(testUser);
+
+    NfsUserPermissions perms = infos.get(0).getUserPermissions();
+    assertNotNull(perms);
+    assertEquals(false, perms.isCanRead());
+    assertEquals(false, perms.isCanWrite());
+  }
+
+  @Test
   public void s3FileSystem_returnsUsernameOnSubsequentCalls() {
     S3Utilities s3Utilities = mock(S3Utilities.class);
     S3NfsClient s3Client = new S3NfsClient(null, s3Utilities);

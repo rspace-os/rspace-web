@@ -123,7 +123,7 @@ public class NfsManagerImpl implements NfsManager {
   }
 
   private NfsUserPermissions buildPermissions(User user, NfsFileSystem fs) {
-    if (user == null || fs == null) {
+    if (user == null) {
       return null;
     }
     return new NfsUserPermissions(aclChecker.canRead(user, fs), aclChecker.canWrite(user, fs));

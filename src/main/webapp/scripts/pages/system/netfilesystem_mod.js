@@ -457,15 +457,16 @@ function showWhitelistWarnings(result) {
     if (!result) {
         return;
     }
+    // toastmessage renders text as HTML, so escape the sysadmin-typed usernames.
     if (result.unknownReadWhitelistUsernames && result.unknownReadWhitelistUsernames.length) {
         showStickyWarning(
             'Unknown usernames on read whitelist (saved as typed): '
-            + result.unknownReadWhitelistUsernames.join(', '));
+            + result.unknownReadWhitelistUsernames.map(RS.escapeHtml).join(', '));
     }
     if (result.unknownWriteWhitelistUsernames && result.unknownWriteWhitelistUsernames.length) {
         showStickyWarning(
             'Unknown usernames on write whitelist (saved as typed): '
-            + result.unknownWriteWhitelistUsernames.join(', '));
+            + result.unknownWriteWhitelistUsernames.map(RS.escapeHtml).join(', '));
     }
 }
 
