@@ -150,11 +150,6 @@
                                     name="isCopyable"
                                     value="${createPermission.instancePermissions[record.id]['COPY']}"
                             />
-                            <input  id="offlineStatus_${record.id}"
-                                    type="hidden"
-                                    name="offlineStatus"
-                                    value="${record.offlineWorkStatus}"
-                            />
                             <input  id="authzExport_${record.id}"
                                     type="hidden"
                                     name="isExportable"

@@ -215,12 +215,6 @@
 
     <!-- Spring MVC -->
 
-    <!-- don't translate offline traffic -->
-    <rule>
-        <from>/offline/**</from>
-        <to>/offline/$1</to>
-    </rule>
-
     <!--  Backwards compatibility: Previous chemical thumbnail urls -->
     <rule>
         <from>/notebook/editor/structuredDocument/getImageChem/**</from>
