@@ -9,9 +9,11 @@
             Remove the offline / end-offline work feature: drop the OfflineRecordUser table
             (and its foreign keys to BaseRecord and User) now that the feature has been removed.
         </comment>
+    <changeSet id="rsdev-1136-remove-offline-work-a" context="run" author="claude">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="OfflineRecordUser"/>
         </preConditions>
+        <comment>
         <dropTable tableName="OfflineRecordUser"/>
     </changeSet>
 
