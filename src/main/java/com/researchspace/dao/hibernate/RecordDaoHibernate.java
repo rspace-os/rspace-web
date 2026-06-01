@@ -847,5 +847,15 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
         .setParameter("newOwnerUsername", newOwnerUsername)
         .setParameter("mediaIds", mediaIds)
         .executeUpdate();
+
+    getSession()
+        .createNativeQuery(
+            "UPDATE FileProperty fp"
+                + " INNER JOIN EcatImage ei ON ei.workingImageFP_id = fp.id"
+                + " SET fp.fileOwner = :newOwnerUsername, fp.fileUser = :newOwnerUsername"
+                + " WHERE ei.id IN :mediaIds")
+        .setParameter("newOwnerUsername", newOwnerUsername)
+        .setParameter("mediaIds", mediaIds)
+        .executeUpdate();
   }
 }
