@@ -1,10 +1,10 @@
 function initWordChooserDlg() {
-    
+
     var isNotebook = _isNotebook();
     if (!isNotebook) {
         initFolderChooser('-wordimport');
     }
-    
+
     $('#wordDocChooserDlg').dialog({
         modal: true,
         autoOpen: false,
@@ -29,7 +29,7 @@ function initWordChooserDlg() {
             }
         }
     });
-    
+
 }
 
 function openWordChooserDlg(config) {
@@ -47,10 +47,10 @@ function _toggleWordFolderChooser(listNotebooks) {
     }
     //RSPAC-1761: evernote import generates folder, can't shoose notebook
     if(!listNotebooks) {
-    	setFolderChooserDirListingParams('-wordimport', "showNotebooks=false");
+        setFolderChooserDirListingParams('-wordimport', "showNotebooks=false");
     }
     $('#folderChooser-wordimport').show();
-   
+
     $('#folderChooserDesc-wordimport').html('to put the imported documents. Otherwise, they will be put in the current folder.');
 }
 
@@ -64,11 +64,11 @@ function _isFormValid(fileType) {
 }
 
 function _submitWordImportForm(fileType) {
-    
+
     if (!_isFormValid(fileType)) {
         return false;
     }
-    
+
     var $form = $("form#wordImportForm");
     var targetFolderId = $form.data("parentid");
     var val = $('#folderChooser-id-wordimport').val();
@@ -83,7 +83,7 @@ function _submitWordImportForm(fileType) {
        data: formData,
        cache: false,
        contentType: false,
-       processData: false 
+       processData: false
     });
 
     jqxhr.always(function () {
@@ -116,6 +116,6 @@ function _submitWordImportForm(fileType) {
     jqxhr.fail(function (jqXHR) {
         RS.ajaxFailed("Importing Word Documents", true, jqXHR);
     });
-    
+
     return true;
 }
