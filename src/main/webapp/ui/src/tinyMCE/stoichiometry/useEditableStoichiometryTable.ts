@@ -87,14 +87,14 @@ function toStoichiometryRequest(
         limitingReagent: m.limitingReagent ?? undefined,
         notes: m.notes,
         inventoryLink: m.inventoryLink ?? null,
+        formula: m.formula ?? undefined,
+        molecularWeight: m.molecularWeight ?? undefined,
       };
 
       if (m.id >= 0) {
         return {
           ...base,
           id: m.id,
-          formula: m.formula ?? undefined,
-          molecularWeight: m.molecularWeight ?? undefined,
         } as ExistingMoleculeUpdate;
       }
 
@@ -105,11 +105,7 @@ function toStoichiometryRequest(
         throw new Error("New reagents must have a name");
       }
 
-      return {
-        ...base,
-        formula: m.formula ?? undefined,
-        molecularWeight: m.molecularWeight ?? undefined,
-      } as NewMolecule;
+      return base as NewMolecule;
     }),
   };
 }
