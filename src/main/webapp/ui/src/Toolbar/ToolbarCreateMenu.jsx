@@ -52,11 +52,9 @@ export default function CreateMenu(props) {
         variant="outlined"
         sx={{
           color: "white",
-          fontSize: 20,
+          fontSize: "calc(8px + .2cqw)",
           fontWeight: "normal",
           borderColor: "white",
-          flexBasis: "120px",
-          mr: 2,
         }}
         aria-label="Create a record"
       >

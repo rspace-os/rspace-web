@@ -516,7 +516,7 @@ function IntegrationCard<Credentials>({
           </Stack>
         </DialogTitle>
         <DialogContent sx={{ p: 0 }}>
-          <Stack sx={{ p: 2}}>
+          <Stack sx={{ p: 2 }}>
             <section>
               <Typography variant="body2">{usageText}</Typography>
               {typeof website === "string" ? (
@@ -548,7 +548,7 @@ function IntegrationCard<Credentials>({
             </section>
           </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: `0 ${theme.spacing(2)} ${theme.spacing(2)}` }}>
           <Button
             onClick={() => {
               setOpen(false);

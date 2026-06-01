@@ -16,8 +16,6 @@ function ParameterChip({
   return (
     <Chip
       size="small"
-      sx={{ maxWidth: "100%" }}
-      slotProps={{ label: { sx: { letterSpacing: "0.02em", p: "4px 12px" } } }}
       label={label}
       onDelete={onDelete}
     />
@@ -36,7 +34,7 @@ function SearchParameterChips(): React.ReactNode {
   const currentBasket = search.currentBasket(searchStore.savedBaskets);
 
   return (
-    <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
+    <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
       {resultType && resultType !== "ALL" && (
         <ParameterChip
           label={`Type: ${toTitleCase(resultType)}s`}

@@ -321,7 +321,6 @@ class WorkspaceToolbar extends React.Component {
           component="span"
           sx={{
             borderRight: "1px solid transparent",
-            margin: "0px 10px",
             height: "100%",
           }}
         ></Box>
@@ -438,7 +437,6 @@ class WorkspaceToolbar extends React.Component {
               component="span"
               sx={{
                 borderRight: "1px solid transparent",
-                margin: "0px 10px",
                 height: "100%",
               }}
             ></Box>

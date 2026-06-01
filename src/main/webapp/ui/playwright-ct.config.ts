@@ -33,10 +33,6 @@ async function getPlaywrightConfig() {
         resolve: {
           alias: {
             "@": path.resolve(__dirname, "src"),
-            "@mui/utils/deepmerge/": path.resolve(
-              __dirname,
-              "node_modules/@mui/utils/deepmerge/index.js",
-            ),
           },
           extensions: [".ts", ".tsx", ".js"],
         },

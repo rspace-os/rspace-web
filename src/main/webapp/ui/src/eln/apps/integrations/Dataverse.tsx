@@ -409,6 +409,7 @@ const DialogContent = observer(
           )}
         </Stack>
         <Button
+          sx={{ width: "fit-content" }}
           disabled={Boolean(newConfig)}
           onClick={() => {
             setNewConfig(
