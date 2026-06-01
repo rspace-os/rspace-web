@@ -240,9 +240,9 @@ function DSWImportDialogContent({
             </Typography>
             <Typography variant="body2">
               See{" "}
-              <Link href="https://researchers.dsw.elixir-europe.org">
-                researchers.dsw.elixir-europe.org
-              </Link>{" "}
+              <Link href="https://guide.ds-wizard.org/en/latest/">
+			       https://guide.ds-wizard.org/en/latest
+			  </Link>{" "}
               and our{" "}
               <Link href={docLinks.dsw}>
                 DSW / FAIR Wizard integration docs

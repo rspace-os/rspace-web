@@ -11,6 +11,7 @@ import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.chemistry.StoichiometryException;
@@ -63,26 +64,39 @@ public class StoichiometryApiController extends BaseApiController implements Sto
 
   @Override
   public StoichiometryDTO updateStoichiometry(
-      long stoichiometryId, StoichiometryUpdateDTO stoichiometryUpdateDTO, User user) {
+      long stoichiometryId,
+      StoichiometryUpdateDTO stoichiometryUpdateDTO,
+      boolean updateFieldHtml,
+      User user)
+      throws DocumentAlreadyEditedException {
     Stoichiometry stoichiometry =
         stoichiometryService.update(stoichiometryId, stoichiometryUpdateDTO, user);
     // Get latest revision number after updated
-    return StoichiometryMapper.toDTO(stoichiometry, getLatestRevisionNumber(stoichiometry.getId()));
+    Long newRevision = getLatestRevisionNumber(stoichiometry.getId());
+    if (updateFieldHtml && newRevision != null) {
+      stoichiometryService.syncFieldHtml(stoichiometryId, newRevision, user);
+    }
+    return StoichiometryMapper.toDTO(stoichiometry, newRevision);
   }
 
   @Override
-  public Boolean deleteStoichiometry(long stoichiometryId, User user) {
-    stoichiometryService.delete(stoichiometryId, user);
+  public Boolean deleteStoichiometry(long stoichiometryId, boolean updateFieldHtml, User user)
+      throws DocumentAlreadyEditedException {
+    stoichiometryService.delete(stoichiometryId, user, updateFieldHtml);
     return Boolean.TRUE;
   }
 
   @Override
-  public StockDeductionResult deductStock(StockDeductionRequest request, User user) {
+  public StockDeductionResult deductStock(StockDeductionRequest request, User user)
+      throws DocumentAlreadyEditedException {
     long stoichiometryId = request.getStoichiometryId();
     List<Long> linkIds = request.getLinkIds();
     StockDeductionResult result =
         stoichiometryInventoryLinkManager.deductStock(stoichiometryId, linkIds, user);
     result.setRevisionNumber(getLatestRevisionNumber(stoichiometryId));
+    if (request.isUpdateFieldHtml() && result.getRevisionNumber() != null) {
+      stoichiometryService.syncFieldHtml(stoichiometryId, result.getRevisionNumber(), user);
+    }
     return result;
   }
 

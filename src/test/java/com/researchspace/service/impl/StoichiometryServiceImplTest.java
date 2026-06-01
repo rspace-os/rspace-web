@@ -9,12 +9,16 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
+import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Record;
+import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
+import com.researchspace.service.DocumentAlreadyEditedException;
+import com.researchspace.service.FieldManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.StoichiometryManager;
@@ -22,6 +26,8 @@ import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.chemistry.StoichiometryException;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
 import org.apache.shiro.authz.AuthorizationException;
@@ -42,6 +48,7 @@ public class StoichiometryServiceImplTest {
   @Mock private ChemistryProvider chemistryProvider;
   @Mock private RSChemElementManager rsChemElementManager;
   @Mock private RecordManager recordManager;
+  @Mock private FieldManager fieldManager;
 
   @InjectMocks private StoichiometryServiceImpl service;
 
@@ -249,7 +256,7 @@ public class StoichiometryServiceImplTest {
     when(stoichiometryManager.get(5L)).thenReturn(existing);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(false);
 
-    assertThrows(AuthorizationException.class, () -> service.delete(5L, user));
+    assertThrows(AuthorizationException.class, () -> service.delete(5L, user, false));
   }
 
   @Test
@@ -261,7 +268,7 @@ public class StoichiometryServiceImplTest {
     doThrow(new RuntimeException("problem removing")).when(stoichiometryManager).remove(5L);
 
     StoichiometryException ex =
-        assertThrows(StoichiometryException.class, () -> service.delete(5L, user));
+        assertThrows(StoichiometryException.class, () -> service.delete(5L, user, false));
     assertTrue(ex.getMessage().contains("Error deleting stoichiometry with id 5"));
   }
 
@@ -271,8 +278,21 @@ public class StoichiometryServiceImplTest {
     when(stoichiometryManager.get(5L)).thenReturn(existing);
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
 
-    assertDoesNotThrow(() -> service.delete(5L, user));
+    assertDoesNotThrow(() -> service.delete(5L, user, false));
     verify(stoichiometryManager).remove(5L);
+    verify(fieldManager, never()).getFieldsByRecordId(anyLong(), any());
+  }
+
+  @Test
+  void delete_whenUpdateFieldHtmlTrue_syncsThenRemoves() throws Exception {
+    Stoichiometry existing = makeStoichiometryWithReaction(5L);
+    when(stoichiometryManager.get(5L)).thenReturn(existing);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+    when(fieldManager.getFieldsByRecordId(anyLong(), any())).thenReturn(Collections.emptyList());
+
+    assertDoesNotThrow(() -> service.delete(5L, user, true));
+    verify(stoichiometryManager).remove(5L);
+    verify(fieldManager).getFieldsByRecordId(anyLong(), any());
   }
 
   @Test
@@ -308,9 +328,182 @@ public class StoichiometryServiceImplTest {
     assertThrows(NotFoundException.class, () -> service.getMoleculeInfo("CCO"));
   }
 
+  @Test
+  void syncFieldHtml_whenStoichiometryNotFound_doesNothing() {
+    when(stoichiometryManager.get(99L)).thenReturn(null);
+    assertDoesNotThrow(() -> service.syncFieldHtml(99L, 5L, user));
+    verify(fieldManager, never()).getFieldsByRecordId(anyLong(), any());
+  }
+
+  @Test
+  void syncFieldHtml_whenNoFields_doesNothing() throws Exception {
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+    when(fieldManager.getFieldsByRecordId(anyLong(), any())).thenReturn(Collections.emptyList());
+
+    assertDoesNotThrow(() -> service.syncFieldHtml(10L, 7L, user));
+    verify(fieldManager, never()).save(any(), any());
+  }
+
+  @Test
+  void syncFieldHtml_whenFieldContainsStoichiometry_updatesRevision() throws Exception {
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+
+    StructuredDocument doc = TestFactory.createAnySD();
+    Field field = doc.getFields().get(0);
+    field.setFieldData("<p><img data-stoichiometry-table='{\"id\":10,\"revision\":3}' /></p>");
+    when(fieldManager.getFieldsByRecordId(anyLong(), any())).thenReturn(List.of(field));
+    when(fieldManager.save(any(), any())).thenReturn(field);
+
+    service.syncFieldHtml(10L, 7L, user);
+
+    verify(fieldManager)
+        .save(argThat(f -> f.getFieldData().contains("revision&quot;:7")), eq(user));
+  }
+
+  @Test
+  void syncFieldHtml_whenDeleteCaseOnChemImageOverlay_stripsAttributeKeepsImage() throws Exception {
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+
+    StructuredDocument doc = TestFactory.createAnySD();
+    Field field = doc.getFields().get(0);
+    field.setFieldData(
+        "<p><img id=\"chem-1\" data-stoichiometry-table='{\"id\":10,\"revision\":3}' /></p>");
+    when(fieldManager.getFieldsByRecordId(anyLong(), any())).thenReturn(List.of(field));
+    when(fieldManager.save(any(), any())).thenReturn(field);
+
+    service.syncFieldHtml(10L, null, user);
+
+    verify(fieldManager)
+        .save(
+            argThat(
+                f ->
+                    !f.getFieldData().contains("data-stoichiometry-table")
+                        && f.getFieldData().contains("id=\"chem-1\"")),
+            eq(user));
+  }
+
+  @Test
+  void syncFieldHtml_whenDeleteCaseOnStandaloneTable_removesWholeElement() throws Exception {
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+
+    StructuredDocument doc = TestFactory.createAnySD();
+    Field field = doc.getFields().get(0);
+    field.setFieldData(
+        "<p>before</p><div data-stoichiometry-table-only=\"true\""
+            + " data-stoichiometry-table='{\"id\":10,\"revision\":3}'>table</div><p>after</p>");
+    when(fieldManager.getFieldsByRecordId(anyLong(), any())).thenReturn(List.of(field));
+    when(fieldManager.save(any(), any())).thenReturn(field);
+
+    service.syncFieldHtml(10L, null, user);
+
+    verify(fieldManager)
+        .save(
+            argThat(
+                f ->
+                    !f.getFieldData().contains("data-stoichiometry-table")
+                        && !f.getFieldData().contains("table")
+                        && f.getFieldData().contains("before")
+                        && f.getFieldData().contains("after")),
+            eq(user));
+  }
+
+  @Test
+  void syncFieldHtml_whenFieldDoesNotContainStoichiometry_doesNotSave() throws Exception {
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+
+    StructuredDocument doc = TestFactory.createAnySD();
+    Field field = doc.getFields().get(0);
+    field.setFieldData("<p>No stoichiometry here</p>");
+    when(fieldManager.getFieldsByRecordId(anyLong(), any())).thenReturn(List.of(field));
+
+    service.syncFieldHtml(10L, 7L, user);
+
+    verify(fieldManager, never()).save(any(), any());
+  }
+
+  @Test
+  void syncFieldHtml_whenUserLacksWritePermission_throws() throws Exception {
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(false);
+
+    assertThrows(AuthorizationException.class, () -> service.syncFieldHtml(10L, 7L, user));
+    verify(fieldManager, never()).getFieldsByRecordId(anyLong(), any());
+  }
+
+  @Test
+  void syncFieldHtml_whenDocumentIsBeingEdited_throwsConflictAndDoesNotSave() throws Exception {
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+    when(recordManager.getEditingUserForRecord(100L)).thenReturn(Optional.of("someoneElse"));
+
+    DocumentAlreadyEditedException ex =
+        assertThrows(
+            DocumentAlreadyEditedException.class, () -> service.syncFieldHtml(10L, 7L, user));
+    assertTrue(ex.getMessage().contains("someoneElse"));
+    verify(fieldManager, never()).getFieldsByRecordId(anyLong(), any());
+    verify(fieldManager, never()).save(any(), any());
+  }
+
+  @Test
+  void syncFieldHtml_whenSameUserHoldsEditLock_stillThrows() throws Exception {
+    // Same user editing in another tab is just as dangerous: that tab's autosave will overwrite.
+    Stoichiometry stoich = makeStoichiometryWithReaction(1L);
+    stoich.setId(10L);
+    when(stoichiometryManager.get(10L)).thenReturn(stoich);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+    when(recordManager.getEditingUserForRecord(100L)).thenReturn(Optional.of(user.getUsername()));
+
+    assertThrows(DocumentAlreadyEditedException.class, () -> service.syncFieldHtml(10L, 7L, user));
+    verify(fieldManager, never()).save(any(), any());
+  }
+
+  @Test
+  void delete_whenUpdateFieldHtmlTrueAndDocumentIsBeingEdited_throwsBeforeRemoving()
+      throws Exception {
+    Stoichiometry existing = makeStoichiometryWithReaction(5L);
+    when(stoichiometryManager.get(5L)).thenReturn(existing);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+    when(recordManager.getEditingUserForRecord(100L)).thenReturn(Optional.of("someoneElse"));
+
+    assertThrows(DocumentAlreadyEditedException.class, () -> service.delete(5L, user, true));
+    verify(stoichiometryManager, never()).remove(anyLong());
+  }
+
+  @Test
+  void delete_whenUpdateFieldHtmlFalse_ignoresEditLock() throws Exception {
+    // The HTML-sync gate only applies when the caller asked us to rewrite the field HTML.
+    Stoichiometry existing = makeStoichiometryWithReaction(5L);
+    when(stoichiometryManager.get(5L)).thenReturn(existing);
+    when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(true);
+
+    assertDoesNotThrow(() -> service.delete(5L, user, false));
+    verify(stoichiometryManager).remove(5L);
+    verify(recordManager, never()).getEditingUserForRecord(anyLong());
+  }
+
   private Stoichiometry makeStoichiometryWithReaction(Long reactionId) throws Exception {
     RSChemElement parent = TestFactory.createChemElement(null, reactionId);
     Record record = TestFactory.createAnySD();
+    record.setId(100L);
     parent.setRecord(record);
     Stoichiometry s = new Stoichiometry();
     s.setId(1L);

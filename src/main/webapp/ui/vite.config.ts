@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import bundleEntries from "./bundleEntries.json";
 import { defineConfig } from "vitest/config";
 import type { Alias, PluginOption, UserConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import browserslist from "browserslist";
 import browserslistToEsbuild from "browserslist-to-esbuild";
