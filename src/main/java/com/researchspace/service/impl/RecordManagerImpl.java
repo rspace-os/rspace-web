@@ -453,6 +453,11 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   @Override
+  public Optional<String> getEditingUserForRecord(Long recordId) {
+    return Optional.ofNullable(tracker.getEditingUserForRecord(recordId));
+  }
+
+  @Override
   public EditStatus requestRecordView(Long recordId, User user) {
     EditStatus basicStatus = checkBasicEditStatusForRecordAndUser(recordId, user);
     if (basicStatus != null) {
