@@ -584,7 +584,62 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void transferBetweenFilestores_userNotOnWriteWhitelist_throwsAuthorizationException() {
+  void transferBetweenFilestores_userNotOnDestWriteWhitelist_throwsAuthorizationException() {
+    Long srcId = 10L;
+    Long dstId = 20L;
+    when(nfsManager.getNfsFileStore(srcId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user));
+    NfsFileStore destFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user);
+    destFilestore.getFileSystem().setWriteWhitelist("alice"); // user is "username"
+    when(nfsManager.getNfsFileStore(dstId)).thenReturn(destFilestore);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", false);
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            controller.transferBetweenFilestores(
+                srcId, request, new BeanPropertyBindingResult(request, "request"), user));
+  }
+
+  @Test
+  void transferBetweenFilestores_readOnlySourceNonDeleting_isAllowed()
+      throws BindException, IOException {
+    // a non-deleting transfer only reads the source, so write access on the source is not required
+    Long srcId = 10L;
+    Long dstId = 20L;
+    NfsFileStore srcFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user);
+    srcFilestore
+        .getFileSystem()
+        .setWriteWhitelist("alice"); // read stays '*', so source is readable
+    when(nfsManager.getNfsFileStore(srcId)).thenReturn(srcFilestore);
+    when(nfsManager.getNfsFileStore(dstId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
+    WritableNfsClient srcClient = mock(WritableNfsClient.class);
+    WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
+    when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", false);
+
+    ApiExternalStorageOperationResult result =
+        controller.transferBetweenFilestores(
+            srcId, request, new BeanPropertyBindingResult(request, "request"), user);
+
+    assertTrue(result.getFileInfoDetails().iterator().next().getSucceeded());
+    verify(srcClient, never()).deleteFile(any());
+  }
+
+  @Test
+  void transferBetweenFilestores_deleteSourceWithoutSourceWrite_throwsAuthorizationException() {
+    // deleting the source modifies it, so write access on the source is required
     Long srcId = 10L;
     Long dstId = 20L;
     NfsFileStore srcFilestore =
@@ -596,7 +651,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     when(user.getUsername()).thenReturn(USERNAME);
 
     ApiGalleryFilestoreTransferRequest request =
-        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", false);
+        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", true);
 
     assertThrows(
         AuthorizationException.class,

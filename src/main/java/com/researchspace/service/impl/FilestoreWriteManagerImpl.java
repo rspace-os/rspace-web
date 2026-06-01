@@ -142,7 +142,13 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     }
     throwBindExceptionIfErrors(errors);
 
-    aclChecker.assertCanWrite(user, sourceFilestore.getFileSystem());
+    // the transfer reads the source and writes the destination; the source is only modified
+    // when deleteSource is set, so it needs read access unless we are deleting from it.
+    if (request.isDeleteSource()) {
+      aclChecker.assertCanWrite(user, sourceFilestore.getFileSystem());
+    } else {
+      aclChecker.assertCanRead(user, sourceFilestore.getFileSystem());
+    }
     aclChecker.assertCanWrite(user, destFilestore.getFileSystem());
 
     WritableNfsClient sourceClient = resolveWritableClient(user, sourceFilestore, null, errors);
