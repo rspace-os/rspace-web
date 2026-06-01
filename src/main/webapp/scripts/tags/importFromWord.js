@@ -45,7 +45,7 @@ function _toggleWordFolderChooser(listNotebooks) {
     if (_isNotebook()) {
         return;
     }
-    //RSPAC-1761: evernote import generates folder, can't shoose notebook
+    //RSPAC-1761: evernote import generates folder, can't choose notebook
     if(!listNotebooks) {
         setFolderChooserDirListingParams('-wordimport', "showNotebooks=false");
     }
