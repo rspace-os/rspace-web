@@ -1493,7 +1493,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>RSDEV-1137-stoichiometry-duplication-fix-SNAPSHOT</version>
+      <version>2.23.1</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
