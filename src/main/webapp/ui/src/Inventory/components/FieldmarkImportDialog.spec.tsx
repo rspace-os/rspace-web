@@ -11,11 +11,6 @@ import {
 
 import { sleep } from "@/util/Util";
 
-test.skip(
-  ({ browserName }) => browserName === "webkit",
-  "Flaky on WebKit",
-);
-
 const feature = test.extend<{
   Given: {
     "the fieldmark import dialog is mounted": () => Promise<void>;

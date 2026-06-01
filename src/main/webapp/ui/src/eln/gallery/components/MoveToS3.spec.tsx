@@ -10,11 +10,6 @@ import {
   MoveToS3DialogInTransferModeWithTwoFiles,
 } from "./MoveToS3.story";
 
-test.skip(
-  ({ browserName }) => browserName === "webkit",
-  "Flaky on WebKit",
-);
-
 const S3_FILESTORE = {
   id: 1,
   name: "My S3 Bucket",

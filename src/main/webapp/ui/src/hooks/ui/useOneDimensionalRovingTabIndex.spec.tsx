@@ -7,11 +7,6 @@ import {
 
 import { type emptyObject } from "../../util/types";
 
-test.skip(
-  ({ browserName }) => browserName === "webkit",
-  "Flaky on WebKit",
-);
-
 const feature = test.extend<{
   Given: {
     "the simple example component is rendered": () => Promise<void>;
