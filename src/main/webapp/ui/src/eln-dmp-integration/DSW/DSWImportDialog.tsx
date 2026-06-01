@@ -230,7 +230,7 @@ function DSWImportDialogContent({
               it available to view and reference as a DMP within RSpace.
             </Typography>
             <Typography variant="body2">
-              See <Link href="https://researchers.dsw.elixir-europe.org">researchers.dsw.elixir-europe.org</Link> and our{" "}
+              See <Link href="https://guide.ds-wizard.org/en/latest/">guide.ds-wizard.org/en/latest/</Link> and our{" "}
               <Link href={docLinks.dsw}>DSW / FAIR Wizard integration docs</Link> for
               more.
             </Typography>
