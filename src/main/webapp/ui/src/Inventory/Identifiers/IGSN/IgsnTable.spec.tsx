@@ -184,11 +184,11 @@ const feature = test.extend<{
       },
       "the default columns should be Select, DOI, State, and Linked Item":
         async () => {
-          const headers = await page
-            .getByRole("columnheader")
-            .allTextContents();
-          expect(headers).toEqual(["", "DOI", "State", "Linked Item"]);
-          // the empty string at the beginning is the checkbox column
+          const headers = page.getByRole("columnheader");
+          await expect(headers).toHaveCount(4);
+          await expect(headers.nth(1)).toHaveText("DOI");
+          await expect(headers.nth(2)).toHaveText("State");
+          await expect(headers.nth(3)).toHaveText("Linked Item");
         },
       "there should be four rows": async () => {
         const rows = await page.getByRole("row").count();
