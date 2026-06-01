@@ -266,6 +266,12 @@ public interface RecordManager {
   EditStatus requestRecordView(Long recordId, User user);
 
   /**
+   * Returns the username of the user currently holding the edit lock on a record, if any. Does not
+   * acquire or release the lock — purely a read.
+   */
+  Optional<String> getEditingUserForRecord(Long recordId);
+
+  /**
    * Creates and persists a new empty {@link StructuredDocument}, using the {@link
    * DefaultRecordContext} <br>
    * As a side effect, will increment the user's form usage, if the form is in PUBLISHED state.

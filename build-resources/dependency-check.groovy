@@ -24,7 +24,9 @@ pipeline {
                     echo "Using Java: `java -version`"
                     echo "App version: ${APP_VERSION}"
                 '''
-                sh 'mvn clean package -Dmaven.test.skip=true'
+                /* '-DreactDevMode=true' is a temporary fix to omit npm build part 
+                   which that generates node_modules that are unnecessarily scanned */
+                sh 'mvn clean package -Dmaven.test.skip=true -DreactDevMode=true'
             }
         }
 
