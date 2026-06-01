@@ -32,10 +32,7 @@ function initWordChooserDlg() {
     
 }
 
-var wordImportSelectedIdsNamesTypes = null;
-
-function openWordChooserDlg(idsNamesTypesGetter, config) {
-    wordImportSelectedIdsNamesTypes = idsNamesTypesGetter();
+function openWordChooserDlg(config) {
     config = config || {};
     $('#wordDocChooserDlg').dialog({title:config.title}).data("config",config).dialog('open');
 }

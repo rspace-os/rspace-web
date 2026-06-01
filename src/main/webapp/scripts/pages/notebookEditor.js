@@ -179,10 +179,10 @@ $(document).ready(function(e) {
       initWordChooserDlg();
       $('#createFromWord').click( function (e){
         e.preventDefault();
-        openWordChooserDlg(getDocIdNameAndType, {
+        openWordChooserDlg({
           title:"Import from Word/Open Office",
           fileType:"Word or Open Office",
-          showImportOptions:true, listNotebooks:true
+          listNotebooks:true
         });
       });
 
