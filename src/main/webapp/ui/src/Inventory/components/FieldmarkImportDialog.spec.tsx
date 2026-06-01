@@ -11,6 +11,9 @@ import {
 
 import { sleep } from "@/util/Util";
 
+const importNotebookEndpoint =
+  "/api/inventory/v1/import/fieldmark/notebook";
+
 const feature = test.extend<{
   Given: {
     "the fieldmark import dialog is mounted": () => Promise<void>;
@@ -49,6 +52,22 @@ const feature = test.extend<{
     });
   },
   When: async ({ page }, use) => {
+    const selectNotebook = async (name: string) => {
+      const radio = page.getByRole("radio", {
+        name: `Select notebook: ${name}`,
+      });
+      await radio.check();
+    };
+    const clickImport = async () => {
+      const importButton = page.getByRole("button", { name: "Import" });
+      await Promise.all([
+        page.waitForRequest(
+          (request) =>
+            new URL(request.url()).pathname === importNotebookEndpoint,
+        ),
+        importButton.click(),
+      ]);
+    };
     await use({
       "the dialog is in the DOM": async () => {
         const dialog = page.getByRole("dialog", { includeHidden: true });
@@ -58,75 +77,58 @@ const feature = test.extend<{
         const dialog = page.getByRole("dialog");
 
         await expect(dialog).toBeVisible();
-        // Wait for the DataGrid to appear
         const dataGrid = page.getByRole("grid");
         await expect(dataGrid).toBeVisible();
-      },
-      "the user selects a notebook and clicks import": async () => {
         await page
           .getByRole("radio", { name: "Select notebook: Test Notebook 1" })
-          .click();
-        await page.getByRole("button", { name: "Import" }).click();
+          .waitFor();
+      },
+      "the user selects a notebook and clicks import": async () => {
+        await selectNotebook("Test Notebook 1");
+        await clickImport();
       },
       "the user selects a notebook with no identifier columns and clicks import":
         async () => {
-          await page
-            .getByRole("radio", {
-              name: "Select notebook: Notebook No Identifiers",
-            })
-            .click();
-          await page.getByRole("button", { name: "Import" }).click();
+          await selectNotebook("Notebook No Identifiers");
+          await clickImport();
         },
       "the user selects a notebook with identifier columns, selects an identifier column, and clicks import":
         async () => {
-          await page
-            .getByRole("radio", {
-              name: "Select notebook: Notebook With Identifiers",
-            })
-            .click();
+          await selectNotebook("Notebook With Identifiers");
           const identifierSelect = page.getByRole("combobox", {
             name: "IGSN ID field",
           });
+          await identifierSelect.waitFor();
           await identifierSelect.click();
           await page.getByRole("option", { name: "sample_id" }).click();
-          await page.getByRole("button", { name: "Import" }).click();
+          await clickImport();
         },
       "the user selects a notebook and clicks import for alert testing":
         async () => {
-          await page
-            .getByRole("radio", { name: "Select notebook: Test Notebook 1" })
-            .click();
-          await page.getByRole("button", { name: "Import" }).click();
+          await selectNotebook("Test Notebook 1");
+          await clickImport();
         },
       "the user selects a notebook that will trigger IGSN error": async () => {
-        await page
-          .getByRole("radio", {
-            name: "Select notebook: Notebook IGSN Error",
-          })
-          .click();
+        await selectNotebook("Notebook IGSN Error");
       },
       "the user selects a notebook with identifier columns and clicks import without selecting identifier":
         async () => {
+          await selectNotebook("Notebook With Identifiers");
           await page
-            .getByRole("radio", {
-              name: "Select notebook: Notebook With Identifiers",
-            })
-            .click();
-          await page.getByRole("button", { name: "Import" }).click();
+            .getByRole("combobox", { name: "IGSN ID field" })
+            .waitFor();
+          await clickImport();
         },
       "the user selects a notebook that will trigger detailed import error":
         async () => {
-          await page
-            .getByRole("radio", {
-              name: "Select notebook: Notebook Detailed Error",
-            })
-            .click();
+          await selectNotebook("Notebook Detailed Error");
           const identifierSelect = page.getByRole("combobox", {
             name: "IGSN ID field",
           });
+          await identifierSelect.waitFor();
           await identifierSelect.click();
           await page.getByRole("option", { name: "identifier_field" }).click();
-          await page.getByRole("button", { name: "Import" }).click();
+          await clickImport();
         },
     });
   },
@@ -224,7 +226,7 @@ const feature = test.extend<{
                 request.postData?.includes(
                   '"notebookId":"test-project-no-identifiers"',
                 ) &&
-                !request.postData?.includes('"identifierColumn"'),
+                !request.postData?.includes('"identifier"'),
             ),
           )
           .toBe(true);
