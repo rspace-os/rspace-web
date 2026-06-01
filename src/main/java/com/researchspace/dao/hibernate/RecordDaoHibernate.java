@@ -783,8 +783,8 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
             .createNativeQuery(
                 "UPDATE BaseRecord br SET acl = (SELECT REPLACE(br.acl, :originalOwnerInMiddle,"
                     + " :newOwnerInMiddle) ) WHERE id IN :ids")
-            .setParameter("originalOwnerInMiddle", "&" + originalOwner.getUsername() + "")
-            .setParameter("newOwnerInMiddle", "&" + newOwner.getUsername() + "")
+            .setParameter("originalOwnerInMiddle", "&" + originalOwner.getUsername() + "=")
+            .setParameter("newOwnerInMiddle", "&" + newOwner.getUsername() + "=")
             .setParameter("ids", templateIds);
     query.executeUpdate();
   }
