@@ -1452,4 +1452,37 @@ public class RecordManagerImpl implements RecordManager {
     }
     return DOCUMENT_CATEGORIES.DOCUMENTFILE;
   }
+
+  @Override
+  public void moveUsersRecordsToFolder(
+      List<Long> recordIds, User currentOwner, Folder destinationFolder) {
+    recordDao.moveUsersRecordsToFolder(recordIds, currentOwner, destinationFolder);
+  }
+
+  @Override
+  public boolean hasUserSharedTemplatesUsedByOtherUsers(User u) {
+    return recordDao.hasUserSharedTemplatesUsedByOtherUsers(u);
+  }
+
+  @Override
+  public List<BaseRecord> getTemplatesOwnedByUserAndUsedByOtherUsers(User u) {
+    return recordDao.getTemplatesOwnedByUserAndUsedByOtherUsers(u);
+  }
+
+  @Override
+  public void transferTemplates(
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName) {
+    recordDao.transferTemplates(originalOwner, newOwner, templateIds, updatedOriginalOwnerName);
+  }
+
+  @Override
+  public List<EcatMediaFile> getGalleryItemsForTemplates(
+      List<Long> templateIds, User originalOwner) {
+    return recordDao.getGalleryItemsForTemplates(templateIds, originalOwner);
+  }
+
+  @Override
+  public void updateFilePropertyOwnerForMediaFiles(List<Long> mediaIds, String newOwnerUsername) {
+    recordDao.updateFilePropertyOwnerForMediaFiles(mediaIds, newOwnerUsername);
+  }
 }

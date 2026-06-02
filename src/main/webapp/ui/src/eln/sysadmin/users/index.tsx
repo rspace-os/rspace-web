@@ -95,6 +95,7 @@ import useUiPreference, {
 } from "../../../hooks/api/useUiPreference";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 import Analytics from "../../../components/Analytics";
+import Alert from "@mui/material/Alert";
 
 /*
  * `userListing` and `selectedCount` are passed to the `UsersToolbar` slot via
@@ -856,6 +857,20 @@ const DeleteAction = ({
                     mb: 2,
                   }}
                 >
+                  {(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) && (
+                      <Alert severity="info" sx={{ mb: 1 }}>
+                        <Typography variant="body2">
+                          The user you are trying to delete is{" "}
+                          <strong>
+                            the owner of Forms and/or Templates that are used by other users.
+                          </strong>
+                          {" "}To ensure continued access to these Forms/Templates, the system
+                          <strong> will transfer ownership</strong> of those files to
+                          <strong> this System Administrator</strong> account. Forms and
+                          Templates that are not used by others will be deleted.
+                        </Typography>
+                      </Alert>
+                  )}
                   <Typography
                     variant="body2"
                     sx={{
@@ -928,11 +943,7 @@ const DeleteAction = ({
                   type="submit"
                   loading={false}
                   disabled={false}
-                  label={
-                    user.hasFormsUsedByOtherUsers
-                      ? "Transfer Forms And Delete"
-                      : "Delete"
-                  }
+                  label={(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) ? "Transfer Forms/Templates And Delete" : "Delete"}
                 />
               </DialogActions>
             </form>
