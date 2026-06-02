@@ -2,6 +2,7 @@ package com.researchspace.service.archive.export;
 
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.archive.model.IArchiveExportConfig;
+import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -12,6 +13,8 @@ import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.DiskSpaceChecker;
+import com.researchspace.service.FilestoreAclChecker;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsFileHandler;
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +47,10 @@ public class NfsExportContext {
   private Map<String, String> folderSummaryMsgs = new HashMap<>();
 
   private IArchiveExportConfig exportConfig;
+
+  private FilestoreAclChecker aclChecker;
+
+  private MessageSourceUtils messages;
 
   public NfsExportContext(IArchiveExportConfig aconfig) {
     exportConfig = aconfig;
@@ -78,11 +85,27 @@ public class NfsExportContext {
     String fileMapKey = fileSystemId + "_" + nfsTarget.getPath();
     NfsClient nfsClient = nfsClients.get(fileSystemId);
     if (nfsClient == null || !nfsClient.isUserLoggedIn()) {
-      errors.put(fileMapKey, "user not logged into '" + fileSystem.getName() + "' File System");
+      errors.put(
+          fileMapKey,
+          messages.getMessage(
+              "archive.export.nfs.user.not.logged.in", new Object[] {fileSystem.getName()}));
       log.info(
           "skipping export of nfs element "
               + nfsTarget.getPath()
               + " as user not logged into "
+              + fileSystemId);
+      return null;
+    }
+    User exporter = exportConfig.getExporter();
+    if (aclChecker != null && (exporter == null || !aclChecker.canRead(exporter, fileSystem))) {
+      errors.put(
+          fileMapKey,
+          messages.getMessage(
+              "archive.export.nfs.no.read.access", new Object[] {fileSystem.getName()}));
+      log.info(
+          "skipping export of nfs element "
+              + nfsTarget.getPath()
+              + " as user has no read access to filesystem "
               + fileSystemId);
       return null;
     }
@@ -101,11 +124,13 @@ public class NfsExportContext {
           if (nfsFileDetails != null) {
             diskSpaceChecker.assertEnoughDiskSpaceToCopyFileSizeIntoArchiveDir(
                 nfsFileDetails.getSize(), archiveAssemblyDir);
-            skippedMsg = checkNfsExportFiltersMsgForFile(nfsFileDetails, exportConfig);
+            skippedMsg = checkNfsExportFiltersMsgForFile(nfsFileDetails, exportConfig, messages);
           }
           if (skippedMsg != null) {
             log.info("skipping nfs file " + nfsTarget + ": " + skippedMsg);
-            errors.put(fileMapKey, "file skipped (" + skippedMsg + ")");
+            errors.put(
+                fileMapKey,
+                messages.getMessage("archive.export.nfs.file.skipped", new Object[] {skippedMsg}));
           } else {
             downloadedNfsDetails =
                 nfsFileHandler.downloadNfsFileToRSpace(nfsTarget, nfsClient, targetDir);
@@ -116,7 +141,10 @@ public class NfsExportContext {
         }
       } catch (IOException e) {
         log.info("download error when trying to export nfs element: " + nfsTarget, e);
-        errors.put(fileMapKey, "download error: " + e.getMessage());
+        errors.put(
+            fileMapKey,
+            messages.getMessage(
+                "archive.export.nfs.download.error", new Object[] {e.getMessage()}));
       }
       resolvedResources.put(fileMapKey, downloadedNfsDetails);
     }
@@ -128,7 +156,9 @@ public class NfsExportContext {
    *     included
    */
   public static String checkNfsExportFiltersMsgForFile(
-      NfsFileDetails nfsFileDetails, IArchiveExportConfig exportConfig) {
+      NfsFileDetails nfsFileDetails,
+      IArchiveExportConfig exportConfig,
+      MessageSourceUtils messages) {
     if (exportConfig == null) {
       return null;
     }
@@ -138,13 +168,14 @@ public class NfsExportContext {
 
     if (nfsFileDetails != null) {
       if (fileSizeLimit > 0 && nfsFileDetails.getSize() > fileSizeLimit) {
-        return "file larger than provided size limit";
+        return messages.getMessage("archive.export.nfs.file.too.large", null);
       }
       String fileExtensionLowerCase =
           FilenameUtils.getExtension(nfsFileDetails.getName()).toLowerCase();
       if (CollectionUtils.isNotEmpty(excludedFileExtensions)
           && excludedFileExtensions.contains(fileExtensionLowerCase)) {
-        return "file extension '" + fileExtensionLowerCase + "' excluded";
+        return messages.getMessage(
+            "archive.export.nfs.file.extension.excluded", new Object[] {fileExtensionLowerCase});
       }
     }
     return null;
@@ -173,7 +204,7 @@ public class NfsExportContext {
 
     String internalSummaryMsg = folderSummaryMsgs.get(folderKey);
     if (internalSummaryMsg == null) {
-      return "empty folder";
+      return messages.getMessage("archive.export.nfs.folder.empty", null);
     }
 
     List<String> included = new ArrayList<>();
@@ -188,10 +219,18 @@ public class NfsExportContext {
     }
     String downloadSummaryMsg = "";
     if (included.size() > 0) {
-      downloadSummaryMsg += "Included: " + String.join(", ", included) + "; ";
+      downloadSummaryMsg +=
+          messages.getMessage("archive.export.nfs.folder.included.label", null)
+              + ": "
+              + String.join(", ", included)
+              + "; ";
     }
     if (skipped.size() > 0) {
-      downloadSummaryMsg += "Skipped: " + String.join(", ", skipped) + ";";
+      downloadSummaryMsg +=
+          messages.getMessage("archive.export.nfs.folder.skipped.label", null)
+              + ": "
+              + String.join(", ", skipped)
+              + ";";
     }
     return downloadSummaryMsg;
   }
@@ -249,7 +288,10 @@ public class NfsExportContext {
       if (childDetails != null) {
         childMsg = "included";
       } else {
-        childMsg = child.isFolder() ? "skipped as subfolder" : errors.get(childKey);
+        childMsg =
+            child.isFolder()
+                ? messages.getMessage("archive.export.nfs.folder.skipped.as.subfolder", null)
+                : errors.get(childKey);
       }
       String childSummaryMsg = String.format("%s::%s;;", child.getName(), childMsg);
       String newFolderSummary = folderSummaryMsgs.getOrDefault(folderKey, "") + childSummaryMsg;

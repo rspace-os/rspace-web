@@ -22,6 +22,8 @@ import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.DiskSpaceChecker;
+import com.researchspace.service.FilestoreAclChecker;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsExportManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.archive.export.NfsExportContext;
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +50,10 @@ public class NfsExportManagerImpl implements NfsExportManager {
   @Autowired private DiskSpaceChecker diskSpaceChecker;
 
   @Autowired private NfsManager nfsManager;
+
+  @Autowired @Setter private FilestoreAclChecker aclChecker;
+
+  @Autowired @Setter private MessageSourceUtils messages;
 
   @Override
   public NfsExportPlan generateQuickExportPlan(List<GlobalIdentifier> recordsToExport) {
@@ -109,20 +116,23 @@ public class NfsExportManagerImpl implements NfsExportManager {
       IArchiveExportConfig archiveExportConfig) {
 
     plan.clearCheckedNfsLinks();
-    checkFoundLinksOnConnectedFileSystems(plan, nfsClients);
+    User exporter = archiveExportConfig == null ? null : archiveExportConfig.getExporter();
+    checkFoundLinksOnConnectedFileSystems(plan, nfsClients, exporter);
     addExportFilterMsgForCheckedLinksInPlan(plan, archiveExportConfig);
     setArchiveSizeLimitProperties(plan);
   }
 
-  public static final String SUBFOLDER_NOT_INCLUDED_MSG = "subfolder of linked folder";
+  public static final String SUBFOLDER_NOT_INCLUDED_MSG_KEY =
+      "archive.export.nfs.subfolder.not.included";
 
-  public static final String RESOURCE_NOT_ACCESSIBLE_MSG = "resource not accessible";
+  public static final String RESOURCE_NOT_ACCESSIBLE_MSG_KEY =
+      "archive.export.nfs.resource.not.accessible";
 
-  public static final String NOT_LOGGED_INTO_FILE_SYSTEM_MSG =
-      "not logged into connected File System";
+  public static final String NOT_LOGGED_INTO_FILE_SYSTEM_MSG_KEY =
+      "archive.export.nfs.not.logged.in";
 
   private void checkFoundLinksOnConnectedFileSystems(
-      NfsExportPlan plan, Map<Long, NfsClient> nfsClients) {
+      NfsExportPlan plan, Map<Long, NfsClient> nfsClients, User exporter) {
     for (NfsElement nfsElem : plan.getFoundNfsLinks().values()) {
       NfsFileStore fileStore = plan.getFoundFileStoresByIdMap().get(nfsElem.getFileStoreId());
       Long fileSystemId = fileStore.getFileSystem().getId();
@@ -133,7 +143,14 @@ public class NfsExportManagerImpl implements NfsExportManager {
         NfsResourceDetails foundDetails = null;
         NfsClient nfsClient = nfsClients.get(fileSystemId);
         if (nfsClient == null || !nfsClient.isUserLoggedIn()) {
-          plan.addCheckedNfsLinkMsg(fileSystemId, absolutePath, NOT_LOGGED_INTO_FILE_SYSTEM_MSG);
+          plan.addCheckedNfsLinkMsg(
+              fileSystemId, absolutePath, messages.getMessage(NOT_LOGGED_INTO_FILE_SYSTEM_MSG_KEY));
+        } else if (exporter != null
+            && aclChecker != null
+            && !aclChecker.canRead(exporter, fileStore.getFileSystem())) {
+          // skip the remote query when the exporter has no read access on the filesystem
+          plan.addCheckedNfsLinkMsg(
+              fileSystemId, absolutePath, messages.getMessage(RESOURCE_NOT_ACCESSIBLE_MSG_KEY));
         } else {
           if (nfsElem.isFolderLink()) {
             try {
@@ -145,7 +162,8 @@ public class NfsExportManagerImpl implements NfsExportManager {
             foundDetails = nfsClient.queryForNfsFile(nfsTarget);
           }
           if (foundDetails == null) {
-            plan.addCheckedNfsLinkMsg(fileSystemId, absolutePath, RESOURCE_NOT_ACCESSIBLE_MSG);
+            plan.addCheckedNfsLinkMsg(
+                fileSystemId, absolutePath, messages.getMessage(RESOURCE_NOT_ACCESSIBLE_MSG_KEY));
           } else {
             NfsExportContext.applyFileSystemIdToNfsResource(foundDetails, fileSystemId);
           }
@@ -172,7 +190,7 @@ public class NfsExportManagerImpl implements NfsExportManager {
               plan.addCheckedNfsLinkMsg(
                   folderContentResource.getFileSystemId(),
                   folderContentResource.getFileSystemFullPath(),
-                  SUBFOLDER_NOT_INCLUDED_MSG);
+                  messages.getMessage(SUBFOLDER_NOT_INCLUDED_MSG_KEY));
             }
           }
         }
@@ -181,7 +199,8 @@ public class NfsExportManagerImpl implements NfsExportManager {
 
     for (NfsFileDetails fileToCheck : nfsFilesToCheck) {
       String exportFiltersMsg =
-          NfsExportContext.checkNfsExportFiltersMsgForFile(fileToCheck, archiveExportConfig);
+          NfsExportContext.checkNfsExportFiltersMsgForFile(
+              fileToCheck, archiveExportConfig, messages);
       if (exportFiltersMsg != null) {
         plan.addCheckedNfsLinkMsg(
             fileToCheck.getFileSystemId(), fileToCheck.getFileSystemFullPath(), exportFiltersMsg);

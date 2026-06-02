@@ -9,6 +9,7 @@ import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemInfo;
+import com.researchspace.model.netfiles.NfsUserPermissions;
 import com.researchspace.netfiles.NfsAuthException;
 import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
@@ -16,6 +17,7 @@ import com.researchspace.netfiles.NfsException;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.netfiles.WriteAttribution;
+import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.NfsManager;
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +43,7 @@ public class NfsManagerImpl implements NfsManager {
 
   private @Autowired NfsDao nfsDao;
   private @Autowired @Setter NfsFactory nfsFactory;
+  private @Autowired @Setter FilestoreAclChecker aclChecker;
 
   @Autowired
   @Setter
@@ -93,7 +96,9 @@ public class NfsManagerImpl implements NfsManager {
     List<NfsFileStore> userStores = nfsDao.getUserFileStores(user.getId());
     List<NfsFileStoreInfo> userStoreInfos = new ArrayList<>();
     for (NfsFileStore us : userStores) {
-      userStoreInfos.add(us.toFileStoreInfo());
+      NfsFileStoreInfo info = us.toFileStoreInfo();
+      info.setUserPermissions(buildPermissions(user, us.getFileSystem()));
+      userStoreInfos.add(info);
     }
     return userStoreInfos;
   }
@@ -107,12 +112,21 @@ public class NfsManagerImpl implements NfsManager {
   }
 
   @Override
-  public List<NfsFileSystemInfo> getActiveFileSystemInfos() {
+  public List<NfsFileSystemInfo> getActiveFileSystemInfos(User user) {
     List<NfsFileSystemInfo> activeSystemInfos = new ArrayList<>();
     for (NfsFileSystem as : getActiveFileSystems()) {
-      activeSystemInfos.add(as.toFileSystemInfo());
+      NfsFileSystemInfo info = as.toFileSystemInfo();
+      info.setUserPermissions(buildPermissions(user, as));
+      activeSystemInfos.add(info);
     }
     return activeSystemInfos;
+  }
+
+  private NfsUserPermissions buildPermissions(User user, NfsFileSystem fs) {
+    if (user == null) {
+      return null;
+    }
+    return new NfsUserPermissions(aclChecker.canRead(user, fs), aclChecker.canWrite(user, fs));
   }
 
   /*

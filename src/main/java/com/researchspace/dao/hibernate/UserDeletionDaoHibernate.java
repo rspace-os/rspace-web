@@ -640,8 +640,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
         session,
         "update StructuredDocument sd join BaseRecord br on br.id = sd.id"
             + " set sd.template_id = null"
-            + " where br.owner_id = :id and sd.template_id is not null"
-        );
+            + " where br.owner_id = :id and sd.template_id is not null");
     for (String recordTable2 : RecordTables2) {
       executeDeleteByRecordOwner(userId, session, recordTable2, "id");
       executeDeleteByRecordOwner(userId, session, recordTable2 + "_AUD", "id");

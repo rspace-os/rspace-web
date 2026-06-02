@@ -82,6 +82,7 @@ class GalleryIrodsApiControllerTest {
     filestoreWriteManager.setBaseRecordManager(baseRecordManager);
     filestoreWriteManager.setExternalStorageManager(externalStorageManager);
     filestoreWriteManager.setCredentialsStore(credentialsStore);
+    filestoreWriteManager.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
     galleryIrodsApiController.setFilestoreWriteManager(filestoreWriteManager);
 
     when(propertyHolder.isNetFileStoresEnabled()).thenReturn(true);

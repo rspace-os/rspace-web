@@ -85,7 +85,12 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     return getRemotePathBrowseResult(filesystem, nfsClient, fileTree);
   }
 
+  /**
+   * Returns an NfsClient for the given user and filesystem after asserting the user has read
+   * access.
+   */
   private NfsClient getNfsClientForUserAndFilesystem(User user, NfsFileSystem filesystem) {
+    aclChecker.assertCanRead(user, filesystem);
     if (NfsAuthenticationType.NONE.equals(filesystem.getAuthType())) {
       return nfsFactory.getNfsClient(user.getUsername(), null, filesystem);
     }
@@ -145,6 +150,8 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
       @RequestAttribute(name = "user") User user) {
 
     assertFilestoresApiEnabled(user);
+    NfsFileSystem filesystem = nfsManager.getFileSystem(filesystemId);
+    aclChecker.assertCanRead(user, filesystem);
     boolean filestoreNameUnique = nfsManager.verifyFileStoreNameUniqueForUser(filestoreName, user);
     if (!filestoreNameUnique) {
       throw new IllegalArgumentException(
@@ -179,7 +186,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   @Override
   public List<NfsFileSystemInfo> getFilesystems(@RequestAttribute(name = "user") User user) {
     assertFilestoresApiEnabled(user);
-    return nfsManager.getActiveFileSystemInfos();
+    return nfsManager.getActiveFileSystemInfos(user);
   }
 
   @Override
@@ -208,6 +215,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     assertFilestoresApiEnabled(user);
     NfsFileSystem filesystem = nfsManager.getFileSystem(filesystemId);
+    aclChecker.assertCanRead(user, filesystem);
     NfsClient nfsClient =
         credentialsStore.validateCredentialsAndLoginNfs(credentials, errors, user, filesystem);
     try {
