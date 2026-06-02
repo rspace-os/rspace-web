@@ -261,6 +261,15 @@ to cache.
 Run the usual `mvn jetty:run` command, just change the active spring profile to `prod`
 i.e. pass a `-Dspring.profiles.active=prod` parameter.
 
+**NOTE:** when you want Jetty to serve a freshly built production frontend bundle
+(i.e. running without `-DreactDevMode=true`), build the bundle first with
+`mvn prepare-package jetty:run`. The `frontend-maven-plugin` executions that run
+`npm ci` and the Vite build are bound to the `prepare-package` phase, which the
+`jetty:run` goal does not reach on its own (it forks the build only up to
+`test-compile`). The everyday dev loop that passes `-DreactDevMode=true` is
+unaffected, because that flag skips the frontend build entirely and Jetty proxies
+to the Vite dev server instead.
+
 Note that when running through jetty, the `defaultDeployment.properties` file is not used for some reason.
 That means deployment properties that are not explicitly set in your `deployment.properties` file may have unexpected values. 
 
