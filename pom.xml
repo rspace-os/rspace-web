@@ -95,6 +95,7 @@
         <executions>
           <execution>
             <id>Install node and npm locally to the project</id>
+            <phase>prepare-package</phase>
             <goals>
               <goal>install-node-and-npm</goal>
             </goals>
@@ -104,6 +105,7 @@
           </execution>
           <execution>
             <id>Collect npm dependencies</id>
+            <phase>prepare-package</phase>
             <goals>
               <goal>npm</goal>
             </goals>
@@ -114,6 +116,7 @@
           </execution>
           <execution>
             <id>Build react dist files</id>
+            <phase>prepare-package</phase>
             <goals>
               <goal>npm</goal>
             </goals>
