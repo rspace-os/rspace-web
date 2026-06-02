@@ -166,13 +166,22 @@ function MoveCopyDialog({
                 ),
                 success: (filestores) =>
                   filestores.length === 0 ? (
-                    <Grid item>
-                      <NoFilestoreAlert />
-                    </Grid>
+                    <Alert severity="error">
+                      <AlertTitle>
+                        No S3 filestore has been configured.
+                      </AlertTitle>
+                      Add a new one in the filestore section of the Gallery or
+                      speak to your system administrator.
+                    </Alert>
                   ) : filestores.every((fs) => !fs.canWrite) ? (
-                    <Grid item>
-                      <NoWritableFilestoreAlert />
-                    </Grid>
+                    <Alert severity="error">
+                      <AlertTitle>
+                        You do not have write access to any S3 filestore.
+                      </AlertTitle>
+                      Your account is not on the write allowlist for any S3
+                      filestore. Ask your system administrator if you need write
+                      access.
+                    </Alert>
                   ) : (
                     <>
                       <Typography variant="body2">
