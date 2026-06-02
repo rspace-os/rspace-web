@@ -11,8 +11,8 @@ import {
 
 import { sleep } from "@/util/Util";
 
-const importNotebookEndpoint =
-  "/api/inventory/v1/import/fieldmark/notebook";
+const igsnCandidateFieldsEndpoint =
+  "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields";
 
 const feature = test.extend<{
   Given: {
@@ -56,18 +56,30 @@ const feature = test.extend<{
       const radio = page.getByRole("radio", {
         name: `Select notebook: ${name}`,
       });
+      /*
+       * Selecting a notebook triggers a fetch of its IGSN candidate fields.
+       * Whilst that request is in flight a "Loading available IGSN ID
+       * fields..." indicator is shown and, once it resolves, the
+       * identifier-field UI is rendered. Both transitions shift the dialog
+       * layout, which can move the Import button mid-click on WebKit so that a
+       * subsequent click is missed entirely (the import request then never
+       * fires and the test times out). Wait for the request to resolve and the
+       * loading indicator to clear so the layout is stable before continuing.
+       */
+      const candidateFieldsResponse = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === igsnCandidateFieldsEndpoint,
+      );
       await radio.click();
       await expect(radio).toBeChecked();
+      await candidateFieldsResponse;
+      await expect(
+        page.getByText("Loading available IGSN ID fields..."),
+      ).toBeHidden();
     };
     const clickImport = async () => {
       const importButton = page.getByRole("button", { name: "Import" });
-      await Promise.all([
-        page.waitForRequest(
-          (request) =>
-            new URL(request.url()).pathname === importNotebookEndpoint,
-        ),
-        importButton.click(),
-      ]);
+      await importButton.click();
     };
     await use({
       "the dialog is in the DOM": async () => {
