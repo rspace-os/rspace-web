@@ -6,19 +6,19 @@ is best to ensure that all of the tests continue to pass.
 
 ## Running
 
-To run on unix machines, perform the following command from the
-/src/main/webapp/ui directory: `npm run test`. On windows machines, run `npm
-run testw` from the same directory.
+To run on unix machines, perform the following command from the repo root:
+`pnpm run test`. On windows machines, run `pnpm run
+testw` from the repo root.
 
 A regex can then be appended to the command to run just the tests whose file
-name match the regex. E.g. `npm run test ContainerModel` will run all the
+name match the regex. E.g. `pnpm run test -- ContainerModel` will run all the
 ContainerModel tests.
 
 ### Other useful arguments
 
 Appending the argument `--verbose` outputs a detailed listing of each test. To
 run this, you have to add `--` first to ensure the arg gets passed to jest and
-not to npm. E.g. `npm run test -- --verbose ContainerModel`
+not to pnpm. E.g. `pnpm run test -- --verbose ContainerModel`
 
 The argument `-o` only runs the tests that jest thinks could have been impacted
 by the changes that are being tracked by git. This drastically reduces the time
@@ -27,7 +27,7 @@ it takes to run the tests before committing.
 The argument `--color` will always output with colours, even if the output is
 not a tty. For example, when piping into less use `--color` and `-R`
 ```
-npm run test -- --color | less -R
+pnpm run test -- --color | less -R
 ```
 
 ## Writing
@@ -40,7 +40,6 @@ to start off writing new react tests.
 /*
  * @jest-environment jsdom
  */
-//@flow
 /* eslint-env jest */
 import React from "react";
 import { render, cleanup } from "@testing-library/react";
@@ -67,7 +66,7 @@ describe("<filename>", () => {
 });
 ```
 
-Be sure to also run eslint and flow over any new or modified tests.
+Be sure to also run eslint and type checking over any new or modified tests.
 
 ### Using fireEvent
 
@@ -139,18 +138,9 @@ Here are some useful links for working with fast-check tests:
   library exposes. There are lots of useful arguments to the various functions
   that are documented here.
 
-We also maintain our own [Flow type definitions for this library] as the
-library only supports TypeScript and there were no sufficient third-party ones.
-Because the library was built with functional programming principles in mind,
-the type definitions are actually pretty straight forward if you're comfortable
-with type variables. The flow types are not comprenhensive, however, and
-writing new property tests may require exetending the definitions there. The
-[API-reference] is of particular help in getting this right.
-
 [Fast-check]: https://fast-check.dev/
 [Arbitraries]: https://fast-check.dev/docs/core-blocks/arbitraries/
 [API-reference]: https://fast-check.dev/api-reference/index.html
-[Flow type definitions for this library]: ../../../src/main/webapp/ui/flow-typed/fast-check.js
 
 ## Debugging with git bisect
 
@@ -176,7 +166,7 @@ Finally, run the following commands from the root of the repo.
 git bisect start
 git bisect bad
 git bisect good <good-commit>
-git bisect run bash -c 'cd src/main/webapp/ui; npm run test <failing-test>'
+git bisect run pnpm run test -- <failing-test>
 ```
 
 As an aside, if this process identifies a squashed commit from a PR, GitHub
@@ -196,4 +186,3 @@ will leave HEAD pointing to the HEAD of the branch as it was before squashing
 and merging. You can now perform the same bisect steps as above, with the known
 good commit being the merge base of HEAD and the branch into which the PR was
 merged (this can either be found manually or using `git merge-base`).
-

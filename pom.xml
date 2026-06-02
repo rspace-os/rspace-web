@@ -89,33 +89,33 @@
         <version>2.0.0</version>
         <configuration>
           <nodeVersion>v24.15.0</nodeVersion>
-          <npmVersion>11.14.1</npmVersion>
-          <workingDirectory>src/main/webapp/ui</workingDirectory>
+          <pnpmVersion>11.3.0</pnpmVersion>
+          <workingDirectory>.</workingDirectory>
         </configuration>
         <executions>
           <execution>
-            <id>Install node and npm locally to the project</id>
+            <id>Install node and pnpm locally to the project</id>
             <goals>
-              <goal>install-node-and-npm</goal>
+              <goal>install-node-and-pnpm</goal>
             </goals>
             <configuration>
               <skip>${reactDevMode}</skip>
             </configuration>
           </execution>
           <execution>
-            <id>Collect npm dependencies</id>
+            <id>Collect frontend dependencies</id>
             <goals>
-              <goal>npm</goal>
+              <goal>pnpm</goal>
             </goals>
             <configuration>
-              <arguments>${npm.dependencies.collection.arg}</arguments>
+              <arguments>${frontend.dependencies.install.arg}</arguments>
               <skip>${reactDevMode}</skip>
             </configuration>
           </execution>
           <execution>
             <id>Build react dist files</id>
             <goals>
-              <goal>npm</goal>
+              <goal>pnpm</goal>
             </goals>
             <configuration>
               <arguments>run build</arguments>
@@ -2602,7 +2602,7 @@
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
     <spotless.version>3.5.1</spotless.version>
-    <npm.dependencies.collection.arg>ci</npm.dependencies.collection.arg>
+    <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
 
     <!--Sonar properties-->
     <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce5109/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>

@@ -523,7 +523,7 @@ Add a new entry to the JSON object, alongside the other `tinymce*` entries:
 5. Replace the TinyMCE icon SVG in `icons.js` with a properly-designed icon.
 6. Move the `_printSettings(['<name>.available']);` line in `settings_mod.js`
    under the correct sysadmin-settings category (default placement is `'Other'`).
-7. Run `cd src/main/webapp/ui && npm run build` to produce the
+7. Run `pnpm run build` from the repo root to produce the
    `ui/dist/tinymce<Name>.js` bundle. Without this, the TinyMCE dialog opens
    blank (the React component fails to load). This was already done in step 5
    of the skill workflow; include it here as a reminder for manual runs.
@@ -553,8 +553,6 @@ Add a new entry to the JSON object, alongside the other `tinymce*` entries:
   `fileRepositoriesMenu += " opt<Name>"` in `tinymce5_configuration.js`.
 - Setting `localTinymcesetup.<name>_url` / `<name>_web_url` in
   `tinymce5_configuration.js`.
-
-
 
 
 

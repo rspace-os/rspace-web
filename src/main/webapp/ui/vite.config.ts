@@ -65,6 +65,7 @@ export default defineConfig(async ({ mode }) => {
 
   if (shouldGenerateBuildStats) {
     const { visualizer } = await import("rollup-plugin-visualizer");
+    const { analyzer } = await import("vite-bundle-analyzer");
 
     plugins.push(
       visualizer({
@@ -72,6 +73,11 @@ export default defineConfig(async ({ mode }) => {
         gzipSize: true,
         brotliSize: true,
         sourcemap: true,
+      }),
+      // Emits stats.json consumed by wojtekmaj/vite-compare-bundle-size in CI.
+      analyzer({
+        analyzerMode: "json",
+        fileName: "stats",
       }),
     );
   }

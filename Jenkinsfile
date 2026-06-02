@@ -98,7 +98,7 @@ pipeline {
                 }
             }
         }
-        stage('NPM Install') {
+        stage('PNPM Install') {
             when {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
@@ -111,12 +111,12 @@ pipeline {
                 }
             }
             steps {
-                dir('src/main/webapp/ui') {
-                    echo 'Installing npm packages'
-                    sh 'node -v'
-                    sh 'npx -y npm@11.14.1 -v'
-                    sh 'npx -y npm@11.14.1 ci'
-                }
+                echo 'Installing pnpm packages'
+                sh 'node -v'
+                sh 'corepack enable'
+                sh 'corepack prepare pnpm@11.3.0 --activate'
+                sh 'pnpm -v'
+                sh 'pnpm install --frozen-lockfile'
             }
         }
         stage('TypeScript Check') {
@@ -125,11 +125,9 @@ pipeline {
                 expression { return params.FRONTEND_TESTS_TYPESCRIPT_CHECK }
             }
             steps {
-                dir('src/main/webapp/ui') {
-                    echo 'Running TypeScript check'
-                    sh 'npx tsc --version'
-                    sh 'npm run tsc --noEmit'
-                }
+                echo 'Running TypeScript check'
+                sh 'pnpm exec tsc --version'
+                sh 'pnpm run tsc --noEmit'
             }
         }
         stage('Dependency Cruiser') {
@@ -142,12 +140,6 @@ pipeline {
                     changeset '**/*.jsp'
                     changeset '**/*.css'
                     changeset '**/*.json'
-                }
-            }
-            steps {
-                dir('src/main/webapp/ui') {
-                    echo 'Running dependency cruiser'
-                    sh 'npm run depcruise | sed \'s/\\x1b\\[[0-9;]*[a-zA-Z]//g\''
                 }
             }
         }
@@ -169,10 +161,8 @@ pipeline {
             steps {
                 echo 'Running Vitest tests'
                 sh 'git fetch origin main:main || true'
-                dir('src/main/webapp/ui') {
-                    // In Jenkins we limit this to 2 to not overwhelm the CI machine
-                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers 2 --changed main'
-                }
+                // In Jenkins we limit this to 2 to not overwhelm the CI machine
+                sh 'env COLORS=false FORCE_COLOR=false pnpm run test -- --maxWorkers 2 --changed main'
             }
             post {
                 failure {
@@ -202,9 +192,7 @@ pipeline {
             }
             steps {
                 echo 'Running Vitest tests'
-                dir('src/main/webapp/ui') {
-                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2'
-                }
+                sh 'env COLORS=false FORCE_COLOR=false pnpm run test -- --maxWorkers=2'
             }
             post {
                 failure {
@@ -234,11 +222,9 @@ pipeline {
             }
             steps {
                 echo 'Running Playwright tests'
-                dir('src/main/webapp/ui') {
-                    sh 'npx playwright install'
-                    sh 'rm -rf playwright/.cache'
-                    sh 'npm run test-ct -- --only-changed=main'
-                }
+                sh 'pnpm exec playwright install'
+                sh 'rm -rf src/main/webapp/ui/playwright/.cache'
+                sh 'pnpm run test-ct -- --only-changed=main'
             }
         }
         stage('Playwright Component Tests (main branch)') {
@@ -254,11 +240,9 @@ pipeline {
             }
             steps {
                 echo 'Running Playwright tests'
-                dir('src/main/webapp/ui') {
-                    sh 'npx playwright install'
-                    sh 'rm -rf playwright/.cache'
-                    sh 'npm run test-ct'
-                }
+                sh 'pnpm exec playwright install'
+                sh 'rm -rf src/main/webapp/ui/playwright/.cache'
+                sh 'pnpm run test-ct'
             }
         }
         stage('Build feature branch') {

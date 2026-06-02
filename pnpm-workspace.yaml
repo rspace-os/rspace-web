@@ -1,0 +1,29 @@
+# Root manifest manages git hooks and frontend dependencies/scripts.
+packages: []
+
+overrides:
+  react-is: ^18.3.1
+
+allowBuilds:
+  lefthook: true
+  '@swc/core': true
+  canvas: true
+  core-js: true
+  esbuild: true
+  protobufjs: true
+
+# Block packages published less than 7 days ago (10080 minutes) as a defence
+# against supply-chain attacks that are typically caught within that window.
+# Stricter than pnpm 11's 1440-minute (1 day) default.
+minimumReleaseAge: 10080
+strictPeerDependencies: true
+
+peerDependencyRules:
+  allowedVersions:
+    # Ketcher 3.12.0 brings draft-js@0.11.7 via ketcher-react, while its
+    # draft-js-custom-styles dependency declares draft-js@0.10.x.
+    'draft-js-custom-styles>draft-js': 0.11.7
+    # This comes from `@playwright/experimental-ct`
+    '@vitejs/plugin-react>vite': 8.0.13
+    # @sa11y/vitest pulls vitest@3.2.4, which wants the matching UI package.
+    'vitest>@vitest/ui': 4.1.7

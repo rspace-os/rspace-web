@@ -40,7 +40,7 @@ Uncaught ReferenceError: Cannot access a module export before initialization
 
 [Dependency-cruiser][depcruiser] to the rescue!
 
-Run `npm run depcruise` from `src/main/webapp/ui` and amongst the output,
+Run `pnpm run depcruise` from the repo root and amongst the output,
 you're looking for a fragment that looks like this:
 
 ```
@@ -79,8 +79,3 @@ react component, or something imported by a react component, then removing it
 from the page (by removing all the places it is rendered and its import) will
 allow the page to render. Then its just a case of repeating the process down
 the component tree.
-
-
-
-
-[depcruiser]: https://github.com/sverweij/dependency-cruiser

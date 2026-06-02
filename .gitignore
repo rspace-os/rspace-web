@@ -25,6 +25,7 @@
 /src/main/webapp/ui/dist
 /src/main/webapp/ui/node/
 /src/main/webapp/ui/node_modules/
+/node/
 node_modules
 src/main/webapp/ui/playwright/
 /.classpath

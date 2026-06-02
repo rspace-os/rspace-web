@@ -63,18 +63,19 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       java: ${{ steps.filter.outputs.java }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           persist-credentials: false
-      - uses: dorny/paths-filter@v4
+      - uses: dorny/paths-filter@v4.0.1
         id: filter
         with:
           filters: |
             frontend:
               - 'src/main/webapp/ui/**/*.{js,jsx,ts,tsx}'
               - 'src/main/webapp/ui/**/*.{css,json}'
-              - 'src/main/webapp/ui/package.json'
-              - 'src/main/webapp/ui/package-lock.json'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
               - 'src/main/webapp/ui/webpack.config.mjs'
             java:
               - 'src/main/java/**'
@@ -96,13 +97,13 @@ jobs:
       inputs.fast_java_tests ||
       needs.changed-files.outputs.java == 'true'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v5.2.0
         with:
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
@@ -120,7 +121,7 @@ jobs:
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
         if: |
           always() &&
           (
@@ -139,140 +140,31 @@ jobs:
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          version: 11.3.0
+          run_install: false
+
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: src/main/webapp/ui/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: src/main/webapp/ui
-        run: npm ci --force
+        run: pnpm install --frozen-lockfile
 
       - name: TypeScript check
-        working-directory: src/main/webapp/ui
         run: |
-          npx tsc --version
-          npm run tsc --noEmit
-
-      - name: Dependency Cruiser
-        working-directory: src/main/webapp/ui
-        run: npm run depcruise | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
-
-# These are currently failing because of stats.json being too large - https://github.com/github/webpack-bundlesize-compare-action/issues/762
-#  build-current-webpack-stats:
-#    runs-on: ubuntu-latest
-#    needs: changed-files
-#    permissions:
-#      contents: read
-#    if: |
-#      github.event_name == 'pull_request' &&
-#      needs.changed-files.outputs.frontend == 'true' &&
-#      github.event.pull_request.head.repo.full_name == github.repository
-#    steps:
-#      - uses: actions/checkout@v5
-#        with:
-#          ref: ${{ github.event.pull_request.head.sha }}
-#          persist-credentials: false
-#
-#      - name: Setup Node.js
-#        uses: actions/setup-node@v6
-#        with:
-#          node-version: '24'
-#          cache: 'npm'
-#          cache-dependency-path: src/main/webapp/ui/package-lock.json
-#
-#      - name: Install dependencies
-#        working-directory: src/main/webapp/ui
-#        run: npm ci --force
-#
-#      - name: Build current webpack stats
-#        working-directory: src/main/webapp/ui
-#        run: NODE_OPTIONS="${NODE_OPTIONS} --max-old-space-size=6144" npm run build:stats
-#
-#      - name: Upload current webpack stats
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: webpack-stats-current
-#          path: src/main/webapp/ui/dist/stats.json
-#
-#  build-base-webpack-stats:
-#    runs-on: ubuntu-latest
-#    needs: changed-files
-#    permissions:
-#      contents: read
-#    if: |
-#      github.event_name == 'pull_request' &&
-#      needs.changed-files.outputs.frontend == 'true' &&
-#      github.event.pull_request.head.repo.full_name == github.repository
-#    steps:
-#      - uses: actions/checkout@v5
-#        with:
-#          ref: ${{ github.event.pull_request.base.sha }}
-#          persist-credentials: false
-#
-#      - name: Setup Node.js
-#        uses: actions/setup-node@v6
-#        with:
-#          node-version: '24'
-#          cache: 'npm'
-#          cache-dependency-path: src/main/webapp/ui/package-lock.json
-#
-#      - name: Install dependencies
-#        working-directory: src/main/webapp/ui
-#        run: npm ci --force
-#
-#      - name: Build base webpack stats
-#        working-directory: src/main/webapp/ui
-#        run: NODE_OPTIONS="${NODE_OPTIONS} --max-old-space-size=6144" npm run build:stats
-#
-#      - name: Upload base webpack stats
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: webpack-stats-base
-#          path: src/main/webapp/ui/dist/stats.json
-#
-#  compare-webpack-stats:
-#    runs-on: ubuntu-latest
-#    needs:
-#      - changed-files
-#      - frontend-checks
-#      - build-current-webpack-stats
-#      - build-base-webpack-stats
-#    permissions:
-#      contents: read
-#      pull-requests: write
-#    if: |
-#      github.event_name == 'pull_request' &&
-#      needs.changed-files.outputs.frontend == 'true' &&
-#      github.event.pull_request.head.repo.full_name == github.repository
-#    steps:
-#      - name: Download current webpack stats
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: webpack-stats-current
-#          path: ${{ runner.temp }}/webpack-stats/current
-#
-#      - name: Download base webpack stats
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: webpack-stats-base
-#          path: ${{ runner.temp }}/webpack-stats/base
-#
-#      - name: Compare webpack bundle size
-#        uses: github/webpack-bundlesize-compare-action@v2.1.0
-#        with:
-#          current-stats-json-path: ${{ runner.temp }}/webpack-stats/current/stats.json
-#          base-stats-json-path: ${{ runner.temp }}/webpack-stats/base/stats.json
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
-#          title: Frontend Webpack Bundle Size
-#          describe-assets: changed-only
+          pnpm exec tsc --version
+          pnpm run tsc --noEmit
 
   vitest-tests:
     runs-on: ubuntu-latest
@@ -286,28 +178,32 @@ jobs:
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          version: 11.3.0
+          run_install: false
+
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: src/main/webapp/ui/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: src/main/webapp/ui
-        run: npm ci --force
+        run: pnpm install --frozen-lockfile
 
       - name: Run Vitest tests
-        working-directory: src/main/webapp/ui
-        run: npm run test
+        run: pnpm run test
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
         if: |
           always() &&
           (
@@ -334,44 +230,169 @@ jobs:
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          version: 11.3.0
+          run_install: false
+
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: src/main/webapp/ui/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: src/main/webapp/ui
-        run: npm ci --force
+        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        working-directory: src/main/webapp/ui
-        run: npx playwright install --with-deps
+        run: pnpm exec playwright install --with-deps
 
       - name: Run Playwright tests
-        working-directory: src/main/webapp/ui
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results-${{ matrix.browser }}.json
         run: |
-          rm -rf playwright/.cache
-          npm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
+          rm -rf src/main/webapp/ui/playwright/.cache
+          pnpm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
 
       - name: Summarize Playwright report
         if: always()
-        uses: daun/playwright-report-summary@v3
+        uses: daun/playwright-report-summary@v4
         with:
           report-file: src/main/webapp/ui/playwright-report/results-${{ matrix.browser }}.json
           report-tag: ${{ matrix.browser }}
           create-comment: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
           job-summary: true
           comment-title: Playwright component test results
-          test-command: npm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
+          test-command: pnpm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
+
+  # Bundle-size comparison: build the frontend on both the PR and the base
+  # branch, then diff the two stats.json files and post the result as a PR
+  # comment. Restricted to same-repo PRs because posting the comment needs a
+  # writable GITHUB_TOKEN, which fork PRs do not receive. Each build produces
+  # src/main/webapp/ui/dist/stats.json via the vite-bundle-analyzer plugin
+  # (enabled by FRONTEND_BUILD_STATS, see pnpm run build:stats).
+  bundle-size-pr:
+    name: Bundle size (PR)
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      needs.changed-files.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          version: 11.3.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build with bundle stats
+        run: pnpm run build:stats
+
+      - name: Upload PR bundle stats
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats-pr
+          path: src/main/webapp/ui/dist/stats.json
+          if-no-files-found: error
+          retention-days: 1
+
+  bundle-size-base:
+    name: Bundle size (base)
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      needs.changed-files.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ github.base_ref }}
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          version: 11.3.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build with bundle stats
+        run: pnpm run build:stats
+
+      - name: Upload base bundle stats
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats-base
+          path: src/main/webapp/ui/dist/stats.json
+          if-no-files-found: error
+          retention-days: 1
+
+  bundle-size-report:
+    name: Bundle size report
+    runs-on: ubuntu-latest
+    needs: [bundle-size-pr, bundle-size-base]
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Download PR bundle stats
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: bundle-stats-pr
+          path: pr
+
+      - name: Download base bundle stats
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: bundle-stats-base
+          path: base
+
+      - name: Compare bundle size and comment
+        uses: wojtekmaj/vite-compare-bundle-size@v1.2.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          current-stats-json-path: pr/stats.json
+          base-stats-json-path: base/stats.json
+          title: Frontend bundle size change
+          # The bundle is hundreds of chunks; only list assets that actually
+          # changed (added/removed/bigger/smaller) and omit the unchanged list.
+          describe-assets: changed-only
 
 #  full-java-tests:
 #    runs-on: ubuntu-latest
@@ -381,12 +402,12 @@ jobs:
 #    needs: initialize
 #    if: inputs.full_java_tests && !inputs.liquibase
 #    steps:
-#      - uses: actions/checkout@v5
+#      - uses: actions/checkout@v6.0.2
 #      - uses: liquibase/setup-liquibase@v2
 #        with:
 #          version: '4.27.0'
 #          edition: 'community'
-#      - uses: shogo82148/actions-setup-mysql@v1
+#      - uses: shogo82148/actions-setup-mysql@v1.51.0
 #        with:
 #          distribution: "mariadb"
 #          mysql-version: "10.11"
@@ -394,7 +415,7 @@ jobs:
 #          password: rspacedbpwd
 #
 #      - name: Set up JDK
-#        uses: actions/setup-java@v5
+#        uses: actions/setup-java@v5.2.0
 #        with:
 #          distribution: ${{ inputs.java_vendor || 'temurin' }}
 #          java-version: ${{ matrix.java-version }}
@@ -427,7 +448,7 @@ jobs:
 #            ${{ inputs.nightly_build }}
 #
 #      - name: Publish test results
-#        uses: EnricoMi/publish-unit-test-result-action@v2
+#        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
 #        with:
 #          files: target/surefire-reports/*.xml
 #
@@ -447,12 +468,12 @@ jobs:
 #      matrix:
 #        java-version: [17]
 #    steps:
-#      - uses: actions/checkout@v5
+#      - uses: actions/checkout@v6.0.2
 #        with:
 #          fetch-depth: 0
 #
 #      - name: Set up JDK
-#        uses: actions/setup-java@v5
+#        uses: actions/setup-java@v5.2.0
 #        with:
 #          distribution: ${{ inputs.java_vendor || 'temurin' }}
 #          java-version: ${{ matrix.java-version }}
