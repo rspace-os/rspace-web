@@ -162,7 +162,7 @@ pipeline {
                 echo 'Running Vitest tests'
                 sh 'git fetch origin main:main || true'
                 // In Jenkins we limit this to 2 to not overwhelm the CI machine
-                sh 'env COLORS=false FORCE_COLOR=false pnpm run test -- --maxWorkers 2 --changed main'
+                sh 'env COLORS=false FORCE_COLOR=false pnpm run test --maxWorkers 2 --changed main'
             }
             post {
                 failure {
@@ -192,7 +192,7 @@ pipeline {
             }
             steps {
                 echo 'Running Vitest tests'
-                sh 'env COLORS=false FORCE_COLOR=false pnpm run test -- --maxWorkers=2'
+                sh 'env COLORS=false FORCE_COLOR=false pnpm run test --maxWorkers=2'
             }
             post {
                 failure {
@@ -224,7 +224,7 @@ pipeline {
                 echo 'Running Playwright tests'
                 sh 'pnpm exec playwright install'
                 sh 'rm -rf src/main/webapp/ui/playwright/.cache'
-                sh 'pnpm run test-ct -- --only-changed=main'
+                sh 'pnpm run test-ct --only-changed=main'
             }
         }
         stage('Playwright Component Tests (main branch)') {

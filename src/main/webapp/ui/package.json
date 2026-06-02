@@ -7,12 +7,9 @@
   "scripts": {
     "test": "cross-env vitest run",
     "test:ui": "cross-env vitest --ui",
-    "clustermarket-test": "vitest run --dir ./src/tinyMCE/clustermarket",
-    "omero-test": "vitest run --dir ./src/tinyMCE/omero",
     "build": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite build --config vite.config.ts",
     "build:stats": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" FRONTEND_BUILD_STATS=true vite build --config vite.config.ts",
     "serve": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite --config vite.config.ts --mode development",
-    "depcruise": "npx depcruise src",
     "tsc": "tsc --noEmit",
     "test-ct": "cross-env playwright test -c playwright-ct.config.ts",
     "test-ct:ui": "cross-env playwright test -c playwright-ct.config.ts --ui",
