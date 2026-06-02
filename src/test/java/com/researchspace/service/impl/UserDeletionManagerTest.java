@@ -12,6 +12,7 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.dao.FormDao;
+import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.dao.UserDeletionDao;
 import com.researchspace.files.service.FileStore;
@@ -22,6 +23,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.TransferService;
 import com.researchspace.service.UserDeletionPolicy;
 import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
 import com.researchspace.testutils.TestFactory;
@@ -53,6 +55,9 @@ public class UserDeletionManagerTest {
   private @Mock FileMetadataDao fileMetadataDao;
   private @Mock FileStore fileStore;
   private @Mock DeletedUserResourcesListHelper deletedResourcesHelper;
+  private @Mock RecordDao recordDao;
+  private @Mock TransferService formTransferService;
+  private @Mock TransferService templateTransferService;
 
   @InjectMocks UserDeletionManagerImpl userDeletionMgr;
   User toDelete, deleter, sysadmin1, sysadminToDelete, sysadmin3;
