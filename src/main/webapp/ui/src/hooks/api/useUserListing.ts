@@ -30,6 +30,7 @@ type FetchedUser = {
   lastLogin: number;
   creationDate: number;
   hasFormsUsedByOtherUsers: boolean;
+  hasTemplatesUsedByOtherUsers: boolean;
 };
 
 type FetchedData = {
@@ -93,6 +94,7 @@ export type User = {
   delete: () => Promise<void>;
   setAlias: (alias: string) => Promise<void>;
   hasFormsUsedByOtherUsers: boolean;
+  hasTemplatesUsedByOtherUsers: boolean;
 };
 
 export type UserListing = {
@@ -366,6 +368,7 @@ export function useUserListing(): {
         tags: fetchedUser.userInfo.tags,
         usernameAlias: fetchedUser.userInfo.usernameAlias,
         hasFormsUsedByOtherUsers: fetchedUser.hasFormsUsedByOtherUsers,
+        hasTemplatesUsedByOtherUsers: fetchedUser.hasTemplatesUsedByOtherUsers,
 
         // operations on a single user
         grantPiRole,

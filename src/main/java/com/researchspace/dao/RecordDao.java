@@ -1,9 +1,11 @@
 package com.researchspace.dao;
 
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.RecordToFolder;
@@ -163,4 +165,35 @@ public interface RecordDao extends GenericDao<Record, Long> {
 
   List<StructuredDocument> getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(
       String uNAme);
+
+  void moveUsersRecordsToFolder(List<Long> recordIds, User currentOwner, Folder destinationFolder);
+
+  /**
+   * Returns true if the user has any templates which have been shared with other users or groups.
+   *
+   * @param u User
+   * @return
+   */
+  boolean hasUserSharedTemplatesUsedByOtherUsers(User u);
+
+  /**
+   * Gets all templates from a specific user that have been used by another user. This includes
+   * templates that might have once been shared, but which are currently no longer shared.
+   *
+   * @param u user
+   * @return
+   */
+  List<BaseRecord> getTemplatesOwnedByUserAndUsedByOtherUsers(User u);
+
+  void transferTemplates(
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName);
+
+  /**
+   * Returns all gallery items owned by originalOwner that are linked via FieldAttachment to any of
+   * the given template IDs.
+   */
+  List<EcatMediaFile> getGalleryItemsForTemplates(List<Long> templateIds, User originalOwner);
+
+  /** Updates FileProperty.fileOwner for the given media file IDs. */
+  void updateFilePropertyOwnerForMediaFiles(List<Long> mediaIds, String newOwnerUsername);
 }

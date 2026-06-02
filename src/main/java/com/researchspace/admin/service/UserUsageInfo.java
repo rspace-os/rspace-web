@@ -29,6 +29,8 @@ public class UserUsageInfo {
 
   @Getter @Setter private boolean hasFormsUsedByOtherUsers;
 
+  @Getter @Setter private boolean hasTemplatesUsedByOtherUsers;
+
   @Getter @Setter private String signupSource;
 
   /** Default constructor for frameworks */

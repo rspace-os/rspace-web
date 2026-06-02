@@ -286,6 +286,14 @@ public interface FolderManager {
    */
   Folder getFromURLPath(String path, User user, CollectionFilter<BaseRecord> filter);
 
+  /**
+   * Returns all sub-folders of the given folder
+   *
+   * @param rootFolder
+   * @return
+   */
+  List<Folder> getSubFolders(Folder rootFolder);
+
   Folder getInitialisedFolder(Long fId, User user, CollectionFilter<BaseRecord> filter);
 
   /**

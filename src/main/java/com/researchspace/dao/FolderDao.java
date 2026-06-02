@@ -106,6 +106,14 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    */
   Folder getSystemFolderForUserByName(User user, String folderName);
 
+  /**
+   * Returns all sub-folders of the given folder
+   *
+   * @param rootFolder
+   * @return
+   */
+  List<Folder> getSubFolders(Folder rootFolder);
+
   Optional<Folder> getApiFolderForContentType(String contentType, User subject);
 
   /**
@@ -130,4 +138,13 @@ public interface FolderDao extends GenericDao<Folder, Long> {
   Optional<Folder> getImportFolder(User subject);
 
   Long getLabGroupFolderIdForUser(User user);
+
+  /**
+   * Returns all parent folders of the given record (folder or media file). A record may be in
+   * multiple folders (e.g. also shared into a group folder).
+   *
+   * @param childId the ID of the record whose parent folders are sought
+   * @return list of parent Folders, empty if none
+   */
+  List<Folder> getParentFolders(Long childId);
 }

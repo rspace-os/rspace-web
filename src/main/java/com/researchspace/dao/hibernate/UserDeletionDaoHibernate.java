@@ -631,6 +631,17 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     executeDeleteByRecordOwner(userId, session, FIELD, STRUCTURED_DOCUMENT_ID);
     executeDeleteByRecordOwner(userId, session, "Field_AUD", STRUCTURED_DOCUMENT_ID);
 
+    // Null any references that the user makes to their own templates here.  If the
+    // template is being used by any other user than that will have been dealt with
+    // already, so it's safe to just clear all references that the user to be deleted
+    // makes.
+    execute(
+        userId,
+        session,
+        "update StructuredDocument sd join BaseRecord br on br.id = sd.id"
+            + " set sd.template_id = null"
+            + " where br.owner_id = :id and sd.template_id is not null"
+        );
     for (String recordTable2 : RecordTables2) {
       executeDeleteByRecordOwner(userId, session, recordTable2, "id");
       executeDeleteByRecordOwner(userId, session, recordTable2 + "_AUD", "id");
