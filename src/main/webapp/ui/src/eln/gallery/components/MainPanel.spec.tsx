@@ -213,17 +213,23 @@ const feature = test.extend<{
         );
       },
       "there shouldn't be any axe violations": async () => {
-        const firstCard = page.locator(`.${cardClasses.root}`).first();
-        if ((await firstCard.count()) > 0) {
-          await expect(firstCard).toHaveCSS("opacity", "1");
+        const cards = page.locator(`.${cardClasses.root}`);
+        if ((await cards.count()) > 0) {
+          /*
+           * FileCards fade in with a per-card staggered transitionDelay, so the
+           * last card (largest delay) finishes after the first. Waiting only for
+           * the first card leaves later cards mid-fade (opacity < 1) when axe
+           * runs, which trips color-contrast checks in slower browsers (WebKit
+           * on CI). Wait for the last card and for every animation on the page.
+           */
+          await expect(cards.last()).toHaveCSS("opacity", "1");
           await expect
             .poll(() =>
-              firstCard.evaluate((element) => {
-                const animations = element.getAnimations({ subtree: true });
-                return animations.every(
-                  (animation) => animation.playState === "finished",
-                );
-              }),
+              page.evaluate(() =>
+                document
+                  .getAnimations()
+                  .every((animation) => animation.playState === "finished"),
+              ),
             )
             .toBe(true);
         }
@@ -422,10 +428,20 @@ feature.beforeEach(async ({ router }) => {
 
 feature.afterEach(({}) => {});
 test.describe("MainPanel", () => {
-  feature("Should have no axe violations", async ({ Given, Then }) => {
+  feature("Should have no axe violations", async ({ Given, Then, page }) => {
+    /*
+     * FileCards fade in with a per-card staggered transitionDelay. Scanning
+     * mid-fade trips axe's color-contrast check because the text is composited
+     * at partial opacity over the background. WebKit reports transitions that
+     * are still in their delay phase inconsistently, so waiting for the
+     * animations to settle is unreliable. Emulating reduced motion makes the
+     * component render the cards at their final opacity immediately (the fade
+     * timeout/delay become 0), so axe scans the settled UI. This is also the
+     * correct surface to assert accessibility against.
+     */
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await Given["the main panel is showing a nested folder structure"]();
     await Then["there shouldn't be any axe violations"]();
-
   });
   test.describe("breadcrumbs", () => {
     feature("The root of the gallery section", async ({ Given, Then }) => {

@@ -56,7 +56,8 @@ const feature = test.extend<{
       const radio = page.getByRole("radio", {
         name: `Select notebook: ${name}`,
       });
-      await radio.check();
+      await radio.click();
+      await expect(radio).toBeChecked();
     };
     const clickImport = async () => {
       const importButton = page.getByRole("button", { name: "Import" });
