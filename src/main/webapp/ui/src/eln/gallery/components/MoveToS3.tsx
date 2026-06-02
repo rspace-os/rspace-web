@@ -39,6 +39,14 @@ const NoFilestoreAlert = () => (
   </Alert>
 );
 
+const NoWritableFilestoreAlert = () => (
+  <Alert severity="error">
+    <AlertTitle>You do not have write access to any S3 filestore.</AlertTitle>
+    Your account is not on the write allowlist for any S3 filestore. Ask your
+    system administrator if you need write access.
+  </Alert>
+);
+
 type MoveCopyDialogArgs = {
   dialogOpen: boolean;
   setDialogOpen: (open: boolean) => void;
@@ -175,6 +183,10 @@ function MoveCopyDialog({
                     <Grid item>
                       <NoFilestoreAlert />
                     </Grid>
+                  ) : filestores.every((fs) => !fs.canWrite) ? (
+                    <Grid item>
+                      <NoWritableFilestoreAlert />
+                    </Grid>
                   ) : (
                     <>
                       <Grid item>
@@ -254,13 +266,21 @@ function MoveCopyDialog({
                                   <MenuItem
                                     key={fs.id}
                                     selected={fs === selectedFilestore}
+                                    disabled={!fs.canWrite}
                                     onClick={() => {
                                       setSelectedFilestore(fs);
                                       setDestinationAnchorEl(null);
                                     }}
                                     sx={{ width: "400px" }}
                                   >
-                                    <ListItemText primary={fs.name} />
+                                    <ListItemText
+                                      primary={fs.name}
+                                      secondary={
+                                        fs.canWrite
+                                          ? undefined
+                                          : "No write access"
+                                      }
+                                    />
                                   </MenuItem>
                                 ))}
                               </Menu>

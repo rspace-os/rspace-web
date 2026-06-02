@@ -13,6 +13,8 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.archive.model.ArchiveExportConfig;
+import com.researchspace.model.User;
+import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -24,19 +26,23 @@ import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.DiskSpaceLimitException;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.impl.DiskSpaceCheckerImpl;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.context.support.StaticMessageSource;
 
 public class NfsExportContextTest {
 
@@ -75,6 +81,8 @@ public class NfsExportContextTest {
     testFileSystem = new NfsFileSystem();
     testFileSystem.setId(11L);
     testFileSystem.setName("Test FS");
+    // non-NONE authType so the default FilestoreAclChecker short-circuits to allow
+    testFileSystem.setAuthType(NfsAuthenticationType.PASSWORD);
 
     // two filestores pointing to the same filesystem
     testFileStore = new NfsFileStore();
@@ -133,7 +141,10 @@ public class NfsExportContextTest {
     Map<Long, NfsClient> nfsClientMap = Collections.singletonMap(testFileSystem.getId(), nfsClient);
     exportConfig = new ArchiveExportConfig();
     exportConfig.setAvailableNfsClients(nfsClientMap);
+    exportConfig.setExporter(new User("testUser"));
     nfsContext = new NfsExportContext(exportConfig);
+    nfsContext.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
+    nfsContext.setMessages(messageSourceWithExportBundleKeys());
 
     // support object returning mock managers
     when(support.getNfsManager()).thenReturn(mockNfsManager);
@@ -141,6 +152,27 @@ public class NfsExportContextTest {
 
     diskSpaceChecker = new DiskSpaceCheckerImpl();
     when(support.getDiskSpaceChecker()).thenReturn(diskSpaceChecker);
+  }
+
+  private static MessageSourceUtils messageSourceWithExportBundleKeys() {
+    StaticMessageSource source = new StaticMessageSource();
+    Locale loc = Locale.getDefault();
+    source.addMessage(
+        "archive.export.nfs.user.not.logged.in", loc, "user not logged into ''{0}'' File System");
+    source.addMessage(
+        "archive.export.nfs.no.read.access", loc, "no read access to ''{0}'' File System");
+    source.addMessage("archive.export.nfs.file.skipped", loc, "file skipped ({0})");
+    source.addMessage("archive.export.nfs.download.error", loc, "download error: {0}");
+    source.addMessage(
+        "archive.export.nfs.file.too.large", loc, "file larger than provided size limit");
+    source.addMessage(
+        "archive.export.nfs.file.extension.excluded", loc, "file extension ''{0}'' excluded");
+    source.addMessage("archive.export.nfs.folder.empty", loc, "empty folder");
+    source.addMessage(
+        "archive.export.nfs.folder.skipped.as.subfolder", loc, "skipped as subfolder");
+    source.addMessage("archive.export.nfs.folder.included.label", loc, "Included");
+    source.addMessage("archive.export.nfs.folder.skipped.label", loc, "Skipped");
+    return new MessageSourceUtils(source);
   }
 
   @Test
@@ -293,6 +325,42 @@ public class NfsExportContextTest {
         nfsContext.getDownloadedNfsResourceDetails(testNfsFileElem, support);
     assertNull(downloadException);
     assertEquals(1, nfsContext.getErrors().size());
+  }
+
+  @Test
+  public void testAclDeniedSkipsDownloadAndRecordsError() throws IOException {
+    // user is logged in but ACL forbids read on a NONE-auth filesystem
+    when(nfsClient.isUserLoggedIn()).thenReturn(true);
+    testFileSystem.setAuthType(NfsAuthenticationType.NONE);
+    testFileSystem.setReadAllowlist("someoneElse");
+    testFileSystem.setWriteAllowlist(null);
+
+    NfsResourceDetails denied =
+        nfsContext.getDownloadedNfsResourceDetails(testNfsFileElem, support);
+    assertNull(denied);
+    assertEquals(1, nfsContext.getErrors().size());
+    assertEquals(
+        "no read access to 'Test FS' File System",
+        nfsContext.getErrors().values().iterator().next());
+
+    verify(mockNfsFileHandler, never()).downloadNfsFileToRSpace(any(), any(), any());
+  }
+
+  @Test
+  public void testNullExporterSkipsDownloadAndRecordsNoReadAccess() throws IOException {
+    // a null exporter has no identity to evaluate the ACL against; deny rather than NPE
+    when(nfsClient.isUserLoggedIn()).thenReturn(true);
+    exportConfig.setExporter(null);
+
+    NfsResourceDetails denied =
+        nfsContext.getDownloadedNfsResourceDetails(testNfsFileElem, support);
+    assertNull(denied);
+    assertEquals(1, nfsContext.getErrors().size());
+    assertEquals(
+        "no read access to 'Test FS' File System",
+        nfsContext.getErrors().values().iterator().next());
+
+    verify(mockNfsFileHandler, never()).downloadNfsFileToRSpace(any(), any(), any());
   }
 
   @Test

@@ -23,6 +23,7 @@ import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
@@ -84,10 +85,12 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     filestoreWriteManager.setBaseRecordManager(baseRecordManager);
     filestoreWriteManager.setExternalStorageManager(externalStorageManager);
     filestoreWriteManager.setCredentialsStore(credentialsStore);
+    filestoreWriteManager.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
 
     controller = new GalleryFilestoresApiController();
     controller.nfsManager = nfsManager;
     controller.credentialsStore = credentialsStore;
+    controller.aclChecker = GalleryFilestoreTestUtils.filestoreAclCheckerForTest();
     controller.deletionManager = deletionManager;
     controller.filestoreWriteManager = filestoreWriteManager;
     controller.setNfsFileHandler(nfsFileHandler);
@@ -553,6 +556,108 @@ class GalleryFilestoresApiControllerWriteOpsTest {
                     user));
 
     assertEquals(1, ex.getAllErrors().size());
+  }
+
+  @Test
+  void moveToFilestore_userNotOnWriteAllowlist_throwsAuthorizationException() throws IOException {
+    // override the permissive default with a allowlist that excludes the request's user
+    NfsFileStore restrictedFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(2L, "restricted", user);
+    NfsFileSystem restrictedFs = restrictedFilestore.getFileSystem();
+    restrictedFs.setReadAllowlist("*");
+    restrictedFs.setWriteAllowlist("alice"); // USER's username is "username", not "alice"
+    when(nfsManager.getNfsFileStore(2L)).thenReturn(restrictedFilestore);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(
+            validRecordIds, new ApiNfsCredentials(null, USERNAME, PASSWORD));
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            controller.moveToFilestore(
+                2L, request, new BeanPropertyBindingResult(request, "request"), user));
+
+    verify(nfsManager, never())
+        .uploadFilesToNfs(anyCollection(), anyString(), any(WritableNfsClient.class), any());
+  }
+
+  @Test
+  void transferBetweenFilestores_userNotOnDestWriteAllowlist_throwsAuthorizationException() {
+    Long srcId = 10L;
+    Long dstId = 20L;
+    when(nfsManager.getNfsFileStore(srcId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user));
+    NfsFileStore destFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user);
+    destFilestore.getFileSystem().setWriteAllowlist("alice"); // user is "username"
+    when(nfsManager.getNfsFileStore(dstId)).thenReturn(destFilestore);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", false);
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            controller.transferBetweenFilestores(
+                srcId, request, new BeanPropertyBindingResult(request, "request"), user));
+  }
+
+  @Test
+  void transferBetweenFilestores_readOnlySourceNonDeleting_isAllowed()
+      throws BindException, IOException {
+    // a non-deleting transfer only reads the source, so write access on the source is not required
+    Long srcId = 10L;
+    Long dstId = 20L;
+    NfsFileStore srcFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user);
+    srcFilestore
+        .getFileSystem()
+        .setWriteAllowlist("alice"); // read stays '*', so source is readable
+    when(nfsManager.getNfsFileStore(srcId)).thenReturn(srcFilestore);
+    when(nfsManager.getNfsFileStore(dstId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
+    WritableNfsClient srcClient = mock(WritableNfsClient.class);
+    WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
+    when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", false);
+
+    ApiExternalStorageOperationResult result =
+        controller.transferBetweenFilestores(
+            srcId, request, new BeanPropertyBindingResult(request, "request"), user);
+
+    assertTrue(result.getFileInfoDetails().iterator().next().getSucceeded());
+    verify(srcClient, never()).deleteFile(any());
+  }
+
+  @Test
+  void transferBetweenFilestores_deleteSourceWithoutSourceWrite_throwsAuthorizationException() {
+    // deleting the source modifies it, so write access on the source is required
+    Long srcId = 10L;
+    Long dstId = 20L;
+    NfsFileStore srcFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user);
+    srcFilestore.getFileSystem().setWriteAllowlist("alice"); // user is "username"
+    when(nfsManager.getNfsFileStore(srcId)).thenReturn(srcFilestore);
+    when(nfsManager.getNfsFileStore(dstId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", true);
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            controller.transferBetweenFilestores(
+                srcId, request, new BeanPropertyBindingResult(request, "request"), user));
   }
 
   @Test

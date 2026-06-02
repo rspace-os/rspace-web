@@ -49,7 +49,7 @@ public interface NfsManager {
 
   boolean verifyFileStoreNameUniqueForUser(String fileStoreName, User user);
 
-  List<NfsFileSystemInfo> getActiveFileSystemInfos();
+  List<NfsFileSystemInfo> getActiveFileSystemInfos(User user);
 
   void saveNfsFileSystem(NfsFileSystem fileSystem);
 
