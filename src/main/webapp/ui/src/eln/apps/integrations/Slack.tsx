@@ -186,57 +186,61 @@ const DialogContent = observer(
           <Box key={channel.optionsId}>
             <Card variant="outlined">
               <form
-                onSubmit={(event) => { void (async () => {
-                  event.preventDefault();
-                  try {
-                    const params: { optionsId: unknown } = {
-                      ...channel,
-                    };
-                    delete params.optionsId;
-                    const newState = await saveAppOptions(
-                      "SLACK",
-                      Optional.present(channel.optionsId),
-                      params,
-                    );
-                    runInAction(() => {
-                      integrationState.credentials = newState.credentials;
-                      const newCreds = ArrayUtils.all(newState.credentials)
-                        .toResult(
-                          () =>
-                            new Error("Save completed but cannot show results"),
-                        )
-                        .elseThrow();
-                      const indexOfNewConfig = newCreds.findIndex(
-                        (c) => c.optionsId === channel.optionsId,
+                onSubmit={(event) => {
+                  void (async () => {
+                    event.preventDefault();
+                    try {
+                      const params: { optionsId: unknown } = {
+                        ...channel,
+                      };
+                      delete params.optionsId;
+                      const newState = await saveAppOptions(
+                        "SLACK",
+                        Optional.present(channel.optionsId),
+                        params,
                       );
-                      if (indexOfNewConfig === -1)
-                        throw new Error(
-                          "Save completed but cannot show results.",
+                      runInAction(() => {
+                        integrationState.credentials = newState.credentials;
+                        const newCreds = ArrayUtils.all(newState.credentials)
+                          .toResult(
+                            () =>
+                              new Error(
+                                "Save completed but cannot show results",
+                              ),
+                          )
+                          .elseThrow();
+                        const indexOfNewConfig = newCreds.findIndex(
+                          (c) => c.optionsId === channel.optionsId,
                         );
+                        if (indexOfNewConfig === -1)
+                          throw new Error(
+                            "Save completed but cannot show results.",
+                          );
 
-                      copyOfChannels.splice(
-                        index,
-                        1,
-                        observable(newCreds[indexOfNewConfig]),
-                      );
-                    });
-                    addAlert(
-                      mkAlert({
-                        variant: "success",
-                        message: "Successfully changed label.",
-                      }),
-                    );
-                  } catch (e) {
-                    if (e instanceof Error)
+                        copyOfChannels.splice(
+                          index,
+                          1,
+                          observable(newCreds[indexOfNewConfig]),
+                        );
+                      });
                       addAlert(
                         mkAlert({
-                          variant: "error",
-                          title: "Failed to change label.",
-                          message: e.message,
+                          variant: "success",
+                          message: "Successfully changed label.",
                         }),
                       );
-                  }
-                })(); }}
+                    } catch (e) {
+                      if (e instanceof Error)
+                        addAlert(
+                          mkAlert({
+                            variant: "error",
+                            title: "Failed to change label.",
+                            message: e.message,
+                          }),
+                        );
+                    }
+                  })();
+                }}
               >
                 <CardContent>
                   <Stack spacing={2}>
@@ -267,33 +271,38 @@ const DialogContent = observer(
                 <CardActions>
                   <Button type="submit">Save</Button>
                   <Button
-                    onClick={() => { void (async () => {
-                      try {
-                        await deleteAppOptions("SLACK", channel.optionsId);
-                        runInAction(() => {
-                          const deletedIndex = copyOfChannels.findIndex(
-                            (c) => c === channel,
-                          );
-                          copyOfChannels.splice(deletedIndex, 1);
-                          integrationState.credentials.splice(deletedIndex, 1);
-                        });
-                        addAlert(
-                          mkAlert({
-                            variant: "success",
-                            message: "Successfully deleted channel.",
-                          }),
-                        );
-                      } catch (e) {
-                        if (e instanceof Error)
+                    onClick={() => {
+                      void (async () => {
+                        try {
+                          await deleteAppOptions("SLACK", channel.optionsId);
+                          runInAction(() => {
+                            const deletedIndex = copyOfChannels.findIndex(
+                              (c) => c === channel,
+                            );
+                            copyOfChannels.splice(deletedIndex, 1);
+                            integrationState.credentials.splice(
+                              deletedIndex,
+                              1,
+                            );
+                          });
                           addAlert(
                             mkAlert({
-                              variant: "error",
-                              title: "Could not delete channel.",
-                              message: e.message,
+                              variant: "success",
+                              message: "Successfully deleted channel.",
                             }),
                           );
-                      }
-                    })(); }}
+                        } catch (e) {
+                          if (e instanceof Error)
+                            addAlert(
+                              mkAlert({
+                                variant: "error",
+                                title: "Could not delete channel.",
+                                message: e.message,
+                              }),
+                            );
+                        }
+                      })();
+                    }}
                   >
                     Remove
                   </Button>
@@ -306,45 +315,47 @@ const DialogContent = observer(
           {newChannel ? (
             <Card variant="outlined">
               <form
-                onSubmit={(event) => { void (async () => {
-                  event.preventDefault();
-                  try {
-                    const newState = await saveAppOptions(
-                      "SLACK",
-                      Optional.empty(),
-                      newChannel,
-                    );
-                    const optionIdsOfExistingRepos = new RsSet(
-                      copyOfChannels.map(({ optionsId }) => optionsId),
-                    );
-                    runInAction(() => {
-                      integrationState.credentials = newState.credentials;
-                      const newlySavedRepo = new RsSet(newState.credentials)
-                        .mapOptional((x) => x)
-                        .subtractMap(
-                          ({ optionsId }) => optionsId,
-                          optionIdsOfExistingRepos,
-                        ).first;
-                      copyOfChannels.push(newlySavedRepo);
-                    });
-                    setNewChannel(null);
-                    addAlert(
-                      mkAlert({
-                        variant: "success",
-                        message: "Successfully added channel.",
-                      }),
-                    );
-                  } catch (e) {
-                    if (e instanceof Error)
+                onSubmit={(event) => {
+                  void (async () => {
+                    event.preventDefault();
+                    try {
+                      const newState = await saveAppOptions(
+                        "SLACK",
+                        Optional.empty(),
+                        newChannel,
+                      );
+                      const optionIdsOfExistingRepos = new RsSet(
+                        copyOfChannels.map(({ optionsId }) => optionsId),
+                      );
+                      runInAction(() => {
+                        integrationState.credentials = newState.credentials;
+                        const newlySavedRepo = new RsSet(newState.credentials)
+                          .mapOptional((x) => x)
+                          .subtractMap(
+                            ({ optionsId }) => optionsId,
+                            optionIdsOfExistingRepos,
+                          ).first;
+                        copyOfChannels.push(newlySavedRepo);
+                      });
+                      setNewChannel(null);
                       addAlert(
                         mkAlert({
-                          variant: "error",
-                          title: "Failed to add channel.",
-                          message: e.message,
+                          variant: "success",
+                          message: "Successfully added channel.",
                         }),
                       );
-                  }
-                })(); }}
+                    } catch (e) {
+                      if (e instanceof Error)
+                        addAlert(
+                          mkAlert({
+                            variant: "error",
+                            title: "Failed to add channel.",
+                            message: e.message,
+                          }),
+                        );
+                    }
+                  })();
+                }}
               >
                 <CardContent>
                   <DescriptionList

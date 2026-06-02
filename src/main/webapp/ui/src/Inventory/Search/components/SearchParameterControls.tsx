@@ -44,7 +44,7 @@ const Panel = ({ anchorEl, children, onClose }: PanelProps) => (
         style: {
           minWidth: 300,
         },
-      }
+      },
     }}
   >
     {Boolean(anchorEl) && children}

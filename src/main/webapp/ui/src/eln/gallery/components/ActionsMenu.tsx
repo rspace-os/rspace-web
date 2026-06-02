@@ -722,9 +722,8 @@ function ActionsMenu({
               .orElseGet(([e]) => e.message)}
             avatar={<EditIcon />}
             onClick={() => {
-              editingAllowed.get().do(
-                (action) => {
-                  void (async () => {
+              editingAllowed.get().do((action) => {
+                void (async () => {
                   if (action.key === "officeonline") {
                     window.open(action.url);
                     trackEvent("user:opens:document:officeonline");
@@ -752,9 +751,8 @@ function ActionsMenu({
                       }
                     }
                   }
-                  })();
-                },
-              );
+                })();
+              });
               setActionsMenuAnchorEl(null);
             }}
             compact
@@ -1097,41 +1095,41 @@ function ActionsMenu({
         submitButtonLabel="Save as new image"
         submitHandler={(newBlob) => {
           void (async () => {
-          try {
-            const file = selection
-              .asSet()
-              .only.toResult(() => new Error("Nothing selected"))
-              .elseThrow();
-            const newFile = new File(
-              [newBlob],
-              file.transformFilename((name) => name + "_edited"),
-              {
-                type: newBlob.type,
-              },
-            );
-            const idOfFolderThatFileIsIn = ArrayUtils.last(file.path)
-              .map(({ id }) => id)
-              .orElseTry(() => FetchingData.getSuccessValue(folderId))
-              .mapError(() => new Error("Current folder is not known"))
-              .elseThrow();
-            await uploadFiles(idOfFolderThatFileIsIn, [newFile], {
-              originalImageId: file.id,
-            });
-            void refreshListing();
-            trackEvent("user:edit:image:gallery");
-          } catch (e) {
-            if (e instanceof Error) {
-              addAlert(
-                mkAlert({
-                  variant: "error",
-                  title: "Failed to process edited image",
-                  message: e.message,
-                }),
+            try {
+              const file = selection
+                .asSet()
+                .only.toResult(() => new Error("Nothing selected"))
+                .elseThrow();
+              const newFile = new File(
+                [newBlob],
+                file.transformFilename((name) => name + "_edited"),
+                {
+                  type: newBlob.type,
+                },
               );
+              const idOfFolderThatFileIsIn = ArrayUtils.last(file.path)
+                .map(({ id }) => id)
+                .orElseTry(() => FetchingData.getSuccessValue(folderId))
+                .mapError(() => new Error("Current folder is not known"))
+                .elseThrow();
+              await uploadFiles(idOfFolderThatFileIsIn, [newFile], {
+                originalImageId: file.id,
+              });
+              void refreshListing();
+              trackEvent("user:edit:image:gallery");
+            } catch (e) {
+              if (e instanceof Error) {
+                addAlert(
+                  mkAlert({
+                    variant: "error",
+                    title: "Failed to process edited image",
+                    message: e.message,
+                  }),
+                );
+              }
+            } finally {
+              setActionsMenuAnchorEl(null);
             }
-          } finally {
-            setActionsMenuAnchorEl(null);
-          }
           })();
         }}
         alt={selection

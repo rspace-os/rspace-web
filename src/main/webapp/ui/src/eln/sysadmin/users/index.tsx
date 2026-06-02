@@ -295,30 +295,30 @@ const TagDialog = ({
             loading={submitting}
             onClick={() => {
               void (async () => {
-              setSubmitting(true);
-              try {
-                await setTags(addedTags, deletedTags);
-                addAlert(
-                  mkAlert({
-                    message: "Successfully saved tags.",
-                    variant: "success",
-                  }),
-                );
-                onClose();
-              } catch (error) {
-                console.error(error);
-                if (error instanceof Error) {
+                setSubmitting(true);
+                try {
+                  await setTags(addedTags, deletedTags);
                   addAlert(
                     mkAlert({
-                      title: "Could not save tags.",
-                      message: error.message,
-                      variant: "error",
+                      message: "Successfully saved tags.",
+                      variant: "success",
                     }),
                   );
+                  onClose();
+                } catch (error) {
+                  console.error(error);
+                  if (error instanceof Error) {
+                    addAlert(
+                      mkAlert({
+                        title: "Could not save tags.",
+                        message: error.message,
+                        variant: "error",
+                      }),
+                    );
+                  }
+                } finally {
+                  setSubmitting(false);
                 }
-              } finally {
-                setSubmitting(false);
-              }
               })();
             }}
             label="Save"
@@ -859,19 +859,24 @@ const DeleteAction = ({
                     mb: 2,
                   }}
                 >
-                  {(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) && (
-                      <Alert severity="info" sx={{ mb: 1 }}>
-                        <Typography variant="body2">
-                          The user you are trying to delete is{" "}
-                          <strong>
-                            the owner of Forms and/or Templates that are used by other users.
-                          </strong>
-                          {" "}To ensure continued access to these Forms/Templates, the system
-                          <strong> will transfer ownership</strong> of those files to
-                          <strong> this System Administrator</strong> account. Forms and
-                          Templates that are not used by others will be deleted.
-                        </Typography>
-                      </Alert>
+                  {(user.hasFormsUsedByOtherUsers ||
+                    user.hasTemplatesUsedByOtherUsers) && (
+                    <Alert severity="info" sx={{ mb: 1 }}>
+                      <Typography variant="body2">
+                        The user you are trying to delete is{" "}
+                        <strong>
+                          the owner of Forms and/or Templates that are used by
+                          other users.
+                        </strong>{" "}
+                        To ensure continued access to these Forms/Templates, the
+                        system
+                        <strong> will transfer ownership</strong> of those files
+                        to
+                        <strong> this System Administrator</strong> account.
+                        Forms and Templates that are not used by others will be
+                        deleted.
+                      </Typography>
+                    </Alert>
                   )}
                   <Typography
                     variant="body2"
@@ -945,7 +950,12 @@ const DeleteAction = ({
                   type="submit"
                   loading={false}
                   disabled={false}
-                  label={(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) ? "Transfer Forms/Templates And Delete" : "Delete"}
+                  label={
+                    user.hasFormsUsedByOtherUsers ||
+                    user.hasTemplatesUsedByOtherUsers
+                      ? "Transfer Forms/Templates And Delete"
+                      : "Delete"
+                  }
                 />
               </DialogActions>
             </form>
@@ -1131,9 +1141,8 @@ const SelectionActions = ({
                 <MenuItem
                   disabled={unlockAction.isError}
                   onClick={() => {
-                    unlockAction.do(
-                      (user) => {
-                        void (async () => {
+                    unlockAction.do((user) => {
+                      void (async () => {
                         try {
                           await user.unlock();
                           addAlert(
@@ -1154,9 +1163,8 @@ const SelectionActions = ({
                             );
                           }
                         }
-                        })();
-                      },
-                    );
+                      })();
+                    });
                   }}
                 >
                   <ListItemIcon>
@@ -1185,9 +1193,8 @@ const SelectionActions = ({
                 <MenuItem
                   disabled={enableDisableAction.isError}
                   onClick={() =>
-                    enableDisableAction.do(
-                      ({ action, user }) => {
-                        void (async () => {
+                    enableDisableAction.do(({ action, user }) => {
+                      void (async () => {
                         if (action === "enable") {
                           try {
                             await user.enable();
@@ -1232,9 +1239,8 @@ const SelectionActions = ({
                             }
                           }
                         }
-                        })();
-                      },
-                    )
+                      })();
+                    })
                   }
                 >
                   <ListItemIcon>

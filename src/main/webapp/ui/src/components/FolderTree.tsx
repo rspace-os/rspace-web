@@ -21,7 +21,6 @@ import useFolders, {
 } from "../hooks/api/useFolders";
 import { Tree, TreeItem } from "./Tree";
 
-
 type CreateFolderDialogProps = {
   open: boolean;
   onClose: () => void;

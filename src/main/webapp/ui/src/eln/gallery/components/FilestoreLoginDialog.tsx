@@ -74,43 +74,46 @@ const FilestoreLoginDialog = ({
       <form
         onSubmit={(e) => {
           void (async () => {
-          e.preventDefault();
-          setSubmitting(true);
-          try {
-            const api = axios.create({
-              baseURL: "/api/v1/gallery",
-              headers: {
-                Authorization: "Bearer " + (await getToken()),
-              },
-            });
-            await api.post<unknown>(`filesystems/${filesystemId}/login`, {
-              username,
-              password,
-            });
-            onSuccess();
-          } catch (error) {
-            console.error(error);
-            if (error instanceof Error) {
-              const message = Parsers.objectPath(["response", "status"], error)
-                .flatMap((status) => {
-                  if (status === 403) return Result.Ok("Wrong credentials?");
-                  return Parsers.objectPath(
-                    ["response", "data", "message"],
-                    error,
-                  ).flatMap(Parsers.isString);
-                })
-                .orElse(error.message);
-              addAlert(
-                mkAlert({
-                  variant: "error",
-                  title: "Could not authenticate",
-                  message,
-                }),
-              );
+            e.preventDefault();
+            setSubmitting(true);
+            try {
+              const api = axios.create({
+                baseURL: "/api/v1/gallery",
+                headers: {
+                  Authorization: "Bearer " + (await getToken()),
+                },
+              });
+              await api.post<unknown>(`filesystems/${filesystemId}/login`, {
+                username,
+                password,
+              });
+              onSuccess();
+            } catch (error) {
+              console.error(error);
+              if (error instanceof Error) {
+                const message = Parsers.objectPath(
+                  ["response", "status"],
+                  error,
+                )
+                  .flatMap((status) => {
+                    if (status === 403) return Result.Ok("Wrong credentials?");
+                    return Parsers.objectPath(
+                      ["response", "data", "message"],
+                      error,
+                    ).flatMap(Parsers.isString);
+                  })
+                  .orElse(error.message);
+                addAlert(
+                  mkAlert({
+                    variant: "error",
+                    title: "Could not authenticate",
+                    message,
+                  }),
+                );
+              }
+            } finally {
+              setSubmitting(false);
             }
-          } finally {
-            setSubmitting(false);
-          }
           })();
         }}
       >

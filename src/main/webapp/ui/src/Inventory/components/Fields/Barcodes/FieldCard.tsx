@@ -211,7 +211,12 @@ const CollapseContents = observer(
                       </DescriptionWrapper>
                     </TableCell>
                     <TableCell width={1}>
-                      <Grid container direction="row" spacing={1} sx={{ flexWrap: "nowrap" }}>
+                      <Grid
+                        container
+                        direction="row"
+                        spacing={1}
+                        sx={{ flexWrap: "nowrap" }}
+                      >
                         <Grid>
                           <IconButtonWithTooltip
                             size="small"

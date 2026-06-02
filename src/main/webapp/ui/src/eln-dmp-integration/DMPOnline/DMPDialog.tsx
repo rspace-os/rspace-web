@@ -34,7 +34,10 @@ import { DataGridColumn } from "../../util/table";
 import { ACCENT_COLOR } from "../../assets/branding/dmponline";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 
-function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
+function CustomDialog({
+  fullScreen,
+  ...props
+}: React.ComponentProps<typeof Dialog>): React.ReactNode {
   return (
     <Dialog
       {...props}
@@ -224,30 +227,30 @@ const DMPDialogContent = ({
                   error: () => {},
                   success: (l) => {
                     void (async () => {
-                    try {
-                      if (newPage !== l.page) {
-                        setListing({ tag: "loading" });
-                        setListing({
-                          tag: "success",
-                          value: await l.setPage(newPage),
-                        });
+                      try {
+                        if (newPage !== l.page) {
+                          setListing({ tag: "loading" });
+                          setListing({
+                            tag: "success",
+                            value: await l.setPage(newPage),
+                          });
+                        }
+                      } catch (error) {
+                        if (error instanceof Error)
+                          setListing({ tag: "error", error: error.message });
                       }
-                    } catch (error) {
-                      if (error instanceof Error)
-                        setListing({ tag: "error", error: error.message });
-                    }
-                    try {
-                      if (newPageSize !== l.pageSize) {
-                        setListing({ tag: "loading" });
-                        setListing({
-                          tag: "success",
-                          value: await l.setPageSize(newPageSize),
-                        });
+                      try {
+                        if (newPageSize !== l.pageSize) {
+                          setListing({ tag: "loading" });
+                          setListing({
+                            tag: "success",
+                            value: await l.setPageSize(newPageSize),
+                          });
+                        }
+                      } catch (error) {
+                        if (error instanceof Error)
+                          setListing({ tag: "error", error: error.message });
                       }
-                    } catch (error) {
-                      if (error instanceof Error)
-                        setListing({ tag: "error", error: error.message });
-                    }
                     })();
                   },
                 });

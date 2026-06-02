@@ -248,9 +248,8 @@ const Preview = ({
           key: "aspose",
         })),
       )
-      .do(
-        (preview) => {
-          void (async () => {
+      .do((preview) => {
+        void (async () => {
           if (preview.key === "image") {
             setImageUrl({ tag: "loading" });
             try {
@@ -311,9 +310,8 @@ const Preview = ({
               });
             }
           }
-          })();
-        },
-      );
+        })();
+      });
   }, []);
 
   function onDocumentLoadSuccess({

@@ -182,53 +182,50 @@ export default function FieldmarkImportDialog({
   const [identifierFieldSelection, setIdentifierFieldSelection] =
     React.useState<IdentifierFieldSelection>({ type: "unselected" });
 
-  React.useEffect(
-    () => {
-      void (async () => {
-        if (!open) return;
-        setFetchingNotebooks(true);
-        setIdentifierFieldSelection({ type: "unselected" });
-        setSelectedNotebook(null);
-        setNotebooks(null);
-        try {
-          const { data } = await axios.get<ReadonlyArray<Notebook>>(
-            "/api/inventory/v1/fieldmark/notebooks",
-            {
-              headers: {
-                Authorization: `Bearer ${await getToken()}`,
-              },
+  React.useEffect(() => {
+    void (async () => {
+      if (!open) return;
+      setFetchingNotebooks(true);
+      setIdentifierFieldSelection({ type: "unselected" });
+      setSelectedNotebook(null);
+      setNotebooks(null);
+      try {
+        const { data } = await axios.get<ReadonlyArray<Notebook>>(
+          "/api/inventory/v1/fieldmark/notebooks",
+          {
+            headers: {
+              Authorization: `Bearer ${await getToken()}`,
             },
+          },
+        );
+        setNotebooks(data);
+      } catch (e) {
+        console.error(e);
+        if (e instanceof Error) {
+          const message = Parsers.objectPath(
+            ["response", "data", "data", "validationErrors"],
+            e,
+          )
+            .flatMap(Parsers.isArray)
+            .flatMap(ArrayUtils.head)
+            .flatMap(Parsers.isObject)
+            .flatMap(Parsers.isNotNull)
+            .flatMap(Parsers.getValueWithKey("message"))
+            .flatMap(Parsers.isString)
+            .orElse(e.message);
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not get notebooks from Fieldmark",
+              message,
+            }),
           );
-          setNotebooks(data);
-        } catch (e) {
-          console.error(e);
-          if (e instanceof Error) {
-            const message = Parsers.objectPath(
-              ["response", "data", "data", "validationErrors"],
-              e,
-            )
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head)
-              .flatMap(Parsers.isObject)
-              .flatMap(Parsers.isNotNull)
-              .flatMap(Parsers.getValueWithKey("message"))
-              .flatMap(Parsers.isString)
-              .orElse(e.message);
-            addAlert(
-              mkAlert({
-                variant: "error",
-                title: "Could not get notebooks from Fieldmark",
-                message,
-              }),
-            );
-          }
-        } finally {
-          setFetchingNotebooks(false);
         }
-      })();
-    },
-    [open],
-  );
+      } finally {
+        setFetchingNotebooks(false);
+      }
+    })();
+  }, [open]);
 
   async function importNotebook(notebook: Notebook) {
     setImporting(true);
@@ -415,10 +412,7 @@ export default function FieldmarkImportDialog({
         />
         <DialogTitle variant="h3">Import from Fieldmark</DialogTitle>
         <DialogContent>
-          <Stack
-            spacing={2}
-            sx={{ height: "100%", flexWrap: "nowrap" }}
-          >
+          <Stack spacing={2} sx={{ height: "100%", flexWrap: "nowrap" }}>
             <Box>
               <Typography
                 variant="body2"

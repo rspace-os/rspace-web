@@ -138,17 +138,17 @@ const MoveDialog = observer(
             <SubmitSpinnerButton
               onClick={() => {
                 void (async () => {
-                setTopLevelLoading(true);
-                try {
-                  await moveFiles(section, rootDestination(), selectedFiles);
-                  void refreshListing();
-                  onClose();
-                  trackEvent("user:moved:files:gallery", {
-                    count: selectedFiles.size,
-                  });
-                } finally {
-                  setTopLevelLoading(false);
-                }
+                  setTopLevelLoading(true);
+                  try {
+                    await moveFiles(section, rootDestination(), selectedFiles);
+                    void refreshListing();
+                    onClose();
+                    trackEvent("user:moved:files:gallery", {
+                      count: selectedFiles.size,
+                    });
+                  } finally {
+                    setTopLevelLoading(false);
+                  }
                 })();
               }}
               disabled={topLevelLoading}
@@ -167,30 +167,30 @@ const MoveDialog = observer(
               loading={submitLoading}
               onClick={() => {
                 void (async () => {
-                setSubmitLoading(true);
-                try {
-                  const destinationFolder = selection
-                    .asSet()
-                    .only.toResult(
-                      () =>
-                        new Error(
-                          "Impossible; submit button requires a selection of one",
-                        ),
-                    )
-                    .elseThrow();
-                  await moveFiles(
-                    section,
-                    folderDestination(destinationFolder),
-                    selectedFiles,
-                  );
-                  void refreshListing();
-                  onClose();
-                  trackEvent("user:moved:files:gallery", {
-                    count: selectedFiles.size,
-                  });
-                } finally {
-                  setSubmitLoading(false);
-                }
+                  setSubmitLoading(true);
+                  try {
+                    const destinationFolder = selection
+                      .asSet()
+                      .only.toResult(
+                        () =>
+                          new Error(
+                            "Impossible; submit button requires a selection of one",
+                          ),
+                      )
+                      .elseThrow();
+                    await moveFiles(
+                      section,
+                      folderDestination(destinationFolder),
+                      selectedFiles,
+                    );
+                    void refreshListing();
+                    onClose();
+                    trackEvent("user:moved:files:gallery", {
+                      count: selectedFiles.size,
+                    });
+                  } finally {
+                    setSubmitLoading(false);
+                  }
                 })();
               }}
               validationResult={computeValidation()}

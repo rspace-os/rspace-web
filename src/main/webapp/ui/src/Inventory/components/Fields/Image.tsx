@@ -16,7 +16,7 @@ function Image<
     image: BlobUrl | null;
     newBase64Image: string | null;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   fieldOwner,
   alt,

@@ -250,58 +250,65 @@ const DialogContent = observer(
                 </CardContent>
                 <CardActions>
                   <Button
-                    onClick={() => { void (async () => {
-                      try {
-                        await deleteAppOptions("DATAVERSE", config.optionsId);
-                        runInAction(() => {
-                          const deletedIndex = observableConfigs.findIndex(
-                            (c) => c === config,
-                          );
-                          observableConfigs.splice(deletedIndex, 1);
-                          integrationState.credentials.splice(deletedIndex, 1);
-                        });
-                        addAlert(
-                          mkAlert({
-                            variant: "success",
-                            message: "Successfully deleted configuration.",
-                          }),
-                        );
-                      } catch (e) {
-                        if (e instanceof Error)
+                    onClick={() => {
+                      void (async () => {
+                        try {
+                          await deleteAppOptions("DATAVERSE", config.optionsId);
+                          runInAction(() => {
+                            const deletedIndex = observableConfigs.findIndex(
+                              (c) => c === config,
+                            );
+                            observableConfigs.splice(deletedIndex, 1);
+                            integrationState.credentials.splice(
+                              deletedIndex,
+                              1,
+                            );
+                          });
                           addAlert(
                             mkAlert({
-                              variant: "error",
-                              title: "Could not delete configuration.",
-                              message: e.message,
+                              variant: "success",
+                              message: "Successfully deleted configuration.",
                             }),
                           );
-                      }
-                    })(); }}
+                        } catch (e) {
+                          if (e instanceof Error)
+                            addAlert(
+                              mkAlert({
+                                variant: "error",
+                                title: "Could not delete configuration.",
+                                message: e.message,
+                              }),
+                            );
+                        }
+                      })();
+                    }}
                   >
                     Delete
                   </Button>
                   <Button
                     disabled={config.dirty}
-                    onClick={() => { void (async () => {
-                      try {
-                        await test(config.optionsId);
-                        addAlert(
-                          mkAlert({
-                            variant: "success",
-                            message: "Connection details are valid.",
-                          }),
-                        );
-                      } catch (e) {
-                        if (e instanceof Error)
+                    onClick={() => {
+                      void (async () => {
+                        try {
+                          await test(config.optionsId);
                           addAlert(
                             mkAlert({
-                              variant: "error",
-                              title: "Connection details are not valid.",
-                              message: e.message,
+                              variant: "success",
+                              message: "Connection details are valid.",
                             }),
                           );
-                      }
-                    })(); }}
+                        } catch (e) {
+                          if (e instanceof Error)
+                            addAlert(
+                              mkAlert({
+                                variant: "error",
+                                title: "Connection details are not valid.",
+                                message: e.message,
+                              }),
+                            );
+                        }
+                      })();
+                    }}
                   >
                     Test
                   </Button>
@@ -369,7 +376,8 @@ const DialogContent = observer(
                       label="API key"
                       error={newConfig.DATAVERSE_APIKEY === ""}
                       helperText={
-                        newConfig.DATAVERSE_APIKEY === "" && "API key is required."
+                        newConfig.DATAVERSE_APIKEY === "" &&
+                        "API key is required."
                       }
                     />
                   </Stack>

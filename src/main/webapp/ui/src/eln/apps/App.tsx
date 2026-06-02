@@ -152,9 +152,8 @@ function App(): React.ReactNode {
     FetchingData.Fetched<IntegrationStates>
   >(observable({ tag: "loading" }));
 
-  useEffect(
-    () => {
-      void (async () => {
+  useEffect(() => {
+    void (async () => {
       try {
         setAllStates(
           observable({
@@ -166,10 +165,8 @@ function App(): React.ReactNode {
         if (e instanceof Error)
           setAllStates(observable({ tag: "error", error: e.message }));
       }
-      })();
-    },
-    [],
-  );
+    })();
+  }, []);
 
   return (
     <>

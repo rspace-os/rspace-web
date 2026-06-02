@@ -76,7 +76,7 @@ function LocationsImageField(): React.ReactNode {
                     size="large"
                     color="primary"
                     variant="outlined"
-                      sx={{ flexGrow: 1 }}
+                    sx={{ flexGrow: 1 }}
                     startIcon={<LocationOnIcon />}
                     disabled={!locationsImage}
                     onClick={() => {

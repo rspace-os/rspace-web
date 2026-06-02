@@ -264,11 +264,13 @@ const ActionsBar = observer(
         </Grid>
         <Grid>
           <ValidatingSubmitButton
-            onClick={() => { void (async () => {
-              if (currentList) {
-                await currentList.moveAllToBench();
-              }
-            })(); }}
+            onClick={() => {
+              void (async () => {
+                if (currentList) {
+                  await currentList.moveAllToBench();
+                }
+              })();
+            }}
             loading={moveStore.submitting === "TO-OTHER"}
             validationResult={moveAllToBenchValidation()}
             color="primary"
@@ -542,8 +544,8 @@ function MaterialsDialog({
                       disableElevation
                       onClick={preventEventBubbling<
                         React.MouseEvent<HTMLButtonElement>
-                      >(
-                        () => { void (async () => {
+                      >(() => {
+                        void (async () => {
                           if (currentList) {
                             const changed = materialsStore.hasListChanged;
                             if (changed) {
@@ -556,8 +558,8 @@ function MaterialsDialog({
                             }
                             setOpenExporter(true);
                           }
-                        })(); },
-                      )}
+                        })();
+                      })}
                       disabled={!isListExisting || !isListValid}
                     >
                       Export
@@ -589,26 +591,28 @@ function MaterialsDialog({
                         {isUnchanged ? "Close" : "Cancel"}
                       </Button>
                       <ValidatingSubmitButton
-                        onClick={() => { void (async () => {
-                          if (currentList && isListValid) {
-                            if (isListNew) {
-                              await showToastWhilstPending(
-                                `Creating list...`,
-                                currentList.create(),
-                              );
-                            }
-                            if (isListExisting) {
-                              const changed = materialsStore.hasListChanged;
-                              if (changed)
+                        onClick={() => {
+                          void (async () => {
+                            if (currentList && isListValid) {
+                              if (isListNew) {
                                 await showToastWhilstPending(
-                                  `Updating list...`,
-                                  currentList.update(),
+                                  `Creating list...`,
+                                  currentList.create(),
                                 );
+                              }
+                              if (isListExisting) {
+                                const changed = materialsStore.hasListChanged;
+                                if (changed)
+                                  await showToastWhilstPending(
+                                    `Updating list...`,
+                                    currentList.update(),
+                                  );
+                              }
+                              materialsStore.setCurrentList(currentList);
+                              refetch();
                             }
-                            materialsStore.setCurrentList(currentList);
-                            refetch();
-                          }
-                        })(); }}
+                          })();
+                        }}
                         loading={isListLoading}
                         validationResult={materialsStore.cantSaveCurrentList}
                       >

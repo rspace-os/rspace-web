@@ -22,14 +22,16 @@ function Retry({ retryFunction, onClose }: RetryArgs): React.ReactNode {
           <RefreshIcon />
         )
       }
-      onClick={(_event: React.MouseEvent<HTMLButtonElement>) => { void (async () => {
+      onClick={(_event: React.MouseEvent<HTMLButtonElement>) => {
+        void (async () => {
           setRetrying(true);
           try {
             await retryFunction();
           } finally {
             onClose();
           }
-        })(); }}
+        })();
+      }}
       sx={{ m: 0.5 }}
     />
   );

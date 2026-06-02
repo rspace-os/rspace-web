@@ -132,21 +132,23 @@ const ExportMenuItem = ({
   hideMenu?: () => void;
 }) => (
   <MenuItem
-    onClick={() => { void (async () => {
-      await onClick();
-      /*
-       * `hideMenu` is injected by MUI into the children of
-       * `GridToolbarExportContainer`. See
-       * https://github.com/mui/mui-x/blob/2414dcfe87b8bd4507361a80ab43c8d284ddc4de/packages/x-data-grid/src/components/toolbar/GridToolbarExportContainer.tsx#L99
-       * However, if we add `hideMenu` to the type of the `ExportMenuItem`
-       * props then Flow will complain we're not passing it in at the call site
-       */
-      getByKey<{ hideMenu?: () => void }, "hideMenu">("hideMenu", rest).do(
-        (hideMenu) => {
-          hideMenu();
-        },
-      );
-    })(); }}
+    onClick={() => {
+      void (async () => {
+        await onClick();
+        /*
+         * `hideMenu` is injected by MUI into the children of
+         * `GridToolbarExportContainer`. See
+         * https://github.com/mui/mui-x/blob/2414dcfe87b8bd4507361a80ab43c8d284ddc4de/packages/x-data-grid/src/components/toolbar/GridToolbarExportContainer.tsx#L99
+         * However, if we add `hideMenu` to the type of the `ExportMenuItem`
+         * props then Flow will complain we're not passing it in at the call site
+         */
+        getByKey<{ hideMenu?: () => void }, "hideMenu">("hideMenu", rest).do(
+          (hideMenu) => {
+            hideMenu();
+          },
+        );
+      })();
+    }}
   >
     {children}
   </MenuItem>
@@ -263,60 +265,62 @@ function CompareDialog(): React.ReactNode {
   }, [documents]);
 
   React.useEffect(() => {
-    const handler = (event: Event) => { void (async () => {
-      // @ts-expect-error the event will have this detail
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      const ids = event.detail.ids as Array<string>;
-      analytics.trackEvent("Dialog comparing ELN documents opened", {
-        numberOfDocuments: ids.length,
-      });
-      setDocumentCount(ids.length);
-      setLoadedCount(0);
-      try {
-        const token = await getToken();
-        /*
-         * Making one network call per document may not be the most performant
-         * approach but this work was only possible by not requiring any
-         * backend developer capacity. If we find that users are downloading
-         * the CSV of many documents and this is causing a performance
-         * bottleneck then we should look to parallelise this with a custom API
-         * endpoint.
-         */
-        const docs = await Promise.all(
-          ids.map(async (id) => {
-            const { data } = await axios.get<
-              Document | { errors: ReadonlyArray<string> }
-            >(`/api/v1/documents/${id}`, {
-              headers: {
-                Authorization: "Bearer " + token,
-              },
-            });
-            Parsers.getValueWithKey("errors")(data)
-              .flatMap(Parsers.isArray)
-              .do((errors) => {
-                throw errors[0];
-              });
-            setLoadedCount((x) => x + 1);
-            return data as Document;
-          }),
-        );
-        setDocuments(docs);
-      } catch (e) {
-        setDocumentCount(0);
+    const handler = (event: Event) => {
+      void (async () => {
+        // @ts-expect-error the event will have this detail
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const ids = event.detail.ids as Array<string>;
+        analytics.trackEvent("Dialog comparing ELN documents opened", {
+          numberOfDocuments: ids.length,
+        });
+        setDocumentCount(ids.length);
         setLoadedCount(0);
-        const message = Parsers.objectPath(["response", "data", "message"], e)
-          .orElseTry(() => Parsers.objectPath(["message"], e))
-          .flatMap(Parsers.isString)
-          .orElse("Unknown reason");
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Could not read all of the documents",
-            message,
-          }),
-        );
-      }
-    })(); };
+        try {
+          const token = await getToken();
+          /*
+           * Making one network call per document may not be the most performant
+           * approach but this work was only possible by not requiring any
+           * backend developer capacity. If we find that users are downloading
+           * the CSV of many documents and this is causing a performance
+           * bottleneck then we should look to parallelise this with a custom API
+           * endpoint.
+           */
+          const docs = await Promise.all(
+            ids.map(async (id) => {
+              const { data } = await axios.get<
+                Document | { errors: ReadonlyArray<string> }
+              >(`/api/v1/documents/${id}`, {
+                headers: {
+                  Authorization: "Bearer " + token,
+                },
+              });
+              Parsers.getValueWithKey("errors")(data)
+                .flatMap(Parsers.isArray)
+                .do((errors) => {
+                  throw errors[0];
+                });
+              setLoadedCount((x) => x + 1);
+              return data as Document;
+            }),
+          );
+          setDocuments(docs);
+        } catch (e) {
+          setDocumentCount(0);
+          setLoadedCount(0);
+          const message = Parsers.objectPath(["response", "data", "message"], e)
+            .orElseTry(() => Parsers.objectPath(["message"], e))
+            .flatMap(Parsers.isString)
+            .orElse("Unknown reason");
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not read all of the documents",
+              message,
+            }),
+          );
+        }
+      })();
+    };
     window.addEventListener("OPEN_COMPARE_DIALOG", handler);
     return () => {
       window.removeEventListener("OPEN_COMPARE_DIALOG", handler);

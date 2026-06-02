@@ -329,8 +329,7 @@ export default function ExportFileStore({
           <div>
             <h4>No filestore links found in exported content.</h4>
             <h4>
-              If that&apos;s unexpected, you should check your export
-              selection.
+              If that&apos;s unexpected, you should check your export selection.
             </h4>
             <h4>Otherwise you can proceed with the export.</h4>
           </div>

@@ -66,7 +66,7 @@ const EditAction = forwardRef<
             variant: "error",
             help: `Being edited by ${lockOwner.firstName} ${lockOwner.lastName} (${lockOwner.username}).`,
           })),
-        })
+        }),
       );
       return true;
     }
@@ -81,7 +81,7 @@ const EditAction = forwardRef<
 
   const acquireLocksForSelectedRecords = async () => {
     const editStatuses: AllSettled<LockStatus> = await Promise.allSettled(
-      selectedResults.map((r) => r.setEditing(true, true, true))
+      selectedResults.map((r) => r.setEditing(true, true, true)),
     );
     return partitionAllSettled(editStatuses);
   };
@@ -98,14 +98,14 @@ const EditAction = forwardRef<
             "otherwise editing here could result in an error.",
           variant: "warning",
           isInfinite: true,
-        })
+        }),
       );
     }
   };
 
   const releaseAllLocks = async () => {
     await Promise.all(
-      selectedResults.map((r) => r.setEditing(false, true, true))
+      selectedResults.map((r) => r.setEditing(false, true, true)),
     );
   };
 
@@ -160,7 +160,7 @@ const EditAction = forwardRef<
                     title: getErrorMessage(error, "Unknown reason."),
                   }))
                 : [],
-          })
+          }),
         );
       }
     } finally {

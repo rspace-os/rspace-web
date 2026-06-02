@@ -247,9 +247,9 @@ const CustomTreeItem = observer(
       useFileImportDropZone({
         onDrop: (files) => {
           void (async () => {
-          await uploadFiles(file.id, files);
-          void refreshListing();
-          trackEvent("user:drag_uploads:file:into_folder");
+            await uploadFiles(file.id, files);
+            void refreshListing();
+            trackEvent("user:drag_uploads:file:into_folder");
           })();
         },
         disabled: !file.isFolder,
@@ -387,11 +387,13 @@ const CustomTreeItem = observer(
           sx={(theme) => ({
             [`.${treeItemClasses.content}`]: {
               "&.Mui-selected": {
-                backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
+                backgroundColor: window.matchMedia("(prefers-contrast: more)")
+                  .matches
                   ? "black"
                   : theme.palette.callToAction.main,
                 "&.Mui-focused": {
-                  backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
+                  backgroundColor: window.matchMedia("(prefers-contrast: more)")
+                    .matches
                     ? "black"
                     : theme.palette.callToAction.main,
                 },
