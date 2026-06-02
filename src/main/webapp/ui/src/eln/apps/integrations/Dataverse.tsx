@@ -16,7 +16,6 @@ import TextField from "@mui/material/TextField";
 import CardActions from "@mui/material/CardActions";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { runInAction, observable } from "mobx";
-import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { useDataverseTestEndpoint } from "../useDataverseTestEndpoint";
 import RsSet from "../../../util/set";
@@ -251,7 +250,7 @@ const DialogContent = observer(
                 </CardContent>
                 <CardActions>
                   <Button
-                    onClick={doNotAwait(async () => {
+                    onClick={() => { void (async () => {
                       try {
                         await deleteAppOptions("DATAVERSE", config.optionsId);
                         runInAction(() => {
@@ -277,13 +276,13 @@ const DialogContent = observer(
                             }),
                           );
                       }
-                    })}
+                    })(); }}
                   >
                     Delete
                   </Button>
                   <Button
                     disabled={config.dirty}
-                    onClick={doNotAwait(async () => {
+                    onClick={() => { void (async () => {
                       try {
                         await test(config.optionsId);
                         addAlert(
@@ -302,7 +301,7 @@ const DialogContent = observer(
                             }),
                           );
                       }
-                    })}
+                    })(); }}
                   >
                     Test
                   </Button>

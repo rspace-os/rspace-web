@@ -12,7 +12,7 @@ import Box from "@mui/material/Box";
 import CardListing from "./CardListing";
 import docLinks from "../../assets/DocLinks";
 import * as FetchingData from "../../util/fetchingData";
-import { doNotAwait, mapObject } from "../../util/Util";
+import { mapObject } from "../../util/Util";
 import Alert from "@mui/material/Alert";
 import Skeleton from "@mui/material/Skeleton";
 import { DialogBoundary } from "../../components/DialogBoundary";
@@ -153,7 +153,8 @@ function App(): React.ReactNode {
   >(observable({ tag: "loading" }));
 
   useEffect(
-    doNotAwait(async () => {
+    () => {
+      void (async () => {
       try {
         setAllStates(
           observable({
@@ -165,7 +166,8 @@ function App(): React.ReactNode {
         if (e instanceof Error)
           setAllStates(observable({ tag: "error", error: e.message }));
       }
-    }),
+      })();
+    },
     [],
   );
 

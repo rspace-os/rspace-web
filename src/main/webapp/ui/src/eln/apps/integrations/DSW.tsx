@@ -16,7 +16,6 @@ import TextField from "@mui/material/TextField";
 import CardActions from "@mui/material/CardActions";
 import { useLocalObservable, observer } from "mobx-react-lite";
 import { runInAction, observable } from "mobx";
-import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { useDSWTestEndpoint } from "../useDSWTestEndpoint";
 import RsSet from "../../../util/set";
@@ -248,7 +247,7 @@ const DialogContent = observer(
                 </CardContent>
                 <CardActions>
                   <Button
-                    onClick={doNotAwait(async () => {
+                    onClick={() => { void (async () => {
                       trackEvent("user:delete:dsw_connection:apps");
                       try {
                         await deleteAppOptions("DSW", config.optionsId);
@@ -275,13 +274,13 @@ const DialogContent = observer(
                             }),
                           );
                       }
-                    })}
+                    })(); }}
                   >
                     Delete
                   </Button>
                   <Button
                     disabled={config.dirty}
-                    onClick={doNotAwait(async () => {
+                    onClick={() => { void (async () => {
                       try {
                         await test(config.DSW_ALIAS);
                         addAlert(
@@ -300,7 +299,7 @@ const DialogContent = observer(
                             }),
                           );
                       }
-                    })}
+                    })(); }}
                   >
                     Test
                   </Button>

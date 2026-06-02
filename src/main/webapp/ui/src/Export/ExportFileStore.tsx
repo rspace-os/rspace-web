@@ -22,7 +22,6 @@ import {
   type FileSystem,
   type MixedLink,
 } from "./common";
-import { doNotAwait } from "../util/Util";
 
 /*
  * When exporting RSpace documents that contain references to files in
@@ -347,7 +346,7 @@ export default function ExportFileStore({
 
           <LoginStatus
             fileSystems={fileSystems}
-            fileStoreCheck={doNotAwait(fileStoreCheck)}
+            fileStoreCheck={() => void fileStoreCheck()}
           />
 
           <FileFilters
@@ -368,7 +367,7 @@ export default function ExportFileStore({
             scanResultsAvailableCount={scanResultsAvailableCount}
             scanResultsTotalFileSize={scanResultsTotalFileSize}
             scanResultsOmittedCount={scanResultsOmittedCount}
-            fileStoreScan={doNotAwait(fileStoreScan)}
+            fileStoreScan={() => void fileStoreScan()}
             loadingScanResults={loadingFullPlan}
             checkedFileSystems={checkedFileSystems}
           />

@@ -15,7 +15,6 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableBody from "@mui/material/TableBody";
 import Button from "@mui/material/Button";
-import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { runInAction } from "mobx";
 import Card from "@mui/material/Card";
@@ -100,7 +99,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                             </TableCell>
                             <TableCell>
                               <Button
-                                onClick={doNotAwait(async () => {
+                                onClick={() => { void (async () => {
                                   try {
                                     await deleteAppOptions(
                                       "MSTEAMS",
@@ -133,7 +132,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                       );
                                     }
                                   }
-                                })}
+                                })(); }}
                               >
                                 Remove
                               </Button>
@@ -156,7 +155,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                     ) : (
                       <Card variant="outlined">
                         <form
-                          onSubmit={doNotAwait(async (event) => {
+                          onSubmit={(event) => { void (async () => {
                             event.preventDefault();
                             try {
                               const newState = await saveAppOptions(
@@ -190,7 +189,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                 );
                               }
                             }
-                          })}
+                          })(); }}
                         >
                           <CardContent>
                             <TextField

@@ -19,7 +19,6 @@ import {
   parseEncodedTags,
   encodeTags,
 } from "../../components/Tags/ParseEncodedTagStrings";
-import { doNotAwait } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import AlertContext, {
   mkAlert,
@@ -85,7 +84,7 @@ function TagDialog(): React.ReactNode {
   }, [commonTags, addedTags, deletedTags]);
 
   React.useEffect(() => {
-    const handler = doNotAwait(async (event: Event) => {
+    const handler = (event: Event) => { void (async () => {
       // @ts-expect-error there will be a detail
       const ids: Array<string> = event.detail.ids;
       setSelectedIds(ids.map((x) => parseInt(x, 10)));
@@ -127,7 +126,7 @@ function TagDialog(): React.ReactNode {
           );
         }
       }
-    });
+    })(); };
     window.addEventListener("OPEN_TAG_DIALOG", handler);
     return () => {
       window.removeEventListener("OPEN_TAG_DIALOG", handler);
@@ -168,7 +167,7 @@ function TagDialog(): React.ReactNode {
   };
 
   React.useEffect(() => {
-    const handler = doNotAwait(async () => {
+    const handler = () => { void (async () => {
       try {
         const { data } = await axios.get<boolean>(
           "/userform/ajax/enforcedOntologies",
@@ -186,7 +185,7 @@ function TagDialog(): React.ReactNode {
           );
         }
       }
-    });
+    })(); };
     window.addEventListener("OPEN_TAG_DIALOG", handler);
     return () => {
       window.removeEventListener("OPEN_TAG_DIALOG", handler);
@@ -300,7 +299,7 @@ function TagDialog(): React.ReactNode {
           disabled={
             saving || (addedTags.length === 0 && deletedTags.length === 0)
           }
-          onClick={doNotAwait(async () => {
+          onClick={() => { void (async () => {
             try {
               await handleSave();
               trackEvent("user:tag:documents:workspace", {
@@ -341,7 +340,7 @@ function TagDialog(): React.ReactNode {
                 }),
               );
             }
-          })}
+          })(); }}
           loading={saving}
           label="Save"
         />

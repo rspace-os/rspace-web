@@ -237,18 +237,6 @@ export const sleep = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 /**
- * Explicitly execute a function that returns a promise whilst ignoring its
- * return value. Useful when flow requires that event handlers return void.
- */
-export function doNotAwait<T extends unknown[], R>(
-  f: (...rest: T) => Promise<R>
-): (...rest: T) => void {
-  return function (...t: T): void {
-    void f(...t);
-  };
-}
-
-/**
  * Returns a new map with only the key-value pairs that satisfy the predicate.
  */
 export const filterMap = <A, B>(

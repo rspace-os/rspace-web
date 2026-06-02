@@ -5,7 +5,7 @@ import {
   type LockStatus,
 } from "../../../stores/definitions/InventoryRecord";
 import useStores from "../../../stores/use-stores";
-import { match, doNotAwait, partitionAllSettled } from "../../../util/Util";
+import { match, partitionAllSettled } from "../../../util/Util";
 import RsSet from "../../../util/set";
 import ContextMenuAction, {
   type ContextMenuRenderOptions,
@@ -193,7 +193,7 @@ const EditAction = forwardRef<
     <Observer>
       {() => (
         <ContextMenuAction
-          onClick={doNotAwait(doEdit)}
+          onClick={() => void doEdit()}
           icon={
             selectedResults.length > 1 ? <DoubleEditIcon /> : <SingleEditIcon />
           }

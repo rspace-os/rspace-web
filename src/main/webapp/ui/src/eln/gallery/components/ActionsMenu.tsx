@@ -62,7 +62,6 @@ import { useAsposePreview } from "./CallableAsposePreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import axios from "@/common/axios";
 import ImageEditingDialog from "../../../components/ImageEditingDialog";
-import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import CardMedia from "@mui/material/CardMedia";
 import { useFolderOpen } from "./OpenFolderProvider";
@@ -724,7 +723,8 @@ function ActionsMenu({
             avatar={<EditIcon />}
             onClick={() => {
               editingAllowed.get().do(
-                doNotAwait(async (action) => {
+                (action) => {
+                  void (async () => {
                   if (action.key === "officeonline") {
                     window.open(action.url);
                     trackEvent("user:opens:document:officeonline");
@@ -752,7 +752,8 @@ function ActionsMenu({
                       }
                     }
                   }
-                }),
+                  })();
+                },
               );
               setActionsMenuAnchorEl(null);
             }}
@@ -1094,7 +1095,8 @@ function ActionsMenu({
           setImageEditorBlob(null);
         }}
         submitButtonLabel="Save as new image"
-        submitHandler={doNotAwait(async (newBlob) => {
+        submitHandler={(newBlob) => {
+          void (async () => {
           try {
             const file = selection
               .asSet()
@@ -1130,7 +1132,8 @@ function ActionsMenu({
           } finally {
             setActionsMenuAnchorEl(null);
           }
-        })}
+          })();
+        }}
         alt={selection
           .asSet()
           .only.map(

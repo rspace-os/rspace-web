@@ -24,7 +24,6 @@ import {
 } from "./useDmpOnlineEndpoint";
 import docLinks from "../../assets/DocLinks";
 import NoValue from "../../components/NoValue";
-import { doNotAwait } from "../../util/Util";
 import createAccentedTheme from "../../accentedTheme";
 import AppBar from "../../components/AppBar";
 import ValidatingSubmitButton, {
@@ -223,7 +222,8 @@ const DMPDialogContent = ({
                 FetchingData.match(listing, {
                   loading: () => {},
                   error: () => {},
-                  success: doNotAwait(async (l) => {
+                  success: (l) => {
+                    void (async () => {
                     try {
                       if (newPage !== l.page) {
                         setListing({ tag: "loading" });
@@ -248,7 +248,8 @@ const DMPDialogContent = ({
                       if (error instanceof Error)
                         setListing({ tag: "error", error: error.message });
                     }
-                  }),
+                    })();
+                  },
                 });
               }}
               slots={{

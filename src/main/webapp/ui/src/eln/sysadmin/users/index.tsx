@@ -79,7 +79,7 @@ import CrossIcon from "@mui/icons-material/Clear";
 import LockIcon from "@mui/icons-material/Lock";
 import ExpandCircleDownIcon from "@mui/icons-material/ExpandCircleDown";
 import DialogContentText from "@mui/material/DialogContentText";
-import { doNotAwait, sleep } from "../../../util/Util";
+import { sleep } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Dialog from "@mui/material/Dialog";
 import Alerts from "../../../components/Alerts/Alerts";
@@ -293,7 +293,8 @@ const TagDialog = ({
           <SubmitSpinnerButton
             disabled={addedTags.length === 0 && deletedTags.length === 0}
             loading={submitting}
-            onClick={doNotAwait(async () => {
+            onClick={() => {
+              void (async () => {
               setSubmitting(true);
               try {
                 await setTags(addedTags, deletedTags);
@@ -318,7 +319,8 @@ const TagDialog = ({
               } finally {
                 setSubmitting(false);
               }
-            })}
+              })();
+            }}
             label="Save"
           />
         </DialogActions>
@@ -1130,7 +1132,8 @@ const SelectionActions = ({
                   disabled={unlockAction.isError}
                   onClick={() => {
                     unlockAction.do(
-                      doNotAwait(async (user) => {
+                      (user) => {
+                        void (async () => {
                         try {
                           await user.unlock();
                           addAlert(
@@ -1151,7 +1154,8 @@ const SelectionActions = ({
                             );
                           }
                         }
-                      }),
+                        })();
+                      },
                     );
                   }}
                 >
@@ -1182,7 +1186,8 @@ const SelectionActions = ({
                   disabled={enableDisableAction.isError}
                   onClick={() =>
                     enableDisableAction.do(
-                      doNotAwait(async ({ action, user }) => {
+                      ({ action, user }) => {
+                        void (async () => {
                         if (action === "enable") {
                           try {
                             await user.enable();
@@ -1227,7 +1232,8 @@ const SelectionActions = ({
                             }
                           }
                         }
-                      }),
+                        })();
+                      },
                     )
                   }
                 >

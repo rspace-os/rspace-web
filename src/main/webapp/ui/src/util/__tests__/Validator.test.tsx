@@ -11,8 +11,6 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { type Validator, mkValidator } from "../Validator";
 import { runInAction, observable } from "mobx";
-
-import { doNotAwait } from "../Util";
 function Child1({ validator }: { validator: Validator }) {
 
   const [state] = useState(observable({ text: "" }));
@@ -50,9 +48,11 @@ function ParentComponent() {
       {activePane === 0 && <Child1 validator={panel1Validator} />}
       {activePane === 1 && <Child2 />}
       <Button
-        onClick={doNotAwait(async () => {
-          if (await panel1Validator.isValid()) setActivePane(activePane + 1);
-        })}
+        onClick={() => {
+          void (async () => {
+            if (await panel1Validator.isValid()) setActivePane(activePane + 1);
+          })();
+        }}
       >
         Next
       </Button>

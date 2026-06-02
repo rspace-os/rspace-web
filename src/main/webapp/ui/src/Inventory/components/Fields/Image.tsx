@@ -1,7 +1,6 @@
 import ImageField from "../../../components/Inputs/ImageField";
 import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
-import { doNotAwait } from "../../../util/Util";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
 import { type BlobUrl } from "../../../util/types";
 import { capImageAt1MB } from "../../../util/images";
@@ -54,13 +53,19 @@ function Image<
       renderInput={({ value }) => (
         <>
           <ImageField
-            storeImage={doNotAwait(async ({ dataURL, file }) => {
-              const scaledImage = await capImageAt1MB(file, dataURL, CANVAS_ID);
-              fieldOwner.setFieldsDirty({
-                image: scaledImage,
-                newBase64Image: scaledImage,
-              });
-            })}
+            storeImage={({ dataURL, file }) => {
+              void (async () => {
+                const scaledImage = await capImageAt1MB(
+                  file,
+                  dataURL,
+                  CANVAS_ID,
+                );
+                fieldOwner.setFieldsDirty({
+                  image: scaledImage,
+                  newBase64Image: scaledImage,
+                });
+              })();
+            }}
             imageAsObjectURL={value}
             disabled={disabled}
             height={150}

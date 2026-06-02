@@ -8,7 +8,7 @@ import { type ExportOptions } from "../../stores/definitions/Search";
 import { defaultExportOptions } from "../../Inventory/components/Export/ExportDialog";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import useStores from "../../stores/use-stores";
-import { preventEventBubbling, doNotAwait } from "../../util/Util";
+import { preventEventBubbling } from "../../util/Util";
 import { showToastWhilstPending } from "../../util/alerts";
 import MaterialsTable from "./MaterialsTable";
 import PopoutPrintIcon from "./PopoutPrintIcon";
@@ -264,11 +264,11 @@ const ActionsBar = observer(
         </Grid>
         <Grid>
           <ValidatingSubmitButton
-            onClick={doNotAwait(async () => {
+            onClick={() => { void (async () => {
               if (currentList) {
                 await currentList.moveAllToBench();
               }
-            })}
+            })(); }}
             loading={moveStore.submitting === "TO-OTHER"}
             validationResult={moveAllToBenchValidation()}
             color="primary"
@@ -543,7 +543,7 @@ function MaterialsDialog({
                       onClick={preventEventBubbling<
                         React.MouseEvent<HTMLButtonElement>
                       >(
-                        doNotAwait(async () => {
+                        () => { void (async () => {
                           if (currentList) {
                             const changed = materialsStore.hasListChanged;
                             if (changed) {
@@ -556,7 +556,7 @@ function MaterialsDialog({
                             }
                             setOpenExporter(true);
                           }
-                        }),
+                        })(); },
                       )}
                       disabled={!isListExisting || !isListValid}
                     >
@@ -566,7 +566,7 @@ function MaterialsDialog({
                       <Button
                         sx={[{ color: "warningRed" }, { mx: 1 }]}
                         disableElevation
-                        onClick={doNotAwait(() => confirmListDeletion())}
+                        onClick={() => void confirmListDeletion()}
                         disabled={!canEdit}
                       >
                         Delete List
@@ -589,7 +589,7 @@ function MaterialsDialog({
                         {isUnchanged ? "Close" : "Cancel"}
                       </Button>
                       <ValidatingSubmitButton
-                        onClick={doNotAwait(async () => {
+                        onClick={() => { void (async () => {
                           if (currentList && isListValid) {
                             if (isListNew) {
                               await showToastWhilstPending(
@@ -608,7 +608,7 @@ function MaterialsDialog({
                             materialsStore.setCurrentList(currentList);
                             refetch();
                           }
-                        })}
+                        })(); }}
                         loading={isListLoading}
                         validationResult={materialsStore.cantSaveCurrentList}
                       >

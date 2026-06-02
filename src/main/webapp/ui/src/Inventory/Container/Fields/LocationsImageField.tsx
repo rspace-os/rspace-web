@@ -9,7 +9,6 @@ import React from "react";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import ContainerModel from "../../../stores/models/ContainerModel";
-import { doNotAwait } from "@/util/Util";
 import docLinks from "../../../assets/DocLinks";
 import { mkAlert, type Alert } from "@/stores/contexts/Alert";
 import FormField from "../../components/Inputs/FormField";
@@ -37,9 +36,8 @@ function LocationsImageField(): React.ReactNode {
       variant: "notice",
       isInfinite: true,
       actionLabel: "yes",
-      onActionClick: doNotAwait(() =>
-        activeResult.setImage("image", CANVAS_ID)(newImageData),
-      ),
+      onActionClick: () =>
+        void activeResult.setImage("image", CANVAS_ID)(newImageData),
     });
     setToast(newToast);
     activeResult.addScopedToast(newToast);

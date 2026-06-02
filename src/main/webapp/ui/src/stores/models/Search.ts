@@ -3,7 +3,6 @@ import ApiService, {
 } from "../../common/InvApiService";
 import {
   match,
-  doNotAwait,
   omitNull,
   sameKeysAndValues,
   mapObject,
@@ -647,11 +646,11 @@ export default class Search implements SearchInterface {
           variant: "notice",
           isInfinite: true,
           actionLabel: "yes",
-          onActionClick: doNotAwait(async () => {
+          onActionClick: () => { void (async () => {
             await this.deleteRecords([sample]);
             await sample.fetchAdditionalInfo();
             await searchStore.search.fetcher.performInitialSearch(null);
-          }),
+          })(); },
         }),
       );
     }
@@ -1369,7 +1368,7 @@ export default class Search implements SearchInterface {
 
     // in the move dialog, choosing a bench should set it as the target
     if (user) {
-      doNotAwait(async () => {
+      void (async () => {
         const bench = user.bench ?? (await user.getBench());
         await getRootStore().moveStore.setTargetContainer(bench);
       })();

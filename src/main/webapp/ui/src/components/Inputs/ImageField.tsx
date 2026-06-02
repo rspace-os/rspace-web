@@ -8,7 +8,6 @@ import React, { useState, useEffect } from "react";
 import { isMobile } from "react-device-detect";
 import { observer } from "mobx-react-lite";
 import DynamicallyLoadedImageEditor from "./DynamicallyLoadedImageEditor";
-import { doNotAwait } from "../../util/Util";
 import ImagePreview from "../ImagePreview";
 import NoValue from "../../components/NoValue";
 import FileField from "./FileField";
@@ -190,7 +189,7 @@ function ImageField({
               close={() => {
                 setEditorOpen(false);
               }}
-              submitHandler={doNotAwait(submit)}
+              submitHandler={(...args) => void submit(...args)}
               alt={alt}
             />
           )}

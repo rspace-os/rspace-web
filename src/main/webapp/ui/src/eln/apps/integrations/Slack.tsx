@@ -9,7 +9,6 @@ import { Optional } from "../../../util/optional";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { useSlackEndpoint } from "../useSlackEndpoint";
 import Button from "@mui/material/Button";
-import { doNotAwait } from "../../../util/Util";
 import DescriptionList from "../../../components/DescriptionList";
 import TextField from "@mui/material/TextField";
 import {
@@ -187,7 +186,7 @@ const DialogContent = observer(
           <Box key={channel.optionsId}>
             <Card variant="outlined">
               <form
-                onSubmit={doNotAwait(async (event) => {
+                onSubmit={(event) => { void (async () => {
                   event.preventDefault();
                   try {
                     const params: { optionsId: unknown } = {
@@ -237,7 +236,7 @@ const DialogContent = observer(
                         }),
                       );
                   }
-                })}
+                })(); }}
               >
                 <CardContent>
                   <Stack spacing={2}>
@@ -268,7 +267,7 @@ const DialogContent = observer(
                 <CardActions>
                   <Button type="submit">Save</Button>
                   <Button
-                    onClick={doNotAwait(async () => {
+                    onClick={() => { void (async () => {
                       try {
                         await deleteAppOptions("SLACK", channel.optionsId);
                         runInAction(() => {
@@ -294,7 +293,7 @@ const DialogContent = observer(
                             }),
                           );
                       }
-                    })}
+                    })(); }}
                   >
                     Remove
                   </Button>
@@ -307,7 +306,7 @@ const DialogContent = observer(
           {newChannel ? (
             <Card variant="outlined">
               <form
-                onSubmit={doNotAwait(async (event) => {
+                onSubmit={(event) => { void (async () => {
                   event.preventDefault();
                   try {
                     const newState = await saveAppOptions(
@@ -345,7 +344,7 @@ const DialogContent = observer(
                         }),
                       );
                   }
-                })}
+                })(); }}
               >
                 <CardContent>
                   <DescriptionList
@@ -386,7 +385,7 @@ const DialogContent = observer(
           ) : (
             <Button
               disabled={loadingNewChannel}
-              onClick={doNotAwait(addHandler)}
+              onClick={() => void addHandler()}
             >
               {loadingNewChannel ? "Loading a new channel" : "Add"}
             </Button>

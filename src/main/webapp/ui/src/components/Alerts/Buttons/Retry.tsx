@@ -4,7 +4,6 @@ import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { doNotAwait } from "../../../util/Util";
 
 type RetryArgs = {
   retryFunction: () => Promise<void>;
@@ -23,16 +22,14 @@ function Retry({ retryFunction, onClose }: RetryArgs): React.ReactNode {
           <RefreshIcon />
         )
       }
-      onClick={doNotAwait(
-        async (_event: React.MouseEvent<HTMLButtonElement>) => {
+      onClick={(_event: React.MouseEvent<HTMLButtonElement>) => { void (async () => {
           setRetrying(true);
           try {
             await retryFunction();
           } finally {
             onClose();
           }
-        }
-      )}
+        })(); }}
       sx={{ m: 0.5 }}
     />
   );

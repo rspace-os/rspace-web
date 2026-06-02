@@ -4,7 +4,7 @@ import { observer } from "mobx-react-lite";
 import AddButton from "../../../../components/AddButton";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
-import { match, doNotAwait } from "../../../../util/Util";
+import { match } from "../../../../util/Util";
 import * as ArrayUtils from "../../../../util/ArrayUtils";
 import Badge from "@mui/material/Badge";
 import Card from "@mui/material/Card";
@@ -229,7 +229,7 @@ const CollapseContents = observer(
                               !connectedItem.canRead ||
                               !b.imageUrl
                             }
-                            onClick={doNotAwait(() => handlePrintOne(b))}
+                            onClick={() => void handlePrintOne(b)}
                           />
                         </Grid>
                         <Grid>
@@ -245,7 +245,7 @@ const CollapseContents = observer(
                               b.imageUrl ? <PreviewIcon /> : <NoPreviewIcon />
                             }
                             disabled={!b.imageUrl}
-                            onClick={doNotAwait(() => handlePreview(b))}
+                            onClick={() => void handlePreview(b)}
                           />
                         </Grid>
                         <Grid>
@@ -285,7 +285,7 @@ const CollapseContents = observer(
                           )
                         }
                         disabled={!imgUrlsAvailable}
-                        onClick={doNotAwait(() => handlePrintAll())}
+                        onClick={() => void handlePrintAll()}
                       />
                       <Box
                         component="span"

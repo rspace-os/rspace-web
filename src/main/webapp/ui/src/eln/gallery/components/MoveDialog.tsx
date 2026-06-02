@@ -24,7 +24,6 @@ import useViewportDimensions from "../../../hooks/browser/useViewportDimensions"
 import { type GallerySection } from "../common";
 import { observer } from "mobx-react-lite";
 import PlaceholderLabel from "./PlaceholderLabel";
-import { doNotAwait } from "../../../util/Util";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 type MoveDialogArgs = {
@@ -137,7 +136,8 @@ const MoveDialog = observer(
         <DialogActions>
           <Stack direction="row" spacing={1}>
             <SubmitSpinnerButton
-              onClick={doNotAwait(async () => {
+              onClick={() => {
+                void (async () => {
                 setTopLevelLoading(true);
                 try {
                   await moveFiles(section, rootDestination(), selectedFiles);
@@ -149,7 +149,8 @@ const MoveDialog = observer(
                 } finally {
                   setTopLevelLoading(false);
                 }
-              })}
+                })();
+              }}
               disabled={topLevelLoading}
               loading={topLevelLoading}
               label="Make top-level"
@@ -164,7 +165,8 @@ const MoveDialog = observer(
             </Button>
             <ValidatingSubmitButton
               loading={submitLoading}
-              onClick={doNotAwait(async () => {
+              onClick={() => {
+                void (async () => {
                 setSubmitLoading(true);
                 try {
                   const destinationFolder = selection
@@ -189,7 +191,8 @@ const MoveDialog = observer(
                 } finally {
                   setSubmitLoading(false);
                 }
-              })}
+                })();
+              }}
               validationResult={computeValidation()}
             >
               Move

@@ -11,11 +11,7 @@ import DropdownButton from "../../../components/DropdownButton";
 import SavedList from "./SavedList";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import { type SavedSearch } from "../../../stores/stores/SearchStore";
-import {
-  dropProperty,
-  isInventoryPermalink,
-  doNotAwait,
-} from "../../../util/Util";
+import { dropProperty, isInventoryPermalink } from "../../../util/Util";
 import BarcodeScanner from "../../components/BarcodeScanner/BarcodeScanner";
 import BasketModel from "../../../stores/models/Basket";
 import TagsCombobox from "../../../components/Tags/TagsCombobox";
@@ -254,10 +250,12 @@ function SearchParameterControls(): React.ReactNode {
       <DropdownButton
         name="Baskets"
         disabled={!search.showSavedBaskets}
-        onClick={doNotAwait(async ({ target }) => {
-          await searchStore.getBaskets();
-          setSavedBasketsDropdown(target as HTMLElement);
-        })}
+        onClick={({ target }) => {
+          void (async () => {
+            await searchStore.getBaskets();
+            setSavedBasketsDropdown(target as HTMLElement);
+          })();
+        }}
       >
         <SavedList
           anchorEl={savedBasketsDropdown}

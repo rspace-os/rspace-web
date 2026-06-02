@@ -23,7 +23,6 @@ import { DataGridColumn } from "../../util/table";
 import createAccentedTheme from "../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
 import MenuItem from "@mui/material/MenuItem";
-import { doNotAwait } from "../../util/Util";
 import { getByKey } from "../../util/optional";
 import Box from "@mui/material/Box";
 import UserDetails from "../../components/UserDetails";
@@ -133,7 +132,7 @@ const ExportMenuItem = ({
   hideMenu?: () => void;
 }) => (
   <MenuItem
-    onClick={doNotAwait(async () => {
+    onClick={() => { void (async () => {
       await onClick();
       /*
        * `hideMenu` is injected by MUI into the children of
@@ -147,7 +146,7 @@ const ExportMenuItem = ({
           hideMenu();
         },
       );
-    })}
+    })(); }}
   >
     {children}
   </MenuItem>
@@ -264,7 +263,7 @@ function CompareDialog(): React.ReactNode {
   }, [documents]);
 
   React.useEffect(() => {
-    const handler = doNotAwait(async (event: Event) => {
+    const handler = (event: Event) => { void (async () => {
       // @ts-expect-error the event will have this detail
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const ids = event.detail.ids as Array<string>;
@@ -317,7 +316,7 @@ function CompareDialog(): React.ReactNode {
           }),
         );
       }
-    });
+    })(); };
     window.addEventListener("OPEN_COMPARE_DIALOG", handler);
     return () => {
       window.removeEventListener("OPEN_COMPARE_DIALOG", handler);

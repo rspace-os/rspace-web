@@ -9,7 +9,6 @@ import * as MapUtils from "../../../util/MapUtils";
 import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
 import { useGalleryActions, folderDestination } from "../useGalleryActions";
 import { useGallerySelection, GallerySelection } from "../useGallerySelection";
-import { doNotAwait } from "../../../util/Util";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem, treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import { useDroppable, useDraggable, useDndContext } from "@dnd-kit/core";
@@ -246,11 +245,13 @@ const CustomTreeItem = observer(
      */
     const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
       useFileImportDropZone({
-        onDrop: doNotAwait(async (files) => {
+        onDrop: (files) => {
+          void (async () => {
           await uploadFiles(file.id, files);
           void refreshListing();
           trackEvent("user:drag_uploads:file:into_folder");
-        }),
+          })();
+        },
         disabled: !file.isFolder,
       });
     const { setNodeRef: setDropRef, isOver } = useDroppable({
