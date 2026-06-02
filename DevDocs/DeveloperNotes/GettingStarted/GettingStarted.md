@@ -82,10 +82,16 @@ all code dependencies and compile the code.
 The application .war file can be built with the following maven command:  
 
 ```
-mvn clean package -DskipTests=true \
+mvn clean package -DgenerateReactDist -DskipTests=true \
   -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
   -Djava-version=17 -Djava-vendor=openjdk
 ```
+
+The `-DgenerateReactDist` flag activates the `generateReactDistFiles` Maven profile,
+which installs Node/npm locally, runs `npm ci`, and runs the Vite production build,
+bundling the resulting `dist/` files into the WAR. Without this flag the frontend is
+not built, so any command that produces a deployable WAR must pass it (the Jenkins
+packaging stages do).
 
 You can also check top-level Jenkinsfile file to see how internal tests builds are created by
 ResearchSpace dev team (check 'Build prodRelease-like package' stage script).  
@@ -262,13 +268,12 @@ Run the usual `mvn jetty:run` command, just change the active spring profile to 
 i.e. pass a `-Dspring.profiles.active=prod` parameter.
 
 **NOTE:** when you want Jetty to serve a freshly built production frontend bundle
-(i.e. running without `-DreactDevMode=true`), build the bundle first with
-`mvn prepare-package jetty:run`. The `frontend-maven-plugin` executions that run
-`npm ci` and the Vite build are bound to the `prepare-package` phase, which the
-`jetty:run` goal does not reach on its own (it forks the build only up to
-`test-compile`). The everyday dev loop that passes `-DreactDevMode=true` is
-unaffected, because that flag skips the frontend build entirely and Jetty proxies
-to the Vite dev server instead.
+(i.e. running without `-DreactDevMode=true`), add `-DgenerateReactDist` to the
+command, e.g. `mvn jetty:run -DgenerateReactDist -Dspring.profiles.active=prod`.
+The frontend build lives in the opt-in `generateReactDistFiles` profile and is not
+run by default, so without the flag Jetty would serve a stale or missing bundle. The
+everyday dev loop that passes `-DreactDevMode=true` does not need this, because that
+flag makes Jetty proxy frontend requests to the local Vite dev server instead.
 
 Note that when running through jetty, the `defaultDeployment.properties` file is not used for some reason.
 That means deployment properties that are not explicitly set in your `deployment.properties` file may have unexpected values. 
