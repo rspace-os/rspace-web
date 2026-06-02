@@ -332,8 +332,8 @@ public class NfsExportContextTest {
     // user is logged in but ACL forbids read on a NONE-auth filesystem
     when(nfsClient.isUserLoggedIn()).thenReturn(true);
     testFileSystem.setAuthType(NfsAuthenticationType.NONE);
-    testFileSystem.setReadWhitelist("someoneElse");
-    testFileSystem.setWriteWhitelist(null);
+    testFileSystem.setReadAllowlist("someoneElse");
+    testFileSystem.setWriteAllowlist(null);
 
     NfsResourceDetails denied =
         nfsContext.getDownloadedNfsResourceDetails(testNfsFileElem, support);

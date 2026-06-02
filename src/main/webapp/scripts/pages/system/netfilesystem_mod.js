@@ -211,9 +211,9 @@ function displayFileSystemDetailsDiv(fileSystem) {
         }
     }
 
-    setWhitelistFields('Read', fileSystem.readWhitelist);
-    setWhitelistFields('Write', fileSystem.writeWhitelist);
-    refreshWhitelistRows();
+    setAllowlistFields('Read', fileSystem.readAllowlist);
+    setAllowlistFields('Write', fileSystem.writeAllowlist);
+    refreshAllowlistRows();
 
     var isEnabled = isExistingFileSystem && !fileSystem.disabled;
     var isDisabled = isExistingFileSystem && fileSystem.disabled;
@@ -281,8 +281,8 @@ function saveFileSystem() {
             + "\nS3_PATH_STYLE_ACCESS_ENABLED=" + s3PathStyleEnabled;
     }
 
-    var readWhitelist = collectWhitelistValue('Read');
-    var writeWhitelist = collectWhitelistValue('Write');
+    var readAllowlist = collectAllowlistValue('Read');
+    var writeAllowlist = collectAllowlistValue('Write');
     var fileSystem = {
             id: $('#fileSystemId').html(),
             name: $('#fileSystemName').val(),
@@ -292,14 +292,14 @@ function saveFileSystem() {
             authType: authType,
             clientOptions: clientOptions,
             authOptions: authOptions,
-            readWhitelist: authType === 'NONE' ? readWhitelist : null,
-            writeWhitelist: authType === 'NONE' ? writeWhitelist : null
+            readAllowlist: authType === 'NONE' ? readAllowlist : null,
+            writeAllowlist: authType === 'NONE' ? writeAllowlist : null
         };
     RS.blockPage("Saving...");
     var jqxhr = RS.sendJsonPostRequestToUrl('/system/netfilesystem/save', fileSystem);
     jqxhr.done(function(result) {
         $().toastmessage('showSuccessToast', 'File System saved');
-        showWhitelistWarnings(result);
+        showAllowlistWarnings(result);
         loadNetFileSystemsList();
     });
     jqxhr.fail(function () {
@@ -394,7 +394,7 @@ function refreshClientTypeRows() {
     }
     $('#fileSystemUrl').prop('required', !isS3AWSClient);
 
-    refreshWhitelistRows();
+    refreshAllowlistRows();
 }
 
 function refreshAuthTypeRows() {
@@ -402,30 +402,30 @@ function refreshAuthTypeRows() {
 
     $('.fileSystemDetailsPubKeyRow').toggle(isPubKeyAuth);
     $('#fileSystemPubKeyRegistrationUrl').prop('required', isPubKeyAuth);
-    refreshWhitelistRows();
+    refreshAllowlistRows();
 }
 
-function refreshWhitelistRows() {
+function refreshAllowlistRows() {
     // Both isS3Client and isNoneAuth must be checked: the NONE radio's state can
     // linger from a prior S3 selection after switching client type.
     var isS3Client = $('#fileSystemClientTypeS3').prop('checked');
     var isNoneAuth = $('#fileSystemAuthTypeNone').prop('checked');
-    var showWhitelists = isS3Client && isNoneAuth;
-    var writeOnly = showWhitelists && $('#fileSystemLimitWriteYes').prop('checked');
-    var writeNobody = showWhitelists && $('#fileSystemLimitWriteNobody').prop('checked');
+    var showAllowlists = isS3Client && isNoneAuth;
+    var writeOnly = showAllowlists && $('#fileSystemLimitWriteYes').prop('checked');
+    var writeNobody = showAllowlists && $('#fileSystemLimitWriteNobody').prop('checked');
     var showReadQuestion = writeOnly || writeNobody;
 
-    $('.fileSystemDetailsWhitelistsRow').toggle(showWhitelists);
-    $('#fileSystemWriteWhitelist').toggle(writeOnly);
-    $('.fileSystemDetailsReadWhitelistRow').toggle(showReadQuestion);
-    $('#fileSystemReadWhitelist').toggle(
+    $('.fileSystemDetailsAllowlistsRow').toggle(showAllowlists);
+    $('#fileSystemWriteAllowlist').toggle(writeOnly);
+    $('.fileSystemDetailsReadAllowlistRow').toggle(showReadQuestion);
+    $('#fileSystemReadAllowlist').toggle(
         showReadQuestion && $('#fileSystemLimitReadYes').prop('checked'));
 
-    $('#fileSystemLimitWriteNo').prop('required', showWhitelists);
+    $('#fileSystemLimitWriteNo').prop('required', showAllowlists);
     $('#fileSystemLimitReadNo').prop('required', showReadQuestion);
 }
 
-function setWhitelistFields(suffix, value) {
+function setAllowlistFields(suffix, value) {
     var isEveryone = value === '*';
     var hasNames = typeof value === 'string' && value !== '' && !isEveryone;
     $('#fileSystemLimit' + suffix + 'No').prop('checked', isEveryone);
@@ -434,12 +434,12 @@ function setWhitelistFields(suffix, value) {
         var isNobody = value === '' || value === null;
         $('#fileSystemLimitWriteNobody').prop('checked', isNobody);
     }
-    $('#fileSystem' + suffix + 'Whitelist').val(hasNames ? value : '');
+    $('#fileSystem' + suffix + 'Allowlist').val(hasNames ? value : '');
 }
 
 // If write is unrestricted, everyone writes (and therefore reads); force read='*'
 // regardless of any orphan state in the hidden read radio/input.
-function collectWhitelistValue(suffix) {
+function collectAllowlistValue(suffix) {
     if (suffix === 'Read' && $('#fileSystemLimitWriteNo').prop('checked')) {
         return '*';
     }
@@ -450,23 +450,23 @@ function collectWhitelistValue(suffix) {
     if (limit === 'nobody') {
         return '';
     }
-    return $('#fileSystem' + suffix + 'Whitelist').val();
+    return $('#fileSystem' + suffix + 'Allowlist').val();
 }
 
-function showWhitelistWarnings(result) {
+function showAllowlistWarnings(result) {
     if (!result) {
         return;
     }
     // toastmessage renders text as HTML, so escape the sysadmin-typed usernames.
-    if (result.unknownReadWhitelistUsernames && result.unknownReadWhitelistUsernames.length) {
+    if (result.unknownReadAllowlistUsernames && result.unknownReadAllowlistUsernames.length) {
         showStickyWarning(
-            'Unknown usernames on read whitelist (saved as typed): '
-            + result.unknownReadWhitelistUsernames.map(RS.escapeHtml).join(', '));
+            'Unknown usernames on read allowlist (saved as typed): '
+            + result.unknownReadAllowlistUsernames.map(RS.escapeHtml).join(', '));
     }
-    if (result.unknownWriteWhitelistUsernames && result.unknownWriteWhitelistUsernames.length) {
+    if (result.unknownWriteAllowlistUsernames && result.unknownWriteAllowlistUsernames.length) {
         showStickyWarning(
-            'Unknown usernames on write whitelist (saved as typed): '
-            + result.unknownWriteWhitelistUsernames.map(RS.escapeHtml).join(', '));
+            'Unknown usernames on write allowlist (saved as typed): '
+            + result.unknownWriteAllowlistUsernames.map(RS.escapeHtml).join(', '));
     }
 }
 
@@ -483,8 +483,8 @@ $(document).ready(function() {
     $(document).on('change', 'input[name="fileSystemClientTypeSamba"]', refreshClientTypeRows);
     $(document).on('change', 'input[name="fileSystemClientTypeS3"]', refreshClientTypeRows);
     $(document).on('change', 'input[name="fileSystemAuthType"]', refreshAuthTypeRows);
-    $(document).on('change', 'input[name="fileSystemLimitRead"]', refreshWhitelistRows);
-    $(document).on('change', 'input[name="fileSystemLimitWrite"]', refreshWhitelistRows);
+    $(document).on('change', 'input[name="fileSystemLimitRead"]', refreshAllowlistRows);
+    $(document).on('change', 'input[name="fileSystemLimitWrite"]', refreshAllowlistRows);
     $(document).on('click','#addNewFileSystem', addNewFileSystem);
     $(document).on('submit', '#fileSystemDetailsForm', saveFileSystem);
 });

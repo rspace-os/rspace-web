@@ -12,9 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Per-filesystem read/write authorization based on username whitelists.
+ * Per-filesystem read/write authorization based on username allowlists.
  *
- * <p>Whitelists are only consulted for filesystems with {@link NfsAuthenticationType#NONE} (i.e.
+ * <p>Allowlists are only consulted for filesystems with {@link NfsAuthenticationType#NONE} (i.e.
  * server-wide credentials, no per-user identity at the storage layer). For other auth types both
  * checks short-circuit to {@code true}, since per-user authentication already gates access.
  */
@@ -25,13 +25,13 @@ public class FilestoreAclChecker {
 
   private @Autowired @Setter MessageSourceUtils messages;
 
-  /** Splits a comma-separated whitelist into trimmed, non-empty tokens. */
-  public static Set<String> parseList(String whitelist) {
-    if (whitelist == null) {
+  /** Splits a comma-separated allowlist into trimmed, non-empty tokens. */
+  public static Set<String> parseList(String allowlist) {
+    if (allowlist == null) {
       return Collections.emptySet();
     }
     Set<String> tokens = new LinkedHashSet<>();
-    for (String raw : whitelist.split(",")) {
+    for (String raw : allowlist.split(",")) {
       String trimmed = raw.trim();
       if (!trimmed.isEmpty()) {
         tokens.add(trimmed);
@@ -47,7 +47,7 @@ public class FilestoreAclChecker {
     if (!isGated(fs)) {
       return true;
     }
-    return inList(user, fs.getReadWhitelist()) || inList(user, fs.getWriteWhitelist());
+    return inList(user, fs.getReadAllowlist()) || inList(user, fs.getWriteAllowlist());
   }
 
   public boolean canWrite(User user, NfsFileSystem fs) {
@@ -57,7 +57,7 @@ public class FilestoreAclChecker {
     if (!isGated(fs)) {
       return true;
     }
-    return inList(user, fs.getWriteWhitelist());
+    return inList(user, fs.getWriteAllowlist());
   }
 
   public void assertCanRead(User user, NfsFileSystem fs) {
@@ -83,8 +83,8 @@ public class FilestoreAclChecker {
     return NfsAuthenticationType.NONE.equals(fs.getAuthType());
   }
 
-  private static boolean inList(User user, String whitelist) {
-    Set<String> tokens = parseList(whitelist);
+  private static boolean inList(User user, String allowlist) {
+    Set<String> tokens = parseList(allowlist);
     return tokens.contains(EVERYONE) || tokens.contains(user.getUsername());
   }
 }

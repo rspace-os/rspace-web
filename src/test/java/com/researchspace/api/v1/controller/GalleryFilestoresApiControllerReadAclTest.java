@@ -58,11 +58,11 @@ class GalleryFilestoresApiControllerReadAclTest {
   }
 
   @Test
-  void browseFilesystem_userNotOnReadWhitelist_throwsAuthorizationException() {
+  void browseFilesystem_userNotOnReadAllowlist_throwsAuthorizationException() {
     Long fsId = 1L;
     NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(fsId);
-    fs.setReadWhitelist("alice");
-    fs.setWriteWhitelist(null);
+    fs.setReadAllowlist("alice");
+    fs.setWriteAllowlist(null);
     when(nfsManager.getFileSystem(fsId)).thenReturn(fs);
 
     assertThrows(AuthorizationException.class, () -> controller.browseFilesystem(fsId, null, user));
@@ -71,12 +71,12 @@ class GalleryFilestoresApiControllerReadAclTest {
   }
 
   @Test
-  void browseFilestore_userNotOnReadWhitelist_throwsAuthorizationException() {
+  void browseFilestore_userNotOnReadAllowlist_throwsAuthorizationException() {
     Long filestoreId = 1L;
     NfsFileStore filestore =
         GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(filestoreId, "fs", user);
-    filestore.getFileSystem().setReadWhitelist("alice");
-    filestore.getFileSystem().setWriteWhitelist(null);
+    filestore.getFileSystem().setReadAllowlist("alice");
+    filestore.getFileSystem().setWriteAllowlist(null);
     when(nfsManager.getNfsFileStore(filestoreId)).thenReturn(filestore);
 
     assertThrows(
@@ -86,12 +86,12 @@ class GalleryFilestoresApiControllerReadAclTest {
   }
 
   @Test
-  void downloadFromFilestore_userNotOnReadWhitelist_throwsAuthorizationException() {
+  void downloadFromFilestore_userNotOnReadAllowlist_throwsAuthorizationException() {
     Long filestoreId = 1L;
     NfsFileStore filestore =
         GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(filestoreId, "fs", user);
-    filestore.getFileSystem().setReadWhitelist("alice");
-    filestore.getFileSystem().setWriteWhitelist(null);
+    filestore.getFileSystem().setReadAllowlist("alice");
+    filestore.getFileSystem().setWriteAllowlist(null);
     when(nfsManager.getNfsFileStore(filestoreId)).thenReturn(filestore);
 
     assertThrows(
@@ -102,11 +102,11 @@ class GalleryFilestoresApiControllerReadAclTest {
   }
 
   @Test
-  void createFilestore_userNotOnReadWhitelist_throwsAuthorizationException() throws IOException {
+  void createFilestore_userNotOnReadAllowlist_throwsAuthorizationException() throws IOException {
     Long fsId = 1L;
     NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(fsId);
-    fs.setReadWhitelist("alice");
-    fs.setWriteWhitelist(null);
+    fs.setReadAllowlist("alice");
+    fs.setWriteAllowlist(null);
     when(nfsManager.getFileSystem(fsId)).thenReturn(fs);
 
     assertThrows(
@@ -117,12 +117,12 @@ class GalleryFilestoresApiControllerReadAclTest {
   }
 
   @Test
-  void loginToFilesystem_userNotOnReadWhitelist_throwsAuthorizationException()
+  void loginToFilesystem_userNotOnReadAllowlist_throwsAuthorizationException()
       throws BindException {
     Long fsId = 1L;
     NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(fsId);
-    fs.setReadWhitelist("alice");
-    fs.setWriteWhitelist(null);
+    fs.setReadAllowlist("alice");
+    fs.setWriteAllowlist(null);
     when(nfsManager.getFileSystem(fsId)).thenReturn(fs);
 
     assertThrows(
@@ -133,12 +133,12 @@ class GalleryFilestoresApiControllerReadAclTest {
   }
 
   @Test
-  void browseFilesystem_userOnWriteWhitelistOnly_isAllowed() throws IOException {
+  void browseFilesystem_userOnWriteAllowlistOnly_isAllowed() throws IOException {
     // write implies read: user on write list but not read list can still browse
     Long fsId = 1L;
     NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(fsId);
-    fs.setReadWhitelist(null);
-    fs.setWriteWhitelist(USERNAME);
+    fs.setReadAllowlist(null);
+    fs.setWriteAllowlist(USERNAME);
     when(nfsManager.getFileSystem(fsId)).thenReturn(fs);
 
     try {

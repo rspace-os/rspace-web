@@ -228,26 +228,26 @@
                 </td>
             </tr>
 
-            <tr class="fileSystemDetailsWhitelistsRow">
-                <td><label><spring:message code="system.netfilesystem.details.whitelists.write.question" /></label></td>
+            <tr class="fileSystemDetailsAllowlistsRow">
+                <td><label><spring:message code="system.netfilesystem.details.allowlists.write.question" /></label></td>
                 <td>
                     <label><input type="radio" id="fileSystemLimitWriteNo" name="fileSystemLimitWrite" value="no">
-                        <spring:message code="system.netfilesystem.details.whitelists.anyone" /></label><br/>
+                        <spring:message code="system.netfilesystem.details.allowlists.anyone" /></label><br/>
                     <label><input type="radio" id="fileSystemLimitWriteYes" name="fileSystemLimitWrite" value="yes">
-                        <spring:message code="system.netfilesystem.details.whitelists.only.these" /></label>
-                    <input id="fileSystemWriteWhitelist" type="text" style="width: 15em" placeholder="alice, bob" /><br/>
+                        <spring:message code="system.netfilesystem.details.allowlists.only.these" /></label>
+                    <input id="fileSystemWriteAllowlist" type="text" style="width: 15em" placeholder="alice, bob" /><br/>
                     <label><input type="radio" id="fileSystemLimitWriteNobody" name="fileSystemLimitWrite" value="nobody">
-                        <spring:message code="system.netfilesystem.details.whitelists.nobody" /></label>
+                        <spring:message code="system.netfilesystem.details.allowlists.nobody" /></label>
                 </td>
             </tr>
-            <tr class="fileSystemDetailsWhitelistsRow fileSystemDetailsReadWhitelistRow">
-                <td><label><spring:message code="system.netfilesystem.details.whitelists.read.question" /></label></td>
+            <tr class="fileSystemDetailsAllowlistsRow fileSystemDetailsReadAllowlistRow">
+                <td><label><spring:message code="system.netfilesystem.details.allowlists.read.question" /></label></td>
                 <td>
                     <label><input type="radio" id="fileSystemLimitReadNo" name="fileSystemLimitRead" value="no">
-                        <spring:message code="system.netfilesystem.details.whitelists.anyone" /></label><br/>
+                        <spring:message code="system.netfilesystem.details.allowlists.anyone" /></label><br/>
                     <label><input type="radio" id="fileSystemLimitReadYes" name="fileSystemLimitRead" value="yes">
-                        <spring:message code="system.netfilesystem.details.whitelists.only.these" /></label>
-                    <input id="fileSystemReadWhitelist" type="text" style="width: 15em" placeholder="carol" />
+                        <spring:message code="system.netfilesystem.details.allowlists.only.these" /></label>
+                    <input id="fileSystemReadAllowlist" type="text" style="width: 15em" placeholder="carol" />
                 </td>
             </tr>
 

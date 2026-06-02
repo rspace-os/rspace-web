@@ -96,9 +96,9 @@ class NfsExportManagerImplTest {
   }
 
   @Test
-  void userNotOnReadWhitelist_marksResourceNotAccessibleAndSkipsQuery() {
-    fileSystem.setReadWhitelist("alice");
-    fileSystem.setWriteWhitelist(null);
+  void userNotOnReadAllowlist_marksResourceNotAccessibleAndSkipsQuery() {
+    fileSystem.setReadAllowlist("alice");
+    fileSystem.setWriteAllowlist(null);
 
     manager.scanFileSystemsForFoundNfsLinks(plan, nfsClients, exportConfig);
 
@@ -109,9 +109,9 @@ class NfsExportManagerImplTest {
   }
 
   @Test
-  void userOnReadWhitelist_queriesForNfsFile() {
-    fileSystem.setReadWhitelist("testUser");
-    fileSystem.setWriteWhitelist(null);
+  void userOnReadAllowlist_queriesForNfsFile() {
+    fileSystem.setReadAllowlist("testUser");
+    fileSystem.setWriteAllowlist(null);
 
     NfsFileDetails details = new NfsFileDetails("test.txt");
     details.setFileSystemFullPath("/test.txt");
@@ -125,8 +125,8 @@ class NfsExportManagerImplTest {
   @Test
   void nullExportConfig_skipsAclCheckAndStillScans() {
     // a null config has no exporter to evaluate the ACL against; the scan must still run
-    fileSystem.setReadWhitelist("alice");
-    fileSystem.setWriteWhitelist(null);
+    fileSystem.setReadAllowlist("alice");
+    fileSystem.setWriteAllowlist(null);
     NfsFileDetails details = new NfsFileDetails("test.txt");
     details.setFileSystemFullPath("/test.txt");
     when(nfsClient.queryForNfsFile(any(NfsTarget.class))).thenReturn(details);

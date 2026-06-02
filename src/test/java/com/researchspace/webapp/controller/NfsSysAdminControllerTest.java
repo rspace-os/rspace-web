@@ -87,15 +87,15 @@ public class NfsSysAdminControllerTest {
   public void saveFileSystem() {
     NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
     assertEquals(12L, result.getFileSystemId().longValue());
-    assertTrue(result.getUnknownReadWhitelistUsernames().isEmpty());
-    assertTrue(result.getUnknownWriteWhitelistUsernames().isEmpty());
+    assertTrue(result.getUnknownReadAllowlistUsernames().isEmpty());
+    assertTrue(result.getUnknownWriteAllowlistUsernames().isEmpty());
     verify(netFilesMgr, atLeastOnce()).saveNfsFileSystem(nfs);
   }
 
   @Test
   public void saveFileSystem_unknownUsernames_returnedAsWarningButSaveSucceeds() {
-    nfs.setReadWhitelist("alice,bob");
-    nfs.setWriteWhitelist("carol");
+    nfs.setReadAllowlist("alice,bob");
+    nfs.setWriteAllowlist("carol");
     when(userMgr.getUserByUsername("alice")).thenReturn(sysadmin);
     when(userMgr.getUserByUsername("bob")).thenReturn(null);
     when(userMgr.getUserByUsername("carol"))
@@ -103,15 +103,15 @@ public class NfsSysAdminControllerTest {
 
     NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
 
-    assertEquals(java.util.List.of("bob"), result.getUnknownReadWhitelistUsernames());
-    assertEquals(java.util.List.of("carol"), result.getUnknownWriteWhitelistUsernames());
+    assertEquals(java.util.List.of("bob"), result.getUnknownReadAllowlistUsernames());
+    assertEquals(java.util.List.of("carol"), result.getUnknownWriteAllowlistUsernames());
     verify(netFilesMgr, atLeastOnce()).saveNfsFileSystem(nfs);
   }
 
   @Test
   public void saveFileSystem_usernameInBothLists_rejectedAndNotSaved() {
-    nfs.setReadWhitelist("alice,carol");
-    nfs.setWriteWhitelist("alice,bob");
+    nfs.setReadAllowlist("alice,carol");
+    nfs.setWriteAllowlist("alice,bob");
 
     IllegalArgumentException ex =
         org.junit.Assert.assertThrows(
@@ -126,8 +126,8 @@ public class NfsSysAdminControllerTest {
   public void saveFileSystem_everyoneSentinelInBothLists_isAllowed() {
     // '*' in both lists means 'everyone reads, everyone writes' — a valid configuration,
     // not a duplicate of a named user.
-    nfs.setReadWhitelist("*");
-    nfs.setWriteWhitelist("*");
+    nfs.setReadAllowlist("*");
+    nfs.setWriteAllowlist("*");
 
     NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
 
@@ -136,29 +136,29 @@ public class NfsSysAdminControllerTest {
   }
 
   @Test
-  public void saveFileSystem_emptyWriteWhitelist_isNobodyAndDoesNotTriggerLookup() {
+  public void saveFileSystem_emptyWriteAllowlist_isNobodyAndDoesNotTriggerLookup() {
     // The 'Nobody (read access only)' radio submits an empty string for the write list.
     // parseList returns an empty set, so no lookup is attempted; the value is persisted as-is.
-    nfs.setReadWhitelist("alice");
-    nfs.setWriteWhitelist("");
+    nfs.setReadAllowlist("alice");
+    nfs.setWriteAllowlist("");
     when(userMgr.getUserByUsername("alice")).thenReturn(sysadmin);
 
     NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
 
-    assertTrue(result.getUnknownReadWhitelistUsernames().isEmpty());
-    assertTrue(result.getUnknownWriteWhitelistUsernames().isEmpty());
+    assertTrue(result.getUnknownReadAllowlistUsernames().isEmpty());
+    assertTrue(result.getUnknownWriteAllowlistUsernames().isEmpty());
     verify(netFilesMgr, atLeastOnce()).saveNfsFileSystem(nfs);
   }
 
   @Test
   public void saveFileSystem_everyoneSentinel_doesNotTriggerLookup() {
-    nfs.setReadWhitelist("*");
-    nfs.setWriteWhitelist("*");
+    nfs.setReadAllowlist("*");
+    nfs.setWriteAllowlist("*");
 
     NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
 
-    assertTrue(result.getUnknownReadWhitelistUsernames().isEmpty());
-    assertTrue(result.getUnknownWriteWhitelistUsernames().isEmpty());
+    assertTrue(result.getUnknownReadAllowlistUsernames().isEmpty());
+    assertTrue(result.getUnknownWriteAllowlistUsernames().isEmpty());
     verify(userMgr, never()).getUserByUsername(Mockito.anyString());
   }
 

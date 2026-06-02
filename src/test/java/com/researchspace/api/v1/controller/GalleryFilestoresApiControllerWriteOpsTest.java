@@ -559,13 +559,13 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void moveToFilestore_userNotOnWriteWhitelist_throwsAuthorizationException() throws IOException {
-    // override the permissive default with a whitelist that excludes the request's user
+  void moveToFilestore_userNotOnWriteAllowlist_throwsAuthorizationException() throws IOException {
+    // override the permissive default with a allowlist that excludes the request's user
     NfsFileStore restrictedFilestore =
         GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(2L, "restricted", user);
     NfsFileSystem restrictedFs = restrictedFilestore.getFileSystem();
-    restrictedFs.setReadWhitelist("*");
-    restrictedFs.setWriteWhitelist("alice"); // USER's username is "username", not "alice"
+    restrictedFs.setReadAllowlist("*");
+    restrictedFs.setWriteAllowlist("alice"); // USER's username is "username", not "alice"
     when(nfsManager.getNfsFileStore(2L)).thenReturn(restrictedFilestore);
     when(user.getUsername()).thenReturn(USERNAME);
 
@@ -584,14 +584,14 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void transferBetweenFilestores_userNotOnDestWriteWhitelist_throwsAuthorizationException() {
+  void transferBetweenFilestores_userNotOnDestWriteAllowlist_throwsAuthorizationException() {
     Long srcId = 10L;
     Long dstId = 20L;
     when(nfsManager.getNfsFileStore(srcId))
         .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user));
     NfsFileStore destFilestore =
         GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user);
-    destFilestore.getFileSystem().setWriteWhitelist("alice"); // user is "username"
+    destFilestore.getFileSystem().setWriteAllowlist("alice"); // user is "username"
     when(nfsManager.getNfsFileStore(dstId)).thenReturn(destFilestore);
     when(user.getUsername()).thenReturn(USERNAME);
 
@@ -615,7 +615,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user);
     srcFilestore
         .getFileSystem()
-        .setWriteWhitelist("alice"); // read stays '*', so source is readable
+        .setWriteAllowlist("alice"); // read stays '*', so source is readable
     when(nfsManager.getNfsFileStore(srcId)).thenReturn(srcFilestore);
     when(nfsManager.getNfsFileStore(dstId))
         .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
@@ -644,7 +644,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     Long dstId = 20L;
     NfsFileStore srcFilestore =
         GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user);
-    srcFilestore.getFileSystem().setWriteWhitelist("alice"); // user is "username"
+    srcFilestore.getFileSystem().setWriteAllowlist("alice"); // user is "username"
     when(nfsManager.getNfsFileStore(srcId)).thenReturn(srcFilestore);
     when(nfsManager.getNfsFileStore(dstId))
         .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));

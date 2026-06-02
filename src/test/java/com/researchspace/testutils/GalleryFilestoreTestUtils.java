@@ -65,8 +65,8 @@ public class GalleryFilestoreTestUtils {
     fileSystem.setUrl("https://s3.example.com");
     // default permissive ACL so existing tests don't need to opt-in;
     // ACL-specific tests override these values.
-    fileSystem.setReadWhitelist("*");
-    fileSystem.setWriteWhitelist("*");
+    fileSystem.setReadAllowlist("*");
+    fileSystem.setWriteAllowlist("*");
     return fileSystem;
   }
 

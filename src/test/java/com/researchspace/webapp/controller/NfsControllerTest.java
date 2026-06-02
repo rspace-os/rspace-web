@@ -212,11 +212,11 @@ public class NfsControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void loginToNfsWithJson_userNotOnReadWhitelistForNoneAuth_throwsAuthorizationException() {
+  public void loginToNfsWithJson_userNotOnReadAllowlistForNoneAuth_throwsAuthorizationException() {
     // ACL check should fire before nfsManager.loginToNfs for NONE-auth filesystems
     testNfsFileSystem.setAuthType(NfsAuthenticationType.NONE);
-    testNfsFileSystem.setReadWhitelist("someoneElse");
-    testNfsFileSystem.setWriteWhitelist(null);
+    testNfsFileSystem.setReadAllowlist("someoneElse");
+    testNfsFileSystem.setWriteAllowlist(null);
     controller.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
 
     NfsController.NfsLoginData data =

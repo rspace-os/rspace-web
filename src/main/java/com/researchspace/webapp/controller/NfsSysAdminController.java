@@ -70,8 +70,8 @@ public class NfsSysAdminController extends BaseController {
     assertIsSysAdmin();
     rejectIfUsernamesInBothLists(nfsFileSystem);
 
-    List<String> unknownReaders = findUnknownUsernames(nfsFileSystem.getReadWhitelist());
-    List<String> unknownWriters = findUnknownUsernames(nfsFileSystem.getWriteWhitelist());
+    List<String> unknownReaders = findUnknownUsernames(nfsFileSystem.getReadAllowlist());
+    List<String> unknownWriters = findUnknownUsernames(nfsFileSystem.getWriteAllowlist());
 
     nfsManager.saveNfsFileSystem(nfsFileSystem);
     return new NfsFileSystemSaveResult(nfsFileSystem.getId(), unknownReaders, unknownWriters);
@@ -84,8 +84,8 @@ public class NfsSysAdminController extends BaseController {
    */
   private void rejectIfUsernamesInBothLists(NfsFileSystem nfsFileSystem) {
     Set<String> intersection =
-        new LinkedHashSet<>(FilestoreAclChecker.parseList(nfsFileSystem.getReadWhitelist()));
-    intersection.retainAll(FilestoreAclChecker.parseList(nfsFileSystem.getWriteWhitelist()));
+        new LinkedHashSet<>(FilestoreAclChecker.parseList(nfsFileSystem.getReadAllowlist()));
+    intersection.retainAll(FilestoreAclChecker.parseList(nfsFileSystem.getWriteAllowlist()));
     intersection.remove(FilestoreAclChecker.EVERYONE);
     if (!intersection.isEmpty()) {
       throw new IllegalArgumentException(
@@ -96,13 +96,13 @@ public class NfsSysAdminController extends BaseController {
   }
 
   /**
-   * Returns the subset of whitelisted usernames that do not correspond to any RSpace user. The
+   * Returns the subset of allowlisted usernames that do not correspond to any RSpace user. The
    * 'everyone' sentinel ({@code *}) is ignored. The list is preserved as typed so that sysadmins
    * can pre-provision access for users who have not signed up yet; this is a non-fatal warning.
    */
-  private List<String> findUnknownUsernames(String whitelist) {
+  private List<String> findUnknownUsernames(String allowlist) {
     List<String> unknown = new ArrayList<>();
-    for (String token : FilestoreAclChecker.parseList(whitelist)) {
+    for (String token : FilestoreAclChecker.parseList(allowlist)) {
       if (FilestoreAclChecker.EVERYONE.equals(token)) {
         continue;
       }

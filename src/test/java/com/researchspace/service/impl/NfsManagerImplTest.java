@@ -105,8 +105,8 @@ public class NfsManagerImplTest {
 
   @Test
   public void getActiveFileSystemInfos_populatesUserPermissionsForRequestingUser() {
-    s3FileSystem.setReadWhitelist("testUser");
-    s3FileSystem.setWriteWhitelist(null);
+    s3FileSystem.setReadAllowlist("testUser");
+    s3FileSystem.setWriteAllowlist(null);
     when(nfsDao.getActiveFileSystems()).thenReturn(List.of(s3FileSystem));
 
     List<NfsFileSystemInfo> infos = nfsManager.getActiveFileSystemInfos(testUser);
@@ -120,8 +120,8 @@ public class NfsManagerImplTest {
 
   @Test
   public void getActiveFileSystemInfos_userNotInAnyList_canReadAndWriteAreFalse() {
-    s3FileSystem.setReadWhitelist("alice");
-    s3FileSystem.setWriteWhitelist("alice");
+    s3FileSystem.setReadAllowlist("alice");
+    s3FileSystem.setWriteAllowlist("alice");
     when(nfsDao.getActiveFileSystems()).thenReturn(List.of(s3FileSystem));
 
     List<NfsFileSystemInfo> infos = nfsManager.getActiveFileSystemInfos(testUser);
@@ -138,7 +138,7 @@ public class NfsManagerImplTest {
     irods.setName("irods");
     irods.setClientType(NfsClientType.IRODS);
     irods.setAuthType(NfsAuthenticationType.PASSWORD);
-    // empty whitelists; should be ignored because authType != NONE
+    // empty allowlists; should be ignored because authType != NONE
     when(nfsDao.getActiveFileSystems()).thenReturn(List.of(irods));
 
     List<NfsFileSystemInfo> infos = nfsManager.getActiveFileSystemInfos(testUser);
@@ -150,8 +150,8 @@ public class NfsManagerImplTest {
 
   @Test
   public void getFileStoreInfosForUser_populatesUserPermissionsFromUnderlyingFilesystem() {
-    s3FileSystem.setReadWhitelist("*");
-    s3FileSystem.setWriteWhitelist(null);
+    s3FileSystem.setReadAllowlist("*");
+    s3FileSystem.setWriteAllowlist(null);
     NfsFileStore filestore = new NfsFileStore();
     filestore.setId(42L);
     filestore.setName("staleFilestore");

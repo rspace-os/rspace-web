@@ -67,7 +67,7 @@ class FilestoreAclCheckerTest {
   // --- canRead / canWrite, authType=NONE ---
 
   @Test
-  void canRead_emptyWhitelists_deniesEveryone() {
+  void canRead_emptyAllowlists_deniesEveryone() {
     NfsFileSystem fs = s3FileSystem(null, null);
     assertFalse(checker.canRead(user("alice"), fs));
     assertFalse(checker.canRead(user("bob"), fs));
@@ -130,13 +130,13 @@ class FilestoreAclCheckerTest {
   // --- authType gate ---
 
   @Test
-  void canRead_nonNoneAuthType_shortCircuitsTrue_evenIfWhitelistsEmpty() {
+  void canRead_nonNoneAuthType_shortCircuitsTrue_evenIfAllowlistsEmpty() {
     NfsFileSystem fs = perUserAuthFileSystem(NfsClientType.SAMBA);
     assertTrue(checker.canRead(user("alice"), fs));
   }
 
   @Test
-  void canWrite_nonNoneAuthType_shortCircuitsTrue_evenIfWhitelistsEmpty() {
+  void canWrite_nonNoneAuthType_shortCircuitsTrue_evenIfAllowlistsEmpty() {
     NfsFileSystem fs = perUserAuthFileSystem(NfsClientType.IRODS);
     assertTrue(checker.canWrite(user("alice"), fs));
   }
@@ -154,8 +154,8 @@ class FilestoreAclCheckerTest {
     NfsFileSystem fs = new NfsFileSystem();
     fs.setClientType(NfsClientType.S3);
     fs.setAuthType(null);
-    fs.setReadWhitelist("*");
-    fs.setWriteWhitelist("*");
+    fs.setReadAllowlist("*");
+    fs.setWriteAllowlist("*");
     assertFalse(checker.canRead(user("alice"), fs));
   }
 
@@ -164,7 +164,7 @@ class FilestoreAclCheckerTest {
     NfsFileSystem fs = new NfsFileSystem();
     fs.setClientType(NfsClientType.S3);
     fs.setAuthType(null);
-    fs.setWriteWhitelist("*");
+    fs.setWriteAllowlist("*");
     assertFalse(checker.canWrite(user("alice"), fs));
   }
 
@@ -174,7 +174,7 @@ class FilestoreAclCheckerTest {
     NfsFileSystem fs = new NfsFileSystem();
     fs.setClientType(NfsClientType.SAMBA);
     fs.setAuthType(NfsAuthenticationType.NONE);
-    fs.setReadWhitelist("alice");
+    fs.setReadAllowlist("alice");
     assertTrue(checker.canRead(user("alice"), fs));
     assertFalse(checker.canRead(user("bob"), fs));
   }
@@ -215,12 +215,12 @@ class FilestoreAclCheckerTest {
     return new User(username);
   }
 
-  private static NfsFileSystem s3FileSystem(String readWhitelist, String writeWhitelist) {
+  private static NfsFileSystem s3FileSystem(String readAllowlist, String writeAllowlist) {
     NfsFileSystem fs = new NfsFileSystem();
     fs.setClientType(NfsClientType.S3);
     fs.setAuthType(NfsAuthenticationType.NONE);
-    fs.setReadWhitelist(readWhitelist);
-    fs.setWriteWhitelist(writeWhitelist);
+    fs.setReadAllowlist(readAllowlist);
+    fs.setWriteAllowlist(writeAllowlist);
     return fs;
   }
 

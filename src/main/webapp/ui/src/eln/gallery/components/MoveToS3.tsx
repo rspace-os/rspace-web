@@ -42,7 +42,7 @@ const NoFilestoreAlert = () => (
 const NoWritableFilestoreAlert = () => (
   <Alert severity="error">
     <AlertTitle>You do not have write access to any S3 filestore.</AlertTitle>
-    Your account is not on the write whitelist for any S3 filestore. Ask your
+    Your account is not on the write allowlist for any S3 filestore. Ask your
     system administrator if you need write access.
   </Alert>
 );

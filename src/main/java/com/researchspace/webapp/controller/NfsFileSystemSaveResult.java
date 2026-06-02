@@ -15,6 +15,6 @@ public class NfsFileSystemSaveResult implements Serializable {
   private static final long serialVersionUID = 1L;
 
   private Long fileSystemId;
-  private List<String> unknownReadWhitelistUsernames;
-  private List<String> unknownWriteWhitelistUsernames;
+  private List<String> unknownReadAllowlistUsernames;
+  private List<String> unknownWriteAllowlistUsernames;
 }

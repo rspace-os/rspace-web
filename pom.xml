@@ -1493,7 +1493,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>2.23.2</version>
+      <version>c54b58e4e2</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
