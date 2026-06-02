@@ -2570,8 +2570,6 @@
     <deployment>dev</deployment>
     <!-- default location of external properties file is actually the classpath one! -->
     <propertyFileDirPlaceholder>classpath:deployments/${deployment}</propertyFileDirPlaceholder>
-    <!-- set to true when using a local Vite dev server, skipping the production Vite build -->
-    <reactDevMode>false</reactDevMode>
     <!-- opt-in cache busting for legacy /scripts/** and /styles/** assets in dev mode; production always cache-busts -->
     <legacyAssetCacheBustingInDevMode>false</legacyAssetCacheBustingInDevMode>
 
